@@ -15,9 +15,9 @@ func TestQueryResolver(t *testing.T) {
 	mockDBStore := NewMockDBStore() // returns no dumps
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
-	mockSymbolsResolver := NewMockSymbolsResolver()
+	mockCodeNavResolver := NewMockCodeNavResolver()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB(), mockSymbolsResolver)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB(), mockCodeNavResolver)
 	queryResolver, err := resolver.QueryResolver(context.Background(), &gql.GitBlobLSIFDataArgs{
 		Repo:      &types.Repo{ID: 50},
 		Commit:    api.CommitID("deadbeef"),

@@ -43,8 +43,8 @@ type ExecutorResolver interface {
 	ExecutorResolver() executor.Resolver
 }
 
-type SymbolsResolver interface {
-	SymbolsResolver() codenav.Resolver
+type CodeNavResolver interface {
+	CodeNavResolver() codenav.Resolver
 }
 
 type UploadsServiceResolver interface {

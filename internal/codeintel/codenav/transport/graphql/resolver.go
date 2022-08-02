@@ -37,8 +37,7 @@ type resolver struct {
 
 func New(svc Service, hunkCacheSize int, observationContext *observation.Context) *resolver {
 	return &resolver{
-		svc: svc,
-		// requestState:  codenav.RequestState{},
+		svc:           svc,
 		operations:    newOperations(observationContext),
 		hunkCacheSize: hunkCacheSize,
 	}

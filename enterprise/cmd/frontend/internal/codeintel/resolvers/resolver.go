@@ -89,7 +89,7 @@ type resolver struct {
 	// See the same field on the QueryResolver struct
 	maximumIndexesPerMonikerSearch int
 
-	symbolsResolver SymbolsResolver
+	codenavResolver CodeNavResolver
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -103,9 +103,9 @@ func NewResolver(
 	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
-	symbolsResolver SymbolsResolver,
+	codenavResolver CodeNavResolver,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn, symbolsResolver)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn, codenavResolver)
 }
 
 func newResolver(
@@ -118,7 +118,7 @@ func newResolver(
 	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
-	symbolsResolver SymbolsResolver,
+	codenavResolver CodeNavResolver,
 ) *resolver {
 	return &resolver{
 		db:                             dbConn,
@@ -131,12 +131,12 @@ func newResolver(
 		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
 		operations:                     newOperations(observationContext),
 		executorResolver:               executor.New(dbConn),
-		symbolsResolver:                symbolsResolver,
+		codenavResolver:                codenavResolver,
 	}
 }
 
-func (r *resolver) SymbolsResolver() SymbolsResolver {
-	return r.symbolsResolver
+func (r *resolver) CodeNavResolver() CodeNavResolver {
+	return r.codenavResolver
 }
 
 func (r *resolver) ExecutorResolver() executor.Resolver {
@@ -225,24 +225,16 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		return nil, err
 	}
 
-	// r.symbolsResolver.SetRequestState(
-	// 	dumps,
-	// 	authz.DefaultSubRepoPermsChecker,
-	// 	gitserver.NewClient(r.db), args.Repo, commit, args.Path,
-	// 	r.gitserverClient,
-	// 	r.maximumIndexesPerMonikerSearch,
-	// )
-
 	reqState := codenav.NewRequestState(
 		dumps,
 		authz.DefaultSubRepoPermsChecker,
 		gitserver.NewClient(r.db), args.Repo, commit, args.Path,
 		r.gitserverClient,
 		r.maximumIndexesPerMonikerSearch,
-		r.symbolsResolver.GetHunkCacheSize(),
+		r.codenavResolver.GetHunkCacheSize(),
 	)
 
-	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.symbolsResolver, *reqState), nil
+	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.codenavResolver, *reqState), nil
 }
 
 func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {

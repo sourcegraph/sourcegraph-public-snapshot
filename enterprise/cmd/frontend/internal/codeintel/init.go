@@ -12,7 +12,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
-	symbolsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
+	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -40,12 +40,12 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) gql.CodeIntelResolver {
 	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
 
-	symbolsCtx := &observation.Context{
+	codenavCtx := &observation.Context{
 		Logger:     logger.Scoped("symbols.transport.graphql", "codeintel symbols graphql transport"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	symbolsResolver := symbolsgraphql.New(services.SymbolsSvc, config.HunkCacheSize, symbolsCtx)
+	codenavResolver := codenavgraphql.New(services.SymbolsSvc, config.HunkCacheSize, codenavCtx)
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
@@ -57,7 +57,7 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		config.MaximumIndexesPerMonikerSearch,
 		observationContext,
 		db,
-		symbolsResolver,
+		codenavResolver,
 	)
 
 	obsCtx := &observation.Context{

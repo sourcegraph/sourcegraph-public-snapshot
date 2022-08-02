@@ -25,6 +25,1190 @@ import (
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
+// MockCodeNavResolver is a mock implementation of the CodeNavResolver
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockCodeNavResolver struct {
+	// DefinitionsFunc is an instance of a mock function object controlling
+	// the behavior of the method Definitions.
+	DefinitionsFunc *CodeNavResolverDefinitionsFunc
+	// DiagnosticsFunc is an instance of a mock function object controlling
+	// the behavior of the method Diagnostics.
+	DiagnosticsFunc *CodeNavResolverDiagnosticsFunc
+	// GetHunkCacheSizeFunc is an instance of a mock function object
+	// controlling the behavior of the method GetHunkCacheSize.
+	GetHunkCacheSizeFunc *CodeNavResolverGetHunkCacheSizeFunc
+	// HoverFunc is an instance of a mock function object controlling the
+	// behavior of the method Hover.
+	HoverFunc *CodeNavResolverHoverFunc
+	// ImplementationsFunc is an instance of a mock function object
+	// controlling the behavior of the method Implementations.
+	ImplementationsFunc *CodeNavResolverImplementationsFunc
+	// LSIFUploadsFunc is an instance of a mock function object controlling
+	// the behavior of the method LSIFUploads.
+	LSIFUploadsFunc *CodeNavResolverLSIFUploadsFunc
+	// RangesFunc is an instance of a mock function object controlling the
+	// behavior of the method Ranges.
+	RangesFunc *CodeNavResolverRangesFunc
+	// ReferencesFunc is an instance of a mock function object controlling
+	// the behavior of the method References.
+	ReferencesFunc *CodeNavResolverReferencesFunc
+	// StencilFunc is an instance of a mock function object controlling the
+	// behavior of the method Stencil.
+	StencilFunc *CodeNavResolverStencilFunc
+}
+
+// NewMockCodeNavResolver creates a new mock of the CodeNavResolver
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockCodeNavResolver() *MockCodeNavResolver {
+	return &MockCodeNavResolver{
+		DefinitionsFunc: &CodeNavResolverDefinitionsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 error) {
+				return
+			},
+		},
+		DiagnosticsFunc: &CodeNavResolverDiagnosticsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+				return
+			},
+		},
+		GetHunkCacheSizeFunc: &CodeNavResolverGetHunkCacheSizeFunc{
+			defaultHook: func() (r0 int) {
+				return
+			},
+		},
+		HoverFunc: &CodeNavResolverHoverFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 string, r1 shared.Range, r2 bool, r3 error) {
+				return
+			},
+		},
+		ImplementationsFunc: &CodeNavResolverImplementationsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 string, r2 error) {
+				return
+			},
+		},
+		LSIFUploadsFunc: &CodeNavResolverLSIFUploadsFunc{
+			defaultHook: func(context.Context, codenav.RequestState) (r0 []shared.Dump, r1 error) {
+				return
+			},
+		},
+		RangesFunc: &CodeNavResolverRangesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) (r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+				return
+			},
+		},
+		ReferencesFunc: &CodeNavResolverReferencesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 string, r2 error) {
+				return
+			},
+		},
+		StencilFunc: &CodeNavResolverStencilFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.Range, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCodeNavResolver creates a new mock of the CodeNavResolver
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCodeNavResolver() *MockCodeNavResolver {
+	return &MockCodeNavResolver{
+		DefinitionsFunc: &CodeNavResolverDefinitionsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Definitions")
+			},
+		},
+		DiagnosticsFunc: &CodeNavResolverDiagnosticsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Diagnostics")
+			},
+		},
+		GetHunkCacheSizeFunc: &CodeNavResolverGetHunkCacheSizeFunc{
+			defaultHook: func() int {
+				panic("unexpected invocation of MockCodeNavResolver.GetHunkCacheSize")
+			},
+		},
+		HoverFunc: &CodeNavResolverHoverFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Hover")
+			},
+		},
+		ImplementationsFunc: &CodeNavResolverImplementationsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Implementations")
+			},
+		},
+		LSIFUploadsFunc: &CodeNavResolverLSIFUploadsFunc{
+			defaultHook: func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+				panic("unexpected invocation of MockCodeNavResolver.LSIFUploads")
+			},
+		},
+		RangesFunc: &CodeNavResolverRangesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Ranges")
+			},
+		},
+		ReferencesFunc: &CodeNavResolverReferencesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+				panic("unexpected invocation of MockCodeNavResolver.References")
+			},
+		},
+		StencilFunc: &CodeNavResolverStencilFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Stencil")
+			},
+		},
+	}
+}
+
+// NewMockCodeNavResolverFrom creates a new mock of the MockCodeNavResolver
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockCodeNavResolverFrom(i CodeNavResolver) *MockCodeNavResolver {
+	return &MockCodeNavResolver{
+		DefinitionsFunc: &CodeNavResolverDefinitionsFunc{
+			defaultHook: i.Definitions,
+		},
+		DiagnosticsFunc: &CodeNavResolverDiagnosticsFunc{
+			defaultHook: i.Diagnostics,
+		},
+		GetHunkCacheSizeFunc: &CodeNavResolverGetHunkCacheSizeFunc{
+			defaultHook: i.GetHunkCacheSize,
+		},
+		HoverFunc: &CodeNavResolverHoverFunc{
+			defaultHook: i.Hover,
+		},
+		ImplementationsFunc: &CodeNavResolverImplementationsFunc{
+			defaultHook: i.Implementations,
+		},
+		LSIFUploadsFunc: &CodeNavResolverLSIFUploadsFunc{
+			defaultHook: i.LSIFUploads,
+		},
+		RangesFunc: &CodeNavResolverRangesFunc{
+			defaultHook: i.Ranges,
+		},
+		ReferencesFunc: &CodeNavResolverReferencesFunc{
+			defaultHook: i.References,
+		},
+		StencilFunc: &CodeNavResolverStencilFunc{
+			defaultHook: i.Stencil,
+		},
+	}
+}
+
+// CodeNavResolverDefinitionsFunc describes the behavior when the
+// Definitions method of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverDefinitionsFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)
+	history     []CodeNavResolverDefinitionsFuncCall
+	mutex       sync.Mutex
+}
+
+// Definitions delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Definitions(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, error) {
+	r0, r1 := m.DefinitionsFunc.nextHook()(v0, v1, v2)
+	m.DefinitionsFunc.appendCall(CodeNavResolverDefinitionsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Definitions method
+// of the parent MockCodeNavResolver instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavResolverDefinitionsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Definitions method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverDefinitionsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverDefinitionsFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverDefinitionsFunc) PushReturn(r0 []shared.UploadLocation, r1 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavResolverDefinitionsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverDefinitionsFunc) appendCall(r0 CodeNavResolverDefinitionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverDefinitionsFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverDefinitionsFunc) History() []CodeNavResolverDefinitionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverDefinitionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverDefinitionsFuncCall is an object that describes an
+// invocation of method Definitions on an instance of MockCodeNavResolver.
+type CodeNavResolverDefinitionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverDefinitionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverDefinitionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavResolverDiagnosticsFunc describes the behavior when the
+// Diagnostics method of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverDiagnosticsFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)
+	history     []CodeNavResolverDiagnosticsFuncCall
+	mutex       sync.Mutex
+}
+
+// Diagnostics delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Diagnostics(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1, v2)
+	m.DiagnosticsFunc.appendCall(CodeNavResolverDiagnosticsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Diagnostics method
+// of the parent MockCodeNavResolver instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Diagnostics method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverDiagnosticsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverDiagnosticsFunc) SetDefaultReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverDiagnosticsFunc) PushReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *CodeNavResolverDiagnosticsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverDiagnosticsFunc) appendCall(r0 CodeNavResolverDiagnosticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverDiagnosticsFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverDiagnosticsFunc) History() []CodeNavResolverDiagnosticsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverDiagnosticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverDiagnosticsFuncCall is an object that describes an
+// invocation of method Diagnostics on an instance of MockCodeNavResolver.
+type CodeNavResolverDiagnosticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.DiagnosticAtUpload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverDiagnosticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverDiagnosticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// CodeNavResolverGetHunkCacheSizeFunc describes the behavior when the
+// GetHunkCacheSize method of the parent MockCodeNavResolver instance is
+// invoked.
+type CodeNavResolverGetHunkCacheSizeFunc struct {
+	defaultHook func() int
+	hooks       []func() int
+	history     []CodeNavResolverGetHunkCacheSizeFuncCall
+	mutex       sync.Mutex
+}
+
+// GetHunkCacheSize delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) GetHunkCacheSize() int {
+	r0 := m.GetHunkCacheSizeFunc.nextHook()()
+	m.GetHunkCacheSizeFunc.appendCall(CodeNavResolverGetHunkCacheSizeFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GetHunkCacheSize
+// method of the parent MockCodeNavResolver instance is invoked and the hook
+// queue is empty.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) SetDefaultHook(hook func() int) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetHunkCacheSize method of the parent MockCodeNavResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) PushHook(hook func() int) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) SetDefaultReturn(r0 int) {
+	f.SetDefaultHook(func() int {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) PushReturn(r0 int) {
+	f.PushHook(func() int {
+		return r0
+	})
+}
+
+func (f *CodeNavResolverGetHunkCacheSizeFunc) nextHook() func() int {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverGetHunkCacheSizeFunc) appendCall(r0 CodeNavResolverGetHunkCacheSizeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverGetHunkCacheSizeFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) History() []CodeNavResolverGetHunkCacheSizeFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverGetHunkCacheSizeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverGetHunkCacheSizeFuncCall is an object that describes an
+// invocation of method GetHunkCacheSize on an instance of
+// MockCodeNavResolver.
+type CodeNavResolverGetHunkCacheSizeFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverGetHunkCacheSizeFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverGetHunkCacheSizeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeNavResolverHoverFunc describes the behavior when the Hover method of
+// the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverHoverFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)
+	history     []CodeNavResolverHoverFuncCall
+	mutex       sync.Mutex
+}
+
+// Hover delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Hover(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) (string, shared.Range, bool, error) {
+	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2)
+	m.HoverFunc.appendCall(CodeNavResolverHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
+	return r0, r1, r2, r3
+}
+
+// SetDefaultHook sets function that is called when the Hover method of the
+// parent MockCodeNavResolver instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavResolverHoverFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Hover method of the parent MockCodeNavResolver instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeNavResolverHoverFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverHoverFunc) SetDefaultReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverHoverFunc) PushReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+func (f *CodeNavResolverHoverFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverHoverFunc) appendCall(r0 CodeNavResolverHoverFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverHoverFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverHoverFunc) History() []CodeNavResolverHoverFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverHoverFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverHoverFuncCall is an object that describes an invocation of
+// method Hover on an instance of MockCodeNavResolver.
+type CodeNavResolverHoverFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 shared.Range
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 bool
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverHoverFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverHoverFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// CodeNavResolverImplementationsFunc describes the behavior when the
+// Implementations method of the parent MockCodeNavResolver instance is
+// invoked.
+type CodeNavResolverImplementationsFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
+	history     []CodeNavResolverImplementationsFuncCall
+	mutex       sync.Mutex
+}
+
+// Implementations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Implementations(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, string, error) {
+	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1, v2)
+	m.ImplementationsFunc.appendCall(CodeNavResolverImplementationsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Implementations
+// method of the parent MockCodeNavResolver instance is invoked and the hook
+// queue is empty.
+func (f *CodeNavResolverImplementationsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Implementations method of the parent MockCodeNavResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeNavResolverImplementationsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverImplementationsFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverImplementationsFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *CodeNavResolverImplementationsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverImplementationsFunc) appendCall(r0 CodeNavResolverImplementationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverImplementationsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavResolverImplementationsFunc) History() []CodeNavResolverImplementationsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverImplementationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverImplementationsFuncCall is an object that describes an
+// invocation of method Implementations on an instance of
+// MockCodeNavResolver.
+type CodeNavResolverImplementationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverImplementationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverImplementationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// CodeNavResolverLSIFUploadsFunc describes the behavior when the
+// LSIFUploads method of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverLSIFUploadsFunc struct {
+	defaultHook func(context.Context, codenav.RequestState) ([]shared.Dump, error)
+	hooks       []func(context.Context, codenav.RequestState) ([]shared.Dump, error)
+	history     []CodeNavResolverLSIFUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// LSIFUploads delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) LSIFUploads(v0 context.Context, v1 codenav.RequestState) ([]shared.Dump, error) {
+	r0, r1 := m.LSIFUploadsFunc.nextHook()(v0, v1)
+	m.LSIFUploadsFunc.appendCall(CodeNavResolverLSIFUploadsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LSIFUploads method
+// of the parent MockCodeNavResolver instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavResolverLSIFUploadsFunc) SetDefaultHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LSIFUploads method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverLSIFUploadsFunc) PushHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverLSIFUploadsFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverLSIFUploadsFunc) PushReturn(r0 []shared.Dump, r1 error) {
+	f.PushHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavResolverLSIFUploadsFunc) nextHook() func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverLSIFUploadsFunc) appendCall(r0 CodeNavResolverLSIFUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverLSIFUploadsFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverLSIFUploadsFunc) History() []CodeNavResolverLSIFUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverLSIFUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverLSIFUploadsFuncCall is an object that describes an
+// invocation of method LSIFUploads on an instance of MockCodeNavResolver.
+type CodeNavResolverLSIFUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverLSIFUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverLSIFUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavResolverRangesFunc describes the behavior when the Ranges method
+// of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverRangesFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
+	history     []CodeNavResolverRangesFuncCall
+	mutex       sync.Mutex
+}
+
+// Ranges delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Ranges(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState, v3 int, v4 int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.RangesFunc.appendCall(CodeNavResolverRangesFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Ranges method of the
+// parent MockCodeNavResolver instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavResolverRangesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Ranges method of the parent MockCodeNavResolver instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeNavResolverRangesFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverRangesFunc) SetDefaultReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverRangesFunc) PushReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavResolverRangesFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverRangesFunc) appendCall(r0 CodeNavResolverRangesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverRangesFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverRangesFunc) History() []CodeNavResolverRangesFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverRangesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverRangesFuncCall is an object that describes an invocation
+// of method Ranges on an instance of MockCodeNavResolver.
+type CodeNavResolverRangesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.AdjustedCodeIntelligenceRange
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverRangesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverRangesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavResolverReferencesFunc describes the behavior when the References
+// method of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverReferencesFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
+	history     []CodeNavResolverReferencesFuncCall
+	mutex       sync.Mutex
+}
+
+// References delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) References(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, string, error) {
+	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2)
+	m.ReferencesFunc.appendCall(CodeNavResolverReferencesFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the References method of
+// the parent MockCodeNavResolver instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavResolverReferencesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// References method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverReferencesFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverReferencesFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverReferencesFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *CodeNavResolverReferencesFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverReferencesFunc) appendCall(r0 CodeNavResolverReferencesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverReferencesFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverReferencesFunc) History() []CodeNavResolverReferencesFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverReferencesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverReferencesFuncCall is an object that describes an
+// invocation of method References on an instance of MockCodeNavResolver.
+type CodeNavResolverReferencesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverReferencesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverReferencesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// CodeNavResolverStencilFunc describes the behavior when the Stencil method
+// of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverStencilFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)
+	history     []CodeNavResolverStencilFuncCall
+	mutex       sync.Mutex
+}
+
+// Stencil delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Stencil(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.Range, error) {
+	r0, r1 := m.StencilFunc.nextHook()(v0, v1, v2)
+	m.StencilFunc.appendCall(CodeNavResolverStencilFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Stencil method of
+// the parent MockCodeNavResolver instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavResolverStencilFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Stencil method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverStencilFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverStencilFunc) SetDefaultReturn(r0 []shared.Range, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverStencilFunc) PushReturn(r0 []shared.Range, r1 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavResolverStencilFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverStencilFunc) appendCall(r0 CodeNavResolverStencilFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverStencilFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverStencilFunc) History() []CodeNavResolverStencilFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverStencilFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverStencilFuncCall is an object that describes an invocation
+// of method Stencil on an instance of MockCodeNavResolver.
+type CodeNavResolverStencilFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Range
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverStencilFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverStencilFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
@@ -7945,1189 +9129,5 @@ func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// MockSymbolsResolver is a mock implementation of the SymbolsResolver
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
-// used for unit testing.
-type MockSymbolsResolver struct {
-	// DefinitionsFunc is an instance of a mock function object controlling
-	// the behavior of the method Definitions.
-	DefinitionsFunc *SymbolsResolverDefinitionsFunc
-	// DiagnosticsFunc is an instance of a mock function object controlling
-	// the behavior of the method Diagnostics.
-	DiagnosticsFunc *SymbolsResolverDiagnosticsFunc
-	// GetHunkCacheSizeFunc is an instance of a mock function object
-	// controlling the behavior of the method GetHunkCacheSize.
-	GetHunkCacheSizeFunc *SymbolsResolverGetHunkCacheSizeFunc
-	// HoverFunc is an instance of a mock function object controlling the
-	// behavior of the method Hover.
-	HoverFunc *SymbolsResolverHoverFunc
-	// ImplementationsFunc is an instance of a mock function object
-	// controlling the behavior of the method Implementations.
-	ImplementationsFunc *SymbolsResolverImplementationsFunc
-	// LSIFUploadsFunc is an instance of a mock function object controlling
-	// the behavior of the method LSIFUploads.
-	LSIFUploadsFunc *SymbolsResolverLSIFUploadsFunc
-	// RangesFunc is an instance of a mock function object controlling the
-	// behavior of the method Ranges.
-	RangesFunc *SymbolsResolverRangesFunc
-	// ReferencesFunc is an instance of a mock function object controlling
-	// the behavior of the method References.
-	ReferencesFunc *SymbolsResolverReferencesFunc
-	// StencilFunc is an instance of a mock function object controlling the
-	// behavior of the method Stencil.
-	StencilFunc *SymbolsResolverStencilFunc
-}
-
-// NewMockSymbolsResolver creates a new mock of the SymbolsResolver
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockSymbolsResolver() *MockSymbolsResolver {
-	return &MockSymbolsResolver{
-		DefinitionsFunc: &SymbolsResolverDefinitionsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 error) {
-				return
-			},
-		},
-		DiagnosticsFunc: &SymbolsResolverDiagnosticsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
-				return
-			},
-		},
-		GetHunkCacheSizeFunc: &SymbolsResolverGetHunkCacheSizeFunc{
-			defaultHook: func() (r0 int) {
-				return
-			},
-		},
-		HoverFunc: &SymbolsResolverHoverFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 string, r1 shared.Range, r2 bool, r3 error) {
-				return
-			},
-		},
-		ImplementationsFunc: &SymbolsResolverImplementationsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 string, r2 error) {
-				return
-			},
-		},
-		LSIFUploadsFunc: &SymbolsResolverLSIFUploadsFunc{
-			defaultHook: func(context.Context, codenav.RequestState) (r0 []shared.Dump, r1 error) {
-				return
-			},
-		},
-		RangesFunc: &SymbolsResolverRangesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) (r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
-				return
-			},
-		},
-		ReferencesFunc: &SymbolsResolverReferencesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 string, r2 error) {
-				return
-			},
-		},
-		StencilFunc: &SymbolsResolverStencilFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.Range, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockSymbolsResolver creates a new mock of the SymbolsResolver
-// interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockSymbolsResolver() *MockSymbolsResolver {
-	return &MockSymbolsResolver{
-		DefinitionsFunc: &SymbolsResolverDefinitionsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
-				panic("unexpected invocation of MockSymbolsResolver.Definitions")
-			},
-		},
-		DiagnosticsFunc: &SymbolsResolverDiagnosticsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
-				panic("unexpected invocation of MockSymbolsResolver.Diagnostics")
-			},
-		},
-		GetHunkCacheSizeFunc: &SymbolsResolverGetHunkCacheSizeFunc{
-			defaultHook: func() int {
-				panic("unexpected invocation of MockSymbolsResolver.GetHunkCacheSize")
-			},
-		},
-		HoverFunc: &SymbolsResolverHoverFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
-				panic("unexpected invocation of MockSymbolsResolver.Hover")
-			},
-		},
-		ImplementationsFunc: &SymbolsResolverImplementationsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
-				panic("unexpected invocation of MockSymbolsResolver.Implementations")
-			},
-		},
-		LSIFUploadsFunc: &SymbolsResolverLSIFUploadsFunc{
-			defaultHook: func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
-				panic("unexpected invocation of MockSymbolsResolver.LSIFUploads")
-			},
-		},
-		RangesFunc: &SymbolsResolverRangesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
-				panic("unexpected invocation of MockSymbolsResolver.Ranges")
-			},
-		},
-		ReferencesFunc: &SymbolsResolverReferencesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
-				panic("unexpected invocation of MockSymbolsResolver.References")
-			},
-		},
-		StencilFunc: &SymbolsResolverStencilFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
-				panic("unexpected invocation of MockSymbolsResolver.Stencil")
-			},
-		},
-	}
-}
-
-// NewMockSymbolsResolverFrom creates a new mock of the MockSymbolsResolver
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockSymbolsResolverFrom(i SymbolsResolver) *MockSymbolsResolver {
-	return &MockSymbolsResolver{
-		DefinitionsFunc: &SymbolsResolverDefinitionsFunc{
-			defaultHook: i.Definitions,
-		},
-		DiagnosticsFunc: &SymbolsResolverDiagnosticsFunc{
-			defaultHook: i.Diagnostics,
-		},
-		GetHunkCacheSizeFunc: &SymbolsResolverGetHunkCacheSizeFunc{
-			defaultHook: i.GetHunkCacheSize,
-		},
-		HoverFunc: &SymbolsResolverHoverFunc{
-			defaultHook: i.Hover,
-		},
-		ImplementationsFunc: &SymbolsResolverImplementationsFunc{
-			defaultHook: i.Implementations,
-		},
-		LSIFUploadsFunc: &SymbolsResolverLSIFUploadsFunc{
-			defaultHook: i.LSIFUploads,
-		},
-		RangesFunc: &SymbolsResolverRangesFunc{
-			defaultHook: i.Ranges,
-		},
-		ReferencesFunc: &SymbolsResolverReferencesFunc{
-			defaultHook: i.References,
-		},
-		StencilFunc: &SymbolsResolverStencilFunc{
-			defaultHook: i.Stencil,
-		},
-	}
-}
-
-// SymbolsResolverDefinitionsFunc describes the behavior when the
-// Definitions method of the parent MockSymbolsResolver instance is invoked.
-type SymbolsResolverDefinitionsFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)
-	history     []SymbolsResolverDefinitionsFuncCall
-	mutex       sync.Mutex
-}
-
-// Definitions delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockSymbolsResolver) Definitions(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, error) {
-	r0, r1 := m.DefinitionsFunc.nextHook()(v0, v1, v2)
-	m.DefinitionsFunc.appendCall(SymbolsResolverDefinitionsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Definitions method
-// of the parent MockSymbolsResolver instance is invoked and the hook queue
-// is empty.
-func (f *SymbolsResolverDefinitionsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Definitions method of the parent MockSymbolsResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SymbolsResolverDefinitionsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverDefinitionsFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverDefinitionsFunc) PushReturn(r0 []shared.UploadLocation, r1 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
-		return r0, r1
-	})
-}
-
-func (f *SymbolsResolverDefinitionsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverDefinitionsFunc) appendCall(r0 SymbolsResolverDefinitionsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverDefinitionsFuncCall objects
-// describing the invocations of this function.
-func (f *SymbolsResolverDefinitionsFunc) History() []SymbolsResolverDefinitionsFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverDefinitionsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverDefinitionsFuncCall is an object that describes an
-// invocation of method Definitions on an instance of MockSymbolsResolver.
-type SymbolsResolverDefinitionsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.RequestArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 codenav.RequestState
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.UploadLocation
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverDefinitionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverDefinitionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SymbolsResolverDiagnosticsFunc describes the behavior when the
-// Diagnostics method of the parent MockSymbolsResolver instance is invoked.
-type SymbolsResolverDiagnosticsFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)
-	history     []SymbolsResolverDiagnosticsFuncCall
-	mutex       sync.Mutex
-}
-
-// Diagnostics delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockSymbolsResolver) Diagnostics(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
-	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1, v2)
-	m.DiagnosticsFunc.appendCall(SymbolsResolverDiagnosticsFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the Diagnostics method
-// of the parent MockSymbolsResolver instance is invoked and the hook queue
-// is empty.
-func (f *SymbolsResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Diagnostics method of the parent MockSymbolsResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SymbolsResolverDiagnosticsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverDiagnosticsFunc) SetDefaultReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverDiagnosticsFunc) PushReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *SymbolsResolverDiagnosticsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverDiagnosticsFunc) appendCall(r0 SymbolsResolverDiagnosticsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverDiagnosticsFuncCall objects
-// describing the invocations of this function.
-func (f *SymbolsResolverDiagnosticsFunc) History() []SymbolsResolverDiagnosticsFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverDiagnosticsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverDiagnosticsFuncCall is an object that describes an
-// invocation of method Diagnostics on an instance of MockSymbolsResolver.
-type SymbolsResolverDiagnosticsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.RequestArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 codenav.RequestState
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.DiagnosticAtUpload
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverDiagnosticsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverDiagnosticsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// SymbolsResolverGetHunkCacheSizeFunc describes the behavior when the
-// GetHunkCacheSize method of the parent MockSymbolsResolver instance is
-// invoked.
-type SymbolsResolverGetHunkCacheSizeFunc struct {
-	defaultHook func() int
-	hooks       []func() int
-	history     []SymbolsResolverGetHunkCacheSizeFuncCall
-	mutex       sync.Mutex
-}
-
-// GetHunkCacheSize delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockSymbolsResolver) GetHunkCacheSize() int {
-	r0 := m.GetHunkCacheSizeFunc.nextHook()()
-	m.GetHunkCacheSizeFunc.appendCall(SymbolsResolverGetHunkCacheSizeFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the GetHunkCacheSize
-// method of the parent MockSymbolsResolver instance is invoked and the hook
-// queue is empty.
-func (f *SymbolsResolverGetHunkCacheSizeFunc) SetDefaultHook(hook func() int) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetHunkCacheSize method of the parent MockSymbolsResolver instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *SymbolsResolverGetHunkCacheSizeFunc) PushHook(hook func() int) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverGetHunkCacheSizeFunc) SetDefaultReturn(r0 int) {
-	f.SetDefaultHook(func() int {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverGetHunkCacheSizeFunc) PushReturn(r0 int) {
-	f.PushHook(func() int {
-		return r0
-	})
-}
-
-func (f *SymbolsResolverGetHunkCacheSizeFunc) nextHook() func() int {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverGetHunkCacheSizeFunc) appendCall(r0 SymbolsResolverGetHunkCacheSizeFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverGetHunkCacheSizeFuncCall
-// objects describing the invocations of this function.
-func (f *SymbolsResolverGetHunkCacheSizeFunc) History() []SymbolsResolverGetHunkCacheSizeFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverGetHunkCacheSizeFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverGetHunkCacheSizeFuncCall is an object that describes an
-// invocation of method GetHunkCacheSize on an instance of
-// MockSymbolsResolver.
-type SymbolsResolverGetHunkCacheSizeFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverGetHunkCacheSizeFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverGetHunkCacheSizeFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// SymbolsResolverHoverFunc describes the behavior when the Hover method of
-// the parent MockSymbolsResolver instance is invoked.
-type SymbolsResolverHoverFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)
-	history     []SymbolsResolverHoverFuncCall
-	mutex       sync.Mutex
-}
-
-// Hover delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSymbolsResolver) Hover(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) (string, shared.Range, bool, error) {
-	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2)
-	m.HoverFunc.appendCall(SymbolsResolverHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
-	return r0, r1, r2, r3
-}
-
-// SetDefaultHook sets function that is called when the Hover method of the
-// parent MockSymbolsResolver instance is invoked and the hook queue is
-// empty.
-func (f *SymbolsResolverHoverFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Hover method of the parent MockSymbolsResolver instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *SymbolsResolverHoverFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverHoverFunc) SetDefaultReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverHoverFunc) PushReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-func (f *SymbolsResolverHoverFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverHoverFunc) appendCall(r0 SymbolsResolverHoverFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverHoverFuncCall objects
-// describing the invocations of this function.
-func (f *SymbolsResolverHoverFunc) History() []SymbolsResolverHoverFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverHoverFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverHoverFuncCall is an object that describes an invocation of
-// method Hover on an instance of MockSymbolsResolver.
-type SymbolsResolverHoverFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.RequestArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 codenav.RequestState
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 shared.Range
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 bool
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverHoverFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverHoverFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
-}
-
-// SymbolsResolverImplementationsFunc describes the behavior when the
-// Implementations method of the parent MockSymbolsResolver instance is
-// invoked.
-type SymbolsResolverImplementationsFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
-	history     []SymbolsResolverImplementationsFuncCall
-	mutex       sync.Mutex
-}
-
-// Implementations delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockSymbolsResolver) Implementations(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, string, error) {
-	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1, v2)
-	m.ImplementationsFunc.appendCall(SymbolsResolverImplementationsFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the Implementations
-// method of the parent MockSymbolsResolver instance is invoked and the hook
-// queue is empty.
-func (f *SymbolsResolverImplementationsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Implementations method of the parent MockSymbolsResolver instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *SymbolsResolverImplementationsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverImplementationsFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverImplementationsFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *SymbolsResolverImplementationsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverImplementationsFunc) appendCall(r0 SymbolsResolverImplementationsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverImplementationsFuncCall
-// objects describing the invocations of this function.
-func (f *SymbolsResolverImplementationsFunc) History() []SymbolsResolverImplementationsFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverImplementationsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverImplementationsFuncCall is an object that describes an
-// invocation of method Implementations on an instance of
-// MockSymbolsResolver.
-type SymbolsResolverImplementationsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.RequestArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 codenav.RequestState
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.UploadLocation
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 string
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverImplementationsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverImplementationsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// SymbolsResolverLSIFUploadsFunc describes the behavior when the
-// LSIFUploads method of the parent MockSymbolsResolver instance is invoked.
-type SymbolsResolverLSIFUploadsFunc struct {
-	defaultHook func(context.Context, codenav.RequestState) ([]shared.Dump, error)
-	hooks       []func(context.Context, codenav.RequestState) ([]shared.Dump, error)
-	history     []SymbolsResolverLSIFUploadsFuncCall
-	mutex       sync.Mutex
-}
-
-// LSIFUploads delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockSymbolsResolver) LSIFUploads(v0 context.Context, v1 codenav.RequestState) ([]shared.Dump, error) {
-	r0, r1 := m.LSIFUploadsFunc.nextHook()(v0, v1)
-	m.LSIFUploadsFunc.appendCall(SymbolsResolverLSIFUploadsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the LSIFUploads method
-// of the parent MockSymbolsResolver instance is invoked and the hook queue
-// is empty.
-func (f *SymbolsResolverLSIFUploadsFunc) SetDefaultHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// LSIFUploads method of the parent MockSymbolsResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SymbolsResolverLSIFUploadsFunc) PushHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverLSIFUploadsFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverLSIFUploadsFunc) PushReturn(r0 []shared.Dump, r1 error) {
-	f.PushHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
-		return r0, r1
-	})
-}
-
-func (f *SymbolsResolverLSIFUploadsFunc) nextHook() func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverLSIFUploadsFunc) appendCall(r0 SymbolsResolverLSIFUploadsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverLSIFUploadsFuncCall objects
-// describing the invocations of this function.
-func (f *SymbolsResolverLSIFUploadsFunc) History() []SymbolsResolverLSIFUploadsFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverLSIFUploadsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverLSIFUploadsFuncCall is an object that describes an
-// invocation of method LSIFUploads on an instance of MockSymbolsResolver.
-type SymbolsResolverLSIFUploadsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 codenav.RequestState
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverLSIFUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverLSIFUploadsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SymbolsResolverRangesFunc describes the behavior when the Ranges method
-// of the parent MockSymbolsResolver instance is invoked.
-type SymbolsResolverRangesFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
-	history     []SymbolsResolverRangesFuncCall
-	mutex       sync.Mutex
-}
-
-// Ranges delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSymbolsResolver) Ranges(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState, v3 int, v4 int) ([]shared.AdjustedCodeIntelligenceRange, error) {
-	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.RangesFunc.appendCall(SymbolsResolverRangesFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Ranges method of the
-// parent MockSymbolsResolver instance is invoked and the hook queue is
-// empty.
-func (f *SymbolsResolverRangesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Ranges method of the parent MockSymbolsResolver instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *SymbolsResolverRangesFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverRangesFunc) SetDefaultReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverRangesFunc) PushReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
-		return r0, r1
-	})
-}
-
-func (f *SymbolsResolverRangesFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverRangesFunc) appendCall(r0 SymbolsResolverRangesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverRangesFuncCall objects
-// describing the invocations of this function.
-func (f *SymbolsResolverRangesFunc) History() []SymbolsResolverRangesFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverRangesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverRangesFuncCall is an object that describes an invocation
-// of method Ranges on an instance of MockSymbolsResolver.
-type SymbolsResolverRangesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.RequestArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 codenav.RequestState
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.AdjustedCodeIntelligenceRange
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverRangesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverRangesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SymbolsResolverReferencesFunc describes the behavior when the References
-// method of the parent MockSymbolsResolver instance is invoked.
-type SymbolsResolverReferencesFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
-	history     []SymbolsResolverReferencesFuncCall
-	mutex       sync.Mutex
-}
-
-// References delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockSymbolsResolver) References(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, string, error) {
-	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2)
-	m.ReferencesFunc.appendCall(SymbolsResolverReferencesFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the References method of
-// the parent MockSymbolsResolver instance is invoked and the hook queue is
-// empty.
-func (f *SymbolsResolverReferencesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// References method of the parent MockSymbolsResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SymbolsResolverReferencesFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverReferencesFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverReferencesFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *SymbolsResolverReferencesFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverReferencesFunc) appendCall(r0 SymbolsResolverReferencesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverReferencesFuncCall objects
-// describing the invocations of this function.
-func (f *SymbolsResolverReferencesFunc) History() []SymbolsResolverReferencesFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverReferencesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverReferencesFuncCall is an object that describes an
-// invocation of method References on an instance of MockSymbolsResolver.
-type SymbolsResolverReferencesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.RequestArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 codenav.RequestState
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.UploadLocation
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 string
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverReferencesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// SymbolsResolverStencilFunc describes the behavior when the Stencil method
-// of the parent MockSymbolsResolver instance is invoked.
-type SymbolsResolverStencilFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)
-	history     []SymbolsResolverStencilFuncCall
-	mutex       sync.Mutex
-}
-
-// Stencil delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSymbolsResolver) Stencil(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.Range, error) {
-	r0, r1 := m.StencilFunc.nextHook()(v0, v1, v2)
-	m.StencilFunc.appendCall(SymbolsResolverStencilFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Stencil method of
-// the parent MockSymbolsResolver instance is invoked and the hook queue is
-// empty.
-func (f *SymbolsResolverStencilFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Stencil method of the parent MockSymbolsResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SymbolsResolverStencilFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverStencilFunc) SetDefaultReturn(r0 []shared.Range, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverStencilFunc) PushReturn(r0 []shared.Range, r1 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
-		return r0, r1
-	})
-}
-
-func (f *SymbolsResolverStencilFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverStencilFunc) appendCall(r0 SymbolsResolverStencilFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SymbolsResolverStencilFuncCall objects
-// describing the invocations of this function.
-func (f *SymbolsResolverStencilFunc) History() []SymbolsResolverStencilFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverStencilFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverStencilFuncCall is an object that describes an invocation
-// of method Stencil on an instance of MockSymbolsResolver.
-type SymbolsResolverStencilFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.RequestArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 codenav.RequestState
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.Range
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverStencilFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverStencilFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
