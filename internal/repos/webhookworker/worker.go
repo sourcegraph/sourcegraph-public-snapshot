@@ -104,7 +104,10 @@ func doScanWebhookBuildJobs(rows *sql.Rows, err error) ([]*Job, error) {
 			// Webhook builder fields
 			&job.RepoID,
 			&job.RepoName,
+			&job.Org,
+			&job.ExtSvcID,
 			&job.ExtSvcKind,
+			&job.AccountID,
 			&job.QueuedAt,
 
 			// Standard dbworker fields
