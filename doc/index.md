@@ -20,14 +20,14 @@ You can quickly try Sourcegraph locally using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.42.0<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
+<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.42.1<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
 </pre>
 
 For more information, see [single-container Docker deployment documentation](admin/deploy/docker-single-container/index.md).
 
 To use Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com](https://sourcegraph.com/search).
 
-**For production deployments:** [use Sourcegraph Cloud](admin/deploy/managed.md) or [deploy self-hosted Sourcegraph](admin/deploy/index.md).
+**For production deployments:** [use Sourcegraph Cloud](cloud/index.md) or [deploy self-hosted Sourcegraph](admin/deploy/index.md).
 
 ## Popular documentation
 
@@ -47,5 +47,5 @@ To use Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
 - [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide)
-- [Talk to an engineer](https://info.sourcegraph.com/talk-to-a-developer)
+- [Request a demo](https://about.sourcegraph.com/demo)
 - [Talk to a product specialist](https://about.sourcegraph.com/contact/request-info/)

@@ -33,9 +33,7 @@ export interface SearchPageProps
         ActivationProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<
-            'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'
-        >,
+        PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
         SearchContextInputProps,
         HomePanelsProps,
         CodeInsightsProps {

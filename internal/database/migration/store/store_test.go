@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -45,6 +46,150 @@ func TestEnsureSchemaTable(t *testing.T) {
 	// Test idempotency
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("expected method to be idempotent, got error: %s", err)
+	}
+}
+
+func TestBackfillSchemaVersions(t *testing.T) {
+	t.Run("frontend", func(t *testing.T) {
+		testViaMigrationLogs(t, "frontend", 1528395834, backfillRange(1528395787, 1528395834)) // squashed root
+		testViaGolangMigrate(t, "frontend", 1528395834, backfillRange(1528395787, 1528395834)) // squashed root
+		testViaGolangMigrate(t, "frontend", 1528395840, backfillRange(1528395787, 1528395840)) // non-squashed migration
+	})
+
+	t.Run("codeintel", func(t *testing.T) {
+		testViaMigrationLogs(t, "codeintel", 1000000015, backfillRange(1000000005, 1000000015)) // squashed root
+		testViaGolangMigrate(t, "codeintel", 1000000015, backfillRange(1000000005, 1000000015)) // squashed root
+		testViaGolangMigrate(t, "codeintel", 1000000020, backfillRange(1000000005, 1000000020)) // non-squashed migration
+	})
+
+	t.Run("codeinsights", func(t *testing.T) {
+		testViaMigrationLogs(t, "codeinsights", 1000000020, backfillRange(1000000000, 1000000020)) // squashed root
+		testViaGolangMigrate(t, "codeinsights", 1000000020, backfillRange(1000000000, 1000000020)) // squashed root
+		testViaGolangMigrate(t, "codeinsights", 1000000027, backfillRange(1000000000, 1000000027)) // non-squashed migration
+	})
+}
+
+// testViaGolangMigrate asserts the given expected versions are backfilled on a new store instance, given
+// the .*schema_migrations table has an entry with the given initial version.
+func testViaGolangMigrate(t *testing.T, schemaName string, version int, expectedVersions []int) {
+	testBackfillSchemaVersion(t, schemaName, expectedVersions, func(ctx context.Context, store *Store) {
+		if err := setupGolangMigrateTest(ctx, store, schemaName, version); err != nil {
+			t.Fatalf("unexpected error preparing .*schema_migrations tests: %s", err)
+		}
+	})
+}
+
+// setupGolangMigrateTest creates and populates the .*schema_migrations table with the given version.
+func setupGolangMigrateTest(ctx context.Context, store *Store, schemaName string, version int) error {
+	tableName := quote(tableizeSchemaName(schemaName))
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`CREATE TABLE %s (version text, dirty bool)`, tableName)); err != nil {
+		return err
+	}
+	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (%s, false)`, tableName, strconv.Itoa(version))); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// testViaMigrationLogs asserts the given expected versions are backfilled on a new store instance, given
+// the migration_logs table has an entry with the given initial version.
+func testViaMigrationLogs(t *testing.T, schemaName string, initialVersion int, expectedVersions []int) {
+	testBackfillSchemaVersion(t, schemaName, expectedVersions, func(ctx context.Context, store *Store) {
+		if err := setupGolangMigrateTest(ctx, store, schemaName, initialVersion); err != nil {
+			t.Fatalf("unexpected error preparing migration_logs tests: %s", err)
+		}
+	})
+}
+
+// setupMigrationLogsTest populates the migration_logs table with the given version.
+func setupMigrationLogsTest(ctx context.Context, store *Store, schemaName string, version int) error {
+	return store.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO migration_logs (
+			migration_logs_schema_version,
+			schema,
+			version,
+			up,
+			started_at,
+			finished_at,
+			success
+		) VALUES (%s, %s, %s, true, NOW(), NOW(), true)
+	`,
+		currentMigrationLogSchemaVersion,
+		schemaName,
+		version,
+	))
+}
+
+// testBackfillSchemaVersion runs the given setup function prior to backfilling a test
+// migration store. The versions available post-backfill are checked against the given
+// expected versions.
+func testBackfillSchemaVersion(
+	t *testing.T,
+	schemaName string,
+	expectedVersions []int,
+	setup func(ctx context.Context, store *Store),
+) {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
+	store := testStoreWithName(db, schemaName)
+	ctx := context.Background()
+
+	if err := store.EnsureSchemaTable(ctx); err != nil {
+		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
+	}
+
+	setup(ctx, store)
+
+	if err := store.BackfillSchemaVersions(ctx); err != nil {
+		t.Fatalf("unexpected error backfilling schema table: %s", err)
+	}
+
+	appliedVersions, _, _, err := store.Versions(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error querying versions: %s", err)
+	}
+	if diff := cmp.Diff(expectedVersions, appliedVersions); diff != "" {
+		t.Errorf("unexpected applied migrations (-want +got):\n%s", diff)
+	}
+}
+
+// backfillRange creates an integer slice of the shape `[-lo, lo, lo+1, ..., hi-1, hi]`.
+// This is used to represent a linear range of migration identifiers from a historic
+// squashed migration to a future migration (prior to non-lienar migration identifeirs).
+func backfillRange(lo, hi int) []int {
+	vs := make([]int, 0, hi-lo+2)
+	vs = append(vs, -lo)
+	for i := lo; i <= hi; i++ {
+		vs = append(vs, i)
+	}
+	return vs
+}
+
+func TestHumanizeSchemaName(t *testing.T) {
+	for input, expected := range map[string]string{
+		"schema_migrations":              "frontend",
+		"codeintel_schema_migrations":    "codeintel",
+		"codeinsights_schema_migrations": "codeinsights",
+		"test_schema_migrations":         "test",
+	} {
+		if output := humanizeSchemaName(input); output != expected {
+			t.Errorf("unexpected output. want=%q have=%q", expected, output)
+		}
+	}
+}
+
+func TestTableizeSchemaName(t *testing.T) {
+	for input, expected := range map[string]string{
+		"frontend":     "schema_migrations",
+		"codeintel":    "codeintel_schema_migrations",
+		"codeinsights": "codeinsights_schema_migrations",
+		"test":         "test_schema_migrations",
+	} {
+		if output := tableizeSchemaName(input); output != expected {
+			t.Errorf("unexpected output. want=%q have=%q", expected, output)
+		}
 	}
 }
 

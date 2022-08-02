@@ -100,6 +100,7 @@
 	</noscript>
 	{{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
 	<script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
+	<script src="{{.Manifest.OpenTelemetryJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
 	<script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
 	{{.Injected.BodyBottom}}
 </body>
