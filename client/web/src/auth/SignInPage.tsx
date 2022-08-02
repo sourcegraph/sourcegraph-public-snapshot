@@ -112,7 +112,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 iconLinkTo={props.context.sourcegraphDotComMode ? '/search' : undefined}
                 iconClassName="bg-transparent"
                 lessPadding={true}
-                title={'Sign in to Sourcegraph Cloud'}
+                title="Sign in to Sourcegraph"
                 body={body}
             />
         </div>
