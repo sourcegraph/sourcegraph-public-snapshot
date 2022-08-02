@@ -223,17 +223,13 @@ func compareConstraints(out *output.Output, schemaName, version string, actualTa
 func compareIndexes(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) bool {
 		var createIndexStmt string
-		var dropIndexStmt string
-
 		switch expectedIndex.ConstraintType {
 		case "u":
 			fallthrough
 		case "p":
 			createIndexStmt = fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", actualTable.Name, expectedIndex.Name, expectedIndex.ConstraintDefinition)
-			dropIndexStmt = fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
 		default:
 			createIndexStmt = fmt.Sprintf("%s;", expectedIndex.IndexDefinition)
-			dropIndexStmt = fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
 		}
 
 		if index == nil {
@@ -242,6 +238,7 @@ func compareIndexes(out *output.Output, schemaName, version string, actualTable,
 			return true
 		}
 
+		dropIndexStmt := fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
 		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of index %q.%q", expectedTable.Name, expectedIndex.Name)))
 		writeDiff(out, expectedIndex, *index)
 		writeSQLSolution(out, "redefine the index", dropIndexStmt, createIndexStmt)
