@@ -979,7 +979,7 @@ type InsightView implements Node {
     """
     The total number of series on this insight.
     """
-    seriesCount: Int!
+    seriesCount: Int
 }
 
 """

@@ -87,22 +87,27 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 value: searches.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'Searches' : 'Users searched',
                 color: 'var(--cyan)',
+                tooltip: 'Any search conducted via the UI, API, or browser or IDE extensions.',
             },
             {
                 value: resultClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
                 color: 'var(--purple)',
+                tooltip:
+                    'This event is triggered when a user clicks a result, which may be a file, repository, diff, or commit. Note that at times, a user is able to find the answer to their query directly in search results, therefore fewer interactions may actually speak to higher relevancy and usefulness of search results.',
             },
             {
                 value: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
                 color: 'var(--orange)',
+                tooltip: 'File views can be generated from a search result, or be linked to directly.',
             },
             {
                 value: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
                 color: 'var(--body-color)',
                 position: 'right',
+                tooltip: 'File views can be generated from a search result, or be linked to directly.',
             },
         ]
         return [stats, legends]
