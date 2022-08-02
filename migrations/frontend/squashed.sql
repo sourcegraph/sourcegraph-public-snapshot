@@ -3151,7 +3151,10 @@ CREATE TABLE webhook_build_jobs (
     num_failures integer DEFAULT 0 NOT NULL,
     execution_logs json[],
     last_heartbeat_at timestamp with time zone,
-    worker_hostname text DEFAULT ''::text NOT NULL
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    org text,
+    extsvc_id integer,
+    account_id integer
 );
 
 CREATE TABLE webhook_logs (
