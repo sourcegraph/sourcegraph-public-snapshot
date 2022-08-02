@@ -1,3 +1,7 @@
+:root {
+    --toolbar-spacer: 0.313rem;
+}
+
 .api-console {
     display: flex;
     flex-direction: column;
@@ -11,7 +15,7 @@
 }
 
 :global(.graphiql-container) .toolbar-button {
-    margin-left: 5px;
-    margin-right: 5px;
+    margin-left: var(--toolbar-spacer);
+    margin-right: var(--toolbar-spacer);
     color: var(--body-color);
 }
