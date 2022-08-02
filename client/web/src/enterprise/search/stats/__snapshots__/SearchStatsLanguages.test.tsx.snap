@@ -53,7 +53,7 @@ exports[`SearchStatsLanguages renders 1`] = `
               <td>
                 <a
                   class=""
-                  href="/search?q=abc+lang:a&patternType=standard"
+                  href="/search?q=abc+lang:a&patternType=literal"
                 >
                   A
                 </a>
@@ -69,7 +69,7 @@ exports[`SearchStatsLanguages renders 1`] = `
               <td>
                 <a
                   class=""
-                  href="/search?q=abc+lang:b&patternType=standard"
+                  href="/search?q=abc+lang:b&patternType=literal"
                 >
                   B
                 </a>
@@ -85,7 +85,7 @@ exports[`SearchStatsLanguages renders 1`] = `
               <td>
                 <a
                   class=""
-                  href="/search?q=abc+lang:c&patternType=standard"
+                  href="/search?q=abc+lang:c&patternType=literal"
                 >
                   C
                 </a>
@@ -101,7 +101,7 @@ exports[`SearchStatsLanguages renders 1`] = `
               <td>
                 <a
                   class=""
-                  href="/search?q=abc+lang:d&patternType=standard"
+                  href="/search?q=abc+lang:d&patternType=literal"
                 >
                   D
                 </a>
