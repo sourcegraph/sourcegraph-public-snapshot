@@ -97,6 +97,7 @@ require (
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.1
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
+	github.com/kljensen/snowball v0.6.0
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf
