@@ -331,8 +331,6 @@ type Features struct {
 type RepoOptions struct {
 	RepoFilters         []string
 	MinusRepoFilters    []string
-	Dependencies        []query.RepoDependenciesPredicate
-	Dependents          []string
 	DescriptionPatterns []string
 
 	CaseSensitiveRepoFilters bool
@@ -373,12 +371,6 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	}
 	if len(op.MinusRepoFilters) > 0 {
 		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))
-	}
-	if len(op.Dependencies) > 0 {
-		add(trace.Printf("dependencies", "%+v", op.Dependencies))
-	}
-	if len(op.Dependents) > 0 {
-		add(trace.Strings("dependents", op.Dependents))
 	}
 	if len(op.DescriptionPatterns) > 0 {
 		add(trace.Strings("descriptionPatterns", op.DescriptionPatterns))

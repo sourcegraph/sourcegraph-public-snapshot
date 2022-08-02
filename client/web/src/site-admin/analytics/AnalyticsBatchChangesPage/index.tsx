@@ -74,11 +74,14 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                 value: changesetsCreated.summary.totalCount,
                 description: 'Changesets created',
                 color: 'var(--orange)',
+                tooltip:
+                    'The number of changesets created on a code host during the timeframe. This does not include changesets that are unpublished.',
             },
             {
                 value: changesetsMerged.summary.totalCount,
                 description: 'Changesets merged',
                 color: 'var(--cyan)',
+                tooltip: 'The number of changesets merged on the code host during the timeframe.',
             },
         ]
 

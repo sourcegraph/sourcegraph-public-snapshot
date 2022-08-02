@@ -121,11 +121,6 @@ export interface PlatformContext {
     }) => Observable<GraphQLResult<R>>
 
     /**
-     * Forces the currently displayed tooltip, if any, to update its contents.
-     */
-    forceUpdateTooltip: () => void
-
-    /**
      * Spawns a new JavaScript execution context (such as a Web Worker or browser extension
      * background worker) with the extension host and opens a communication channel to it. It is
      * called exactly once, to start the extension host.

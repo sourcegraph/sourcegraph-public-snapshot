@@ -30,7 +30,7 @@ import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
-import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
@@ -43,7 +43,7 @@ import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@source
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { createDefaultSuggestions, createUpdateableField, singleLine } from './extensions'
+import { createDefaultSuggestions, singleLine } from './extensions'
 import {
     decoratedTokens,
     queryTokens,
@@ -386,71 +386,68 @@ const [callbacksField, setCallbacks] = createUpdateableField<
         MonacoQueryInputProps,
         'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected' | 'onHandleFuzzyFinder'
     >
->(
-    callbacks => [
-        Prec.high(
-            keymap.of([
-                {
-                    key: 'Enter',
-                    run: view => {
-                        const { onSubmit } = view.state.field(callbacks)
-                        if (onSubmit) {
-                            // Cancel/close any open completion popovers
-                            closeCompletion(view)
-                            onSubmit()
-                            return true
-                        }
-                        return false
-                    },
-                },
-            ])
-        ),
+>({ onChange: () => {} }, callbacks => [
+    Prec.high(
         keymap.of([
             {
-                key: 'Mod-k',
+                key: 'Enter',
                 run: view => {
-                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
-                    if (onHandleFuzzyFinder) {
-                        onHandleFuzzyFinder(true)
+                    const { onSubmit } = view.state.field(callbacks)
+                    if (onSubmit) {
+                        // Cancel/close any open completion popovers
+                        closeCompletion(view)
+                        onSubmit()
                         return true
                     }
                     return false
                 },
             },
-        ]),
-        EditorView.updateListener.of((update: ViewUpdate) => {
-            const { state, view } = update
-            const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
-
-            if (update.docChanged) {
-                onChange({
-                    query: state.sliceDoc(),
-                    changeSource: QueryChangeSource.userInput,
-                })
-            }
-
-            // The focus and blur event handlers are implemented via state update handlers
-            // because it appears that binding them as DOM event handlers triggers them at
-            // the moment they are bound if the editor is already in that state ((not)
-            // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
-            if (update.focusChanged) {
-                if (view.hasFocus) {
-                    onFocus?.()
-                } else {
-                    closeCompletion(view)
-                    onBlur?.()
+        ])
+    ),
+    keymap.of([
+        {
+            key: 'Mod-k',
+            run: view => {
+                const { onHandleFuzzyFinder } = view.state.field(callbacks)
+                if (onHandleFuzzyFinder) {
+                    onHandleFuzzyFinder(true)
+                    return true
                 }
+                return false
+            },
+        },
+    ]),
+    EditorView.updateListener.of((update: ViewUpdate) => {
+        const { state, view } = update
+        const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
+
+        if (update.docChanged) {
+            onChange({
+                query: state.sliceDoc(),
+                changeSource: QueryChangeSource.userInput,
+            })
+        }
+
+        // The focus and blur event handlers are implemented via state update handlers
+        // because it appears that binding them as DOM event handlers triggers them at
+        // the moment they are bound if the editor is already in that state ((not)
+        // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
+        if (update.focusChanged) {
+            if (view.hasFocus) {
+                onFocus?.()
+            } else {
+                closeCompletion(view)
+                onBlur?.()
             }
-            if (
-                onCompletionItemSelected &&
-                update.transactions.some(transaction => transaction.isUserEvent('input.complete'))
-            ) {
-                onCompletionItemSelected()
-            }
-        }),
-    ],
-    { onChange: () => {} }
-)
+        }
+        if (
+            onCompletionItemSelected &&
+            update.transactions.some(transaction => transaction.isUserEvent('input.complete'))
+        ) {
+            onCompletionItemSelected()
+        }
+    }),
+])
 
 // Defines decorators for syntax highlighting
 const tokenDecorators: { [key: string]: Decoration } = {}

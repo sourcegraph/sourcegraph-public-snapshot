@@ -653,7 +653,8 @@ const updateRepoSizesQueryFmtstr = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.UpdateRepoSizes
 UPDATE gitserver_repos AS gr
 SET
-    repo_size_bytes = tmp.repo_size_bytes
+    repo_size_bytes = tmp.repo_size_bytes,
+	updated_at = NOW()
 FROM (VALUES
 -- (<repo_id>, <repo_size_bytes>),
     %s

@@ -680,16 +680,12 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		return nil, nil, err
 	}
 
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return resp.Body, resp.Trailer, nil
-
-	default:
-		// Read response body at best effort
-		body, _ := io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
-		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, body)
+	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, readResponseBody(resp.Body))
 	}
+
+	return resp.Body, resp.Trailer, nil
 }
 
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -747,8 +743,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
 
 		if resp.StatusCode != http.StatusOK {
-			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-			return errors.Newf("http status %d: %s", resp.StatusCode, body)
+			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
 		}
 
 		var response protocol.BatchLogResponse
@@ -878,8 +873,11 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, body)}
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoInfo",
+			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
 	}
 
 	var info *protocol.RepoUpdateResponse
@@ -909,11 +907,10 @@ func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return nil, &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "RepoMigrate",
-			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, body),
+			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 		}
 	}
 
@@ -939,16 +936,12 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 		return err
 	}
 	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
 	if r.StatusCode != http.StatusOK {
-		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
+		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, readResponseBody(r.Body))
 	}
 
 	var resp protocol.IsRepoCloneableResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
 		return err
 	}
 
@@ -1098,24 +1091,10 @@ func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 
 			defer resp.Body.Close()
 			if resp.StatusCode != http.StatusOK {
-				msg := fmt.Sprintf("RepoInfo: http status code: %d", resp.StatusCode)
-				content, err := io.ReadAll(resp.Body)
-				if err != nil {
-					msg = fmt.Sprintf("%s, failed to read response body, error: %v", msg, err)
-				}
-
-				// strings.TrimSpace is needed to remove trailing \n characters that is added by the
-				// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-				// the error message. And in translation that newline gets escapted into a \n
-				// character.  For what the error message would look in the UI without
-				// strings.TrimSpace, see attached screenshots in this pull request:
-				// https://github.com/sourcegraph/sourcegraph/pull/39358.
-				msg = fmt.Sprintf("%s, reason: %q", msg, strings.TrimSpace(string(content)))
-
 				o.err = &url.Error{
 					URL: resp.Request.URL.String(),
 					Op:  "RepoInfo",
-					Err: errors.New(msg),
+					Err: errors.Errorf("RepoInfo: http status code: %d, reason: %s", resp.StatusCode, readResponseBody(resp.Body)),
 				}
 
 				ch <- o
@@ -1210,9 +1189,11 @@ func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return &url.Error{URL: resp.Request.URL.String(), Op: "RepoRemove", Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, string(body))}
+		return &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoRemove",
+			Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
 	}
 	return nil
 }
@@ -1295,17 +1276,23 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if resp.StatusCode != http.StatusOK {
 		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
+		return "", &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CreateCommitFromPatch",
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.Status, readResponseBody(resp.Body)),
+		}
 	}
 
 	var res protocol.CreateCommitFromPatchResponse
-	err = json.Unmarshal(data, &res)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
+		return "", &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CreateCommitFromPatch",
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %v", resp.StatusCode, err),
+		}
 	}
 
 	if res.Error != nil {
@@ -1329,17 +1316,23 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if resp.StatusCode != http.StatusOK {
 		c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, err.Error())}
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "GetObject",
+			Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
+		}
 	}
 
 	var res protocol.GetObjectResponse
-	err = json.Unmarshal(data, &res)
-	if err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, string(data))}
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "GetObject",
+			Err: errors.Errorf("GetObject: http status %d, failed to decode response body: %v", resp.StatusCode, err),
+		}
 	}
 
 	return &res.Object, nil
@@ -1406,4 +1399,30 @@ func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string
 func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
 	pinned, found := pinnedServers[repo]
 	return found, pinned
+}
+
+// readResponseBody will attempt to read the body of the HTTP response and return it as a
+// string. However, in the unlikely scenario that it fails to read the body, it will encode and
+// return the error message as a string.
+//
+// This allows us to use this function directly without yet another if err != nil check. As a
+// result, this function should **only** be used when we're attempting to return the body's content
+// as part of an error. In such scenarios we don't need to return the potential error from reading
+// the body, but can get away with returning that error as a string itself.
+//
+// This is an unusual pattern of not returning an error. Be careful of replicating this in other
+// parts of the code.
+func readResponseBody(body io.Reader) string {
+	content, err := io.ReadAll(body)
+	if err != nil {
+		return fmt.Sprintf("failed to read response body, error: %v", err)
+	}
+
+	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
+	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
+	// the error message. And in translation that newline gets escapted into a \n
+	// character.  For what the error message would look in the UI without
+	// strings.TrimSpace, see attached screenshots in this pull request:
+	// https://github.com/sourcegraph/sourcegraph/pull/39358.
+	return strings.TrimSpace(string(content))
 }
