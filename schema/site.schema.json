@@ -1217,6 +1217,12 @@
           "description": "Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.",
           "type": "boolean",
           "default": false
+        },
+        "urlTemplate": {
+          "description": "Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'.",
+          "type": "string",
+          "default": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}",
+          "examples": ["https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"]
         }
       }
     },
