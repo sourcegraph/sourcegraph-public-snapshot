@@ -181,6 +181,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     pluralNoun="repositories"
                     queryConnection={queryRepositories}
                     nodeComponent={RepositoryNode}
+                    inputClassName="flex-1"
                     filters={FILTERS}
                     history={history}
                     location={location}
