@@ -230,10 +230,9 @@ _:sourcegraph: disable flakes on sight and save your fellow teammate some time!_
 					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View logs on Grafana"},
 				},
 				&slack.ButtonBlockElement{
-					Type:  slack.METButton,
-					Style: slack.StyleDanger,
-					URL:   "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake ?"},
+					Type: slack.METButton,
+					URL:  "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake ?"},
 				},
 			}...,
 		),
