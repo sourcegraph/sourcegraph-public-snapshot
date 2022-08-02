@@ -10,8 +10,6 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 
 	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -122,15 +120,6 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		Definition: *def,
 		Hover:      hover,
 	}, nil
-}
-
-// How to read a file from gitserver.
-func readFileFromGitserver(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	data, err := gitserver.NewClient(nil).ReadFile(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path, nil)
-	if err != nil {
-		return nil, errors.Newf("failed to get file contents: %s", err)
-	}
-	return data, nil
 }
 
 // DirOrNode is a union type that can either be a directory or a node. It's returned by getDef().

@@ -143,7 +143,6 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <Card as={CardBody} className={styles.installLocallyRequirements}>
                             <H3>Code Insights requirements</H3>
                             <ul className={styles.installLocallyRequirementsList}>
-                                <li>On-prem installation</li>
                                 <li>Create up to 2 code insights for free</li>
                                 <li>Get unlimited insights with an Enterprise plan (or trial)</li>
                             </ul>

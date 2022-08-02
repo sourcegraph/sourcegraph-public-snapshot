@@ -79,17 +79,29 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 value: creations.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'Notebooks created' : 'Users created notebooks',
                 color: 'var(--cyan)',
+                tooltip:
+                    eventAggregation === 'count'
+                        ? 'The number of notebooks created in the timeframe.'
+                        : 'The number of users who created notebooks in the timeframe.',
             },
             {
                 value: views.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'Notebook views' : 'Users viewed notebooks',
                 color: 'var(--orange)',
+                tooltip:
+                    eventAggregation === 'count'
+                        ? 'The number of views of all notebooks in the timeframe.'
+                        : 'The number of users who viewed notebooks in the timeframe.',
             },
             {
                 value: blockRuns.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'Block runs' : 'Users ran blocks',
                 color: 'var(--body-color)',
                 position: 'right',
+                tooltip:
+                    eventAggregation === 'count'
+                        ? 'The number of of blocks within each notebook that are run. Some blocks such as the search results block must be run for the user to see code.'
+                        : 'The number of users who ran blocks within each notebook in the timeframe.',
             },
         ]
 

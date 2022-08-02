@@ -27,7 +27,7 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
         excludeRepoRegex: '',
     },
     dashboards: { nodes: [] },
-    seriesCount: 2,
+
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
         title: 'Migration to new GraphQL TS types',
@@ -91,7 +91,7 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
     dashboards: { nodes: [] },
-    seriesCount: 1,
+
     isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
@@ -139,7 +139,7 @@ export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = 
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
     dashboards: { nodes: [] },
-    seriesCount: 1,
+
     isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',

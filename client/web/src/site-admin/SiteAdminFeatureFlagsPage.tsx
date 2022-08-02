@@ -7,13 +7,13 @@ import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
-import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import { aggregateStreamingSearch, ContentMatch, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, PageHeader, Container, Button, Code, H3, Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { FeatureFlagFields, SearchPatternType, SearchVersion } from '../graphql-operations'
+import { FeatureFlagFields, SearchPatternType } from '../graphql-operations'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 
@@ -77,8 +77,8 @@ export function getFeatureFlagReferences(flagName: string, productGitVersion: st
     const referencesQuery = `${repoQuery} (${flagQuery} AND (lang:TypeScript OR lang:Go)) count:25`
     return aggregateStreamingSearch(of(referencesQuery), {
         caseSensitive: true,
-        patternType: SearchPatternType.literal,
-        version: SearchVersion.V2,
+        patternType: SearchPatternType.standard,
+        version: LATEST_VERSION,
         trace: undefined,
     }).pipe(
         map(({ results }) =>

@@ -168,7 +168,7 @@ export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRep
 
 export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
-/** Information for adding code intelligence to code views on arbitrary code hosts. */
+/** Information for adding code navigation to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * The type of the code host. This will be added as a className to the overlay mount.
@@ -327,23 +327,22 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
 export interface CodeIntelligenceProps extends TelemetryProps {
     platformContext: Pick<
         BrowserPlatformContext,
-        | 'forceUpdateTooltip'
-        | 'urlToFile'
-        | 'sideloadedExtensionURL'
-        | 'requestGraphQL'
-        | 'settings'
-        | 'refreshSettings'
-        | 'sourcegraphURL'
+        'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
 }
 
-export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
-    const mount = document.createElement('div')
-    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
-    container.append(mount)
+export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
+    let mount = container.querySelector<HTMLDivElement>(`.hover-overlay-mount.hover-overlay-mount__${codeHostName}`)
+
+    if (!mount) {
+        mount = document.createElement('div')
+        mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+        container.append(mount)
+    }
+
     return mount
 }
 
@@ -355,7 +354,7 @@ export const createGlobalDebugMount = (): HTMLElement => {
 }
 
 /**
- * Prepares the page for code intelligence. It creates the hoverifier, injects
+ * Prepares the page for code navigation. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
  */
 function initCodeIntelligence({
@@ -602,7 +601,7 @@ function initCodeIntelligence({
     if (!getHoverOverlayMountLocation) {
         // This renders to document.body, which we can assume is never removed,
         // so we don't need to subscribe to mutations.
-        const overlayMount = createOverlayMount(codeHost.type, document.body)
+        const overlayMount = getExistingOrCreateOverlayMount(codeHost.type, document.body)
         render(<HoverOverlayContainer />, overlayMount)
     } else {
         let previousMount: HTMLElement | null = null
@@ -613,7 +612,7 @@ function initCodeIntelligence({
                 if (previousMount) {
                     previousMount.remove()
                 }
-                const mount = createOverlayMount(codeHost.type, mountLocation)
+                const mount = getExistingOrCreateOverlayMount(codeHost.type, mountLocation)
                 previousMount = mount
                 render(<HoverOverlayContainer />, mount)
             })
@@ -891,7 +890,7 @@ export async function handleCodeHost({
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
-        // Stop initializing code intelligence
+        // Stop initializing code navigation
         return subscriptions
     }
 
@@ -1397,7 +1396,7 @@ export async function handleCodeHost({
                     }
                 }
 
-                // Add hover code intelligence
+                // Add hover code navigation
                 const resolveContext: ContextResolver<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> = ({
                     part,
                 }) => {

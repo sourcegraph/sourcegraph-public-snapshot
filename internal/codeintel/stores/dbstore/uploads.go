@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -766,6 +765,9 @@ func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 	}
 	defer func() { err = tx.Done(err) }()
 
+	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by ID request")
+	defer unset(ctx)
+
 	repositoryID, deleted, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(deleteUploadByIDQuery, id)))
 	if err != nil {
 		return false, err
@@ -906,105 +908,6 @@ repositories_matching_policy AS (
 	FROM lsif_configuration_policies p
 	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.policy_id = p.id
 	WHERE p.indexing_enabled
-),
-candidate_repositories AS (
-	SELECT r.id AS id
-	FROM repo r
-	WHERE
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL AND
-		r.id IN (SELECT id FROM repositories_matching_policy)
-),
-repositories AS (
-	SELECT cr.id
-	FROM candidate_repositories cr
-	LEFT JOIN %s lrs ON lrs.repository_id = cr.id
-
-	-- Ignore records that have been checked recently. Note this condition is
-	-- true for a null {column_name} (which has never been checked).
-	WHERE (%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
-	ORDER BY
-		lrs.{column_name} NULLS FIRST,
-		cr.id -- tie breaker
-	LIMIT %s
-)
-INSERT INTO %s (repository_id, {column_name})
-SELECT r.id, %s::timestamp FROM repositories r
-ON CONFLICT (repository_id) DO UPDATE
-SET {column_name} = %s
-RETURNING repository_id
-`
-
-// SelectRepositoriesForLockfileIndexScan returns a set of repository identifiers that should be considered
-// for indexing jobs. Repositories that were returned previously from this call within the given
-// process delay are not returned.
-//
-// If allowGlobalPolicies is false, then configuration policies that define neither a repository id
-// nor a non-empty set of repository patterns wl be ignored. When true, such policies apply over all
-// repositories known to the instance.
-func (s *Store) SelectRepositoriesForLockfileIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (_ []int, err error) {
-	return s.selectRepositoriesForLockfileIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, timeutil.Now())
-}
-
-func (s *Store) selectRepositoriesForLockfileIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.selectRepositoriesForLockfileIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
-		log.Int("limit", limit),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	limitExpression := sqlf.Sprintf("")
-	if repositoryMatchLimit != nil {
-		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
-	}
-
-	replacer := strings.NewReplacer("{column_name}", column)
-	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
-		replacer.Replace(selectRepositoriesForLockfileIndexScanQuery),
-		allowGlobalPolicies,
-		limitExpression,
-		quote(table),
-		now,
-		int(processDelay/time.Second),
-		limit,
-		quote(table),
-		now,
-		now,
-	)))
-}
-
-const selectRepositoriesForLockfileIndexScanQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForLockfileIndexScan
-WITH
-repositories_matching_policy AS (
-	(
-		SELECT r.id FROM repo r WHERE EXISTS (
-			SELECT 1
-			FROM lsif_configuration_policies p
-			WHERE
-				p.lockfile_indexing_enabled AND
-				p.repository_id IS NULL AND
-				p.repository_patterns IS NULL AND
-				%s -- completely enable or disable this query
-		)
-		ORDER BY stars DESC NULLS LAST, id
-		%s
-	)
-
-	UNION ALL
-
-	SELECT p.repository_id AS id
-	FROM lsif_configuration_policies p
-	WHERE
-		p.lockfile_indexing_enabled AND
-		p.repository_id IS NOT NULL
-
-	UNION ALL
-
-	SELECT rpl.repo_id AS id
-	FROM lsif_configuration_policies p
-	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.policy_id = p.id
-	WHERE p.lockfile_indexing_enabled
 ),
 candidate_repositories AS (
 	SELECT r.id AS id
@@ -1183,7 +1086,7 @@ func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependency
 
 	// Just in case
 	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_REFERENCE_COUNTS_BAIL_OUT") != "" {
-		log15.Warn("Reference count operations are currently disabled")
+		s.logger.Warn("Reference count operations are currently disabled")
 		return 0, nil
 	}
 

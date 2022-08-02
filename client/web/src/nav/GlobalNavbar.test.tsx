@@ -26,7 +26,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     extensionsController,
     location: createLocation('/'),
     history,
-    keyboardShortcuts: [],
     isSourcegraphDotCom: false,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
@@ -49,11 +48,19 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    showKeyboardShortcutsHelp: () => undefined,
 }
 
 describe('GlobalNavbar', () => {
+    const origContext = window.context
     beforeEach(() => {
         useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
+        window.context = {
+            enableLegacyExtensions: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
     })
 
     test('default', () => {

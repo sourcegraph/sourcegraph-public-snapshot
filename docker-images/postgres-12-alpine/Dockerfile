@@ -17,7 +17,7 @@ RUN apk add --no-cache nss su-exec shadow &&\
     chown -R postgres:postgres /var/lib/postgresql &&\
     chown -R postgres:postgres /var/run/postgresql
 
-RUN apk add --upgrade --no-cache busybox>=1.34.1 &&\
+RUN apk add --upgrade --no-cache busybox>=1.35.0-r18 &&\
     apk add --upgrade --no-cache libxslt>=1.1.35 &&\
     apk add --upgrade --no-cache libxml2>=2.9.12 &&\
     apk add --upgrade --no-cache libgcrypt>=1.8.8 &&\

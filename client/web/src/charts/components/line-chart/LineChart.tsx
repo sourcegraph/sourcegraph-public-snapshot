@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, useState, SVGProps, CSSProperties } from 'react'
+import { ReactElement, useMemo, useState, SVGProps, CSSProperties, useRef } from 'react'
 
 import { AxisScale, TickFormatter } from '@visx/axis/lib/types'
 import { Group } from '@visx/group'
@@ -85,6 +85,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         ...attributes
     } = props
 
+    const rootReference = useRef<SVGSVGElement>(null)
     const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
@@ -146,12 +147,14 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     const voronoiLayout = useMemo(
         () =>
             voronoi<Point<D>>({
-                x: point => point.x,
-                y: point => point.y,
+                // Taking into account content area shift in point distribution map
+                // see https://github.com/sourcegraph/sourcegraph/issues/38919
+                x: point => point.x + content.left,
+                y: point => point.y + content.top,
                 width: outerWidth,
                 height: outerHeight,
             })(Object.values(points).flat()),
-        [outerWidth, outerHeight, points]
+        [content, outerWidth, outerHeight, points]
     )
 
     const handlers = useChartEventHandlers({
@@ -162,15 +165,17 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 setActivePoint(closestPoint.data)
             }
         },
-        onPointerLeave: () => setActivePoint(undefined),
         onClick: event => {
             if (activePoint?.linkUrl) {
                 onDatumClick(event)
                 window.open(activePoint.linkUrl)
             }
         },
+        onPointerLeave: () => setActivePoint(undefined),
+        onFocusOut: () => setActivePoint(undefined),
     })
 
+    const activeSeriesId = activePoint?.seriesId ?? ''
     const sortedSeries = useMemo(
         () =>
             [...activeSeries]
@@ -178,12 +183,13 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 // this is to make sure the hovered series is always rendered on top
                 // since SVGs do not support z-index, we have to render the hovered
                 // series last
-                .sort(series => sortByDataKey(series.id, activePoint?.seriesId || '')),
-        [activeSeries, activePoint]
+                .sort(series => sortByDataKey(series.id, activeSeriesId)),
+        [activeSeries, activeSeriesId]
     )
 
     return (
         <svg
+            ref={rootReference}
             width={outerWidth}
             height={outerHeight}
             className={classNames(styles.root, className, { [styles.rootWithHoveredLinkPoint]: activePoint?.linkUrl })}
@@ -212,6 +218,19 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {sortedSeries.map(line => (
+                    <LinePath
+                        key={line.id}
+                        data={line.data as SeriesDatum<D>[]}
+                        defined={isDatumWithValidNumber}
+                        x={data => xScale(data.x)}
+                        y={data => yScale(getDatumValue(data))}
+                        stroke={line.color}
+                        strokeLinecap="round"
+                        strokeWidth={2}
+                    />
+                ))}
+
+                {activeSeries.map(line => (
                     <Group
                         key={line.id}
                         style={getLineGroupStyle?.({
@@ -220,34 +239,36 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                             isActive: activePoint?.seriesId === line.id,
                         })}
                     >
-                        <LinePath
-                            data={line.data as SeriesDatum<D>[]}
-                            defined={isDatumWithValidNumber}
-                            x={data => xScale(data.x)}
-                            y={data => yScale(getDatumValue(data))}
-                            stroke={line.color}
-                            strokeLinecap="round"
-                            strokeWidth={2}
-                        />
                         {points[line.id].map(point => (
                             <PointGlyph
                                 key={point.id}
                                 left={point.x}
                                 top={point.y}
-                                active={activePoint?.id === point.id}
+                                active={false}
                                 color={point.color}
                                 linkURL={point.linkUrl}
                                 onClick={onDatumClick}
                                 onFocus={event => setActivePoint({ ...point, element: event.target })}
-                                onBlur={() => setActivePoint(undefined)}
                             />
                         ))}
                     </Group>
                 ))}
+
+                {activePoint && (
+                    <PointGlyph
+                        left={activePoint.x}
+                        top={activePoint.y}
+                        active={true}
+                        color={activePoint.color}
+                        linkURL={activePoint.linkUrl}
+                        onClick={onDatumClick}
+                        tabIndex={-1}
+                    />
+                )}
             </Group>
 
-            {activePoint && (
-                <Tooltip>
+            {activePoint && rootReference.current && (
+                <Tooltip containerElement={rootReference.current} activeElement={activePoint.element as HTMLElement}>
                     <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}

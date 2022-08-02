@@ -13,8 +13,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -144,9 +145,6 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitLab,
 				Config: marshalJSON(t, &schema.GitLabConnection{
@@ -156,7 +154,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 
 			ctx := context.Background()
 			db := database.NewMockDB()
-			gitlabSrc, err := NewGitLabSource(ctx, db, svc, cf)
+			gitlabSrc, err := NewGitLabSource(ctx, logtest.Scoped(t), db, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -211,12 +209,10 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GitLabSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
 
 			ctx := context.Background()
 			db := database.NewMockDB()
-			s, err := newGitLabSource(ctx, db, &svc, test.schema, nil)
+			s, err := newGitLabSource(ctx, logtest.Scoped(t), db, &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -232,12 +228,13 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 }
 
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("supported", func(t *testing.T) {
 		var src Source
 
 		ctx := context.Background()
 		db := database.NewMockDB()
-		src, err := newGitLabSource(ctx, db, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
+		src, err := newGitLabSource(ctx, logger, db, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -264,7 +261,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 
 				ctx := context.Background()
 				db := database.NewMockDB()
-				src, err := newGitLabSource(ctx, db, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
+				src, err := newGitLabSource(ctx, logger, db, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
@@ -379,7 +376,7 @@ func Test_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
  }`, server.URL, expiryDate.Unix()),
 			}
 
-			refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(context.Background(), db, svc)
+			refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(context.Background(), logtest.Scoped(t), db, svc)
 			if err != nil {
 				t.Error(err)
 			}

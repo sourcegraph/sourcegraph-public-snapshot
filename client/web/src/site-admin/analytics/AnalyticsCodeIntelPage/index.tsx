@@ -106,6 +106,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 description: 'Cross repo events',
                 position: 'right',
                 color: 'var(--body-color)',
+                tooltip:
+                    'Cross repository code intel identifies symbols in code throughout your Sourcegraph instance, in a single click, without locating and downloading a repository.',
             },
         ]
 
@@ -163,8 +165,6 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     }
 
     const repos = data?.site.analytics.repos
-    const browserExtensionInstalls =
-        data?.site.analytics.codeIntel.browserExtensionInstalls.summary.totalRegisteredUsers || 0
 
     return (
         <>
@@ -229,11 +229,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     <div className={classNames(styles.border, 'mb-3')} />
                     <ul className="mb-3 pl-3">
                         <Text as="li">
-                            <b>{browserExtensionInstalls}</b> {browserExtensionInstalls === 1 ? 'user' : 'users'} have
-                            installed the browser extension.{' '}
+                            Promote installation of the{' '}
                             <AnchorLink to="/help/integration/browser_extension" target="_blank">
-                                Promote installation of the browser extesion to increase value.
-                            </AnchorLink>
+                                browser extension
+                            </AnchorLink>{' '}
+                            to add code intelligence to your code hosts.
                         </Text>
                         {repos && (
                             <Text as="li">

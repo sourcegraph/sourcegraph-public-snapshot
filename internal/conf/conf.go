@@ -89,8 +89,7 @@ func getMode() configurationMode {
 var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
-	clientStore := defaultStore
-	defaultClient := &client{store: clientStore}
+	defaultClient := &client{store: newStore()}
 
 	mode := getMode()
 	// Don't kickoff the background updaters for the client/server
@@ -172,6 +171,10 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	// so that the frontend does not request configuration from itself via HTTP
 	// and instead only relies on the DB.
 	DefaultClient().passthrough = source
+
+	// Notify the default client of updates to the source to ensure updates
+	// propagate quickly.
+	DefaultClient().sourceUpdates = server.sourceWrites
 
 	go DefaultClient().continuouslyUpdate(nil)
 	close(configurationServerFrontendOnlyInitialized)

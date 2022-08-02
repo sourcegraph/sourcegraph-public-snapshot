@@ -71,13 +71,13 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 		for _, branch := range repo.Branches {
 			if branch.Name == rev {
-				branches = append(branches, inputRev)
+				branches = append(branches, branch.Name)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
-				branches = append(branches, inputRev)
+				branches = append(branches, branch.Name)
 				found = true
 				break
 			}
@@ -105,6 +105,14 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	}
 
 	return unindexed
+}
+
+func (rb *IndexedRepoRevs) BranchRepos() []zoektquery.BranchRepos {
+	brs := make([]zoektquery.BranchRepos, 0, len(rb.branchRepos))
+	for _, br := range rb.branchRepos {
+		brs = append(brs, *br)
+	}
+	return brs
 }
 
 // getRepoInputRev returns the repo and inputRev associated with file.
@@ -272,10 +280,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	brs := make([]zoektquery.BranchRepos, 0, len(repos.branchRepos))
-	for _, br := range repos.branchRepos {
-		brs = append(brs, *br)
-	}
+	brs := repos.BranchRepos()
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 

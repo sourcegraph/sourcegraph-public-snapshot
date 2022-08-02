@@ -1,7 +1,6 @@
 import { ReactElement } from 'react'
 
 import { mdiSourceBranch } from '@mdi/js'
-import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Icon, H4, Badge } from '@sourcegraph/wildcard'
@@ -36,7 +35,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
             <H4 className={styles.name}>{workspace?.repository.name ?? 'Workspace in hidden repository'}</H4>
             {workspace && workspace.path !== '' && workspace.path !== '/' ? (
                 <>
-                    <VisuallyHidden>Workspace path: </VisuallyHidden>
+                    {/* <VisuallyHidden>Workspace path: </VisuallyHidden> */}
                     <span className={styles.path}>{workspace?.path}</span>
                 </>
             ) : null}
@@ -62,7 +61,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
                     )}
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiSourceBranch} />
                     <small>
-                        <VisuallyHidden>Workspace branch: </VisuallyHidden>
+                        {/* <VisuallyHidden>Workspace branch: </VisuallyHidden> */}
                         {workspace.branch.displayName}
                     </small>
                 </div>

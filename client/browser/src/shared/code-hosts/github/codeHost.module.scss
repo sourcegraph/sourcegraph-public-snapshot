@@ -23,9 +23,19 @@
     --mark-bg: var(--mark-bg-dark);
 }
 
+.command-palette-popover {
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
 .command-palette-action-item {
     /* Reset GitHub's 44px min-height */
     min-height: initial;
+
+    /* Reset default user agent button styles */
+    border: none;
+    background-color: transparent;
 }
 
 .action-item {

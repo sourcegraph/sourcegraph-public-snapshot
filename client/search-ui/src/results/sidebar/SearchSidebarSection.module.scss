@@ -49,11 +49,11 @@
 
         &:hover {
             background-color: var(--color-bg-2);
-            text-decoration: none;
+            text-decoration: none !important;
         }
 
         &:focus {
-            text-decoration: none;
+            text-decoration: none !important;
         }
 
         &:active {
@@ -65,8 +65,18 @@
         }
     }
 
+    &__list-item-label {
+        :global(.core-workflow-improvements-enabled) & {
+            color: var(--body-color);
+        }
+    }
+
     &__icon {
         margin: 0 0.125rem;
+
+        :global(.core-workflow-improvements-enabled) & {
+            margin-left: 0;
+        }
     }
 
     &__no-results {

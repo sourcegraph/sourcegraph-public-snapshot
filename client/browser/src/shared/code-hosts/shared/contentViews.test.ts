@@ -89,7 +89,9 @@ describe('contentViews', () => {
                     {
                         contentViewResolvers: [{ selector: 'div', resolveView: () => ({ element }) }],
                         setElementTooltip: (element, text) =>
-                            text !== null ? (element.dataset.tooltip = text) : element.removeAttribute('data-tooltip'),
+                            text !== null
+                                ? element.setAttribute('aria-label', text)
+                                : element.removeAttribute('aria-label'),
                     }
                 )
             )
@@ -98,7 +100,7 @@ describe('contentViews', () => {
             await waitSubject.pipe(first()).toPromise()
             await tick()
             expect(element.innerHTML).toBe(
-                '0 <a href="#foo" data-tooltip="foo">foo</a><span class="sg-link-preview-content" data-tooltip="foo"><strong>foo</strong> x</span> 1 <a href="#bar">bar</a> 2 <a href="#qux" data-tooltip="qux">qux</a><span class="sg-link-preview-content" data-tooltip="qux"><strong>qux</strong> x</span> 3'
+                '0 <a href="#foo" aria-label="foo">foo</a><span class="sg-link-preview-content" aria-label="foo"><strong>foo</strong> x</span> 1 <a href="#bar">bar</a> 2 <a href="#qux" aria-label="qux">qux</a><span class="sg-link-preview-content" aria-label="qux"><strong>qux</strong> x</span> 3'
             )
 
             // Mutate content view.
@@ -107,7 +109,7 @@ describe('contentViews', () => {
             await tick()
 
             expect(element.innerHTML).toBe(
-                '4 <a href="#zip" data-tooltip="zip">zip</a><span class="sg-link-preview-content" data-tooltip="zip"><strong>zip</strong> x</span> 5'
+                '4 <a href="#zip" aria-label="zip">zip</a><span class="sg-link-preview-content" aria-label="zip"><strong>zip</strong> x</span> 5'
             )
 
             // Remove content view.
@@ -145,7 +147,9 @@ describe('contentViews', () => {
                     {
                         contentViewResolvers: [{ selector: 'div', resolveView: () => ({ element }) }],
                         setElementTooltip: (element, text) =>
-                            text !== null ? (element.dataset.tooltip = text) : element.removeAttribute('data-tooltip'),
+                            text !== null
+                                ? element.setAttribute('aria-label', text)
+                                : element.removeAttribute('aria-label'),
                     }
                 )
             )
@@ -171,7 +175,7 @@ describe('contentViews', () => {
             })
             await wait
             expect(element.innerHTML).toBe(
-                '0 <a href="#foo" data-tooltip="foo">foo</a><span class="sg-link-preview-content" data-tooltip="foo"><strong>foo</strong></span> 1 <a href="#bar">bar</a> 2'
+                '0 <a href="#foo" aria-label="foo">foo</a><span class="sg-link-preview-content" aria-label="foo"><strong>foo</strong></span> 1 <a href="#bar">bar</a> 2'
             )
 
             wait = waitSubject.pipe(first()).toPromise()
@@ -191,7 +195,7 @@ describe('contentViews', () => {
             })
             await wait
             expect(element.innerHTML).toBe(
-                '0 <a href="#foo" data-tooltip="foo2">foo</a><span class="sg-link-preview-content" data-tooltip="foo2"><strong>foo2</strong></span> 1 <a href="#bar">bar</a> 2'
+                '0 <a href="#foo" aria-label="foo2">foo</a><span class="sg-link-preview-content" aria-label="foo2"><strong>foo2</strong></span> 1 <a href="#bar">bar</a> 2'
             )
 
             wait = waitSubject.pipe(first()).toPromise()
@@ -205,7 +209,7 @@ describe('contentViews', () => {
                 ],
             })
             await wait
-            expect(element.innerHTML).toBe('0 <a href="#foo" data-tooltip="foo2">foo</a> 1 <a href="#bar">bar</a> 2')
+            expect(element.innerHTML).toBe('0 <a href="#foo" aria-label="foo2">foo</a> 1 <a href="#bar">bar</a> 2')
 
             wait = waitSubject.pipe(first()).toPromise()
             fooLinkPreviewValues.next({

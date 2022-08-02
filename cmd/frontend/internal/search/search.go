@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -106,7 +105,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 
 	inputs, err := h.searchClient.Plan(ctx, args.Version, strPtr(args.PatternType), args.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
-		var queryErr *run.QueryError
+		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
 			eventWriter.Alert(search.AlertForQuery(queryErr.Query, queryErr.Err))
 			return nil
@@ -226,7 +225,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 
 	a := args{
 		Query:          get("q", ""),
-		Version:        get("v", "V2"),
+		Version:        get("v", "V3"),
 		PatternType:    get("t", ""),
 		DecorationKind: get("dk", "html"),
 	}
@@ -422,6 +421,7 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 			Name:          sym.Symbol.Name,
 			ContainerName: sym.Symbol.Parent,
 			Kind:          kindString,
+			Line:          int32(sym.Symbol.Line),
 		})
 	}
 

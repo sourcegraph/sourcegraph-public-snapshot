@@ -7,8 +7,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -413,5 +414,43 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				t.Fatalf("workspace.Skipped is wrong. want=%t, have=%t", want, have)
 			}
 		}
+	})
+
+	t.Run("ListRetryBatchSpecWorkspaces", func(t *testing.T) {
+		successfulWorkspace := &btypes.BatchSpecWorkspace{
+			BatchSpecID: 9999,
+			RepoID:      repos[0].ID,
+		}
+		failedWorkspace := &btypes.BatchSpecWorkspace{
+			BatchSpecID: 9999,
+			RepoID:      repos[0].ID,
+		}
+
+		err := s.CreateBatchSpecWorkspace(ctx, successfulWorkspace)
+		require.NoError(t, err)
+		err = s.CreateBatchSpecWorkspace(ctx, failedWorkspace)
+		require.NoError(t, err)
+
+		err = s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, state, cancel) VALUES (%s, %s, %s, %s)", successfulWorkspace.ID, user.ID, btypes.BatchSpecWorkspaceExecutionJobStateCompleted, true))
+		require.NoError(t, err)
+		err = s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, state, cancel) VALUES (%s, %s, %s, %s)", failedWorkspace.ID, user.ID, btypes.BatchSpecResolutionJobStateFailed, true))
+		require.NoError(t, err)
+
+		t.Run("All", func(t *testing.T) {
+			have, err := s.ListRetryBatchSpecWorkspaces(ctx, ListRetryBatchSpecWorkspacesOpts{
+				BatchSpecID:      9999,
+				IncludeCompleted: true,
+			})
+			require.NoError(t, err)
+			assert.Len(t, have, 2)
+		})
+
+		t.Run("Uncompleted", func(t *testing.T) {
+			have, err := s.ListRetryBatchSpecWorkspaces(ctx, ListRetryBatchSpecWorkspacesOpts{
+				BatchSpecID: 9999,
+			})
+			require.NoError(t, err)
+			assert.Len(t, have, 1)
+		})
 	})
 }
