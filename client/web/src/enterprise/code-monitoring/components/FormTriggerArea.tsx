@@ -230,12 +230,12 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 className={classNames(
                                     'form-control',
                                     styles.queryInputField,
-                                    'test-trigger-input',
                                     `test-${derivedInputClassName}`
                                 )}
                                 data-testid="trigger-query-edit"
                             >
                                 <LazyMonacoQueryInput
+                                    className="test-trigger-input"
                                     editorComponent={editorComponent}
                                     isLightTheme={isLightTheme}
                                     patternType={SearchPatternType.literal}

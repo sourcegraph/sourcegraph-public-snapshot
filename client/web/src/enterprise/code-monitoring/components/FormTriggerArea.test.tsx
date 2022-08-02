@@ -12,6 +12,11 @@ describe('FormTriggerArea', () => {
 
     beforeAll(() => {
         clock = sinon.useFakeTimers()
+        Range.prototype.getClientRects = () => ({
+            length: 0,
+            item: () => null,
+            [Symbol.iterator]: [][Symbol.iterator],
+        })
     })
 
     afterAll(() => {

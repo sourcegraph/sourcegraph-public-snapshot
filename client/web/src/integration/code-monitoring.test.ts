@@ -10,7 +10,7 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
-import { percySnapshotWithVariants } from './utils'
+import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {
     let driver: Driver
@@ -135,11 +135,11 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-trigger-button')
             await driver.page.click('.test-trigger-button')
 
-            await driver.page.waitForSelector('.test-trigger-input')
-            await driver.page.type('.test-trigger-input', 'foobar')
+            const input = await createEditorAPI(driver, '.test-trigger-input')
+            await input.append('foobar', 'type')
             await driver.page.waitForSelector('.test-is-invalid')
 
-            await driver.page.type('.test-trigger-input', ' type:diff')
+            await input.append(' type:diff', 'type')
             await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             expect(
@@ -164,8 +164,9 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-trigger-button')
             await driver.page.click('.test-trigger-button')
 
-            await driver.page.waitForSelector('.test-trigger-input')
-            await driver.page.type('.test-trigger-input', 'foobar type:diff repo:test')
+            const input = await createEditorAPI(driver, '.test-trigger-input')
+
+            await input.append('foobar type:diff repo:test', 'type')
             await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             await driver.page.waitForSelector('.test-submit-trigger')
@@ -201,8 +202,8 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-trigger-button')
             await driver.page.click('.test-trigger-button')
 
-            await driver.page.waitForSelector('.test-trigger-input')
-            await driver.page.type('.test-trigger-input', 'foobar type:diff repo:test')
+            const input = await createEditorAPI(driver, '.test-trigger-input')
+            await input.append('foobar type:diff repo:test', 'type')
             await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             await driver.page.waitForSelector('.test-submit-trigger')
