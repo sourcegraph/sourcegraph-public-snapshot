@@ -199,6 +199,14 @@ func compareColumns(out *output.Output, schemaName, version string, actualTable,
 			fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
 		))
 		return true
+	}, func(additional []schemas.ColumnDescription) bool {
+		for _, column := range additional {
+			dropColumnStmt := fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", expectedTable.Name, column.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected column %q.%q", expectedTable.Name, column.Name)))
+			writeSQLSolution(out, "drop the column", dropColumnStmt)
+		}
+
+		return true
 	})
 }
 
@@ -216,6 +224,14 @@ func compareConstraints(out *output.Output, schemaName, version string, actualTa
 		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
 		writeDiff(out, expectedConstraint, *constraint)
 		writeSQLSolution(out, "redefine the constraint", dropConstraintStmt, createConstraintStmt)
+		return true
+	}, func(additional []schemas.ConstraintDescription) bool {
+		for _, constraint := range additional {
+			dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, constraint.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected constraint %q.%q", expectedTable.Name, constraint.Name)))
+			writeSQLSolution(out, "drop the constraint", dropConstraintStmt)
+		}
+
 		return true
 	})
 }
@@ -243,6 +259,14 @@ func compareIndexes(out *output.Output, schemaName, version string, actualTable,
 		writeDiff(out, expectedIndex, *index)
 		writeSQLSolution(out, "redefine the index", dropIndexStmt, createIndexStmt)
 		return true
+	}, func(additional []schemas.IndexDescription) bool {
+		for _, index := range additional {
+			dropIndexStmt := fmt.Sprintf("DROP INDEX %s;", index.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected index %q.%q", expectedTable.Name, index.Name)))
+			writeSQLSolution(out, "drop the index", dropIndexStmt)
+		}
+
+		return true
 	})
 }
 
@@ -261,6 +285,15 @@ func compareTriggers(out *output.Output, schemaName, version string, actualTable
 		writeDiff(out, expectedTrigger, *trigger)
 		writeSQLSolution(out, "redefine the trigger", dropTriggerStmt, createTriggerStmt)
 		return true
+	}, func(additional []schemas.TriggerDescription) bool {
+		for _, trigger := range additional {
+			dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", trigger.Name, expectedTable.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected trigger %q.%q", expectedTable.Name, trigger.Name)))
+			writeSQLSolution(out, "drop the trigger", dropTriggerStmt)
+		}
+
+		return true
+
 	})
 }
 
