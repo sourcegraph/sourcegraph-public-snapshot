@@ -1,20 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 
 import { mdiDotsHorizontal, mdiContentCopy, mdiFileDocument } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
 import { pluralize } from '@sourcegraph/common'
-import {
-    Button,
-    ButtonGroup,
-    DeprecatedTooltipController,
-    Link,
-    Icon,
-    Code,
-    screenReaderAnnounce,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -94,10 +85,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         eventLogger.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])
-
-    useEffect(() => {
-        DeprecatedTooltipController.forceUpdate()
-    }, [flashCopiedToClipboardMessage])
 
     const copyToClipboard = useCallback((oid: string): void => {
         eventLogger.log('CommitSHACopiedToClipboard')

@@ -6,13 +6,13 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Alert, Link, Code, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, Code, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { MultiSelectContext } from '../MultiSelectContext'
 
-import { createBatchChange, applyBatchChange } from './backend'
+import { applyBatchChange, createBatchChange } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 
 import styles from './CreateUpdateBatchChangeAlert.module.scss'

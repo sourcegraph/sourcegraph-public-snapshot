@@ -183,6 +183,16 @@
         }
     }
 
+    .variable-editor-title-text {
+        color: var(--text-muted);
+        font-weight: 400;
+
+        &.active {
+            color: var(--body-color);
+            font-weight: 600;
+        }
+    }
+
     .CodeMirror-hints {
         border-left: solid 1px var(--dropdown-border-color);
         border-right: solid 1px var(--dropdown-border-color);

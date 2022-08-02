@@ -648,6 +648,17 @@ Flags:
 * `--up`: The migration direction.
 * `--version="<value>"`: The migration `version` to log. (default: 0)
 
+### sg migration upgrade
+
+Upgrade Sourcegraph instance databases to a target version.
+
+
+Flags:
+
+* `--from="<value>"`: The source (current) instance version. Must be of the form `v{Major}.{Minor}`.
+* `--skip-version-check`: Skip validation of the instance's current version.
+* `--to="<value>"`: The target instance version. Must be of the form `v{Major}.{Minor}`.
+
 ### sg migration leaves
 
 Identiy the migration leaves for the given commit.

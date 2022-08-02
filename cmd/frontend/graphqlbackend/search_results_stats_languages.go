@@ -133,7 +133,7 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				_, oid, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repoName.Name)
+				_, oid, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repoName.Name, false)
 				if err != nil {
 					run.Error(err)
 					return
