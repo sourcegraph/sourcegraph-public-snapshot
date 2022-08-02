@@ -45,7 +45,7 @@ const {
   WEBPACK_USE_NAMED_CHUNKS,
   SENTRY_UPLOAD_SOURCE_MAPS,
   COMMIT_SHA,
-  RELEASE_CANDIDATE_VERSION,
+  VERSION,
   SENTRY_DOT_COM_AUTH_TOKEN,
   SENTRY_ORGANIZATION,
   SENTRY_PROJECT,
@@ -60,7 +60,6 @@ const RUNTIME_ENV_VARIABLES = {
   ENABLE_OPEN_TELEMETRY,
   INTEGRATION_TESTS,
   COMMIT_SHA,
-  RELEASE_CANDIDATE_VERSION,
   ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
 
@@ -188,13 +187,13 @@ const config = {
          */
         threshold: 10240,
       }),
-    RELEASE_CANDIDATE_VERSION &&
+    VERSION &&
       SENTRY_UPLOAD_SOURCE_MAPS &&
       new SentryWebpackPlugin({
         org: SENTRY_ORGANIZATION,
         project: SENTRY_PROJECT,
         authToken: SENTRY_DOT_COM_AUTH_TOKEN,
-        release: `frontend@${RELEASE_CANDIDATE_VERSION}`,
+        release: `frontend@${VERSION}`,
         include: path.join(STATIC_ASSETS_PATH, 'scripts'),
       }),
   ].filter(Boolean),

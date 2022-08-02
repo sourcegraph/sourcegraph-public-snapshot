@@ -2848,6 +2848,8 @@ Triggers:
  execution_logs    | json[]                   |           |          | 
  last_heartbeat_at | timestamp with time zone |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
+ org               | text                     |           |          | 
+ extsvc_id         | integer                  |           |          | 
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
 
