@@ -22,6 +22,6 @@ jobs:
                   team/security=@dcomas
                   team/dev-experience=@jhchabran @kstretch9
                   team/frontend-platform=@taylorsperry @jasongornall
-                  team/repo-management=@jplahn
+                  team/repo-management=@jplahn @ryphil
                   team/devops=@sourcegraph/cloud-devops
                   team/iam=@sourcegraph/iam

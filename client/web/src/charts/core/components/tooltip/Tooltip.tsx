@@ -1,44 +1,69 @@
-import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes, useEffect, useState } from 'react'
+import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes, useEffect, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { PopoverContent, Position, Point as PopoverPoint, createRectangle } from '@sourcegraph/wildcard'
+import { PopoverContent, Position, createRectangle } from '@sourcegraph/wildcard'
 
 import styles from './Tooltip.module.scss'
 
 const TOOLTIP_PADDING = createRectangle(0, 0, 10, 10)
 
-export const Tooltip: React.FunctionComponent<React.PropsWithChildren<{}>> = props => {
-    const [virtualElement, setVirtualElement] = useState<PopoverPoint | null>(null)
+interface TooltipProps {
+    containerElement: SVGSVGElement
+    activeElement?: HTMLElement
+}
+
+interface TooltipPosition {
+    target: HTMLElement | null
+    x: number
+    y: number
+}
+
+export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipProps>> = props => {
+    const { containerElement, activeElement = null, children } = props
+
+    const [{ target, ...pinPoint }, setVirtualElement] = useState<TooltipPosition>({
+        target: activeElement,
+        x: 0,
+        y: 0,
+    })
+
+    useLayoutEffect(() => {
+        if (activeElement) {
+            setVirtualElement(state => ({ ...state, target: activeElement }))
+        }
+    }, [activeElement])
 
     useEffect(() => {
         function handleMove(event: PointerEvent): void {
             setVirtualElement({
+                target: null,
                 x: event.clientX,
                 y: event.clientY,
             })
         }
 
-        window.addEventListener('pointermove', handleMove)
-        window.addEventListener('pointerleave', () => setVirtualElement(null))
+        containerElement.addEventListener('pointermove', handleMove)
 
         return () => {
-            window.removeEventListener('pointermove', handleMove)
+            containerElement.removeEventListener('pointermove', handleMove)
         }
-    }, [])
+    }, [containerElement])
 
     return (
-        virtualElement && (
-            <PopoverContent
-                isOpen={true}
-                pin={virtualElement}
-                targetPadding={TOOLTIP_PADDING}
-                position={Position.rightStart}
-                className={styles.tooltip}
-            >
-                {props.children}
-            </PopoverContent>
-        )
+        <PopoverContent
+            isOpen={true}
+            pin={!target ? pinPoint : null}
+            targetElement={target}
+            autoFocus={false}
+            focusLocked={false}
+            targetPadding={TOOLTIP_PADDING}
+            position={Position.rightStart}
+            className={styles.tooltip}
+            tabIndex={-1}
+        >
+            {children}
+        </PopoverContent>
     )
 }
 

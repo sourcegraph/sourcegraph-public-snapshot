@@ -11,7 +11,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -91,7 +90,7 @@ func init() {
 		if c.SiteConfig().ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
 		} else if deploy.Type() != deploy.Dev && strings.HasPrefix(c.SiteConfig().ExternalURL, "http://") {
-			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/nginx)"))
+			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/http_https_configuration)"))
 		}
 
 		return problems
@@ -127,7 +126,7 @@ func init() {
 			return nil
 		}
 
-		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+		problems, err := conf.Validate(conf.Raw())
 		if err != nil {
 			return []*Alert{
 				{

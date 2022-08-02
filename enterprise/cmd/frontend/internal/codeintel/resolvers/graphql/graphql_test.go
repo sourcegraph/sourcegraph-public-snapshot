@@ -5,13 +5,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }

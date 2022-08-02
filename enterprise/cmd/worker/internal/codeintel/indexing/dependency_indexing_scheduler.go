@@ -40,7 +40,7 @@ func NewDependencyIndexingScheduler(
 	numProcessorRoutines int,
 	workerMetrics workerutil.WorkerMetrics,
 ) *workerutil.Worker {
-	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
 		dbStore:       dbStore,

@@ -37,7 +37,6 @@ import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
-import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
@@ -49,15 +48,7 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/share
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
-import {
-    // This is the root Tooltip usage
-    DeprecatedTooltip,
-    FeedbackText,
-    setLinkComponent,
-    RouterLink,
-    WildcardThemeContext,
-    WildcardTheme,
-} from '@sourcegraph/wildcard'
+import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -113,12 +104,11 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
-        KeyboardShortcutsProps {
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
-    extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
-    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
+    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -427,7 +417,6 @@ export class SourcegraphWebApp extends React.Component<
                                                     </CompatRouter>
                                                 </Router>
                                             </ScrollManager>
-                                            <DeprecatedTooltip key={1} />
                                             <Notifications
                                                 key={2}
                                                 extensionsController={this.extensionsController}

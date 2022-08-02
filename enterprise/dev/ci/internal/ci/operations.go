@@ -43,10 +43,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	// Simple, fast-ish linter checks
-	linterOps := operations.NewNamedSet("Linters and static analysis",
-		// lightweight check that works over a lot of stuff - we are okay with running
-		// these on all PRs
-		addPrettier)
+	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if diff.Has(changed.GraphQL) {
 		linterOps.Append(addGraphQLLint)
 	}
@@ -216,24 +213,6 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Adds steps for building webapp with the Sentry Webpack plugin enabled to upload sourcemaps
-// Only builds webapp without ENTERPRISE=1, no tests are performed. Should only run on release branches.
-func buildWebAppWithSentrySourcemaps(version string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Webapp build with Sentry's webpack plugin enabled
-		pipeline.AddStep(":webpack::globe_with_meridians: Build and upload sourcemaps to Sentry",
-			withYarnCache(),
-			bk.Cmd("dev/ci/yarn-build.sh client/web"),
-			bk.Env("NODE_ENV", "production"),
-			bk.Env("ENTERPRISE", ""),
-			bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
-			bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
-			bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
-			bk.Env("RELEASE_CANDIDATE_VERSION", version),
-		)
-	}
-}
-
 var browsers = []string{"chrome"}
 
 func getParallelTestCount(webParallelTestCount int) int {
@@ -365,7 +344,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
 			bk.AutomaticRetry(3),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent"),
+			bk.Cmd("./dev/ci/yarn-install-with-retry.sh"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
 		}
@@ -683,7 +662,7 @@ func candidateImageStepKey(app string) string {
 // tags once the e2e tests pass.
 //
 // Version is the actual version of the code, and
-func buildCandidateDockerImage(app, version, tag string) operations.Operation {
+func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		localImage := "sourcegraph/" + image + ":" + version
@@ -696,6 +675,16 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Env("VERSION", version),
 		}
 
+		// Add Sentry environment variables if we are building off main branch
+		// to enable building the webapp with source maps enabled
+		if uploadSourcemaps {
+			cmds = append(cmds,
+				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
+				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
+				bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
+			)
+		}
+
 		// Allow all build scripts to emit info annotations
 		buildAnnotationOptions := bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{
@@ -706,7 +695,9 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
 			// Building Docker image located under $REPO_ROOT/docker-images/
-			cmds = append(cmds, bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
+			cmds = append(cmds,
+				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
+				bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {

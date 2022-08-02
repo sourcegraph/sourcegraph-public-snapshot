@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -523,12 +524,43 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ArchivedInOwnerBatchChange: true,
 			},
 		},
+		"detach changeset": {
+			hasCurrentSpec: false,
+			changeset: bt.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    btypes.ChangesetExternalStateClosed,
+				Closing:          false,
+				BatchChanges: []btypes.BatchChangeAssoc{{
+					BatchChangeID: 1234, Detach: true,
+				}},
+			},
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationDetach,
+				},
+			},
+
+			wantCloseOnCodeHost: false,
+
+			wantChangeset: bt.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				Closing:          false,
+
+				ExternalID:     closedGitHubPR.ID,
+				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalState:  btypes.ChangesetExternalStateClosed,
+
+				ArchivedInOwnerBatchChange: false,
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "executor-test-batch-change", admin.ID)
+			batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "executor-test-batch-change", admin.ID, 0)
 			batchChange := bt.CreateBatchChange(t, ctx, cstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
@@ -652,11 +684,23 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				return
 			}
 
+			// Determine if a detach operation is being done
+			hasDetachOperation := false
+			for _, op := range tc.plan.Ops {
+				if op == btypes.ReconcilerOperationDetach {
+					hasDetachOperation = true
+					break
+				}
+			}
+
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
 			assertions.Repo = repo.ID
 			assertions.OwnedByBatchChange = changesetOpts.OwnedByBatchChange
-			assertions.AttachedTo = []int64{batchChange.ID}
+			// There are no AttachedTo for detach operations
+			if !hasDetachOperation {
+				assertions.AttachedTo = []int64{batchChange.ID}
+			}
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
 			}
@@ -677,6 +721,11 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				if !strings.Contains(rcs.Body, "Created by Sourcegraph batch change") {
 					t.Errorf("did not find backlink in body: %q", rcs.Body)
 				}
+			}
+
+			// Ensure the detached_at timestamp is set when the operation is detach
+			if hasDetachOperation {
+				assert.NotNil(t, changeset.DetachedAt)
 			}
 		})
 
@@ -788,7 +837,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "reconciler-test-batch-change", admin.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, 0)
 	adminBatchChange := bt.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
 	userBatchChange := bt.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
@@ -1097,7 +1146,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				defer func() { cstore.UserCredentials().Delete(ctx, cred.ID) }()
 			}
 
-			batchSpec := bt.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			batchSpec := bt.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, 0)
 			batchChange := bt.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, batchSpec.ID)
 
 			plan.Changeset = &btypes.Changeset{

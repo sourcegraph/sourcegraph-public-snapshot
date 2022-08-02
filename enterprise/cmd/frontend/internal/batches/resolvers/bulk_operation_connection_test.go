@@ -35,7 +35,7 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test", userID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test", userID, 0)
 	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
 	batchChangeAPIID := marshalBatchChangeID(batchChange.ID)
 	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
@@ -83,7 +83,7 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

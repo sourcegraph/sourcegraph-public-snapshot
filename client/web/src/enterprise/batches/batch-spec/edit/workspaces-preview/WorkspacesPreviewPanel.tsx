@@ -26,6 +26,7 @@ export const WorkspacesPreviewPanel: React.FunctionComponent<React.PropsWithChil
             maxSize={0.45 * width}
             position="right"
             storageKey={WORKSPACES_PREVIEW_SIZE}
+            ariaLabel="Workspaces preview sidebar"
         >
             <div className={styles.container}>
                 <WorkspacesPreview isReadOnly={isReadOnly} />

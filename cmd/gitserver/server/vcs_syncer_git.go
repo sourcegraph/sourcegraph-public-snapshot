@@ -31,7 +31,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := runWithRemoteOpts(ctx, cmd, nil)
+	out, err := runWith(ctx, cmd, true, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr

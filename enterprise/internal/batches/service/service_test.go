@@ -179,6 +179,7 @@ func TestServicePermissionLevels(t *testing.T) {
 				_, err := svc.CreateBatchSpecFromRaw(currentUserCtx, CreateBatchSpecFromRawOpts{
 					RawSpec:         bt.TestRawBatchSpecYAML,
 					NamespaceUserID: tc.batchChangeAuthor,
+					BatchChange:     batchChange.ID,
 				})
 				tc.assertFunc(t, err)
 			})
@@ -204,8 +205,11 @@ func TestService(t *testing.T) {
 
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
+	user2 := bt.CreateTestUser(t, db, false)
+
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+	user2Ctx := actor.WithActor(context.Background(), actor.FromUser(user2.ID))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -744,7 +748,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("GetBatchChangeMatchingBatchSpec", func(t *testing.T) {
-		batchSpec := bt.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID)
+		batchSpec := bt.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID, 0)
 
 		haveBatchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 		if err != nil {
@@ -768,22 +772,39 @@ func TestService(t *testing.T) {
 			t.Fatalf("failed to create batch change: %s\n", err)
 		}
 
-		haveBatchChange, err = svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
-		if err != nil {
-			t.Fatalf("unexpected error: %s\n", err)
-		}
-		if haveBatchChange == nil {
-			t.Fatalf("expected to have matching batch change, but got nil")
-		}
+		t.Run("BatchChangeID is not provided", func(t *testing.T) {
+			haveBatchChange, err = svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
+			if err != nil {
+				t.Fatalf("unexpected error: %s\n", err)
+			}
+			if haveBatchChange == nil {
+				t.Fatalf("expected to have matching batch change, but got nil")
+			}
 
-		if diff := cmp.Diff(matchingBatchChange, haveBatchChange); diff != "" {
-			t.Fatalf("wrong batch change was matched (-want +got):\n%s", diff)
-		}
+			if diff := cmp.Diff(matchingBatchChange, haveBatchChange); diff != "" {
+				t.Fatalf("wrong batch change was matched (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("BatchChangeID is provided", func(t *testing.T) {
+			batchSpec2 := bt.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID, matchingBatchChange.ID)
+			haveBatchChange, err = svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec2)
+			if err != nil {
+				t.Fatalf("unexpected error: %s\n", err)
+			}
+			if haveBatchChange == nil {
+				t.Fatalf("expected to have matching batch change, but got nil")
+			}
+
+			if diff := cmp.Diff(matchingBatchChange, haveBatchChange); diff != "" {
+				t.Fatalf("wrong batch change was matched (-want +got):\n%s", diff)
+			}
+		})
 	})
 
 	t.Run("GetNewestBatchSpec", func(t *testing.T) {
-		older := bt.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
-		newer := bt.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
+		older := bt.CreateBatchSpec(t, ctx, s, "superseding", user.ID, 0)
+		newer := bt.CreateBatchSpec(t, ctx, s, "superseding", user.ID, 0)
 
 		for name, in := range map[string]*btypes.BatchSpec{
 			"older": older,
@@ -913,6 +934,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+
 		t.Run("changeset not found", func(t *testing.T) {
 			changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:        rs[0].ID,
@@ -932,6 +954,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)
 			}
 		})
+
 		t.Run("DetachChangesets", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
@@ -944,10 +967,12 @@ func TestService(t *testing.T) {
 			}
 			t.Run("attached changeset", func(t *testing.T) {
 				changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-					Repo:            rs[0].ID,
-					ReconcilerState: btypes.ReconcilerStateCompleted,
-					BatchChange:     batchChange.ID,
-					IsArchived:      false,
+					Repo:             rs[0].ID,
+					ReconcilerState:  btypes.ReconcilerStateCompleted,
+					PublicationState: btypes.ChangesetPublicationStatePublished,
+					ExternalState:    btypes.ChangesetExternalStateOpen,
+					BatchChange:      batchChange.ID,
+					IsArchived:       false,
 				})
 				_, err := svc.CreateChangesetJobs(ctx, batchChange.ID, []int64{changeset.ID}, btypes.ChangesetJobTypeDetach, btypes.ChangesetJobDetachPayload{}, store.ListChangesetsOpts{OnlyArchived: true})
 				if err != ErrChangesetsForJobNotFound {
@@ -956,9 +981,11 @@ func TestService(t *testing.T) {
 			})
 			t.Run("detached changeset", func(t *testing.T) {
 				detachedChangeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-					Repo:            rs[2].ID,
-					ReconcilerState: btypes.ReconcilerStateCompleted,
-					BatchChanges:    []btypes.BatchChangeAssoc{},
+					Repo:             rs[2].ID,
+					ReconcilerState:  btypes.ReconcilerStateCompleted,
+					PublicationState: btypes.ChangesetPublicationStatePublished,
+					ExternalState:    btypes.ChangesetExternalStateOpen,
+					BatchChanges:     []btypes.BatchChangeAssoc{},
 				})
 				_, err := svc.CreateChangesetJobs(ctx, batchChange.ID, []int64{detachedChangeset.ID}, btypes.ChangesetJobTypeDetach, btypes.ChangesetJobDetachPayload{}, store.ListChangesetsOpts{OnlyArchived: true})
 				if err != ErrChangesetsForJobNotFound {
@@ -966,6 +993,7 @@ func TestService(t *testing.T) {
 				}
 			})
 		})
+
 		t.Run("MergeChangesets", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
@@ -1104,9 +1132,10 @@ func TestService(t *testing.T) {
 			}
 
 			changeset := bt.CreateChangeset(t, adminCtx, s, bt.TestChangesetOpts{
-				Repo:            rs[0].ID,
-				ReconcilerState: btypes.ReconcilerStateCompleted,
-				BatchChange:     batchChange.ID,
+				Repo:             rs[0].ID,
+				ReconcilerState:  btypes.ReconcilerStateCompleted,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+				BatchChange:      batchChange.ID,
 			})
 
 			_, err := svc.CreateChangesetJobs(
@@ -1532,11 +1561,65 @@ changesetTemplate:
 	})
 
 	t.Run("CreateBatchSpecFromRaw", func(t *testing.T) {
-		adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
-		t.Run("success", func(t *testing.T) {
+		t.Run("batch change isn't owned by non-admin user", func(t *testing.T) {
+			spec := testBatchSpec(user.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(user.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err := svc.CreateBatchSpecFromRaw(user2Ctx, CreateBatchSpecFromRawOpts{
+				RawSpec:         bt.TestRawBatchSpecYAML,
+				NamespaceUserID: user2.ID,
+				BatchChange:     batchChange.ID,
+			})
+
+			assert.Equal(t, "must be authenticated as the authorized user or as an admin (must be site admin)", err.Error())
+		})
+
+		t.Run("success - without batch change ID", func(t *testing.T) {
 			newSpec, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
 				RawSpec:         bt.TestRawBatchSpecYAML,
 				NamespaceUserID: admin.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !newSpec.CreatedFromRaw {
+				t.Fatalf("batchSpec not createdFromRaw: %t", newSpec.CreatedFromRaw)
+			}
+
+			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
+				BatchSpecID: newSpec.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
+				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
+			}
+		})
+
+		t.Run("success - with batch change ID", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(admin.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			newSpec, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
+				RawSpec:         bt.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+				BatchChange:     batchChange.ID,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -1674,7 +1757,7 @@ changesetTemplate:
 	})
 
 	t.Run("ValidateChangesetSpecs", func(t *testing.T) {
-		batchSpec := bt.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID)
+		batchSpec := bt.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID, 0)
 		conflictingRef := "refs/heads/conflicting-head-ref"
 		for _, opts := range []bt.TestSpecOpts{
 			{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: batchSpec.ID},

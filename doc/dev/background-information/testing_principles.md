@@ -110,10 +110,11 @@ We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph featur
 
 - Targeted [code reviews](pull_request_reviews.md) can help ensure changes are appropriately tested.
   - If a change contains changes pertaining to the processing or storing of credentials or tokens, authorization, and authentication methods, the `security` label should be added and a review should be requested from members of the [Sourcegraph Security team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/security)
-  - If a change requires changes to self-managed, managed, or Sourcegraph Cloud deployment methods, reviews from members of the relevant [Sourcegraph DevOps teams](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops) should be requested
+  - If a change requires changes to self-managed deployment method, get a review from the [Delivery team](https://handbook.sourcegraph.com/departments/engineering/teams/delivery/).
+  - If a change requires changes to Cloud (managed instances), get a review from the [Cloud team](https://handbook.sourcegraph.com/departments/cloud/).
   - Performance-sensitive changes should undergo reviews from other engineers to assess potential performance implications.
 - Deployment considerations can help test things live, detect when things have gone wrong, and limit the scope of risks.
-  - For high-risk changes, consider using [feature flags](../how-to/use_feature_flags.md), such as by rolling a change out to just Sourcegraph teammates and/or to a subset of production customers before rolling it out to all customers in Sourcegraph Cloud or a full release.
+  - For high-risk changes, consider using [feature flags](../how-to/use_feature_flags.md), such as by rolling a change out to just Sourcegraph teammates and/or to a subset of production customers before rolling it out to all customers on Sourcegraph Cloud managed instances or a full release.
   - Introduce adequate [observability measures](observability/index.md) so that issues can easily be detected and monitored.
 - Documentation can help ensure that changes are easy to understand if anything goes wrong, and should be added to [sources of truth](https://handbook.sourcegraph.com/company-info-and-process/communication#sources-of-truth).
   - If the documentation will be published to docs.sourcegraph.com, it can be tested by running `sg run docsite` and navigating to the corrected page.

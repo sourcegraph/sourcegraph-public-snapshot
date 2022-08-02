@@ -9,7 +9,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { getFiltersOfKind } from './helpers'
 
@@ -49,12 +49,16 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
             variant="link"
             aria-label={`${ariaLabel ?? label}${countTooltip ? `, ${countTooltip}` : ''}`}
         >
-            <span className="flex-grow-1">{labelConverter(label)}</span>
+            <span className={classNames('flex-grow-1', styles.sidebarSectionListItemLabel)}>
+                {labelConverter(label)}
+            </span>
             {count && (
-                <span className="pl-2 flex-shrink-0" data-tooltip={countTooltip}>
-                    {count}
-                    {limitHit ? '+' : ''}
-                </span>
+                <Tooltip content={countTooltip}>
+                    <span className="pl-2 flex-shrink-0">
+                        {count}
+                        {limitHit ? '+' : ''}
+                    </span>
+                </Tooltip>
             )}
         </Button>
     )
@@ -62,17 +66,23 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
 
 export const getRepoFilterLinks = (
     filters: Filter[] | undefined,
-    onFilterChosen: (value: string, kind?: string) => void
+    onFilterChosen: (value: string, kind?: string) => void,
+    coreWorkflowImprovementsEnabled: boolean | undefined
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
         const Icon = CodeHostIcon({
             repoName: label,
-            className: classNames('text-muted', styles.sidebarSectionIcon),
+            className: classNames(!coreWorkflowImprovementsEnabled && 'text-muted', styles.sidebarSectionIcon),
         })
 
         return (
-            <span className={classNames('text-monospace search-query-link', styles.sidebarSectionListItemBreakWords)}>
-                <span className="search-filter-keyword">r:</span>
+            <span
+                className={classNames(
+                    !coreWorkflowImprovementsEnabled && 'text-monospace search-query-link',
+                    styles.sidebarSectionListItemBreakWords
+                )}
+            >
+                {!coreWorkflowImprovementsEnabled && <span className="search-filter-keyword">r:</span>}
                 {Icon ? (
                     <>
                         {Icon}
@@ -98,16 +108,20 @@ export const getRepoFilterLinks = (
 
 export const getDynamicFilterLinks = (
     filters: Filter[] | undefined,
-    onFilterChosen: (value: string, kind?: string) => void
+    kinds: Filter['kind'][],
+    onFilterChosen: (value: string, kind?: string) => void,
+    ariaLabelTransform: (label: string, value: string) => string = label => `${label}`,
+    labelTransform: (label: string, value: string) => string = label => `${label}`
 ): React.ReactElement[] =>
     (filters || [])
-        .filter(filter => filter.kind !== 'repo')
+        .filter(filter => kinds.includes(filter.kind))
         .map(filter => (
             <FilterLink
                 {...filter}
+                label={labelTransform(filter.label, filter.value)}
+                ariaLabel={ariaLabelTransform(filter.label, filter.value)}
                 key={`${filter.label}-${filter.value}`}
                 onFilterChosen={onFilterChosen}
-                ariaLabel={`Filter by ${filter.label}`}
             />
         ))
 

@@ -270,3 +270,5 @@
 /admin/deploy/docker /admin/deploy/docker-single-container 308
 
 /admin/observability/alert_solutions /admin/observability/alerts 308
+
+/admin/deploy/managed /cloud 308

@@ -62,27 +62,6 @@ func handleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 		and = append(and, &zoektquery.Not{Child: q})
 	}
 
-	// For conditionals that happen on a repo we can use type:repo queries. eg
-	// (type:repo file:foo) (type:repo file:bar) will match all repos which
-	// contain a filename matching "foo" and a filename matchinb "bar".
-	//
-	// Note: (type:repo file:foo file:bar) will only find repos with a
-	// filename containing both "foo" and "bar".
-	for _, p := range query.FilePatternsReposMustInclude {
-		q, err := zoektutil.FileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q})
-	}
-	for _, p := range query.FilePatternsReposMustExclude {
-		q, err := zoektutil.FileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Not{Child: &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q}})
-	}
-
 	return zoektquery.NewAnd(and...), nil
 }
 
@@ -106,29 +85,13 @@ func buildQuery(args *search.TextPatternInfo, branchRepos []zoektquery.BranchRep
 	), nil
 }
 
-type zoektSearchStreamEvent struct {
-	fm       []zoekt.FileMatch
-	limitHit bool
-	partial  map[api.RepoID]struct{}
-	err      error
-}
-
-const defaultMaxSearchResults = 30
-
 // zoektSearch searches repositories using zoekt, returning file contents for
 // files that match the given pattern.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, c chan<- zoektSearchStreamEvent, repo api.RepoName, sender matchSender) (err error) {
-	defer func() {
-		if c != nil {
-			c <- zoektSearchStreamEvent{
-				err: err,
-			}
-		}
-	}()
+func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, repo api.RepoName, sender matchSender) (err error) {
 	if len(branchRepos) == 0 {
 		return nil
 	}

@@ -393,11 +393,8 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})`,
 							// 5% of initial limit of 5000
 							Warning: monitoring.Alert().LessOrEqual(250),
-							// Critical if most of a 60-minute reset window is spent below
-							// the threshold.
-							Critical: monitoring.Alert().LessOrEqual(250).For(50 * time.Minute),
-							Panel:    monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:    monitoring.ObservableOwnerRepoManagement,
+							Panel:   monitoring.Panel().LegendFormat("{{name}}"),
+							Owner:   monitoring.ObservableOwnerRepoManagement,
 							NextSteps: `
 								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
 							`,
@@ -408,11 +405,8 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`,
 							// 5% of initial limit of 5000
 							Warning: monitoring.Alert().LessOrEqual(250),
-							// Critical if most of a 60-minute reset window is spent below
-							// the threshold.
-							Critical: monitoring.Alert().LessOrEqual(250).For(50 * time.Minute),
-							Panel:    monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:    monitoring.ObservableOwnerRepoManagement,
+							Panel:   monitoring.Panel().LegendFormat("{{name}}"),
+							Owner:   monitoring.ObservableOwnerRepoManagement,
 							NextSteps: `
 								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
 							`,
@@ -422,11 +416,8 @@ func RepoUpdater() *monitoring.Dashboard {
 							Description: "remaining calls to GitHub search API before hitting the rate limit",
 							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="search"})`,
 							Warning:     monitoring.Alert().LessOrEqual(5),
-							// Critical if most of a 60-minute reset window is spent below
-							// the threshold.
-							Critical: monitoring.Alert().LessOrEqual(5).For(50 * time.Minute),
-							Panel:    monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:    monitoring.ObservableOwnerRepoManagement,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}"),
+							Owner:       monitoring.ObservableOwnerRepoManagement,
 							NextSteps: `
 								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
 							`,

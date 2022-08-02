@@ -55,6 +55,7 @@ var setupCommand = &cli.Command{
 			Teammate:            !cmd.Bool("oss"),
 			ConfigFile:          configFile,
 			ConfigOverwriteFile: configOverwriteFile,
+			DisableOverwrite:    disableOverwrite,
 		}
 
 		switch {

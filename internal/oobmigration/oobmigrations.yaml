@@ -110,3 +110,19 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 35
+- id: 15
+  team: iam
+  component: frontend-db.product_subscriptions
+  description: Attempt to extract account number from the associated user of subscriptions.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 43
+- id: 16
+  team: iam
+  component: frontend-db.product_licenses
+  description: Extract license fields from the license key text and store them to dedicated columns.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 3
+  introduced_version_minor: 43

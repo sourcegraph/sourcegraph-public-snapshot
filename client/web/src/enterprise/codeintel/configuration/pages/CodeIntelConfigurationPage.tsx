@@ -62,7 +62,6 @@ export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string }
     indexingEnabled?: boolean
-    lockfileIndexingEnabled?: boolean
     isLightTheme: boolean
     telemetryService: TelemetryService
 }
@@ -74,7 +73,6 @@ export const CodeIntelConfigurationPage: FunctionComponent<
     queryPolicies = defaultQueryPolicies,
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
-    lockfileIndexingEnabled = window.context?.codeIntelLockfileIndexingEnabled,
     telemetryService,
     ...props
 }) => {
@@ -139,13 +137,11 @@ export const CodeIntelConfigurationPage: FunctionComponent<
 export interface PoliciesNodeProps {
     node: CodeIntelligenceConfigurationPolicyFields
     indexingEnabled?: boolean
-    lockfileIndexingEnabled?: boolean
 }
 
 export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
     indexingEnabled = false,
-    lockfileIndexingEnabled = false,
 }) => (
     <>
         <span className={styles.separator} />
@@ -206,10 +202,8 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
             </div>
         </div>
 
-        <span className={classNames(styles.button, 'd-none d-md-inline')}>
-            <Link to={`./configuration/${policy.id}`} className="p-0">
-                <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
-            </Link>
-        </span>
+        <Link to={`./configuration/${policy.id}`} className="p-0">
+            <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
+        </Link>
     </>
 )

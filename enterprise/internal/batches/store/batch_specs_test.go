@@ -833,7 +833,7 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	user := bt.CreateTestUser(t, db, false)
 
 	// Create a batch spec with two changeset specs, one on each repo.
-	batchSpec := bt.CreateBatchSpec(t, ctx, s, "test", user.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, s, "test", user.ID, 0)
 	bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      globalRepo.ID,
@@ -848,7 +848,7 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	})
 
 	// Also create an empty batch spec, just for fun.
-	emptyBatchSpec := bt.CreateBatchSpec(t, ctx, s, "empty", user.ID)
+	emptyBatchSpec := bt.CreateBatchSpec(t, ctx, s, "empty", user.ID, 0)
 
 	// Set up repo permissions.
 	bt.MockRepoPermissions(t, db, user.ID, globalRepo.ID)

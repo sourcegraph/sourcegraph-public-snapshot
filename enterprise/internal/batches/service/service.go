@@ -314,6 +314,8 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}})
 	defer endObservation(1, observation.Args{})
 
+	// TODO move license check logic from resolver to here
+
 	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
@@ -393,6 +395,8 @@ type CreateBatchSpecFromRawOpts struct {
 	AllowIgnored     bool
 	AllowUnsupported bool
 	NoCache          bool
+
+	BatchChange int64
 }
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
@@ -419,11 +423,27 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	a := actor.FromContext(ctx)
 	spec.UserID = a.UID
 
+	spec.BatchChangeID = opts.BatchChange
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	if opts.BatchChange != 0 {
+		batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{
+			ID: opts.BatchChange,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// 🚨 SECURITY: Only the Author of the batch change can create a batchSpec from raw assigned to it.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, tx.DatabaseDB(), batchChange.CreatorID); err != nil {
+			return nil, err
+		}
+	}
 
 	return spec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             spec,
@@ -730,6 +750,7 @@ func replaceBatchSpec(ctx context.Context, tx *store.Store, oldSpec, newSpec *bt
 	newSpec.NamespaceOrgID = oldSpec.NamespaceOrgID
 	newSpec.NamespaceUserID = oldSpec.NamespaceUserID
 	newSpec.UserID = oldSpec.UserID
+	newSpec.BatchChangeID = oldSpec.BatchChangeID
 
 	return nil
 }
@@ -782,11 +803,18 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 	ctx, _, endObservation := s.operations.getBatchChangeMatchingBatchSpec.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	// TODO: Should name be case-insensitive? i.e. are "foo" and "Foo" the same?
-	opts := store.GetBatchChangeOpts{
-		Name:            spec.Spec.Name,
-		NamespaceUserID: spec.NamespaceUserID,
-		NamespaceOrgID:  spec.NamespaceOrgID,
+	var opts store.GetBatchChangeOpts
+
+	// if the batch spec is linked to a batch change, we want to take advantage of querying for the
+	// batch change using the primary key as it's faster.
+	if spec.BatchChangeID != 0 {
+		opts = store.GetBatchChangeOpts{ID: spec.BatchChangeID}
+	} else {
+		opts = store.GetBatchChangeOpts{
+			Name:            spec.Spec.Name,
+			NamespaceUserID: spec.NamespaceUserID,
+			NamespaceOrgID:  spec.NamespaceOrgID,
+		}
 	}
 
 	batchChange, err := s.store.GetBatchChange(ctx, opts)
@@ -1408,7 +1436,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 	}
 
 	// Delete the old execution jobs.
-	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
+	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, store.DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs}); err != nil {
 		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
 	}
 
@@ -1482,62 +1510,33 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 		return errors.New("batch spec already applied")
 	}
 
-	// Load workspaces
-	workspaces, _, err := tx.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
-	if err != nil {
-		return errors.Wrap(err, "loading batch spec workspaces")
-	}
-
-	workspaceIDs := make([]int64, 0, len(workspaces))
-	workspacesByID := map[int64]*btypes.BatchSpecWorkspace{}
-	for _, w := range workspaces {
-		workspaceIDs = append(workspaceIDs, w.ID)
-		workspacesByID[w.ID] = w
-	}
-
-	// Load jobs and check their state
-	jobs, err := tx.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
-		BatchSpecWorkspaceIDs: workspaceIDs,
-	})
+	workspaces, err := tx.ListRetryBatchSpecWorkspaces(ctx, store.ListRetryBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID, IncludeCompleted: opts.IncludeCompleted})
 	if err != nil {
 		return errors.Wrap(err, "loading batch spec workspace execution jobs")
 	}
 
-	var (
-		jobsToDelete           []int64
-		changesetSpecsToDelete []int64
-		workspacesToRetry      []int64
-	)
+	var changesetSpecsIDs []int64
+	workspaceIDs := make([]int64, len(workspaces))
 
-	for _, j := range jobs {
-		if !opts.IncludeCompleted && j.State == btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
-			continue
-		}
-
-		jobsToDelete = append(jobsToDelete, j.ID)
-
-		w, ok := workspacesByID[j.BatchSpecWorkspaceID]
-		if !ok {
-			continue
-		}
-		workspacesToRetry = append(workspacesToRetry, w.ID)
-		changesetSpecsToDelete = append(changesetSpecsToDelete, w.ChangesetSpecIDs...)
+	for i, w := range workspaces {
+		changesetSpecsIDs = append(changesetSpecsIDs, w.ChangesetSpecIDs...)
+		workspaceIDs[i] = w.ID
 	}
 
 	// Delete the old execution jobs.
-	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobsToDelete); err != nil {
+	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, store.DeleteBatchSpecWorkspaceExecutionJobsOpts{WorkspaceIDs: workspaceIDs}); err != nil {
 		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
 	}
 
 	// Delete the changeset specs they have created.
-	if len(changesetSpecsToDelete) > 0 {
-		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecsToDelete}); err != nil {
+	if len(changesetSpecsIDs) > 0 {
+		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecsIDs}); err != nil {
 			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
 		}
 	}
 
 	// Create new jobs
-	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspacesToRetry); err != nil {
+	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspaceIDs); err != nil {
 		return errors.Wrap(err, "creating new batch spec workspace execution jobs")
 	}
 

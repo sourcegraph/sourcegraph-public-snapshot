@@ -35,7 +35,7 @@ func TestBulkProcessor(t *testing.T) {
 	user := bt.CreateTestUser(t, db, true)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 	bt.CreateTestSiteCredential(t, bstore, repo)
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID, 0)
 	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-bulk", user.ID, batchSpec.ID)
 	changesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      user.ID,
@@ -235,20 +235,24 @@ func TestBulkProcessor(t *testing.T) {
 				"imported changeset": {
 					spec: nil,
 					changeset: bt.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						CurrentSpec:     0,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						CurrentSpec:      0,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStatePublished,
+						ExternalState:    btypes.ChangesetExternalStateOpen,
 					},
 					wantRetryable: false,
 				},
 				"bogus changeset spec ID, dude": {
 					spec: nil,
 					changeset: bt.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						CurrentSpec:     -1,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						CurrentSpec:      -1,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStatePublished,
+						ExternalState:    btypes.ChangesetExternalStateOpen,
 					},
 					wantRetryable: false,
 				},
@@ -261,9 +265,10 @@ func TestBulkProcessor(t *testing.T) {
 						Published: false,
 					},
 					changeset: bt.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStateUnpublished,
 					},
 					wantRetryable: false,
 				},
@@ -321,10 +326,11 @@ func TestBulkProcessor(t *testing.T) {
 								HeadRef:   "main",
 							})
 							changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
-								Repo:            repo.ID,
-								BatchChange:     batchChange.ID,
-								CurrentSpec:     changesetSpec.ID,
-								ReconcilerState: reconcilerState,
+								Repo:             repo.ID,
+								BatchChange:      batchChange.ID,
+								CurrentSpec:      changesetSpec.ID,
+								ReconcilerState:  reconcilerState,
+								PublicationState: btypes.ChangesetPublicationStateUnpublished,
 							})
 
 							job := &types.ChangesetJob{

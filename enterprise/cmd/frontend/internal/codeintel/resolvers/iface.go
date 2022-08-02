@@ -8,13 +8,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	codenavShared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	gs "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type GitserverClient interface {
@@ -34,11 +34,9 @@ type DBStore interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]dbstore.Upload, error)
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
-	GetDumpsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error)
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]dbstore.Dump, error)
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitdomain.CommitGraph) ([]dbstore.Dump, error)
-	DefinitionDumps(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []dbstore.Dump, err error)
-	ReferenceIDs(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ dbstore.PackageReferenceScanner, _ int, err error)
+
 	HasRepository(ctx context.Context, repositoryID int) (bool, error)
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
@@ -69,21 +67,24 @@ type DBStore interface {
 type LSIFStore interface {
 	Exists(ctx context.Context, bundleID int, path string) (bool, error)
 	DocumentPaths(ctx context.Context, bundleID int, path string) ([]string, int, error)
-	Stencil(ctx context.Context, bundelID int, path string) ([]lsifstore.Range, error)
-	Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error)
-	Definitions(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
-	References(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
-	Implementations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
-	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
-	Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error)
-	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]precise.MonikerData, error)
-	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []precise.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
-	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (precise.PackageInformationData, bool, error)
 }
 
 type IndexEnqueuer interface {
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]dbstore.Index, error)
 	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (*config.IndexConfiguration, []config.IndexJobHint, error)
+}
+
+type CodeNavResolver interface {
+	Definitions(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (_ []codenavShared.UploadLocation, err error)
+	Diagnostics(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []codenavShared.DiagnosticAtUpload, _ int, err error)
+	Hover(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (string, codenavShared.Range, bool, error)
+	Implementations(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (_ []codenavShared.UploadLocation, _ string, err error)
+	LSIFUploads(ctx context.Context, requestState codenav.RequestState) (uploads []codenavShared.Dump, err error)
+	Ranges(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []codenavShared.AdjustedCodeIntelligenceRange, err error)
+	References(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (_ []codenavShared.UploadLocation, _ string, err error)
+	Stencil(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (adjustedRanges []codenavShared.Range, err error)
+
+	GetHunkCacheSize() int
 }
 
 type (
