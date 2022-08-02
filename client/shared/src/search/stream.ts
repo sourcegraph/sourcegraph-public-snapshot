@@ -10,9 +10,13 @@ import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
-// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
-// and will therefore default to V1.
-export const LATEST_VERSION = 'V2'
+// The version is set based on the release tag of the instance.
+// History:
+// V3 - default to standard interpretation (RFC 675): Interpret patterns enclosed by /.../ as regular expressions. Interpret patterns literally otherwise.
+// V2 - default to interpreting patterns literally only.
+// V1 - default to interpreting patterns as regular expressions.
+// None - Anything before 3.9.0 will not pass a version parameter and defaults to V1.
+export const LATEST_VERSION = 'V3'
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
 export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null

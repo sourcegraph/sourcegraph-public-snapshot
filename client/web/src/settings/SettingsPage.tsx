@@ -6,8 +6,6 @@ import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { extensionsAsCoreFeaturesEnabled } from '../util/settings'
-
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
@@ -31,8 +29,6 @@ export class SettingsPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
     public render(): JSX.Element | null {
-        const extensionsAsCoreFeatures = extensionsAsCoreFeaturesEnabled(this.props.settingsCascade)
-
         return (
             <SettingsFile
                 settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
@@ -43,7 +39,6 @@ export class SettingsPage extends React.PureComponent<Props, State> {
                 history={this.props.history}
                 isLightTheme={this.props.isLightTheme}
                 telemetryService={this.props.telemetryService}
-                extensionsAsCoreFeatures={extensionsAsCoreFeatures}
             />
         )
     }

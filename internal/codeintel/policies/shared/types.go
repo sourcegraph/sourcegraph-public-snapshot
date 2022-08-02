@@ -28,7 +28,6 @@ type ConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
-	LockfileIndexingEnabled   bool
 }
 
 type GetConfigurationPoliciesOptions struct {
@@ -47,10 +46,6 @@ type GetConfigurationPoliciesOptions struct {
 	// ForIndexing indicates that only configuration policies with indexing enabled should
 	// be returned.
 	ForIndexing bool
-
-	// ForLockfileIndexing indicates that only configuration policies with
-	// lockfile indexing enabled should be returned.
-	ForLockfileIndexing bool
 
 	// Limit indicates the number of results to take from the result set.
 	Limit int

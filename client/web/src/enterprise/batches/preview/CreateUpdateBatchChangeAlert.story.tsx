@@ -1,5 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { MultiSelectContextProvider } from '../MultiSelectContext'

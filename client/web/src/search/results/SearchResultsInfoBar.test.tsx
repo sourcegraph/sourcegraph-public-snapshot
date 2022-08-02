@@ -13,7 +13,7 @@ import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResults
 const history = createMemoryHistory()
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,
-    platformContext: { forceUpdateTooltip: noop, settings: NEVER },
+    platformContext: { settings: NEVER },
     history,
     location: createLocation('/search'),
     authenticatedUser: { id: 'userID' },
@@ -23,7 +23,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     onSaveQueryClick: noop,
     stats: <div />,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     caseSensitive: false,
 }
 

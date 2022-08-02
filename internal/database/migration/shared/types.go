@@ -8,10 +8,15 @@ type StitchedMigration struct {
 	// several releases. This should contain all migrations defined in the associated version range.
 	Definitions *definition.Definitions
 
-	// LeafIDsByRev is a map from schema name to the set of identifiers of leaf migration for that
-	// schema. This is used to determine the points in the graph that are associated with a particular
-	// minor release.
-	LeafIDsByRev map[string][]int
+	// BoundsByRev is a map from version to the identifiers of the root and leaf migrations defined at
+	// that revision.
+	BoundsByRev map[string]MigrationBounds
+}
+
+// MigrationBounds indicates version boundaries within a StitchedMigration.
+type MigrationBounds struct {
+	RootID  int
+	LeafIDs []int
 }
 
 // IndexStatus describes the state of an index. Is{Valid,Ready,Live} is taken

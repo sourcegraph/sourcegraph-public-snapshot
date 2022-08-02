@@ -27,8 +27,10 @@ export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<u
     <SourcegraphWebApp
         extensionAreaRoutes={extensionAreaRoutes}
         extensionAreaHeaderNavItems={extensionAreaHeaderNavItems}
-        extensionsAreaRoutes={extensionsAreaRoutes}
-        extensionsAreaHeaderActionButtons={extensionsAreaHeaderActionButtons}
+        extensionsAreaRoutes={window.context.enableLegacyExtensions ? extensionsAreaRoutes : undefined}
+        extensionsAreaHeaderActionButtons={
+            window.context.enableLegacyExtensions ? extensionsAreaHeaderActionButtons : undefined
+        }
         siteAdminAreaRoutes={siteAdminAreaRoutes}
         siteAdminSideBarGroups={siteAdminSidebarGroups}
         siteAdminOverviewComponents={siteAdminOverviewComponents}

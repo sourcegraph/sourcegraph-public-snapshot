@@ -115,9 +115,9 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
 
     const ranking = useMemo(() => {
         if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
-            return new LineRanking(coreWorkflowImprovementsEnabled ? 1 : 10)
+            return new LineRanking(coreWorkflowImprovementsEnabled ? 5 : 10)
         }
-        return new ZoektRanking(coreWorkflowImprovementsEnabled ? 1 : 5)
+        return new ZoektRanking(coreWorkflowImprovementsEnabled ? 3 : 5)
     }, [settings, coreWorkflowImprovementsEnabled])
 
     // The number of lines of context to show before and after each match.

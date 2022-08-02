@@ -648,7 +648,7 @@ func TestUsers_Delete(t *testing.T) {
 				}
 			} else {
 				// Event logs are unchanged
-				if eventLog.UserID != user.ID {
+				if int32(eventLog.UserID) != user.ID {
 					t.Error("After soft delete user id should be non zero")
 				}
 				if len(eventLog.AnonymousUserID) != 0 {

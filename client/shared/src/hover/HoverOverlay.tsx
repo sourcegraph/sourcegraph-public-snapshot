@@ -62,7 +62,7 @@ export interface HoverOverlayProps
         TelemetryProps,
         ThemeProps,
         Pick<HoverOverlayAlertsProps, 'onAlertDismissed'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
+        PlatformContextProps<'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 

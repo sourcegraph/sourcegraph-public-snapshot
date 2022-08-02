@@ -22,7 +22,7 @@ jest.mock('./theme', () => ({
 describe('Layout', () => {
     const defaultProps: LayoutProps = ({
         // Parsed query components
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         setPatternType: () => {},
         caseSensitive: false,
         setCaseSensitivity: () => {},
@@ -37,24 +37,29 @@ describe('Layout', () => {
         },
         keyboardShortcuts: [],
         extensionsController,
-        platformContext: { forceUpdateTooltip: () => {}, settings: NEVER },
+        platformContext: { settings: NEVER },
     } as unknown) as LayoutProps
 
+    const origContext = window.context
     beforeEach(() => {
         const root = document.createElement('div')
         root.id = 'root'
         document.body.append(root)
+        window.context = {
+            enableLegacyExtensions: true,
+        } as any
     })
 
     afterEach(() => {
         document.querySelector('#root')?.remove()
+        window.context = origContext
     })
 
     it('should update patternType if different between URL and context', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
 
-        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
+        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.standard })
 
         render(
             <MockedTestProvider>
@@ -73,7 +78,7 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=&patternType=regexp' })
 
-        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
+        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.standard })
 
         render(
             <MockedTestProvider>
@@ -85,7 +90,7 @@ describe('Layout', () => {
             </MockedTestProvider>
         )
 
-        expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.literal)
+        expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.standard)
     })
 
     it('should update caseSensitive if different between URL and context', () => {

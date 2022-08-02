@@ -37,7 +37,8 @@ const {
   INTEGRATION_TESTS,
   ENTERPRISE,
   EMBED_DEVELOPMENT,
-  ENABLE_MONITORING,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
   SOURCEGRAPH_API_URL,
   WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
@@ -55,7 +56,8 @@ const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOP
 
 const RUNTIME_ENV_VARIABLES = {
   NODE_ENV,
-  ENABLE_MONITORING,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
   INTEGRATION_TESTS,
   COMMIT_SHA,
   RELEASE_CANDIDATE_VERSION,
@@ -99,6 +101,11 @@ const config = {
         react: {
           test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
           name: 'react',
+          chunks: 'all',
+        },
+        opentelemetry: {
+          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          name: 'opentelemetry',
           chunks: 'all',
         },
       },
