@@ -15,11 +15,11 @@ import {
     useCodeMirror,
     useCompartment,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 
-import { blameDecorationType, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { blameDecorationType, BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import {
     enableExtensionsDecorationsColumnView as enableColumnView,
     showTextDocumentDecorations,
@@ -27,7 +27,8 @@ import {
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { blobPropsFacet } from './codemirror'
+import { blobPropsFacet, hovercardRangeFromPin } from './codemirror'
+import { hovercardRanges } from './codemirror/hovercard'
 
 const staticExtensions: Extension = [
     // Using EditorState.readOnly instead of EditorView.editable allows us to
@@ -75,6 +76,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
+    const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
+    const blobIsLoading = useBlobIsLoading(blobInfo, location.pathname)
 
     const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
 
@@ -94,6 +97,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [wrapCode, isLightTheme, location, enableExtensionsDecorationsColumnView, blameDecorations]
     )
     const [settingsCompartment, updateSettingsCompartment] = useCompartment(settings)
+
+    // Used to render pinned hovercards
+    const [pinnedRangeField, updatePinnedRangeField] = useMemo(() => {
+        return createUpdateableField(urlIsPinned(location.search) ? position : null, field =>
+            hovercardRangeFromPin(field)
+        )
+    }, [blobInfo])
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -127,6 +137,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const [propsField, updatePropsField] = useMemo(
         () => createUpdateableField(props, field => blobPropsFacet.from(field)),
+        // Should only be executed on first render
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
     const extensions = useMemo(
@@ -137,6 +149,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             syntaxHighlight.of(blobInfo),
             sourcegraphExtensions({ blobInfo, extensionsController }),
             propsField,
+            pinnedRangeField,
         ],
         [propsField, settingsCompartment, onSelection, blobInfo, extensionsController]
     )
@@ -182,19 +195,37 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     }, [blobInfo, extensions])
 
     // Update selected lines when URL changes
-    const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
     useEffect(() => {
-        if (editor) {
-            // This check is necessary because at the moment the position
-            // information is updated before the file content, meaning it's
-            // possible that the currently loaded document has fewer lines.
-            if (!position?.line || editor.state.doc.lines >= (position.endLine ?? position.line)) {
-                selectLines(editor, position.line ? position : null)
-            }
+        if (editor && !blobIsLoading) {
+            selectLines(editor, position.line ? position : null)
         }
         // blobInfo isn't used but we need to trigger the line selection and focus
         // logic whenever the content changes
-    }, [editor, position, blobInfo])
+    }, [editor, position, blobIsLoading])
+
+    // Update pinned hovercard range
+    const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
+    useEffect(() => {
+        if (editor && !blobIsLoading) {
+            updatePinnedRangeField(editor, hasPin ? position : null)
+        }
+        // blobInfo isn't used but we need to trigger the line selection and focus
+        // logic whenever the content changes
+    }, [position, hasPin, blobIsLoading])
 
     return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
+}
+
+function urlIsPinned(search: string): boolean {
+    return new URLSearchParams(search).get('popover') === 'pinned'
+}
+
+/**
+ * Because location changes before new blob info is available we often apply
+ * updates to the old document, which can be problematic or thorw errors. This
+ * helper hook observers keeps track of blob info and location changes to
+ * determine whether or not to apply updates.
+ */
+function useBlobIsLoading(blobInfo: BlobInfo, pathname: string): boolean {
+    return pathname !== useMemo(() => pathname, [blobInfo])
 }

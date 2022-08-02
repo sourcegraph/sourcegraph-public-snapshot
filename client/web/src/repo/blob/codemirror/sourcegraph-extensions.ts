@@ -12,7 +12,7 @@ import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
 import { combineLatest, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { filter, map, skipWhile, switchMap, distinctUntilChanged, startWith } from 'rxjs/operators'
+import { filter, map, skipWhile, switchMap, distinctUntilChanged, startWith, tap } from 'rxjs/operators'
 import { TextDocumentDecorationType } from 'sourcegraph'
 
 import { DocumentHighlight, LineOrPositionOrRange } from '@sourcegraph/codeintellify'
@@ -24,7 +24,7 @@ import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { toURIWithPath, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { StatusBar } from '../../../extensions/components/StatusBar'
 import { BlobInfo, BlobProps } from '../Blob'
@@ -127,10 +127,12 @@ export function sourcegraphExtensions({
             }
         }),
         sgExtensionsContextField,
+        // This needs to come before document highlights so that the hovered
+        // token is highlighted differently
+        hovercardDataSource(),
         documentHighlightsDataSource(),
         textDocumentDecorations(),
         updateSelection(),
-        hovercardDataSource(),
         statusBar,
         warmupReferences,
     ]
@@ -342,7 +344,7 @@ function hovercardDataSource() {
 
     const createObservable = (
         view: EditorView,
-        position: Position
+        position: UIPositionSpec['position']
     ): Observable<Pick<HoverOverlayBaseProps, 'hoverOrError' | 'actionsOrError'>> =>
         nextContext.pipe(
             filter((context): context is Context => context != null),
@@ -372,7 +374,6 @@ function hovercardDataSource() {
                 hoverOrError: hoverResult.result,
                 actionsOrError: actionsResult,
             }))
-            //tap(console.log),
         )
 
     return [updateOnContextChange.of(context => nextContext.next(context)), hovercardSource.of(createObservable)]
