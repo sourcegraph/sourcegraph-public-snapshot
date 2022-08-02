@@ -14,10 +14,7 @@ import { Position } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
-import { stringHuman } from '../search/query/printer'
 import { findFilter, FilterKind } from '../search/query/query'
-import { scanSearchQuery } from '../search/query/scanner'
-import { createLiteral } from '../search/query/token'
 import { appendContextFilter } from '../search/query/transformer'
 
 export interface RepoSpec {
@@ -519,41 +516,6 @@ export function withWorkspaceRootInputRevision(
     return uri // unchanged
 }
 
-interface QueryCompatibility {
-    queryInput: string
-    patternTypeInput: SearchPatternType
-}
-
-export function literalSearchCompatibility({ queryInput, patternTypeInput }: QueryCompatibility): QueryCompatibility {
-    if (patternTypeInput !== SearchPatternType.literal) {
-        return { queryInput, patternTypeInput }
-    }
-    const tokens = scanSearchQuery(queryInput, false, SearchPatternType.standard)
-    if (tokens.type === 'error') {
-        return { queryInput, patternTypeInput }
-    }
-    const newQueryInput = stringHuman(
-        tokens.term.map(token =>
-            token.type === 'pattern' && token.delimited
-                ? {
-                      type: 'filter',
-                      range: { start: 0, end: 0 },
-                      field: createLiteral('content', { start: 0, end: 0 }, false),
-                      value: createLiteral(`/${token.value}/`, { start: 0, end: 0 }, true),
-                      negated: false /** FIXME */,
-                  }
-                : token
-        )
-    )
-
-    console.log('mapped to standard')
-    // setSearchPatternType(SearchPatternType.standard)
-
-    return {
-        queryInput: newQueryInput,
-        patternTypeInput: SearchPatternType.standard,
-    }
-}
 /**
  * Builds a URL query for the given query (without leading `?`).
  *
@@ -563,20 +525,13 @@ export function literalSearchCompatibility({ queryInput, patternTypeInput }: Que
  *
  */
 export function buildSearchURLQuery(
-    queryInput: string,
-    patternTypeInput: SearchPatternType,
+    query: string,
+    patternType: SearchPatternType,
     caseSensitive: boolean,
     searchContextSpec?: string,
     searchParametersList?: { key: string; value: string }[]
 ): string {
     const searchParameters = new URLSearchParams()
-
-    console.log(`patterntype is ${patternTypeInput}`)
-
-    const { queryInput: query, patternTypeInput: patternType } = literalSearchCompatibility({
-        queryInput,
-        patternTypeInput,
-    })
     let queryParameter = query
     let patternTypeParameter: string = patternType
     let caseParameter: string = caseSensitive ? 'yes' : 'no'
