@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log"
@@ -42,16 +43,12 @@ func main() {
 		Name:       "buildkite-ci",
 		Version:    "-",
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySink())
+	}, log.NewSentrySinkWith(log.SentrySink{
+		ClientOptions: sentry.ClientOptions{
+			Dsn: "CI_SENRTY_DSN",
+		},
+	}))
 	defer liblog.Sync()
-
-	liblog.Update(func() log.SinksConfig {
-		return log.SinksConfig{
-			Sentry: &log.SentrySink{
-				DSN: os.Getenv("CI_SENRTY_DSN"),
-			},
-		}
-	})()
 
 	logger = log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
