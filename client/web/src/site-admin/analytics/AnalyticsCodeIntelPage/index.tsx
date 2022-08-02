@@ -106,6 +106,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 description: 'Cross repo events',
                 position: 'right',
                 color: 'var(--body-color)',
+                tooltip:
+                    'Cross repository code intel identifies symbols in code throughout your Sourcegraph instance, in a single click, without locating and downloading a repository.',
             },
         ]
 

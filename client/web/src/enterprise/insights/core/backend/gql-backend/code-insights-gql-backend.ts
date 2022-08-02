@@ -76,6 +76,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     // Prevent unnecessary network request after mutation over dashboard or insights within
                     // current dashboard
                     nextFetchPolicy: 'cache-first',
+                    errorPolicy: 'all',
                 })
             ).pipe(
                 map(({ data }) => data.insightViews.nodes.map(createInsightView)),
@@ -90,6 +91,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 // Prevent unnecessary network request after mutation over dashboard or insights within
                 // current dashboard
                 nextFetchPolicy: 'cache-first',
+                errorPolicy: 'all',
                 variables: { id: dashboardId },
             })
         ).pipe(
@@ -104,6 +106,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             this.apolloClient.watchQuery<GetInsightsResult>({
                 query: GET_INSIGHTS_GQL,
                 variables: { id },
+                errorPolicy: 'all',
             })
         ).pipe(
             map(({ data }) => {

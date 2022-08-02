@@ -206,6 +206,8 @@ type stubBadHTTPRedirectTransport struct {
 	tr http.RoundTripper
 }
 
+var _ httpcli.WrappedTransport = &stubBadHTTPRedirectTransport{}
+
 const stubBadHTTPRedirectLocation = `https://amazonaws.com/badhttpredirectlocation`
 
 func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -226,8 +228,4 @@ func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response
 	return resp, err
 }
 
-// UnwrappableTransport signals that this transport can't be wrapped. In
-// particular this means we won't respect global external
-// settings. https://github.com/sourcegraph/sourcegraph/issues/71 and
-// https://github.com/sourcegraph/sourcegraph/issues/7738
-func (stubBadHTTPRedirectTransport) UnwrappableTransport() {}
+func (t stubBadHTTPRedirectTransport) Unwrap() *http.RoundTripper { return &t.tr }
