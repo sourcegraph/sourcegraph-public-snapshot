@@ -40,9 +40,9 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 	patterns := []string{}
 	parameters := []query.Parameter{
 		// Force search backend to return all results
-		{Field: "count", Value: "all"},
+		{Field: query.FieldCount, Value: "all"},
 		// Only search file content
-		{Field: "type", Value: "file"},
+		{Field: query.FieldType, Value: "file"},
 	}
 	seenLangParameter := false
 
@@ -55,12 +55,14 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 					patterns = append(patterns, concatNodeToPatterns(op)...)
 				}
 			case query.Parameter:
-				if op.Field != "count" && op.Field != "case" && op.Field != "type" {
+				if op.Field != query.FieldCount && op.Field != query.FieldCase && op.Field != query.FieldType {
 					parameters = append(parameters, op)
 				}
-				if op.Field == "lang" {
+				if op.Field == query.FieldLang {
 					seenLangParameter = true
 				}
+			case query.Pattern:
+				patterns = append(patterns, op.Value)
 			}
 		}
 	case query.Concat:
@@ -73,7 +75,7 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 		for idx, pattern := range patterns {
 			langAlias, ok := enry.GetLanguageByAlias(pattern)
 			if ok {
-				parameters = append(parameters, query.Parameter{Field: "lang", Value: langAlias})
+				parameters = append(parameters, query.Parameter{Field: query.FieldLang, Value: langAlias})
 				langPatternIdx = idx
 				break
 			}
@@ -141,7 +143,7 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	for _, p := range transformedPatterns {
 		patternNodes = append(patternNodes, query.Pattern{Value: p})
 	}
-	nodes = append(nodes, query.Operator{Kind: query.Or, Operands: patternNodes})
+	nodes = append(nodes, query.NewOperator(patternNodes, query.Or)...)
 
 	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(nodes)
 	if err != nil {

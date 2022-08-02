@@ -3,7 +3,7 @@ package keyword
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
@@ -39,31 +39,34 @@ func TestTransformPattern(t *testing.T) {
 	}
 
 	gotPatterns := transformPatterns(patterns)
-	if diff := cmp.Diff(wantPatterns, gotPatterns); diff != "" {
-		t.Fatal(diff)
-	}
+	autogold.Want("transform keyword patterns", wantPatterns).Equal(t, gotPatterns)
 }
 
 func TestQueryStringToKeywordQuery(t *testing.T) {
 	tests := []struct {
 		query        string
-		wantQuery    string
-		wantPatterns []string
+		wantQuery    autogold.Value
+		wantPatterns autogold.Value
 	}{
 		{
+			query:        "context:global abc",
+			wantQuery:    autogold.Want("one pattern query with global context", "count:99999999 type:file context:global abc"),
+			wantPatterns: autogold.Want("patterns for one pattern query with global context", []string{"abc"}),
+		},
+		{
 			query:        "abc def",
-			wantQuery:    "count:99999999 type:file (abc OR def)",
-			wantPatterns: []string{"abc", "def"},
+			wantQuery:    autogold.Want("two pattern query", "count:99999999 type:file (abc OR def)"),
+			wantPatterns: autogold.Want("patterns for two pattern query", []string{"abc", "def"}),
 		},
 		{
 			query:        "context:global lang:Go how to unzip file",
-			wantQuery:    "count:99999999 type:file context:global lang:Go (unzip OR file)",
-			wantPatterns: []string{"unzip", "file"},
+			wantQuery:    autogold.Want("query with existing filters", "count:99999999 type:file context:global lang:Go (unzip OR file)"),
+			wantPatterns: autogold.Want("patterns for query with existing filters", []string{"unzip", "file"}),
 		},
 		{
 			query:        "K MEANS CLUSTERING in python",
-			wantQuery:    "count:99999999 type:file lang:Python (k OR mean OR cluster)",
-			wantPatterns: []string{"k", "mean", "cluster"},
+			wantQuery:    autogold.Want("query with language and uppercase patterns", "count:99999999 type:file lang:Python (k OR mean OR cluster)"),
+			wantPatterns: autogold.Want("patterns for query with language and uppercase patterns", []string{"k", "mean", "cluster"}),
 		},
 	}
 
@@ -77,14 +80,8 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 				t.Fatal("keywordQuery == nil")
 			}
 
-			if diff := cmp.Diff(tt.wantPatterns, keywordQuery.patterns); diff != "" {
-				t.Fatal(diff)
-			}
-
-			keywordQueryString := query.StringHuman(keywordQuery.query.ToParseTree())
-			if keywordQueryString != tt.wantQuery {
-				t.Fatalf("expected `%s` query, got `%s`", tt.wantQuery, keywordQueryString)
-			}
+			tt.wantPatterns.Equal(t, keywordQuery.patterns)
+			tt.wantQuery.Equal(t, query.StringHuman(keywordQuery.query.ToParseTree()))
 		})
 	}
 }
