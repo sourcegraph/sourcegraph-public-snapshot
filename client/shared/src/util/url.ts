@@ -601,7 +601,7 @@ export interface ParsedRepoRevision {
 export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
     const firstAtSign = repoRevision.indexOf('@')
     if (firstAtSign === -1) {
-        return { repoName: repoRevision }
+        return { repoName: decodeURIComponent(repoRevision) }
     }
 
     const repository = repoRevision.slice(0, firstAtSign)
