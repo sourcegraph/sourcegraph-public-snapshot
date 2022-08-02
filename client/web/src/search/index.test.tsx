@@ -116,6 +116,26 @@ describe('search/index', () => {
             caseSensitive: false,
         })
     })
+
+    test('parseSearchURL preserves literal search compatibility', () => {
+        expect(parseSearchURL('q=/a literal pattern/&patternType=literal')).toStrictEqual({
+            query: 'content:"/a literal pattern/"',
+            patternType: SearchPatternType.standard,
+            caseSensitive: false,
+        })
+
+        expect(parseSearchURL('q=not /a literal pattern/&patternType=literal')).toStrictEqual({
+            query: 'not content:"/a literal pattern/"',
+            patternType: SearchPatternType.standard,
+            caseSensitive: false,
+        })
+
+        expect(parseSearchURL('q=un.*touched&patternType=literal')).toStrictEqual({
+            query: 'un.*touched',
+            patternType: SearchPatternType.standard,
+            caseSensitive: false,
+        })
+    })
 })
 
 describe('repoFilterForRepoRevision escapes values with spaces', () => {
