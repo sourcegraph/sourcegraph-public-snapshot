@@ -37,7 +37,7 @@ const META: ComponentMeta<typeof NotepadContainer> = {
 export default META
 
 const mockEntries: NotepadEntry[] = [
-    { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
+    { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.standard },
     { id: 1, type: 'file', path: 'path/to/file1', repo: 'my/repo', revision: 'master', lineRange: null },
     {
         id: 2,
@@ -52,7 +52,7 @@ const mockEntries: NotepadEntry[] = [
         type: 'search',
         query: 'file:ts$ a really long search query that should wrap',
         caseSensitive: false,
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
     },
 ]
 
@@ -90,7 +90,7 @@ NotepadManyEntries.args = {
         type: 'search',
         query: `TODO${index}`,
         caseSensitive: false,
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
     })),
     open: true,
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -117,7 +116,7 @@ func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.Back
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, handlerMetrics.handler)
 }
 
-type sendEventsCallbackFunc func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error
+type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error
 
 func newHandlerMetrics(observationContext *observation.Context) *handlerMetrics {
 	redM := metrics.NewREDMetrics(
@@ -214,7 +213,7 @@ func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 }
 
 // sendBatch wraps the send events callback in a metric
-func sendBatch(ctx context.Context, events []*types.Event, topicConfig topicConfig, metadata instanceMetadata, metrics *handlerMetrics, callback sendEventsCallbackFunc) (err error) {
+func sendBatch(ctx context.Context, events []*database.Event, topicConfig topicConfig, metadata instanceMetadata, metrics *handlerMetrics, callback sendEventsCallbackFunc) (err error) {
 	ctx, _, endObservation := metrics.sendEvents.With(ctx, &err, observation.Args{})
 	sentCount := 0
 	defer func() { endObservation(float64(sentCount), observation.Args{}) }()
@@ -228,7 +227,7 @@ func sendBatch(ctx context.Context, events []*types.Event, topicConfig topicConf
 }
 
 // fetchEvents wraps the event data fetch in a metric
-func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore database.EventLogStore, metrics *handlerMetrics) (results []*types.Event, err error) {
+func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore database.EventLogStore, metrics *handlerMetrics) (results []*database.Event, err error) {
 	ctx, _, endObservation := metrics.fetchEvents.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(results)), observation.Args{}) }()
 
@@ -274,7 +273,7 @@ func getTopicConfig() (topicConfig, error) {
 	return config, nil
 }
 
-func buildBigQueryObject(event *types.Event, metadata *instanceMetadata) *bigQueryEvent {
+func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *bigQueryEvent {
 	return &bigQueryEvent{
 		EventName:         event.Name,
 		UserID:            int(event.UserID),
@@ -282,7 +281,7 @@ func buildBigQueryObject(event *types.Event, metadata *instanceMetadata) *bigQue
 		URL:               "", // omitting URL intentionally
 		Source:            event.Source,
 		Timestamp:         event.Timestamp.Format(time.RFC3339),
-		PublicArgument:    event.Argument,
+		PublicArgument:    string(event.Argument),
 		Version:           event.Version, // sending event Version since these events could be scraped from the past
 		SiteID:            metadata.SiteID,
 		LicenseKey:        metadata.LicenseKey,
@@ -291,7 +290,7 @@ func buildBigQueryObject(event *types.Event, metadata *instanceMetadata) *bigQue
 	}
 }
 
-func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, metadata instanceMetadata) error {
+func sendEvents(ctx context.Context, events []*database.Event, config topicConfig, metadata instanceMetadata) error {
 	client, err := pubsub.NewClient(ctx, config.projectName)
 	if err != nil {
 		return errors.Wrap(err, "pubsub.NewClient")

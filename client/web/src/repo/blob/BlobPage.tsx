@@ -92,6 +92,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
+
     useNotepad(
         useMemo(
             () => ({

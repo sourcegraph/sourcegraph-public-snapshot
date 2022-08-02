@@ -1178,6 +1178,25 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "observability.client": {
+      "description": "EXPERIMENTAL: Configuration for client observability",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "openTelemetry": {
+          "description": "Configuration for the client OpenTelemetry exporter",
+          "type": "object",
+          "properties": {
+            "endpoint": {
+              "description": "OpenTelemetry tracing collector endpoint",
+              "type": "string",
+              "examples": ["/-/debug/otlp", "https://COLLECTOR_ENDPOINT"],
+              "default": "/-/debug/otlp"
+            }
+          }
+        }
+      }
+    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",

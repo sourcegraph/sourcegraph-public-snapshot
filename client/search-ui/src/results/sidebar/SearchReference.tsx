@@ -343,8 +343,7 @@ const SearchReferenceExample: React.FunctionComponent<React.PropsWithChildren<Se
     example,
     onClick,
 }) => {
-    // All current examples are literal queries
-    const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
+    const scanResult = scanSearchQuery(example, false, SearchPatternType.standard)
     // We only use valid queries as examples, so this will always be true
     if (scanResult.type === 'success') {
         return (

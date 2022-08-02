@@ -136,7 +136,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('no decoration for literal', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.literal))))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.standard))))
             .toMatchInlineSnapshot(`
             [
               {
