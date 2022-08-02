@@ -13,6 +13,16 @@ type Warning interface {
 
 // warning is the error that wraps an error that is meant to be handled as a warning and not a
 // critical error.
+//
+// AUTHOR'S NOTE
+//
+// @indradhanush: This type does not need a method `As(any) bool` and can be "asserted" with
+// errors.As (see example below) when the underlying package being used is cockroachdb/errors. The
+// `As` method in this library is able to distinguish between warning and native error types.
+//
+// When writing this part of the code, I had implemented an `As(any) bool` method into this struct
+// but it never got invoked and the corresponding tests in TestWarningError still pass the
+// assertions. As a result I chose to not keep it around.
 type warning struct {
 	error error
 }
