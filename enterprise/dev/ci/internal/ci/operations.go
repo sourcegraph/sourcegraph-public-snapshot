@@ -43,10 +43,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	// Simple, fast-ish linter checks
-	linterOps := operations.NewNamedSet("Linters and static analysis",
-		// lightweight check that works over a lot of stuff - we are okay with running
-		// these on all PRs
-		addPrettier)
+	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if diff.Has(changed.GraphQL) {
 		linterOps.Append(addGraphQLLint)
 	}
