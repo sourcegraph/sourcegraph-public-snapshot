@@ -599,7 +599,13 @@ export interface ParsedRepoRevision {
  * Parses a repo-revision string like "my/repo@my/revision" to the repo and revision components.
  */
 export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
-    const [repository, revision] = repoRevision.split('@', 2) as [string, string | undefined]
+    const firstAtSign = repoRevision.indexOf('@')
+    if (firstAtSign === -1) {
+        return { repoName: decodeURIComponent(repoRevision) }
+    }
+
+    const repository = repoRevision.slice(0, firstAtSign)
+    const revision = repoRevision.slice(firstAtSign + 1)
     return {
         repoName: decodeURIComponent(repository),
         revision: revision && decodeURIComponent(revision),
