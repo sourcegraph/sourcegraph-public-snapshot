@@ -21,6 +21,7 @@ export interface CategoricalLikeChart<Datum> {
 }
 
 export interface Series<Datum> {
+
     /** Unique series id. */
     id: string | number
 
