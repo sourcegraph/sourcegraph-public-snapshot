@@ -289,8 +289,8 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
 	defer cancel()
 	go func() {
-		select {
-		case <-ctx.Done():
+		<-ctx.Done()
+		if ctx.Err() == context.DeadlineExceeded {
 			logger.Warn("gathering metrics took longer than expected", log.Duration("maxDuration", maxDuration))
 		}
 	}()
