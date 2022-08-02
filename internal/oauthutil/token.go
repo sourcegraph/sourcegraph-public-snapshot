@@ -124,8 +124,6 @@ func newTokenRequest(oauthCtx OauthContext, refeshToken string, authStyle AuthSt
 		v.Set("refresh_token", refeshToken)
 	}
 
-	fmt.Println(".... NEW TOKEN REQUEST  - V", v)
-
 	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, strings.NewReader(v.Encode()))
 
 	if err != nil {
@@ -139,11 +137,6 @@ func newTokenRequest(oauthCtx OauthContext, refeshToken string, authStyle AuthSt
 }
 
 func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
-
-	fmt.Println("... auth style", authStyle)
-	fmt.Println(".... retrieve token oauthctx", oauthCtx)
-	fmt.Println(".... retrieve token ctx", ctx)
-
 	req, err := newTokenRequest(oauthCtx, refreshToken, authStyle)
 	if err != nil {
 		return nil, err
@@ -165,7 +158,6 @@ func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext
 }
 
 func doTokenRoundTrip(ctx context.Context, doer httpcli.Doer, req *http.Request) (*Token, error) {
-	fmt.Println("... 0 = do token round trip request", req)
 	r, err := doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
@@ -177,18 +169,12 @@ func doTokenRoundTrip(ctx context.Context, doer httpcli.Doer, req *http.Request)
 		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
 	}
 
-	fmt.Println("... 1 do token round trip...")
 	if code := r.StatusCode; code < 200 || code > 299 {
-		fmt.Println("1 A do token round trip -- r.Status code", r.StatusCode)
-		fmt.Println("1 A do token round trip -- body", string(body))
-
 		return nil, &RetrieveError{
 			Response: r,
 			Body:     body,
 		}
 	}
-
-	fmt.Println("... 2 do token round trip...")
 
 	var token *Token
 	content, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))

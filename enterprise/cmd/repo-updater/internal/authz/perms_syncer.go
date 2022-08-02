@@ -3,7 +3,6 @@ package authz
 import (
 	"container/heap"
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -269,8 +268,6 @@ func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config
 }
 
 func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) (err error) {
-	fmt.Println("... MAYBE REFRESH TOKEN for user id account....", acct.UserID)
-
 	if acct.ServiceType != extsvc.TypeGitLab {
 		return nil
 	}
@@ -305,27 +302,17 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	// The default window for the oauth2 library is only 10 seconds, we extend this
 	// to give ourselves a better chance of not having a token expire.
 	tok.Expiry = tok.Expiry.Add(expiryWindow)
-
-	fmt.Println("... TOK FROM EXTERNAL ACCOUNT DATA - user...", acct.UserID, tok)
-
 	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
 
 	if err != nil {
-		fmt.Println("TOKEN SOURCE DIDN't WORK")
 		return errors.Wrap(err, "refresh token")
 	}
 
-	fmt.Println("... TOK FROM oauth.. user.", acct.UserID, refreshedToken)
-	fmt.Println("... comparing access tokens for user ...", acct.UserID, refreshedToken.AccessToken != tok.AccessToken)
-
 	if refreshedToken.AccessToken != tok.AccessToken {
-		fmt.Println("... TIME TO REFRESH TOKEN....")
 		defer func() {
 			success := err == nil
 			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
 		}()
-
-		fmt.Println(".... SETTING THE REFRESH TOKEN TO THE USER DATA")
 		acct.AccountData.SetAuthData(refreshedToken)
 		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
 		if err != nil {
@@ -333,7 +320,6 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 		}
 	}
 
-	fmt.Println(".... DONE....")
 	return nil
 }
 
@@ -439,7 +425,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 
 	for _, acct := range accts {
-		fmt.Println(".... RANGING ACCOUNTS - user id", acct.UserID)
 		acctLogger := logger.With(log.Int32("acct.ID", acct.ID))
 
 		provider := byServiceID[acct.ServiceID]
@@ -469,8 +454,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		//helper.RefreshToken(ctx)
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
-			fmt.Println("... ERROR IS NOT NIL...")
-
 			// The "401 Unauthorized" is returned by code hosts when the token is revoked
 			unauthorized := errcode.IsUnauthorized(err)
 			forbidden := errcode.IsForbidden(err)
@@ -482,13 +465,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				// longer has any access.
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
-					fmt.Println("... RETURN ERR...")
-
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
 				if unauthorized {
-					fmt.Println("... TOKEN IS REVOKEDL...")
-
 					acctLogger.Warn("setExternalAccountExpired, token is revoked",
 						log.Bool("unauthorized", unauthorized),
 					)
@@ -506,14 +485,11 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 			// Skip this external account if unimplemented
 			if errors.Is(err, &authz.ErrUnimplemented{}) {
-				fmt.Println("... UNIMPLEMENTED")
 				acctLogger.Debug("unimplemented", log.Error(err))
 				continue
 			}
 
 			if errcode.IsTemporary(err) {
-				fmt.Println("... IS TEMPORARY")
-
 				// If we have a temporary issue, we should instead return any permissions we
 				// already know about to ensure that we don't temporarily remove access for the
 				// user because of intermittent errors.
@@ -538,8 +514,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					return nil, nil, errors.Wrap(err, "fetching existing repo permissions")
 				}
 				for _, id := range currentRepos {
-					fmt.Println("... FETCHED CURRENT USER PERMS")
-
 					repoIDs = append(repoIDs, uint32(id))
 				}
 
@@ -594,8 +568,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			)
 		}
 
-		fmt.Println("... END")
-
 		for _, excludePrefix := range extPerms.ExcludeContains {
 			excludeContainsSpecs = append(excludeContainsSpecs,
 				api.ExternalRepoSpec{
@@ -645,8 +617,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 // fetchUserPermsViaExternalServices uses user code connections to list all
 // accessible private repositories on code hosts for the given user.
 func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, userID int32, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, err error) {
-	fmt.Println("... perms syncer... fetch user perms via ext svcs")
-
 	logger := s.logger.Scoped("fetchUserPermsViaExternalServices", "sync permissions using code host connections").With(log.Int32("userID", userID))
 
 	has, err := s.permsStore.UserIsMemberOfOrgHasCodeHostConnection(ctx, userID)
@@ -1144,7 +1114,6 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 }
 
 func (s *PermsSyncer) runSync(ctx context.Context) {
-	fmt.Println("...RUN SYNC")
 	logger := s.logger.Scoped("runSync", "routine to start processing the sync request queue")
 	defer logger.Info("stopped")
 

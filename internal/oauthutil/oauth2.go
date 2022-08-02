@@ -59,13 +59,10 @@ func getOAuthErrorDetails(body []byte) error {
 		// If we failed to unmarshal body with oauth error, it's not oauthError and we should return nil.
 		return nil
 	}
-	fmt.Println(".....getOAuthErrorDetails", oe)
-	fmt.Println(".....error", oe.Err)
 
 	// https://www.oauth.com/oauth2-servers/access-tokens/access-token-response/
 	// {"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}
 	if oe.Err == "invalid_token" && strings.Contains(oe.ErrorDescription, "expired") {
-		fmt.Println(".....invalid token")
 		return &oe
 	}
 	return nil
@@ -76,10 +73,7 @@ type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OauthC
 
 // todo docstring
 func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx OauthContext) (code int, header http.Header, body []byte, err error) {
-	fmt.Println(".... DO REQUEST....")
-
 	for i := 0; i < 2; i++ {
-		fmt.Println("... LOOP N", i)
 		if auther != nil {
 			if err := auther.Authenticate(req); err != nil {
 				return 0, nil, nil, errors.Wrap(err, "authenticate")
@@ -97,45 +91,23 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 			return 0, nil, nil, errors.Wrap(err, "read response body")
 		}
 
-		fmt.Println("...body...")
-		fmt.Println(string(body))
 		_ = resp.Body.Close()
 
-		fmt.Println("....IS RESPONSE UNAUTHORIZED ?", resp.StatusCode)
-
-		//resp.StatusCode = 401
-		fmt.Println("....2 IS RESPONSE UNAUTHORIZED ?", resp.StatusCode)
-
 		if resp.StatusCode == http.StatusUnauthorized && auther != nil {
-			fmt.Println("....DO REQUEST WITH UNAUTHORIZED.. loop", i)
 			if err = getOAuthErrorDetails(body); err != nil {
 				if _, ok := err.(*oauthError); ok {
 					//Refresh the token
-					fmt.Println("....1 WILL REFRESH TOKEN")
-
-					fmt.Println("params for token refresher")
-					fmt.Println("params ctx and oauthCTx", ctx, oauthCtx)
 					newToken, err := tokenRefresher(ctx, doer, oauthCtx)
 
 					if err != nil {
-						fmt.Println("....DO Request - error trying to  get new token")
-
 						return 0, nil, nil, errors.Wrap(err, "refresh token")
 					}
 					auther = auther.WithToken(newToken)
 					continue
 				}
-
-				fmt.Println(" .... error but not oauthError")
 				return 0, nil, nil, errors.Errorf("got unexpected OAuth error %T", err)
 			}
 		}
-
-		//fmt.Println("....NO NEED TO REFRESH")
-
-		fmt.Println("--- token refreshed???", resp.Header)
-		fmt.Println("--- token refreshed? body??", string(body))
-
 		return resp.StatusCode, resp.Header, body, nil
 	}
 	return 0, nil, nil, errors.Errorf("retries exceeded for OAuth refresher with status code %d and body %q", code, string(body))

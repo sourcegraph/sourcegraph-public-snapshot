@@ -97,7 +97,7 @@ func TestClient_doWithBaseURLWithOAuthContext(t *testing.T) {
 
 	ctx := context.Background()
 
-	client := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.Context) (string, error) {
+	client := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OauthContext) (string, error) {
 		return "refreshed-token", nil
 	}).getClient(&auth.OAuthBearerToken{Token: "bad token"})
 
@@ -108,4 +108,3 @@ func TestClient_doWithBaseURLWithOAuthContext(t *testing.T) {
 	_, _, err = client.doWithBaseURL(ctx, req, &result)
 	require.NoError(t, err)
 }
-

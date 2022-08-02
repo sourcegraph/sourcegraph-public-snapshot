@@ -112,8 +112,6 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefr
 		tokenRefresher: tokenRefresher,
 	}
 
-	fmt.Println("... new auth provider client", client)
-
 	return client
 }
 

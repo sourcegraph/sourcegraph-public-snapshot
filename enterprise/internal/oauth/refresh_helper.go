@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -59,8 +58,6 @@ func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context,
 }
 
 func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error) {
-	fmt.Println(".......RefreshToken original funcion")
-
 	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
 
 	defer func() {

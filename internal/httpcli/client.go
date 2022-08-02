@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"math"
 	"math/rand"
 	"net"
@@ -46,7 +45,6 @@ type DoerFunc func(*http.Request) (*http.Response, error)
 
 // Do implements the Doer interface.
 func (f DoerFunc) Do(req *http.Request) (*http.Response, error) {
-	fmt.Println("... Do method implementing the doer interface")
 	return f(req)
 }
 
