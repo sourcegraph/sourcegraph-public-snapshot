@@ -2,11 +2,8 @@ package repos
 
 import (
 	"context"
-	"encoding/json"
-	"net/url"
 
 	"github.com/sourcegraph/log"
-	"github.com/thanhpk/randstr"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type webhookBuildHandler struct {

@@ -84,10 +84,6 @@ type MockStore struct {
 	// UpdateRepoFunc is an instance of a mock function object controlling
 	// the behavior of the method UpdateRepo.
 	UpdateRepoFunc *StoreUpdateRepoFunc
-	// UserExternalAccountsStoreFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UserExternalAccountsStore.
-	UserExternalAccountsStoreFunc *StoreUserExternalAccountsStoreFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *StoreWithFunc
@@ -189,11 +185,6 @@ func NewMockStore() *MockStore {
 		},
 		UpdateRepoFunc: &StoreUpdateRepoFunc{
 			defaultHook: func(context.Context, *types.Repo) (r0 *types.Repo, r1 error) {
-				return
-			},
-		},
-		UserExternalAccountsStoreFunc: &StoreUserExternalAccountsStoreFunc{
-			defaultHook: func() (r0 database.UserExternalAccountsStore) {
 				return
 			},
 		},
@@ -304,11 +295,6 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.UpdateRepo")
 			},
 		},
-		UserExternalAccountsStoreFunc: &StoreUserExternalAccountsStoreFunc{
-			defaultHook: func() database.UserExternalAccountsStore {
-				panic("unexpected invocation of MockStore.UserExternalAccountsStore")
-			},
-		},
 		WithFunc: &StoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) Store {
 				panic("unexpected invocation of MockStore.With")
@@ -377,9 +363,6 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		UpdateRepoFunc: &StoreUpdateRepoFunc{
 			defaultHook: i.UpdateRepo,
-		},
-		UserExternalAccountsStoreFunc: &StoreUserExternalAccountsStoreFunc{
-			defaultHook: i.UserExternalAccountsStore,
 		},
 		WithFunc: &StoreWithFunc{
 			defaultHook: i.With,
@@ -2382,107 +2365,6 @@ func (c StoreUpdateRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpdateRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreUserExternalAccountsStoreFunc describes the behavior when the
-// UserExternalAccountsStore method of the parent MockStore instance is
-// invoked.
-type StoreUserExternalAccountsStoreFunc struct {
-	defaultHook func() database.UserExternalAccountsStore
-	hooks       []func() database.UserExternalAccountsStore
-	history     []StoreUserExternalAccountsStoreFuncCall
-	mutex       sync.Mutex
-}
-
-// UserExternalAccountsStore delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) UserExternalAccountsStore() database.UserExternalAccountsStore {
-	r0 := m.UserExternalAccountsStoreFunc.nextHook()()
-	m.UserExternalAccountsStoreFunc.appendCall(StoreUserExternalAccountsStoreFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// UserExternalAccountsStore method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreUserExternalAccountsStoreFunc) SetDefaultHook(hook func() database.UserExternalAccountsStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserExternalAccountsStore method of the parent MockStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreUserExternalAccountsStoreFunc) PushHook(hook func() database.UserExternalAccountsStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreUserExternalAccountsStoreFunc) SetDefaultReturn(r0 database.UserExternalAccountsStore) {
-	f.SetDefaultHook(func() database.UserExternalAccountsStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreUserExternalAccountsStoreFunc) PushReturn(r0 database.UserExternalAccountsStore) {
-	f.PushHook(func() database.UserExternalAccountsStore {
-		return r0
-	})
-}
-
-func (f *StoreUserExternalAccountsStoreFunc) nextHook() func() database.UserExternalAccountsStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreUserExternalAccountsStoreFunc) appendCall(r0 StoreUserExternalAccountsStoreFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreUserExternalAccountsStoreFuncCall
-// objects describing the invocations of this function.
-func (f *StoreUserExternalAccountsStoreFunc) History() []StoreUserExternalAccountsStoreFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreUserExternalAccountsStoreFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreUserExternalAccountsStoreFuncCall is an object that describes an
-// invocation of method UserExternalAccountsStore on an instance of
-// MockStore.
-type StoreUserExternalAccountsStoreFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.UserExternalAccountsStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreUserExternalAccountsStoreFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreUserExternalAccountsStoreFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // StoreWithFunc describes the behavior when the With method of the parent
