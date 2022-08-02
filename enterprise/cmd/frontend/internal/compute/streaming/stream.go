@@ -10,6 +10,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
@@ -63,6 +64,18 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	computeQuery, err := compute.Parse(args.Query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	searchQuery, err := computeQuery.ToSearchQuery()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	progress := &streamclient.ProgressAggregator{
 		Start:     start,
 		RepoNamer: streamclient.RepoNamer(ctx, h.db),
@@ -80,7 +93,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
-	events, getResults := NewComputeStream(ctx, h.logger, h.db, args.Query)
+	events, getResults := NewComputeStream(ctx, h.logger, h.db, searchQuery, computeQuery.Command)
 	events = batchEvents(events, 50*time.Millisecond)
 
 	// Store marshalled matches and flush periodically or when we go over
