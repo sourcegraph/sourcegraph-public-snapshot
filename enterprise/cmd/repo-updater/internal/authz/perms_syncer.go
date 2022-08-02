@@ -376,7 +376,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 
-		// If the "401 Unauthorized" is due to the token being expired, try to refresh it fetch perms again
+		// If the "401 Unauthorized" is due to the token being expired, try to refresh it.
 		tokenExpired := errcode.IsUnauthorized(err) && err.Error() == "invalid_token"
 		if err != nil && tokenExpired {
 			errRefreshingToken := s.tryToRefreshToken(ctx, acct)
@@ -388,7 +388,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				continue
 			}
 
-			// Try again if token is successfully refreshed
+			// Try to fetch perms again if the token is successfully refreshed
 			extPerms, err = provider.FetchUserPerms(ctx, acct, fetchOpts)
 			if err != nil {
 				acctLogger.Warn("setExternalAccountExpired, couldn't refresh token",
@@ -397,7 +397,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				continue
 			}
 		} else if err != nil && err.Error() != "invalid_token" {
-			// The "401 Unauthorized" could be triggered by other reasons such as a token is revoked
+			// The "401 Unauthorized" could be due to other reason besides a token is revoked
 			unauthorized := errcode.IsUnauthorized(err) && err.Error() != "invalid_token"
 			forbidden := errcode.IsForbidden(err)
 			// Detect GitHub account suspension error

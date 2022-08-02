@@ -30,7 +30,7 @@ func (token *OAuthBearerToken) Hash() string {
 	return hex.EncodeToString(key[:])
 }
 
-// todo docstring
+// WithToken returns an Oauth Bearer Token authenticator with a new token
 func (token *OAuthBearerToken) WithToken(newToken string) *OAuthBearerToken {
 	return &OAuthBearerToken{
 		Token: newToken,

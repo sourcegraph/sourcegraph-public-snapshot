@@ -45,7 +45,6 @@ func NewAuthzProviders(
 	return ps, problems, warnings
 }
 
-// func newAuthzProvider(urn strring, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
 func newAuthzProvider(c *ExternalConnection, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
 	if c.GitLabConnection.Authorization == nil {
 		return nil, nil

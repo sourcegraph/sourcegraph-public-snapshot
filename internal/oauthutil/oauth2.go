@@ -17,8 +17,7 @@ import (
 
 type Endpoint = oauth2.Endpoint
 
-// todo docstring
-// todo Maybe can be deleted based on how do token refresh (i.e. need access to external service object anyway)
+// OauthContext contains configuration that is used in requests to refresh expired oauth tokens
 type OauthContext struct {
 	//ServiceType string
 	// ClientID is the application's ID.
@@ -32,10 +31,6 @@ type OauthContext struct {
 	Endpoint Endpoint
 	// Scope specifies optional requested permissions.
 	Scopes []string
-	// RefreshToken is a token that's used by the application
-	// (as opposed to the user) to refresh the access token
-	// if it expires.
-	//RefreshToken string
 }
 
 type oauthError struct {
@@ -71,7 +66,7 @@ func getOAuthErrorDetails(body []byte) error {
 // TokenRefresher is a function to refresh and return the new OAuth token.
 type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext) (string, error)
 
-// todo docstring
+// DoRequest makes a http request and retries it once if an "401" error is returned due to the token being expired.
 func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx OauthContext) (code int, header http.Header, body []byte, err error) {
 	for i := 0; i < 2; i++ {
 		if auther != nil {
