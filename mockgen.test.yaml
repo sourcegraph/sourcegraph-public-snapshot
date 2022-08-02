@@ -39,8 +39,8 @@
     - GitserverClient
     - IndexEnqueuer
     - LSIFStore
-    - PositionAdjuster
     - RepoUpdaterClient
+    - CodeNavResolver
 - filename: enterprise/cmd/frontend/internal/executorqueue/handler/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/services/executors/store
   interfaces:
@@ -142,10 +142,20 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore/migration
   interfaces:
     - GitServerClient
-- filename: internal/codeintel/symbols/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/internal/store
+- filename: internal/codeintel/codenav/mocks_store.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store
   interfaces:
     - Store
+- filename: internal/codeintel/codenav/mocks_lsifstore.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
+  interfaces:
+    - LsifStore
+- filename: internal/codeintel/codenav/mocks_uploadservice.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
+  interfaces:
+    - UploadService
+    - GitTreeTranslator
+    - GitserverClient
 - filename: internal/codeintel/uploads/background/cleanup/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   interfaces:
