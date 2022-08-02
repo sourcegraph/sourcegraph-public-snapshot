@@ -338,10 +338,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         )}
                     </ActionsContainer>
 
+                    {exportSearchResultsButton}
+
                     {(createActions.length > 0 ||
                         createCodeMonitorButton ||
                         saveSearchButton ||
-                        exportSearchResultsButton ||
                         coreWorkflowImprovementsEnabled) && <li className={styles.divider} aria-hidden="true" />}
 
                     {coreWorkflowImprovementsEnabled ? (
@@ -404,8 +405,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                             )}
 
                             {saveSearchButton}
-
-                            {exportSearchResultsButton}
 
                             {props.resultsFound && (
                                 <>
