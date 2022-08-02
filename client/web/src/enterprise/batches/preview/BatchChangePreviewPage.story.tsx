@@ -156,7 +156,7 @@ const fetchBatchSpecUpdate = (props: Args) =>
         },
     })
 
-const fetchExceedsLicense = () =>
+const fetchExceedsLicense = (props: Args) =>
     new WildcardMockLink([
         {
             request: {
@@ -169,7 +169,7 @@ const fetchExceedsLicense = () =>
                 data: {
                     node: {
                         __typename: 'BatchSpec',
-                        ...batchSpec(),
+                        ...batchSpec(props),
                     },
                 },
             },
@@ -361,8 +361,8 @@ export const NoChangesets: Story = args => {
 
 NoChangesets.storyName = 'No changesets'
 
-export const CreateNewStory: Story = () => {
-    const link = useMemo(() => fetchBatchSpecCreate(), [])
+export const CreateNewStory: Story = args => {
+    const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
         <WebStory>
             {props => (
@@ -389,8 +389,8 @@ export const CreateNewStory: Story = () => {
 
 CreateNewStory.storyName = 'Create (New)'
 
-export const ExceedsLicenseStory: Story = () => {
-    const link = useMemo(() => fetchExceedsLicense(), [])
+export const ExceedsLicenseStory: Story = args => {
+    const link = useMemo(() => fetchExceedsLicense(args), [args])
     return (
         <WebStory>
             {props => (
