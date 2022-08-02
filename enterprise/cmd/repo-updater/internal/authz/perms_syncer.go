@@ -21,6 +21,7 @@ import (
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -30,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -267,61 +269,6 @@ func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config
 	}
 }
 
-func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) (err error) {
-	if acct.ServiceType != extsvc.TypeGitLab {
-		return nil
-	}
-
-	logger := s.logger.Scoped("maybeRefreshGitLabOAuthTokenFromAccount", "").With(log.Int32("externalAccountID", acct.ID))
-
-	var oauthConfig *oauth2.Config
-	expiryWindow := 10 * time.Minute
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab == nil ||
-			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
-			continue
-		}
-		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
-		if authProvider.Gitlab.TokenRefreshWindowMinutes > 0 {
-			expiryWindow = time.Duration(authProvider.Gitlab.TokenRefreshWindowMinutes) * time.Minute
-		}
-		break
-	}
-	if oauthConfig == nil {
-		logger.Warn("external account has no auth.provider")
-		return nil
-	}
-
-	_, tok, err := gitlab.GetExternalAccountData(&acct.AccountData)
-	if err != nil {
-		return errors.Wrap(err, "get external account data")
-	} else if tok == nil {
-		return errors.New("no token found in the external account data")
-	}
-
-	// The default window for the oauth2 library is only 10 seconds, we extend this
-	// to give ourselves a better chance of not having a token expire.
-	tok.Expiry = tok.Expiry.Add(expiryWindow)
-
-	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
-	if err != nil {
-		return errors.Wrap(err, "refresh token")
-	}
-
-	if refreshedToken.AccessToken != tok.AccessToken {
-		defer func() {
-			success := err == nil
-			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
-		}()
-		acct.AccountData.SetAuthData(refreshedToken)
-		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
-		if err != nil {
-			return errors.Wrap(err, "save refreshed token")
-		}
-	}
-	return nil
-}
-
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
 // connections) to list all accessible private repositories on code hosts for
 // the given user.
@@ -432,13 +379,20 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 
 		// Refresh the token after waiting for the rate limit to give us the best chance of it being valid
-		logger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
-		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
-			// This should not be a fatal error, we should still try to sync from other accounts
-			acctLogger.Warn("failed to refresh GitLab token", log.Error(err))
-			continue
+		logger.Debug("refresh account token", log.Int32("accountID", acct.ID))
+		_, token, err := gitlab.GetExternalAccountData(&acct.AccountData)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "get external account data")
+		} else if token == nil {
+			return nil, nil, errors.New("no token found in the external account data")
 		}
-		logger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
+
+		oauthContext := getOauthContext()
+		helper := &oauth.RefreshTokenHelperForExternalAccount{DB: s.db, ExternalAccountID: acct.ID, OauthRefreshToken: token.RefreshToken}
+		_, err = helper.RefreshToken(ctx, nil, *oauthContext)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "error refreshing token")
+		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
@@ -1560,4 +1514,25 @@ func syncUsersMaxConcurrency() int {
 		return 1
 	}
 	return n
+}
+
+func getOauthContext() *oauthutil.OauthContext {
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab != nil {
+			p := authProvider.Gitlab
+
+			glURL := strings.TrimSuffix(p.Url, "/")
+			return &oauthutil.OauthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  glURL + "/oauth/authorize",
+					TokenURL: glURL + "/oauth/token",
+				},
+				Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
+			}
+		}
+	}
+
+	return nil
 }
