@@ -8,8 +8,7 @@ import * as sourcegraph from 'sourcegraph'
 import { renderMarkdown } from '@sourcegraph/common'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
-import { Notification } from './notification'
-
+import { NotificationWithId } from './notification'
 import styles from './NotificationItem.module.scss'
 
 export interface UnbrandedNotificationItemStyleProps {
@@ -27,8 +26,8 @@ export interface BrandedNotificationItemStyleProps {
 type NotificationItemStyleProps = UnbrandedNotificationItemStyleProps | BrandedNotificationItemStyleProps
 
 export interface NotificationItemProps {
-    notification: Notification
-    onDismiss: (notification: Notification) => void
+    notification: NotificationWithId
+    onDismiss: (notification: NotificationWithId) => void
     className?: string
     notificationItemStyleProps: NotificationItemStyleProps
 }

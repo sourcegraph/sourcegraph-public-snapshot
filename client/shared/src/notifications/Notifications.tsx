@@ -12,7 +12,7 @@ import { NotificationType } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { ExtensionsControllerProps } from '../extensions/controller'
 
-import { Notification } from './notification'
+import { Notification, NotificationWithId } from './notification'
 import { NotificationItem, NotificationItemProps } from './NotificationItem'
 
 import styles from './Notifications.module.scss'
@@ -20,10 +20,6 @@ import styles from './Notifications.module.scss'
 export interface NotificationsProps
     extends ExtensionsControllerProps,
         Pick<NotificationItemProps, 'notificationItemStyleProps'> {}
-
-interface NotificationWithId extends Notification {
-    id: string
-}
 
 interface NotificationsState {
     // TODO(tj): use remote progress observable type
@@ -241,7 +237,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
         )
     }
 
-    private onDismiss = (dismissedNotification: Notification): void => {
+    private onDismiss = (dismissedNotification: NotificationWithId): void => {
         if (this.context.notifications.includes(dismissedNotification)) {
             this.context.removeNotification(dismissedNotification)
         } else {
