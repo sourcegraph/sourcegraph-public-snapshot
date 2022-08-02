@@ -5,6 +5,9 @@ package errors
 // warning, then these are not the droids you're looking for.
 type Warning interface {
 	error
+	// IsWarning should always return true. It exists to differentiate regular errors with Warning
+	// errors. That is, all Warning type objects are error types, but not all error types are
+	// Warning types.
 	IsWarning() bool
 }
 
