@@ -1222,9 +1222,7 @@
           "description": "Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'.",
           "type": "string",
           "default": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}",
-          "examples": [
-            "https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"
-          ]
+          "examples": ["https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"]
         }
       }
     },
