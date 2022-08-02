@@ -14,7 +14,7 @@ Use the [resource estimator](../resource_estimator.md) to determine the resource
 We strongly recommend that you create and run Sourcegraph from your own fork of the reference repository. You will make changes to the default configuration, for example to the docker-compose YAML file, in your fork. The fork will also enable you to keep track of your customizations when upgrading your fork from the reference repo. Refer to the following steps for preparing a clone, which use GitHub as an example, then return to this page:
 
 1. [Fork the reference repo](index.md#step-1-fork-the-sourcegraph-docker-compose-deployment-repository)
-2. [Clone your fork](index.md#step-2-clone-your-fork-locally)
+2. [Clone your fork](index.md#step-2-clone-the-forked-repository-locally)
 3. [Configure the release branch](index.md#step-3-configure-the-release-branch)
 4. [Configure the YAML file](index.md#step-4-configure-the-yaml-file)
 5. [Publish changes to your branch](index.md#step-5-update-your-release-branch)
