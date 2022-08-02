@@ -206,7 +206,7 @@ type stubBadHTTPRedirectTransport struct {
 	tr http.RoundTripper
 }
 
-var _ httpcli.UnwrappableTransport = &stubBadHTTPRedirectTransport{}
+var _ httpcli.WrappedTransport = &stubBadHTTPRedirectTransport{}
 
 const stubBadHTTPRedirectLocation = `https://amazonaws.com/badhttpredirectlocation`
 

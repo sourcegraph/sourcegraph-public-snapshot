@@ -602,7 +602,7 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		tr = v.Clone()
 		cli.Transport = tr
 
-	case UnwrappableTransport:
+	case WrappedTransport:
 		wrapped := unwrapAll(v)
 		t, ok := (*wrapped).(*http.Transport)
 		if !ok {

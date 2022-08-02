@@ -265,7 +265,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 			}(),
 			timeout: timeout,
 			assert: func(t testing.TB, cli *http.Client) {
-				unwrapped := unwrapAll(cli.Transport.(UnwrappableTransport))
+				unwrapped := unwrapAll(cli.Transport.(WrappedTransport))
 				have := (*unwrapped).(*http.Transport).IdleConnTimeout
 
 				// Timeout is set on the underlying transport
