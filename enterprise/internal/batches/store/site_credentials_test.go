@@ -6,13 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	credentials := make([]*btypes.SiteCredential, 0, 3)
 	// Make sure these are sorted alphabetically.
 	externalServiceTypes := []string{

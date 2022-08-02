@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -80,7 +80,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	repoStore := db.Repos()
 	esStore := db.ExternalServices()
@@ -92,7 +92,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
+		Config: bt.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: gitHubToken,
 			Repos: []string{"sourcegraph/sourcegraph"},
@@ -119,7 +119,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
+	mockState := bt.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: githubRepo.Name,
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})

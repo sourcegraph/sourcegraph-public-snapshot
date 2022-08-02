@@ -48,7 +48,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
         <div className={styles.container}>
             <div className={styles.left}>
                 <Text>
-                    Use the <Link to="/help/cli">Sourcegraph CLI (src)</Link>
+                    Use the <Link to="/help/cli">Sourcegraph CLI (src) </Link>
                     to run this batch change locally.
                 </Text>
 
