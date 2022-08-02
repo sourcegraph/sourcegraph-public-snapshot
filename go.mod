@@ -453,6 +453,8 @@ replace (
 // =================================
 // These entries indicate replace directives that are defined for unknown reasons.
 replace (
+	// Forked until PR is merged upstream TODO @jhchabran
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220711101748-360af2317f82
 	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
 	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
@@ -460,5 +462,3 @@ replace (
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
 )
-
-replace github.com/XSAM/otelsql => /Users/tech/gohack/github.com/XSAM/otelsql
