@@ -1,0 +1,83 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
+    method: GET
+  response:
+    body: '[{"type":"Repository","id":112,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://example.com/github-webhooks"},"updated_at":"2022-07-26T13:52:51Z","created_at":"2022-07-26T13:52:51Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/112","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/112/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/112/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/112/deliveries","last_response":{"code":404,"status":"missing","message":"Invalid
+      HTTP Response: 404"}}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 02 Aug 2022 01:37:30 GMT
+      Etag:
+      - W/"dda4e239df7de2b18f9687a65d534b830b1a76575b684b58da99a01cee344f97"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Enterprise-Version:
+      - 3.3.0
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - b5d0c0a4-36f7-413f-82dc-71d55813fae7
+      X-Runtime-Rack:
+      - "0.137119"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"repo":"ghe.sgdev.org/milton/test"}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json
+    url: http://127.0.0.1:8080/enqueue-repo-update
+    method: POST
+  response:
+    body: '{"id":1,"name":"ghe.sgdev.org/milton/test"}'
+    headers:
+      Content-Length:
+      - "43"
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 02 Aug 2022 01:37:31 GMT
+    status: 200 OK
+    code: 200
+    duration: ""
