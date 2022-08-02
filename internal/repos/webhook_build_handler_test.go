@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,9 +26,6 @@ func TestWebhookBuildHandle(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	if err := godotenv.Load("./.env"); err != nil {
-		t.Fatal(err)
-	}
 	token := os.Getenv("ACCESS_TOKEN")
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
