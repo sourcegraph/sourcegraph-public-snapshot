@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,7 +27,7 @@ func TestWebhookBuildHandle(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	token := os.Getenv("ACCESS_TOKEN")
+	token := os.Getenv("GITHUB_TOKEN")
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := NewStore(logger, db)
@@ -39,7 +40,7 @@ func TestWebhookBuildHandle(t *testing.T) {
 		Name:     api.RepoName("ghe.sgdev.org/milton/test"),
 		Metadata: &github.Repository{},
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "hi-mom-12345",
+			ID:          "12345",
 			ServiceID:   "https://ghe.sgdev.org",
 			ServiceType: extsvc.TypeGitHub,
 		},
@@ -55,12 +56,12 @@ func TestWebhookBuildHandle(t *testing.T) {
 		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
 
-	bs, err := json.Marshal(ghConn)
+	configData, err := json.Marshal(ghConn)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	config := string(bs)
+	config := string(configData)
 	svc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "TestService",
@@ -80,14 +81,14 @@ func TestWebhookBuildHandle(t *testing.T) {
 		}`,
 		token, time.Now().Add(time.Hour).Format(time.RFC3339)))
 
-	extAccount := extsvc.Account{
+	account := extsvc.Account{
 		ID:     0,
 		UserID: 777,
 		AccountSpec: extsvc.AccountSpec{
 			ServiceID:   "serviceID",
-			ServiceType: "testService",
+			ServiceType: extsvc.KindGitHub,
 			ClientID:    "clientID",
-			AccountID:   "accountID",
+			AccountID:   fmt.Sprint(svc.ID),
 		},
 		AccountData: extsvc.AccountData{
 			AuthData: &authData,
@@ -100,14 +101,17 @@ func TestWebhookBuildHandle(t *testing.T) {
 		Username:              "susantoscott",
 		Password:              "saltedPassword!@#$%",
 		EmailVerificationCode: "123456",
-	}, extAccount.AccountSpec, extAccount.AccountData); err != nil {
+	}, account.AccountSpec, account.AccountData); err != nil {
 		t.Fatal(err)
 	}
 
 	job := &webhookworker.Job{
 		RepoID:     int32(repo.ID),
 		RepoName:   string(repo.Name),
+		Org:        strings.Split(string(repo.Name), "/")[0],
+		ExtSvcID:   svc.ID,
 		ExtSvcKind: svc.Kind,
+		AccountID:  int32(svc.ID),
 	}
 
 	testName := "webhook-build-handler"
