@@ -197,6 +197,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             //
             // Punctuation Types
             (scope("punctuation.section.mapping"), PunctuationBracket),
+            (scope("punctuation.section.sequence"), PunctuationBracket),
             // TODO: Consider what to do w/ this
             // (scope("punctuation"), PunctuationBracket),
         ]
