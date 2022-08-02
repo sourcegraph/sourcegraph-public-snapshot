@@ -18,11 +18,15 @@ type Warning interface {
 //
 // @indradhanush: This type does not need a method `As(any) bool` and can be "asserted" with
 // errors.As (see example below) when the underlying package being used is cockroachdb/errors. The
-// `As` method in this library is able to distinguish between warning and native error types.
+// `As` method from the cockroachdb/errors library is able to distinguish between warning and native
+// error types.
 //
 // When writing this part of the code, I had implemented an `As(any) bool` method into this struct
 // but it never got invoked and the corresponding tests in TestWarningError still pass the
-// assertions. As a result I chose to not keep it around.
+// assertions. However after further deliberations during code review, I'm choosing to keep it as
+// part of the method list of this type with an aim for interoperability in the future. But the
+// method is a NOOP. The good news is that I've also added a test for this method in
+// TestWarningError.
 type warning struct {
 	error error
 }
@@ -48,7 +52,7 @@ var _ Warning = (*warning)(nil)
 // if err != nil {
 //     return err
 // }
-func NewWarningError(err error) error {
+func NewWarningError(err error) *warning {
 	return &warning{
 		error: err,
 	}
@@ -63,4 +67,16 @@ func (ce *warning) Error() string {
 // types.
 func (w *warning) IsWarning() bool {
 	return true
+}
+
+// As will return true if the target is of type warning.
+//
+// However, this method is not invoked when `errors.As` is invoked. See note in the docstring of the
+// warning struct for more context.
+func (w *warning) As(target any) bool {
+	if _, ok := target.(*warning); ok {
+		return true
+	}
+
+	return false
 }
