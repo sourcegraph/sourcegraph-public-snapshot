@@ -2,8 +2,9 @@ package executors
 
 import (
 	"context"
-	"fmt"
+	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -31,7 +32,11 @@ func (j *metricsServerJob) Config() []env.Config {
 }
 
 func (j *metricsServerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	addr := fmt.Sprintf(":%d", metricsServerConfigInst.MetricsServerPort)
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+	addr := net.JoinHostPort(host, strconv.Itoa(metricsServerConfigInst.MetricsServerPort))
 
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 
