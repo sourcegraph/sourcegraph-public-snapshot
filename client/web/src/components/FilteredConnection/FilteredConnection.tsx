@@ -479,36 +479,27 @@ export class FilteredConnection<
             errors.push(this.state.connectionOrError.error)
         }
 
-        // const shouldShowControls =
-        //     this.state.connectionOrError &&
-        //     !isErrorLike(this.state.connectionOrError) &&
-        //     this.state.connectionOrError.nodes &&
-        //     this.state.connectionOrError.nodes.length > 0 &&
-        //     this.props.hideControlsWhenEmpty
-
         const inputPlaceholder = this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`
 
         return (
             <ConnectionContainer compact={this.props.compact} className={this.props.className}>
-                {
-                    /* shouldShowControls && */ (!this.props.hideSearch || this.props.filters) && (
-                        <ConnectionForm
-                            ref={this.setFilterRef}
-                            hideSearch={this.props.hideSearch}
-                            inputClassName={this.props.inputClassName}
-                            inputPlaceholder={inputPlaceholder}
-                            inputAriaLabel={this.props.inputAriaLabel || inputPlaceholder}
-                            inputValue={this.state.query}
-                            onInputChange={this.onChange}
-                            autoFocus={this.props.autoFocus}
-                            filters={this.props.filters}
-                            onValueSelect={this.onDidSelectValue}
-                            values={this.state.activeValues}
-                            compact={this.props.compact}
-                            formClassName={this.props.formClassName}
-                        />
-                    )
-                }
+                {(!this.props.hideSearch || this.props.filters) && (
+                    <ConnectionForm
+                        ref={this.setFilterRef}
+                        hideSearch={this.props.hideSearch}
+                        inputClassName={this.props.inputClassName}
+                        inputPlaceholder={inputPlaceholder}
+                        inputAriaLabel={this.props.inputAriaLabel || inputPlaceholder}
+                        inputValue={this.state.query}
+                        onInputChange={this.onChange}
+                        autoFocus={this.props.autoFocus}
+                        filters={this.props.filters}
+                        onValueSelect={this.onDidSelectValue}
+                        values={this.state.activeValues}
+                        compact={this.props.compact}
+                        formClassName={this.props.formClassName}
+                    />
+                )}
                 {errors.length > 0 && <ConnectionError errors={errors} compact={this.props.compact} />}
 
                 {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (

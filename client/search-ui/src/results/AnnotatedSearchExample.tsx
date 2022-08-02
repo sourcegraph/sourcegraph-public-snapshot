@@ -68,8 +68,6 @@ export const AnnotatedSearchInput: React.FunctionComponent<
         // the viewBox is adjusted to "crop" the image to its content
         // Original width and height of the image was 800x270
         <svg
-            role="img"
-            aria-hidden={true}
             className={styles.annotatedSearchInput}
             width={width}
             height={height}
@@ -101,14 +99,14 @@ export const AnnotatedSearchInput: React.FunctionComponent<
                     <tspan className={styles.metaRegexpRangeQuantifier}>*</tspan>
                     <tspan> function auth(){'{'} </tspan>
                 </text>
-                <Icon aria-hidden={true} x="590" y="115" svgPath={mdiFormatLetterCase} />
-                <Icon aria-hidden={true} x="620" y="115" svgPath={mdiRegex} />
-                <Icon aria-hidden={true} x="650" y="115" svgPath={mdiCodeBrackets} />
+                <Icon aria-label="Case sensitivity toggle" x="590" y="115" svgPath={mdiFormatLetterCase} />
+                <Icon aria-label="Regular expression toggle" x="620" y="115" svgPath={mdiRegex} />
+                <Icon aria-label="Structural search toggle" x="650" y="115" svgPath={mdiCodeBrackets} />
                 <path
                     d="M688 110H731C732.105 110 733 110.895 733 112V142C733 143.105 732.105 144 731 144H688V110Z"
                     fill="#1475CF"
                 />
-                <Icon aria-hidden={true} className={styles.searchIcon} x="698" y="115" svgPath={mdiMagnify} />
+                <Icon aria-label="Search" className={styles.searchIcon} x="698" y="115" svgPath={mdiMagnify} />
 
                 {arrow(188, 30, 'above')}
                 <text transform={`translate(${filterTextStart}, 44)`}>

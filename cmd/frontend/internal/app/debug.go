@@ -19,12 +19,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -52,6 +54,7 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
 	addSentry(r)
+	addOpenTelemetryProtocolAdapter(r)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -265,6 +268,32 @@ func addJaeger(r *mux.Router, db database.DB) {
 	} else {
 		addNoJaegerHandler(r, db)
 	}
+}
+
+// addOpenTelemetryProtocolAdapter registers handlers that forward OpenTelemetry protocol
+// (OTLP) requests in the http/json format to the configured backend.
+func addOpenTelemetryProtocolAdapter(r *mux.Router) {
+	var (
+		ctx      = context.Background()
+		endpoint = otlpenv.GetEndpoint()
+		protocol = otlpenv.GetProtocol()
+		logger   = sglog.Scoped("otlpAdapter", "OpenTelemetry protocol adapter and forwarder").
+				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
+	)
+
+	// If no endpoint is configured, we export a no-op handler
+	if endpoint == "" {
+		logger.Error("unable to parse OTLP export target")
+
+		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_HTTP_JSON_ENDPOINT, or OTEL_EXPORTER_OTLP_ENDPOINT and OTEL_EXPORTER_OTLP_PROTOCOL=http/json`)
+			w.WriteHeader(http.StatusNotFound)
+		})
+		return
+	}
+
+	// Register adapter endpoints
+	otlpadapter.Register(ctx, logger, protocol, endpoint, r)
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.

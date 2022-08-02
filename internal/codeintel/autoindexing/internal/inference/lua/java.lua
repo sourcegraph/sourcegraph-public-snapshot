@@ -32,7 +32,7 @@ return recognizers.path_recognizer {
           steps = {},
           root = "",
           indexer = indexer,
-          indexer_args = { "scip-java", "index", "--build-tool=lsif" },
+          indexer_args = { "scip-java", "index", "--build-tool=scip" },
           outfile = outfile,
         }
       end,

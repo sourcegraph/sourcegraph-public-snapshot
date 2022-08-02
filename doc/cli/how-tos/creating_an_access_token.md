@@ -17,6 +17,6 @@ Creating an access token is done through your user settings. This video shows th
 
     > NOTE: The `user:all` scope that is selected by default is sufficient for all normal `src` usage, and most uses of the GraphQL API. If you're an admin, you should only enable `site-admin:sudo` if you intend to impersonate other users.
 1. Click **Generate token**.
-1. Sourcegraph will now display your access token. You **must copy it from this screen**: once this page is closed, you cannot access the token again, and can only revoke it and issue a new one.
+1. Sourcegraph will now display your access token. You **must copy it from this screen**: once this page is closed, you cannot access the token again and can only revoke it and issue a new one.
 
 You can then set [the `SRC_ACCESS_TOKEN` environment variable](../explanations/env.md) to the token to use it with `src`.
