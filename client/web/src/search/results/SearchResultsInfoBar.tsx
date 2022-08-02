@@ -261,13 +261,19 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         <ExportSearchResultsButton
                             query={props.query}
                             patternType={props.patternType}
-                            platformContext={props.platformContext}
+                            sourcegraphURL={props.platformContext.sourcegraphURL}
                             settingsCascade={props.settingsCascade}
                         />
                     </li>
                 </Tooltip>
             ) : null,
-        [extensionsAsCoreFeatures, props.patternType, props.platformContext, props.query, props.settingsCascade]
+        [
+            extensionsAsCoreFeatures,
+            props.patternType,
+            props.platformContext.sourcegraphURL,
+            props.query,
+            props.settingsCascade,
+        ]
     )
 
     const extraContext = useMemo(

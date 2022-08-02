@@ -6,18 +6,16 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { NotificationContext } from '@sourcegraph/shared/src/notifications/Notifications'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { IQuery } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { getFromSettings } from '../../util/settings'
 
-interface Props extends SearchPatternTypeProps, SettingsCascadeProps, PlatformContextProps<'sourcegraphURL'> {
+interface Props extends SearchPatternTypeProps, SettingsCascadeProps, Pick<PlatformContext, 'sourcegraphURL'> {
     query?: string
 }
-
-type SearchResultsQueryData = Pick<IQuery, 'search'>
 
 interface SearchResultsQueryVariables extends SearchPatternTypeProps {
     query: string
@@ -95,11 +93,11 @@ const SEARCH_RESULTS_QUERY = gql`
 export const ExportSearchResultsButton: React.FC<Props> = ({
     query = '',
     patternType,
-    platformContext,
+    sourcegraphURL,
     settingsCascade,
 }) => {
     const { addNotification } = useContext(NotificationContext)
-    const [fetchCSV] = useLazyQuery<SearchResultsQueryData, SearchResultsQueryVariables>(SEARCH_RESULTS_QUERY, {
+    const [fetchCSV] = useLazyQuery<Pick<IQuery, 'search'>, SearchResultsQueryVariables>(SEARCH_RESULTS_QUERY, {
         variables: { query, patternType },
         onCompleted: data => {
             const results = data.search?.results.results
@@ -136,7 +134,7 @@ export const ExportSearchResultsButton: React.FC<Props> = ({
                                 result.repository.name,
                                 result.repository.externalURLs[0]?.url,
                                 result.file.path,
-                                new URL(result.file.canonicalURL, platformContext.sourcegraphURL).toString(),
+                                new URL(result.file.canonicalURL, sourcegraphURL).toString(),
                                 result.file.externalURLs[0]?.url,
                                 truncateMatches(settingsCascade, searchMatches),
                             ].map(string_ => JSON.stringify(string_))
