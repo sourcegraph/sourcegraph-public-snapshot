@@ -74,7 +74,6 @@ const config: Config = {
     staticDirs: [path.resolve(__dirname, '../assets'), STATIC_ASSETS_PATH],
     stories: getStoriesGlob(),
     addons: [
-        '@storybook/addon-knobs',
         '@storybook/addon-actions',
         'storybook-addon-designs',
         'storybook-dark-mode',
