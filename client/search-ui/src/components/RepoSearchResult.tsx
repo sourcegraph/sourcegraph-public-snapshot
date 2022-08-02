@@ -126,7 +126,11 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             const visibleDescription = containerElement.current.querySelector('small em')
             if (visibleDescription) {
                 for (const range of result.descriptionMatches) {
-                    highlightNode(visibleDescription as HTMLElement, range.start.offset, range.end.offset - range.start.offset)
+                    highlightNode(
+                        visibleDescription as HTMLElement,
+                        range.start.column,
+                        range.end.column - range.start.column
+                    )
                 }
             }
         }
