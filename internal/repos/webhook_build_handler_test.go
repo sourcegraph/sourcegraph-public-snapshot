@@ -3,11 +3,9 @@ package repos
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -33,7 +31,6 @@ func TestWebhookBuildHandle(t *testing.T) {
 	store := NewStore(logger, db)
 	esStore := store.ExternalServiceStore()
 	repoStore := store.RepoStore()
-	accountStore := store.UserExternalAccountsStore()
 
 	repo := &types.Repo{
 		ID:       1,
@@ -71,40 +68,6 @@ func TestWebhookBuildHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	accountData := json.RawMessage(`{}`)
-	authData := json.RawMessage(fmt.Sprintf(`
-		{
-			"access_token":"%s",
-			"token_type":"Bearer",
-			"refresh_token":"",
-			"expiry":"%s"
-		}`,
-		token, time.Now().Add(time.Hour).Format(time.RFC3339)))
-
-	account := extsvc.Account{
-		ID:     0,
-		UserID: 777,
-		AccountSpec: extsvc.AccountSpec{
-			ServiceID:   "serviceID",
-			ServiceType: extsvc.KindGitHub,
-			ClientID:    "clientID",
-			AccountID:   fmt.Sprint(svc.ID),
-		},
-		AccountData: extsvc.AccountData{
-			AuthData: &authData,
-			Data:     &accountData,
-		},
-	}
-
-	if _, err := accountStore.CreateUserAndSave(ctx, database.NewUser{
-		Email:                 "USCtrojan@usc.edu",
-		Username:              "susantoscott",
-		Password:              "saltedPassword!@#$%",
-		EmailVerificationCode: "123456",
-	}, account.AccountSpec, account.AccountData); err != nil {
-		t.Fatal(err)
-	}
-
 	job := &webhookworker.Job{
 		RepoID:     int32(repo.ID),
 		RepoName:   string(repo.Name),
@@ -128,4 +91,9 @@ func TestWebhookBuildHandle(t *testing.T) {
 	if err := handler.Handle(ctx, logger, job); err != nil {
 		t.Fatal(err)
 	}
+
+	// test it works
+	// is the correct request made
+	// if anything gets modified in DB:
+	//
 }

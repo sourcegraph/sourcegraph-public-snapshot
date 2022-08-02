@@ -46,9 +46,14 @@ func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, rec
 }
 
 func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.Logger, job *webhookworker.Job) error {
-	svc, err := w.store.ExternalServiceStore().GetByID(ctx, job.ExtSvcID)
+	extsvc, err := w.store.ExternalServiceStore().GetByID(ctx, job.ExtSvcID)
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: get external service failed")
+	}
+
+	token, err := extractTokenFromConfig(extsvc)
+	if err != nil {
+		return errors.Wrap(err, "handleKindGitHub: extractTokenFromConfig failed")
 	}
 
 	baseURL, err := url.Parse("")
@@ -56,17 +61,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errors.Wrap(err, "handleKindGitHub: parse baseURL failed")
 	}
 
-	account, err := w.store.UserExternalAccountsStore().Get(ctx, job.AccountID)
-	if err != nil {
-		return errors.Wrap(err, "handleKindGitHub: get account failed")
-	}
-
-	_, token, err := github.GetExternalAccountData(&account.AccountData)
-	if err != nil {
-		return errors.Wrap(err, "handleKindGitHub: get GitHub token failed")
-	}
-
-	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, w.doer)
+	client := github.NewV3Client(logger, extsvc.URN(), baseURL, &auth.OAuthBearerToken{Token: token}, w.doer)
 	id, err := client.FindSyncWebhook(ctx, job.RepoName)
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
@@ -80,7 +75,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	}
 
 	secret := randomHex(32)
-	if err := addSecretToExtSvc(svc, job.Org, secret); err != nil {
+	if err := addSecretToExtSvc(extsvc, job.Org, secret); err != nil {
 		return errors.Wrap(err, "handleKindGitHub: add secret to external service failed")
 	}
 
@@ -91,6 +86,15 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 
 	logger.Info(fmt.Sprintf("Created webhook with ID: %d", id))
 	return nil
+}
+
+func extractTokenFromConfig(extsvc *types.ExternalService) (string, error) {
+	var conn schema.GitHubConnection
+	if err := json.Unmarshal([]byte(extsvc.Config), &conn); err != nil {
+		return "", err
+	}
+
+	return conn.Token, nil
 }
 
 func randomHex(n int) string {
@@ -104,9 +108,9 @@ func randomHex(n int) string {
 	return hex.EncodeToString(r)
 }
 
-func addSecretToExtSvc(svc *types.ExternalService, org, secret string) error {
+func addSecretToExtSvc(extsvc *types.ExternalService, org, secret string) error {
 	var config schema.GitHubConnection
-	err := json.Unmarshal([]byte(svc.Config), &config)
+	err := json.Unmarshal([]byte(extsvc.Config), &config)
 	if err != nil {
 		return errors.Wrap(err, "addSecretToExtSvc: Unmarshal failed")
 	}
@@ -120,7 +124,7 @@ func addSecretToExtSvc(svc *types.ExternalService, org, secret string) error {
 		return errors.Wrap(err, "addSecretToExtSvc: Marshal failed")
 	}
 
-	svc.Config = string(newConfig)
+	extsvc.Config = string(newConfig)
 
 	return nil
 }
