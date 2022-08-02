@@ -18,6 +18,7 @@ import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
+import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
@@ -251,20 +252,22 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.location, showActionButtonExperimentalVersion, props.onSaveQueryClick, props.telemetryService]
     )
 
-    const searchExportButton = useMemo(
-        () => (
-            <Tooltip content="Export search results as CVS file">
-                <li className={classNames('mr-2', styles.navItem)}>
-                    <ExportSearchResultsButton
-                        query={props.query}
-                        patternType={props.patternType}
-                        platformContext={props.platformContext}
-                        settingsCascade={props.settingsCascade}
-                    />
-                </li>
-            </Tooltip>
-        ),
-        [props.patternType, props.platformContext, props.query, props.settingsCascade]
+    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
+    const exportSearchResultsButton = useMemo(
+        () =>
+            extensionsAsCoreFeatures ? (
+                <Tooltip content="Export search results as CVS file">
+                    <li className={classNames('mr-2', styles.navItem)}>
+                        <ExportSearchResultsButton
+                            query={props.query}
+                            patternType={props.patternType}
+                            platformContext={props.platformContext}
+                            settingsCascade={props.settingsCascade}
+                        />
+                    </li>
+                </Tooltip>
+            ) : null,
+        [extensionsAsCoreFeatures, props.patternType, props.platformContext, props.query, props.settingsCascade]
     )
 
     const extraContext = useMemo(
@@ -338,7 +341,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     {(createActions.length > 0 ||
                         createCodeMonitorButton ||
                         saveSearchButton ||
-                        searchExportButton ||
+                        exportSearchResultsButton ||
                         coreWorkflowImprovementsEnabled) && <li className={styles.divider} aria-hidden="true" />}
 
                     {coreWorkflowImprovementsEnabled ? (
@@ -402,7 +405,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                             {saveSearchButton}
 
-                            {searchExportButton}
+                            {exportSearchResultsButton}
 
                             {props.resultsFound && (
                                 <>
