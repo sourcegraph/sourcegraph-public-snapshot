@@ -114,6 +114,10 @@ env:
   DISABLE_CODE_INSIGHTS: true
   ENABLE_STREAMING_REPOS_SYNCER: true
 
+  # # OpenTelemetry in dev - use single http/json endpoint
+  # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+  # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -332,6 +336,7 @@ commands:
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
+      ENABLE_OPEN_TELEMETRY: true
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
