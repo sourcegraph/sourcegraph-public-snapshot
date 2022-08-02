@@ -1282,6 +1282,12 @@ type ObservabilityAlerts struct {
 	Owners []string `json:"owners,omitempty"`
 }
 
+// ObservabilityClient description: EXPERIMENTAL: Configuration for client observability
+type ObservabilityClient struct {
+	// OpenTelemetry description: Configuration for the client OpenTelemetry exporter
+	OpenTelemetry *OpenTelemetry `json:"openTelemetry,omitempty"`
+}
+
 // ObservabilityTracing description: Controls the settings for distributed tracing.
 type ObservabilityTracing struct {
 	// Debug description: Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.
@@ -1330,6 +1336,12 @@ type OpenIDConnectAuthProvider struct {
 	// RequireEmailDomain description: Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading "@". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 	Type               string `json:"type"`
+}
+
+// OpenTelemetry description: Configuration for the client OpenTelemetry exporter
+type OpenTelemetry struct {
+	// Endpoint description: OpenTelemetry tracing collector endpoint
+	Endpoint string `json:"endpoint,omitempty"`
 }
 
 // OrganizationInvitations description: Configuration for organization invitations.
@@ -1982,6 +1994,8 @@ type SiteConfiguration struct {
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
+	// ObservabilityClient description: EXPERIMENTAL: Configuration for client observability
+	ObservabilityClient *ObservabilityClient `json:"observability.client,omitempty"`
 	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
