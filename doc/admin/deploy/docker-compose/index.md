@@ -38,12 +38,12 @@ A step by step guide to install Sourcegraph with Docker Compose.
 ### Overview
 
  1. [Fork the Sourcegraph Docker Compose deployment repository](#step-1-fork-the-sourcegraph-docker-compose-deployment-repository)
- 1. [Clone your fork of the reference repository locally](#step-2-clone-your-fork-locally)
- 1. [Create a release branch on your clone](#step-3-configure-the-release-branch)
- 1. [Customize the Docker-Compose YAML file](#step-4-configure-the-yaml-file)
- 1. [Publish changes to your release branch](#step-5-update-your-release-branch)
- 1. [Clone your release branch onto your server](#step-6-clone-the-release-branch-remotely)
- 1. [Build and start the containers in detached mode](#step-7-start-sourcegraph)
+ 2. [Clone your fork of the reference repository locally](#step-2-clone-the-forked-repository-locally)
+ 3. [Create a release branch on your clone](#step-3-configure-the-release-branch)
+ 4. [Customize the Docker-Compose YAML file](#step-4-configure-the-yaml-file)
+ 5. [Publish changes to your release branch](#step-5-update-your-release-branch)
+ 6. [Clone your release branch onto your server](#step-6-clone-the-release-branch-remotely)
+ 7. [Build and start the containers in detached mode](#step-7-start-sourcegraph)
 
 ### Step 1: Fork the Sourcegraph Docker Compose deployment repository
 
@@ -79,7 +79,7 @@ The [`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/dep
   rm -rf deploy-sourcegraph-docker.git
 ```
 
-### Step 2: Clone your forked repository locally
+### Step 2: Clone the forked repository locally
 
 Clone the forked repository to your local machine. 
 
@@ -120,8 +120,11 @@ jaeger:
   environment:
     - 'SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json'
 ```
+
 #### Git configuration
+
 ##### Git SSH configuration
+
 Provide your `gitserver` instance with your SSH / Git configuration (e.g. `.ssh/config`, `.ssh/id_rsa`, `.ssh/id_rsa.pub`, and `.ssh/known_hosts`--but you can also provide other files like `.netrc`, `.gitconfig`, etc. if needed) by mounting a directory that contains this configuration into the `gitserver` container.
 
 For example, in the `gitserver-0` container configuration in your docker-compose.yaml file, add the volume listed in the following example, replacing `~/path/on/host/` with the path on the host machine to the `.ssh` directory:
@@ -166,7 +169,7 @@ To preserve this data when you kill and recreate the containers, review Sourcegr
 
 #### Set environment variables
 
-Add/modify the environment variables to all of the sourcegraph-frontend-* services and the sourcegraph-frontend-internal service in the [Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml):
+Add/modify the environment variables to all of the sourcegraph-frontend-* services and the sourcegraph-frontend-internal service in the [Docker Compose YAML file](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml):
 
 ```yaml
 sourcegraph-frontend-0:
@@ -191,29 +194,32 @@ Publish the customized configuration to the release branch you created earlier:
 
 ### Step 6: Clone the release branch remotely
 
-Now that you have published your changes to your code host you deploy your customized codebase on the production server. Clone your release branch onto the production server. 
+Now that you have published your changes to your code host you deploy your customized codebase on the production server. Clone the newly configured release branch onto the production server. 
 
 > NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
 
-In this example, you SSH into the server and clone the branch you created earlier: 
+Clone the `release` branch you've created earlier onto your server: 
 
-  ```bash
+```bash
   git clone --branch release https://github.com/<you/private-repository>.git 
-  ```
+```
 
 ### Step 7: Start Sourcegraph
 
 On the production server, run the following command inside the [docker-compose configuration directory](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/master/docker-compose) to start Sourcegraph in a detached mode:
 
 ```bash
+  # Go to the docker-compose configuration directory
   cd docker-compose
+  # Start Sourcegraph with Docker Compose in a detached mode
   docker-compose up -d
 ```
 
 To check if the server is ready, the `sourcegraph-frontend-0` service must be displayed as healthy:
 
-```
-docker ps --filter="name=sourcegraph-frontend-0"
+```bash
+  # Check the health status for sourcegraph-frontend-0
+  docker ps --filter="name=sourcegraph-frontend-0"
 ```
 
 Once the server is ready, navigate to the `sourcegraph-frontend-0` hostname or IP address on port `80`.  
