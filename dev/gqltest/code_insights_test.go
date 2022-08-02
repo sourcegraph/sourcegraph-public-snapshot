@@ -11,8 +11,6 @@ import (
 )
 
 func TestCreateDashboard(t *testing.T) {
-	t.Skip("code insights single docker not enabled yet")
-
 	t.Run("can create an insights dashboard", func(t *testing.T) {
 		title := "Dashboard Title 1"
 		result, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{
@@ -63,8 +61,6 @@ func TestCreateDashboard(t *testing.T) {
 }
 
 func TestGetDashboards(t *testing.T) {
-	t.Skip("code insights single docker not enabled yet")
-
 	titles := []string{"Title 1", "Title 2", "Title 3", "Title 4", "Title 5"}
 	ids := []string{}
 	for _, title := range titles {
@@ -123,8 +119,6 @@ func TestGetDashboards(t *testing.T) {
 }
 
 func TestUpdateDashboard(t *testing.T) {
-	t.Skip("code insights single docker not enabled yet")
-
 	dashboard, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{Title: "Title", GlobalGrant: true})
 	if err != nil {
 		t.Fatal(err)

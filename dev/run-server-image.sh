@@ -37,6 +37,7 @@ docker run "$@" \
   --publish "$PORT":7080 \
   -e SRC_LOG_LEVEL=dbug \
   -e DEBUG=t \
+  -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"

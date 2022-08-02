@@ -123,7 +123,6 @@ func Main() {
 	}
 
 	if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
-		log.Println(AllowSingleDockerCodeInsights)
 		AllowSingleDockerCodeInsights = true
 	}
 
@@ -265,9 +264,7 @@ func runMigrator() {
 	log.Println("Starting migrator")
 
 	schemas := []string{"frontend", "codeintel"}
-	log.Println("checks this")
 	if AllowSingleDockerCodeInsights {
-		log.Println(AllowSingleDockerCodeInsights)
 		schemas = append(schemas, "codeinsights")
 	}
 
