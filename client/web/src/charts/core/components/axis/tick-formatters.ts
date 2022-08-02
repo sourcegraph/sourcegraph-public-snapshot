@@ -37,11 +37,13 @@ interface GetScaleTicksInput {
     pixelsPerTick?: number
 }
 
-export function getXScaleTicks(input: GetScaleTicksInput): string[] {
-    const { scale, space, pixelsPerTick = 20 } = input
+export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
+    const { scale, space, pixelsPerTick = 80 } = input
 
     // Calculate desirable number of ticks
     const numberTicks = Math.max(MINIMUM_NUMBER_OF_TICKS, Math.floor(space / pixelsPerTick))
+
+    // return getTicks(scale, numberTicks) as T[]
 
     let filteredTicks = getTicks(scale)
 
@@ -91,7 +93,7 @@ export function getYScaleTicks(input: GetScaleTicksInput): number[] {
  * removes all even index ticks with even number removes all
  * odd index ticks.
  */
-function getHalvedTicks(ticks: number[]): number[] {
+function getHalvedTicks<T>(ticks: T[]): T[] {
     const isOriginTickLengthOdd = !(ticks.length % 2)
     const filteredTicks = []
 

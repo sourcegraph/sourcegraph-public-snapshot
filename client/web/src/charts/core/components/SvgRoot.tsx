@@ -2,24 +2,29 @@ import {
     createContext,
     Dispatch,
     FC,
-    PropsWithChildren, ReactNode,
+    PropsWithChildren,
+    ReactElement,
+    ReactNode,
     SetStateAction,
+    SVGProps,
     useContext,
     useMemo,
-    useState
-} from 'react';
+    useRef,
+    useState,
+} from 'react'
 
-import { AxisScale, TickFormatter } from '@visx/axis/lib/types';
-import { Group } from '@visx/group';
-import { scaleLinear } from '@visx/scale';
-import { noop } from 'lodash';
-import useResizeObserver from 'use-resize-observer';
+import { AxisScale, TickRendererProps } from '@visx/axis/lib/types'
+import { Group } from '@visx/group'
+import { scaleLinear } from '@visx/scale'
+import { noop } from 'lodash'
+import { useMergeRefs } from 'use-callback-ref'
+import useResizeObserver from 'use-resize-observer'
 
-import { createRectangle, EMPTY_RECTANGLE, Rectangle } from '@sourcegraph/wildcard';
+import { createRectangle, EMPTY_RECTANGLE, Rectangle } from '@sourcegraph/wildcard'
 
-import { formatXTick } from '../../components/line-chart/utils';
-
-import { AxisBottom, AxisLeft } from './axis/Axis';
+import { AxisBottom, AxisLeft } from './axis/Axis'
+import { getMaxTickWidth, Tick, TickProps } from './axis/Tick'
+import { getXScaleTicks } from './axis/tick-formatters'
 
 const DEFAULT_PADDING = { top: 16, right: 36, bottom: 0, left: 0 }
 
@@ -48,7 +53,7 @@ const SVGRootContext = createContext<SVGRootLayout>({
     setPadding: noop,
 })
 
-interface SvgRootProps {
+interface SvgRootProps extends SVGProps<SVGSVGElement> {
     width: number
     height: number
     yScale: AxisScale
@@ -57,33 +62,34 @@ interface SvgRootProps {
 
 /**
  * SVG canvas root element. This component renders SVG element and
- * calculates and prepares all important canvas measurements for x/y axis,
+ * calculates and prepares all important canvas measurements for x/y-axis,
  * content and other chart elements.
  */
 export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
-    const { width, height, yScale: yOriginalScale, xScale: xOriginalScale, children } = props
+    const { width, height, yScale: yOriginalScale, xScale: xOriginalScale, children, ...attributes } = props
 
     const [padding, setPadding] = useState<Padding>(DEFAULT_PADDING)
 
     const contentRectangle = useMemo(
-        () => createRectangle(
-            padding.left,
-            padding.top,
-            width - padding.left - padding.right,
-            height - padding.top - padding.bottom
-        ) ,
+        () =>
+            createRectangle(
+                padding.left,
+                padding.top,
+                width - padding.left - padding.right,
+                height - padding.top - padding.bottom
+            ),
         [width, height, padding]
     )
 
-    const yScale = useMemo(
-        () =>  yOriginalScale.copy().range([contentRectangle.height, 0]) as AxisScale,
-        [yOriginalScale, contentRectangle]
-    )
+    const yScale = useMemo(() => yOriginalScale.copy().range([contentRectangle.height, 0]) as AxisScale, [
+        yOriginalScale,
+        contentRectangle,
+    ])
 
-    const xScale = useMemo(
-        () => xOriginalScale.copy().range([0, contentRectangle.width]) as AxisScale,
-        [xOriginalScale, contentRectangle]
-    )
+    const xScale = useMemo(() => xOriginalScale.copy().range([0, contentRectangle.width]) as AxisScale, [
+        xOriginalScale,
+        contentRectangle,
+    ])
 
     const context = useMemo<SVGRootLayout>(
         () => ({
@@ -92,21 +98,23 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
             xScale,
             yScale,
             content: contentRectangle,
-            setPadding
+            setPadding,
         }),
         [width, height, contentRectangle, xScale, yScale]
     )
 
     return (
         <SVGRootContext.Provider value={context}>
-            <svg width={width} height={height} style={{ background: 'lightgoldenrodyellow', overflow: 'visible'}}>
+            <svg {...attributes} width={width} height={height}>
                 {children}
             </svg>
         </SVGRootContext.Provider>
     )
 }
 
-export const SvgAxisLeft: FC<{}> = props => {
+interface SvgAxisLeftProps {}
+
+export const SvgAxisLeft: FC<SvgAxisLeftProps> = props => {
     const { content, yScale, setPadding } = useContext(SVGRootContext)
 
     const handleResize = ({ width = 0 }): void => {
@@ -117,6 +125,7 @@ export const SvgAxisLeft: FC<{}> = props => {
 
     return (
         <AxisLeft
+            {...props}
             ref={ref}
             width={content.width}
             height={content.height}
@@ -127,51 +136,81 @@ export const SvgAxisLeft: FC<{}> = props => {
     )
 }
 
-interface ObservedSize {
-    width: number | undefined;
-    height: number | undefined;
+const defaultToString = <T,>(tick: T): string => `${tick}`
+
+interface SvgAxisBottomProps<Tick> {
+    tickFormat?: (tick: Tick) => string
+    pixelsPerTick?: number
 }
 
-type ResizeHandler = (size: ObservedSize) => void;
-
-export const SvgAxisBottom: FC<{rotate: boolean, tickFormat?: TickFormatter<AxisScale>}> = props => {
+export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): ReactElement {
+    const { pixelsPerTick = 0, tickFormat = defaultToString } = props
     const { content, xScale, setPadding } = useContext(SVGRootContext)
 
-    const handleResize: ResizeHandler = ({ height = 0 }) => {
-        setPadding(padding => ({ ...padding, bottom: height, }))
-    }
+    const axisGroupRef = useRef<SVGGElement>(null)
+    const { ref } = useResizeObserver<SVGGElement>({
+        onResize: ({ height = 0 }) => setPadding(padding => ({ ...padding, bottom: height })),
+    })
 
-    const { ref } = useResizeObserver<SVGGElement>({ onResize: handleResize })
+    const [, upperRangeBound] = xScale.range() as [number, number]
+    const ticks = getXScaleTicks<Tick>({ scale: xScale, space: content.width, pixelsPerTick })
+
+    const maxWidth = useMemo(() => {
+        const axisGroup = axisGroupRef.current
+
+        if (!axisGroup) {
+            return 0
+        }
+
+        return getMaxTickWidth(axisGroup, ticks.map(tickFormat))
+    }, [ticks, tickFormat])
+
+    const getXTickProps = (props: TickRendererProps): TickProps => {
+        // TODO: Add more sophisticated logic around labels overlapping calculation
+        const measuredSize = ticks.length * maxWidth
+        const rotate = upperRangeBound < measuredSize ? 90 * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2) : 0
+
+        if (rotate) {
+            return {
+                ...props,
+                transform: `rotate(${rotate}, ${props.x} ${props.y})`,
+                textAnchor: 'start',
+                maxWidth: 15,
+            }
+        }
+
+        return { ...props, textAnchor: 'middle' }
+    }
 
     return (
         <AxisBottom
-            ref={ref}
-            rotate={props.rotate}
+            ref={useMergeRefs([axisGroupRef, ref])}
             scale={xScale}
             width={content.width}
             top={content.bottom}
             left={content.left}
-            tickFormat={props.tickFormat ?? (formatXTick as unknown) as TickFormatter<AxisScale>}
+            tickValues={ticks}
+            tickComponent={props => <Tick {...getXTickProps(props)} />}
+            tickFormat={tickFormat}
         />
     )
 }
 
 interface SvgContentProps {
-    children: (input: { yScale: AxisScale, xScale: AxisScale, content: Rectangle }) => ReactNode
+    children: (input: { yScale: AxisScale; xScale: AxisScale; content: Rectangle }) => ReactNode
 }
 
+/**
+ * Compound svg canvas component, to render actual chart content on
+ * SVG canvas with pre-calculated axes and paddings
+ */
 export const SvgContent: FC<SvgContentProps> = props => {
     const { children } = props
-    const { content, xScale, yScale, } = useContext(SVGRootContext)
+    const { content, xScale, yScale } = useContext(SVGRootContext)
 
     return (
-        <Group
-            top={content.top}
-            left={content.left}
-            width={content.width}
-            height={content.height}>
-
-            { children({ xScale, yScale, content }) }
+        <Group top={content.top} left={content.left} width={content.width} height={content.height}>
+            {children({ xScale, yScale, content })}
         </Group>
     )
 }

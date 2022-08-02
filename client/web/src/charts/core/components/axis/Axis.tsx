@@ -1,16 +1,19 @@
-import { forwardRef, memo, useMemo, useRef } from 'react'
+import { forwardRef, memo } from 'react'
 
-import { AxisLeft as VisxAxisLeft, AxisBottom as VisxAsixBottom, TickLabelProps } from '@visx/axis'
-import { AxisScale, TickRendererProps } from '@visx/axis/lib/types'
+import {
+    AxisLeft as VisxAxisLeft,
+    AxisBottom as VisxAsixBottom,
+    TickLabelProps,
+    SharedAxisProps,
+    AxisScale,
+} from '@visx/axis'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import { TextProps } from '@visx/text'
 import classNames from 'classnames'
-import { useMergeRefs } from 'use-callback-ref';
 
-import { formatYTick, getXScaleTicks, getYScaleTicks } from '../../../components/line-chart/utils'
-
-import { getMaxTickSize, Tick, TickProps } from './Tick'
+import { Tick } from './Tick'
+import { formatYTick, getXScaleTicks, getYScaleTicks } from './tick-formatters'
 
 import styles from './Axis.module.scss'
 
@@ -22,18 +25,26 @@ const getTickYLabelProps: TickLabelProps<number> = (value, index, values): Parti
     'aria-label': `Tick axis ${index + 1} of ${values.length}. Value: ${value}`,
 })
 
-interface AxisLeftProps {
-    top: number
-    left: number
+type OwnSharedAxisProps = Omit<SharedAxisProps<AxisScale>, 'tickLabelProps'>
+
+export interface AxisLeftProps extends OwnSharedAxisProps {
     width: number
     height: number
-    scale: AxisScale
 }
 
 export const AxisLeft = memo(
     forwardRef<SVGGElement, AxisLeftProps>((props, reference) => {
-        const { scale, left, top, width, height } = props
-        const ticksValues = getYScaleTicks({ scale, space: height })
+        const {
+            scale,
+            left,
+            top,
+            width,
+            height,
+            tickComponent = Tick,
+            tickFormat = formatYTick,
+            tickValues = getYScaleTicks({ scale, space: height }),
+            ...attributes
+        } = props
 
         return (
             <>
@@ -43,21 +54,18 @@ export const AxisLeft = memo(
                     width={width}
                     height={height}
                     scale={scale}
-                    tickValues={ticksValues}
+                    tickValues={tickValues}
                     className={styles.gridLine}
                 />
 
-                <Group
-                    innerRef={reference}
-                    top={top}
-                    left={left}
-                >
+                <Group innerRef={reference} top={top} left={left}>
                     <VisxAxisLeft
+                        {...attributes}
                         scale={scale}
-                        tickValues={ticksValues}
-                        tickFormat={formatYTick}
+                        tickValues={tickValues}
+                        tickFormat={tickFormat}
                         tickLabelProps={getTickYLabelProps}
-                        tickComponent={Tick}
+                        tickComponent={tickComponent}
                         axisLineClassName={classNames(styles.axisLine, styles.axisLineVertical)}
                         tickClassName={classNames(styles.axisTick, styles.axisTickVertical)}
                     />
@@ -67,65 +75,31 @@ export const AxisLeft = memo(
     })
 )
 
+AxisLeft.displayName = 'AxisLeft'
+
 // TODO: Improve @visx/axis API in order to support value (tick) and values (ticks) props
 // on component level and not just in prop function level
-export const getTickXLabelProps: TickLabelProps<Date> = (value, index, values): Partial<TextProps> => ({
+const getTickXLabelProps: TickLabelProps<Date> = (value, index, values): Partial<TextProps> => ({
     'aria-label': `Tick axis ${index + 1} of ${values.length}. Value: ${value}`,
+    textAnchor: 'middle',
 })
 
-interface AxisBottomProps {
-    rotate: boolean
-    top: number
-    left: number
+interface AxisBottomProps extends OwnSharedAxisProps {
     width: number
-    scale: AxisScale
-    tickFormat: (value: string) => string
 }
 
 export const AxisBottom = memo(
     forwardRef<SVGGElement, AxisBottomProps>((props, reference) => {
-        const { scale, top, left, width, tickFormat } = props
-        const groupReference = useRef<SVGGElement>(null)
-        const ticks = getXScaleTicks({ scale, space: width, pixelsPerTick: 15 })
-        const [, upperRangeBound] = scale.range() as [number, number]
-
-        const maxWidth = useMemo(() => {
-            if (!groupReference.current) {
-                return 0
-            }
-
-            const { maxWidth } = getMaxTickSize(groupReference.current, ticks.map(tickFormat) )
-
-            return maxWidth
-        }, [ticks, tickFormat])
-
-        const getXTickProps = (props: TickRendererProps): TickProps => {
-            // TODO: Add more sophisticated logic around labels overlapping calculation
-            const measuredSize = ticks.length * maxWidth;
-            const rotate = upperRangeBound < measuredSize
-                ? 90 * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2)
-                : 0;
-
-            if (rotate) {
-                return {
-                    ...props,
-                    transform: `rotate(${-rotate}, ${props.x} ${props.y})`,
-                    textAnchor: 'end',
-                    maxWidth: 15
-                }
-            }
-
-            return { ...props, textAnchor: 'middle' }
-        };
+        const { scale, top, left, width, tickValues, tickComponent = Tick, ...attributes } = props
 
         return (
-            <Group innerRef={useMergeRefs([groupReference, reference])} top={top} left={left} width={width}>
+            <Group innerRef={reference} top={top} left={left} width={width}>
                 <VisxAsixBottom
+                    {...attributes}
                     scale={scale}
-                    tickValues={ticks}
-                    tickFormat={tickFormat}
+                    tickComponent={tickComponent}
+                    tickValues={tickValues ?? getXScaleTicks({ scale, space: width })}
                     tickLabelProps={getTickXLabelProps}
-                    tickComponent={props => <Tick {...getXTickProps(props)}/>}
                     axisLineClassName={styles.axisLine}
                     tickClassName={styles.axisTick}
                 />
@@ -133,3 +107,5 @@ export const AxisBottom = memo(
         )
     })
 )
+
+AxisBottom.displayName = 'AxisBottom'
