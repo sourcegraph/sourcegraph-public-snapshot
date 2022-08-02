@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
 	"github.com/dghubble/gologin"
 	oauth2Login "github.com/dghubble/gologin/oauth2"
 	"golang.org/x/oauth2"
@@ -21,12 +19,12 @@ func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
 	return oauth2Login.LoginHandler(config, failure)
 }
 
-func CallbackHandler(config *oauth2.Config, success, failure http.Handler, db database.DB) http.Handler {
-	success = gitlabHandler(config, success, failure, db)
+func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
+	success = gitlabHandler(config, success, failure)
 	return oauth2Login.CallbackHandler(config, success, failure)
 }
 
-func gitlabHandler(config *oauth2.Config, success, failure http.Handler, db database.DB) http.Handler {
+func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
 	logger := log.Scoped("GitlabOAuthHandler", "Gitlab OAuth Handler")
 
 	if failure == nil {
@@ -41,7 +39,7 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler, db data
 			return
 		}
 
-		gitlabClient, err := gitlabClientFromAuthURL(config, token, db)
+		gitlabClient, err := gitlabClientFromAuthURL(config.Endpoint.AuthURL, token.AccessToken)
 		if err != nil {
 			ctx = gologin.WithError(ctx, errors.Errorf("could not parse AuthURL %s", config.Endpoint.AuthURL))
 			failure.ServeHTTP(w, req.WithContext(ctx))
@@ -77,15 +75,13 @@ func validateResponse(user *gitlab.User, err error) error {
 	return nil
 }
 
-func gitlabClientFromAuthURL(config *oauth2.Config, token *oauth2.Token, db database.DB) (*gitlab.Client, error) {
-	baseURL, err := url.Parse(config.Endpoint.AuthURL)
+func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error) {
+	baseURL, err := url.Parse(authURL)
 	if err != nil {
 		return nil, err
 	}
 	baseURL.Path = ""
 	baseURL.RawQuery = ""
 	baseURL.Fragment = ""
-
-	//  todo: question: why are passing nil here instead of a httpcli Doer?
-	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil, nil).GetOAuthClient(token.AccessToken), nil
+	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil, nil).GetOAuthClient(oauthToken), nil
 }
