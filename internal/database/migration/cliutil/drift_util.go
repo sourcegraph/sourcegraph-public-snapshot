@@ -59,7 +59,7 @@ func compareExtensions(out *output.Output, schemaName, version string, actual, e
 		}
 
 		return false
-	})
+	}, noopAdditionalCallback[stringNamer])
 }
 
 func compareEnums(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -87,7 +87,7 @@ func compareEnums(out *output.Output, schemaName, version string, actual, expect
 		writeDiff(out, enum.Labels, expectedEnum.Labels)
 		writeSQLSolution(out, "drop and re-create the type", dropEnumStmt, createEnumStmt)
 		return true
-	})
+	}, noopAdditionalCallback[schemas.EnumDescription])
 }
 
 func compareFunctions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -104,7 +104,7 @@ func compareFunctions(out *output.Output, schemaName, version string, actual, ex
 		writeDiff(out, expectedFunction.Definition, function.Definition)
 		writeSQLSolution(out, "replace the function definition", definitionStmt)
 		return true
-	})
+	}, noopAdditionalCallback[schemas.FunctionDescription])
 }
 
 func compareSequences(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -124,7 +124,7 @@ func compareSequences(out *output.Output, schemaName, version string, actual, ex
 		writeDiff(out, expectedSequence, *sequence)
 		writeSearchHint(out, "redefine the sequence", definitionStmt)
 		return true
-	})
+	}, noopAdditionalCallback[schemas.SequenceDescription])
 }
 
 func compareTables(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -146,7 +146,7 @@ func compareTables(out *output.Output, schemaName, version string, actual, expec
 		outOfSync = compareTriggers(out, schemaName, version, *table, expectedTable) || outOfSync
 		outOfSync = compareTableComments(out, schemaName, version, *table, expectedTable) || outOfSync
 		return outOfSync
-	})
+	}, noopAdditionalCallback[schemas.TableDescription])
 }
 
 func compareColumns(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
@@ -325,7 +325,11 @@ func compareViews(out *output.Output, schemaName, version string, actual, expect
 		writeDiff(out, expectedView.Definition, view.Definition)
 		writeSQLSolution(out, "redefine the view", dropViewStmt, createViewStmt)
 		return true
-	})
+	}, noopAdditionalCallback[schemas.ViewDescription])
+}
+
+func noopAdditionalCallback[T schemas.Namer](_ []T) bool {
+	return false
 }
 
 // writeDiff writes a colorized diff of the given objects.
