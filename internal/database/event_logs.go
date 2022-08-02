@@ -108,13 +108,13 @@ type EventLogStore interface {
 	Insert(ctx context.Context, e *Event) error
 
 	// LatestPing returns the most recently recorded ping event.
-	LatestPing(ctx context.Context) (*types.Event, error)
+	LatestPing(ctx context.Context) (*Event, error)
 
 	// ListAll gets all event logs in descending order of timestamp.
-	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error)
+	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error)
 
 	// ListExportableEvents gets all event logs that are allowed to be exported.
-	ListExportableEvents(ctx context.Context, after, limit int) ([]*types.Event, error)
+	ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error)
 
 	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
 
@@ -178,6 +178,7 @@ func SanitizeEventURL(raw string) string {
 
 // Event contains information needed for logging an event.
 type Event struct {
+	ID               int32
 	Name             string
 	URL              string
 	UserID           uint32
@@ -185,6 +186,7 @@ type Event struct {
 	Argument         json.RawMessage
 	PublicArgument   json.RawMessage
 	Source           string
+	Version          string
 	Timestamp        time.Time
 	EvaluatedFlagSet featureflag.EvaluatedFlagSet
 	CohortID         *string // date in YYYY-MM-DD format
@@ -251,16 +253,16 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	)
 }
 
-func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Event, error) {
+func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*Event, error) {
 	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	events := []*types.Event{}
+	events := []*Event{}
 	for rows.Next() {
-		r := types.Event{}
+		r := Event{}
 		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
 		if err != nil {
 			return nil, err
@@ -283,7 +285,7 @@ type EventLogsListOptions struct {
 	EventName *string
 }
 
-func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error) {
+func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
@@ -294,12 +296,12 @@ func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
-func (l *eventLogStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*types.Event, error) {
+func (l *eventLogStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error) {
 	suffix := "WHERE event_logs.id > %d AND name IN (SELECT event_name FROM event_logs_export_allowlist) ORDER BY event_logs.id LIMIT %d"
 	return l.getBySQL(ctx, sqlf.Sprintf(suffix, after, limit))
 }
 
-func (l *eventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
+func (l *eventLogStore) LatestPing(ctx context.Context) (*Event, error) {
 	rows, err := l.getBySQL(ctx, sqlf.Sprintf(`WHERE name='ping' ORDER BY id DESC LIMIT 1`))
 	if err != nil {
 		return nil, err

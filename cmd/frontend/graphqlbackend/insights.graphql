@@ -211,21 +211,6 @@ extend type Query {
     searchInsightPreview(input: SearchInsightPreviewInput!): [SearchInsightLivePreviewSeries!]!
 
     """
-    Returns insights that have matches in this file. This query is experimental and should be considered unstable in the API.
-    """
-    relatedInsightsInline(input: RelatedInsightsInput!): [RelatedInsightInline!]!
-
-    """
-    Returns insights that match the given file. This query is experimental and should be considered unstable in the API.
-    """
-    relatedInsightsForFile(input: RelatedInsightsInput!): [RelatedInsight!]!
-
-    """
-    Returns insights that match the given repo. This query is experimental and should be considered unstable in the API.
-    """
-    relatedInsightsForRepo(input: RelatedInsightsRepoInput!): [RelatedInsight!]!
-
-    """
     Returns insights based on a search query. This is experimental and should be considered unstable in the API.
     """
     searchQueryInsights(
@@ -269,70 +254,6 @@ type SearchQueryInsightsNotAvailable {
 Defines search query insights for a specified search query.
 """
 union SearchQueryInsightsResult = SearchQueryInsights | SearchQueryInsightsNotAvailable
-
-"""
-Input for getting insights related to a file. This input type is experimental and should be considered unstable in the API.
-"""
-input RelatedInsightsInput {
-    """
-    The repo name for the file
-    """
-    repo: String!
-    """
-    The revision number
-    """
-    revision: String!
-    """
-    The path to the file
-    """
-    file: String!
-}
-
-"""
-Input for getting insights related to a repo. This input type is experimental and should be considered unstable in the API.
-"""
-input RelatedInsightsRepoInput {
-    """
-    The repo name for the file
-    """
-    repo: String!
-    """
-    The revision number
-    """
-    revision: String!
-}
-
-"""
-Metadata for finding where an insight matches in a file. This type is experimental and should be considered unstable in the API.
-"""
-type RelatedInsightInline {
-    """
-    Insight view id
-    """
-    viewId: String!
-    """
-    Insight title
-    """
-    title: String!
-    """
-    An array of line numbers where matches are found
-    """
-    lineNumbers: [Int!]!
-}
-
-"""
-Metadata for a related insight. This type is experimental and should be considered unstable in the API.
-"""
-type RelatedInsight {
-    """
-    Insight view id
-    """
-    viewId: String!
-    """
-    Insight title
-    """
-    title: String!
-}
 
 extend type Mutation {
     """

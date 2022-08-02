@@ -35,7 +35,7 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
                     parametersSource: InitialParametersSource.DEFAULT,
                     queryState: { query: '' },
                     searchCaseSensitivity: false,
-                    searchPatternType: SearchPatternType.literal,
+                    searchPatternType: SearchPatternType.standard,
                     searchQueryFromURL: '',
 
                     setQueryState: queryStateUpdate => {

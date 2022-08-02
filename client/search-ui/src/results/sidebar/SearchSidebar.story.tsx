@@ -36,7 +36,7 @@ const mockUseQueryState = create<SearchQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
-    searchPatternType: SearchPatternType.literal,
+    searchPatternType: SearchPatternType.standard,
     searchQueryFromURL: '',
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
@@ -50,7 +50,7 @@ const mockUseQueryState = create<SearchQueryState>((set, get) => ({
 
 const defaultProps: SearchSidebarProps = {
     caseSensitive: false,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,

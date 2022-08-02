@@ -1,4 +1,4 @@
-package migrations
+package codeintel
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
