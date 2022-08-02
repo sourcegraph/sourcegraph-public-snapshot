@@ -34,7 +34,6 @@ func NewAuthzProviders(
 	// Authorization (i.e., permissions) providers
 
 	for _, c := range conns {
-		//p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
 		p, err := newAuthzProvider(c, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
 		if err != nil {
 			problems = append(problems, err.Error())
