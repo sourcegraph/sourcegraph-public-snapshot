@@ -3,12 +3,8 @@ package oauth
 import (
 	"context"
 	"strconv"
-	"strings"
 	"time"
 
-	"golang.org/x/oauth2"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -16,12 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// Next steps
-// 0 - Use ids to retrieve the objects
-// 1 - Fix compiling errors
-// 2 - gilaboauath / githuboauth providers
-//
 
 type RefreshTokenHelperForExternalAccount struct {
 	DB                database.DB
@@ -87,29 +77,4 @@ func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context,
 	}
 
 	return "", nil
-}
-
-// todo - we have a similar function on perms_syncer. It would be better to avoid dupes or find out how to use the
-// same function in both places...s
-func Oauth2ConfigFromGitLabProvider() *oauth2.Config {
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab != nil {
-			p := authProvider.Gitlab
-
-			url := strings.TrimSuffix(p.Url, "/")
-			return &oauth2.Config{
-				ClientID:     p.ClientID,
-				ClientSecret: p.ClientSecret,
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  url + "/oauth/authorize",
-					TokenURL: url + "/oauth/token",
-				},
-				Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
-			}
-
-		}
-	}
-
-	// todo  - log warning
-	return nil
 }
