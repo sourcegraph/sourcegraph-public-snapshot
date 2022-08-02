@@ -50,8 +50,8 @@ func MakeExecutorMetricsGatherer(
 	nodeMetrics := newMetricsSyncPoint()
 	registryMetrics := newMetricsSyncPoint()
 
-	go backgroundCollectNodeExporterMetrics(nodeExporterEndpoint+"/metrics", nodeMetrics)
-	go backgroundCollectNodeExporterMetrics(dockerRegistryNodeExporterEndpoint+"/metrics", registryMetrics)
+	go backgroundCollectNodeExporterMetrics(nodeExporterEndpoint, nodeMetrics)
+	go backgroundCollectNodeExporterMetrics(dockerRegistryNodeExporterEndpoint, registryMetrics)
 
 	return func() (mfs []*dto.MetricFamily, err error) {
 		// notify to start a scrape
@@ -114,7 +114,7 @@ func backgroundCollectNodeExporterMetrics(endpoint string, syncPoint metricsSync
 	collect := func() (map[string]*dto.MetricFamily, error) {
 		resp, err := (&http.Client{
 			Timeout: 2 * time.Second,
-		}).Get(endpoint)
+		}).Get(endpoint + "/metrics")
 		if err != nil {
 			return nil, err
 		}

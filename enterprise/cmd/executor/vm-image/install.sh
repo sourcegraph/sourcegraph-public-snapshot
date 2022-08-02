@@ -6,6 +6,7 @@ export CNI_VERSION=v0.9.1
 export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
+export NODE_EXPORTER_ADDR="127.0.0.1:9100"
 
 ## Install ops agent
 ## Reference: https://cloud.google.com/logging/docs/agent/ops-agent/installation
@@ -99,6 +100,7 @@ Environment=HOME="%h"
 Environment=SRC_LOG_LEVEL=dbug
 Environment=SRC_PROF_HTTP=127.0.0.1:6060
 Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
+Environment=NODE_EXPORTER_URL="http://${NODE_EXPORTER_ADDR}"
 
 [Install]
 WantedBy=multi-user.target
@@ -146,7 +148,7 @@ Description=Node Exporter
 [Service]
 User=node_exporter
 ExecStart=/usr/local/bin/node_exporter \
-  --web.listen-address="127.0.0.1:9100" \
+  --web.listen-address="${NODE_EXPORTER_ADDR}" \
   --collector.disable-defaults \
   --collector.cpu \
   --collector.loadavg \
