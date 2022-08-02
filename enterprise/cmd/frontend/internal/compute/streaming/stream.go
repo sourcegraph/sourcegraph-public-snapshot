@@ -66,7 +66,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := &streamclient.ProgressAggregator{
 		Start:     start,
 		RepoNamer: streamclient.RepoNamer(ctx, h.db),
-		Trace:     trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
+		Trace:     trace.URL(trace.ID(ctx), conf.DefaultClient()),
 	}
 
 	sendProgress := func() {
