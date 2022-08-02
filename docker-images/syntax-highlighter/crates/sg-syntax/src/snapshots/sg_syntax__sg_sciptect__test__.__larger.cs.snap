@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 539
+assertion_line: 541
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -12,40 +12,49 @@ expression: "dump_document(&document, &contents)"
 //^^^^^ IdentifierKeyword
 //      ^^^^^^^^^^ IdentifierNamespace
 //                 ^^^ IdentifierNamespace
+//                    ^ PunctuationDelimiter
   using Bunit;
 //^^^^^ IdentifierKeyword
 //      ^^^^^ IdentifierNamespace
+//           ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^^^^ IdentifierNamespace
 //                ^^^^^^^^^^ IdentifierNamespace
 //                           ^^^^^^^^^^ IdentifierNamespace
+//                                     ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components.Rendering;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^^^^ IdentifierNamespace
 //                ^^^^^^^^^^ IdentifierNamespace
 //                           ^^^^^^^^^^ IdentifierNamespace
 //                                      ^^^^^^^^^ IdentifierNamespace
+//                                               ^ PunctuationDelimiter
   using System;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^ IdentifierNamespace
+//            ^ PunctuationDelimiter
   using System.Collections.Generic;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^ IdentifierNamespace
 //             ^^^^^^^^^^^ IdentifierNamespace
 //                         ^^^^^^^ IdentifierNamespace
+//                                ^ PunctuationDelimiter
   using System.Linq;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^ IdentifierNamespace
 //             ^^^^ IdentifierNamespace
+//                 ^ PunctuationDelimiter
   using System.Text.RegularExpressions;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^ IdentifierNamespace
 //             ^^^^ IdentifierNamespace
 //                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace
+//                                    ^ PunctuationDelimiter
   using Xunit;
 //^^^^^ IdentifierKeyword
 //      ^^^^^ IdentifierNamespace
+//           ^ PunctuationDelimiter
   namespace Radzen.Blazor.
 //^^^^^^^^^ IdentifierNamespace
   {
@@ -65,6 +74,7 @@ expression: "dump_document(&document, &contents)"
 //                      ^^^ Identifier
 //                          ^ IdentifierOperator
 //                            ^^^ IdentifierOperator
+//                                             ^ PunctuationDelimiter
               ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 //            ^^^ Identifier
 //                ^^^^^^^^^ Identifier
@@ -72,11 +82,13 @@ expression: "dump_document(&document, &contents)"
 //                               ^ IdentifierOperator
 //                                 ^^^^^^^^^^^^^ Identifier
 //                                               ^^^^^ Identifier
+//                                                    ^ PunctuationDelimiter
               ctx.JSInterop.SetupModule("_content/Radzen.Blazor/Radzen.Blazor.js");
 //            ^^^ Identifier
 //                ^^^^^^^^^ Identifier
 //                          ^^^^^^^^^^^ Identifier
 //                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                                                ^ PunctuationDelimiter
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
 //            ^^^ IdentifierType
 //                ^^^^^^^^^ Identifier
@@ -106,6 +118,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                                                      ^^ Identifier
 //                                                                                                                         ^ IdentifierOperator
 //                                                                                                                           ^ NumericLiteral
+//                                                                                                                                 ^ PunctuationDelimiter
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
 //                ^^^^^^^^^^^^^^^^ Identifier
 //                                 ^^^ Identifier
@@ -121,17 +134,22 @@ expression: "dump_document(&document, &contents)"
 //                            ^^^^^^^^^^^^^ Identifier
 //                                          ^ NumericLiteral
 //                                             ^^^^^^ IdentifierOperator
+//                                                                               ^ PunctuationDelimiter
                       builder.AddAttribute(1, "Property", "Id");
 //                    ^^^^^^^ Identifier
 //                            ^^^^^^^^^^^^ Identifier
 //                                         ^ NumericLiteral
 //                                            ^^^^^^^^^^ StringLiteral
 //                                                        ^^^^ StringLiteral
+//                                                             ^ PunctuationDelimiter
                       builder.CloseComponent();
 //                    ^^^^^^^ Identifier
 //                            ^^^^^^^^^^^^^^ Identifier
+//                                            ^ PunctuationDelimiter
                   });
+//                  ^ PunctuationDelimiter
               });
+//              ^ PunctuationDelimiter
   
               // Main
 //            ^^^^^^^ Comment
@@ -141,12 +159,14 @@ expression: "dump_document(&document, &contents)"
 //                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                                 ^^^^^^^^^ Identifier
 //                                                                           ^^^^^^ Identifier
+//                                                                                  ^ PunctuationDelimiter
               Assert.Contains(@$"rz-datatable-scrollable-view", component.Markup);
 //            ^^^^^^ Identifier
 //                   ^^^^^^^^ Identifier
 //                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                              ^^^^^^^^^ Identifier
 //                                                                        ^^^^^^ Identifier
+//                                                                               ^ PunctuationDelimiter
   
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
 //            ^^^ IdentifierType
@@ -177,6 +197,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                                                      ^^ Identifier
 //                                                                                                                         ^ IdentifierOperator
 //                                                                                                                           ^ NumericLiteral
+//                                                                                                                                 ^ PunctuationDelimiter
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
 //                ^^^^^^^^^^^^^^^^ Identifier
 //                                 ^^^ Identifier
@@ -192,17 +213,22 @@ expression: "dump_document(&document, &contents)"
 //                            ^^^^^^^^^^^^^ Identifier
 //                                          ^ NumericLiteral
 //                                             ^^^^^^ IdentifierOperator
+//                                                                               ^ PunctuationDelimiter
                       builder.AddAttribute(1, "Property", "Id");
 //                    ^^^^^^^ Identifier
 //                            ^^^^^^^^^^^^ Identifier
 //                                         ^ NumericLiteral
 //                                            ^^^^^^^^^^ StringLiteral
 //                                                        ^^^^ StringLiteral
+//                                                             ^ PunctuationDelimiter
                       builder.CloseComponent();
 //                    ^^^^^^^ Identifier
 //                            ^^^^^^^^^^^^^^ Identifier
+//                                            ^ PunctuationDelimiter
                   });
+//                  ^ PunctuationDelimiter
               });
+//              ^ PunctuationDelimiter
   
               var markup = new Regex(@"\s\s+").Replace(component.Markup, "").Trim();
 //            ^^^ IdentifierType
@@ -215,6 +241,7 @@ expression: "dump_document(&document, &contents)"
 //                                                               ^^^^^^ Identifier
 //                                                                       ^^ StringLiteral
 //                                                                           ^^^^ Identifier
+//                                                                                 ^ PunctuationDelimiter
               Assert.Contains(@$"""rz-cell-data"">1", markup);
 //            ^^^^^^ Identifier
 //                   ^^^^^^^^ Identifier
@@ -224,6 +251,7 @@ expression: "dump_document(&document, &contents)"
 //                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
 //                                                    ^^^^^^ Identifier
+//                                                           ^ PunctuationDelimiter
               Assert.Contains(@$"""rz-cell-data"">2", markup);
 //            ^^^^^^ Identifier
 //                   ^^^^^^^^ Identifier
@@ -233,6 +261,7 @@ expression: "dump_document(&document, &contents)"
 //                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
 //                                                    ^^^^^^ Identifier
+//                                                           ^ PunctuationDelimiter
               Assert.Contains(@$"""rz-cell-data"">3", markup);
 //            ^^^^^^ Identifier
 //                   ^^^^^^^^ Identifier
@@ -242,6 +271,7 @@ expression: "dump_document(&document, &contents)"
 //                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
 //                                                    ^^^^^^ Identifier
+//                                                           ^ PunctuationDelimiter
               Assert.Contains(@"
 //            ^^^^^^ Identifier
 //                   ^^^^^^^^ Identifier
@@ -249,6 +279,7 @@ expression: "dump_document(&document, &contents)"
   ", component.Markup);
 //   ^^^^^^^^^ Identifier
 //             ^^^^^^ Identifier
+//                    ^ PunctuationDelimiter
           }
       }
   }

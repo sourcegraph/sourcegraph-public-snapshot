@@ -198,6 +198,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             // Punctuation Types
             (scope("punctuation.section.mapping"), PunctuationBracket),
             (scope("punctuation.section.sequence"), PunctuationBracket),
+            (scope("punctuation.terminator"), PunctuationDelimiter),
             // TODO: Consider what to do w/ this
             // (scope("punctuation"), PunctuationBracket),
         ]
@@ -438,7 +439,7 @@ int x = 1;
                 new_occurence(vec![4, 0, 3], SyntaxKind::IdentifierType),
                 new_occurence(vec![4, 6, 7], SyntaxKind::IdentifierOperator),
                 new_occurence(vec![4, 8, 9], SyntaxKind::NumericLiteral),
-                new_occurence(vec![4, 9, 10], SyntaxKind::PunctuationBracket),
+                new_occurence(vec![4, 9, 10], SyntaxKind::PunctuationDelimiter),
             ],
             output.occurrences
         );
@@ -462,7 +463,7 @@ int x = 1;
         assert_eq!(
             vec![
                 new_occurence(vec![1, 0, 14], SyntaxKind::StringLiteral),
-                new_occurence(vec![1, 14, 15], SyntaxKind::PunctuationBracket),
+                new_occurence(vec![1, 14, 15], SyntaxKind::PunctuationDelimiter),
             ],
             output.occurrences
         );
@@ -493,16 +494,12 @@ int main() {
   int main() {
 //^^^ IdentifierType
 //    ^^^^ IdentifierFunction
-//        ^ PunctuationBracket
-//         ^ PunctuationBracket
-//           ^ PunctuationBracket
     // Single line comment
 //  ^^^^^^^^^^^^^^^^^^^^^^ Comment
     return x;
 //  ^^^^^^ IdentifierKeyword
-//          ^ PunctuationBracket
+//          ^ PunctuationDelimiter
   }
-//^ PunctuationBracket
 "#
             .trim()
         );
