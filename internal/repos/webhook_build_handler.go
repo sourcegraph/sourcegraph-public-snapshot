@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -22,10 +23,11 @@ import (
 
 type webhookBuildHandler struct {
 	store Store
+	doer  httpcli.Doer
 }
 
-func newWebhookBuildHandler(store Store) *webhookBuildHandler {
-	return &webhookBuildHandler{store: store}
+func newWebhookBuildHandler(store Store, doer httpcli.Doer) *webhookBuildHandler {
+	return &webhookBuildHandler{store: store, doer: doer}
 }
 
 func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
@@ -35,7 +37,7 @@ func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, rec
 	}
 
 	switch wbj.ExtSvcKind {
-	case "GITHUB":
+	case extsvc.KindGitHub:
 		return w.handleCaseGitHub(ctx, logger, wbj)
 	}
 
@@ -47,6 +49,7 @@ func (w *webhookBuildHandler) handleCaseGitHub(ctx context.Context, logger log.L
 	if err != nil || len(svcs) != 1 {
 		return errors.Wrap(err, "get external service")
 	}
+
 	svc := svcs[0]
 	baseURL, err := url.Parse("")
 	if err != nil {
@@ -63,14 +66,7 @@ func (w *webhookBuildHandler) handleCaseGitHub(ctx context.Context, logger log.L
 		return errors.Wrap(err, "get token")
 	}
 
-	cf := httpcli.ExternalClientFactory
-	opts := []httpcli.Opt{}
-	cli, err := cf.Doer(opts...)
-	if err != nil {
-		return errors.Wrap(err, "create client")
-	}
-
-	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, cli)
+	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, w.doer)
 	id, err := client.FindSyncWebhook(ctx, wbj.RepoName)
 	if err != nil {
 		return err
