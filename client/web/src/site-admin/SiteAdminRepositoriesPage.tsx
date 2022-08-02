@@ -1,13 +1,13 @@
 import React, { useEffect, useCallback } from 'react'
 
-import { mdiCloudOutline, mdiCloudDownload, mdiCog } from '@mdi/js'
+import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text, Tooltip, Container } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, Text, Tooltip, Container } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
 import {
@@ -21,7 +21,7 @@ import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
-import { RepoUpdateSchedule } from './components/RepoUpdateSchedule'
+import { RepoMirrorInfo as RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
 
@@ -39,24 +39,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             <div>
                 <ExternalRepositoryIcon externalRepo={node.externalRepository} />
                 <RepoLink repoName={node.name} to={node.url} />
-                {node.mirrorInfo.cloneInProgress && (
-                    <small className="ml-2 text-success">
-                        <LoadingSpinner /> Cloning
-                    </small>
-                )}
-                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
-                        <small className="ml-2 text-muted">
-                            <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
-                        </small>
-                    </Tooltip>
-                )}
-
-                <Text className="mb-0 text-muted">
-                    <small>
-                        <RepoUpdateSchedule mirrorInfo={node.mirrorInfo} />
-                    </small>
-                </Text>
+                <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
             </div>
 
             <div className="repository-node__actions">
