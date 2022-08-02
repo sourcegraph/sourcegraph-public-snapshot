@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 541
+assertion_line: 538
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -59,6 +59,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^ IdentifierNamespace
   {
       public class DataGridTests
+//    ^^^^^^ IdentifierKeyword
 //           ^^^^^ IdentifierType
       {
           // Css classes tests
@@ -66,6 +67,7 @@ expression: "dump_document(&document, &contents)"
           [Fact]
 //         ^^^^ Identifier
           public void DataGrid_Renders_CssClass()
+//        ^^^^^^ IdentifierKeyword
 //               ^^^^ IdentifierType
 //                    ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
           {

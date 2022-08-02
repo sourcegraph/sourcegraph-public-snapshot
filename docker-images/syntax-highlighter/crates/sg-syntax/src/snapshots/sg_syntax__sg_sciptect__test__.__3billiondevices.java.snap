@@ -1,0 +1,68 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 539
+expression: "dump_document(&document, &contents)"
+---
+  interface MyInterface 
+//^^^^^^^^^ IdentifierType
+  { 
+       void abstract_func(int x,int y); 
+//     ^^^^ IdentifierType
+//          ^^^^^^^^^^^^^ IdentifierFunction
+//                        ^^^ IdentifierType
+//                            ^ Identifier
+//                              ^^^ IdentifierType
+//                                  ^ Identifier
+//                                    ^ PunctuationDelimiter
+   
+       default void default_Fun() 
+//     ^^^^^^^ IdentifierKeyword
+//             ^^^^ IdentifierType
+//                  ^^^^^^^^^^^ IdentifierFunction
+      { 
+           System.out.println("This is default method"); 
+//                    ^^^^^^^ Identifier
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                     ^ PunctuationDelimiter
+      } 
+  } 
+   
+  class Main 
+//^^^^^ IdentifierType
+  { 
+       public static void main(String args[]) 
+//     ^^^^^^ IdentifierKeyword
+//            ^^^^^^ IdentifierKeyword
+//                   ^^^^ IdentifierType
+//                        ^^^^ IdentifierFunction
+//                                    ^^^^ Identifier
+//                                        ^^ PunctuationBracket
+      { 
+          //lambda expression
+//        ^^^^^^^^^^^^^^^^^^^ Comment
+          MyInterface fobj = (int x, int y)->System.out.println(x+y); 
+//                         ^ IdentifierOperator
+//                            ^^^ IdentifierType
+//                                ^ Identifier
+//                                   ^^^ IdentifierType
+//                                       ^ Identifier
+//                                         ^^ IdentifierType
+//                                                      ^^^^^^^ Identifier
+//                                                               ^ IdentifierOperator
+//                                                                  ^ PunctuationDelimiter
+   
+          System.out.print("The result = ");
+//                   ^^^^^ Identifier
+//                         ^^^^^^^^^^^^^^^ StringLiteral
+//                                         ^ PunctuationDelimiter
+          fobj.abstract_func(5,5); 
+//             ^^^^^^^^^^^^^ Identifier
+//                           ^ NumericLiteral
+//                             ^ NumericLiteral
+//                               ^ PunctuationDelimiter
+          fobj.default_Fun();
+//             ^^^^^^^^^^^ Identifier
+//                          ^ PunctuationDelimiter
+      } 
+  }
+

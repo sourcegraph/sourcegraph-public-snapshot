@@ -1,11 +1,13 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 541
+assertion_line: 538
 expression: "dump_document(&document, &contents)"
 ---
   class MyClass {
 //^^^^^ IdentifierType
     public static myValue: string;
+//  ^^^^^^ IdentifierKeyword
+//         ^^^^^^ IdentifierKeyword
 //                ^^^^^^^ Identifier
 //                       ^ IdentifierOperator
 //                               ^ PunctuationDelimiter
@@ -33,6 +35,7 @@ expression: "dump_document(&document, &contents)"
     export interface MyInterface extends Other {
 //  ^^^^^^ IdentifierKeyword
 //         ^^^^^^^^^ IdentifierType
+//                               ^^^^^^^ IdentifierKeyword
       myProperty: any;
 //    ^^^^^^^^^^ Identifier
 //              ^ IdentifierOperator
@@ -40,6 +43,7 @@ expression: "dump_document(&document, &contents)"
     }
   }
   declare magicNumber number;
+//^^^^^^^ IdentifierKeyword
 //        ^^^^^^^^^^^ Identifier
 //                    ^^^^^^ Identifier
 //                          ^ PunctuationDelimiter
