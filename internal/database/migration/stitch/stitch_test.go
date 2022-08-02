@@ -336,11 +336,19 @@ func expectedSchema(t *testing.T, rev, filename string) (schemaDescription schem
 func canonicalize(schemaDescription schemas.SchemaDescription) schemas.SchemaDescription {
 	schemas.Canonicalize(schemaDescription)
 
+	filtered := schemaDescription.Tables[:0]
 	for i, table := range schemaDescription.Tables {
+		if table.Name == "migration_logs" {
+			continue
+		}
+
 		for j := range table.Columns {
 			schemaDescription.Tables[i].Columns[j].Index = -1
 		}
+
+		filtered = append(filtered, schemaDescription.Tables[i])
 	}
+	schemaDescription.Tables = filtered
 
 	return schemaDescription
 }

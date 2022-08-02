@@ -8,6 +8,9 @@ import (
 )
 
 type upgradePlan struct {
+	// the source and target instance versions
+	from, to oobmigration.Version
+
 	// the stitched schema migration definitions over the entire version range by schema name
 	stitchedDefinitionsBySchemaName map[string]*definition.Definitions
 
@@ -94,6 +97,8 @@ func planUpgrade(versionRange []oobmigration.Version) (upgradePlan, error) {
 	})
 
 	return upgradePlan{
+		from:                            from,
+		to:                              to,
 		stitchedDefinitionsBySchemaName: stitchedDefinitionsBySchemaName,
 		steps:                           steps,
 	}, nil
@@ -103,18 +108,18 @@ func planUpgrade(versionRange []oobmigration.Version) (upgradePlan, error) {
 // to tags outside of the given set removed. This allows a migrator instance that knows the upgrade
 // path from X -> Y to also know the path from any partial upgrade X <= W -> Z <= Y.
 func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedMigration, error) {
-	filteredstitchedMigrationBySchemaName := make(map[string]shared.StitchedMigration, len(schemas.SchemaNames))
+	filteredStitchedMigrationBySchemaName := make(map[string]shared.StitchedMigration, len(schemas.SchemaNames))
 	for _, schemaName := range schemas.SchemaNames {
 		boundsByRev := make(map[string]shared.MigrationBounds, len(tags))
 		for _, tag := range tags {
 			boundsByRev[tag] = shared.StitchedMigationsBySchemaName[schemaName].BoundsByRev[tag]
 		}
 
-		filteredstitchedMigrationBySchemaName[schemaName] = shared.StitchedMigration{
+		filteredStitchedMigrationBySchemaName[schemaName] = shared.StitchedMigration{
 			Definitions: shared.StitchedMigationsBySchemaName[schemaName].Definitions,
 			BoundsByRev: boundsByRev,
 		}
 	}
 
-	return filteredstitchedMigrationBySchemaName, nil
+	return filteredStitchedMigrationBySchemaName, nil
 }

@@ -118,18 +118,9 @@
     - SandboxService
 - filename: internal/codeintel/dependencies/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies
-      interfaces:
-        - LockfilesService
-        - Syncer
-        - localGitService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store
       interfaces:
         - Store
-- filename: internal/codeintel/dependencies/internal/lockfiles/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles
-  interfaces:
-    - GitService
 - filename: internal/codeintel/documents/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/documents/internal/store
   interfaces:

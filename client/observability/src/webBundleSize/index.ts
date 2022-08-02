@@ -29,7 +29,7 @@ const environment = cleanEnv(process.env, {
 
 const bundleSizeStats = getBundleSizeStats(path.join(WORKSPACES_PATH, 'web/bundlesize.config'))
 const commit = execSync('git rev-parse HEAD').toString().trim()
-const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+const branch = process.env.BUILDKITE_BRANCH || execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
 
 /**
  * Log every file size as a separate event to Honeycomb.

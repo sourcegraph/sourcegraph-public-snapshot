@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
+
 import { Extension } from '@codemirror/state'
-import { EditorView, hoverTooltip, Tooltip } from '@codemirror/view'
+import { EditorView, hoverTooltip, repositionTooltips, Tooltip } from '@codemirror/view'
 import { upperFirst } from 'lodash'
 import { createRoot } from 'react-dom/client'
 
@@ -18,6 +20,7 @@ const hoverCardTheme = EditorView.theme({
     '.cm-code-intel-hovercard': {
         fontFamily: 'sans-serif',
         minWidth: '10rem',
+        maxWidth: '35rem',
     },
     '.cm-code-intel-contents': {
         maxHeight: '25rem',
@@ -47,8 +50,8 @@ export function hovercard(
         // hoverTooltip takes care of only calling the source (and processing
         // its return value) when necessary.
         hoverTooltip(
-            async (...args) => {
-                const result = await source(...args)
+            async (view, ...args) => {
+                const result = await source(view, ...args)
                 if (!result) {
                     return null
                 }
@@ -61,9 +64,19 @@ export function hovercard(
                         return {
                             dom: container,
                             overlap: true,
+
                             mount() {
                                 const root = createRoot(container)
-                                root.render(<Hovercard {...props} />)
+                                root.render(
+                                    <Hovercard
+                                        {...props}
+                                        onRender={() => {
+                                            // Trigger repositioning after component rendered to ensure that
+                                            // its position is account for its width and height
+                                            repositionTooltips(view)
+                                        }}
+                                    />
+                                )
                             },
                         }
                     },
@@ -81,7 +94,11 @@ export function hovercard(
  * A simple replication of the hovercard for the old blob view.
  * TODO: Reuse existing hovercard component for full feature parity
  */
-export const Hovercard: React.FunctionComponent<Pick<HoverOverlayBaseProps, 'hoverOrError'>> = ({ hoverOrError }) => {
+export const Hovercard: React.FunctionComponent<
+    Pick<HoverOverlayBaseProps, 'hoverOrError'> & { onRender: () => void }
+> = ({ hoverOrError, onRender }) => {
+    useEffect(onRender, [onRender])
+
     if (isErrorLike(hoverOrError)) {
         return <Alert className={hoverOverlayStyle.hoverError}>{upperFirst(hoverOrError.message)}</Alert>
     }
