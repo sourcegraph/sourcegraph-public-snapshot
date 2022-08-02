@@ -3803,7 +3803,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 250 remaining calls to GitHub graphql API before hitting the rate limit
-- <span class="badge badge-critical">critical</span> repo-updater: less than 250 remaining calls to GitHub graphql API before hitting the rate limit for 50m0s
 
 **Next steps**
 
@@ -3813,8 +3812,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_graphql_rate_limit_remaining",
-  "critical_repo-updater_github_graphql_rate_limit_remaining"
+  "warning_repo-updater_github_graphql_rate_limit_remaining"
 ]
 ```
 
@@ -3829,7 +3827,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 250 remaining calls to GitHub rest API before hitting the rate limit
-- <span class="badge badge-critical">critical</span> repo-updater: less than 250 remaining calls to GitHub rest API before hitting the rate limit for 50m0s
 
 **Next steps**
 
@@ -3839,8 +3836,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_rest_rate_limit_remaining",
-  "critical_repo-updater_github_rest_rate_limit_remaining"
+  "warning_repo-updater_github_rest_rate_limit_remaining"
 ]
 ```
 
@@ -3855,7 +3851,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 5 remaining calls to GitHub search API before hitting the rate limit
-- <span class="badge badge-critical">critical</span> repo-updater: less than 5 remaining calls to GitHub search API before hitting the rate limit for 50m0s
 
 **Next steps**
 
@@ -3865,8 +3860,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_search_rate_limit_remaining",
-  "critical_repo-updater_github_search_rate_limit_remaining"
+  "warning_repo-updater_github_search_rate_limit_remaining"
 ]
 ```
 
