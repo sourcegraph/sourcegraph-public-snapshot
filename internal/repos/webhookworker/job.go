@@ -12,6 +12,8 @@ type Job struct {
 	// Webhook builder fields
 	RepoID     int32
 	RepoName   string
+	Org        string
+	ExtSvcID   int64
 	ExtSvcKind string
 	QueuedAt   *time.Time
 
@@ -34,6 +36,8 @@ func (j *Job) RecordID() int {
 var jobColumns = []*sqlf.Query{
 	sqlf.Sprintf("webhook_build_jobs.repo_id"),
 	sqlf.Sprintf("webhook_build_jobs.repo_name"),
+	sqlf.Sprintf("webhook_build_jobs.org"),
+	sqlf.Sprintf("webhook_build_jobs.extsvc_id"),
 	sqlf.Sprintf("webhook_build_jobs.extsvc_kind"),
 	sqlf.Sprintf("webhook_build_jobs.queued_at"),
 	sqlf.Sprintf("id"),
