@@ -22,8 +22,7 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	RelatedInsightsInline(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsInlineResolver, error)
-	RelatedInsightsForFile(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsForFileResolver, error)
+	SearchQueryInsights(ctx context.Context, args SearchQueryInsightsArgs) (SearchQueryInsightsResult, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -200,7 +199,7 @@ type InsightViewResolver interface {
 	DefaultSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
-	SeriesCount(ctx context.Context) (int32, error)
+	SeriesCount(ctx context.Context) (*int32, error)
 }
 
 type InsightDataSeriesDefinition interface {
@@ -453,23 +452,21 @@ type SearchInsightLivePreviewSeriesResolver interface {
 	Label(ctx context.Context) (string, error)
 }
 
-type RelatedInsightsArgs struct {
-	Input RelatedInsightsInput
+type SearchQueryInsightsResolver interface {
+	ThirtyDayPercentChange(ctx context.Context) (int32, error)
+	Preview(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
 }
 
-type RelatedInsightsInput struct {
-	Repo     string
-	File     string
-	Revision string
+type SearchQueryInsightsNotAvailable interface {
+	Message(ctx context.Context) string
 }
 
-type RelatedInsightsInlineResolver interface {
-	ViewID() string
-	Title() string
-	LineNumbers() []int32
+type SearchQueryInsightsArgs struct {
+	Query       string `json:"query"`
+	PatternType string `json:"patternType"`
 }
 
-type RelatedInsightsForFileResolver interface {
-	ViewID() string
-	Title() string
+type SearchQueryInsightsResult interface {
+	ToSearchQueryInsights() (SearchQueryInsightsResolver, bool)
+	ToSearchQueryInsightsNotAvailable() (SearchQueryInsightsNotAvailable, bool)
 }

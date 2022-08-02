@@ -9,6 +9,7 @@ import (
 	"github.com/grafana/regexp"
 
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -108,22 +109,6 @@ func SingleRepoQueryIndexed(query BasicQuery, repo string) BasicQuery {
 	return modified
 }
 
-func SingleFileQuery(query BasicQuery, repo, file string, revision string, defaultParams searchquery.Parameters) (BasicQuery, error) {
-	modified := withCountAll(query)
-	modified, err := withDefaults(modified, defaultParams)
-	if err != nil {
-		return "", errors.Wrap(err, "WithDefaults")
-	}
-	if len(revision) > 0 {
-		modified = forRepoRevision(modified, repo, revision)
-	} else {
-		modified = forRepos(modified, []string{repo})
-	}
-	modified = BasicQuery(fmt.Sprintf("%s file:%s", modified, file))
-
-	return modified, nil
-}
-
 // GlobalQuery generates a Sourcegraph query with the provided default values given a user specified query. This query will be global (against all visible repositories).
 func GlobalQuery(query BasicQuery, defaultParams searchquery.Parameters) (BasicQuery, error) {
 	modified := withCountAll(query)
@@ -181,4 +166,31 @@ func (q BasicQuery) String() string {
 
 func (q ComputeInsightQuery) String() string {
 	return string(q)
+}
+
+var QueryNotSupported = errors.New("query not supported")
+
+// IsSingleRepoQuery - Returns a boolean indicating if the query provided targets only a single repo.
+// At this time only queries with a single query plan step are supported.  Queries with multiple plan steps
+// will error with `QueryNotSupported`
+func IsSingleRepoQuery(query BasicQuery) (bool, error) {
+
+	// because we are only attempting to understand if this query targets a single repo, the search type is not relevant
+	planSteps, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return false, err
+	}
+
+	if len(planSteps) > 1 {
+		return false, QueryNotSupported
+	}
+
+	for _, step := range planSteps {
+		repoFilters, _ := step.Repositories()
+		if !searchrepos.ExactlyOneRepo(repoFilters) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }

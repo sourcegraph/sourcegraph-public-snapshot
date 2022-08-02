@@ -2244,7 +2244,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	s := New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
+	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
@@ -2387,7 +2387,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	s := New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
+	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 

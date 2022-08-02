@@ -23,7 +23,9 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -178,7 +180,7 @@ func TestNewCertPool(t *testing.T) {
 			name:  "fails if transport isn't an http.Transport",
 			cli:   &http.Client{Transport: bogusTransport{}},
 			certs: []string{cert},
-			err:   "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
+			err:   "httpcli.NewCertPoolOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:  "pool is set to what is given",
@@ -216,6 +218,11 @@ func TestNewCertPool(t *testing.T) {
 
 func TestNewIdleConnTimeoutOpt(t *testing.T) {
 	timeout := 33 * time.Second
+
+	// originalRoundtripper must only be used in one test, set at this scope for
+	// convenience.
+	originalRoundtripper := &http.Transport{}
+
 	for _, tc := range []struct {
 		name    string
 		cli     *http.Client
@@ -235,7 +242,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 		{
 			name: "fails if transport isn't an http.Transport",
 			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
+			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:    "IdleConnTimeout is set to what is given",
@@ -246,6 +253,28 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 				if want := timeout; !reflect.DeepEqual(have, want) {
 					t.Fatal(cmp.Diff(have, want))
 				}
+			},
+		},
+		{
+			name: "IdleConnTimeout is set to what is given on a wrapped transport",
+			cli: func() *http.Client {
+				return &http.Client{Transport: &wrappedTransport{
+					RoundTripper: &actor.HTTPTransport{RoundTripper: originalRoundtripper},
+					Wrapped:      originalRoundtripper,
+				}}
+			}(),
+			timeout: timeout,
+			assert: func(t testing.TB, cli *http.Client) {
+				unwrapped := unwrapAll(cli.Transport.(WrappedTransport))
+				have := (*unwrapped).(*http.Transport).IdleConnTimeout
+
+				// Timeout is set on the underlying transport
+				if want := timeout; !reflect.DeepEqual(have, want) {
+					t.Fatal(cmp.Diff(have, want))
+				}
+
+				// Original roundtripper unchanged!
+				assert.Equal(t, time.Duration(0), originalRoundtripper.IdleConnTimeout)
 			},
 		},
 	} {

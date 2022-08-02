@@ -61,14 +61,17 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         buttonLabel: 'Retry changesets',
         dropdownTitle: 'Retry changesets',
         dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <ReenqueueChangesetsModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_retry:clicked')
+            return (
+                <ReenqueueChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
     [BulkOperationType.COMMENT]: {
         type: 'commentatore',
@@ -76,14 +79,17 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Create comment',
         dropdownDescription:
             'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <CreateCommentModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_comment:clicked')
+            return (
+                <CreateCommentModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
     [BulkOperationType.MERGE]: {
         type: 'merge',
@@ -92,14 +98,17 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Merge changesets',
         dropdownDescription:
             'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <MergeChangesetsModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_merge:clicked')
+            return (
+                <MergeChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
     [BulkOperationType.CLOSE]: {
         type: 'close',
@@ -107,28 +116,34 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Close changesets',
         dropdownDescription:
             'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <CloseChangesetsModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_close:clicked')
+            return (
+                <CloseChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
     [BulkOperationType.PUBLISH]: {
         type: 'publish',
         buttonLabel: 'Publish changesets',
         dropdownTitle: 'Publish changesets',
         dropdownDescription: 'Attempt to publish all selected changesets to the code hosts.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
-            <PublishChangesetsModal
-                batchChangeID={batchChangeID}
-                changesetIDs={changesetIDs}
-                afterCreate={onDone}
-                onCancel={onCancel}
-            />
-        ),
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_published:clicked')
+            return (
+                <PublishChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
 }
 

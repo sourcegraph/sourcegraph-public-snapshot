@@ -22,7 +22,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     executorsEnabled: true,
     codeIntelAutoIndexingEnabled: true,
     codeIntelAutoIndexingAllowGlobalPolicies: true,
-    codeIntelLockfileIndexingEnabled: true,
     codeInsightsGqlApiEnabled: false,
     externalServicesUserMode: 'disabled',
     productResearchPageEnabled: true,
@@ -47,4 +46,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     version: '0.0.0',
     xhrHeaders: {},
     authProviders: [builtinAuthProvider],
+    authMinPasswordLength: 12,
+    enableLegacyExtensions: true,
 })

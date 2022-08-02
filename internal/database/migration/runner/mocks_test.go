@@ -12,7 +12,7 @@ import (
 
 	definition "github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	schemas "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	storetypes "github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	shared "github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
@@ -69,7 +69,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		IndexStatusFunc: &StoreIndexStatusFunc{
-			defaultHook: func(context.Context, string, string) (r0 storetypes.IndexStatus, r1 bool, r2 error) {
+			defaultHook: func(context.Context, string, string) (r0 shared.IndexStatus, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -121,7 +121,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		IndexStatusFunc: &StoreIndexStatusFunc{
-			defaultHook: func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+			defaultHook: func(context.Context, string, string) (shared.IndexStatus, bool, error) {
 				panic("unexpected invocation of MockStore.IndexStatus")
 			},
 		},
@@ -499,15 +499,15 @@ func (c StoreDownFuncCall) Results() []interface{} {
 // StoreIndexStatusFunc describes the behavior when the IndexStatus method
 // of the parent MockStore instance is invoked.
 type StoreIndexStatusFunc struct {
-	defaultHook func(context.Context, string, string) (storetypes.IndexStatus, bool, error)
-	hooks       []func(context.Context, string, string) (storetypes.IndexStatus, bool, error)
+	defaultHook func(context.Context, string, string) (shared.IndexStatus, bool, error)
+	hooks       []func(context.Context, string, string) (shared.IndexStatus, bool, error)
 	history     []StoreIndexStatusFuncCall
 	mutex       sync.Mutex
 }
 
 // IndexStatus delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) IndexStatus(v0 context.Context, v1 string, v2 string) (storetypes.IndexStatus, bool, error) {
+func (m *MockStore) IndexStatus(v0 context.Context, v1 string, v2 string) (shared.IndexStatus, bool, error) {
 	r0, r1, r2 := m.IndexStatusFunc.nextHook()(v0, v1, v2)
 	m.IndexStatusFunc.appendCall(StoreIndexStatusFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
@@ -515,7 +515,7 @@ func (m *MockStore) IndexStatus(v0 context.Context, v1 string, v2 string) (store
 
 // SetDefaultHook sets function that is called when the IndexStatus method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreIndexStatusFunc) SetDefaultHook(hook func(context.Context, string, string) (storetypes.IndexStatus, bool, error)) {
+func (f *StoreIndexStatusFunc) SetDefaultHook(hook func(context.Context, string, string) (shared.IndexStatus, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -523,7 +523,7 @@ func (f *StoreIndexStatusFunc) SetDefaultHook(hook func(context.Context, string,
 // IndexStatus method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreIndexStatusFunc) PushHook(hook func(context.Context, string, string) (storetypes.IndexStatus, bool, error)) {
+func (f *StoreIndexStatusFunc) PushHook(hook func(context.Context, string, string) (shared.IndexStatus, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -531,20 +531,20 @@ func (f *StoreIndexStatusFunc) PushHook(hook func(context.Context, string, strin
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreIndexStatusFunc) SetDefaultReturn(r0 storetypes.IndexStatus, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+func (f *StoreIndexStatusFunc) SetDefaultReturn(r0 shared.IndexStatus, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string) (shared.IndexStatus, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreIndexStatusFunc) PushReturn(r0 storetypes.IndexStatus, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+func (f *StoreIndexStatusFunc) PushReturn(r0 shared.IndexStatus, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string, string) (shared.IndexStatus, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreIndexStatusFunc) nextHook() func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+func (f *StoreIndexStatusFunc) nextHook() func(context.Context, string, string) (shared.IndexStatus, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -588,7 +588,7 @@ type StoreIndexStatusFuncCall struct {
 	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 storetypes.IndexStatus
+	Result0 shared.IndexStatus
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool

@@ -238,7 +238,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 <LazyMonacoQueryInput
                                     editorComponent={editorComponent}
                                     isLightTheme={isLightTheme}
-                                    patternType={SearchPatternType.literal}
+                                    patternType={SearchPatternType.standard}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                     caseSensitive={false}
                                     queryState={queryState}
@@ -252,7 +252,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 <Link
                                     to={`/search?${buildSearchURLQuery(
                                         queryState.query,
-                                        SearchPatternType.literal,
+                                        SearchPatternType.standard,
                                         false
                                     )}`}
                                     target="_blank"

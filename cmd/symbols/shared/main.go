@@ -2,7 +2,11 @@ package shared
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -14,9 +18,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
+	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -67,8 +75,33 @@ func Main(setup SetupFunc) {
 		},
 	}
 
+	// Allow to do a sanity check of sqlite.
+	sanityCheck, err := strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
+	if err != nil {
+		fmt.Printf("Invalid SANITY_CHECK value: %s\n", err.Error())
+		os.Exit(1)
+	}
+	if sanityCheck {
+		// Ensure we register our database driver before calling
+		// anything that tries to open a SQLite database.
+		sqlite.Init()
+
+		fmt.Print("Running sanity check...")
+		if err := sqlite.SanityCheck(); err != nil {
+			fmt.Println("failed ❌", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("passed ✅")
+		os.Exit(0)
+	}
+
+	// Initialize main DB connection.
+	sqlDB := mustInitializeFrontendDB(logger, observationContext)
+	db := database.NewDB(logger, sqlDB)
+
 	// Run setup
-	gitserverClient := gitserver.NewClient(observationContext)
+	gitserverClient := gitserver.NewClient(db, observationContext)
 	repositoryFetcherConfig := types.LoadRepositoryFetcherConfig(env.BaseConfig{})
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, repositoryFetcherConfig.MaxTotalPathsLength, int64(repositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
 	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, gitserverClient, repositoryFetcher)
@@ -82,14 +115,31 @@ func Main(setup SetupFunc) {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	// Create HTTP server
+	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = ot.HTTPMiddleware(handler)
+	handler = actor.HTTPMiddleware(handler)
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(logger, api.NewHandler(searchFunc, handleStatus, ctagsBinary), conf.DefaultClient()))),
+		Handler:      handler,
 	})
 	routines = append(routines, server)
 
 	// Mark health server as ready and go!
 	close(ready)
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
+}
+
+func mustInitializeFrontendDB(logger log.Logger, observationContext *observation.Context) *sql.DB {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+
+	db, err := connections.EnsureNewFrontendDB(dsn, "symbols", observationContext)
+	if err != nil {
+		logger.Fatal("failed to connect to database", log.Error(err))
+	}
+
+	return db
 }

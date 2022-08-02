@@ -77,7 +77,7 @@ func (cm CommitMatch) MarshalJSON() ([]byte, error) {
 	return json.Marshal(marshaler)
 }
 
-func (cm *CommitMatch) UnmarshalJSON(input []byte) error {
+func (cm *CommitMatch) UnmarshalJSON(input []byte) (err error) {
 	var unmarshaler stableCommitMatchJSON
 	if err := json.Unmarshal(input, &unmarshaler); err != nil {
 		return err
@@ -95,6 +95,14 @@ func (cm *CommitMatch) UnmarshalJSON(input []byte) error {
 	parents := make([]api.CommitID, len(unmarshaler.Parents))
 	for i, parent := range unmarshaler.Parents {
 		parents[i] = api.CommitID(parent)
+	}
+
+	var structuredDiff []DiffFile
+	if unmarshaler.DiffPreview != nil {
+		structuredDiff, err = ParseDiffString(unmarshaler.DiffPreview.Content)
+		if err != nil {
+			return err
+		}
 	}
 
 	*cm = CommitMatch{
@@ -118,6 +126,7 @@ func (cm *CommitMatch) UnmarshalJSON(input []byte) error {
 		SourceRefs:     unmarshaler.SourceRefs,
 		MessagePreview: unmarshaler.MessagePreview,
 		DiffPreview:    unmarshaler.DiffPreview,
+		Diff:           structuredDiff,
 		ModifiedFiles:  unmarshaler.ModifiedFiles,
 	}
 	return nil

@@ -16,6 +16,7 @@ import { ExtensionManifest } from '../../extensions/extensionManifest'
 import { areExtensionsSame } from '../../extensions/extensions'
 import { queryConfiguredRegistryExtensions } from '../../extensions/helpers'
 import { PlatformContext } from '../../platform/context'
+import { isSettingsValid } from '../../settings/settings'
 
 /**
  * @returns An observable that emits the list of extensions configured in the viewer's final settings upon
@@ -65,6 +66,12 @@ export const getConfiguredSideloadedExtension = (
     )
 
 /**
+ * List of extensions migrated to the core workflow. These extensions should not be activated if
+ * `extensionsAsCoreFeatures` experimental feature is enabled.
+ */
+export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras'])
+
+/**
  * Returns an Observable of extensions enabled for the user.
  * Wrapped with the `once` function from lodash.
  */
@@ -72,7 +79,11 @@ export const getEnabledExtensions = once(
     (
         context: Pick<
             PlatformContext,
-            'settings' | 'getGraphQLClient' | 'sideloadedExtensionURL' | 'getScriptURLForExtension'
+            | 'settings'
+            | 'getGraphQLClient'
+            | 'sideloadedExtensionURL'
+            | 'getScriptURLForExtension'
+            | 'clientApplication'
         >
     ): Observable<ConfiguredExtension[]> => {
         const sideloadedExtension = from(context.sideloadedExtensionURL).pipe(
@@ -85,7 +96,21 @@ export const getEnabledExtensions = once(
 
         return combineLatest([viewerConfiguredExtensions(context), sideloadedExtension, context.settings]).pipe(
             map(([configuredExtensions, sideloadedExtension, settings]) => {
-                let enabled = configuredExtensions.filter(extension => isExtensionEnabled(settings.final, extension.id))
+                const extensionsAsCoreFeatures =
+                    isSettingsValid(settings) && settings.final.experimentalFeatures?.extensionsAsCoreFeatures
+
+                let enabled = configuredExtensions.filter(extension => {
+                    // Ignore extensions migrated to the core workflow if the experimental feature is enabled
+                    if (
+                        context.clientApplication === 'sourcegraph' &&
+                        extensionsAsCoreFeatures &&
+                        MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
+                    ) {
+                        return false
+                    }
+
+                    return isExtensionEnabled(settings.final, extension.id)
+                })
                 if (sideloadedExtension) {
                     if (!isErrorLike(sideloadedExtension.manifest) && sideloadedExtension.manifest?.publisher) {
                         // Disable extension with the same ID while this extension is sideloaded
@@ -95,6 +120,7 @@ export const getEnabledExtensions = once(
 
                     enabled.push(sideloadedExtension)
                 }
+
                 return enabled
             }),
             distinctUntilChanged((a, b) => areExtensionsSame(a, b)),

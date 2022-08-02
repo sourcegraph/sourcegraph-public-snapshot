@@ -450,7 +450,6 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-		LockfileIndexingEnabled:   args.LockfileIndexingEnabled,
 	})
 	if err != nil {
 		return nil, err
@@ -491,7 +490,6 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-		LockfileIndexingEnabled:   args.LockfileIndexingEnabled,
 	}); err != nil {
 		return nil, err
 	}

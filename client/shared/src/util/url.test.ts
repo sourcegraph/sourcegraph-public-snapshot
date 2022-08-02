@@ -360,8 +360,8 @@ describe('buildSearchURLQuery', () => {
     it('builds the URL query for a regular expression search', () =>
         expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, undefined)).toBe('q=foo&patternType=regexp'))
     it('builds the URL query for a literal search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false, undefined)).toBe(
-            'q=foo&patternType=literal'
+        expect(buildSearchURLQuery('foo', SearchPatternType.standard, false, undefined)).toBe(
+            'q=foo&patternType=standard'
         ))
     it('handles an empty query', () =>
         expect(buildSearchURLQuery('', SearchPatternType.regexp, false, undefined)).toBe('q=&patternType=regexp'))
@@ -401,20 +401,20 @@ describe('buildSearchURLQuery', () => {
         })
     })
     it('builds the URL query with a case parameter if caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true, undefined)).toBe(
-            'q=foo&patternType=literal&case=yes'
+        expect(buildSearchURLQuery('foo', SearchPatternType.standard, true, undefined)).toBe(
+            'q=foo&patternType=standard&case=yes'
         ))
     it('appends the case parameter if `case:yes` exists in the query', () =>
-        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false, undefined)).toBe(
-            'q=foo+&patternType=literal&case=yes'
+        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.standard, false, undefined)).toBe(
+            'q=foo+&patternType=standard&case=yes'
         ))
     it('removes the case parameter if using a quoted value', () =>
-        expect(buildSearchURLQuery('foo case:"yes"', SearchPatternType.literal, true, undefined)).toBe(
-            'q=foo+&patternType=literal&case=yes'
+        expect(buildSearchURLQuery('foo case:"yes"', SearchPatternType.standard, true, undefined)).toBe(
+            'q=foo+&patternType=standard&case=yes'
         ))
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, undefined)).toBe(
-            'q=foo+&patternType=literal'
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.standard, true, undefined)).toBe(
+            'q=foo+&patternType=standard'
         ))
 })
 

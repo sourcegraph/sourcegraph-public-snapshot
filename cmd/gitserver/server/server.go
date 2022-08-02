@@ -1065,7 +1065,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if format == "zip" {
+	if format == string(gitserver.ArchiveFormatZip) {
 		// Compression level of 0 (no compression) seems to perform the
 		// best overall on fast network links, but this has not been tuned
 		// thoroughly.

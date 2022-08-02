@@ -41,6 +41,7 @@ describe('SignUpPage', () => {
                                         allowSignup: true,
                                         sourcegraphDotComMode: false,
                                         experimentalFeatures: { enablePostSignupFlow: false },
+                                        authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
                                     }}
@@ -70,6 +71,7 @@ describe('SignUpPage', () => {
                                         allowSignup: true,
                                         sourcegraphDotComMode: true,
                                         experimentalFeatures: { enablePostSignupFlow: false },
+                                        authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
                                     }}
@@ -107,6 +109,7 @@ describe('SignUpPage', () => {
                                         allowSignup: true,
                                         sourcegraphDotComMode: false,
                                         experimentalFeatures: { enablePostSignupFlow: false },
+                                        authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
                                     }}

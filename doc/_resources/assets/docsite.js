@@ -40,11 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const style = document.createElement('style')
   for (const link of document.querySelectorAll('body > #sidebar .nav-section.tree a')) {
     const current = link.pathname === pagePath
-    const expand = pagePath === link.pathname || pagePath.startsWith(link.pathname + '/')
+    const expand = current || pagePath.startsWith(link.pathname + '/')
+    const subsection = link.pathname.split('/').length >= 3
 
     const item = link.parentNode
     item.classList.toggle('current', current)
     item.classList.toggle('expand', expand)
+    item.classList.toggle('active-subsection', subsection && expand)
     item.classList.toggle('collapse', !expand)
   }
 })

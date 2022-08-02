@@ -56,7 +56,7 @@ export interface StreamingSearchResultsProps
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
+        PlatformContextProps<'settings' | 'requestGraphQL'>,
         TelemetryProps,
         ThemeProps,
         CodeInsightsProps {
@@ -138,7 +138,7 @@ export const StreamingSearchResults: React.FunctionComponent<
     const options: StreamSearchOptions = useMemo(
         () => ({
             version: LATEST_VERSION,
-            patternType: patternType ?? SearchPatternType.literal,
+            patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
         }),

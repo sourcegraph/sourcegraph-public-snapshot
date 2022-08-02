@@ -506,6 +506,26 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 		return nil, ErrIDIsZero{}
 	}
 
+	if licenseErr := checkLicense(); licenseErr != nil {
+		if licensing.IsFeatureNotActivated(licenseErr) {
+			batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+				RandID: opts.BatchSpecRandID,
+			})
+			if err != nil {
+				return nil, err
+			}
+			count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+			if err != nil {
+				return nil, err
+			}
+			if count > maxUnlicensedChangesets {
+				return nil, ErrBatchChangesUnlicensed{licenseErr}
+			}
+		} else {
+			return nil, licenseErr
+		}
+	}
+
 	if args.EnsureBatchChange != nil {
 		opts.EnsureBatchChangeID, err = unmarshalBatchChangeID(*args.EnsureBatchChange)
 		if err != nil {
@@ -1573,6 +1593,11 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
+	bid, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
 	batchSpec, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
 		NamespaceUserID:  uid,
 		NamespaceOrgID:   oid,
@@ -1580,6 +1605,7 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
 		NoCache:          args.NoCache,
+		BatchChange:      bid,
 	})
 	if err != nil {
 		return nil, err
@@ -1911,6 +1937,10 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
+	return maxUnlicensedChangesets
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {

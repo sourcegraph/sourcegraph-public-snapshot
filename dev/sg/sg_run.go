@@ -92,7 +92,10 @@ func constructRunCmdLongHelp() string {
 	fmt.Fprintf(&out, "Available commands in `%s`:\n", configFile)
 
 	var names []string
-	for name := range config.Commands {
+	for name, command := range config.Commands {
+		if command.Description != "" {
+			name = fmt.Sprintf("%s: %s", name, command.Description)
+		}
 		names = append(names, name)
 	}
 	sort.Strings(names)

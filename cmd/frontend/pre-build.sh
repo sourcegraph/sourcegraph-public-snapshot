@@ -8,7 +8,7 @@ echo "--- yarn"
 if [[ -z "${CI}" ]]; then
   yarn --mutex network
 else
-  yarn --mutex network --frozen-lockfile --network-timeout 60000
+  ./dev/ci/yarn-install-with-retry.sh
 fi
 
 echo "--- yarn run build-web"
