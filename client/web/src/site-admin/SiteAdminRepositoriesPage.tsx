@@ -10,18 +10,18 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text, Tooltip, Container } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
-import { defaultExternalServices } from '../components/externalServices/externalServices'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
-import { ExternalServiceKind, RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
+import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
 import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
+import { RepoUpdateSchedule } from './components/RepoUpdateSchedule'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
 
@@ -29,85 +29,60 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
-    console.log(node.externalRepository)
-
-    const externalServiceKind = node.externalRepository.serviceType.toUpperCase() as ExternalServiceKind
-    const IconComponent = defaultExternalServices[externalServiceKind].icon
-    return (
-        <li
-            className="repository-node list-group-item py-2"
-            data-test-repository={node.name}
-            data-test-cloned={node.mirrorInfo.cloned}
-        >
-            <div className="d-flex align-items-center justify-content-between">
-                <div>
-                    <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
-                    <RepoLink repoName={node.name} to={node.url} />
-                    {node.mirrorInfo.cloneInProgress && (
-                        <small className="ml-2 text-success">
-                            <LoadingSpinner /> Cloning
+const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
+    <li
+        className="repository-node list-group-item py-2"
+        data-test-repository={node.name}
+        data-test-cloned={node.mirrorInfo.cloned}
+    >
+        <div className="d-flex align-items-center justify-content-between">
+            <div>
+                <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                <RepoLink repoName={node.name} to={node.url} />
+                {node.mirrorInfo.cloneInProgress && (
+                    <small className="ml-2 text-success">
+                        <LoadingSpinner /> Cloning
+                    </small>
+                )}
+                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
+                    <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
+                        <small className="ml-2 text-muted">
+                            <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
                         </small>
-                    )}
-                    {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                        <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
-                            <small className="ml-2 text-muted">
-                                <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
-                            </small>
-                        </Tooltip>
-                    )}
+                    </Tooltip>
+                )}
 
-                    <Text className="mb-0 text-muted">
-                        <small>
-                            {node.mirrorInfo.updatedAt === null ? (
-                                <>Never fetched from code host.</>
-                            ) : (
-                                <>
-                                    Last updated <Timestamp date={node.mirrorInfo.updatedAt} />.
-                                </>
-                            )}{' '}
-                            {node.mirrorInfo.updateSchedule && (
-                                <>
-                                    Next scheduled update <Timestamp date={node.mirrorInfo.updateSchedule.due} />.
-                                </>
-                            )}{' '}
-                            {node.mirrorInfo.updateQueue && !node.mirrorInfo.updateQueue.updating && (
-                                <>
-                                    Queued for update (position {node.mirrorInfo.updateQueue.index + 1} out of{' '}
-                                    {node.mirrorInfo.updateQueue.total} in the queue)
-                                </>
-                            )}
-                        </small>
-                    </Text>
-                </div>
-
-                <div className="repository-node__actions">
-                    {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                        <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
-                        </Button>
-                    )}{' '}
-                    {
-                        <Tooltip content="Repository settings">
-                            <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
-                                <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
-                            </Button>
-                        </Tooltip>
-                    }{' '}
-                </div>
+                <Text className="mb-0 text-muted">
+                    <small>
+                        <RepoUpdateSchedule mirrorInfo={node.mirrorInfo} />
+                    </small>
+                </Text>
             </div>
 
-            {node.mirrorInfo.lastError && (
-                <div className={classNames(styles.alertWrapper)}>
-                    <Alert variant="warning">
-                        <TerminalLine>Error updating repo:</TerminalLine>
-                        <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
-                    </Alert>
-                </div>
-            )}
-        </li>
-    )
-}
+            <div className="repository-node__actions">
+                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
+                    <Button to={node.url} variant="secondary" size="sm" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
+                    </Button>
+                )}{' '}
+                <Tooltip content="Repository settings">
+                    <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                    </Button>
+                </Tooltip>
+            </div>
+        </div>
+
+        {node.mirrorInfo.lastError && (
+            <div className={classNames(styles.alertWrapper)}>
+                <Alert variant="warning">
+                    <TerminalLine>Error syncing repository:</TerminalLine>
+                    <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
+                </Alert>
+            </div>
+        )}
+    </li>
+)
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
@@ -186,7 +161,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
             <PageTitle title="Repositories - Admin" />
             {showRepositoriesAddedBanner && (
                 <Alert variant="success" as="p">
-                    Updating repositories. It may take a few moments to clone and index each repository. Repository
+                    Syncing repositories. It may take a few moments to clone and index each repository. Repository
                     statuses are displayed below.
                 </Alert>
             )}

@@ -149,7 +149,36 @@ export function fetchAllOrganizations(args: {
     )
 }
 
+const mirrorRepositoryInfoFieldsFragment = gql`
+    fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
+        cloned
+        cloneInProgress
+        updatedAt
+        lastError
+        updateSchedule {
+            due
+            index
+            total
+        }
+        updateQueue {
+            updating
+            index
+            total
+        }
+    }
+`
+
+const externalRepositoryFieldsFragment = gql`
+    fragment ExternalRepositoryFields on ExternalRepository {
+        serviceType
+        serviceID
+    }
+`
+
 const siteAdminRepositoryFieldsFragment = gql`
+    ${mirrorRepositoryInfoFieldsFragment}
+    ${externalRepositoryFieldsFragment}
+
     fragment SiteAdminRepositoryFields on Repository {
         id
         name
@@ -158,24 +187,10 @@ const siteAdminRepositoryFieldsFragment = gql`
         url
         isPrivate
         mirrorInfo {
-            cloned
-            cloneInProgress
-            updatedAt
-            lastError
-            updateSchedule {
-                due
-                index
-                total
-            }
-            updateQueue {
-                updating
-                index
-                total
-            }
+            ...MirrorRepositoryInfoFields
         }
         externalRepository {
-            serviceType
-            serviceID
+            ...ExternalRepositoryFields
         }
     }
 `
