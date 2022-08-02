@@ -36,17 +36,19 @@ func toComputeResult(ctx context.Context, db database.DB, cmd compute.Command, m
 }
 
 func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, query string) (<-chan Event, func() (*search.Alert, error)) {
+	eventsC := make(chan Event, 8)
 	computeQuery, err := compute.Parse(query)
 	if err != nil {
-		return nil, func() (*search.Alert, error) { return nil, err }
+		close(eventsC)
+		return eventsC, func() (*search.Alert, error) { return nil, err }
 	}
 
 	searchQuery, err := computeQuery.ToSearchQuery()
 	if err != nil {
-		return nil, func() (*search.Alert, error) { return nil, err }
+		close(eventsC)
+		return eventsC, func() (*search.Alert, error) { return nil, err }
 	}
 
-	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
 	g := group.NewWithStreaming[Event]().WithErrors().WithMaxConcurrency(8)
 	cb := func(ev Event, err error) {
