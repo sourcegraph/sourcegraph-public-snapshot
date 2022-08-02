@@ -104,7 +104,7 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefr
 		return category
 	})
 
-	client := &ClientProvider{
+	return &ClientProvider{
 		urn:            urn,
 		baseURL:        baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
 		httpClient:     cli,
@@ -112,7 +112,6 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefr
 		tokenRefresher: tokenRefresher,
 	}
 
-	return client
 }
 
 // GetAuthenticatorClient returns a client authenticated by the given

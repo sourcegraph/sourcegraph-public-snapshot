@@ -11,7 +11,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -21,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -391,61 +389,4 @@ func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		}
 	}
 	return out, nil
-}
-
-type RefreshTokenConfig struct {
-	DB                database.DB
-	ExternalServiceID int64
-	TokenOauthRefresh string
-}
-
-// todo - add docstring and explain that we cannot import the current helper nor use the helper in other places
-// due to import cycle
-func (r *RefreshTokenConfig) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error) {
-	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, r.TokenOauthRefresh, oauthutil.AuthStyleInParams)
-	if err != nil {
-		return "", errors.Wrap(err, "error retrieving token")
-	}
-
-	svc, err := r.DB.ExternalServices().GetByID(ctx, r.ExternalServiceID)
-	if err != nil {
-		return "", errors.Wrap(err, "getting external service")
-	}
-
-	defer func() {
-		success := err == nil
-		gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
-	}()
-
-	svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
-	if err != nil {
-		return "", errors.Wrap(err, "updating OAuth token")
-	}
-	svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
-	if err != nil {
-		return "", errors.Wrap(err, "updating OAuth refresh token")
-	}
-	svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
-	if err != nil {
-		return "", errors.Wrap(err, "updating OAuth token expiry")
-	}
-	svc.UpdatedAt = time.Now()
-	if err := r.DB.ExternalServices().Upsert(ctx, svc); err != nil {
-		return "", errors.Wrap(err, "upserting external service")
-	}
-
-	return "", nil
-}
-
-func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
-	url := strings.TrimSuffix(p.Url, "/")
-	return &oauth2.Config{
-		ClientID:     p.ClientID,
-		ClientSecret: p.ClientSecret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  url + "/oauth/authorize",
-			TokenURL: url + "/oauth/token",
-		},
-		Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
-	}
 }
