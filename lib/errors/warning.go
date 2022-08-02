@@ -1,7 +1,7 @@
 package errors
 
 // Warning embeds an error. Its purpose is to indicate that this error is not a critical error and
-// maybe ignored. Additionally, it **must** be logged only as a warning. If it cannot be logged as a
+// may be ignored. Additionally, it **must** be logged only as a warning. If it cannot be logged as a
 // warning, then these are not the droids you're looking for.
 type Warning interface {
 	error
