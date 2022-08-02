@@ -596,11 +596,14 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		cli.Transport = http.DefaultTransport
 	}
 
-	var tr *http.Transport
+	// Try to get the underlying, concrete *http.Transport implementation, copy it, and
+	// replace it.
+	var transport *http.Transport
 	switch v := cli.Transport.(type) {
 	case *http.Transport:
-		tr = v.Clone()
-		cli.Transport = tr
+		transport = v.Clone()
+		// Replace underlying implementation
+		cli.Transport = transport
 
 	case WrappedTransport:
 		wrapped := unwrapAll(v)
@@ -608,14 +611,15 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		if !ok {
 			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Transport)
 		}
-		tr = t.Clone()
-		*wrapped = tr
+		transport = t.Clone()
+		// Replace underlying implementation
+		*wrapped = transport
 
 	default:
 		return nil, errors.Errorf("http.Client.Transport cannot be cast as a *http.Transport: %T", cli.Transport)
 	}
 
-	return tr, nil
+	return transport, nil
 }
 
 // ActorTransportOpt wraps an existing http.Transport of an http.Client to pull the actor
