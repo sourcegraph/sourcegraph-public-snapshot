@@ -25,7 +25,7 @@ func TestWebhookBuildHandle(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	token := os.Getenv("ACCESS_TOKEN")
+	token := os.Getenv("GITHUB_TOKEN")
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := NewStore(logger, db)
