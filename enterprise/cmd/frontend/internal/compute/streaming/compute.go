@@ -35,20 +35,8 @@ func toComputeResult(ctx context.Context, db database.DB, cmd compute.Command, m
 	return out, nil
 }
 
-func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, query string) (<-chan Event, func() (*search.Alert, error)) {
+func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, searchQuery string, computeCommand compute.Command) (<-chan Event, func() (*search.Alert, error)) {
 	eventsC := make(chan Event, 8)
-	computeQuery, err := compute.Parse(query)
-	if err != nil {
-		close(eventsC)
-		return eventsC, func() (*search.Alert, error) { return nil, err }
-	}
-
-	searchQuery, err := computeQuery.ToSearchQuery()
-	if err != nil {
-		close(eventsC)
-		return eventsC, func() (*search.Alert, error) { return nil, err }
-	}
-
 	errorC := make(chan error, 1)
 	g := group.NewWithStreaming[Event]().WithErrors().WithMaxConcurrency(8)
 	cb := func(ev Event, err error) {
@@ -70,7 +58,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, qu
 		for _, match := range event.Results {
 			match := match
 			g.Go(func() (Event, error) {
-				results, err := toComputeResult(ctx, db, computeQuery.Command, match)
+				results, err := toComputeResult(ctx, db, computeCommand, match)
 				return Event{results, streaming.Stats{}}, err
 			}, cb)
 		}
