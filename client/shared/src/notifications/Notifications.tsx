@@ -28,6 +28,7 @@ interface NotificationsState {
 
 const HAS_NOTIFICATIONS_CONTEXT_KEY = 'hasNotifications'
 
+// Context to manage notifications contributed by Sourcegraph web app parts.
 export const NotificationContext = React.createContext<{
     notifications: NotificationWithId[]
     addNotification: (notification: Notification) => void
@@ -220,7 +221,10 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     }
 
     public render(): JSX.Element | null {
-        const notifications = [...this.context.notifications, ...this.state.notifications]
+        const notifications = [
+            ...this.context.notifications, // from Sourcegraph web app
+            ...this.state.notifications, // from extension host state
+        ]
 
         return (
             <div className={styles.sourcegraphNotifications} ref={this.notificationsReference}>
