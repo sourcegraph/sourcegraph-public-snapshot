@@ -357,7 +357,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         }
 
         // no code hosts or no repos
-        if (!window.context.sourcegraphDotComMode && isNoActivityReason(noActivityOrStatus)) {
+        if (isNoActivityReason(noActivityOrStatus)) {
+            if (window.context.sourcegraphDotComMode) {
+                return []
+            }
             if (noActivityOrStatus === ExternalServiceNoActivityReasons.NoRepos) {
                 return (
                     <StatusMessagesNavItemEntry
