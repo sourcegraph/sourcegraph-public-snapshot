@@ -46,7 +46,7 @@ func NewAuthzProviders(
 	return ps, problems, warnings
 }
 
-// func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
+// func newAuthzProvider(urn strring, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
 func newAuthzProvider(c *ExternalConnection, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
 	if c.GitLabConnection.Authorization == nil {
 		return nil, nil
@@ -127,9 +127,15 @@ func newAuthzProvider(c *ExternalConnection, tokenType gitlab.TokenType, ps []sc
 
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
+	var refreshToken string
+	if op.TokenType == gitlab.TokenTypeOAuth {
+		refreshToken = op.Token
+	}
+
 	helper := &oauth.RefreshTokenHelperForExternalService{
 		DB:                op.db,
 		ExternalServiceID: op.ExternalService.ID,
+		OauthRefreshToken: refreshToken,
 	}
 
 	return newOAuthProvider(op, nil, helper.RefreshToken)

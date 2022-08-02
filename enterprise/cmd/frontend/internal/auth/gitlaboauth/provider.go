@@ -62,7 +62,6 @@ func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvi
 					allowGroups: p.AllowGroups,
 				}, sessionKey),
 				nil,
-				db,
 			)
 		},
 	}), messages

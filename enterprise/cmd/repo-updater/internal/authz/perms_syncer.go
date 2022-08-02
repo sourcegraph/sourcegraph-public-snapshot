@@ -302,8 +302,8 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	// The default window for the oauth2 library is only 10 seconds, we extend this
 	// to give ourselves a better chance of not having a token expire.
 	tok.Expiry = tok.Expiry.Add(expiryWindow)
-	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
 
+	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
 	if err != nil {
 		return errors.Wrap(err, "refresh token")
 	}
@@ -321,11 +321,6 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	}
 
 	return nil
-}
-
-type RefreshTokenConfig struct {
-	DB                database.DB
-	ExternalAccountID int32
 }
 
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
@@ -438,20 +433,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 
 		// Refresh the token after waiting for the rate limit to give us the best chance of it being valid
-		logger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
+		//logger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
 		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
 			// This should not be a fatal error, we should still try to sync from other accounts
 			acctLogger.Warn("failed to refresh GitLab token", log.Error(err))
 			continue
 		}
-
 		logger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
-		//helper := &oauth.RefreshTokenHelperForExternalAccount{
-		//	DB:                s.db,
-		//	ExternalAccountID: acct.ID,
-		//}
-		//
-		//helper.RefreshToken(ctx)
+
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is revoked

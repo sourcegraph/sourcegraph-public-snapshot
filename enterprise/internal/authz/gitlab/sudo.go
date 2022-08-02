@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -61,8 +59,6 @@ type SudoProviderOp struct {
 	// instead of the authn provider user ID. This is *very* insecure (Sourcegraph usernames can be
 	// changed at the user's will) and should only be used in development environments.
 	UseNativeUsername bool
-
-	DB database.DB
 }
 
 func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
