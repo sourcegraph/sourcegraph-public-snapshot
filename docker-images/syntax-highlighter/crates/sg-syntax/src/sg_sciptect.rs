@@ -185,7 +185,6 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("keyword.operator"), IdentifierOperator),
             (scope("keyword"), IdentifierKeyword),
             (scope("variable"), Identifier),
-            (scope("punctuation"), PunctuationBracket),
             (scope("constant.character.escape"), StringLiteralEscape),
             (scope("string"), StringLiteral),
             (scope("constant.numeric"), NumericLiteral),
@@ -195,6 +194,11 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type"), IdentifierType),
             (scope("support.type.builtin"), IdentifierBuiltinType),
             (scope("meta.path"), IdentifierNamespace),
+            //
+            // Punctuation Types
+            (scope("punctuation.section.mapping"), PunctuationBracket),
+            // TODO: Consider what to do w/ this
+            // (scope("punctuation"), PunctuationBracket),
         ]
     });
 

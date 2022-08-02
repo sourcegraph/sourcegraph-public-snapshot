@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 534
+assertion_line: 539
 expression: "dump_document(&document, &contents)"
 ---
   #include <stdbool.h>
@@ -11,16 +11,12 @@ expression: "dump_document(&document, &contents)"
   int main() {
 //^^^ IdentifierType
 //    ^^^^ IdentifierFunction
-//        ^ PunctuationBracket
-//         ^ PunctuationBracket
-//           ^ PunctuationBracket
     // Single line comment
 //  ^^^^^^^^^^^^^^^^^^^^^^ Comment
     int x = 1;
 //  ^^^ IdentifierType
 //        ^ IdentifierOperator
 //          ^ NumericLiteral
-//           ^ PunctuationBracket
   
     /*
      *Multi Line
@@ -28,7 +24,5 @@ expression: "dump_document(&document, &contents)"
   
     return x;
 //  ^^^^^^ IdentifierKeyword
-//          ^ PunctuationBracket
   }
-//^ PunctuationBracket
 

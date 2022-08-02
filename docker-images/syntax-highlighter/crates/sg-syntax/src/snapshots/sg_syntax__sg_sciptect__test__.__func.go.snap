@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 551
+assertion_line: 539
 expression: "dump_document(&document, &contents)"
 ---
   package main
@@ -14,9 +14,6 @@ expression: "dump_document(&document, &contents)"
   func main() {
 //^^^^ IdentifierKeyword
 //     ^^^^ IdentifierFunction
-//         ^ PunctuationBracket
-//          ^ PunctuationBracket
-//            ^ PunctuationBracket
    // this is comment
 // ^^^^^^^^^^^^^^^^^^ Comment
   
@@ -51,19 +48,11 @@ expression: "dump_document(&document, &contents)"
   
    fmt.Println(x, char, string, bool, null_was_a_mistake)
 // ^^^ Identifier
-//    ^ PunctuationBracket
 //     ^^^^^^^ Identifier
-//            ^ PunctuationBracket
 //             ^ Identifier
-//              ^ PunctuationBracket
 //                ^^^^ Identifier
-//                    ^ PunctuationBracket
 //                      ^^^^^^ Identifier
-//                            ^ PunctuationBracket
 //                              ^^^^ Identifier
-//                                  ^ PunctuationBracket
 //                                    ^^^^^^^^^^^^^^^^^^ Identifier
-//                                                      ^ PunctuationBracket
   }
-//^ PunctuationBracket
 
