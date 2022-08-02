@@ -15,7 +15,6 @@ type Job struct {
 	Org        string
 	ExtSvcID   int64
 	ExtSvcKind string
-	AccountID  int32
 	QueuedAt   *time.Time
 
 	// Standard dbworker fields
@@ -40,7 +39,6 @@ var jobColumns = []*sqlf.Query{
 	sqlf.Sprintf("webhook_build_jobs.org"),
 	sqlf.Sprintf("webhook_build_jobs.extsvc_id"),
 	sqlf.Sprintf("webhook_build_jobs.extsvc_kind"),
-	sqlf.Sprintf("webhook_build_jobs.account_id"),
 	sqlf.Sprintf("webhook_build_jobs.queued_at"),
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),

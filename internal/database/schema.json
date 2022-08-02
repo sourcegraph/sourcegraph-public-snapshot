@@ -18052,19 +18052,6 @@
       "Comment": "",
       "Columns": [
         {
-          "Name": "account_id",
-          "Index": 18,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "execution_logs",
           "Index": 13,
           "TypeName": "json[]",

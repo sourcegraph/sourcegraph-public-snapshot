@@ -62,6 +62,8 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job)
 			enqueueJobFmtStr,
 			job.RepoID,
 			job.RepoName,
+			job.Org,
+			job.ExtSvcID,
 			job.ExtSvcKind,
 		),
 	))
@@ -77,8 +79,10 @@ const enqueueJobFmtStr = `
 INSERT INTO webhook_build_jobs (
 	repo_id,
 	repo_name,
+	org,
+	extsvc_id,
 	extsvc_kind
-) VALUES (%s, %s, %s)
+) VALUES (%s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -107,7 +111,6 @@ func doScanWebhookBuildJobs(rows *sql.Rows, err error) ([]*Job, error) {
 			&job.Org,
 			&job.ExtSvcID,
 			&job.ExtSvcKind,
-			&job.AccountID,
 			&job.QueuedAt,
 
 			// Standard dbworker fields

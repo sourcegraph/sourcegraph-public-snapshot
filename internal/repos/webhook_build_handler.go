@@ -62,7 +62,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	}
 
 	client := github.NewV3Client(logger, extsvc.URN(), baseURL, &auth.OAuthBearerToken{Token: token}, w.doer)
-	id, err := client.FindSyncWebhook(ctx, job.RepoName)
+	id, err := client.FindSyncWebhook(ctx, job.RepoName) // TODO: Don't make API calls every time
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
 	}
@@ -79,7 +79,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errors.Wrap(err, "handleKindGitHub: add secret to external service failed")
 	}
 
-	id, err = client.CreateSyncWebhook(ctx, job.RepoName, globals.ExternalURL().Host, secret)
+	id, err = client.CreateSyncWebhook(ctx, job.RepoName, globals.ExternalURL().Host, secret) // TODO: Add to DB
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: CreateSyncWebhook failed")
 	}

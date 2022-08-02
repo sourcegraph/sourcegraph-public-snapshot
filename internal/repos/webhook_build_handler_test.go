@@ -74,7 +74,6 @@ func TestWebhookBuildHandle(t *testing.T) {
 		Org:        strings.Split(string(repo.Name), "/")[0],
 		ExtSvcID:   svc.ID,
 		ExtSvcKind: svc.Kind,
-		AccountID:  int32(svc.ID),
 	}
 
 	testName := "webhook-build-handler"
