@@ -21,9 +21,10 @@ import (
 type SuggestFunc[Args any] func(category string, c *Check[Args], err error) string
 
 type Runner[Args any] struct {
-	Input      io.Reader
-	Output     *std.Output
-	Categories []Category[Args]
+	Input  io.Reader
+	Output *std.Output
+	// categories is private because the Runner constructor applies deduplication.
+	categories []Category[Args]
 
 	// RenderDescription sets a description to render before core check loops, such as a
 	// massive ASCII art thing.
@@ -45,12 +46,33 @@ type Runner[Args any] struct {
 
 // NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
 // It is a convenience function that indicates the required fields that must be provided
-// to a Runner - fields can also be set directly on the struct.
+// to a Runner - fields can also be set directly on the struct. The only exception is
+// Categories, where this constructor applies some deduplication of Checks across
+// categories.
 func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Args]) *Runner[Args] {
+	checks := make(map[string]struct{})
+	for _, category := range categories {
+		for i, check := range category.Checks {
+			if _, exists := checks[check.Name]; exists {
+				// copy
+				c := &Check[Args]{}
+				*c = *check
+				// set to disabled
+				c.Enabled = func(ctx context.Context, args Args) error {
+					return errors.Newf("skipping duplicate check %q", c.Name)
+				}
+				// set back
+				category.Checks[i] = c
+			} else {
+				checks[check.Name] = struct{}{}
+			}
+		}
+	}
+
 	return &Runner[Args]{
 		Input:       in,
 		Output:      out,
-		Categories:  categories,
+		categories:  categories,
 		Concurrency: 10,
 	}
 }
@@ -93,7 +115,7 @@ func (r *Runner[Args]) Fix(
 
 	r.Output.WriteNoticef("Attempting to fix %d failed categories", len(results.failed))
 	for _, i := range results.failed {
-		category := r.Categories[i]
+		category := r.categories[i]
 
 		ok := r.fixCategoryAutomatically(ctx, i+1, &category, args, results)
 		results.categories[category.Name] = ok
@@ -144,7 +166,7 @@ func (r *Runner[Args]) Interactive(
 			}
 			return err
 		}
-		selectedCategory := r.Categories[idx]
+		selectedCategory := r.categories[idx]
 
 		r.Output.ClearScreen()
 
@@ -186,7 +208,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 	statuses := []*output.StatusBar{}
 	var checks int
-	for i, category := range r.Categories {
+	for i, category := range r.categories {
 		statuses = append(statuses, output.NewStatusBarWithLabel(fmt.Sprintf("%d. %s", i+1, category.Name)))
 		checks += len(category.Checks)
 	}
@@ -221,7 +243,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			progressMu.Lock()
 			defer progressMu.Unlock()
 
-			progress.StatusBarUpdatef(i, "Check %s skipped: %s", checkName, err.Error())
+			progress.StatusBarUpdatef(i, "Check %q skipped: %s", checkName, err.Error())
 		}
 		updateCheckFailed = func(i int, checkName string, err error) {
 			progressMu.Lock()
@@ -232,7 +254,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				// truncate to one line - writing multple lines causes some jank
 				errParts[0] += " ..."
 			}
-			progress.StatusBarFailf(i, "Check %s failed: %s", checkName, errParts[0])
+			progress.StatusBarFailf(i, "Check %q failed: %s", checkName, errParts[0])
 		}
 		updateCategoryStarted = func(i int) {
 			progressMu.Lock()
@@ -252,7 +274,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		}
 	)
 
-	for i, category := range r.Categories {
+	for i, category := range r.categories {
 		updateCategoryStarted(i)
 
 		// Copy
@@ -337,7 +359,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	results := &runAllCategoryChecksResult{
 		categories: make(map[string]bool),
 	}
-	for i, category := range r.Categories {
+	for i, category := range r.categories {
 		results.all = append(results.all, i)
 		idx := i + 1
 
