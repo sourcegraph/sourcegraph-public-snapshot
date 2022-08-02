@@ -41,11 +41,11 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
 
 	codenavCtx := &observation.Context{
-		Logger:     logger.Scoped("symbols.transport.graphql", "codeintel symbols graphql transport"),
+		Logger:     logger.Scoped("codenav.transport.graphql", "codeintel symbols graphql transport"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	codenavResolver := codenavgraphql.New(services.SymbolsSvc, config.HunkCacheSize, codenavCtx)
+	codenavResolver := codenavgraphql.New(services.CodeNavSvc, config.HunkCacheSize, codenavCtx)
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,

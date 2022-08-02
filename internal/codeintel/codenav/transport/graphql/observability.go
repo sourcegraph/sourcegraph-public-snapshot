@@ -34,7 +34,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.symbols.transport.graphql.%s", name),
+			Name:              fmt.Sprintf("codeintel.codenav.transport.graphql.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})

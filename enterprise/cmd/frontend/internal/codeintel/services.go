@@ -46,7 +46,7 @@ type Services struct {
 
 	// used by resolvers
 	UploadsSvc *uploads.Service
-	SymbolsSvc *codenav.Service
+	CodeNavSvc *codenav.Service
 }
 
 func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
@@ -77,7 +77,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	// Initialize services
 	lsif := database.NewDBWith(observationContext.Logger, codeIntelDB)
 	uploadSvc := uploads.GetService(db, lsif, gitserverClient)
-	symbolSvc := codenav.GetService(db, lsif, uploadSvc)
+	codenavSvc := codenav.GetService(db, lsif, uploadSvc)
 	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints
@@ -118,7 +118,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 		indexEnqueuer:   indexEnqueuer,
 
 		UploadsSvc: uploadSvc,
-		SymbolsSvc: symbolSvc,
+		CodeNavSvc: codenavSvc,
 	}, nil
 }
 
