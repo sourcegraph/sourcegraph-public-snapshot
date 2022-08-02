@@ -430,30 +430,45 @@ outer:
 	return ordered, true
 }
 
-// compareNamedLists invokes the given callback with a pair of elements from slices
-// `as` and `bs`, respectively, with the same name. If there is a missing element from
-// `as`, there will be an invocation of `f` with a nil value for its first parameter.
-// If any invocation of `f` returns true, the output of this function will be true.
-func compareNamedLists[T schemas.Namer](as, bs []T, f func(a *T, b T) bool) (outOfSync bool) {
+// compareNamedLists invokes the given primary callback with a pair of differing elements from slices
+// `as` and `bs`, respectively, with the same name. If there is a missing element from `as`, there will
+// be an invocation of this callback with a nil value for its first parameter. Elements for which there
+// is no analog in `bs` will be collected and sent to an invocation of the additions callback. If any
+// invocation of either function returns true, the output of this function will be true.
+func compareNamedLists[T schemas.Namer](
+	as []T,
+	bs []T,
+	primaryCallback func(a *T, b T) bool,
+	additionsCallback func(additional []T) bool,
+) (outOfSync bool) {
 	am := groupByName(as)
 	bm := groupByName(bs)
+	additional := make([]T, 0, len(am))
 
 	for _, k := range keys(am) {
 		av := am[k]
 
 		if bv, ok := bm[k]; ok {
 			if cmp.Diff(av, bv) != "" {
-				if f(&av, bv) {
+				if primaryCallback(&av, bv) {
 					outOfSync = true
 				}
 			}
+		} else {
+			additional = append(additional, av)
 		}
 	}
 	for _, k := range keys(bm) {
 		bv := bm[k]
 
 		if _, ok := am[k]; !ok {
-			f(nil, bv)
+			primaryCallback(nil, bv)
+		}
+	}
+
+	if len(additional) > 0 {
+		if additionsCallback(additional) {
+			outOfSync = true
 		}
 	}
 
