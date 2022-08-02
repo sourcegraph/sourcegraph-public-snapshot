@@ -196,13 +196,14 @@ func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 		return nil, err
 	}
 
-	// Stringify -> SQL-ify the contents of the file. We first replace any
-	// SQL placeholder values with an escaped version so that the sqlf.Sprintf
-	// call does not try to interpolate the text with variables we don't have.
-	return sqlf.Sprintf(strings.ReplaceAll(canonicalizeQuery(string(contents)), "%", "%%")), nil
+	return queryFromString(string(contents)), nil
 }
 
-func canonicalizeQuery(query string) string {
+// queryFromString creates a sqlf Query object from the conetents of a file or serialized
+// string literal. We first replace any SQL placeholder values with an escaped version so
+// that the sqlf.Sprintf call does not try to interpolate the text with variables we don't
+// have.
+func queryFromString(query string) *sqlf.Query {
 	// Strip out embedded yaml frontmatter (existed temporarily)
 	parts := strings.SplitN(query, "-- +++\n", 3)
 	if len(parts) == 3 {
@@ -210,7 +211,7 @@ func canonicalizeQuery(query string) string {
 	}
 
 	// Strip outermost transactions
-	return strings.TrimSpace(
+	canonicalizedQuery := strings.TrimSpace(
 		strings.TrimSuffix(
 			strings.TrimPrefix(
 				strings.TrimSpace(query),
@@ -219,6 +220,8 @@ func canonicalizeQuery(query string) string {
 			"COMMIT;",
 		),
 	)
+
+	return sqlf.Sprintf(strings.ReplaceAll(canonicalizedQuery, "%", "%%"))
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)

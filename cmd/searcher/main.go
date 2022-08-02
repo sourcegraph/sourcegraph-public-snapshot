@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -147,19 +148,23 @@ func run(logger log.Logger) error {
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+				// We pass in a nil sub-repo permissions checker here since searcher needs access
+				// to all data in the archive
+				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
-					Format:  "tar",
+					Format:  gitserver.ArchiveFormatTar,
 				})
 			},
 			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-				pathspecs := make([]gitserver.Pathspec, len(paths))
+				pathspecs := make([]gitdomain.Pathspec, len(paths))
 				for i, p := range paths {
-					pathspecs[i] = gitserver.PathspecLiteral(p)
+					pathspecs[i] = gitdomain.PathspecLiteral(p)
 				}
-				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+				// We pass in a nil sub-repo permissions checker here since searcher needs access
+				// to all data in the archive
+				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
-					Format:    "tar",
+					Format:    gitserver.ArchiveFormatTar,
 					Pathspecs: pathspecs,
 				})
 			},

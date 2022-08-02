@@ -10,8 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/net/http2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -183,7 +184,7 @@ func wrapWithoutRedirect(c *http.Client) {
 	}
 }
 
-func limitedRedirect(r *http.Request, via []*http.Request) error {
+func limitedRedirect(r *http.Request, _ []*http.Request) error {
 	// Request.Response, in CheckRedirect is the response that is triggering
 	// the redirect.
 	resp := r.Response
@@ -205,6 +206,8 @@ type stubBadHTTPRedirectTransport struct {
 	tr http.RoundTripper
 }
 
+var _ httpcli.WrappedTransport = &stubBadHTTPRedirectTransport{}
+
 const stubBadHTTPRedirectLocation = `https://amazonaws.com/badhttpredirectlocation`
 
 func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -225,8 +228,4 @@ func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response
 	return resp, err
 }
 
-// UnwrappableTransport signals that this transport can't be wrapped. In
-// particular this means we won't respect global external
-// settings. https://github.com/sourcegraph/sourcegraph/issues/71 and
-// https://github.com/sourcegraph/sourcegraph/issues/7738
-func (stubBadHTTPRedirectTransport) UnwrappableTransport() {}
+func (t stubBadHTTPRedirectTransport) Unwrap() *http.RoundTripper { return &t.tr }

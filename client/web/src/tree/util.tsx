@@ -46,12 +46,10 @@ export function scrollIntoView(element: Element, scrollRoot: Element): void {
 export const getDomElement = (path: string): Element | null =>
     document.querySelector(`[data-tree-path='${path.replace(/'/g, "\\'")}']`)
 
-export const treePadding = (depth: number, isTree: boolean, isDirectory = false): React.CSSProperties => ({
-    marginLeft: `${depth * 12 + (isTree ? 0 : 12) + (isDirectory ? 0 : 8)}px`,
+export const getTreeItemOffset = (depth: number): React.CSSProperties => ({
+    marginLeft: `${depth * 12}px`,
     paddingRight: '1rem',
 })
-
-export const maxEntries = 2500
 
 // Utility functions to handle single-child directories:
 

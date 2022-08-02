@@ -1,7 +1,6 @@
 package query
 
 import (
-	"regexp/syntax" //nolint:depguard
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -21,13 +20,6 @@ type Predicate interface {
 	// ParseParams parses the contents of the predicate arguments
 	// into the predicate object.
 	ParseParams(string) error
-
-	// Plan optionally generates a plan of queries to evaluate. Currently
-	// all such queries are evaluated and the results are substituted in the
-	// original query. If Plan returns nil, it means this predicate doesn't
-	// need evaluation and just exposes it's value in the query, which can
-	// be used for any purpose.
-	Plan(parent Basic) (Plan, error)
 }
 
 var DefaultPredicateRegistry = PredicateRegistry{
@@ -36,10 +28,6 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
-		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
-		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
-		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
-		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
 	},
 	FieldFile: {
@@ -94,7 +82,6 @@ type EmptyPredicate struct{}
 func (EmptyPredicate) Field() string            { return "" }
 func (EmptyPredicate) Name() string             { return "" }
 func (EmptyPredicate) ParseParams(string) error { return nil }
-func (EmptyPredicate) Plan(Basic) (Plan, error) { return nil, nil }
 
 // RepoContainsPredicate represents the `repo:contains()` predicate,
 // which filters to repos that contain either a file or content
@@ -167,9 +154,6 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 
 func (f *RepoContainsPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsPredicate) Name() string  { return "contains" }
-func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
-	return nil, nil
-}
 
 /* repo:contains.content(pattern) */
 
@@ -190,9 +174,6 @@ func (f *RepoContainsContentPredicate) ParseParams(params string) error {
 
 func (f *RepoContainsContentPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsContentPredicate) Name() string  { return "contains.content" }
-func (f *RepoContainsContentPredicate) Plan(parent Basic) (Plan, error) {
-	return nil, nil
-}
 
 /* repo:contains.file(pattern) */
 
@@ -213,10 +194,6 @@ func (f *RepoContainsFilePredicate) ParseParams(params string) error {
 
 func (f *RepoContainsFilePredicate) Field() string { return FieldRepo }
 func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
-func (f *RepoContainsFilePredicate) Plan(parent Basic) (Plan, error) {
-	// Handled by repo search
-	return nil, nil
-}
 
 /* repo:contains.commit.after(...) */
 
@@ -232,67 +209,6 @@ func (f *RepoContainsCommitAfterPredicate) ParseParams(params string) error {
 func (f RepoContainsCommitAfterPredicate) Field() string { return FieldRepo }
 func (f RepoContainsCommitAfterPredicate) Name() string {
 	return "contains.commit.after"
-}
-func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
-	// Handled by repo pagination code
-	return nil, nil
-}
-
-// RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
-// which filters to repos that are dependencies of the repos matching the given of regex.
-type RepoDependenciesPredicate struct{}
-
-func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
-	re := params
-	if n := strings.LastIndex(params, "@"); n > 0 {
-		re = re[:n]
-	}
-
-	if re == "" {
-		return errors.Errorf("empty repo:dependencies predicate parameter %q", params)
-	}
-
-	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	if err != nil {
-		return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", params, err)
-	}
-
-	return nil
-}
-
-func (f *RepoDependenciesPredicate) Field() string { return FieldRepo }
-func (f *RepoDependenciesPredicate) Name() string  { return "dependencies" }
-func (f *RepoDependenciesPredicate) Plan(parent Basic) (Plan, error) {
-	return nil, nil
-}
-
-// RepoDependentsPredicate represents the `repo:dependents(regex@rev)`
-// predicate, which filters to repos that depend on the repos matching the
-// given of regex.
-type RepoDependentsPredicate struct{}
-
-func (f *RepoDependentsPredicate) ParseParams(params string) (err error) {
-	re := params
-	if n := strings.LastIndex(params, "@"); n > 0 {
-		re = re[:n]
-	}
-
-	if re == "" {
-		return errors.Errorf("empty repo:dependents predicate parameter %q", params)
-	}
-
-	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	if err != nil {
-		return errors.Errorf("invalid repo:dependents predicate parameter %q: %v", params, err)
-	}
-
-	return nil
-}
-
-func (f *RepoDependentsPredicate) Field() string { return FieldRepo }
-func (f *RepoDependentsPredicate) Name() string  { return "dependents" }
-func (f *RepoDependentsPredicate) Plan(parent Basic) (Plan, error) {
-	return nil, nil
 }
 
 /* repo:has.description(...) */
@@ -314,9 +230,6 @@ func (f *RepoHasDescriptionPredicate) ParseParams(params string) (err error) {
 
 func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
 func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
-func (f *RepoHasDescriptionPredicate) Plan(parent Basic) (Plan, error) {
-	return nil, nil
-}
 
 /* file:contains.content(pattern) */
 
@@ -338,23 +251,6 @@ func (f *FileContainsContentPredicate) ParseParams(params string) error {
 func (f FileContainsContentPredicate) Field() string { return FieldFile }
 func (f FileContainsContentPredicate) Name() string  { return "contains.content" }
 
-func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
-	nodes := make([]Node, 0, 3)
-	nodes = append(nodes, Parameter{
-		Field: FieldCount,
-		Value: "99999",
-	}, Parameter{
-		Field: FieldType,
-		Value: "file",
-	}, Pattern{
-		Value:      f.Pattern,
-		Annotation: Annotation{Labels: Regexp},
-	})
-
-	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return BuildPlan(nodes), nil
-}
-
 /* file:has.owner(pattern) */
 
 type FileHasOwnerPredicate struct {
@@ -371,37 +267,3 @@ func (f *FileHasOwnerPredicate) ParseParams(params string) error {
 
 func (f FileHasOwnerPredicate) Field() string { return FieldFile }
 func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
-func (f *FileHasOwnerPredicate) Plan(parent Basic) (Plan, error) {
-	// Filtering by file owner is handled by the codeownership.Job post-search
-	// filter job.
-	return nil, nil
-}
-
-// nonPredicateRepos returns the repo nodes in a query that aren't predicates,
-// respecting parameters that determine repo results.
-func nonPredicateRepos(q Basic) []Node {
-	var res []Node
-	VisitParameter(q.ToParseTree(), func(field, value string, negated bool, ann Annotation) {
-		if ann.Labels.IsSet(IsPredicate) {
-			// Skip predicates
-			return
-		}
-		switch field {
-		case
-			FieldRepo,
-			FieldContext,
-			FieldIndex,
-			FieldFork,
-			FieldArchived,
-			FieldVisibility,
-			FieldCase:
-			res = append(res, Parameter{
-				Field:      field,
-				Value:      value,
-				Negated:    negated,
-				Annotation: ann,
-			})
-		}
-	})
-	return res
-}

@@ -50,24 +50,20 @@ func compareSchemaDescriptions(out *output.Output, schemaName, version string, a
 	return err
 }
 
-func compareExtensions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
-	compareExtension := func(extension *stringNamer, expectedExtension stringNamer) {
-		outOfSync = true
-
+func compareExtensions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+	return compareNamedLists(wrapStrings(actual.Extensions), wrapStrings(expected.Extensions), func(extension *stringNamer, expectedExtension stringNamer) bool {
 		if extension == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing extension %q", expectedExtension)))
 			writeSQLSolution(out, "install the extension", fmt.Sprintf("CREATE EXTENSION %s;", expectedExtension))
+			return true
 		}
-	}
 
-	compareNamedLists(wrapStrings(actual.Extensions), wrapStrings(expected.Extensions), compareExtension)
-	return
+		return false
+	})
 }
 
-func compareEnums(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
-	compareEnum := func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) {
-		outOfSync = true
-
+func compareEnums(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+	return compareNamedLists(actual.Enums, expected.Enums, func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) bool {
 		quotedLabels := make([]string, 0, len(expectedEnum.Labels))
 		for _, label := range expectedEnum.Labels {
 			quotedLabels = append(quotedLabels, fmt.Sprintf("'%s'", label))
@@ -78,68 +74,61 @@ func compareEnums(out *output.Output, schemaName, version string, actual, expect
 		if enum == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing enum %q", expectedEnum.Name)))
 			writeSQLSolution(out, "create the type", createEnumStmt)
-		} else {
-			if ordered, ok := constructEnumRepairStatements(*enum, expectedEnum); ok {
-				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing %d labels for enum %q", len(ordered), expectedEnum.Name)))
-				writeSQLSolution(out, "add the missing enum labels", ordered...)
-				return
-			}
-
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected labels for enum %q", expectedEnum.Name)))
-			writeDiff(out, enum.Labels, expectedEnum.Labels)
-			writeSQLSolution(out, "drop and re-create the type", dropEnumStmt, createEnumStmt)
+			return true
 		}
-	}
 
-	compareNamedLists(actual.Enums, expected.Enums, compareEnum)
-	return outOfSync
+		if ordered, ok := constructEnumRepairStatements(*enum, expectedEnum); ok {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing %d labels for enum %q", len(ordered), expectedEnum.Name)))
+			writeSQLSolution(out, "add the missing enum labels", ordered...)
+			return true
+		}
+
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected labels for enum %q", expectedEnum.Name)))
+		writeDiff(out, enum.Labels, expectedEnum.Labels)
+		writeSQLSolution(out, "drop and re-create the type", dropEnumStmt, createEnumStmt)
+		return true
+	})
 }
 
-func compareFunctions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
-	compareFunction := func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) {
-		outOfSync = true
-
+func compareFunctions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+	return compareNamedLists(actual.Functions, expected.Functions, func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) bool {
 		definitionStmt := fmt.Sprintf("%s;", strings.TrimSpace(expectedFunction.Definition))
 
 		if function == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing function %q", expectedFunction.Name)))
 			writeSQLSolution(out, "define the function", definitionStmt)
-		} else {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of function %q", expectedFunction.Name)))
-			writeDiff(out, expectedFunction.Definition, function.Definition)
-			writeSQLSolution(out, "replace the function definition", definitionStmt)
+			return true
 		}
-	}
 
-	compareNamedLists(actual.Functions, expected.Functions, compareFunction)
-	return outOfSync
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of function %q", expectedFunction.Name)))
+		writeDiff(out, expectedFunction.Definition, function.Definition)
+		writeSQLSolution(out, "replace the function definition", definitionStmt)
+		return true
+	})
 }
 
-func compareSequences(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
-	compareSequence := func(sequence *schemas.SequenceDescription, expectedSequence schemas.SequenceDescription) {
-		outOfSync = true
+func compareSequences(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+	return compareNamedLists(actual.Sequences, expected.Sequences, func(sequence *schemas.SequenceDescription, expectedSequence schemas.SequenceDescription) bool {
+		definitionStmt := makeSearchURL(schemaName, version,
+			fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name),
+			fmt.Sprintf("nextval('%s'::regclass);", expectedSequence.Name),
+		)
 
 		if sequence == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing sequence %q", expectedSequence.Name)))
-		} else {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.Name)))
-			writeDiff(out, expectedSequence, *sequence)
+			writeSearchHint(out, "define the sequence", definitionStmt)
+			return true
 		}
 
-		writeSearchHint(out, "define or redefine the sequence", makeSearchURL(schemaName, version,
-			fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name),
-			fmt.Sprintf("nextval('%s'::regclass);", expectedSequence.Name),
-		))
-	}
-
-	compareNamedLists(actual.Sequences, expected.Sequences, compareSequence)
-	return outOfSync
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.Name)))
+		writeDiff(out, expectedSequence, *sequence)
+		writeSearchHint(out, "redefine the sequence", definitionStmt)
+		return true
+	})
 }
 
-func compareTables(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
-	compareTables := func(table *schemas.TableDescription, expectedTable schemas.TableDescription) {
-		outOfSync = true
-
+func compareTables(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+	return compareNamedLists(actual.Tables, expected.Tables, func(table *schemas.TableDescription, expectedTable schemas.TableDescription) bool {
 		if table == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
 			writeSearchHint(out, "define the table", makeSearchURL(schemaName, version,
@@ -147,90 +136,92 @@ func compareTables(out *output.Output, schemaName, version string, actual, expec
 				fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
 				fmt.Sprintf("CREATE .*(INDEX|TRIGGER).* ON %s", expectedTable.Name),
 			))
-		} else {
-			compareColumns(out, schemaName, version, *table, expectedTable)
-			compareConstraints(out, schemaName, version, *table, expectedTable)
-			compareIndexes(out, schemaName, version, *table, expectedTable)
-			compareTriggers(out, schemaName, version, *table, expectedTable)
-
-			if table.Comment != expectedTable.Comment {
-				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
-				setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
-				writeSQLSolution(out, "change the table comment", setDefaultStmt)
-			}
-		}
-	}
-
-	compareNamedLists(actual.Tables, expected.Tables, compareTables)
-	return outOfSync
-}
-
-func compareColumns(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) {
-	compareNamedLists(actualTable.Columns, expectedTable.Columns, func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) {
-		if column == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing column %q.%q", expectedTable.Name, expectedColumn.Name)))
-		} else {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
-			writeDiff(out, expectedColumn, *column)
-
-			equivIf := func(f func(*schemas.ColumnDescription)) bool {
-				c := *column
-				f(&c)
-				return cmp.Diff(c, expectedColumn) == ""
-			}
-
-			if equivIf(func(s *schemas.ColumnDescription) { s.TypeName = expectedColumn.TypeName }) {
-				// TODO
-			}
-			if equivIf(func(s *schemas.ColumnDescription) { s.IsNullable = expectedColumn.IsNullable }) {
-				var verb string
-				if expectedColumn.IsNullable {
-					verb = "DROP"
-				} else {
-					verb = "SET"
-				}
-
-				nullabilityStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;", expectedTable.Name, expectedColumn.Name, verb)
-				writeSQLSolution(out, "change the column nullability constraint", nullabilityStmt)
-				return
-			}
-			if equivIf(func(s *schemas.ColumnDescription) { s.Default = expectedColumn.Default }) {
-				setDefaultStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", expectedTable.Name, expectedColumn.Name, expectedColumn.Default)
-				writeSQLSolution(out, "change the column default", setDefaultStmt)
-				return
-			}
-			if equivIf(func(s *schemas.ColumnDescription) { s.Comment = expectedColumn.Comment }) {
-				setDefaultStmt := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s';", expectedTable.Name, expectedColumn.Name, expectedColumn.Comment)
-				writeSQLSolution(out, "change the column comment", setDefaultStmt)
-				return
-			}
+			return true
 		}
 
-		writeSearchHint(out, "define or redefine the column", makeSearchURL(schemaName, version,
-			fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
-			fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
-		))
+		outOfSync := false
+		outOfSync = compareColumns(out, schemaName, version, *table, expectedTable) || outOfSync
+		outOfSync = compareConstraints(out, schemaName, version, *table, expectedTable) || outOfSync
+		outOfSync = compareIndexes(out, schemaName, version, *table, expectedTable) || outOfSync
+		outOfSync = compareTriggers(out, schemaName, version, *table, expectedTable) || outOfSync
+		outOfSync = compareTableComments(out, schemaName, version, *table, expectedTable) || outOfSync
+		return outOfSync
 	})
 }
 
-func compareConstraints(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) {
-	compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) {
+func compareColumns(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+	return compareNamedLists(actualTable.Columns, expectedTable.Columns, func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) bool {
+		if column == nil {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing column %q.%q", expectedTable.Name, expectedColumn.Name)))
+			writeSearchHint(out, "define the column", makeSearchURL(schemaName, version,
+				fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
+				fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
+			))
+			return true
+		}
+
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
+		writeDiff(out, expectedColumn, *column)
+
+		equivIf := func(f func(*schemas.ColumnDescription)) bool {
+			c := *column
+			f(&c)
+			return cmp.Diff(c, expectedColumn) == ""
+		}
+
+		// TODO
+		// if equivIf(func(s *schemas.ColumnDescription) { s.TypeName = expectedColumn.TypeName }) {}
+		if equivIf(func(s *schemas.ColumnDescription) { s.IsNullable = expectedColumn.IsNullable }) {
+			var verb string
+			if expectedColumn.IsNullable {
+				verb = "DROP"
+			} else {
+				verb = "SET"
+			}
+
+			nullabilityStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;", expectedTable.Name, expectedColumn.Name, verb)
+			writeSQLSolution(out, "change the column nullability constraint", nullabilityStmt)
+			return true
+		}
+		if equivIf(func(s *schemas.ColumnDescription) { s.Default = expectedColumn.Default }) {
+			setDefaultStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", expectedTable.Name, expectedColumn.Name, expectedColumn.Default)
+			writeSQLSolution(out, "change the column default", setDefaultStmt)
+			return true
+		}
+		if equivIf(func(s *schemas.ColumnDescription) { s.Comment = expectedColumn.Comment }) {
+			setDefaultStmt := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s';", expectedTable.Name, expectedColumn.Name, expectedColumn.Comment)
+			writeSQLSolution(out, "change the column comment", setDefaultStmt)
+			return true
+		}
+
+		writeSearchHint(out, "redefine the column", makeSearchURL(schemaName, version,
+			fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
+			fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
+		))
+		return true
+	})
+}
+
+func compareConstraints(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+	return compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) bool {
 		createConstraintStmt := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", expectedTable.Name, expectedConstraint.Name, expectedConstraint.ConstraintDefinition)
 		dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, expectedConstraint.Name)
 
 		if constraint == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
 			writeSQLSolution(out, "define the constraint", createConstraintStmt)
-		} else {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
-			writeDiff(out, expectedConstraint, *constraint)
-			writeSQLSolution(out, "redefine the constraint", dropConstraintStmt, createConstraintStmt)
+			return true
 		}
+
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
+		writeDiff(out, expectedConstraint, *constraint)
+		writeSQLSolution(out, "redefine the constraint", dropConstraintStmt, createConstraintStmt)
+		return true
 	})
 }
 
-func compareIndexes(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) {
-	compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) {
+func compareIndexes(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+	return compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) bool {
 		var createIndexStmt string
 		var dropIndexStmt string
 
@@ -248,34 +239,47 @@ func compareIndexes(out *output.Output, schemaName, version string, actualTable,
 		if index == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing index %q.%q", expectedTable.Name, expectedIndex.Name)))
 			writeSQLSolution(out, "define the index", createIndexStmt)
-		} else {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of index %q.%q", expectedTable.Name, expectedIndex.Name)))
-			writeDiff(out, expectedIndex, *index)
-			writeSQLSolution(out, "redefine the index", dropIndexStmt, createIndexStmt)
+			return true
 		}
+
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of index %q.%q", expectedTable.Name, expectedIndex.Name)))
+		writeDiff(out, expectedIndex, *index)
+		writeSQLSolution(out, "redefine the index", dropIndexStmt, createIndexStmt)
+		return true
 	})
 }
 
-func compareTriggers(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) {
-	compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) {
+func compareTriggers(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+	return compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) bool {
 		createTriggerStmt := fmt.Sprintf("%s;", expectedTrigger.Definition)
 		dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", expectedTrigger.Name, expectedTable.Name)
 
 		if trigger == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
 			writeSQLSolution(out, "define the trigger", createTriggerStmt)
-		} else {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
-			writeDiff(out, expectedTrigger, *trigger)
-			writeSQLSolution(out, "redefine the trigger", dropTriggerStmt, createTriggerStmt)
+			return true
 		}
+
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
+		writeDiff(out, expectedTrigger, *trigger)
+		writeSQLSolution(out, "redefine the trigger", dropTriggerStmt, createTriggerStmt)
+		return true
 	})
 }
 
-func compareViews(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
-	compareView := func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) {
-		outOfSync = true
+func compareTableComments(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+	if actualTable.Comment != expectedTable.Comment {
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
+		setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
+		writeSQLSolution(out, "change the table comment", setDefaultStmt)
+		return true
+	}
 
+	return false
+}
+
+func compareViews(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+	return compareNamedLists(actual.Views, expected.Views, func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) bool {
 		// pgsql has weird indents here
 		viewDefinition := strings.TrimSpace(stripIndent(" " + expectedView.Definition))
 		createViewStmt := fmt.Sprintf("CREATE VIEW %s AS %s", expectedView.Name, viewDefinition)
@@ -284,15 +288,14 @@ func compareViews(out *output.Output, schemaName, version string, actual, expect
 		if view == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing view %q", expectedView.Name)))
 			writeSQLSolution(out, "define the view", createViewStmt)
-		} else {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of view %q", expectedView.Name)))
-			writeDiff(out, expectedView.Definition, view.Definition)
-			writeSQLSolution(out, "redefine the view", dropViewStmt, createViewStmt)
+			return true
 		}
-	}
 
-	compareNamedLists(actual.Views, expected.Views, compareView)
-	return outOfSync
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of view %q", expectedView.Name)))
+		writeDiff(out, expectedView.Definition, view.Definition)
+		writeSQLSolution(out, "redefine the view", dropViewStmt, createViewStmt)
+		return true
+	})
 }
 
 // writeDiff writes a colorized diff of the given objects.
@@ -433,7 +436,8 @@ outer:
 // compareNamedLists invokes the given callback with a pair of elements from slices
 // `as` and `bs`, respectively, with the same name. If there is a missing element from
 // `as`, there will be an invocation of `f` with a nil value for its first parameter.
-func compareNamedLists[T schemas.Namer](as, bs []T, f func(a *T, b T)) {
+// If any invocation of `f` returns true, the output of this function will be true.
+func compareNamedLists[T schemas.Namer](as, bs []T, f func(a *T, b T) bool) (outOfSync bool) {
 	am := groupByName(as)
 	bm := groupByName(bs)
 
@@ -442,7 +446,9 @@ func compareNamedLists[T schemas.Namer](as, bs []T, f func(a *T, b T)) {
 
 		if bv, ok := bm[k]; ok {
 			if cmp.Diff(av, bv) != "" {
-				f(&av, bv)
+				if f(&av, bv) {
+					outOfSync = true
+				}
 			}
 		}
 	}
@@ -453,6 +459,8 @@ func compareNamedLists[T schemas.Namer](as, bs []T, f func(a *T, b T)) {
 			f(nil, bv)
 		}
 	}
+
+	return
 }
 
 // groupByName converts the given element slice into a map indexed by

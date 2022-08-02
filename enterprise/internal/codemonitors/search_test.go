@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -30,10 +29,10 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
 		erroringJobs := []job.Job{
-			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.SearchJob{}),
-			&run.RepoSearchJob{},
+			jobutil.NewParallelJob(&jobutil.RepoSearchJob{}, &commit.SearchJob{}),
+			&jobutil.RepoSearchJob{},
 			jobutil.NewAndJob(&searcher.SymbolSearchJob{}, &commit.SearchJob{}),
-			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{}),
+			jobutil.NewTimeoutJob(0, &jobutil.RepoSearchJob{}),
 		}
 
 		for _, j := range erroringJobs {
@@ -68,7 +67,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 		test := func(t *testing.T, input string) {
 			plan, err := query.Pipeline(query.InitRegexp(input))
 			require.NoError(t, err)
-			inputs := &run.SearchInputs{
+			inputs := &search.Inputs{
 				UserSettings:        &schema.Settings{},
 				PatternType:         query.SearchTypeLiteral,
 				Protocol:            search.Streaming,

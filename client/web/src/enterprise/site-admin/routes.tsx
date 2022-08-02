@@ -7,7 +7,7 @@ import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
 
-export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = ([
     ...siteAdminAreaRoutes,
     {
         path: '/license',
@@ -75,11 +75,16 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminExternalAccountsPage'), 'SiteAdminExternalAccountsPage'),
         exact: true,
     },
-    {
-        path: '/registry/extensions',
-        render: lazyComponent(() => import('./SiteAdminRegistryExtensionsPage'), 'SiteAdminRegistryExtensionsPage'),
-        exact: true,
-    },
+    window.context.enableLegacyExtensions
+        ? {
+              path: '/registry/extensions',
+              render: lazyComponent(
+                  () => import('./SiteAdminRegistryExtensionsPage'),
+                  'SiteAdminRegistryExtensionsPage'
+              ),
+              exact: true,
+          }
+        : undefined,
 
     {
         path: '/batch-changes',
@@ -137,17 +142,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
 
-    // Lockfile indexes & dependency search routes
-    {
-        path: '/code-graph/lockfiles',
-        render: lazyComponent(
-            () => import('../codeintel/lockfiles/pages/CodeIntelLockfilesPage'),
-            'CodeIntelLockfilesPage'
-        ),
-        exact: true,
-        condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
-    },
-
     // Code graph configuration
     {
         path: '/code-graph/configuration',
@@ -189,4 +183,4 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('../organizations/EarlyAccessOrgsCodeForm'), 'EarlyAccessOrgsCodeForm'),
         exact: true,
     },
-]
+] as readonly (SiteAdminAreaRoute | undefined)[]).filter(Boolean) as readonly SiteAdminAreaRoute[]

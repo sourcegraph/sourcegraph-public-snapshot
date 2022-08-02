@@ -347,7 +347,7 @@ describe('getHoverResult()', () => {
 
     test('literal search interprets parentheses as patterns', () => {
         const input = '(abcd)'
-        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
         expect(getHoverResult(scannedQuery, new Position(1, 1), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
@@ -382,7 +382,7 @@ describe('getHoverResult()', () => {
 
     test('returns hover contents for revision syntax', () => {
         const input = 'repo:^foo$@head:v1.3 rev:*refs/heads/*:*!refs/heads/release*'
-        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
 
         expect(getHoverResult(scannedQuery, new Position(1, 11), editor.createModel(input))).toMatchInlineSnapshot(`
             {
@@ -600,7 +600,7 @@ describe('getHoverResult()', () => {
 
 test('returns hover contents for select', () => {
     const input = 'select:repo repo:foo'
-    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
 
     expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
         {
@@ -621,7 +621,7 @@ test('returns hover contents for select', () => {
 
 test('returns repo:contains hovers', () => {
     const input = 'repo:contains.file(foo)'
-    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
 
     expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
         {
@@ -645,7 +645,7 @@ test('returns multiline hovers', () => {
       file:foo
       content:bar
 )`
-    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
 
     expect(getHoverResult(scannedQuery, new Position(4, 1), editor.createModel(input))).toMatchInlineSnapshot(`
         {

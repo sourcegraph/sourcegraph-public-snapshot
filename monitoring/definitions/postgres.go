@@ -53,10 +53,12 @@ func Postgres() *monitoring.Dashboard {
 						Description:   "maximum transaction durations",
 						Owner:         monitoring.ObservableOwnerDevOps,
 						DataMustExist: false, // not deployed on docker-compose
-						Query:         `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
-						Panel:         monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
-						Warning:       monitoring.Alert().GreaterOrEqual(0.3).For(5 * time.Minute),
-						NextSteps:     "none",
+						// Ignore in codeintel-db because Rockskip processing involves long transactions
+						// during normal operation.
+						Query:     `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin",job!="codeintel-db"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
+						Panel:     monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
+						Warning:   monitoring.Alert().GreaterOrEqual(0.3).For(5 * time.Minute),
+						NextSteps: "none",
 					},
 				},
 				},
