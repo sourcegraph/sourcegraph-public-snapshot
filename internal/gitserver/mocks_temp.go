@@ -32,9 +32,6 @@ type MockClient struct {
 	// AddrsFunc is an instance of a mock function object controlling the
 	// behavior of the method Addrs.
 	AddrsFunc *ClientAddrsFunc
-	// ArchiveFunc is an instance of a mock function object controlling the
-	// behavior of the method Archive.
-	ArchiveFunc *ClientArchiveFunc
 	// ArchiveReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method ArchiveReader.
 	ArchiveReaderFunc *ClientArchiveReaderFunc
@@ -92,9 +89,6 @@ type MockClient struct {
 	// GetDefaultBranchFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDefaultBranch.
 	GetDefaultBranchFunc *ClientGetDefaultBranchFunc
-	// GetDefaultBranchShortFunc is an instance of a mock function object
-	// controlling the behavior of the method GetDefaultBranchShort.
-	GetDefaultBranchShortFunc *ClientGetDefaultBranchShortFunc
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *ClientGetObjectFunc
@@ -204,11 +198,6 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		ArchiveFunc: &ClientArchiveFunc{
-			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (r0 io.ReadCloser, r1 error) {
-				return
-			},
-		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (r0 io.ReadCloser, r1 error) {
 				return
@@ -300,12 +289,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		GetDefaultBranchFunc: &ClientGetDefaultBranchFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 string, r1 api.CommitID, r2 error) {
-				return
-			},
-		},
-		GetDefaultBranchShortFunc: &ClientGetDefaultBranchShortFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 string, r1 api.CommitID, r2 error) {
+			defaultHook: func(context.Context, api.RepoName, bool) (r0 string, r1 api.CommitID, r2 error) {
 				return
 			},
 		},
@@ -481,11 +465,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.Addrs")
 			},
 		},
-		ArchiveFunc: &ClientArchiveFunc{
-			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
-				panic("unexpected invocation of MockClient.Archive")
-			},
-		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockClient.ArchiveReader")
@@ -577,13 +556,8 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		GetDefaultBranchFunc: &ClientGetDefaultBranchFunc{
-			defaultHook: func(context.Context, api.RepoName) (string, api.CommitID, error) {
+			defaultHook: func(context.Context, api.RepoName, bool) (string, api.CommitID, error) {
 				panic("unexpected invocation of MockClient.GetDefaultBranch")
-			},
-		},
-		GetDefaultBranchShortFunc: &ClientGetDefaultBranchShortFunc{
-			defaultHook: func(context.Context, api.RepoName) (string, api.CommitID, error) {
-				panic("unexpected invocation of MockClient.GetDefaultBranchShort")
 			},
 		},
 		GetObjectFunc: &ClientGetObjectFunc{
@@ -754,9 +728,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		AddrsFunc: &ClientAddrsFunc{
 			defaultHook: i.Addrs,
 		},
-		ArchiveFunc: &ClientArchiveFunc{
-			defaultHook: i.Archive,
-		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
 			defaultHook: i.ArchiveReader,
 		},
@@ -813,9 +784,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		GetDefaultBranchFunc: &ClientGetDefaultBranchFunc{
 			defaultHook: i.GetDefaultBranch,
-		},
-		GetDefaultBranchShortFunc: &ClientGetDefaultBranchShortFunc{
-			defaultHook: i.GetDefaultBranchShort,
 		},
 		GetObjectFunc: &ClientGetObjectFunc{
 			defaultHook: i.GetObject,
@@ -1116,116 +1084,6 @@ func (c ClientAddrsFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientAddrsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// ClientArchiveFunc describes the behavior when the Archive method of the
-// parent MockClient instance is invoked.
-type ClientArchiveFunc struct {
-	defaultHook func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
-	hooks       []func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
-	history     []ClientArchiveFuncCall
-	mutex       sync.Mutex
-}
-
-// Archive delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) Archive(v0 context.Context, v1 api.RepoName, v2 ArchiveOptions) (io.ReadCloser, error) {
-	r0, r1 := m.ArchiveFunc.nextHook()(v0, v1, v2)
-	m.ArchiveFunc.appendCall(ClientArchiveFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Archive method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientArchiveFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Archive method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientArchiveFunc) PushHook(hook func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientArchiveFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientArchiveFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientArchiveFunc) nextHook() func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientArchiveFunc) appendCall(r0 ClientArchiveFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientArchiveFuncCall objects describing
-// the invocations of this function.
-func (f *ClientArchiveFunc) History() []ClientArchiveFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientArchiveFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientArchiveFuncCall is an object that describes an invocation of method
-// Archive on an instance of MockClient.
-type ClientArchiveFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 ArchiveOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 io.ReadCloser
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientArchiveFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientArchiveFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientArchiveReaderFunc describes the behavior when the ArchiveReader
@@ -3272,24 +3130,24 @@ func (c ClientGetCommitsFuncCall) Results() []interface{} {
 // ClientGetDefaultBranchFunc describes the behavior when the
 // GetDefaultBranch method of the parent MockClient instance is invoked.
 type ClientGetDefaultBranchFunc struct {
-	defaultHook func(context.Context, api.RepoName) (string, api.CommitID, error)
-	hooks       []func(context.Context, api.RepoName) (string, api.CommitID, error)
+	defaultHook func(context.Context, api.RepoName, bool) (string, api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, bool) (string, api.CommitID, error)
 	history     []ClientGetDefaultBranchFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDefaultBranch delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) GetDefaultBranch(v0 context.Context, v1 api.RepoName) (string, api.CommitID, error) {
-	r0, r1, r2 := m.GetDefaultBranchFunc.nextHook()(v0, v1)
-	m.GetDefaultBranchFunc.appendCall(ClientGetDefaultBranchFuncCall{v0, v1, r0, r1, r2})
+func (m *MockClient) GetDefaultBranch(v0 context.Context, v1 api.RepoName, v2 bool) (string, api.CommitID, error) {
+	r0, r1, r2 := m.GetDefaultBranchFunc.nextHook()(v0, v1, v2)
+	m.GetDefaultBranchFunc.appendCall(ClientGetDefaultBranchFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the GetDefaultBranch
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientGetDefaultBranchFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (string, api.CommitID, error)) {
+func (f *ClientGetDefaultBranchFunc) SetDefaultHook(hook func(context.Context, api.RepoName, bool) (string, api.CommitID, error)) {
 	f.defaultHook = hook
 }
 
@@ -3297,7 +3155,7 @@ func (f *ClientGetDefaultBranchFunc) SetDefaultHook(hook func(context.Context, a
 // GetDefaultBranch method of the parent MockClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ClientGetDefaultBranchFunc) PushHook(hook func(context.Context, api.RepoName) (string, api.CommitID, error)) {
+func (f *ClientGetDefaultBranchFunc) PushHook(hook func(context.Context, api.RepoName, bool) (string, api.CommitID, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3306,19 +3164,19 @@ func (f *ClientGetDefaultBranchFunc) PushHook(hook func(context.Context, api.Rep
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientGetDefaultBranchFunc) SetDefaultReturn(r0 string, r1 api.CommitID, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (string, api.CommitID, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, bool) (string, api.CommitID, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientGetDefaultBranchFunc) PushReturn(r0 string, r1 api.CommitID, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (string, api.CommitID, error) {
+	f.PushHook(func(context.Context, api.RepoName, bool) (string, api.CommitID, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ClientGetDefaultBranchFunc) nextHook() func(context.Context, api.RepoName) (string, api.CommitID, error) {
+func (f *ClientGetDefaultBranchFunc) nextHook() func(context.Context, api.RepoName, bool) (string, api.CommitID, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3357,6 +3215,9 @@ type ClientGetDefaultBranchFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -3371,124 +3232,12 @@ type ClientGetDefaultBranchFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientGetDefaultBranchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientGetDefaultBranchFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// ClientGetDefaultBranchShortFunc describes the behavior when the
-// GetDefaultBranchShort method of the parent MockClient instance is
-// invoked.
-type ClientGetDefaultBranchShortFunc struct {
-	defaultHook func(context.Context, api.RepoName) (string, api.CommitID, error)
-	hooks       []func(context.Context, api.RepoName) (string, api.CommitID, error)
-	history     []ClientGetDefaultBranchShortFuncCall
-	mutex       sync.Mutex
-}
-
-// GetDefaultBranchShort delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockClient) GetDefaultBranchShort(v0 context.Context, v1 api.RepoName) (string, api.CommitID, error) {
-	r0, r1, r2 := m.GetDefaultBranchShortFunc.nextHook()(v0, v1)
-	m.GetDefaultBranchShortFunc.appendCall(ClientGetDefaultBranchShortFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the
-// GetDefaultBranchShort method of the parent MockClient instance is invoked
-// and the hook queue is empty.
-func (f *ClientGetDefaultBranchShortFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (string, api.CommitID, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetDefaultBranchShort method of the parent MockClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *ClientGetDefaultBranchShortFunc) PushHook(hook func(context.Context, api.RepoName) (string, api.CommitID, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientGetDefaultBranchShortFunc) SetDefaultReturn(r0 string, r1 api.CommitID, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (string, api.CommitID, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientGetDefaultBranchShortFunc) PushReturn(r0 string, r1 api.CommitID, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (string, api.CommitID, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *ClientGetDefaultBranchShortFunc) nextHook() func(context.Context, api.RepoName) (string, api.CommitID, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientGetDefaultBranchShortFunc) appendCall(r0 ClientGetDefaultBranchShortFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientGetDefaultBranchShortFuncCall objects
-// describing the invocations of this function.
-func (f *ClientGetDefaultBranchShortFunc) History() []ClientGetDefaultBranchShortFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientGetDefaultBranchShortFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientGetDefaultBranchShortFuncCall is an object that describes an
-// invocation of method GetDefaultBranchShort on an instance of MockClient.
-type ClientGetDefaultBranchShortFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 api.CommitID
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientGetDefaultBranchShortFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientGetDefaultBranchShortFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

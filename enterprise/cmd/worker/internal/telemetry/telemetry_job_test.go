@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/keegancsmith/sqlf"
@@ -139,6 +141,8 @@ func TestHandlerLoadsEvents(t *testing.T) {
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
+	initAllowedEvents(t, db, []string{"event1", "event2"})
+
 	t.Run("loads no events when table is empty", func(t *testing.T) {
 		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			if len(event) != 0 {
@@ -169,7 +173,6 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	t.Run("loads events without error", func(t *testing.T) {
 		var got []*types.Event
 		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
@@ -236,6 +239,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
+	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
 		{
 			Name:   "event1",
@@ -306,6 +310,76 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 			if len(event) == 0 {
 				t.Error("expected empty events")
 			}
+			return nil
+		}
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+
+	initAllowedEvents(t, db, []string{"allowed"})
+	testData := []*database.Event{
+		{
+			Name:   "allowed",
+			UserID: 1,
+			Source: "test",
+		},
+		{
+			Name:   "not-allowed",
+			UserID: 2,
+			Source: "test",
+		},
+		{
+			Name:   "allowed",
+			UserID: 3,
+			Source: "test",
+		},
+	}
+	err := db.EventLogs().BulkInsert(ctx, testData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (0);"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	config := validEnabledConfiguration()
+	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+
+	handler := mockTelemetryHandler(t, noopHandler())
+	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
+	handler.bookmarkStore = newBookmarkStore(db)
+
+	t.Run("ensure only allowed events are returned", func(t *testing.T) {
+		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("first execution of handler should return first event", []*types.Event{
+				{
+					ID:       1,
+					Name:     "allowed",
+					UserID:   1,
+					Argument: "{}",
+					Source:   "test",
+					Version:  "0.0.0+dev",
+				},
+				{
+					ID:       3,
+					Name:     "allowed",
+					UserID:   3,
+					Argument: "{}",
+					Source:   "test",
+					Version:  "0.0.0+dev",
+				},
+			}).Equal(t, got)
 			return nil
 		}
 
@@ -526,5 +600,19 @@ func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *te
 		userEmailsStore:    database.NewMockUserEmailsStore(),
 		bookmarkStore:      bms,
 		sendEventsCallback: callbackFunc,
+	}
+}
+
+// initAllowedEvents is a helper to establish a deterministic set of allowed events. This is useful because
+// the standard database migrations will create data in the allowed events table that may conflict with tests.
+func initAllowedEvents(t *testing.T, db database.DB, names []string) {
+	store := basestore.NewWithHandle(db.Handle())
+	err := store.Exec(context.Background(), sqlf.Sprintf("delete from event_logs_export_allowlist"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.Exec(context.Background(), sqlf.Sprintf("insert into event_logs_export_allowlist (event_name) values (unnest(%s::text[]))", pq.Array(names)))
+	if err != nil {
+		t.Fatal(err)
 	}
 }
