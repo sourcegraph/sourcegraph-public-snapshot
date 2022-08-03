@@ -89,10 +89,10 @@
     underscore "1.6.0"
     webcomponents.js "0.7.20"
 
-"@axe-core/puppeteer@^4.2.0", "@axe-core/puppeteer@^4.4.2":
-  version "4.4.2"
-  resolved "https://registry.npmjs.org/@axe-core/puppeteer/-/puppeteer-4.4.2.tgz#63ada57d407d8bea45bac5b05974e16282f41820"
-  integrity sha512-HsiXUALjQ5fcWZZgGUvYGr/b7qvWbQXeDuW2z+2YYOJsavlPV9z0IGdm4rmX0lmsdJ9usA5vq5LNLiz23ZyXmw==
+"@axe-core/puppeteer@^4.2.0", "@axe-core/puppeteer@^4.4.3":
+  version "4.4.3"
+  resolved "https://registry.npmjs.org/@axe-core/puppeteer/-/puppeteer-4.4.3.tgz#487ec1d3f18fc053a0ae2b4279e9bd87b975de2b"
+  integrity sha512-BkZthRGjKmFnJvJzi2TgwdSeK88yHTqMm+cHrqJpofab6BO7gaqh4BlmvA1f9UzJvQalqgA8zyw4aahWf0OdZw==
   dependencies:
     axe-core "^4.4.1"
 
