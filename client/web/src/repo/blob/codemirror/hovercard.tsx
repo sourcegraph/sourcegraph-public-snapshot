@@ -1,3 +1,62 @@
+/**
+ * This module provides various view plugins, facets and fields to implement
+ * hovercard functionality. Hopefully the following diagram is useful (I wasn't
+ * able to adjust the layout; the graph description is in hovercard.dot).
+ *
+ *                  ┌−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−┐
+ *                  ╎     Extensions integration     ╎
+ *                  └−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−┘
+ *                    │
+ *                    │ provides
+ *                    ▼
+ *                  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ *       ┌────────▶ ┃    hovercardSource (facet)     ┃
+ *       │          ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ *       │            │
+ *       │            │ enables
+ *       │            ▼
+ *       │          ┌────────────────────────────────┐          ┌────────────────────────┐
+ *       │          │   HoverPlugin (view plugin)    │          │ hovercardTheme (theme) │
+ *       │          └────────────────────────────────┘          └────────────────────────┘
+ *       │            │                                           ▲
+ *       │ uses       │ provides                                  │ enables
+ *       │            ▼                                           │
+ *       │          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  enables   ┌─────────────────────────┐
+ *       │          ┃                      hovercardRanges (facet)                       ┃ ─────────▶ │ highlightRanges (field) │ ◀┐
+ *       │          ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛            └─────────────────────────┘  │
+ *       │            │                                 ▲         ▲                                     │                          │
+ *       │            │ enables                         │ reads   │ provides                            │ provides                 │
+ *       │            ▼                                 │         │                                     ▼                          │
+ *       │          ┌────────────────────────────────┐  │       ┌−−−−−−−−−−−−−−−−−−−−−−−−┐            ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓  │
+ *  ┌────┼───────── │ HovercardManager (view plugin) │ ─┘       ╎     Hovercard pin      ╎            ┃   decoration (facet)    ┃  │ updates
+ *  │    │          └────────────────────────────────┘          └−−−−−−−−−−−−−−−−−−−−−−−−┘            ┗━━━━━━━━━━━━━━━━━━━━━━━━━┛  │
+ *  │    │            │                                                                                                            │
+ *  │    │            │ creates                                                                                                    │
+ *  │    │            ▼                                                                                                            │
+ *  │    │          ┌────────────────────────────────┐                                                                             │
+ *  │    └───────── │    Hovercard (tooltip view)    │ ────────────────────────────────────────────────────────────────────────────┘
+ *  │               └────────────────────────────────┘
+ *  │   provides    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ *  └─────────────▶ ┃      showTooltips (facet)      ┃
+ *                  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+ *
+ *  The core part is the {@link hovercardRanges} facet. This facet contains the
+ *  ranges for which to potentially show hovercards (there may not be hover
+ *  information available for these ranges).
+ *  The {@link HovercardManager} creates a CodeMirror {@link Tooltip} for every
+ *  range, using {@link Hovercard} as the tooltip view implementation and passes
+ *  them as input to {@link showTooltips}.
+ *
+ *  The input for {@link hovercardRanges} comes from (currently) two sources:
+ *  (1) a pin extension which provides input if the URL contains a pinned
+ *  location and (2) the {@link HoverManager} which finds valid hovercard ranges
+ *  underneath the mouse pointer.
+ *
+ *  Because with the current implementation we don't know which of the
+ *  {@link hovercardRanges} also has hover information associated with it, we
+ *  require {@link Hovercard} to update {@link highlightRanges} as necessary to
+ *  highlight the ranges for which hover information exists.
+ */
 import { Extension, Facet, RangeSet, StateEffect, StateEffectType, StateField } from '@codemirror/state'
 import {
     Decoration,
