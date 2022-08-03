@@ -8,12 +8,13 @@ import (
 
 type Notebooks struct {
 	DateRange string
+	Grouping  string
 	DB        database.DB
 	Cache     bool
 }
 
 func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"SearchNotebookCreated"})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"SearchNotebookCreated"})
 	if err != nil {
 		return nil, err
 	}
@@ -21,6 +22,7 @@ func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Notebooks:Creations",
@@ -29,7 +31,7 @@ func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {
 }
 
 func (s *Notebooks) Views() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"SearchNotebookPageViewed"})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"SearchNotebookPageViewed"})
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +39,7 @@ func (s *Notebooks) Views() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Notebooks:Views",
@@ -45,7 +48,7 @@ func (s *Notebooks) Views() (*AnalyticsFetcher, error) {
 }
 
 func (s *Notebooks) BlockRuns() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{
 		"SearchNotebookRunAllBlocks",
 		"SearchNotebookRunBlock",
 	})
@@ -56,6 +59,7 @@ func (s *Notebooks) BlockRuns() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Notebooks:BlockRuns",
