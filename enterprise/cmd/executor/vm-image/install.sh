@@ -76,9 +76,13 @@ function install_ignite() {
   curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
+}
 
+function install_cni() {
   mkdir -p /opt/cni/bin
   curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
+
+  curl -sSL https://github.com/AkihiroSuda/cni-isolation/releases/download/v0.0.4/cni-isolation-amd64.tgz | tar -xz -C /opt/cni/bin
 }
 
 ## Install and configure executor service
@@ -195,6 +199,69 @@ function preheat_kernel_image() {
   docker pull "weaveworks/ignite:${IGNITE_VERSION}"
 }
 
+## Configures the CNI explicitly and adds the isolation plugin to the chain.
+## This is to prevent cross-network communication (which currently doesn't happen
+## as we only have 1 bridge).
+function configure_cni() {
+  cat <<EOF >/etc/cni/net.d/10-ignite.conflist
+{
+  "cniVersion": "0.4.0",
+  "name": "ignite-cni-bridge",
+  "plugins": [
+    {
+      "type": "bridge",
+      "bridge": "ignite0",
+      "isGateway": true,
+      "isDefaultGateway": true,
+      "promiscMode": true,
+      "ipMasq": true,
+      "ipam": {
+        "type": "host-local",
+        "subnet": "10.61.0.0/16"
+      }
+    },
+    {
+      "type": "portmap",
+      "capabilities": {
+        "portMappings": true
+      }
+    },
+    {
+      "type": "firewall"
+    },
+    {
+      "type": "isolation"
+    }
+  ]
+}
+EOF
+}
+
+## Configures iptables rules for our ignite VMs. We don't want to allow any local
+## traffic except the traffic to nameservers. This is to prevent any internal attack
+## vector and talking to link-local services like the google metadata server.
+function setup_iptables() {
+  # Ensure the chain exists.
+  iptables -N CNI-ADMIN
+  # Explicitly allow UDP link local traffic (required for google cloud).
+  iptables -A CNI-ADMIN -m udp --dport 53 -d 169.254.0.0/16 -j ACCEPT
+  # Allow access to the gateway on the bridge network.
+  iptables -A CNI-ADMIN -d 10.61.0.1 -j RETURN
+  # Disallow any inter-VM traffic.
+  # TODO: This rule doesn't do what we want yet.
+  iptables -A CNI-ADMIN -s 10.61.0.1 -j RETURN
+  iptables -A CNI-ADMIN -d 10.61.0.0/16 -j DROP
+  # Disallow any other link local traffic.
+  iptables -A CNI-ADMIN -d 169.254.0.0/16 -j DROP
+  # TODO: Disallow _all_ local traffic.
+  iptables-save >/etc/iptables-store.conf
+  cat <<EOF >/etc/network/if-up.d/iptables
+#!/bin/sh
+iptables-restore < /etc/iptables-store.conf
+EOF
+  chmod +x /etc/network/if-up.d/iptables
+}
+
 function cleanup() {
   apt-get -y autoremove
   apt-get clean
@@ -213,6 +280,9 @@ install_docker
 install_git
 install_src_cli
 install_ignite
+install_cni
+configure_cni
+setup_iptables
 
 # Services
 install_executor
