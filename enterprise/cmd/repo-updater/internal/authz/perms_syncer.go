@@ -21,7 +21,6 @@ import (
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -31,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -375,30 +373,10 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
-
-		// If the "401 Unauthorized" is due to the token being expired, try to refresh it.
-		tokenExpired := errcode.IsUnauthorized(err) && err.Error() == "invalid_token"
-		if err != nil && tokenExpired {
-			errRefreshingToken := s.tryToRefreshToken(ctx, acct)
-			if errRefreshingToken != nil {
-				acctLogger.Warn("setExternalAccountExpired, couldn't refresh token",
-					log.Bool("tokenExpired", tokenExpired),
-				)
-
-				continue
-			}
-
-			// Try to fetch perms again if the token is successfully refreshed
-			extPerms, err = provider.FetchUserPerms(ctx, acct, fetchOpts)
-			if err != nil {
-				acctLogger.Warn("setExternalAccountExpired, couldn't refresh token",
-					log.Bool("tokenExpired", tokenExpired),
-				)
-				continue
-			}
-		} else if err != nil && err.Error() != "invalid_token" {
-			// The "401 Unauthorized" could be due to other reason besides a token is revoked
-			unauthorized := errcode.IsUnauthorized(err) && err.Error() != "invalid_token"
+		if err != nil {
+			// The request to fetch user permissions should handle the case of a token being expired.
+			// If it fails to refresh the token or if the token is revoked, we still can have a "401 Unauthorized" here.
+			unauthorized := errcode.IsUnauthorized(err)
 			forbidden := errcode.IsForbidden(err)
 			// Detect GitHub account suspension error
 			accountSuspended := errcode.IsAccountSuspended(err)
@@ -555,25 +533,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	}
 
 	return repoIDs, subRepoPerms, nil
-}
-
-func (s *PermsSyncer) tryToRefreshToken(ctx context.Context, acct *extsvc.Account) error {
-	_, token, err := gitlab.GetExternalAccountData(&acct.AccountData)
-	if err != nil {
-		return errors.Wrap(err, "get external account data")
-	} else if token == nil {
-		return errors.New("no token found in the external account data")
-	}
-
-	oauthContext := getOauthContext()
-	helper := &oauth.RefreshTokenHelperForExternalAccount{DB: s.db, ExternalAccountID: acct.ID, OauthRefreshToken: token.RefreshToken}
-
-	_, err = helper.RefreshToken(ctx, nil, *oauthContext)
-	if err != nil {
-		return errors.Wrap(err, "error refreshing token")
-	}
-
-	return nil
 }
 
 // fetchUserPermsViaExternalServices uses user code connections to list all
@@ -1534,25 +1493,4 @@ func syncUsersMaxConcurrency() int {
 		return 1
 	}
 	return n
-}
-
-func getOauthContext() *oauthutil.OauthContext {
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab != nil {
-			p := authProvider.Gitlab
-
-			glURL := strings.TrimSuffix(p.Url, "/")
-			return &oauthutil.OauthContext{
-				ClientID:     p.ClientID,
-				ClientSecret: p.ClientSecret,
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  glURL + "/oauth/authorize",
-					TokenURL: glURL + "/oauth/token",
-				},
-				Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
-			}
-		}
-	}
-
-	return nil
 }
