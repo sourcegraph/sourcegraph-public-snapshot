@@ -244,7 +244,7 @@ function setup_iptables() {
   # Ensure the chain exists.
   iptables -N CNI-ADMIN
   # Explicitly allow UDP link local traffic (required for google cloud).
-  iptables -A CNI-ADMIN -m udp --dport 53 -d 169.254.0.0/16 -j ACCEPT
+  iptables -A CNI-ADMIN -p udp --dport 53 -d 169.254.0.0/16 -j ACCEPT
   # Allow access to the gateway on the bridge network.
   iptables -A CNI-ADMIN -d 10.61.0.1 -j RETURN
   # Disallow any host-VM network traffic
