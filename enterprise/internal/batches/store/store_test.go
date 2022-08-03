@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -16,14 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-type storeTestFunc func(*testing.T, context.Context, *Store, ct.Clock)
+type storeTestFunc func(*testing.T, context.Context, *Store, bt.Clock)
 
 // storeTest converts a storeTestFunc into a func(*testing.T) in which all
 // dependencies are set up and injected into the storeTestFunc.
 func storeTest(db *sql.DB, key encryption.Key, f storeTestFunc) func(*testing.T) {
 	return func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		c := &ct.TestClock{Time: timeutil.Now()}
+		c := &bt.TestClock{Time: timeutil.Now()}
 
 		// Store tests all run in a transaction that's rolled back at the end
 		// of the tests, so that foreign key constraints can be deferred and we

@@ -51,6 +51,7 @@ func main() {
 		"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
 		"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
 		"executors-janitor":             executors.NewJanitorJob(),
+		"executors-metricsserver":       executors.NewMetricsServerJob(),
 		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),

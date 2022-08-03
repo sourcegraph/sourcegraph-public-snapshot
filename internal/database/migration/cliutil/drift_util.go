@@ -59,7 +59,7 @@ func compareExtensions(out *output.Output, schemaName, version string, actual, e
 		}
 
 		return false
-	})
+	}, noopAdditionalCallback[stringNamer])
 }
 
 func compareEnums(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -87,7 +87,7 @@ func compareEnums(out *output.Output, schemaName, version string, actual, expect
 		writeDiff(out, enum.Labels, expectedEnum.Labels)
 		writeSQLSolution(out, "drop and re-create the type", dropEnumStmt, createEnumStmt)
 		return true
-	})
+	}, noopAdditionalCallback[schemas.EnumDescription])
 }
 
 func compareFunctions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -104,7 +104,7 @@ func compareFunctions(out *output.Output, schemaName, version string, actual, ex
 		writeDiff(out, expectedFunction.Definition, function.Definition)
 		writeSQLSolution(out, "replace the function definition", definitionStmt)
 		return true
-	})
+	}, noopAdditionalCallback[schemas.FunctionDescription])
 }
 
 func compareSequences(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -124,7 +124,7 @@ func compareSequences(out *output.Output, schemaName, version string, actual, ex
 		writeDiff(out, expectedSequence, *sequence)
 		writeSearchHint(out, "redefine the sequence", definitionStmt)
 		return true
-	})
+	}, noopAdditionalCallback[schemas.SequenceDescription])
 }
 
 func compareTables(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -146,7 +146,7 @@ func compareTables(out *output.Output, schemaName, version string, actual, expec
 		outOfSync = compareTriggers(out, schemaName, version, *table, expectedTable) || outOfSync
 		outOfSync = compareTableComments(out, schemaName, version, *table, expectedTable) || outOfSync
 		return outOfSync
-	})
+	}, noopAdditionalCallback[schemas.TableDescription])
 }
 
 func compareColumns(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
@@ -199,6 +199,14 @@ func compareColumns(out *output.Output, schemaName, version string, actualTable,
 			fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
 		))
 		return true
+	}, func(additional []schemas.ColumnDescription) bool {
+		for _, column := range additional {
+			dropColumnStmt := fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", expectedTable.Name, column.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected column %q.%q", expectedTable.Name, column.Name)))
+			writeSQLSolution(out, "drop the column", dropColumnStmt)
+		}
+
+		return true
 	})
 }
 
@@ -217,23 +225,27 @@ func compareConstraints(out *output.Output, schemaName, version string, actualTa
 		writeDiff(out, expectedConstraint, *constraint)
 		writeSQLSolution(out, "redefine the constraint", dropConstraintStmt, createConstraintStmt)
 		return true
+	}, func(additional []schemas.ConstraintDescription) bool {
+		for _, constraint := range additional {
+			dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, constraint.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected constraint %q.%q", expectedTable.Name, constraint.Name)))
+			writeSQLSolution(out, "drop the constraint", dropConstraintStmt)
+		}
+
+		return true
 	})
 }
 
 func compareIndexes(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) bool {
 		var createIndexStmt string
-		var dropIndexStmt string
-
 		switch expectedIndex.ConstraintType {
 		case "u":
 			fallthrough
 		case "p":
 			createIndexStmt = fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", actualTable.Name, expectedIndex.Name, expectedIndex.ConstraintDefinition)
-			dropIndexStmt = fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
 		default:
 			createIndexStmt = fmt.Sprintf("%s;", expectedIndex.IndexDefinition)
-			dropIndexStmt = fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
 		}
 
 		if index == nil {
@@ -242,9 +254,18 @@ func compareIndexes(out *output.Output, schemaName, version string, actualTable,
 			return true
 		}
 
+		dropIndexStmt := fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
 		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of index %q.%q", expectedTable.Name, expectedIndex.Name)))
 		writeDiff(out, expectedIndex, *index)
 		writeSQLSolution(out, "redefine the index", dropIndexStmt, createIndexStmt)
+		return true
+	}, func(additional []schemas.IndexDescription) bool {
+		for _, index := range additional {
+			dropIndexStmt := fmt.Sprintf("DROP INDEX %s;", index.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected index %q.%q", expectedTable.Name, index.Name)))
+			writeSQLSolution(out, "drop the index", dropIndexStmt)
+		}
+
 		return true
 	})
 }
@@ -264,6 +285,15 @@ func compareTriggers(out *output.Output, schemaName, version string, actualTable
 		writeDiff(out, expectedTrigger, *trigger)
 		writeSQLSolution(out, "redefine the trigger", dropTriggerStmt, createTriggerStmt)
 		return true
+	}, func(additional []schemas.TriggerDescription) bool {
+		for _, trigger := range additional {
+			dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", trigger.Name, expectedTable.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected trigger %q.%q", expectedTable.Name, trigger.Name)))
+			writeSQLSolution(out, "drop the trigger", dropTriggerStmt)
+		}
+
+		return true
+
 	})
 }
 
@@ -295,7 +325,11 @@ func compareViews(out *output.Output, schemaName, version string, actual, expect
 		writeDiff(out, expectedView.Definition, view.Definition)
 		writeSQLSolution(out, "redefine the view", dropViewStmt, createViewStmt)
 		return true
-	})
+	}, noopAdditionalCallback[schemas.ViewDescription])
+}
+
+func noopAdditionalCallback[T schemas.Namer](_ []T) bool {
+	return false
 }
 
 // writeDiff writes a colorized diff of the given objects.
@@ -433,30 +467,45 @@ outer:
 	return ordered, true
 }
 
-// compareNamedLists invokes the given callback with a pair of elements from slices
-// `as` and `bs`, respectively, with the same name. If there is a missing element from
-// `as`, there will be an invocation of `f` with a nil value for its first parameter.
-// If any invocation of `f` returns true, the output of this function will be true.
-func compareNamedLists[T schemas.Namer](as, bs []T, f func(a *T, b T) bool) (outOfSync bool) {
+// compareNamedLists invokes the given primary callback with a pair of differing elements from slices
+// `as` and `bs`, respectively, with the same name. If there is a missing element from `as`, there will
+// be an invocation of this callback with a nil value for its first parameter. Elements for which there
+// is no analog in `bs` will be collected and sent to an invocation of the additions callback. If any
+// invocation of either function returns true, the output of this function will be true.
+func compareNamedLists[T schemas.Namer](
+	as []T,
+	bs []T,
+	primaryCallback func(a *T, b T) bool,
+	additionsCallback func(additional []T) bool,
+) (outOfSync bool) {
 	am := groupByName(as)
 	bm := groupByName(bs)
+	additional := make([]T, 0, len(am))
 
 	for _, k := range keys(am) {
 		av := am[k]
 
 		if bv, ok := bm[k]; ok {
 			if cmp.Diff(av, bv) != "" {
-				if f(&av, bv) {
+				if primaryCallback(&av, bv) {
 					outOfSync = true
 				}
 			}
+		} else {
+			additional = append(additional, av)
 		}
 	}
 	for _, k := range keys(bm) {
 		bv := bm[k]
 
 		if _, ok := am[k]; !ok {
-			f(nil, bv)
+			primaryCallback(nil, bv)
+		}
+	}
+
+	if len(additional) > 0 {
+		if additionsCallback(additional) {
+			outOfSync = true
 		}
 	}
 

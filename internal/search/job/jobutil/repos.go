@@ -18,7 +18,8 @@ import (
 )
 
 type RepoSearchJob struct {
-	RepoOpts search.RepoOptions
+	RepoOpts            search.RepoOptions
+	DescriptionPatterns []*regexp.Regexp
 }
 
 func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -61,33 +62,25 @@ func (s *RepoSearchJob) repoDescriptions(ctx context.Context, db database.DB, re
 // descriptionMatchRanges takes a map of repo IDs to their descriptions, and a list of patterns to match against those repo descriptions.
 // It returns a map of repo IDs to []result.Range. The []result.Range value contains the match ranges
 // for repos with a description that matches at least one of the patterns in descriptionPatterns.
-func descriptionMatchRanges(repoDescriptions map[api.RepoID]string, descriptionPatterns []string) map[api.RepoID][]result.Range {
+func (s *RepoSearchJob) descriptionMatchRanges(repoDescriptions map[api.RepoID]string) map[api.RepoID][]result.Range {
 	res := make(map[api.RepoID][]result.Range)
 
 	for repoID, repoDescription := range repoDescriptions {
-		for _, dp := range descriptionPatterns {
-			re, err := regexp.Compile(`(?is)` + dp) // case-insensitive and match across newlines
-			if err != nil {
-				// this should never happen. repo:has.description predicate arguments should already be validated and `re` should always compile.
-				panic(err)
-			}
-
+		for _, re := range s.DescriptionPatterns {
 			submatches := re.FindAllStringSubmatchIndex(repoDescription, -1)
-			if len(submatches) > 0 {
-				for _, sm := range submatches {
-					res[repoID] = append(res[repoID], result.Range{
-						Start: result.Location{
-							Offset: sm[0],
-							Line:   0,
-							Column: sm[0],
-						},
-						End: result.Location{
-							Offset: sm[1],
-							Line:   0,
-							Column: sm[1],
-						},
-					})
-				}
+			for _, sm := range submatches {
+				res[repoID] = append(res[repoID], result.Range{
+					Start: result.Location{
+						Offset: sm[0],
+						Line:   0,
+						Column: sm[0],
+					},
+					End: result.Location{
+						Offset: sm[1],
+						Line:   0,
+						Column: sm[1],
+					},
+				})
 			}
 		}
 	}
