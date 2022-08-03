@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -84,13 +83,9 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {
 	// The repo may be deleted in the database, in this case we need to get the
 	// original name in order to find it on disk
-	err := s.removeRepoDirectory(s.dir(api.UndeletedRepoName(repo)), true)
+	err := s.removeRepoDirectory(s.dir(api.UndeletedRepoName(repo)))
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
-	}
-	err = s.setCloneStatus(ctx, repo, types.CloneStatusNotCloned)
-	if err != nil {
-		return errors.Wrap(err, "setting clone status after delete")
 	}
 	return nil
 }

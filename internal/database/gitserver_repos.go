@@ -436,13 +436,14 @@ func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoNa
 UPDATE gitserver_repos
 SET
 	clone_status = %s,
-	shard_id = %s,
 	updated_at = NOW()
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 	AND
 	clone_status IS DISTINCT FROM %s
-`, status, shardID, name, status))
+	AND
+	shard_id = %s
+`, status, name, status, shardID))
 	if err != nil {
 		return errors.Wrap(err, "setting clone status")
 	}
@@ -458,13 +459,14 @@ func (s *gitserverRepoStore) SetLastError(ctx context.Context, name api.RepoName
 UPDATE gitserver_repos
 SET
 	last_error = %s,
-	shard_id = %s,
 	updated_at = NOW()
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 	AND
 	last_error IS DISTINCT FROM %s
-`, ns, shardID, name, ns))
+	AND
+	shard_id = %s
+`, ns, name, ns, shardID))
 	if err != nil {
 		return errors.Wrap(err, "setting last error")
 	}
@@ -478,14 +480,15 @@ func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName,
 UPDATE gitserver_repos
 SET
 	repo_size_bytes = %s,
-	shard_id = %s,
 	clone_status = %s,
 	updated_at = NOW()
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 	AND
 	repo_size_bytes IS DISTINCT FROM %s
-	`, size, shardID, types.CloneStatusCloned, name, size))
+	AND
+	shard_id = %s
+	`, size, types.CloneStatusCloned, name, size, shardID))
 	if err != nil {
 		return errors.Wrap(err, "setting repo size")
 	}
@@ -511,11 +514,13 @@ UPDATE gitserver_repos
 SET
 	last_fetched = %s,
 	last_changed = %s,
-	shard_id = %s,
 	clone_status = %s,
 	updated_at = NOW()
-WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-`, data.LastFetched, data.LastChanged, data.ShardID, types.CloneStatusCloned, name))
+WHERE
+	repo_id = (SELECT id FROM repo WHERE name = %s)
+	AND
+	shard_id = %s
+`, data.LastFetched, data.LastChanged, types.CloneStatusCloned, name, data.ShardID))
 	if err != nil {
 		return errors.Wrap(err, "setting last fetched")
 	}

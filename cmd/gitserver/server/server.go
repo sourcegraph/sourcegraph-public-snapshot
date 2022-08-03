@@ -629,7 +629,9 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			s.setLastErrorNonFatal(s.ctx, job.repo, err)
+			if err2 := s.setLastError(s.ctx, job.repo, err); err2 != nil {
+				s.Logger.Error("failed to write clone error status", log.String("repo", string(job.repo)), log.Error(err))
+			}
 		}(j)
 	}
 }
@@ -1863,6 +1865,15 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
+func (s *Server) setLastError(ctx context.Context, name api.RepoName, err error) error {
+	var errString string
+	if err != nil {
+		errString = err.Error()
+	}
+
+	return s.DB.GitserverRepos().SetLastError(ctx, name, errString, s.Hostname)
+}
+
 func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 	dir := s.dir(name)
 
@@ -1883,27 +1894,8 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 	})
 }
 
-// setLastErrorNonFatal will set the last_error column for the repo in the gitserver table.
-func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
-	var errString string
-	if err != nil {
-		errString = err.Error()
-	}
-
-	if err := s.DB.GitserverRepos().SetLastError(ctx, name, errString, s.Hostname); err != nil {
-		s.Logger.Warn("Setting last error in DB", log.Error(err))
-	}
-}
-
 func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
 	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
-}
-
-// setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
-func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, status types.CloneStatus) {
-	if err := s.setCloneStatus(ctx, name, status); err != nil {
-		s.Logger.Warn("Setting clone status in DB", log.Error(err))
-	}
 }
 
 // setRepoSize calculates the size of the repo and stores it in the database.
@@ -1964,7 +1956,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We always want to store whether there was an error cloning the repo
 	defer func() {
 		// Use a different context in case we failed because the original context failed.
-		s.setLastErrorNonFatal(s.ctx, repo, err)
+		err = errors.Append(err, s.setLastError(s.ctx, repo, err))
 	}()
 
 	dir := s.dir(repo)
@@ -2099,11 +2091,13 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	// It may already be cloned
 	if !repoCloned(dir) {
-		s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
+		if err := s.setCloneStatus(ctx, repo, types.CloneStatusCloning); err != nil {
+			return err
+		}
 	}
 	defer func() {
 		// Use a background context to ensure we still update the DB even if we time out
-		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
+		err = errors.Append(err, s.setCloneStatus(context.Background(), repo, cloneStatus(repoCloned(dir), false)))
 	}()
 
 	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
@@ -2175,12 +2169,12 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Error("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Error("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
 	}
 
 	s.Logger.Info("repo cloned", log.String("repo", string(repo)))
@@ -2425,7 +2419,9 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 			if err != nil {
 				s.Logger.Error("performing background repo update", log.Error(err))
 			}
-			s.setLastErrorNonFatal(s.ctx, repo, err)
+			if err2 := s.setLastError(s.ctx, repo, err); err2 != nil {
+				s.Logger.Error("failed to store last error for background repo update", log.Error(err2))
+			}
 		})
 	}()
 
