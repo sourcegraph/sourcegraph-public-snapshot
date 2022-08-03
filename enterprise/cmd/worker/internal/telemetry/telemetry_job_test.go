@@ -159,12 +159,15 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+	flags := make(map[string]bool)
+	flags["testflag"] = true
 
 	want := []*database.Event{
 		{
-			Name:   "event1",
-			UserID: 1,
-			Source: "test",
+			Name:             "event1",
+			UserID:           1,
+			Source:           "test",
+			EvaluatedFlagSet: flags,
 		},
 		{
 			Name:   "event2",
@@ -190,12 +193,13 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		}
 		autogold.Want("loads events without error", []*database.Event{
 			{
-				ID:       1,
-				Name:     "event1",
-				UserID:   1,
-				Argument: json.RawMessage("{}"),
-				Source:   "test",
-				Version:  "0.0.0+dev",
+				ID:               1,
+				Name:             "event1",
+				UserID:           1,
+				Argument:         json.RawMessage("{}"),
+				Source:           "test",
+				Version:          "0.0.0+dev",
+				EvaluatedFlagSet: flags,
 			},
 			{
 				ID:       2,
@@ -225,12 +229,13 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		}
 		autogold.Want("loads using specified batch size from settings", []*database.Event{
 			{
-				ID:       1,
-				Name:     "event1",
-				UserID:   1,
-				Argument: json.RawMessage("{}"),
-				Source:   "test",
-				Version:  "0.0.0+dev",
+				ID:               1,
+				Name:             "event1",
+				UserID:           1,
+				Argument:         json.RawMessage("{}"),
+				Source:           "test",
+				Version:          "0.0.0+dev",
+				EvaluatedFlagSet: flags,
 			},
 		}).Equal(t, got)
 	})
