@@ -432,8 +432,6 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 		if incrementErr != nil {
 			log15.Warn("unable to update backfill attempts", "seriesId", series.SeriesID, "error", err)
 		}
-		// Series should backfill as if it were just created now
-		series.CreatedAt = time.Now()
 		err := h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
 		if err != nil {
 			log15.Error("unable to backfill scoped series", "series_id", series.SeriesID, "error", err)
