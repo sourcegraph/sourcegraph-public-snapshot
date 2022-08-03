@@ -52,7 +52,7 @@ var _ Warning = (*warning)(nil)
 // if err != nil {
 //     return err
 // }
-func NewWarningError(err error) *warning {
+func NewWarning(err error) *warning {
 	return &warning{
 		error: err,
 	}
