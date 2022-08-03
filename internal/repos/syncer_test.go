@@ -16,6 +16,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -2325,8 +2326,8 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 		if err := s.RepoStore().Create(ctx, dbRepo); err != nil {
 			t.Fatal(err)
 		}
-		// Create an entry in gitserver_repos for this repo which indicates there's been an issue fetching the repo
-		if err := s.GitserverReposStore().Upsert(ctx, &types.GitserverRepo{
+		// Log a failure in gitserver_repos for this repo
+		if err := s.GitserverReposStore().Update(ctx, &types.GitserverRepo{
 			RepoID:      dbRepo.ID,
 			ShardID:     "test",
 			CloneStatus: types.CloneStatusCloned,

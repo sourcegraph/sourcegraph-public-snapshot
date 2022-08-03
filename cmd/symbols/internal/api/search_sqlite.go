@@ -11,12 +11,12 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -24,7 +24,7 @@ import (
 
 const searchTimeout = 60 * time.Second
 
-func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedDatabaseWriter writer.CachedDatabaseWriter, gitserverClient gitserver.GitserverClient) types.SearchFunc {
+func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
 	return func(ctx context.Context, args search.SymbolsParameters) (results []result.Symbol, err error) {
 		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{LogFields: []log.Field{
 			log.String("repo", string(args.Repo)),
@@ -59,11 +59,12 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			size, err2 := gitserverClient.GetRepoSize(ctx, args.Repo)
+			info, err2 := db.GitserverRepos().GetByName(ctx, args.Repo)
 			if err2 != nil {
 				err = errors.New("Processing symbols using the SQLite backend is taking a while. If this repository is ~1GB+, enable [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip).")
 				return
 			}
+			size := info.RepoSizeBytes
 
 			help := ""
 			if size > 1_000_000_000 {

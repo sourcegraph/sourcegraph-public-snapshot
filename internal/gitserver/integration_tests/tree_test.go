@@ -60,6 +60,8 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	}
 
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
 	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
 	if err != nil {
@@ -77,6 +79,8 @@ func TestRepository_FileSystem(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	// In all tests, repo should contain three commits. The first commit
 	// (whose ID is in the 'first' field) has a file at dir1/file1 with the
@@ -273,6 +277,8 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	// The repo contains 3 files: one whose filename includes a
 	// non-ASCII char, one whose filename contains a double quote, and
@@ -346,6 +352,8 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	submodDir := InitGitRepository(t,
 		"touch f",

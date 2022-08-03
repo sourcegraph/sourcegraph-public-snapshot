@@ -25,9 +25,6 @@ type GitserverClient interface {
 	// GitDiff returns the paths that have changed between two commits.
 	GitDiff(context.Context, api.RepoName, api.CommitID, api.CommitID) (Changes, error)
 
-	// GetRepoSize returns the repo size in bytes.
-	GetRepoSize(context.Context, api.RepoName) (int64, error)
-
 	// ReadFile returns the file content for the given file at a repo commit.
 	ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error)
 
@@ -97,18 +94,6 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	}
 
 	return changes, nil
-}
-
-func (c *gitserverClient) GetRepoSize(ctx context.Context, repo api.RepoName) (int64, error) {
-	repoToInfo, err := c.innerClient.RepoInfo(ctx, repo)
-	if err != nil {
-		return 0, err
-	}
-	info := repoToInfo.Results[repo]
-	if info == nil {
-		return 0, errors.Errorf("repo %q not found", repo)
-	}
-	return info.Size, nil
 }
 
 func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {

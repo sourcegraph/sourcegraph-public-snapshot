@@ -268,7 +268,7 @@ func TestStatusMessages(t *testing.T) {
 				if tc.gitserverFailure != nil && tc.gitserverFailure[toClone] {
 					lastError = "Oops"
 				}
-				err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
+				err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
 					RepoID:      id,
 					ShardID:     "test",
 					CloneStatus: types.CloneStatusCloned,
