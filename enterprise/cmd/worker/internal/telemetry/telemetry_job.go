@@ -296,7 +296,7 @@ func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *big
 		DeployType:        metadata.DeployType,
 		InitialAdminEmail: metadata.InitialAdminEmail,
 		FeatureFlags:      string(event.EvaluatedFlagSet.Json()),
-		CohortID:          event.CohortID, // date in YYYY-MM-DD format
+		CohortID:          event.CohortID,
 		FirstSourceURL:    emptyIfNil(event.FirstSourceURL),
 		LastSourceURL:     emptyIfNil(event.LastSourceURL),
 		Referrer:          emptyIfNil(event.Referrer),

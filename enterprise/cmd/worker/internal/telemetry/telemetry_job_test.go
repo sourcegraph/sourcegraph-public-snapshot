@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -25,6 +27,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/hexops/autogold"
+	"github.com/hexops/valast"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -446,16 +449,30 @@ func TestHandleInvalidConfig(t *testing.T) {
 
 func TestBuildBigQueryObject(t *testing.T) {
 	atTime := time.Date(2022, 7, 22, 0, 0, 0, 0, time.UTC)
+	flags := make(featureflag.EvaluatedFlagSet)
+	flags["testflag"] = true
+
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	event := &database.Event{
-		ID:              1,
-		Name:            "GREAT_EVENT",
-		URL:             "https://sourcegraph.com/search",
-		UserID:          5,
-		AnonymousUserID: "anonymous",
-		Argument:        json.RawMessage("argument"),
-		Source:          "src",
-		Version:         "1.1.1",
-		Timestamp:       atTime,
+		ID:               1,
+		Name:             "GREAT_EVENT",
+		URL:              "https://sourcegraph.com/search",
+		UserID:           5,
+		AnonymousUserID:  "anonymous",
+		Argument:         json.RawMessage("argument"),
+		Source:           "src",
+		Version:          "1.1.1",
+		Timestamp:        atTime,
+		EvaluatedFlagSet: flags,
+		CohortID:         ptr("cohort1"),
+		FirstSourceURL:   ptr("first_source_url"),
+		LastSourceURL:    ptr("last_source_url"),
+		Referrer:         ptr("reff"),
+		DeviceID:         ptr("devid"),
+		InsertID:         ptr("insertid"),
 	}
 
 	metadata := &instanceMetadata{
@@ -468,17 +485,23 @@ func TestBuildBigQueryObject(t *testing.T) {
 
 	got := buildBigQueryObject(event, metadata)
 	autogold.Want("build big query object", &bigQueryEvent{
-		SiteID:            "site-id-1",
-		LicenseKey:        "license-key-1",
+		SiteID: "site-id-1", LicenseKey: "license-key-1",
 		InitialAdminEmail: "admin@place.com",
 		DeployType:        "docker",
 		EventName:         "GREAT_EVENT",
 		AnonymousUserID:   "anonymous",
+		FirstSourceURL:    "first_source_url",
+		LastSourceURL:     "last_source_url",
 		UserID:            5,
 		Source:            "src",
 		Timestamp:         "2022-07-22T00:00:00Z",
 		Version:           "1.1.1",
+		FeatureFlags:      `{"testflag":true}`,
+		CohortID:          valast.Addr("cohort1").(*string),
+		Referrer:          "reff",
 		PublicArgument:    "argument",
+		DeviceID:          valast.Addr("devid").(*string),
+		InsertID:          valast.Addr("insertid").(*string),
 	}).Equal(t, got)
 }
 
