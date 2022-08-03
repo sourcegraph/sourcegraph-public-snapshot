@@ -11,6 +11,7 @@
 - [Index a TypeScript or JavaScript repository](index_a_typescript_and_javascript_repository.md)
 - [Index a C++ repository](index_a_cpp_repository.md)
 - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
+- [Index a Python repository](https://github.com/sourcegraph/scip-python)
 
 ## Automate uploading precise indexes
 
