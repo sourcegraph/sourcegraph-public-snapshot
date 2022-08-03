@@ -62,9 +62,7 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 		FROM (SELECT COUNT(*) AS count FROM insights_settings_migration_jobs WHERE completed_at IS NOT NULL) c1,
 			 (SELECT COUNT(*) AS count FROM insights_settings_migration_jobs) c2;
 	`)))
-	fmt.Println("PROGRESS called:")
-	fmt.Println(progress)
-	fmt.Println(err)
+	log15.Warn("PROGRESS called:", "value", progress, "error", err)
 	return progress, err
 }
 
