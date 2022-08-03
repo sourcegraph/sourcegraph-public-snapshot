@@ -16,13 +16,13 @@ import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParamete
 
 import { WebHoverOverlay, WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
 import { blobPropsFacet } from '.'
-import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
-import { startWith, scan, distinctUntilChanged } from 'rxjs/operators'
+import { combineLatest, fromEvent, Observable, Subject, Subscription } from 'rxjs'
+import { startWith, filter } from 'rxjs/operators'
 import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
 import { Container } from './react-interop'
 import webOverlayStyles from '../../../components/WebHoverOverlay/WebHoverOverlay.module.scss'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
-import { offsetToPosition } from './utils'
+import { distinctWordAtCoords, offsetToUIPosition, rangesContain } from './utils'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 type HovercardData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
@@ -44,7 +44,7 @@ export type HovercardSource = (view: EditorView, position: UIPositionSpec['posit
 /**
  * Some style overrides to replicate the existing hovercard style.
  */
-const hoverCardTheme = EditorView.theme({
+const hovercardTheme = EditorView.theme({
     '.cm-code-intel-hovercard': {
         // Without this all text in the hovercard is monospace
         fontFamily: 'sans-serif',
@@ -74,43 +74,46 @@ const addRange = StateEffect.define<HovercardRange>()
 const removeRange = StateEffect.define<HovercardRange>()
 const selectionHighlightDecoration = Decoration.mark({ class: 'selection-highlight' })
 
-const validTokenRanges = StateField.define<HovercardRange[]>({
+const highlightRanges = StateField.define<HovercardRange[]>({
     create() {
         return []
     },
 
-    update(value, transaction) {
+    update(ranges, transaction) {
         const availableRanges = transaction.state.facet(hovercardRanges)
 
-        const newValues = [...value]
+        const newRanges = [...ranges]
         let changed = false
 
         // Remove any values not in the current set of ranges. availableRanges and
         // value will be small, so processing them this way should be fine.
-        for (const range of value) {
-            if (!availableRanges.includes(range)) {
-                newValues.splice(newValues.indexOf(range), 1)
+        for (const range of ranges) {
+            // It's enough to look for the range start because we never have
+            // overlapping ranges.
+            if (!rangesContain(availableRanges, range.from)) {
+                newRanges.splice(newRanges.indexOf(range), 1)
                 changed = true
             }
         }
 
+        // FIXME: Use from/to comparison instead
         for (const effect of transaction.effects) {
             if (effect.is(addRange)) {
-                if (availableRanges.includes(effect.value) && !newValues.includes(effect.value)) {
-                    newValues.push(effect.value)
+                if (rangesContain(availableRanges, effect.value.from) && !rangesContain(newRanges, effect.value.from)) {
+                    newRanges.push(effect.value)
                     changed = true
                 }
             }
             if (effect.is(removeRange)) {
-                const index = newValues.indexOf(effect.value)
+                const index = newRanges.findIndex(range => range.from === effect.value.from)
                 if (index > -1) {
-                    newValues.splice(index, 1)
+                    newRanges.splice(index, 1)
                     changed = true
                 }
             }
         }
 
-        return changed ? newValues : value
+        return changed ? newRanges : ranges
     },
 
     provide(field) {
@@ -124,11 +127,13 @@ const validTokenRanges = StateField.define<HovercardRange[]>({
 })
 
 /**
- * This class is used to prevent flickering when a hovercard is pinned or when a
- * pinned and a hovered hovercard are rendered.
- * This class keeps track of for which ranges a tooltip exists and will
- * add/remove tooltips as necessary. Flickering is prevented by reusing existing
- * tooltip instances for existing ranges.
+ * HovercardMangaer is responsible for creating {@link Tooltip}s and updating
+ * the {@link showTooltips} facet.
+ * This is done to prevent prevent flickering when a hovercard is pinned or when
+ * a pinned and a hovered hovercard are rendered. This class keeps track of for
+ * which ranges a tooltip exists and will add/remove tooltips as necessary.
+ * Flickering is prevented by reusing existing tooltip instances for existing
+ * ranges.
  */
 class HovercardManager implements PluginValue {
     private tooltips: Map<string, Tooltip> = new Map()
@@ -160,7 +165,7 @@ class HovercardManager implements PluginValue {
                     pos: range.from,
                     end: range.to,
                     above: true,
-                    create: view => Hovercard.create(view, range),
+                    create: view => new Hovercard(view, range),
                 })
             }
         }
@@ -191,11 +196,11 @@ function hovercardManager(): Extension {
  */
 export const hovercardRanges = Facet.define<HovercardRange>({
     enables: [
-        hoverCardTheme,
+        hovercardTheme,
         // Compute CodeMirror tooltips from hovercard ranges
         hovercardManager(),
         // Highlight hovered token(s)
-        validTokenRanges,
+        highlightRanges,
     ],
 })
 
@@ -210,56 +215,43 @@ export const hovercardSource = Facet.define<HovercardSource, HovercardSource>({
 })
 
 /**
- * Converts mousemove events to hovercard ranges.
+ * Listens to mousemove events, determines whether the position under the mouse
+ * cursor is eligible (whether a "word" is under the mouse cursor) and creates
+ * range objects for {@link hovercardRanges}.
  */
-class HoverPlugin implements PluginValue {
-    position: { from: number; to: number } | null = null
-    subscription: Subscription = new Subscription()
+class HoverManager implements PluginValue {
+    private nextOffset = new Subject<number | null>()
+    private subscription: Subscription
 
-    constructor(
-        readonly view: EditorView,
-        readonly setHovercardPosition: StateEffectType<HovercardRange | null>,
-        nextOffset: Subject<number | null>
-    ) {
-        this.subscription.add(
-            nextOffset
-                .pipe(
-                    scan((position: { from: number; to: number } | null, offset) => {
-                        if (offset === null) {
-                            return null
-                        }
-                        if (position && position.from <= offset && position.to >= offset) {
-                            // Nothing to do, return same value
-                            return position
-                        }
-
-                        {
-                            const word = this.view.state.wordAt(offset)
-                            if (word) {
-                                return { from: word.from, to: word.to }
-                            }
-                        }
-
-                        return null
-                    }, null),
-                    distinctUntilChanged()
-                )
-                .subscribe(position => {
-                    this.view.dispatch({
-                        effects: setHovercardPosition.of(
-                            position
-                                ? {
-                                      ...position,
-                                      range: offsetToPosition(this.view.state.doc, position.from, position.to),
-                                  }
-                                : null
-                        ),
-                    })
+    constructor(readonly view: EditorView, readonly setHovercardPosition: StateEffectType<HovercardRange | null>) {
+        this.subscription = fromEvent<MouseEvent>(this.view.dom, 'mousemove')
+            .pipe(
+                // Ignore events when hovering over hovercards
+                filter(event => !(event.target as HTMLElement | null)?.closest('.cm-code-intel-hovercard')),
+                distinctWordAtCoords(this.view)
+            )
+            .subscribe(position => {
+                this.view.dispatch({
+                    effects: setHovercardPosition.of(
+                        position
+                            ? {
+                                  ...position,
+                                  range: offsetToUIPosition(this.view.state.doc, position.from, position.to),
+                              }
+                            : null
+                    ),
                 })
-        )
+            })
+
+        this.view.dom.addEventListener('mouseleave', this.mouseleave)
     }
 
-    destroy() {
+    private mouseleave = () => {
+        this.nextOffset.next(null)
+    }
+
+    public destroy() {
+        this.view.dom.removeEventListener('mouseleave', this.mouseleave)
         this.subscription.unsubscribe()
     }
 }
@@ -271,39 +263,8 @@ function hovercard(): Extension {
             return range ? [range] : []
         })
     )
-    const nextOffset = new Subject<number | null>()
 
-    return [
-        hovercardRange,
-        ViewPlugin.define(view => new HoverPlugin(view, setHovercardRange, nextOffset), {
-            eventHandlers: {
-                mousemove(event: MouseEvent, view) {
-                    let pos = view.posAtCoords(event)
-
-                    if (pos) {
-                        // It seems CodeMirror returns the document position _closest_ to mouse position.
-                        // This has the unfortunate effect that hovering over empty parts a line will find
-                        // the closest word next to it, which is not something we want. To ensure that we
-                        // only consider positions of actual words/characters we perform the inverse
-                        // conversion and compare the results. This is also done by CodeMirror's own hover
-                        // tooltip plugin.
-                        const posCoords = view.coordsAtPos(pos)
-                        if (
-                            posCoords == null ||
-                            event.y < posCoords.top ||
-                            event.y > posCoords.bottom ||
-                            event.x < posCoords.left - this.view.defaultCharacterWidth ||
-                            event.x > posCoords.right + this.view.defaultCharacterWidth
-                        ) {
-                            pos = null
-                        }
-                    }
-
-                    nextOffset.next(pos)
-                },
-            },
-        }),
-    ]
+    return [hovercardRange, ViewPlugin.define(view => new HoverManager(view, setHovercardRange))]
 }
 
 // WebHoverOverlay requires to be passed an element representing the currently
@@ -323,31 +284,33 @@ const dummyOverlayPosition = { left: 0, bottom: 0 }
 class Hovercard implements TooltipView {
     public dom: HTMLElement
     private root: Root | null = null
-    private nextRoot = new Subject<Root>()
+    private nextContainer = new Subject<HTMLElement>()
     private nextProps = new Subject<BlobProps>()
     private props: BlobProps | null = null
     public overlap = true
     private subscription: Subscription
 
-    static create(view: EditorView, range: HovercardRange): Hovercard {
-        return new Hovercard(view, range)
-    }
-
     constructor(readonly view: EditorView, readonly range: HovercardRange) {
         this.dom = document.createElement('div')
 
         this.subscription = combineLatest([
-            this.nextRoot,
+            this.nextContainer,
             this.view.state.facet(hovercardSource)(view, range.range.start),
             this.nextProps.pipe(startWith(view.state.facet(blobPropsFacet))),
-        ]).subscribe(([root, hovercardData, props]) => {
-            this.render(root, hovercardData, props)
+        ]).subscribe(([container, hovercardData, props]) => {
+            if (hovercardData.hoverOrError) {
+                if (!this.root) {
+                    // Defer creating a React container until absolutely
+                    // necessary
+                    this.root = createRoot(container)
+                }
+                this.render(this.root, hovercardData, props)
+            }
         })
     }
 
     public mount() {
-        this.root = createRoot(this.dom)
-        this.nextRoot.next(this.root)
+        this.nextContainer.next(this.dom)
     }
 
     public update(update: ViewUpdate) {
@@ -383,6 +346,13 @@ class Hovercard implements TooltipView {
     }
 
     private render(root: Root, { hoverOrError, actionsOrError }: HovercardData, props: BlobProps) {
+        if (!hoverOrError) {
+            this.removeRange()
+            root.render([])
+            return
+        }
+        this.addRange()
+
         let hoverContext = {
             commitID: props.blobInfo.commitID,
             filePath: props.blobInfo.filePath,
@@ -403,64 +373,57 @@ class Hovercard implements TooltipView {
             }
         }
 
-        if (hoverOrError) {
-            this.addRange()
+        root.render(
+            <Container onRender={() => repositionTooltips(this.view)} history={props.history}>
+                <div className="cm-code-intel-hovercard">
+                    <WebHoverOverlay
+                        // Blob props
+                        location={props.location}
+                        onHoverShown={props.onHoverShown}
+                        isLightTheme={props.isLightTheme}
+                        platformContext={props.platformContext}
+                        settingsCascade={props.settingsCascade}
+                        telemetryService={props.telemetryService}
+                        extensionsController={props.extensionsController}
+                        nav={props.nav ?? (url => props.history.push(url))}
+                        // Hover props
+                        actionsOrError={actionsOrError}
+                        hoverOrError={hoverOrError}
+                        // CodeMirror handles the positioning but a
+                        // non-nullable value must be passed for the
+                        // hovercard to render
+                        overlayPosition={dummyOverlayPosition}
+                        hoveredToken={hoveredToken}
+                        hoveredTokenElement={dummyHoveredElement}
+                        pinOptions={{
+                            showCloseButton: true,
+                            onCloseButtonClick: () => {
+                                const parameters = new URLSearchParams(props.location.search)
+                                parameters.delete('popover')
 
-            root.render(
-                <Container onRender={() => repositionTooltips(this.view)} history={props.history}>
-                    <div className="cm-code-intel-hovercard">
-                        <WebHoverOverlay
-                            // Blob props
-                            location={props.location}
-                            onHoverShown={props.onHoverShown}
-                            isLightTheme={props.isLightTheme}
-                            platformContext={props.platformContext}
-                            settingsCascade={props.settingsCascade}
-                            telemetryService={props.telemetryService}
-                            extensionsController={props.extensionsController}
-                            nav={props.nav ?? (url => props.history.push(url))}
-                            // Hover props
-                            actionsOrError={actionsOrError}
-                            hoverOrError={hoverOrError}
-                            // CodeMirror handles the positioning but a
-                            // non-nullable value must be passed for the
-                            // hovercard to render
-                            overlayPosition={dummyOverlayPosition}
-                            hoveredToken={hoveredToken}
-                            hoveredTokenElement={dummyHoveredElement}
-                            pinOptions={{
-                                showCloseButton: true,
-                                onCloseButtonClick: () => {
-                                    const parameters = new URLSearchParams(props.location.search)
-                                    parameters.delete('popover')
-
-                                    updateBrowserHistoryIfChanged(props.history, props.location, parameters)
-                                },
-                                onCopyLinkButtonClick: async () => {
-                                    const context = {
-                                        position: this.range.range.start,
-                                        range: {
-                                            start: this.range.range.start,
-                                            end: this.range.range.start,
-                                        },
-                                    }
-                                    const search = new URLSearchParams(location.search)
-                                    search.set('popover', 'pinned')
-                                    updateBrowserHistoryIfChanged(
-                                        props.history,
-                                        props.location,
-                                        addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
-                                    )
-                                    await navigator.clipboard.writeText(window.location.href)
-                                },
-                            }}
-                        />
-                    </div>
-                </Container>
-            )
-        } else {
-            this.removeRange()
-            root.render([])
-        }
+                                updateBrowserHistoryIfChanged(props.history, props.location, parameters)
+                            },
+                            onCopyLinkButtonClick: async () => {
+                                const context = {
+                                    position: this.range.range.start,
+                                    range: {
+                                        start: this.range.range.start,
+                                        end: this.range.range.start,
+                                    },
+                                }
+                                const search = new URLSearchParams(location.search)
+                                search.set('popover', 'pinned')
+                                updateBrowserHistoryIfChanged(
+                                    props.history,
+                                    props.location,
+                                    addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
+                                )
+                                await navigator.clipboard.writeText(window.location.href)
+                            },
+                        }}
+                    />
+                </div>
+            </Container>
+        )
     }
 }

@@ -12,7 +12,7 @@ import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
 import { combineLatest, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { filter, map, skipWhile, switchMap, distinctUntilChanged, startWith, tap } from 'rxjs/operators'
+import { filter, map, skipWhile, switchMap, distinctUntilChanged, startWith } from 'rxjs/operators'
 import { TextDocumentDecorationType } from 'sourcegraph'
 
 import { DocumentHighlight, LineOrPositionOrRange } from '@sourcegraph/codeintellify'
