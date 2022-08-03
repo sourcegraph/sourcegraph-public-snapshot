@@ -5,19 +5,26 @@ CREATE TABLE repo_statistics (
   -- that it's unique.
   CONSTRAINT id CHECK (id),
 
-  total BIGINT NOT NULL DEFAULT 0,
+  total        BIGINT NOT NULL DEFAULT 0,
   soft_deleted BIGINT NOT NULL DEFAULT 0,
-  cloned BIGINT NOT NULL DEFAULT 0
+
+  not_cloned BIGINT NOT NULL DEFAULT 0,
+  cloning    BIGINT NOT NULL DEFAULT 0,
+  cloned     BIGINT NOT NULL DEFAULT 0
 );
 
 COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';
 COMMENT ON COLUMN repo_statistics.soft_deleted IS 'Number of repositories that are soft-deleted and not blocked';
-COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are cloned';
+COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories in gitserver_repos table that are cloned';
+COMMENT ON COLUMN repo_statistics.cloning IS 'Number of repositories in gitserver_repos table that cloning';
+COMMENT ON COLUMN repo_statistics.not_cloned IS 'Number of repositories in gitserver_repos table that are not cloned yet';
 
-INSERT INTO repo_statistics (total, soft_deleted, cloned)
+INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned)
 VALUES (
   (SELECT COUNT(1) FROM repo WHERE deleted_at is NULL AND blocked IS NULL),
   (SELECT COUNT(1) FROM repo WHERE deleted_at is NOT NULL AND blocked IS NULL),
+  (SELECT COUNT(1) FROM gitserver_repos WHERE clone_status = 'not_cloned'),
+  (SELECT COUNT(1) FROM gitserver_repos WHERE clone_status = 'cloning'),
   (SELECT COUNT(1) FROM gitserver_repos WHERE clone_status = 'cloned')
 );
 
@@ -91,13 +98,17 @@ CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_gitserver_repos_update() RE
     LANGUAGE plpgsql
     AS $$ BEGIN
       INSERT INTO
-        repo_statistics (cloned)
+        repo_statistics (not_cloned, cloning, cloned)
       VALUES (
-        (SELECT COUNT(1) FROM newtab WHERE clone_status = 'cloned') - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'cloned')
+        (SELECT COUNT(1) FROM newtab WHERE clone_status = 'not_cloned') - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'not_cloned'),
+        (SELECT COUNT(1) FROM newtab WHERE clone_status = 'cloning')    - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'cloning'),
+        (SELECT COUNT(1) FROM newtab WHERE clone_status = 'cloned')     - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'cloned')
       )
       ON CONFLICT(id) DO UPDATE
       SET
-        cloned = repo_statistics.cloned + excluded.cloned
+        not_cloned = repo_statistics.not_cloned + excluded.not_cloned,
+        cloning    = repo_statistics.cloning + excluded.cloning,
+        cloned     = repo_statistics.cloned + excluded.cloned
       ;
       RETURN NULL;
   END
@@ -112,13 +123,17 @@ CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_gitserver_repos_insert() RE
     LANGUAGE plpgsql
     AS $$ BEGIN
       INSERT INTO
-        repo_statistics (cloned)
+        repo_statistics (not_cloned, cloning, cloned)
       VALUES (
+        (SELECT COUNT(1) FROM newtab WHERE clone_status = 'not_cloned'),
+        (SELECT COUNT(1) FROM newtab WHERE clone_status = 'cloning'),
         (SELECT COUNT(1) FROM newtab WHERE clone_status = 'cloned')
       )
       ON CONFLICT(id) DO UPDATE
       SET
-        cloned = repo_statistics.cloned + excluded.cloned
+        not_cloned = repo_statistics.not_cloned + excluded.not_cloned,
+        cloning    = repo_statistics.cloning + excluded.cloning,
+        cloned     = repo_statistics.cloned + excluded.cloned
       ;
       RETURN NULL;
   END
@@ -132,7 +147,9 @@ CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_gitserver_repos_delete() RE
     AS $$ BEGIN
       UPDATE repo_statistics
       SET
-        cloned = repo_statistics.cloned - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'cloned')
+        not_cloned = repo_statistics.not_cloned - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'not_cloned'),
+        cloning    = repo_statistics.cloning    - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'cloning'),
+        cloned     = repo_statistics.cloned     - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'cloned')
       WHERE id = TRUE;
       RETURN NULL;
   END
