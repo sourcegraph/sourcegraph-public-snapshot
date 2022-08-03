@@ -4384,7 +4384,7 @@ interface File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Format the file as a table for use in our blob views.
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
         """
         formatOnly: Boolean = false
     ): HighlightedFile!
@@ -4451,7 +4451,7 @@ type VirtualFile implements File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Format the file as a table for use in our blob views.
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
         """
         formatOnly: Boolean = false
     ): HighlightedFile!
@@ -4556,7 +4556,7 @@ type GitBlob implements TreeEntry & File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Format the file as a table for use in our blob views.
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
         """
         formatOnly: Boolean = false
     ): HighlightedFile!
