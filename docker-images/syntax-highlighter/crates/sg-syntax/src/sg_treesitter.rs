@@ -108,11 +108,30 @@ pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
 }
 
+// TODO(cleanup_lsif): Remove this when we remove /lsif endpoint
+// Currently left unchanged
+pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
+    let filetype = q
+        .filetype
+        .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
+        .to_lowercase();
+
+    match index_language(&filetype, &q.code) {
+        Ok(document) => {
+            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+
+            Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+        }
+        Err(Error::InvalidLanguage) => Err(json!({
+            "error": format!("{} is not a valid filetype for treesitter", filetype)
+        })),
+        Err(err) => Err(jsonify_err(err)),
+    }
+}
+
 pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
     match q.engine {
         crate::SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
-            println!("Generating w/ syntect...");
-
             let sg_query = SourcegraphQuery {
                 extension: "".to_string(),
                 filepath: q.filepath.clone(),

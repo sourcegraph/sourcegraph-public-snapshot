@@ -24,16 +24,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
 // for now, since I'm working on doing that.
 #[post("/lsif", format = "application/json", data = "<q>")]
 fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
-    let original_query = q.into_inner();
-    let scip_query = ScipHighlightQuery {
-        engine: sg_syntax::SyntaxEngine::TreeSitter,
-        code: original_query.code,
-        language: original_query.filetype,
-        filepath: original_query.filepath,
-        line_length_limit: original_query.line_length_limit,
-    };
-
-    match sg_syntax::scip_highlight(scip_query) {
+    match sg_syntax::lsif_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
     }

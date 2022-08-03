@@ -15,44 +15,39 @@ use syntect::{
 pub struct DocumentGenerator<'a> {
     syntax_set: &'a SyntaxSet,
     parse_state: ParseState,
-    stack: ScopeStack,
     code: &'a str,
     max_line_len: Option<usize>,
 }
 
 #[derive(Clone)]
-struct PartialHighlight {
-    start_row: i32,
-    start_col: i32,
+struct HighlightStart {
+    row: i32,
+    col: i32,
     kind: Option<SyntaxKind>,
 }
 
-impl PartialHighlight {
-    fn some(start_row: usize, start_col: usize, kind: SyntaxKind) -> Self {
+impl HighlightStart {
+    fn some(row: usize, col: usize, kind: SyntaxKind) -> Self {
         Self {
-            start_row: start_row as i32,
-            start_col: start_col as i32,
+            row: row as i32,
+            col: col as i32,
             kind: Some(kind),
         }
     }
 
     fn none() -> Self {
         Self {
-            start_row: 0,
-            start_col: 0,
+            row: 0,
+            col: 0,
             kind: None,
         }
     }
 }
 
-impl Debug for PartialHighlight {
+impl Debug for HighlightStart {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind {
-            Some(kind) => write!(
-                f,
-                "PartialHighight({}, {}, {:?})",
-                self.start_row, self.start_col, kind
-            ),
+            Some(kind) => write!(f, "HighlightStart({}, {}, {:?})", self.row, self.col, kind),
             None => write!(f, "<None>",),
         }
     }
@@ -60,7 +55,7 @@ impl Debug for PartialHighlight {
 
 #[derive(Default)]
 struct HighlightManager {
-    highlights: Vec<PartialHighlight>,
+    highlights: Vec<HighlightStart>,
 }
 
 // HighlightManager is used to keep track of the scope of highlights that we have and make sure
@@ -83,13 +78,19 @@ struct HighlightManager {
 // Note: The parts where string previous overlapped the punctuation
 // is no longer the case.
 impl HighlightManager {
-    fn push_hl(&mut self, hl: PartialHighlight) -> Option<PartialHighlight> {
+    fn push_hl(&mut self, hl: HighlightStart) -> Option<HighlightStart> {
         let mut existing_hl = None;
+
+        // If there was an existing highlight, we need to modify it
+        // so that the range is smaller than it would be otherwise.
+        // This prevents overlapping ranges.
+        //
+        // (see the documentation above for HighlightManager)
         if let Some(last_hl) = self.highlights.last_mut() {
             if let Some(_kind) = last_hl.kind {
                 existing_hl = Some(last_hl.clone());
-                last_hl.start_row = hl.start_row;
-                last_hl.start_col = hl.start_col;
+                last_hl.row = hl.row;
+                last_hl.col = hl.col;
             }
         }
 
@@ -99,10 +100,10 @@ impl HighlightManager {
     }
 
     fn push_empty(&mut self) {
-        self.highlights.push(PartialHighlight::none());
+        self.highlights.push(HighlightStart::none());
     }
 
-    fn pop_hl(&mut self, row: usize, character: usize) -> Option<PartialHighlight> {
+    fn pop_hl(&mut self, row: usize, character: usize) -> Option<HighlightStart> {
         let row = row as i32;
         let character = character as i32;
 
@@ -113,12 +114,12 @@ impl HighlightManager {
             //  highlight is ending at. This makes sure that we don't have any overlapping
             //  highlights.
             for prev_hl in self.highlights.iter_mut().rev() {
-                if prev_hl.start_row != hl.start_row || prev_hl.start_col != hl.start_col {
+                if prev_hl.row != hl.row || prev_hl.col != hl.col {
                     break;
                 }
 
-                prev_hl.start_row = row;
-                prev_hl.start_col = character;
+                prev_hl.row = row;
+                prev_hl.col = character;
             }
         }
 
@@ -223,7 +224,6 @@ impl<'a> DocumentGenerator<'a> {
             code,
             syntax_set: ss,
             parse_state: ParseState::new(sr),
-            stack: ScopeStack::new(),
             max_line_len,
         }
     }
@@ -231,14 +231,14 @@ impl<'a> DocumentGenerator<'a> {
     // generate takes ownership of self so that it can't be re-used
     pub fn generate(mut self) -> Document {
         let mut document = Document::default();
+
+        let mut stack = ScopeStack::new();
         let mut unhandled_scopes = HashSet::new();
         let mut highlight_manager = HighlightManager::default();
-        let mut end_of_line = (0, 0);
         for (row, line_contents) in LinesWithEndings::from(self.code).enumerate() {
+            // Do not attempt to parse very long lines
             if self.max_line_len.map_or(false, |n| line_contents.len() > n) {
-                // TODO: Should just gracefully handle this, but haven't been able
-                // to reproduce this yet.
-                panic!("Made it past end of line? {:?} {:?}", row, line_contents);
+                continue;
             }
 
             let ops = self.parse_state.parse_line(line_contents, self.syntax_set);
@@ -256,7 +256,7 @@ impl<'a> DocumentGenerator<'a> {
                     None => line_contents.chars().count() - 1,
                 };
 
-                self.stack.apply_with_hook(op, |basic_op, _stack| {
+                stack.apply_with_hook(op, |basic_op, _stack| {
                     match basic_op {
                         BasicScopeStackOp::Push(scope) => {
                             // We have to push PartialHighight to the stack
@@ -268,7 +268,7 @@ impl<'a> DocumentGenerator<'a> {
 
                             match match_scope_to_kind(&scope) {
                                 Some(kind) => {
-                                    let partial_hl = PartialHighlight::some(row, character, kind);
+                                    let partial_hl = HighlightStart::some(row, character, kind);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
                                     {
                                         push_document_occurence(
@@ -297,28 +297,39 @@ impl<'a> DocumentGenerator<'a> {
                     }
                 });
             }
-
-            end_of_line = (row, line_contents.chars().count());
         }
 
-        if highlight_manager
-            .highlights
-            .iter()
-            .filter(|hl| hl.kind.is_some())
-            .count()
-            > 0
+        // Only panic in test code, this condition should only result
+        // in one line not being highlighted correctly, so we can just
+        // continue on in production.
+        if cfg!(test) {
+            if highlight_manager
+                .highlights
+                .iter()
+                .filter(|hl| hl.kind.is_some())
+                .count()
+                > 0
+            {
+                panic!("unhandled highlights in: {:?}", highlight_manager);
+            }
+
+            if !unhandled_scopes.is_empty() {
+                // TODO: We can use this to reduce unhandled scopes to 0 in test cases
+                //       I will leave it up to the later reader or me :)
+                // panic!("Unhandled Scopes: {:?}", unhandled_scopes);
+            }
+        }
+
+        // If we have some highlights that are still open when we end the file,
+        // then we need to close them with the range that is the very end of the contents
+        if let Some(end_of_line) = LinesWithEndings::from(self.code)
+            .enumerate()
+            .last()
+            .map(|(row, line)| (row, line.chars().count()))
         {
-            // TODO: Probably shouldn't panic in prod?...
-            panic!("unhandled highlights in: {:?}", highlight_manager);
-        }
-
-        while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
-            push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
-        }
-
-        if !unhandled_scopes.is_empty() {
-            // This is where we can add a bunch of these before merging
-            // panic!("Unhandled Scopes: {:?}", unhandled_scopes);
+            while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
+                push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
+            }
         }
 
         document
@@ -327,7 +338,7 @@ impl<'a> DocumentGenerator<'a> {
 
 fn push_document_occurence(
     document: &mut Document,
-    partial_hl: &PartialHighlight,
+    partial_hl: &HighlightStart,
     row: usize,
     col: usize,
 ) {
@@ -335,15 +346,16 @@ fn push_document_occurence(
     let col = col as i32;
 
     // Do not emit ranges that are empty
-    if (partial_hl.start_row, partial_hl.start_col) == (row, col) {
+    if (partial_hl.row, partial_hl.col) == (row, col) {
         return;
     }
 
-    if let Some(kind) = partial_hl.kind {
-        document.occurrences.push(new_occurence(
-            vec![partial_hl.start_row, partial_hl.start_col, row, col],
+    match partial_hl.kind {
+        Some(kind) => document.occurrences.push(new_occurence(
+            vec![partial_hl.row, partial_hl.col, row, col],
             kind,
-        ))
+        )),
+        None => return,
     }
 }
 
