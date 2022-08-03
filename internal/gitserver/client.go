@@ -211,9 +211,6 @@ type Client interface {
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
-	// RemoveFrom removes the repository clone from the given gitserver.
-	RemoveFrom(ctx context.Context, repo api.RepoName, from string) error
-
 	// RendezvousAddrForRepo returns the gitserver address to use for the given
 	// repo name using the Rendezvous hashing scheme.
 	RendezvousAddrForRepo(api.RepoName) string
@@ -1079,10 +1076,10 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 	if err != nil {
 		return err
 	}
-	return c.RemoveFrom(ctx, repo, addr)
+	return c.removeFrom(ctx, repo, addr)
 }
 
-func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, from string) error {
+func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, from string) error {
 	b, err := json.Marshal(&protocol.RepoDeleteRequest{
 		Repo: repo,
 	})
