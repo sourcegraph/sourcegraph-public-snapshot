@@ -61,6 +61,14 @@ var (
 		Destination: &outputFilepath,
 	}
 
+	targetRevision     string
+	targetRevisionFlag = &cli.StringFlag{
+		Name:        "rev",
+		Usage:       "The target revision",
+		Required:    true,
+		Destination: &targetRevision,
+	}
+
 	logger = log.Scoped("sg migration", "")
 )
 
@@ -131,6 +139,15 @@ var (
 		Action:      visualizeExec,
 	}
 
+	rewriteCommand = &cli.Command{
+		Name:        "rewrite",
+		ArgsUsage:   "",
+		Usage:       "Rewrite schemas definitions as they were at a particular version",
+		Description: cliutil.ConstructLongHelp(),
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, targetRevisionFlag},
+		Action:      rewriteExec,
+	}
+
 	migrationCommand = &cli.Command{
 		Name:  "migration",
 		Usage: "Modifies and runs database migrations",
@@ -164,6 +181,7 @@ sg migration squash
 			squashCommand,
 			squashAllCommand,
 			visualizeCommand,
+			rewriteCommand,
 		},
 	}
 )
@@ -346,6 +364,28 @@ func visualizeExec(ctx *cli.Context) (err error) {
 	}
 
 	return migration.Visualize(database, outputFilepath)
+}
+
+func rewriteExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
+	if len(args) != 0 {
+		return cli.NewExitError("too many arguments", 1)
+	}
+
+	if targetRevision == "" {
+		return cli.NewExitError("Supply a target revision with -rev", 1)
+	}
+
+	var (
+		databaseName = migrateTargetDatabase
+		database, ok = db.DatabaseByName(databaseName)
+	)
+
+	if !ok {
+		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+	}
+
+	return migration.Rewrite(database, targetRevision)
 }
 
 func squashAllExec(ctx *cli.Context) (err error) {
