@@ -265,6 +265,7 @@ var sg = &cli.App{
 		setupCommand,
 
 		// Company
+		newsCommand,
 		teammateCommand,
 		rfcCommand,
 		adrCommand,
