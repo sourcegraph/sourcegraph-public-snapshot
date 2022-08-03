@@ -45,6 +45,14 @@ var (
 		Destination: &squashInContainer,
 	}
 
+	squashInTimescaleDBContainer     bool
+	squashInTimescaleDBContainerFlag = &cli.BoolFlag{
+		Name:        "in-timescaledb-container",
+		Usage:       "Launch TimescaleDB in a Docker container for squashing; do not use the host",
+		Value:       false,
+		Destination: &squashInTimescaleDBContainer,
+	}
+
 	skipTeardown     bool
 	skipTeardownFlag = &cli.BoolFlag{
 		Name:        "skip-teardown",
@@ -117,7 +125,7 @@ var (
 		ArgsUsage:   "<current-release>",
 		Usage:       "Collapse migration files from historic releases together",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag},
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, squashInTimescaleDBContainerFlag, skipTeardownFlag},
 		Action:      squashExec,
 	}
 
@@ -126,7 +134,7 @@ var (
 		ArgsUsage:   "",
 		Usage:       "Collapse schema definitions into a single SQL file",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, outputFilepathFlag},
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, squashInTimescaleDBContainerFlag, skipTeardownFlag, outputFilepathFlag},
 		Action:      squashAllExec,
 	}
 
@@ -341,7 +349,7 @@ func squashExec(ctx *cli.Context) (err error) {
 	}
 	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
-	return migration.Squash(database, commit, squashInContainer, skipTeardown)
+	return migration.Squash(database, commit, squashInContainer || squashInTimescaleDBContainer, squashInTimescaleDBContainer, skipTeardown)
 }
 
 func visualizeExec(ctx *cli.Context) (err error) {
@@ -407,7 +415,7 @@ func squashAllExec(ctx *cli.Context) (err error) {
 		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
-	return migration.SquashAll(database, squashInContainer, skipTeardown, outputFilepath)
+	return migration.SquashAll(database, squashInContainer || squashInTimescaleDBContainer, squashInTimescaleDBContainer, skipTeardown, outputFilepath)
 }
 
 func leavesExec(ctx *cli.Context) (err error) {
