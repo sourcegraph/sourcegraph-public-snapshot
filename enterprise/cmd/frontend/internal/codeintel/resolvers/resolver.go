@@ -9,6 +9,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -16,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	symbolsClient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
@@ -81,13 +82,14 @@ type resolver struct {
 	gitserverClient  GitserverClient
 	policyMatcher    *policies.Matcher
 	indexEnqueuer    IndexEnqueuer
-	hunkCache        HunkCache
 	operations       *operations
 	executorResolver executor.Resolver
-	symbolsClient    *symbols.Client
+	symbolsClient    *symbolsClient.Client
 
 	// See the same field on the QueryResolver struct
 	maximumIndexesPerMonikerSearch int
+
+	codenavResolver CodeNavResolver
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -97,13 +99,13 @@ func NewResolver(
 	gitserverClient GitserverClient,
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
-	hunkCache HunkCache,
-	symbolsClient *symbols.Client,
+	symbolsClient *symbolsClient.Client,
 	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
+	codenavResolver CodeNavResolver,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn, codenavResolver)
 }
 
 func newResolver(
@@ -112,11 +114,11 @@ func newResolver(
 	gitserverClient GitserverClient,
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
-	hunkCache HunkCache,
-	symbolsClient *symbols.Client,
+	symbolsClient *symbolsClient.Client,
 	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
+	codenavResolver CodeNavResolver,
 ) *resolver {
 	return &resolver{
 		db:                             dbConn,
@@ -125,12 +127,16 @@ func newResolver(
 		gitserverClient:                gitserverClient,
 		policyMatcher:                  policyMatcher,
 		indexEnqueuer:                  indexEnqueuer,
-		hunkCache:                      hunkCache,
 		symbolsClient:                  symbolsClient,
 		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
 		operations:                     newOperations(observationContext),
 		executorResolver:               executor.New(dbConn),
+		codenavResolver:                codenavResolver,
 	}
+}
+
+func (r *resolver) CodeNavResolver() CodeNavResolver {
+	return r.codenavResolver
 }
 
 func (r *resolver) ExecutorResolver() executor.Resolver {
@@ -205,36 +211,30 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	})
 	defer endObservation()
 
+	repoId := int(args.Repo.ID)
+	commit := string(args.Commit)
 	cachedCommitChecker := newCachedCommitChecker(r.gitserverClient)
-	cachedCommitChecker.set(int(args.Repo.ID), string(args.Commit))
+	cachedCommitChecker.set(repoId, commit)
 
-	dumps, err := r.findClosestDumps(
-		ctx,
-		cachedCommitChecker,
-		int(args.Repo.ID),
-		string(args.Commit),
-		args.Path,
-		args.ExactPath,
-		args.ToolName,
-	)
+	// Maintain a map from identifers to hydrated upload records from the database. We use
+	// this map as a quick lookup when constructing the resulting location set. Any additional
+	// upload records pulled back from the database while processing this page will be added
+	// to this map.
+	dumps, err := r.findClosestDumps(ctx, cachedCommitChecker, repoId, commit, args.Path, args.ExactPath, args.ToolName)
 	if err != nil || len(dumps) == 0 {
 		return nil, err
 	}
 
-	return NewQueryResolver(
-		r.db,
-		r.dbStore,
-		r.lsifStore,
-		cachedCommitChecker,
-		NewPositionAdjuster(gitserver.NewClient(r.db), args.Repo, string(args.Commit), r.hunkCache),
-		int(args.Repo.ID),
-		string(args.Commit),
-		args.Path,
+	reqState := codenav.NewRequestState(
 		dumps,
-		r.operations,
 		authz.DefaultSubRepoPermsChecker,
+		gitserver.NewClient(r.db), args.Repo, commit, args.Path,
+		r.gitserverClient,
 		r.maximumIndexesPerMonikerSearch,
-	), nil
+		r.codenavResolver.GetHunkCacheSize(),
+	)
+
+	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.codenavResolver, *reqState), nil
 }
 
 func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {

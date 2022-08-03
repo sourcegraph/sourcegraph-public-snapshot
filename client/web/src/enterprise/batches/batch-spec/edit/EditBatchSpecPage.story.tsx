@@ -182,7 +182,39 @@ export const BatchChangeNotFound: Story = () => (
     </WebStory>
 )
 
+const INVALID_SPEC_MOCKS = new WildcardMockLink([
+    {
+        request: {
+            query: getDocumentNode(GET_BATCH_CHANGE_TO_EDIT),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: { batchChange: mockBatchChange() } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    ACTIVE_EXECUTORS_MOCK,
+    ...UNSTARTED_CONNECTION_MOCKS,
+])
+
 BatchChangeNotFound.storyName = 'batch change not found'
+
+export const InvalidBatchSpec: Story = () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={INVALID_SPEC_MOCKS}>
+                <EditBatchSpecPage
+                    {...props}
+                    batchChange={{
+                        name: 'hello-world',
+                        namespace: 'test1234',
+                    }}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+InvalidBatchSpec.storyName = 'invalid batch spec'
 
 const NO_EXECUTORS_MOCKS = new WildcardMockLink([
     {
@@ -190,7 +222,7 @@ const NO_EXECUTORS_MOCKS = new WildcardMockLink([
             query: getDocumentNode(GET_BATCH_CHANGE_TO_EDIT),
             variables: MATCH_ANY_PARAMETERS,
         },
-        result: { data: { batchChange: mockBatchChange() } },
+        result: { data: { batchChange: mockBatchChange({ name: 'hello-world' }) } },
         nMatches: Number.POSITIVE_INFINITY,
     },
     NO_ACTIVE_EXECUTORS_MOCK,
@@ -204,7 +236,7 @@ export const ExecutorsNotActive: Story = () => (
                 <EditBatchSpecPage
                     {...props}
                     batchChange={{
-                        name: 'my-batch-change',
+                        name: 'hello-world',
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}

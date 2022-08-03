@@ -7856,17 +7856,17 @@ func NewMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		LatestPingFunc: &EventLogStoreLatestPingFunc{
-			defaultHook: func(context.Context) (r0 *types.Event, r1 error) {
+			defaultHook: func(context.Context) (r0 *Event, r1 error) {
 				return
 			},
 		},
 		ListAllFunc: &EventLogStoreListAllFunc{
-			defaultHook: func(context.Context, EventLogsListOptions) (r0 []*types.Event, r1 error) {
+			defaultHook: func(context.Context, EventLogsListOptions) (r0 []*Event, r1 error) {
 				return
 			},
 		},
 		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
-			defaultHook: func(context.Context, int, int) (r0 []*types.Event, r1 error) {
+			defaultHook: func(context.Context, int, int) (r0 []*Event, r1 error) {
 				return
 			},
 		},
@@ -8048,17 +8048,17 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		LatestPingFunc: &EventLogStoreLatestPingFunc{
-			defaultHook: func(context.Context) (*types.Event, error) {
+			defaultHook: func(context.Context) (*Event, error) {
 				panic("unexpected invocation of MockEventLogStore.LatestPing")
 			},
 		},
 		ListAllFunc: &EventLogStoreListAllFunc{
-			defaultHook: func(context.Context, EventLogsListOptions) ([]*types.Event, error) {
+			defaultHook: func(context.Context, EventLogsListOptions) ([]*Event, error) {
 				panic("unexpected invocation of MockEventLogStore.ListAll")
 			},
 		},
 		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
-			defaultHook: func(context.Context, int, int) ([]*types.Event, error) {
+			defaultHook: func(context.Context, int, int) ([]*Event, error) {
 				panic("unexpected invocation of MockEventLogStore.ListExportableEvents")
 			},
 		},
@@ -11111,15 +11111,15 @@ func (c EventLogStoreInsertFuncCall) Results() []interface{} {
 // EventLogStoreLatestPingFunc describes the behavior when the LatestPing
 // method of the parent MockEventLogStore instance is invoked.
 type EventLogStoreLatestPingFunc struct {
-	defaultHook func(context.Context) (*types.Event, error)
-	hooks       []func(context.Context) (*types.Event, error)
+	defaultHook func(context.Context) (*Event, error)
+	hooks       []func(context.Context) (*Event, error)
 	history     []EventLogStoreLatestPingFuncCall
 	mutex       sync.Mutex
 }
 
 // LatestPing delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockEventLogStore) LatestPing(v0 context.Context) (*types.Event, error) {
+func (m *MockEventLogStore) LatestPing(v0 context.Context) (*Event, error) {
 	r0, r1 := m.LatestPingFunc.nextHook()(v0)
 	m.LatestPingFunc.appendCall(EventLogStoreLatestPingFuncCall{v0, r0, r1})
 	return r0, r1
@@ -11128,7 +11128,7 @@ func (m *MockEventLogStore) LatestPing(v0 context.Context) (*types.Event, error)
 // SetDefaultHook sets function that is called when the LatestPing method of
 // the parent MockEventLogStore instance is invoked and the hook queue is
 // empty.
-func (f *EventLogStoreLatestPingFunc) SetDefaultHook(hook func(context.Context) (*types.Event, error)) {
+func (f *EventLogStoreLatestPingFunc) SetDefaultHook(hook func(context.Context) (*Event, error)) {
 	f.defaultHook = hook
 }
 
@@ -11136,7 +11136,7 @@ func (f *EventLogStoreLatestPingFunc) SetDefaultHook(hook func(context.Context) 
 // LatestPing method of the parent MockEventLogStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *EventLogStoreLatestPingFunc) PushHook(hook func(context.Context) (*types.Event, error)) {
+func (f *EventLogStoreLatestPingFunc) PushHook(hook func(context.Context) (*Event, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11144,20 +11144,20 @@ func (f *EventLogStoreLatestPingFunc) PushHook(hook func(context.Context) (*type
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EventLogStoreLatestPingFunc) SetDefaultReturn(r0 *types.Event, r1 error) {
-	f.SetDefaultHook(func(context.Context) (*types.Event, error) {
+func (f *EventLogStoreLatestPingFunc) SetDefaultReturn(r0 *Event, r1 error) {
+	f.SetDefaultHook(func(context.Context) (*Event, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreLatestPingFunc) PushReturn(r0 *types.Event, r1 error) {
-	f.PushHook(func(context.Context) (*types.Event, error) {
+func (f *EventLogStoreLatestPingFunc) PushReturn(r0 *Event, r1 error) {
+	f.PushHook(func(context.Context) (*Event, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreLatestPingFunc) nextHook() func(context.Context) (*types.Event, error) {
+func (f *EventLogStoreLatestPingFunc) nextHook() func(context.Context) (*Event, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11195,7 +11195,7 @@ type EventLogStoreLatestPingFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *types.Event
+	Result0 *Event
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -11216,15 +11216,15 @@ func (c EventLogStoreLatestPingFuncCall) Results() []interface{} {
 // EventLogStoreListAllFunc describes the behavior when the ListAll method
 // of the parent MockEventLogStore instance is invoked.
 type EventLogStoreListAllFunc struct {
-	defaultHook func(context.Context, EventLogsListOptions) ([]*types.Event, error)
-	hooks       []func(context.Context, EventLogsListOptions) ([]*types.Event, error)
+	defaultHook func(context.Context, EventLogsListOptions) ([]*Event, error)
+	hooks       []func(context.Context, EventLogsListOptions) ([]*Event, error)
 	history     []EventLogStoreListAllFuncCall
 	mutex       sync.Mutex
 }
 
 // ListAll delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockEventLogStore) ListAll(v0 context.Context, v1 EventLogsListOptions) ([]*types.Event, error) {
+func (m *MockEventLogStore) ListAll(v0 context.Context, v1 EventLogsListOptions) ([]*Event, error) {
 	r0, r1 := m.ListAllFunc.nextHook()(v0, v1)
 	m.ListAllFunc.appendCall(EventLogStoreListAllFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -11233,7 +11233,7 @@ func (m *MockEventLogStore) ListAll(v0 context.Context, v1 EventLogsListOptions)
 // SetDefaultHook sets function that is called when the ListAll method of
 // the parent MockEventLogStore instance is invoked and the hook queue is
 // empty.
-func (f *EventLogStoreListAllFunc) SetDefaultHook(hook func(context.Context, EventLogsListOptions) ([]*types.Event, error)) {
+func (f *EventLogStoreListAllFunc) SetDefaultHook(hook func(context.Context, EventLogsListOptions) ([]*Event, error)) {
 	f.defaultHook = hook
 }
 
@@ -11241,7 +11241,7 @@ func (f *EventLogStoreListAllFunc) SetDefaultHook(hook func(context.Context, Eve
 // ListAll method of the parent MockEventLogStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *EventLogStoreListAllFunc) PushHook(hook func(context.Context, EventLogsListOptions) ([]*types.Event, error)) {
+func (f *EventLogStoreListAllFunc) PushHook(hook func(context.Context, EventLogsListOptions) ([]*Event, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11249,20 +11249,20 @@ func (f *EventLogStoreListAllFunc) PushHook(hook func(context.Context, EventLogs
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EventLogStoreListAllFunc) SetDefaultReturn(r0 []*types.Event, r1 error) {
-	f.SetDefaultHook(func(context.Context, EventLogsListOptions) ([]*types.Event, error) {
+func (f *EventLogStoreListAllFunc) SetDefaultReturn(r0 []*Event, r1 error) {
+	f.SetDefaultHook(func(context.Context, EventLogsListOptions) ([]*Event, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreListAllFunc) PushReturn(r0 []*types.Event, r1 error) {
-	f.PushHook(func(context.Context, EventLogsListOptions) ([]*types.Event, error) {
+func (f *EventLogStoreListAllFunc) PushReturn(r0 []*Event, r1 error) {
+	f.PushHook(func(context.Context, EventLogsListOptions) ([]*Event, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreListAllFunc) nextHook() func(context.Context, EventLogsListOptions) ([]*types.Event, error) {
+func (f *EventLogStoreListAllFunc) nextHook() func(context.Context, EventLogsListOptions) ([]*Event, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11303,7 +11303,7 @@ type EventLogStoreListAllFuncCall struct {
 	Arg1 EventLogsListOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.Event
+	Result0 []*Event
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -11325,15 +11325,15 @@ func (c EventLogStoreListAllFuncCall) Results() []interface{} {
 // ListExportableEvents method of the parent MockEventLogStore instance is
 // invoked.
 type EventLogStoreListExportableEventsFunc struct {
-	defaultHook func(context.Context, int, int) ([]*types.Event, error)
-	hooks       []func(context.Context, int, int) ([]*types.Event, error)
+	defaultHook func(context.Context, int, int) ([]*Event, error)
+	hooks       []func(context.Context, int, int) ([]*Event, error)
 	history     []EventLogStoreListExportableEventsFuncCall
 	mutex       sync.Mutex
 }
 
 // ListExportableEvents delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) ListExportableEvents(v0 context.Context, v1 int, v2 int) ([]*types.Event, error) {
+func (m *MockEventLogStore) ListExportableEvents(v0 context.Context, v1 int, v2 int) ([]*Event, error) {
 	r0, r1 := m.ListExportableEventsFunc.nextHook()(v0, v1, v2)
 	m.ListExportableEventsFunc.appendCall(EventLogStoreListExportableEventsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -11342,7 +11342,7 @@ func (m *MockEventLogStore) ListExportableEvents(v0 context.Context, v1 int, v2 
 // SetDefaultHook sets function that is called when the ListExportableEvents
 // method of the parent MockEventLogStore instance is invoked and the hook
 // queue is empty.
-func (f *EventLogStoreListExportableEventsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]*types.Event, error)) {
+func (f *EventLogStoreListExportableEventsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]*Event, error)) {
 	f.defaultHook = hook
 }
 
@@ -11351,7 +11351,7 @@ func (f *EventLogStoreListExportableEventsFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *EventLogStoreListExportableEventsFunc) PushHook(hook func(context.Context, int, int) ([]*types.Event, error)) {
+func (f *EventLogStoreListExportableEventsFunc) PushHook(hook func(context.Context, int, int) ([]*Event, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11359,20 +11359,20 @@ func (f *EventLogStoreListExportableEventsFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EventLogStoreListExportableEventsFunc) SetDefaultReturn(r0 []*types.Event, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, int) ([]*types.Event, error) {
+func (f *EventLogStoreListExportableEventsFunc) SetDefaultReturn(r0 []*Event, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]*Event, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreListExportableEventsFunc) PushReturn(r0 []*types.Event, r1 error) {
-	f.PushHook(func(context.Context, int, int) ([]*types.Event, error) {
+func (f *EventLogStoreListExportableEventsFunc) PushReturn(r0 []*Event, r1 error) {
+	f.PushHook(func(context.Context, int, int) ([]*Event, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreListExportableEventsFunc) nextHook() func(context.Context, int, int) ([]*types.Event, error) {
+func (f *EventLogStoreListExportableEventsFunc) nextHook() func(context.Context, int, int) ([]*Event, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11417,7 +11417,7 @@ type EventLogStoreListExportableEventsFuncCall struct {
 	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.Event
+	Result0 []*Event
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

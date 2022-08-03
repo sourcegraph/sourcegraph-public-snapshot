@@ -1132,7 +1132,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		if traceID := trace.ID(ctx); traceID != "" {
 			ev.AddField("traceID", traceID)
-			ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
+			ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
 		}
 		if honey.Enabled() {
 			_ = ev.Send()
@@ -1563,7 +1563,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 				if traceID := trace.ID(ctx); traceID != "" {
 					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
+					ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
 				}
 
 				if honey.Enabled() {
@@ -1808,7 +1808,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 				if traceID := trace.ID(ctx); traceID != "" {
 					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
+					ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
 				}
 
 				_ = ev.Send()

@@ -142,26 +142,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = ([
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
 
-    // Lockfile indexes & dependency search routes
-    {
-        path: '/code-graph/lockfiles',
-        render: lazyComponent(
-            () => import('../codeintel/lockfiles/pages/CodeIntelLockfilesPage'),
-            'CodeIntelLockfilesPage'
-        ),
-        exact: true,
-        condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
-    },
-    {
-        path: '/code-graph/lockfiles/:id',
-        render: lazyComponent(
-            () => import('../codeintel/lockfiles/pages/CodeIntelLockfilePage'),
-            'CodeIntelLockfilePage'
-        ),
-        exact: true,
-        condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
-    },
-
     // Code graph configuration
     {
         path: '/code-graph/configuration',

@@ -1914,6 +1914,7 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
  finished_at                   | timestamp with time zone |           |          | 
  success                       | boolean                  |           |          | 
  error_message                 | text                     |           |          | 
+ backfilled                    | boolean                  |           | not null | false
 Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
 
@@ -2847,6 +2848,8 @@ Triggers:
  execution_logs    | json[]                   |           |          | 
  last_heartbeat_at | timestamp with time zone |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
+ org               | text                     |           |          | 
+ extsvc_id         | integer                  |           |          | 
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
 

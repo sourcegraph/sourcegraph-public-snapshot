@@ -6,6 +6,9 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 
 Critical telemetry includes only the high-level data below required for billing, support, updates, and security notices.
 
+<details>
+<summary>Click to expand a list of critical telemetry</summary>
+
 - Randomly generated site identifier
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, security updates, and policy updates
 - Sourcegraph version string (e.g. "vX.X.X")
@@ -19,12 +22,17 @@ Critical telemetry includes only the high-level data below required for billing,
   - Total number of lines of code stored in text search index
 - Code Insights: total count of insights 
 
+</details>
+
 ## Other telemetry
 
 By default, Sourcegraph also aggregates usage and performance metrics for some product features. No personal or specific information is ever included.
 
 This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 [site configuration](config/site_config.md#disableNonCriticalTelemetry).
+
+<details>
+<summary>Click to expand a list of other telemetry</summary>
 
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
@@ -164,6 +172,8 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
     - Count of users who uninstalled the extension 
   - Aggregate count of current daily redirects from extension to Sourcegraph instance
 
+</details>
+
 ## CIDR Range for Sourcegraph
 
 Sourcegraph currently uses Cloudflare to provide web application security. You should allow access to all [Cloudflare IP ranges](https://www.cloudflare.com/ips/)
@@ -179,3 +189,38 @@ Sourcegraph only connects to Sourcegraph.com for two purposes:
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
 
+## Troubleshooting Pings
+
+It may happen that Sourcegraph will stop sending critical telemetry to Sourcegraph.com, if this happens it may indicate a problem with Sourcegraphs frontend database, or a site settings misconfiguration. Below are some debugging steps.
+
+Sourcegraph telemetry pings are handled by a goroutine running on Sourcegraphs frontend service called [`updatecheck`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/app/updatecheck/client.go?subtree=true), `updatecheck` is [started](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/cli/serve_cmd%5C.go+updatecheck.Start%28db%29&patternType=literal) on container startup and periodically requests a variety of queries be run in the `pgsql` database.
+
+
+### Misconfigured update.channel 
+The most common scenario in which Sourcegraph stops sending pings is a change to the `update.channel` setting in an instance's [site config](https://docs.sourcegraph.com/admin/config/site_config)
+```
+"update.channel": "release",
+```
+*This setting [must be set to "release"](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/app/updatecheck/client%5C.go+channel+%21%3D+%22release%22&patternType=literal) in order for the telemetry goroutine to run.*
+
+
+### Check if the goroutine is running
+
+*This section is under development and currently only applies for docker-compose instances: [39710](https://github.com/sourcegraph/sourcegraph/issues/39710)*
+
+If it's reported that pings aren't being sent to the Sourcegraph.com, you can check that the goroutine is running with the following command:
+```
+docker exec -it sourcegraph-frontend-0 sh -c 'wget -nv -O- 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1' | grep updatecheck'
+```
+Example:
+```
+[ec2-user@latveria-ip ~]$ docker exec -it sourcegraph-frontend-0 sh -c 'wget -nv -O- 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1' | grep updatecheck'
+2022-04-05 20:53:32 URL:http://127.0.0.1:6060/debug/pprof/goroutine?debug=1 [14660] -> "-" [1]
+#	0x1f052c5	github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck.Start+0xc5	github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck/client.go:697
+```
+
+### Looking for errors in the logs
+
+If the `update.check` is running, and the site config is correctly configured, then it may be the case that `pgsql` is failing to return data from the SQL queries to the `frontend`. Check out the frontend logs for logs tagged [`telemetry: updatecheck failed`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/app/updatecheck/client%5C.go+telemetry:+updatecheck+failed&patternType=literal).
+
+If issues persist, please reach out to a team member for support at support@sourcegraph.com 

@@ -23,7 +23,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     onSaveQueryClick: noop,
     stats: <div />,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     caseSensitive: false,
 }
 

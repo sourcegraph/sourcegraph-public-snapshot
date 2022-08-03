@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
@@ -42,6 +43,10 @@ type Services struct {
 	locker          *locker.Locker
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *autoindexing.Service
+
+	// used by resolvers
+	UploadsSvc *uploads.Service
+	CodeNavSvc *codenav.Service
 }
 
 func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
@@ -69,6 +74,12 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	gitserverClient := gitserver.New(db, dbStore, observationContext)
 	repoUpdaterClient := repoupdater.New(observationContext)
 
+	// Initialize services
+	lsif := database.NewDBWith(observationContext.Logger, codeIntelDB)
+	uploadSvc := uploads.GetService(db, lsif, gitserverClient)
+	codenavSvc := codenav.GetService(db, lsif, uploadSvc)
+	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
+
 	// Initialize http endpoints
 	operations := httpapi.NewOperations(observationContext)
 	newUploadHandler := func(internal bool) http.Handler {
@@ -78,8 +89,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 			//
 			// See https://github.com/sourcegraph/sourcegraph/issues/33375
 
-			lsifStore := database.NewDBWith(observationContext.Logger, codeIntelDB)
-			return uploadshttp.GetHandler(uploads.GetService(db, lsifStore, gitserverClient))
+			return uploadshttp.GetHandler(uploadSvc)
 		}
 
 		return httpapi.NewUploadHandler(
@@ -94,9 +104,6 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	internalUploadHandler := newUploadHandler(true)
 	externalUploadHandler := newUploadHandler(false)
 
-	// Initialize the index enqueuer
-	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
-
 	return &Services{
 		dbStore:     dbStore,
 		lsifStore:   lsifStore,
@@ -109,6 +116,9 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 		locker:          locker,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
+
+		UploadsSvc: uploadSvc,
+		CodeNavSvc: codenavSvc,
 	}, nil
 }
 
