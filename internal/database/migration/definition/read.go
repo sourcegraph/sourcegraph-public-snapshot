@@ -200,10 +200,17 @@ func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 }
 
 // queryFromString creates a sqlf Query object from the conetents of a file or serialized
-// string literal. We first replace any SQL placeholder values with an escaped version so
-// that the sqlf.Sprintf call does not try to interpolate the text with variables we don't
-// have.
+// string literal. The resulting query is canonicalized. SQL placeholder values are also
+// escaped, so when sqlf.Query renders it the placeholders will be valid and not replaced
+// by a "missing" parameterized value.
 func queryFromString(query string) *sqlf.Query {
+	return sqlf.Sprintf(strings.ReplaceAll(CanonicalizeQuery(query), "%", "%%"))
+}
+
+// CanonicalizeQuery removes old cruft from historic definitions to make them conform to
+// the new standards. This includes YAML metadata frontmatter as well as explicit tranaction
+// blocks around golang-migrate-era migration definitions.
+func CanonicalizeQuery(query string) string {
 	// Strip out embedded yaml frontmatter (existed temporarily)
 	parts := strings.SplitN(query, "-- +++\n", 3)
 	if len(parts) == 3 {
@@ -211,7 +218,7 @@ func queryFromString(query string) *sqlf.Query {
 	}
 
 	// Strip outermost transactions
-	canonicalizedQuery := strings.TrimSpace(
+	return strings.TrimSpace(
 		strings.TrimSuffix(
 			strings.TrimPrefix(
 				strings.TrimSpace(query),
@@ -220,8 +227,6 @@ func queryFromString(query string) *sqlf.Query {
 			"COMMIT;",
 		),
 	)
-
-	return sqlf.Sprintf(strings.ReplaceAll(canonicalizedQuery, "%", "%%"))
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
