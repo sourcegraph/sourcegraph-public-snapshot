@@ -385,17 +385,6 @@ func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 	return repo
 }
 
-// UpdateOnce causes a single update of the given repository.
-// It neither adds nor removes the repo from the schedule.
-func (s *UpdateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
-	repo := configuredRepo{
-		ID:   id,
-		Name: name,
-	}
-	schedManualFetch.Inc()
-	s.updateQueue.enqueue(repo, priorityHigh)
-}
-
 // DebugDump returns the state of the update scheduler for debugging.
 func (s *UpdateScheduler) DebugDump(ctx context.Context) any {
 	data := struct {
