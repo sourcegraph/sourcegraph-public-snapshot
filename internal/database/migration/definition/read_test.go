@@ -140,7 +140,7 @@ parent: 12345
 -- +++
 `
 
-func TestQueryFromString(t *testing.T) {
+func TestCanonicalizeQuery(t *testing.T) {
 	for _, testCase := range []struct {
 		name     string
 		input    string
@@ -154,7 +154,7 @@ func TestQueryFromString(t *testing.T) {
 		{"kitchen sink", testFrontmatter + "\n\nBEGIN;\n\nMY QUERY;\n\nCOMMIT;\n", "MY QUERY;"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			if query := queryFromString(testCase.input).Query(sqlf.PostgresBindVar); query != testCase.expected {
+			if query := CanonicalizeQuery(testCase.input); query != testCase.expected {
 				t.Errorf("unexpected canonical query. want=%q have=%q", testCase.expected, query)
 			}
 		})

@@ -6019,6 +6019,20 @@ enum AnalyticsDateRange {
 }
 
 """
+Group site analytics by period.
+"""
+enum AnalyticsGrouping {
+    """
+    Group data by day.
+    """
+    DAILY
+    """
+    Group data by week.
+    """
+    WEEKLY
+}
+
+"""
 Analytics for certain date.
 """
 type AnalyticsStatItemNode {
@@ -6237,19 +6251,19 @@ type Analytics {
     """
     Search statistics.
     """
-    search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
+    search(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsSearchResult!
     """
     Notebooks statistics.
     """
-    notebooks(dateRange: AnalyticsDateRange): AnalyticsNotebooksResults!
+    notebooks(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsNotebooksResults!
     """
     Users statistics.
     """
-    users(dateRange: AnalyticsDateRange): AnalyticsUsersResult!
+    users(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsUsersResult!
     """
     Code-intelligence statistics.
     """
-    codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
+    codeIntel(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodeIntelResult!
     """
     Repositories summary statistics.
     """
@@ -6257,7 +6271,7 @@ type Analytics {
     """
     Batch changes statistics
     """
-    batchChanges(dateRange: AnalyticsDateRange): AnalyticsBatchChangesResult!
+    batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
 }
 
 """

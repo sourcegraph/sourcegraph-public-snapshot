@@ -6,9 +6,7 @@ import (
 	"bytes"
 	"container/list"
 	"context"
-	"crypto/md5"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
@@ -510,9 +508,8 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(interval time.Duration) {
 	for {
-		cfg := conf.Get()
-		addrs := cfg.ServiceConnectionConfig.GitServers
-		s.cleanupRepos(addrs)
+		gitserverAddrs := currentGitserverAddresses()
+		s.cleanupRepos(gitserverAddrs)
 		time.Sleep(interval)
 	}
 }
@@ -523,27 +520,49 @@ func (s *Server) Janitor(interval time.Duration) {
 // repos that have not yet been assigned a shard.
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
+	var previousPinned string
 	for {
-		cfg := conf.Get()
-		addrs := cfg.ServiceConnectionConfig.GitServers
+		gitServerAddrs := currentGitserverAddresses()
+		addrs := gitServerAddrs.Addresses
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
 		currentAddrs := strings.Join(addrs, ",")
 		fullSync := currentAddrs != previousAddrs
 		previousAddrs = currentAddrs
 
-		gitServerAddrs := gitserver.GitServerAddresses{
-			Addresses: addrs,
+		// We turn PinnedServers into a string here for easy comparison and storage
+		// of previous pins.
+		pinnedServerPairs := make([]string, 0, len(gitServerAddrs.PinnedServers))
+		for k, v := range gitServerAddrs.PinnedServers {
+			pinnedServerPairs = append(pinnedServerPairs, fmt.Sprintf("%s=%s", k, v))
 		}
-		if cfg.ExperimentalFeatures != nil {
-			gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
-		}
+		sort.Strings(pinnedServerPairs)
+		currentPinned := strings.Join(pinnedServerPairs, ",")
+		fullSync = fullSync || currentPinned != previousPinned
+		previousPinned = currentPinned
+
 		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 			s.Logger.Error("Syncing repo state", log.Error(err))
 		}
 
 		time.Sleep(interval)
 	}
+}
+
+func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) (string, error) {
+	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), s.DB, repoName, gitServerAddrs)
+}
+
+func currentGitserverAddresses() gitserver.GitServerAddresses {
+	cfg := conf.Get()
+	gitServerAddrs := gitserver.GitServerAddresses{
+		Addresses: cfg.ServiceConnectionConfig.GitServers,
+	}
+	if cfg.ExperimentalFeatures != nil {
+		gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
+	}
+
+	return gitServerAddrs
 }
 
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
@@ -731,8 +750,11 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		// directory.
 		repo.Name = api.UndeletedRepoName(repo.Name)
 
-		// Ensure we're only dealing with repos we are responsible for
-		addr := addrForKey(repo.Name, gitServerAddrs.Addresses)
+		// Ensure we're only dealing with repos we are responsible for.
+		addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
+		if err != nil {
+			return err
+		}
 		if !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
@@ -771,21 +793,6 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	writeBatch()
 
 	return err
-}
-
-// addrForKey is used only during gitserver client experiment and will be removed as soon as the experiment ends.
-// In fact this commit will be just reverted.
-// If it still bothers you -- contact sashaostrikov
-func addrForKey(repo api.RepoName, addrs []string) string {
-	if len(addrs) == 0 {
-		// Avoid a panic where we index lower down
-		return ""
-	}
-	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	rs := string(repo)
-	sum := md5.Sum([]byte(rs))
-	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
-	return addrs[serverIndex]
 }
 
 // Stop cancels the running background jobs and returns when done.
