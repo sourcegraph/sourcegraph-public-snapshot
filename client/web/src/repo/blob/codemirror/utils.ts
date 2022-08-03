@@ -1,10 +1,10 @@
 import { Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
+import { OperatorFunction, pipe } from 'rxjs'
+import { scan, distinctUntilChanged } from 'rxjs/operators'
 
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
-import { OperatorFunction, pipe } from 'rxjs'
-import { scan, distinctUntilChanged } from 'rxjs/operators'
 
 /**
  * Returns true of any of the document offset ranges contains the provided
@@ -101,7 +101,7 @@ export function preciseOffsetAtCoords(view: EditorView, coords: { x: number; y: 
     }
     const offsetCords = view.coordsAtPos(offset)
     if (
-        offsetCords == null ||
+        offsetCords === null ||
         coords.y < offsetCords.top ||
         coords.y > offsetCords.bottom ||
         coords.x < offsetCords.left - view.defaultCharacterWidth ||

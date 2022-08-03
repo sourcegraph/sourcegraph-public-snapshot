@@ -21,26 +21,26 @@ import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-typ
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
+import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { toURIWithPath, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
+import { getHover } from '../../../backend/features'
 import { StatusBar } from '../../../extensions/components/StatusBar'
 import { BlobInfo, BlobProps } from '../Blob'
 
 import { showTextDocumentDecorations } from './decorations'
 import { documentHighlightsSource } from './document-highlights'
+import { hovercardSource } from './hovercard'
+import { Container } from './react-interop'
 
 import { blobPropsFacet } from '.'
 
 import blobStyles from '../Blob.module.scss'
-import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { hovercardSource } from './hovercard'
-import { getHover } from '../../../backend/features'
-import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
-import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { Container } from './react-interop'
 
 /**
  * Context holds all the information needed for CodeMirror extensions to
@@ -339,7 +339,7 @@ function updateSelection(): Extension {
  * showHovercard uses the {@link hovercard} extension and simply provides a
  * callback function that queries the extension host and generates tooltip data.
  */
-function hovercardDataSource() {
+function hovercardDataSource(): Extension {
     const nextContext: Subject<Context | null> = new ReplaySubject(1)
 
     const createObservable = (
@@ -347,7 +347,7 @@ function hovercardDataSource() {
         position: UIPositionSpec['position']
     ): Observable<Pick<HoverOverlayBaseProps, 'hoverOrError' | 'actionsOrError'>> =>
         nextContext.pipe(
-            filter((context): context is Context => context != null),
+            filter((context): context is Context => context !== null),
             switchMap(context => {
                 const hoverContext = {
                     commitID: context.blobInfo.commitID,
@@ -458,8 +458,8 @@ const statusBar = ViewPlugin.fromClass(
 
 const warmupReferences = ViewPlugin.fromClass(
     class {
-        nextContext: Subject<Context> = new Subject()
-        subscription: Subscription = new Subscription()
+        private nextContext: Subject<Context> = new Subject()
+        private subscription: Subscription = new Subscription()
 
         constructor() {
             this.subscription.add(
@@ -469,11 +469,11 @@ const warmupReferences = ViewPlugin.fromClass(
             )
         }
 
-        setContext(context: Context) {
+        public setContext(context: Context): void {
             this.nextContext.next(context)
         }
 
-        destroy() {
+        public destroy(): void {
             this.subscription.unsubscribe()
         }
     },

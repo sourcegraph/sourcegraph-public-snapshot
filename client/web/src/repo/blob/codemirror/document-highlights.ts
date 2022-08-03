@@ -15,9 +15,9 @@ import { switchMap, filter, mergeAll, map, tap } from 'rxjs/operators'
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { offsetToUIPosition, positionToOffset, distinctWordAtCoords, sortRangeValuesByStart } from './utils'
-import { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 type DocumentHighlightsSource = (position: Position) => Observable<DocumentHighlight[]>
 

@@ -15,6 +15,7 @@ import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 
 import { blameDecorationType, BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { blobPropsFacet } from './codemirror'
 import {
     enableExtensionsDecorationsColumnView as enableColumnView,
     showTextDocumentDecorations,
@@ -23,7 +24,6 @@ import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { blobPropsFacet } from './codemirror'
 import { offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
 
 const staticExtensions: Extension = [
@@ -95,7 +95,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             EditorView.darkTheme.of(isLightTheme === false),
             enableColumnView.of(enableExtensionsDecorationsColumnView),
         ],
-        [wrapCode, isLightTheme, location, enableExtensionsDecorationsColumnView]
+        [wrapCode, isLightTheme, enableExtensionsDecorationsColumnView]
     )
 
     const blameDecorations = useMemo(
@@ -152,6 +152,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blameDecorationsCompartment.of(blameDecorations),
             settingsCompartment.of(settings),
         ],
+        // A couple of values are not dependencies (blameDecorations, blobProps,
+        // hasPin, position and settings) because those are updated in effects
+        // further below. However they are still needed here because we need to
+        // set initial values when we re-initialize the editor.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [onSelection, blobInfo, extensionsController]
     )
 
@@ -213,8 +218,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         if (editor && !blobIsLoading) {
             selectLines(editor, position.line ? position : null)
         }
-        // blobInfo isn't used but we need to trigger the line selection and focus
-        // logic whenever the content changes
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
     }, [editor, position, blobIsLoading])
 
     // Update pinned hovercard range
@@ -222,8 +227,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         if (editor && !blobIsLoading) {
             updatePinnedRangeField(editor, hasPin ? position : null)
         }
-        // blobInfo isn't used but we need to trigger the line selection and focus
-        // logic whenever the content changes
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position, hasPin, blobIsLoading])
 
     return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
@@ -234,12 +240,14 @@ function urlIsPinned(search: string): boolean {
 }
 
 /**
- * Because location changes before new blob info is available we often apply
+ * Because the location changes before new blob info is available we often apply
  * updates to the old document, which can be problematic or thorw errors. This
- * helper hook observers keeps track of blob info and location changes to
- * determine whether or not to apply updates.
+ * helper hook keeps track of which path is set when the blob info updates
+ * and compares it against the current path.
  */
 function useBlobIsLoading(blobInfo: BlobInfo, pathname: string): boolean {
+    // pathname is intentionally ignored to make this functionality work
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     return pathname !== useMemo(() => pathname, [blobInfo])
 }
 

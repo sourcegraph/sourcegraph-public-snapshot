@@ -1,3 +1,4 @@
+/* eslint-disable jsdoc/check-indentation */
 /**
  * This module provides various view plugins, facets and fields to implement
  * hovercard functionality. Hopefully the following diagram is useful (I wasn't
@@ -70,22 +71,25 @@ import {
     ViewUpdate,
 } from '@codemirror/view'
 import { createRoot, Root } from 'react-dom/client'
-
-import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-
-import { WebHoverOverlay, WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
-import { blobPropsFacet } from '.'
 import { combineLatest, fromEvent, Observable, Subject, Subscription } from 'rxjs'
 import { startWith, filter } from 'rxjs/operators'
-import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
-import { Container } from './react-interop'
-import webOverlayStyles from '../../../components/WebHoverOverlay/WebHoverOverlay.module.scss'
-import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
-import { distinctWordAtCoords, offsetToUIPosition, rangesContain } from './utils'
+
+import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+
+import { WebHoverOverlay, WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
+import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
+
+import { Container } from './react-interop'
+import { distinctWordAtCoords, offsetToUIPosition, rangesContain } from './utils'
+
+import { blobPropsFacet } from '.'
+
+import webOverlayStyles from '../../../components/WebHoverOverlay/WebHoverOverlay.module.scss'
 
 type HovercardData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
-type HovercardRange = {
+interface HovercardRange {
     // Line/column position
     range: UIRangeSpec['range']
 
@@ -198,9 +202,9 @@ class HovercardManager implements PluginValue {
     private tooltips: Map<string, Tooltip> = new Map()
     private hovercardRanges: readonly HovercardRange[] = []
 
-    constructor(readonly view: EditorView, readonly setTooltips: StateEffectType<Tooltip[]>) {}
+    constructor(private readonly view: EditorView, private readonly setTooltips: StateEffectType<Tooltip[]>) {}
 
-    public update(update: ViewUpdate) {
+    public update(update: ViewUpdate): void {
         const ranges = update.state.facet(hovercardRanges)
         if (this.hovercardRanges !== ranges) {
             this.hovercardRanges = ranges
@@ -208,7 +212,7 @@ class HovercardManager implements PluginValue {
         }
     }
 
-    private updateTooltips() {
+    private updateTooltips(): void {
         // Remove removed tooltips
         for (const [key, tooltip] of this.tooltips) {
             if (!this.hovercardRanges.some(range => range.from === tooltip.pos && range.to === tooltip.end)) {
@@ -242,9 +246,7 @@ class HovercardManager implements PluginValue {
 
 function hovercardManager(): Extension {
     const [tooltips, , setTooltips] = createUpdateableField<Tooltip[]>([], field =>
-        showTooltip.computeN([field], state => {
-            return state.field(field)
-        })
+        showTooltip.computeN([field], state => state.field(field))
     )
 
     return [tooltips, ViewPlugin.define(view => new HovercardManager(view, setTooltips))]
@@ -282,7 +284,10 @@ class HoverManager implements PluginValue {
     private nextOffset = new Subject<number | null>()
     private subscription: Subscription
 
-    constructor(readonly view: EditorView, readonly setHovercardPosition: StateEffectType<HovercardRange | null>) {
+    constructor(
+        private readonly view: EditorView,
+        private readonly setHovercardPosition: StateEffectType<HovercardRange | null>
+    ) {
         this.subscription = fromEvent<MouseEvent>(this.view.dom, 'mousemove')
             .pipe(
                 // Ignore events when hovering over hovercards
@@ -291,7 +296,7 @@ class HoverManager implements PluginValue {
             )
             .subscribe(position => {
                 this.view.dispatch({
-                    effects: setHovercardPosition.of(
+                    effects: this.setHovercardPosition.of(
                         position
                             ? {
                                   ...position,
@@ -305,11 +310,11 @@ class HoverManager implements PluginValue {
         this.view.dom.addEventListener('mouseleave', this.mouseleave)
     }
 
-    private mouseleave = () => {
+    private mouseleave = (): void => {
         this.nextOffset.next(null)
     }
 
-    public destroy() {
+    public destroy(): void {
         this.view.dom.removeEventListener('mouseleave', this.mouseleave)
         this.subscription.unsubscribe()
     }
@@ -349,7 +354,7 @@ class Hovercard implements TooltipView {
     public overlap = true
     private subscription: Subscription
 
-    constructor(readonly view: EditorView, readonly range: HovercardRange) {
+    constructor(private readonly view: EditorView, private readonly range: HovercardRange) {
         this.dom = document.createElement('div')
 
         this.subscription = combineLatest([
@@ -368,11 +373,11 @@ class Hovercard implements TooltipView {
         })
     }
 
-    public mount() {
+    public mount(): void {
         this.nextContainer.next(this.dom)
     }
 
-    public update(update: ViewUpdate) {
+    public update(update: ViewUpdate): void {
         // Umount React components when tooltip range does exist anymore
         if (
             !update.state
@@ -392,19 +397,19 @@ class Hovercard implements TooltipView {
         }
     }
 
-    private addRange() {
+    private addRange(): void {
         window.requestAnimationFrame(() => {
             this.view.dispatch({ effects: addRange.of(this.range) })
         })
     }
 
-    private removeRange() {
+    private removeRange(): void {
         window.requestAnimationFrame(() => {
             this.view.dispatch({ effects: removeRange.of(this.range) })
         })
     }
 
-    private render(root: Root, { hoverOrError, actionsOrError }: HovercardData, props: BlobProps) {
+    private render(root: Root, { hoverOrError, actionsOrError }: HovercardData, props: BlobProps): void {
         if (!hoverOrError) {
             this.removeRange()
             root.render([])
@@ -412,7 +417,7 @@ class Hovercard implements TooltipView {
         }
         this.addRange()
 
-        let hoverContext = {
+        const hoverContext = {
             commitID: props.blobInfo.commitID,
             filePath: props.blobInfo.filePath,
             repoName: props.blobInfo.repoName,
