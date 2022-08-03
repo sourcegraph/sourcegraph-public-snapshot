@@ -8,7 +8,6 @@ import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable } from '@s
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
-import { isSettingsValid } from '../../settings/settings'
 import { wrapRemoteObservable } from '../client/api/common'
 import { MainThreadAPI } from '../contract'
 import { tryCatchPromise } from '../util'
@@ -61,12 +60,6 @@ export function observeActiveExtensions(
  */
 const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'sourcegraph/search-insights'])
 
-/**
- * List of extensions being migrated to the core workflow. These extensions are not activated if
- * `extensionsAsCoreFeatures` experimental feature is enabled.
- */
-const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras', 'sourcegraph/search-export'])
-
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
     mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
@@ -105,11 +98,9 @@ export function activateExtensions(
     const previouslyActivatedExtensions = new Set<string>()
     const extensionContributions = new Map<string, Contributions>()
     const contributionsToAdd = new Map<string, Contributions>()
-    const extensionsSubscription = combineLatest([state.settings, state.activeExtensions, getScriptURLs(null)])
+    const extensionsSubscription = combineLatest([state.activeExtensions, getScriptURLs(null)])
         .pipe(
-            concatMap(([settings, activeExtensions, getScriptURLs]) => {
-                const extensionsAsCoreFeatures =
-                    isSettingsValid(settings) && settings.final.experimentalFeatures?.extensionsAsCoreFeatures
+            concatMap(([activeExtensions, getScriptURLs]) => {
                 const toDeactivate = new Set<string>()
                 const toActivate = new Map<string, ConfiguredExtension | ExecutableExtension>()
                 const activeExtensionIDs = new Set<string>()
@@ -117,11 +108,6 @@ export function activateExtensions(
                 for (const extension of activeExtensions) {
                     // Ignore extensions that now work via built-in insights fetchers
                     if (DEPRECATED_EXTENSION_IDS.has(extension.id)) {
-                        continue
-                    }
-
-                    // Ignore extensions that are being migrated to the core workflow if the experimental feature is enabled
-                    if (extensionsAsCoreFeatures && MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)) {
                         continue
                     }
 
