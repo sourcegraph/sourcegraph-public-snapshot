@@ -230,10 +230,6 @@ var sg = &cli.App{
 			})
 		}
 
-		background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
-			time.Sleep(10 * time.Second)
-		})
-
 		// Call registered hooks last
 		for _, hook := range postInitHooks {
 			hook(cmd)
