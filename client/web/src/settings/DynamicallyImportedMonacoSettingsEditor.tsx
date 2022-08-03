@@ -165,7 +165,6 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     private onSave = async (): Promise<void> => {
         const value = this.effectiveValue
         if (this.props.onSave) {
-            console.log('on Save')
             const newConfig = await this.props.onSave(value)
             if (newConfig) {
                 this.setState({ value: newConfig })
