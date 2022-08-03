@@ -46,7 +46,7 @@ describe('StreamingSearchResults', () => {
             subjects: null,
             final: null,
         },
-        platformContext: { settings: NEVER, requestGraphQL: () => EMPTY },
+        platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 

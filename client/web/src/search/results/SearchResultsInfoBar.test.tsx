@@ -4,7 +4,7 @@ import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
-import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -13,7 +13,7 @@ import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResults
 const history = createMemoryHistory()
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,
-    platformContext: { settings: NEVER },
+    platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
     history,
     location: createLocation('/search'),
     authenticatedUser: { id: 'userID' },
@@ -25,6 +25,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
     patternType: SearchPatternType.standard,
     caseSensitive: false,
+    settingsCascade: NOOP_SETTINGS_CASCADE,
 }
 
 describe('SearchResultsInfoBar', () => {
