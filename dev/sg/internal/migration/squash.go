@@ -35,7 +35,7 @@ const (
 	squasherContainerPostgresName = "postgres"
 )
 
-func SquashAll(database db.Database, inContainer, skipTeardown, skipData bool, filepath string) error {
+func SquashAll(database db.Database, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool, filepath string) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func SquashAll(database db.Database, inContainer, skipTeardown, skipData bool, f
 		leafIDs = append(leafIDs, leaf.ID)
 	}
 
-	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, skipTeardown, skipData)
+	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, runInTimescaleDBContainer, skipTeardown, skipData)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func SquashAll(database db.Database, inContainer, skipTeardown, skipData bool, f
 	return os.WriteFile(filepath, []byte(squashedUpMigration), os.ModePerm)
 }
 
-func Squash(database db.Database, commit string, inContainer, skipTeardown, skipData bool) error {
+func Squash(database db.Database, commit string, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown, skip
 	}
 
 	// Run migrations up to the new selected root and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, skipTeardown, skipData)
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, runInTimescaleDBContainer, skipTeardown, skipData)
 	if err != nil {
 		return err
 	}
@@ -183,8 +183,8 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
 // of a database up to a given migration index.
-func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, skipTeardown, skipData bool) (up, down string, err error) {
-	postgresDSN, teardown, err := setupDatabaseForSquash(database, inContainer)
+func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool) (up, down string, err error) {
+	postgresDSN, teardown, err := setupDatabaseForSquash(database, inContainer, runInTimescaleDBContainer)
 	if err != nil {
 		return "", "", err
 	}
@@ -209,14 +209,22 @@ func generateSquashedMigrations(database db.Database, targetVersions []int, inCo
 // setupDatabaseForSquash prepares a database for use in running a schema up to a certain point so it
 // can be reliably dumped. If the provided inContainer flag is true, then this function will launch a
 // daemon Postgres container. Otherwise, a new database on the host Postgres instance will be created.
-func setupDatabaseForSquash(database db.Database, runInContainer bool) (string, func(error) error, error) {
+//
+// If `runIntimescaleDBContainer` is true, then a TimescaleDB-compatible image will be used. This is
+// necessary to squash migrations prior to the deprecation of TimescaleDB.
+func setupDatabaseForSquash(database db.Database, runInContainer, runInTimescaleDBContainer bool) (string, func(error) error, error) {
 	if runInContainer {
+		image := "postgres:12.7"
+		if runInTimescaleDBContainer {
+			image = "timescale/timescaledb-ha:pg14-latest"
+		}
+
 		postgresDSN := fmt.Sprintf(
 			"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
 			squasherContainerExposedPort,
 			database.Name,
 		)
-		teardown, err := runPostgresContainer(database.Name)
+		teardown, err := runPostgresContainer(image, database.Name)
 		return postgresDSN, teardown, err
 	}
 
@@ -323,10 +331,10 @@ func setupLocalDatabase(databaseName string) (_ func(error) error, err error) {
 	return teardown, nil
 }
 
-// runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.
-// This method returns a teardown function that filters the error value of the calling
-// function, as well as any immediate synchronous error.
-func runPostgresContainer(databaseName string) (_ func(err error) error, err error) {
+// runPostgresContainer runs the given Postgres-compatible image with an empty db with the
+// given name. This method returns a teardown function that filters the error value of the
+// calling function, as well as any immediate synchronous error.
+func runPostgresContainer(image, databaseName string) (_ func(err error) error, err error) {
 	pending := std.Out.Pending(output.Line("", output.StylePending, "Starting PostgreSQL 12 in a container..."))
 	defer func() {
 		if err == nil {
@@ -354,7 +362,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 		"--name", squasherContainerName,
 		"-p", fmt.Sprintf("%d:5432", squasherContainerExposedPort),
 		"-e", "POSTGRES_HOST_AUTH_METHOD=trust",
-		"postgres:12.7",
+		image,
 	}
 	if _, err := run.DockerCmd(runArgs...); err != nil {
 		return nil, err
