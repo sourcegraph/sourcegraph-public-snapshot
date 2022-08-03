@@ -23,7 +23,7 @@
   "scripts": {
     "lint:js": "eslint 'src/*.[jt]s?(x)'",
     "docs": "typedoc",
-    "prepublishOnly": "yarn run eslint && yarn run docs"
+    "prepublish": "yarn run eslint && yarn run docs"
   },
   "devDependencies": {
     "typedoc": "^0.17.8"
