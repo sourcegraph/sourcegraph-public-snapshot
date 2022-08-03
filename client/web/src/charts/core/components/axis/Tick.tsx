@@ -8,16 +8,12 @@ import classNames from 'classnames'
 import styles from './Tick.module.scss'
 
 export interface TickProps extends TickRendererProps {
-    /** Max width of value of ticks in symbols */
-    maxWidth?: number
+    getTruncatedTick?: (lable: string) => string
 }
 
 /** Tick component displays tick label for each axis line of chart. */
 export const Tick: FC<TickProps> = props => {
-    const { formattedValue = '', maxWidth, 'aria-label': ariaLabel, className, ...tickLabelProps } = props
-
-    const tickLabelText =
-        maxWidth && maxWidth <= formattedValue.length ? `${formattedValue.slice(0, maxWidth)}...` : formattedValue
+    const { formattedValue = '', 'aria-label': ariaLabel, className, getTruncatedTick, ...tickLabelProps } = props
 
     // Hack with Group + Text (aria hidden)
     // Because the Text component renders text inside svg element and text element with tspan
@@ -28,7 +24,7 @@ export const Tick: FC<TickProps> = props => {
         // eslint-disable-next-line jsx-a11y/aria-role
         <Group role="text" aria-label={ariaLabel}>
             <Text aria-hidden={true} className={classNames(styles.tick, className)} {...(tickLabelProps as TextProps)}>
-                {tickLabelText}
+                {getTruncatedTick ? getTruncatedTick(formattedValue) : formattedValue}
             </Text>
         </Group>
     )

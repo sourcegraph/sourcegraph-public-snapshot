@@ -137,14 +137,23 @@ export const SvgAxisLeft: FC<SvgAxisLeftProps> = props => {
 }
 
 const defaultToString = <T,>(tick: T): string => `${tick}`
+const defaultTruncatedTick = (tick: string): string => (tick.length >= 15 ? `${tick.slice(0, 15)}...` : tick)
+export const reverseTruncatedTick = (tick: string): string => (tick.length >= 15 ? `...${tick.slice(-15)}` : tick)
 
 interface SvgAxisBottomProps<Tick> {
     tickFormat?: (tick: Tick) => string
     pixelsPerTick?: number
+    maxRotateAngle?: number
+    getTruncatedTick?: (formattedTick: string) => string
 }
 
 export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): ReactElement {
-    const { pixelsPerTick = 0, tickFormat = defaultToString } = props
+    const {
+        pixelsPerTick = 0,
+        maxRotateAngle = 90,
+        tickFormat = defaultToString,
+        getTruncatedTick = defaultTruncatedTick,
+    } = props
     const { content, xScale, setPadding } = useContext(SVGRootContext)
 
     const axisGroupRef = useRef<SVGGElement>(null)
@@ -168,14 +177,19 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
     const getXTickProps = (props: TickRendererProps): TickProps => {
         // TODO: Add more sophisticated logic around labels overlapping calculation
         const measuredSize = ticks.length * maxWidth
-        const rotate = upperRangeBound < measuredSize ? 90 * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2) : 0
+        const rotate =
+            upperRangeBound < measuredSize
+                ? maxRotateAngle * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2)
+                : 0
 
         if (rotate) {
             return {
                 ...props,
+                // Truncate ticks only if we rotate them, this means truncate labels only
+                // when they overlap
+                getTruncatedTick,
                 transform: `rotate(${rotate}, ${props.x} ${props.y})`,
                 textAnchor: 'start',
-                maxWidth: 15,
             }
         }
 

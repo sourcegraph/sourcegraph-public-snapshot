@@ -7,11 +7,11 @@ import { scaleBand, scaleLinear, scaleTime } from '@visx/scale'
 
 import { WebStory } from '../../../components/WebStory'
 
-import { formatXTick } from './axis/tick-formatters'
+import { formatDateTick } from './axis/tick-formatters'
 import { SvgRoot, SvgAxisLeft, SvgAxisBottom, SvgContent } from './SvgRoot'
 
 const StoryConfig: Meta = {
-    title: 'web/charts/demo',
+    title: 'web/charts/axis',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }
 
@@ -48,7 +48,7 @@ export const Demo: Story = props => {
                     {parent => (
                         <SvgRoot width={parent.width} height={parent.height} xScale={X_SCALE} yScale={Y_SCALE}>
                             <SvgAxisLeft />
-                            <SvgAxisBottom<Date> tickFormat={formatXTick} pixelsPerTick={20} />
+                            <SvgAxisBottom<Date> tickFormat={formatDateTick} pixelsPerTick={20} />
 
                             <SvgContent>
                                 {({ content }) => (

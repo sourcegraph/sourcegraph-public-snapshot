@@ -9,7 +9,7 @@ import styles from './Tooltip.module.scss'
 const TOOLTIP_PADDING = createRectangle(0, 0, 10, 10)
 
 interface TooltipProps {
-    containerElement: SVGSVGElement
+    containerElement: HTMLElement
     activeElement?: HTMLElement
 }
 

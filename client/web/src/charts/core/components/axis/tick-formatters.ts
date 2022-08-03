@@ -20,7 +20,7 @@ export function formatYTick(number: number): string {
  *
  * Example: 01 Jan, 12 Feb, ...
  */
-export const formatXTick = timeFormat('%d %b')
+export const formatDateTick = timeFormat('%d %b')
 
 /**
  * Returns a formatted date text for points aria labels.
