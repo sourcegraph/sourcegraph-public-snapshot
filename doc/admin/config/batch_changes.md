@@ -36,7 +36,7 @@ Keep in mind that if you configure a rollout window that is too aggressive, you 
 
 * [GitHub](https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit)
 * [GitLab](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits)
-* [BitBucket Cloud](https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/)
+* [Bitbucket Cloud](https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/)
 
 When using a [global service account token](../../batch_changes/how-tos/configuring_credentials.md#global-service-account-tokens) with Batch Changes, keep in mind that this token will also be used for other Batch Changes <> code host interactions, too.
 
