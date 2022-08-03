@@ -64,6 +64,9 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
             requireAtLeastOneNumber: true,
             requireUpperandLowerCase: true,
         },
+        openTelemetry: {
+            endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
+        },
         // Site-config overrides default JS context
         ...siteConfig,
     }

@@ -22,7 +22,7 @@ describe('notepad store', () => {
     const exampleEntryInput: NotepadEntryInput = {
         type: 'search',
         query: 'test',
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         caseSensitive: false,
     }
 

@@ -80,6 +80,10 @@ type ObservationGroupOptions struct {
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	rows := make([]monitoring.Row, 0, 2)
 
+	if options.JobLabel == "" {
+		options.JobLabel = "job"
+	}
+
 	if len(options.By) == 0 {
 		if options.Aggregate != nil {
 			panic("Aggregate must not be supplied when By is not set")

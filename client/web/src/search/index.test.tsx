@@ -10,18 +10,18 @@ expect.addSnapshotSerializer({
 describe('search/index', () => {
     test('parseSearchURL', () => {
         expect(
-            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal&case=yes')
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=standard&case=yes')
         ).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph ',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             caseSensitive: true,
         })
 
         expect(
-            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:no&patternType=literal&case=yes')
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:no&patternType=standard&case=yes')
         ).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph ',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             caseSensitive: false,
         })
 
@@ -33,9 +33,9 @@ describe('search/index', () => {
             caseSensitive: true,
         })
 
-        expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal')).toStrictEqual({
+        expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=standard')).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph ',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             caseSensitive: true,
         })
 
@@ -49,31 +49,31 @@ describe('search/index', () => {
             caseSensitive: false,
         })
 
-        expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph&patternType=literal')).toStrictEqual({
+        expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph&patternType=standard')).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             caseSensitive: false,
         })
     })
 
     test('parseSearchURL with appendCaseFilter', () => {
         expect(
-            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal&case=yes', {
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=standard&case=yes', {
                 appendCaseFilter: true,
             })
         ).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             caseSensitive: true,
         })
 
         expect(
-            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:no&patternType=literal&case=yes', {
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:no&patternType=standard&case=yes', {
                 appendCaseFilter: true,
             })
         ).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph ',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             caseSensitive: false,
         })
 
@@ -88,12 +88,12 @@ describe('search/index', () => {
         })
 
         expect(
-            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal', {
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=standard', {
                 appendCaseFilter: true,
             })
         ).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             caseSensitive: true,
         })
 
@@ -109,10 +109,30 @@ describe('search/index', () => {
         })
 
         expect(
-            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph&patternType=literal', { appendCaseFilter: true })
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph&patternType=standard', { appendCaseFilter: true })
         ).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
+            caseSensitive: false,
+        })
+    })
+
+    test('parseSearchURL preserves literal search compatibility', () => {
+        expect(parseSearchURL('q=/a literal pattern/&patternType=literal')).toStrictEqual({
+            query: 'content:"/a literal pattern/"',
+            patternType: SearchPatternType.standard,
+            caseSensitive: false,
+        })
+
+        expect(parseSearchURL('q=not /a literal pattern/&patternType=literal')).toStrictEqual({
+            query: 'not content:"/a literal pattern/"',
+            patternType: SearchPatternType.standard,
+            caseSensitive: false,
+        })
+
+        expect(parseSearchURL('q=un.*touched&patternType=literal')).toStrictEqual({
+            query: 'un.*touched',
+            patternType: SearchPatternType.standard,
             caseSensitive: false,
         })
     })

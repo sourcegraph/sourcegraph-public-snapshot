@@ -29,6 +29,9 @@ type ObservableConstructorOptions struct {
 	// will add a prefix to the constructed legend.
 	MetricDescriptionRoot string
 
+	// JobLabel is the name of the label used to denote the job name. If unset, "job" is used.
+	JobLabel string
+
 	// Filters are additional prometheus filter expressions used to select or hide values
 	// for a given label pattern.
 	Filters []string
@@ -76,8 +79,12 @@ type GroupConstructorOptions struct {
 // expressions. The given container name may be string or pattern, which will be matched
 // against the prefix of the value of the job label. Note that this excludes replicas like
 // -0 and -1 in docker-compose.
-func makeFilters(containerName string, filters ...string) string {
-	filters = append(filters, fmt.Sprintf(`job=~"^%s.*"`, containerName))
+func makeFilters(containerLabel, containerName string, filters ...string) string {
+	if containerLabel == "" {
+		containerLabel = "job"
+	}
+
+	filters = append(filters, fmt.Sprintf(`%s=~"^%s.*"`, containerLabel, containerName))
 	return strings.Join(filters, ",")
 }
 

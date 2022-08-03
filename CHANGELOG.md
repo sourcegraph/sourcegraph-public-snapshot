@@ -22,10 +22,11 @@ All notable changes to Sourcegraph are documented in this file.
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
 - Code Insights over some repos now get 12 historic data points in addition to a current daily value and future points that align with the defined interval. [#37756](https://github.com/sourcegraph/sourcegraph/pull/37756)
 - Added `ROCKSKIP_MIN_REPO_SIZE_MB` to automatically use [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) for repositories over a certain size. [#38192](https://github.com/sourcegraph/sourcegraph/pull/38192)
+- `"observability.tracing": { "urlTemplate": "..." }` can now be set to configure generated trace URLs (for example those generated via `&trace=1`). [#39765](https://github.com/sourcegraph/sourcegraph/pull/39765)
 
 ### Changed
 
--
+- **IMPORTANT: Search queries with patterns surrounded by** `/.../` **will now be interpreted as regular expressions.** Existing search links or code monitors are unaffected. In the rare event where older links rely on the literal meaning of `/.../`, the string will be automatically quoted it in a `content` filter, preserving the original meaning. If you happen to use an existing older link and want `/.../` to work as a regular expression, add `patterntype:standard` to the query. New queries and code monitors will interpret `/.../` as regular expressions. [#38141](https://github.com/sourcegraph/sourcegraph/pull/38141).
 
 ### Fixed
 

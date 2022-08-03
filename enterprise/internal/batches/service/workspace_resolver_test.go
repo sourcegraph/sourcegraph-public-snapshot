@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -62,12 +62,12 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, &observation.TestContext, nil)
 
-	u := ct.CreateTestUser(t, db, false)
+	u := bt.CreateTestUser(t, db, false)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 7)
-	unsupported, _ := ct.CreateAWSCodeCommitTestRepos(t, ctx, db, 1)
+	rs, _ := bt.CreateTestRepos(t, ctx, db, 7)
+	unsupported, _ := bt.CreateAWSCodeCommitTestRepos(t, ctx, db, 1)
 	// Allow access to all repos but rs[4].
-	ct.MockRepoPermissions(t, db, u.ID, rs[0].ID, rs[1].ID, rs[2].ID, rs[3].ID, rs[5].ID, rs[6].ID, unsupported[0].ID)
+	bt.MockRepoPermissions(t, db, u.ID, rs[0].ID, rs[1].ID, rs[2].ID, rs[3].ID, rs[5].ID, rs[6].ID, unsupported[0].ID)
 
 	defaultBranches := map[api.RepoName]defaultBranch{
 		rs[0].Name:          {branch: "branch-1", commit: api.CommitID("6f152ece24b9424edcd4da2b82989c5c2bea64c3")},

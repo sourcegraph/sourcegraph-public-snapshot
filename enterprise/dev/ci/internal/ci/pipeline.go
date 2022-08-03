@@ -120,7 +120,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			testBuilds := operations.NewNamedSet("Test builds")
 			scanBuilds := operations.NewNamedSet("Scan test builds")
 			for _, image := range images.SourcegraphDockerImages {
-				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag()))
+				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
 				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
 			}
 			ops.Merge(testBuilds)
@@ -132,7 +132,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage("server", c.Version, c.candidateImageTag(), false),
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// always include very backend-oriented changes in this set of tests
@@ -190,7 +190,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
@@ -211,14 +211,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
 			wait,
 			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
 
 	case runtype.ExecutorPatchNoTest:
@@ -237,7 +237,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			// Only upload sourcemaps for the "frontend" image, on the Main branch build
+			uploadSourcemaps := false
+			if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
+				uploadSourcemaps = true
+			}
+			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
 		}
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch)
@@ -289,9 +294,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
 			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				publishOps.Append(publishExecutorDockerMirror(c.Version))
-			}
-			if c.RunType.Is(runtype.ReleaseBranch) {
-				ops.Append(buildWebAppWithSentrySourcemaps(c.Version))
 			}
 		}
 		ops.Merge(publishOps)

@@ -59,7 +59,7 @@ func (workerutilConstructor) ErrorRate(options ObservableConstructorOptions) sha
 // Requires a gauge of the format `src_{options.MetricNameRoot}_processor_handlers`
 func (workerutilConstructor) Handlers(options ObservableConstructorOptions) sharedObservable {
 	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{

@@ -102,7 +102,7 @@ describe('StreamingSearchResults', () => {
 
         expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
         expect(receivedOptions).toEqual({
-            version: 'V2',
+            version: 'V3',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             trace: undefined,

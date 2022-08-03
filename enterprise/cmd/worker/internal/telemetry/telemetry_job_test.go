@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -27,8 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-
-	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -120,7 +119,7 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 				return nil
 			})
 			err := handler.Handle(ctx)
@@ -148,7 +147,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	initAllowedEvents(t, db, []string{"event1", "event2"})
 
 	t.Run("loads no events when table is empty", func(t *testing.T) {
-		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			if len(event) != 0 {
 				t.Errorf("expected empty events but got event array with size: %d", len(event))
 			}
@@ -178,8 +177,8 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Run("loads events without error", func(t *testing.T) {
-		var got []*types.Event
-		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		var got []*database.Event
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			got = event
 			return nil
 		})
@@ -189,12 +188,12 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("loads events without error", []*types.Event{
+		autogold.Want("loads events without error", []*database.Event{
 			{
 				ID:       1,
 				Name:     "event1",
 				UserID:   1,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			},
@@ -202,7 +201,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 				ID:       2,
 				Name:     "event2",
 				UserID:   2,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			},
@@ -214,8 +213,8 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		config.ExportUsageTelemetry.BatchSize = 1
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		var got []*types.Event
-		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		var got []*database.Event
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			got = event
 			return nil
 		})
@@ -224,12 +223,12 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("loads using specified batch size from settings", []*types.Event{
+		autogold.Want("loads using specified batch size from settings", []*database.Event{
 			{
 				ID:       1,
 				Name:     "event1",
 				UserID:   1,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			},
@@ -274,12 +273,12 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	handler.bookmarkStore = newBookmarkStore(db)
 
 	t.Run("first execution of handler should return first event", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Want("first execution of handler should return first event", []*types.Event{{
+		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("first execution of handler should return first event", []*database.Event{{
 				ID:       1,
 				Name:     "event1",
 				UserID:   1,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			}}).Equal(t, got)
@@ -292,12 +291,12 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 		}
 	})
 	t.Run("second execution of handler should return second event", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Want("second execution of handler should return second event", []*types.Event{{
+		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("second execution of handler should return second event", []*database.Event{{
 				ID:       2,
 				Name:     "event2",
 				UserID:   2,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			}}).Equal(t, got)
@@ -310,7 +309,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 		}
 	})
 	t.Run("third execution of handler should return no events", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		handler.sendEventsCallback = func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			if len(event) == 0 {
 				t.Error("expected empty events")
 			}
@@ -365,13 +364,13 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	handler.bookmarkStore = newBookmarkStore(db)
 
 	t.Run("ensure only allowed events are returned", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Want("first execution of handler should return first event", []*types.Event{
+		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("first execution of handler should return first event", []*database.Event{
 				{
 					ID:       1,
 					Name:     "allowed",
 					UserID:   1,
-					Argument: "{}",
+					Argument: json.RawMessage("{}"),
 					Source:   "test",
 					Version:  "0.0.0+dev",
 				},
@@ -379,7 +378,7 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 					ID:       3,
 					Name:     "allowed",
 					UserID:   3,
-					Argument: "{}",
+					Argument: json.RawMessage("{}"),
 					Source:   "test",
 					Version:  "0.0.0+dev",
 				},
@@ -442,13 +441,13 @@ func TestHandleInvalidConfig(t *testing.T) {
 
 func TestBuildBigQueryObject(t *testing.T) {
 	atTime := time.Date(2022, 7, 22, 0, 0, 0, 0, time.UTC)
-	event := &types.Event{
+	event := &database.Event{
 		ID:              1,
 		Name:            "GREAT_EVENT",
 		URL:             "https://sourcegraph.com/search",
 		UserID:          5,
 		AnonymousUserID: "anonymous",
-		Argument:        "argument",
+		Argument:        json.RawMessage("argument"),
 		Source:          "src",
 		Version:         "1.1.1",
 		Timestamp:       atTime,
@@ -509,7 +508,7 @@ func TestGetInstanceMetadata(t *testing.T) {
 }
 
 func noopHandler() sendEventsCallbackFunc {
-	return func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+	return func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 		return nil
 	}
 }

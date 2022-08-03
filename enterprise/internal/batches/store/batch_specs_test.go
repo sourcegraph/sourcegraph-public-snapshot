@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -506,12 +505,12 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 	})
 
 	t.Run("GetBatchSpecDiffStat", func(t *testing.T) {
-		user := ct.CreateTestUser(t, s.DatabaseDB(), false)
-		admin := ct.CreateTestUser(t, s.DatabaseDB(), true)
-		repo1, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
-		repo2, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+		user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+		admin := bt.CreateTestUser(t, s.DatabaseDB(), true)
+		repo1, _ := bt.CreateTestRepo(t, ctx, s.DatabaseDB())
+		repo2, _ := bt.CreateTestRepo(t, ctx, s.DatabaseDB())
 		// Give access to repo1 but not repo2.
-		ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repo1.ID)
+		bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repo1.ID)
 
 		batchSpec := &btypes.BatchSpec{
 			UserID:          user.ID,
