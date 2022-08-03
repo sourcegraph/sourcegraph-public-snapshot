@@ -1883,8 +1883,7 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 	})
 }
 
-// setLastErrorNonFatal will set the last_error column for the repo in the gitserver table and log
-// the error.
+// setLastErrorNonFatal will set the last_error column for the repo in the gitserver table.
 func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
 	var errString string
 	if err != nil {
