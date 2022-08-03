@@ -5,109 +5,137 @@ CREATE TABLE repo_statistics (
   -- that it's unique.
   CONSTRAINT id CHECK (id),
 
-  total bigint,
-  soft_deleted bigint,
-  cloned bigint
+  total BIGINT NOT NULL DEFAULT 0,
+  soft_deleted BIGINT NOT NULL DEFAULT 0,
+  cloned BIGINT NOT NULL DEFAULT 0
 );
 
 COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';
 COMMENT ON COLUMN repo_statistics.soft_deleted IS 'Number of repositories that are soft-deleted and not blocked';
 COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are cloned';
 
-INSERT INTO repo_statistics (total, soft_deleted, cloned) VALUES (0, 0, 0);
+INSERT INTO repo_statistics (total, soft_deleted, cloned)
+VALUES (
+  (SELECT COUNT(1) FROM repo WHERE deleted_at is NULL AND blocked IS NULL),
+  (SELECT COUNT(1) FROM repo WHERE deleted_at is NOT NULL AND blocked IS NULL),
+  (SELECT COUNT(1) FROM gitserver_repos WHERE clone_status = 'cloned')
+);
 
-UPDATE repo_statistics
-SET
-  total = (SELECT COUNT(1) FROM repo WHERE deleted_at is NULL AND blocked IS NULL),
-  soft_deleted = (SELECT COUNT(1) FROM repo WHERE deleted_at is NOT NULL AND blocked IS NULL),
-  cloned = (SELECT COUNT(1) FROM gitserver_repos WHERE clone_status = 'cloned')
-WHERE
-  id = TRUE;
-
-CREATE FUNCTION count_soft_deleted_repo() RETURNS trigger
+--------------------------------------------------------------------------------
+--                              repos table                                   --
+--------------------------------------------------------------------------------
+-- UPDATE
+CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        IF (OLD.deleted_at IS NULL AND OLD.blocked IS NULL AND NEW.deleted_at IS NOT NULL AND NEW.blocked IS NULL) THEN
-          UPDATE repo_statistics
-          SET soft_deleted = soft_deleted + 1, total = total - 1
-          WHERE id = TRUE;
-          END IF;
-        RETURN OLD;
-    END;
+    AS $$ BEGIN
+      INSERT INTO
+        repo_statistics (total, soft_deleted)
+      VALUES (
+        (SELECT COUNT(1) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL) - (SELECT COUNT(1) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT COUNT(1) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL) - (SELECT COUNT(1) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
+      )
+      ON CONFLICT(id) DO UPDATE
+      SET
+        total        = repo_statistics.total        + excluded.total,
+        soft_deleted = repo_statistics.soft_deleted + excluded.soft_deleted
+      ;
+      RETURN NULL;
+  END
 $$;
-CREATE TRIGGER trig_count_soft_deleted_repo AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION count_soft_deleted_repo();
+DROP TRIGGER IF EXISTS trig_recalc_repo_statistics_on_repo_update ON repo;
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update();
 
-CREATE FUNCTION count_inserted_repo() RETURNS trigger
+-- INSERT
+CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_insert() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        IF (NEW.deleted_at IS NOT NULL AND NEW.blocked IS NULL) THEN
-          UPDATE repo_statistics
-          SET soft_deleted = soft_deleted + 1
-          WHERE id = TRUE;
-        ELSE
-          UPDATE repo_statistics
-          SET total = total + 1
-          WHERE id = TRUE;
-        END IF;
-        RETURN NEW;
-    END;
+    AS $$ BEGIN
+      INSERT INTO
+        repo_statistics (total, soft_deleted)
+      VALUES (
+        (SELECT COUNT(1) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT COUNT(1) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
+      )
+      ON CONFLICT(id) DO UPDATE
+      SET
+        total        = repo_statistics.total        + excluded.total,
+        soft_deleted = repo_statistics.soft_deleted + excluded.soft_deleted
+      ;
+      RETURN NULL;
+  END
 $$;
-CREATE TRIGGER trig_count_inserted_repo AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION count_inserted_repo();
+DROP TRIGGER IF EXISTS trig_recalc_repo_statistics_on_repo_insert ON repo;
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert();
 
-CREATE FUNCTION count_deleted_repo() RETURNS trigger
+-- DELETE
+CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_delete() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        IF (NEW.blocked IS NULL) THEN
-          IF (NEW.deleted_at IS NOT NULL) THEN
-            UPDATE repo_statistics
-            SET soft_deleted = soft_deleted - 1
-            WHERE id = TRUE;
-          ELSIF (NEW.deleted_at IS NULL) THEN
-            UPDATE repo_statistics
-            SET total = total - 1
-            WHERE id = TRUE;
-          END IF;
-        END IF;
-
-        RETURN NULL;
-    END;
+    AS $$ BEGIN
+      UPDATE repo_statistics
+      SET
+        total        = repo_statistics.total        - (SELECT COUNT(1) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        soft_deleted = repo_statistics.soft_deleted - (SELECT COUNT(1) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
+      WHERE id = TRUE;
+      RETURN NULL;
+  END
 $$;
-CREATE TRIGGER trig_count_deleted_repo AFTER DELETE ON repo FOR EACH ROW EXECUTE FUNCTION count_deleted_repo();
+DROP TRIGGER IF EXISTS trig_recalc_repo_statistics_on_repo_delete ON repo;
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete();
 
-CREATE FUNCTION count_cloned_gitserver_repos() RETURNS trigger
+
+
+--------------------------------------------------------------------------------
+--                       gitserver_repos table                                --
+--------------------------------------------------------------------------------
+-- UPDATE
+CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_gitserver_repos_update() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        IF ((OLD.clone_status = 'cloning' OR OLD.clone_status = '' OR OLD.clone_status = 'not_cloned') AND NEW.clone_status = 'cloned') THEN
-          UPDATE repo_statistics
-          SET cloned = cloned + 1
-          WHERE id = TRUE;
-        ELSIF (OLD.clone_status = 'cloned' AND NEW.clone_status = 'not_cloned') THEN
-          UPDATE repo_statistics
-          SET cloned = cloned - 1
-          WHERE id = TRUE;
-          END IF;
-        RETURN OLD;
-    END;
+    AS $$ BEGIN
+      INSERT INTO
+        repo_statistics (cloned)
+      VALUES (
+        (SELECT COUNT(1) FROM newtab WHERE clone_status = 'cloned') - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'cloned')
+      )
+      ON CONFLICT(id) DO UPDATE
+      SET
+        cloned = repo_statistics.cloned + excluded.cloned
+      ;
+      RETURN NULL;
+  END
 $$;
-CREATE TRIGGER trig_count_cloned_gitserver_repos AFTER UPDATE OF clone_status ON gitserver_repos FOR EACH ROW EXECUTE FUNCTION count_cloned_gitserver_repos();
 
-CREATE FUNCTION count_deleted_gitserver_repos() RETURNS trigger
+DROP TRIGGER IF EXISTS trig_recalc_repo_statistics_on_gitserver_repos_update ON gitserver_repos;
+CREATE TRIGGER trig_recalc_repo_statistics_on_gitserver_repos_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_gitserver_repos_update();
+
+
+-- INSERT
+CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_gitserver_repos_insert() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        IF (NEW.clone_status = 'cloned') THEN
-          UPDATE repo_statistics
-          SET
-            cloned = cloned - 1
-          WHERE
-              id = TRUE;
-        END IF;
-
-        RETURN NULL;
-    END;
+    AS $$ BEGIN
+      INSERT INTO
+        repo_statistics (cloned)
+      VALUES (
+        (SELECT COUNT(1) FROM newtab WHERE clone_status = 'cloned')
+      )
+      ON CONFLICT(id) DO UPDATE
+      SET
+        cloned = repo_statistics.cloned + excluded.cloned
+      ;
+      RETURN NULL;
+  END
 $$;
-CREATE TRIGGER trig_count_deleted_gitserver_repos AFTER DELETE ON gitserver_repos FOR EACH ROW EXECUTE FUNCTION count_deleted_gitserver_repos();
+DROP TRIGGER IF EXISTS trig_recalc_repo_statistics_on_gitserver_repos_insert ON gitserver_repos;
+CREATE TRIGGER trig_recalc_repo_statistics_on_gitserver_repos_insert AFTER INSERT ON gitserver_repos REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_gitserver_repos_insert();
+
+-- DELETE
+CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_gitserver_repos_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      UPDATE repo_statistics
+      SET
+        cloned = repo_statistics.cloned - (SELECT COUNT(1) FROM oldtab WHERE clone_status = 'cloned')
+      WHERE id = TRUE;
+      RETURN NULL;
+  END
+$$;
+DROP TRIGGER IF EXISTS trig_recalc_repo_statistics_on_gitserver_repos_delete ON gitserver_repos;
+CREATE TRIGGER trig_recalc_repo_statistics_on_gitserver_repos_delete AFTER DELETE ON gitserver_repos REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_gitserver_repos_delete();
