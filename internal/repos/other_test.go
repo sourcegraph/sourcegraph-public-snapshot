@@ -99,6 +99,25 @@ func TestSrcExpose(t *testing.T) {
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
 		}},
 	}, {
+		name: "bare",
+		body: `{"Items":[{"uri": "/repos/bare.git", "name": "bare.git"}]}`,
+		want: []*types.Repo{{
+			URI:  "/repos/bare.git",
+			Name: "bare",
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceID:   s.URL,
+				ServiceType: extsvc.TypeOther,
+				ID:          "/repos/bare.git",
+			},
+			Sources: map[string]*types.SourceInfo{
+				"extsvc:other:1": {
+					ID:       "extsvc:other:1",
+					CloneURL: s.URL + "/repos/bare.git",
+				},
+			},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bare.git"},
+		}},
+	}, {
 		name: "immutable",
 		body: `{"Items":[{"uri": "foo", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
 		want: []*types.Repo{{
