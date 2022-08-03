@@ -46,9 +46,13 @@ func (j *metricsJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 
 		var count int64
 		err := db.QueryRowContext(ctx, `
-			SELECT COUNT(*) FROM gitserver_repos AS g
-			INNER JOIN repo AS r ON g.repo_id = r.id
-			WHERE g.last_error IS NOT NULL AND r.deleted_at IS NULL
+SELECT COUNT(*)
+FROM gitserver_repos AS gr
+JOIN repo AS r ON gr.repo_id = r.id
+WHERE
+	gr.last_error IS NOT NULL
+	AND r.deleted_at IS NULL
+	AND r.blocked IS NULL
 		`).Scan(&count)
 		if err != nil {
 			j.Logger.Error("failed to count repository errors", log.Error(err))
@@ -67,8 +71,11 @@ func (j *metricsJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 
 		var count int64
 		err := db.QueryRowContext(ctx, `
-			SELECT COUNT(*) FROM repo AS r
-			WHERE r.deleted_at IS NULL
+SELECT COUNT(*)
+FROM repo AS r
+WHERE
+	r.deleted_at IS NULL
+	AND r.blocked IS NULL
 		`).Scan(&count)
 		if err != nil {
 			j.Logger.Error("failed to count repositories", log.Error(err))
