@@ -935,7 +935,7 @@ Referenced by:
  last_source_url   | text                     |           |          | 
  referrer          | text                     |           |          | 
  device_id         | text                     |           |          | 
- insert_id         | integer                  |           |          | 
+ insert_id         | text                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)

@@ -7125,7 +7125,7 @@
         {
           "Name": "insert_id",
           "Index": 17,
-          "TypeName": "integer",
+          "TypeName": "text",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
