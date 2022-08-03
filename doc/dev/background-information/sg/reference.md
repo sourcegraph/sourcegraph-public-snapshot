@@ -756,6 +756,7 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
+* `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 
 ### sg migration squash-all
@@ -774,6 +775,7 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
+* `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
 
