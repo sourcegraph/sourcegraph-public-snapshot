@@ -362,7 +362,8 @@ class Hovercard implements TooltipView {
             this.view.state.facet(hovercardSource)(view, range.range.start),
             this.nextProps.pipe(startWith(view.state.facet(blobPropsFacet))),
         ]).subscribe(([container, hovercardData, props]) => {
-            if (hovercardData.hoverOrError) {
+            // undefined means the data is still loading
+            if (hovercardData.hoverOrError !== undefined) {
                 if (!this.root) {
                     // Defer creating a React container until absolutely
                     // necessary
@@ -410,11 +411,21 @@ class Hovercard implements TooltipView {
     }
 
     private render(root: Root, { hoverOrError, actionsOrError }: HovercardData, props: BlobProps): void {
-        if (!hoverOrError) {
+        // Only render if we either have something for hover or actions. Adapted
+        // from shouldRenderOverlay in codeintellify/src/hoverifier.ts
+        if (
+            !(
+                (hoverOrError && hoverOrError !== 'loading') ||
+                (actionsOrError &&
+                    actionsOrError !== 'loading' &&
+                    (isErrorLike(actionsOrError) || actionsOrError.length > 0))
+            )
+        ) {
             this.removeRange()
             root.render([])
             return
         }
+
         this.addRange()
 
         const hoverContext = {

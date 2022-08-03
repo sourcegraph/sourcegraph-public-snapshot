@@ -12,11 +12,17 @@ import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
 import { combineLatest, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { filter, map, skipWhile, switchMap, distinctUntilChanged, startWith } from 'rxjs/operators'
+import { filter, map, catchError, switchMap, distinctUntilChanged, startWith } from 'rxjs/operators'
 import { TextDocumentDecorationType } from 'sourcegraph'
 
-import { DocumentHighlight, LineOrPositionOrRange } from '@sourcegraph/codeintellify'
-import { lprToSelectionsZeroIndexed } from '@sourcegraph/common'
+import {
+    DocumentHighlight,
+    LineOrPositionOrRange,
+    LOADER_DELAY,
+    MaybeLoadingResult,
+    emitLoading,
+} from '@sourcegraph/codeintellify'
+import { asError, ErrorLike, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
 import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -336,8 +342,8 @@ function updateSelection(): Extension {
 //
 
 /**
- * showHovercard uses the {@link hovercard} extension and simply provides a
- * callback function that queries the extension host and generates tooltip data.
+ * hovercardDataSource uses the {@link hovercardSource} facet to provide a
+ * callback function for querying the extension API for hover data.
  */
 function hovercardDataSource(): Extension {
     const nextContext: Subject<Context | null> = new ReplaySubject(1)
@@ -359,7 +365,10 @@ function hovercardDataSource(): Extension {
 
                 return combineLatest([
                     getHover({ ...hoverContext, position }, { extensionsController }).pipe(
-                        skipWhile(({ isLoading }) => isLoading === true)
+                        catchError((error): [MaybeLoadingResult<ErrorLike>] => [
+                            { isLoading: false, result: asError(error) },
+                        ]),
+                        emitLoading<HoverOverlayBaseProps['hoverOrError'] | ErrorLike, null>(LOADER_DELAY, null)
                     ),
                     getHoverActions(
                         { extensionsController, platformContext },
@@ -371,7 +380,7 @@ function hovercardDataSource(): Extension {
                 ])
             }),
             map(([hoverResult, actionsResult]) => ({
-                hoverOrError: hoverResult.result,
+                hoverOrError: hoverResult,
                 actionsOrError: actionsResult,
             }))
         )
