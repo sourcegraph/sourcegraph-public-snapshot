@@ -132,8 +132,6 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 		return err
 	}
 
-	log15.Warn("Migrations are being validated", "currentVersion", currentVersion)
-
 	errs := make([]error, 0, len(migrations))
 	for _, migration := range migrations {
 		currentVersionCmpIntroduced := CompareVersions(currentVersion, migration.Introduced)
@@ -362,7 +360,6 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 // updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
 // given migration record, and updates the record in the database.
 func updateProgress(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) error {
-	log15.Warn("Returning progress", "migration", migration.ID)
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
 		return err
@@ -377,7 +374,6 @@ func updateProgress(ctx context.Context, store storeIface, migration *Migration,
 }
 
 func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, operations *operations) (err error) {
-	log15.Warn("Running UP migration", "migration", migration.ID)
 	ctx, _, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("migrationID", migration.ID),
 	}})

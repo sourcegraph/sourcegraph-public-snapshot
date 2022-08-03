@@ -19,14 +19,13 @@ const RefreshInterval = time.Second * 30
 // current migration progress. This method will return an error when there are migrations
 // left in an unexpected state for the current application version.
 func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runner *Runner) error {
-	hardCodedVersion := "3.42.1"
-	if version.IsDev(hardCodedVersion) {
+	if version.IsDev(version.Version()) {
 		log15.Warn("Skipping out-of-band migrations check (dev mode)", "version", version.Version())
 		return nil
 	}
-	currentVersionSemver, err := semver.NewVersion(hardCodedVersion)
+	currentVersionSemver, err := semver.NewVersion(version.Version())
 	if err != nil {
-		log15.Warn("one: Skipping out-of-band migrations check", "version", version.Version(), "error", err)
+		log15.Warn("Skipping out-of-band migrations check", "version", version.Version(), "error", err)
 		return nil
 	}
 
@@ -41,7 +40,7 @@ func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runne
 
 	firstVersionSemver, err := semver.NewVersion(firstSemverString)
 	if err != nil {
-		log15.Warn("two: Skipping out-of-band migrations check", "version", version.Version(), "error", err)
+		log15.Warn("Skipping out-of-band migrations check", "version", version.Version(), "error", err)
 		return nil
 	}
 
