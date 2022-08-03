@@ -94,7 +94,8 @@ export const AllOptionsPages: Story = (args = {}) => (
                     <OptionsPageWrapper
                         requestPermissionsHandler={requestPermissionsHandler}
                         showSourcegraphCloudAlert={true}
-                        {...args}
+                        sourcegraphUrl={args.sourcegraphUrl}
+                        version={args.version}
                     />
                 </div>
                 <div className="mx-4">
