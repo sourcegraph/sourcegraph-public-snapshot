@@ -100,7 +100,8 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
     const [
         updateExternalService,
         { error: updateExternalServiceError, loading: updateExternalServiceLoading },
-    ] = useUpdateExternalService(() => {
+    ] = useUpdateExternalService(result => {
+        setExternalService(result.updateExternalService)
         setUpdated(true)
     })
 
@@ -184,8 +185,7 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
             ) : (
                 <PageTitle title="External service" />
             )}
-            <H2>Update code host connection {combinedLoading}</H2>
-            {combinedLoading && <LoadingSpinner inline={true} />}
+            <H2>Update code host connection {combinedLoading && <LoadingSpinner inline={true} />}</H2>
             {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}
 
             {externalService && (

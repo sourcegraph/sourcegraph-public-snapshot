@@ -91,7 +91,7 @@ export const UPDATE_EXTERNAL_SERVICE = gql`
 `
 
 export const useUpdateExternalService = (
-    onCompleted: () => void
+    onCompleted: (result: UpdateExternalServiceResult) => void
 ): MutationTuple<UpdateExternalServiceResult, UpdateExternalServiceVariables> =>
     useMutation(UPDATE_EXTERNAL_SERVICE, { onCompleted })
 
