@@ -152,9 +152,6 @@ type MockClient struct {
 	// RepoCloneProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoCloneProgress.
 	RepoCloneProgressFunc *ClientRepoCloneProgressFunc
-	// RepoInfoFunc is an instance of a mock function object controlling the
-	// behavior of the method RepoInfo.
-	RepoInfoFunc *ClientRepoInfoFunc
 	// ReposStatsFunc is an instance of a mock function object controlling
 	// the behavior of the method ReposStats.
 	ReposStatsFunc *ClientReposStatsFunc
@@ -395,11 +392,6 @@ func NewMockClient() *MockClient {
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
 			defaultHook: func(context.Context, ...api.RepoName) (r0 *protocol.RepoCloneProgressResponse, r1 error) {
-				return
-			},
-		},
-		RepoInfoFunc: &ClientRepoInfoFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (r0 *protocol.RepoInfoResponse, r1 error) {
 				return
 			},
 		},
@@ -665,11 +657,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.RepoCloneProgress")
 			},
 		},
-		RepoInfoFunc: &ClientRepoInfoFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-				panic("unexpected invocation of MockClient.RepoInfo")
-			},
-		},
 		ReposStatsFunc: &ClientReposStatsFunc{
 			defaultHook: func(context.Context) (map[string]*protocol.ReposStats, error) {
 				panic("unexpected invocation of MockClient.ReposStats")
@@ -847,9 +834,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
 			defaultHook: i.RepoCloneProgress,
-		},
-		RepoInfoFunc: &ClientRepoInfoFunc{
-			defaultHook: i.RepoInfo,
 		},
 		ReposStatsFunc: &ClientReposStatsFunc{
 			defaultHook: i.ReposStats,
@@ -5628,120 +5612,6 @@ func (c ClientRepoCloneProgressFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientRepoCloneProgressFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientRepoInfoFunc describes the behavior when the RepoInfo method of the
-// parent MockClient instance is invoked.
-type ClientRepoInfoFunc struct {
-	defaultHook func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	hooks       []func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	history     []ClientRepoInfoFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoInfo delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) RepoInfo(v0 context.Context, v1 ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	r0, r1 := m.RepoInfoFunc.nextHook()(v0, v1...)
-	m.RepoInfoFunc.appendCall(ClientRepoInfoFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoInfo method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientRepoInfoFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoInfo method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientRepoInfoFunc) PushHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientRepoInfoFunc) SetDefaultReturn(r0 *protocol.RepoInfoResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientRepoInfoFunc) PushReturn(r0 *protocol.RepoInfoResponse, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientRepoInfoFunc) nextHook() func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientRepoInfoFunc) appendCall(r0 ClientRepoInfoFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientRepoInfoFuncCall objects describing
-// the invocations of this function.
-func (f *ClientRepoInfoFunc) History() []ClientRepoInfoFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientRepoInfoFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientRepoInfoFuncCall is an object that describes an invocation of
-// method RepoInfo on an instance of MockClient.
-type ClientRepoInfoFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *protocol.RepoInfoResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c ClientRepoInfoFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientRepoInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

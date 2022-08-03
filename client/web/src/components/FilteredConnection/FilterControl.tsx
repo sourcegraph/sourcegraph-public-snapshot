@@ -93,15 +93,11 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
                                     id=""
                                     name={filter.id}
                                     onChange={event => onChange(filter, event.currentTarget.value)}
+                                    value={values.get(filter.id)?.value}
                                     className="mb-0"
                                 >
                                     {filter.values.map(value => (
-                                        <option
-                                            key={value.value}
-                                            value={value.value}
-                                            label={value.label}
-                                            selected={values.get(filter.id)?.value === value.value}
-                                        />
+                                        <option key={value.value} value={value.value} label={value.label} />
                                     ))}
                                 </Select>
                             </div>

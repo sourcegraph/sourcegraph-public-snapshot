@@ -162,6 +162,21 @@ func TestRedactSecrets(t *testing.T) {
 	assert.Equal(t, want, redacted.Site)
 }
 
+func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
+	const cfgWithoutAuthProviders = `{
+  "executors.accessToken": "%s"
+}`
+	redacted, err := RedactSecrets(
+		conftypes.RawUnified{
+			Site: fmt.Sprintf(cfgWithoutAuthProviders, executorsAccessToken),
+		},
+	)
+	require.NoError(t, err)
+
+	want := fmt.Sprintf(cfgWithoutAuthProviders, "REDACTED")
+	assert.Equal(t, want, redacted.Site)
+}
+
 func TestUnredactSecrets(t *testing.T) {
 	previousSite := getTestSiteWithSecrets(
 		executorsAccessToken,
@@ -260,8 +275,7 @@ func getTestSiteWithSecrets(
 	if len(optionalEdit) > 0 {
 		email = optionalEdit[0]
 	}
-	return fmt.Sprintf(`
-{
+	return fmt.Sprintf(`{
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "email.address": "%s",
@@ -295,7 +309,7 @@ func getTestSiteWithSecrets(
     }
   ],
   "observability.tracing": {
-    "sampling":"selective"
+    "sampling": "selective"
   },
   "externalService.userMode": "all",
   "email.smtp": {
@@ -312,8 +326,7 @@ func getTestSiteWithSecrets(
     }
   },
   "auth.unlockAccountLinkSigningKey": "%s",
-}
-`,
+}`,
 		email,
 		executorsAccessToken,
 		authOpenIDClientSecret, authGitHubClientSecret, authGitLabClientSecret,

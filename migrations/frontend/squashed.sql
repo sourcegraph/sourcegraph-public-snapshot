@@ -1575,7 +1575,7 @@ CREATE TABLE external_service_sync_jobs (
     finished_at timestamp with time zone,
     process_after timestamp with time zone,
     num_resets integer DEFAULT 0 NOT NULL,
-    external_service_id bigint,
+    external_service_id bigint NOT NULL,
     num_failures integer DEFAULT 0 NOT NULL,
     log_contents text,
     execution_logs json[],
@@ -3151,7 +3151,9 @@ CREATE TABLE webhook_build_jobs (
     num_failures integer DEFAULT 0 NOT NULL,
     execution_logs json[],
     last_heartbeat_at timestamp with time zone,
-    worker_hostname text DEFAULT ''::text NOT NULL
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    org text,
+    extsvc_id integer
 );
 
 CREATE TABLE webhook_logs (

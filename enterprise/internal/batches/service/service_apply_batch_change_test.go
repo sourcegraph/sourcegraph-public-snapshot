@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -31,13 +31,13 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	admin := ct.CreateTestUser(t, db, true)
+	admin := bt.CreateTestUser(t, db, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-	user := ct.CreateTestUser(t, db, false)
+	user := bt.CreateTestUser(t, db, false)
 	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-	repos, _ := ct.CreateTestRepos(t, ctx, db, 4)
+	repos, _ := bt.CreateTestRepos(t, ctx, db, 4)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -46,8 +46,8 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 	t.Run("BatchSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new batch change", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange1", admin.ID, 0)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec := bt.CreateBatchSpec(t, ctx, store, "batchchange1", admin.ID, 0)
 			batchChange, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
 				BatchSpecRandID: batchSpec.RandID,
 			})
@@ -80,9 +80,9 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("existing batch change", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
-			batchChange := ct.CreateBatchChange(t, ctx, store, "batchchange2", admin.ID, batchSpec.ID)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec := bt.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
+			batchChange := bt.CreateBatchChange(t, ctx, store, "batchchange2", admin.ID, batchSpec.ID)
 
 			t.Run("apply same BatchSpec", func(t *testing.T) {
 				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
@@ -108,7 +108,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			t.Run("apply batch spec with same name", func(t *testing.T) {
-				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
+				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
 				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
 					BatchSpecRandID: batchSpec2.RandID,
 				})
@@ -122,8 +122,8 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			t.Run("apply batch spec with same name but different current user", func(t *testing.T) {
-				batchSpec := ct.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID, 0)
-				batchChange := ct.CreateBatchChange(t, ctx, store, "created-by-user", user.ID, batchSpec.ID)
+				batchSpec := bt.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID, 0)
+				batchChange := bt.CreateBatchChange(t, ctx, store, "created-by-user", user.ID, batchSpec.ID)
 
 				if have, want := batchChange.CreatorID, user.ID; have != want {
 					t.Fatalf("batch change CreatorID is wrong. want=%d, have=%d", want, have)
@@ -133,7 +133,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					t.Fatalf("batch change LastApplierID is wrong. want=%d, have=%d", want, have)
 				}
 
-				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID, 0)
+				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID, 0)
 				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
 					BatchSpecRandID: batchSpec2.RandID,
 				})
@@ -155,8 +155,8 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			t.Run("apply batch spec with same name but different namespace", func(t *testing.T) {
-				user2 := ct.CreateTestUser(t, db, false)
-				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange2", user2.ID, 0)
+				user2 := bt.CreateTestUser(t, db, false)
+				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange2", user2.ID, 0)
 
 				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
 					BatchSpecRandID: batchSpec2.RandID,
@@ -175,7 +175,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			t.Run("batch spec with same name and same ensureBatchChangeID", func(t *testing.T) {
-				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
+				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
 
 				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
 					BatchSpecRandID:     batchSpec2.RandID,
@@ -190,7 +190,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			t.Run("batch spec with same name but different ensureBatchChangeID", func(t *testing.T) {
-				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
+				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
 
 				_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
 					BatchSpecRandID:     batchSpec2.RandID,
@@ -208,17 +208,17 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	// covered in the tests above.
 	t.Run("batchSpec with changesetSpecs", func(t *testing.T) {
 		t.Run("new batch change", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange3", admin.ID, 0)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec := bt.CreateBatchSpec(t, ctx, store, "batchchange3", admin.ID, 0)
 
-			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			spec1 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:       admin.ID,
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec.ID,
 				ExternalID: "1234",
 			})
 
-			spec2 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			spec2 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[1].ID,
 				BatchSpec: batchSpec.ID,
@@ -232,7 +232,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			}
 
 			c1 := cs.Find(btypes.WithExternalID(spec1.Spec.ExternalID))
-			ct.AssertChangeset(t, c1, ct.ChangesetAssertions{
+			bt.AssertChangeset(t, c1, bt.ChangesetAssertions{
 				Repo:             spec1.RepoID,
 				ExternalID:       "1234",
 				ReconcilerState:  btypes.ReconcilerStateQueued,
@@ -241,46 +241,46 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			c2 := cs.Find(btypes.WithCurrentSpecID(spec2.ID))
-			ct.AssertChangeset(t, c2, ct.ChangesetAssertions{
+			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
 				Repo:               spec2.RepoID,
 				CurrentSpec:        spec2.ID,
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			})
 		})
 
 		t.Run("batch change with changesets", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			// First we create a batchSpec and apply it, so that we have
 			// changesets and changesetSpecs in the database, wired up
 			// correctly.
-			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "batchchange4", admin.ID, 0)
+			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "batchchange4", admin.ID, 0)
 
-			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:       admin.ID,
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec1.ID,
 				ExternalID: "1234",
 			})
 
-			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:       admin.ID,
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec1.ID,
 				ExternalID: "5678",
 			})
 
-			oldSpec3 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			oldSpec3 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[1].ID,
 				BatchSpec: batchSpec1.ID,
 				HeadRef:   "refs/heads/repo-1-branch-1",
 			})
 
-			oldSpec4 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			oldSpec4 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[2].ID,
 				BatchSpec: batchSpec1.ID,
@@ -292,10 +292,10 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			// Now we create another batch spec with the same batch change name
 			// and namespace.
-			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange4", admin.ID, 0)
+			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange4", admin.ID, 0)
 
 			// Same
-			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			spec1 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:       admin.ID,
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec2.ID,
@@ -303,7 +303,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			// DIFFERENT: Track #9999 in repo[0]
-			spec2 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			spec2 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:       admin.ID,
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec2.ID,
@@ -311,7 +311,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			// Same
-			spec3 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			spec3 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[1].ID,
 				BatchSpec: batchSpec2.ID,
@@ -319,7 +319,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			// DIFFERENT: branch changed in repo[2]
-			spec4 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			spec4 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[2].ID,
 				BatchSpec: batchSpec2.ID,
@@ -327,7 +327,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			// NEW: repo[3]
-			spec5 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			spec5 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[3].ID,
 				BatchSpec: batchSpec2.ID,
@@ -338,10 +338,10 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			// expect to be closed to look "published", otherwise it won't be
 			// closed.
 			wantClosed := oldChangesets.Find(btypes.WithCurrentSpecID(oldSpec4.ID))
-			ct.SetChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.Spec.HeadRef)
+			bt.SetChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.Spec.HeadRef)
 
 			changeset3 := oldChangesets.Find(btypes.WithCurrentSpecID(oldSpec3.ID))
-			ct.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.Spec.HeadRef)
+			bt.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.Spec.HeadRef)
 
 			// Apply and expect 6 changesets
 			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 6)
@@ -351,7 +351,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			}
 
 			// This changeset we want marked as "to be archived" and "to be closed"
-			ct.ReloadAndAssertChangeset(t, ctx, store, wantClosed, ct.ChangesetAssertions{
+			bt.ReloadAndAssertChangeset(t, ctx, store, wantClosed, bt.ChangesetAssertions{
 				Repo:         repos[2].ID,
 				CurrentSpec:  oldSpec4.ID,
 				PreviousSpec: oldSpec4.ID,
@@ -362,14 +362,14 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 				ArchiveIn:          batchChange.ID,
 				Closing:            true,
 			})
 
 			c1 := cs.Find(btypes.WithExternalID(spec1.Spec.ExternalID))
-			ct.AssertChangeset(t, c1, ct.ChangesetAssertions{
+			bt.AssertChangeset(t, c1, bt.ChangesetAssertions{
 				Repo:             repos[0].ID,
 				CurrentSpec:      0,
 				PreviousSpec:     0,
@@ -380,7 +380,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			c2 := cs.Find(btypes.WithExternalID(spec2.Spec.ExternalID))
-			ct.AssertChangeset(t, c2, ct.ChangesetAssertions{
+			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
 				Repo:             repos[0].ID,
 				CurrentSpec:      0,
 				PreviousSpec:     0,
@@ -391,7 +391,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			c3 := cs.Find(btypes.WithCurrentSpecID(spec3.ID))
-			ct.AssertChangeset(t, c3, ct.ChangesetAssertions{
+			bt.AssertChangeset(t, c3, bt.ChangesetAssertions{
 				Repo:           repos[1].ID,
 				CurrentSpec:    spec3.ID,
 				ExternalID:     changeset3.ExternalID,
@@ -402,38 +402,38 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			})
 
 			c4 := cs.Find(btypes.WithCurrentSpecID(spec4.ID))
-			ct.AssertChangeset(t, c4, ct.ChangesetAssertions{
+			bt.AssertChangeset(t, c4, bt.ChangesetAssertions{
 				Repo:               repos[2].ID,
 				CurrentSpec:        spec4.ID,
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			})
 
 			c5 := cs.Find(btypes.WithCurrentSpecID(spec5.ID))
-			ct.AssertChangeset(t, c5, ct.ChangesetAssertions{
+			bt.AssertChangeset(t, c5, bt.ChangesetAssertions{
 				Repo:               repos[3].ID,
 				CurrentSpec:        spec5.ID,
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			})
 		})
 
 		t.Run("batch change tracking changesets owned by another batch change", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "owner-batch-change", admin.ID, 0)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "owner-batch-change", admin.ID, 0)
 
-			oldSpec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			oldSpec1 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec1.ID,
@@ -445,11 +445,11 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
 			c := ownerChangesets[0]
-			ct.SetChangesetPublished(t, ctx, store, c, "88888", "refs/heads/repo-0-branch-0")
+			bt.SetChangesetPublished(t, ctx, store, c, "88888", "refs/heads/repo-0-branch-0")
 
 			// This other batch change tracks the changeset created by the first one
-			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "tracking-batch-change", admin.ID, 0)
-			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "tracking-batch-change", admin.ID, 0)
+			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:       admin.ID,
 				Repo:       c.RepoID,
 				BatchSpec:  batchSpec2.ID,
@@ -459,7 +459,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			trackingBatchChange, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
 			// This should still point to the owner batch change
 			c2 := trackedChangesets[0]
-			trackedChangesetAssertions := ct.ChangesetAssertions{
+			trackedChangesetAssertions := bt.ChangesetAssertions{
 				Repo:               c.RepoID,
 				CurrentSpec:        oldSpec1.ID,
 				OwnedByBatchChange: ownerBatchChange.ID,
@@ -468,15 +468,15 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				ExternalState:      btypes.ChangesetExternalStateOpen,
 				ReconcilerState:    btypes.ReconcilerStateCompleted,
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{ownerBatchChange.ID, trackingBatchChange.ID},
 			}
-			ct.AssertChangeset(t, c2, trackedChangesetAssertions)
+			bt.AssertChangeset(t, c2, trackedChangesetAssertions)
 
 			// Now try to apply a new spec that wants to modify the formerly tracked changeset.
-			batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "tracking-batch-change", admin.ID, 0)
+			batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "tracking-batch-change", admin.ID, 0)
 
-			spec3 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			spec3 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec3.ID,
@@ -491,25 +491,25 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			trackedChangesetAssertions.ReconcilerState = btypes.ReconcilerStateQueued
 			trackedChangesetAssertions.DetachFrom = []int64{trackingBatchChange.ID}
 			trackedChangesetAssertions.AttachedTo = []int64{ownerBatchChange.ID}
-			ct.ReloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
+			bt.ReloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
 
 			// But we do want to have a new changeset record that is going to create a new changeset on the code host.
-			ct.ReloadAndAssertChangeset(t, ctx, store, cs[1], ct.ChangesetAssertions{
+			bt.ReloadAndAssertChangeset(t, ctx, store, cs[1], bt.ChangesetAssertions{
 				Repo:               spec3.RepoID,
 				CurrentSpec:        spec3.ID,
 				OwnedByBatchChange: trackingBatchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{trackingBatchChange.ID},
 			})
 		})
 
 		t.Run("batch change with changeset that is unpublished", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID, 0)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID, 0)
 
-			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[3].ID,
 				BatchSpec: batchSpec1.ID,
@@ -521,7 +521,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			// But the changeset was not published yet.
 			// And now we apply a new spec without any changesets.
-			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID, 0)
+			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID, 0)
 
 			// That should close no changesets, but set the unpublished changesets to be detached when
 			// the reconciler picks them up.
@@ -529,10 +529,10 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("batch change with changeset that wasn't processed before reapply", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
 
-			specOpts := ct.TestSpecOpts{
+			specOpts := bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[3].ID,
 				BatchSpec: batchSpec1.ID,
@@ -540,15 +540,15 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				HeadRef:   "refs/heads/queued",
 				Published: true,
 			}
-			spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+			spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// We apply the spec and expect 1 changeset
 			batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
 
 			// And publish it.
-			ct.SetChangesetPublished(t, ctx, store, changesets[0], "123-queued", "refs/heads/queued")
+			bt.SetChangesetPublished(t, ctx, store, changesets[0], "123-queued", "refs/heads/queued")
 
-			ct.ReloadAndAssertChangeset(t, ctx, store, changesets[0], ct.ChangesetAssertions{
+			bt.ReloadAndAssertChangeset(t, ctx, store, changesets[0], bt.ChangesetAssertions{
 				ReconcilerState:    btypes.ReconcilerStateCompleted,
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
 				ExternalBranch:     "refs/heads/queued",
@@ -557,21 +557,21 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Repo:               repos[3].ID,
 				CurrentSpec:        spec1.ID,
 				OwnedByBatchChange: batchChange.ID,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			})
 
 			// Apply again so that an update to the changeset is pending.
-			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
+			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
 
 			specOpts.BatchSpec = batchSpec2.ID
 			specOpts.Title = "Spec2"
-			spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+			spec2 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// That should still want to publish the changeset
 			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
 
-			ct.ReloadAndAssertChangeset(t, ctx, store, changesets[0], ct.ChangesetAssertions{
+			bt.ReloadAndAssertChangeset(t, ctx, store, changesets[0], bt.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateQueued,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalBranch:   "refs/heads/queued",
@@ -582,7 +582,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				// Track the previous spec.
 				PreviousSpec:       spec1.ID,
 				OwnedByBatchChange: batchChange.ID,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			})
 
@@ -603,15 +603,15 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			}
 
 			// And now we apply a new spec before the reconciler could process the changeset.
-			batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
+			batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
 
 			// No change this time, just reapplying.
 			specOpts.BatchSpec = batchSpec3.ID
-			spec3 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+			spec3 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
 
-			ct.ReloadAndAssertChangeset(t, ctx, store, changesets[0], ct.ChangesetAssertions{
+			bt.ReloadAndAssertChangeset(t, ctx, store, changesets[0], bt.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateQueued,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalBranch:   "refs/heads/queued",
@@ -622,7 +622,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				// Still be pointing at the first spec, since the second was never applied.
 				PreviousSpec:       spec1.ID,
 				OwnedByBatchChange: batchChange.ID,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			})
 
@@ -643,17 +643,17 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			}
 
 			// Now test that it still updates when this update failed.
-			ct.SetChangesetFailed(t, ctx, store, changesets[0])
+			bt.SetChangesetFailed(t, ctx, store, changesets[0])
 
-			batchSpec4 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
+			batchSpec4 := bt.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
 
 			// No change this time, just reapplying.
 			specOpts.BatchSpec = batchSpec4.ID
-			spec4 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+			spec4 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec4.RandID, 1)
 
-			ct.ReloadAndAssertChangeset(t, ctx, store, changesets[0], ct.ChangesetAssertions{
+			bt.ReloadAndAssertChangeset(t, ctx, store, changesets[0], bt.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateQueued,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalBranch:   "refs/heads/queued",
@@ -664,7 +664,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				// Still be pointing at the first spec, since the second and third were never applied.
 				PreviousSpec:       spec1.ID,
 				OwnedByBatchChange: batchChange.ID,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			})
 
@@ -686,20 +686,20 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			ct.MockRepoPermissions(t, db, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			bt.MockRepoPermissions(t, db, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
 			// NOTE: We cannot use a context with an internal actor.
-			batchSpec := ct.CreateBatchSpec(t, userCtx, store, "missing-permissions", user.ID, 0)
+			batchSpec := bt.CreateBatchSpec(t, userCtx, store, "missing-permissions", user.ID, 0)
 
-			ct.CreateChangesetSpec(t, userCtx, store, ct.TestSpecOpts{
+			bt.CreateChangesetSpec(t, userCtx, store, bt.TestSpecOpts{
 				User:       user.ID,
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec.ID,
 				ExternalID: "1234",
 			})
 
-			ct.CreateChangesetSpec(t, userCtx, store, ct.TestSpecOpts{
+			bt.CreateChangesetSpec(t, userCtx, store, bt.TestSpecOpts{
 				User:      user.ID,
 				Repo:      repos[1].ID, // Not authorized to access this repository
 				BatchSpec: batchSpec.ID,
@@ -722,46 +722,46 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("batch change with errored changeset", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "errored-changeset-batch-change", admin.ID, 0)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "errored-changeset-batch-change", admin.ID, 0)
 
-			spec1Opts := ct.TestSpecOpts{
+			spec1Opts := bt.TestSpecOpts{
 				User:       admin.ID,
 				Repo:       repos[0].ID,
 				BatchSpec:  batchSpec1.ID,
 				ExternalID: "1234",
 				Published:  true,
 			}
-			ct.CreateChangesetSpec(t, ctx, store, spec1Opts)
+			bt.CreateChangesetSpec(t, ctx, store, spec1Opts)
 
-			spec2Opts := ct.TestSpecOpts{
+			spec2Opts := bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[1].ID,
 				BatchSpec: batchSpec1.ID,
 				HeadRef:   "refs/heads/repo-1-branch-1",
 				Published: true,
 			}
-			ct.CreateChangesetSpec(t, ctx, store, spec2Opts)
+			bt.CreateChangesetSpec(t, ctx, store, spec2Opts)
 
 			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 2)
 
 			// Set the changesets to look like they failed in the reconciler
 			for _, c := range oldChangesets {
-				ct.SetChangesetFailed(t, ctx, store, c)
+				bt.SetChangesetFailed(t, ctx, store, c)
 			}
 
 			// Now we create another batch spec with the same batch change name
 			// and namespace.
-			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "errored-changeset-batch-change", admin.ID, 0)
+			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "errored-changeset-batch-change", admin.ID, 0)
 			spec1Opts.BatchSpec = batchSpec2.ID
-			newSpec1 := ct.CreateChangesetSpec(t, ctx, store, spec1Opts)
+			newSpec1 := bt.CreateChangesetSpec(t, ctx, store, spec1Opts)
 			spec2Opts.BatchSpec = batchSpec2.ID
-			newSpec2 := ct.CreateChangesetSpec(t, ctx, store, spec2Opts)
+			newSpec2 := bt.CreateChangesetSpec(t, ctx, store, spec2Opts)
 
 			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 2)
 
 			c1 := cs.Find(btypes.WithExternalID(newSpec1.Spec.ExternalID))
-			ct.ReloadAndAssertChangeset(t, ctx, store, c1, ct.ChangesetAssertions{
+			bt.ReloadAndAssertChangeset(t, ctx, store, c1, bt.ChangesetAssertions{
 				Repo:             spec1Opts.Repo,
 				ExternalID:       "1234",
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
@@ -773,14 +773,14 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			c2 := cs.Find(btypes.WithCurrentSpecID(newSpec2.ID))
-			ct.AssertChangeset(t, c2, ct.ChangesetAssertions{
+			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
 				Repo:        newSpec2.RepoID,
 				CurrentSpec: newSpec2.ID,
 				// An errored changeset doesn't get the specs rotated, to prevent https://github.com/sourcegraph/sourcegraph/issues/16041.
 				PreviousSpec:       0,
 				OwnedByBatchChange: batchChange.ID,
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 
 				ReconcilerState: btypes.ReconcilerStateQueued,
@@ -806,16 +806,16 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("closed and archived changeset not re-enqueued for close", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
 
-			specOpts := ct.TestSpecOpts{
+			specOpts := bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec1.ID,
 				HeadRef:   "refs/heads/archived-closed",
 			}
-			spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+			spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// STEP 1: We apply the spec and expect 1 changeset.
 			batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
@@ -823,9 +823,9 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
 			c := changesets[0]
-			ct.SetChangesetPublished(t, ctx, store, c, "995544", specOpts.HeadRef)
+			bt.SetChangesetPublished(t, ctx, store, c, "995544", specOpts.HeadRef)
 
-			assertions := ct.ChangesetAssertions{
+			assertions := bt.ChangesetAssertions{
 				Repo:               c.RepoID,
 				CurrentSpec:        spec1.ID,
 				ExternalID:         c.ExternalID,
@@ -834,14 +834,14 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateCompleted,
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				DiffStat:           ct.TestChangsetSpecDiffStat,
+				DiffStat:           bt.TestChangsetSpecDiffStat,
 				AttachedTo:         []int64{batchChange.ID},
 			}
-			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+			c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 			// STEP 2: Now we apply a new spec without any changesets, but expect the changeset-to-be-archived to
 			// be left in the batch change (the reconciler would detach it, if the executor picked up the changeset).
-			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
+			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
 			applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
 
 			// Our previously published changeset should be marked as "to be
@@ -852,39 +852,39 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			assertions.ReconcilerState = btypes.ReconcilerStateQueued
 			// And the previous spec is recorded, because the previous run finished with reconcilerState completed.
 			assertions.PreviousSpec = spec1.ID
-			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+			c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 			// Now we update the changeset to make it look closed and archived.
-			ct.SetChangesetClosed(t, ctx, store, c)
+			bt.SetChangesetClosed(t, ctx, store, c)
 			assertions.Closing = false
 			assertions.ReconcilerState = btypes.ReconcilerStateCompleted
 			assertions.ArchivedInOwnerBatchChange = true
 			assertions.ArchiveIn = 0
 			assertions.ExternalState = btypes.ChangesetExternalStateClosed
-			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+			c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 			// STEP 3: We apply a new batch spec and expect that the archived changeset record is not re-enqueued.
-			batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
+			batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
 
 			// 1 changeset that's archived
 			applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
 
 			// Assert that the changeset record is still archived and closed.
-			ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+			bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 		})
 
 		t.Run("batch change with changeset that is archived and reattached", func(t *testing.T) {
 			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-				batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
+				bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+				batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
 
-				specOpts := ct.TestSpecOpts{
+				specOpts := bt.TestSpecOpts{
 					User:      admin.ID,
 					Repo:      repos[0].ID,
 					BatchSpec: batchSpec1.ID,
 					HeadRef:   "refs/heads/archived-reattached",
 				}
-				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
 				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
@@ -892,9 +892,9 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				// Now we update the changeset so it looks like it's been published
 				// on the code host.
 				c := changesets[0]
-				ct.SetChangesetPublished(t, ctx, store, c, "995533", specOpts.HeadRef)
+				bt.SetChangesetPublished(t, ctx, store, c, "995533", specOpts.HeadRef)
 
-				assertions := ct.ChangesetAssertions{
+				assertions := bt.ChangesetAssertions{
 					Repo:               c.RepoID,
 					CurrentSpec:        spec1.ID,
 					ExternalID:         c.ExternalID,
@@ -903,13 +903,13 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					OwnedByBatchChange: batchChange.ID,
 					ReconcilerState:    btypes.ReconcilerStateCompleted,
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					DiffStat:           ct.TestChangsetSpecDiffStat,
+					DiffStat:           bt.TestChangsetSpecDiffStat,
 					AttachedTo:         []int64{batchChange.ID},
 				}
-				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 2: Now we apply a new spec without any changesets.
-				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
+				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
 				applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to
@@ -920,23 +920,23 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.ReconcilerState = btypes.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
-				c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// Now we update the changeset to make it look closed.
-				ct.SetChangesetClosed(t, ctx, store, c)
+				bt.SetChangesetClosed(t, ctx, store, c)
 				assertions.Closing = false
 				assertions.ArchiveIn = 0
 				assertions.ReconcilerState = btypes.ReconcilerStateCompleted
 				assertions.ExternalState = btypes.ChangesetExternalStateClosed
-				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 3: We apply a new batch spec with a changeset spec that
 				// matches the old changeset and expect _the same changeset_ to be
 				// re-attached.
-				batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
+				batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
 
 				specOpts.BatchSpec = batchSpec3.ID
-				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec2 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
 
@@ -953,20 +953,20 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				// Assert that it's not archived anymore:
 				assertions.ArchiveIn = 0
 				assertions.AttachedTo = []int64{batchChange.ID}
-				ct.AssertChangeset(t, attachedChangeset, assertions)
+				bt.AssertChangeset(t, attachedChangeset, assertions)
 			})
 
 			t.Run("changeset has failed closing before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-				batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
+				bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+				batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
 
-				specOpts := ct.TestSpecOpts{
+				specOpts := bt.TestSpecOpts{
 					User:      admin.ID,
 					Repo:      repos[0].ID,
 					BatchSpec: batchSpec1.ID,
 					HeadRef:   "refs/heads/detached-reattach-failed",
 				}
-				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
 				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
@@ -974,9 +974,9 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				// Now we update the changeset so it looks like it's been published
 				// on the code host.
 				c := changesets[0]
-				ct.SetChangesetPublished(t, ctx, store, c, "80022", specOpts.HeadRef)
+				bt.SetChangesetPublished(t, ctx, store, c, "80022", specOpts.HeadRef)
 
-				assertions := ct.ChangesetAssertions{
+				assertions := bt.ChangesetAssertions{
 					Repo:               c.RepoID,
 					CurrentSpec:        spec1.ID,
 					ExternalID:         c.ExternalID,
@@ -985,13 +985,13 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					OwnedByBatchChange: batchChange.ID,
 					ReconcilerState:    btypes.ReconcilerStateCompleted,
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					DiffStat:           ct.TestChangsetSpecDiffStat,
+					DiffStat:           bt.TestChangsetSpecDiffStat,
 					AttachedTo:         []int64{batchChange.ID},
 				}
-				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 2: Now we apply a new spec without any changesets.
-				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
+				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
 				applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to
@@ -1002,30 +1002,30 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.ReconcilerState = btypes.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
-				c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				if len(c.BatchChanges) != 1 {
 					t.Fatal("Expected changeset to be still attached to batch change, but wasn't")
 				}
 
 				// Now we update the changeset to simulate that closing failed.
-				ct.SetChangesetFailed(t, ctx, store, c)
+				bt.SetChangesetFailed(t, ctx, store, c)
 				assertions.Closing = true
 				assertions.ReconcilerState = btypes.ReconcilerStateFailed
 				assertions.ExternalState = btypes.ChangesetExternalStateOpen
 
-				// Side-effects of ct.setChangesetFailed.
+				// Side-effects of bt.setChangesetFailed.
 				assertions.FailureMessage = c.FailureMessage
 				assertions.NumFailures = c.NumFailures
-				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 3: We apply a new batch spec with a changeset spec that
 				// matches the old changeset and expect _the same changeset_ to be
 				// re-attached.
-				batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
+				batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
 
 				specOpts.BatchSpec = batchSpec3.ID
-				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec2 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
 
@@ -1044,32 +1044,32 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.DetachFrom = []int64{}
 				assertions.AttachedTo = []int64{batchChange.ID}
 				assertions.ArchiveIn = 0
-				ct.AssertChangeset(t, attachedChangeset, assertions)
+				bt.AssertChangeset(t, attachedChangeset, assertions)
 			})
 
 			t.Run("changeset has not been closed before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+				bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 				// The difference to the previous test: we DON'T update the
 				// changeset to make it look closed. We want to make sure that
 				// we also pick up enqueued-to-be-closed changesets.
 
-				batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
+				batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
 
-				specOpts := ct.TestSpecOpts{
+				specOpts := bt.TestSpecOpts{
 					User:      admin.ID,
 					Repo:      repos[0].ID,
 					BatchSpec: batchSpec1.ID,
 					HeadRef:   "refs/heads/detached-reattached-2",
 				}
-				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
 				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
 
 				c := changesets[0]
-				ct.SetChangesetPublished(t, ctx, store, c, "449955", specOpts.HeadRef)
+				bt.SetChangesetPublished(t, ctx, store, c, "449955", specOpts.HeadRef)
 
-				assertions := ct.ChangesetAssertions{
+				assertions := bt.ChangesetAssertions{
 					Repo:               c.RepoID,
 					CurrentSpec:        spec1.ID,
 					ExternalID:         c.ExternalID,
@@ -1078,13 +1078,13 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					OwnedByBatchChange: batchChange.ID,
 					ReconcilerState:    btypes.ReconcilerStateCompleted,
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					DiffStat:           ct.TestChangsetSpecDiffStat,
+					DiffStat:           bt.TestChangsetSpecDiffStat,
 					AttachedTo:         []int64{batchChange.ID},
 				}
-				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 2: Now we apply a new spec without any changesets.
-				batchChange2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
+				batchChange2 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
 				applyAndListChangesets(adminCtx, t, svc, batchChange2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to
@@ -1095,15 +1095,15 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.ReconcilerState = btypes.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
-				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 3: We apply a new batch spec with a changeset spec that
 				// matches the old changeset and expect _the same changeset_ to be
 				// re-attached.
-				batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
+				batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
 
 				specOpts.BatchSpec = batchSpec3.ID
-				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec2 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
 
@@ -1120,23 +1120,23 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.DetachFrom = []int64{}
 				assertions.AttachedTo = []int64{batchChange.ID}
 				assertions.ArchiveIn = 0
-				ct.AssertChangeset(t, attachedChangeset, assertions)
+				bt.AssertChangeset(t, attachedChangeset, assertions)
 			})
 		})
 
 		t.Run("invalid changeset specs", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange-invalid-specs", admin.ID, 0)
+			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec := bt.CreateBatchSpec(t, ctx, store, "batchchange-invalid-specs", admin.ID, 0)
 
 			// Both specs here have the same HeadRef in the same repository
-			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec.ID,
 				HeadRef:   "refs/heads/my-branch",
 			})
 
-			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec.ID,
@@ -1157,9 +1157,9 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	})
 
 	t.Run("applying to closed batch change", func(t *testing.T) {
-		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-		batchSpec := ct.CreateBatchSpec(t, ctx, store, "closed-batch-change", admin.ID, 0)
-		batchChange := ct.CreateBatchChange(t, ctx, store, "closed-batch-change", admin.ID, batchSpec.ID)
+		bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		batchSpec := bt.CreateBatchSpec(t, ctx, store, "closed-batch-change", admin.ID, 0)
+		batchChange := bt.CreateBatchChange(t, ctx, store, "closed-batch-change", admin.ID, batchSpec.ID)
 
 		batchChange.ClosedAt = time.Now()
 		if err := store.UpdateBatchChange(ctx, batchChange); err != nil {

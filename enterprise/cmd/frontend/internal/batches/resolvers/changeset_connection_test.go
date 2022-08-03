@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,7 +30,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(logger, cstore)
@@ -41,7 +41,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	if err := repoStore.Create(ctx, repo, inaccessibleRepo); err != nil {
 		t.Fatal(err)
 	}
-	ct.MockRepoPermissions(t, db, userID, repo.ID)
+	bt.MockRepoPermissions(t, db, userID, repo.ID)
 
 	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
@@ -63,7 +63,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changeset1 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	changeset1 := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
@@ -72,7 +72,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		BatchChange:         batchChange.ID,
 	})
 
-	changeset2 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	changeset2 := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "12345",
@@ -84,7 +84,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		BatchChange:         batchChange.ID,
 	})
 
-	changeset3 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	changeset3 := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "56789",
@@ -95,7 +95,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		OwnedByBatchChange:  batchChange.ID,
 		BatchChange:         batchChange.ID,
 	})
-	changeset4 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	changeset4 := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                inaccessibleRepo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "987651",

@@ -6,21 +6,29 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 
 	"github.com/gorilla/mux"
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore executor.Store, queueOptionsMap []QueueOptions, router *mux.Router) {
+func SetupRoutes(executorStore executor.Store, metricsStore metricsstore.DistributedStore, queueOptionsMap []QueueOptions, router *mux.Router) {
 	for _, queueOptions := range queueOptionsMap {
-		h := newHandler(executorStore, queueOptions)
+		h := newHandler(executorStore, metricsStore, queueOptions)
 
 		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(queueOptions.Name))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
@@ -132,6 +140,22 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 			SrcCliVersion:   payload.SrcCliVersion,
 		}
 
+		// Handle metrics in the background, this should not delay the heartbeat response being
+		// delivered. It is critical for keeping jobs alive.
+		go func() {
+			metrics, err := decodeAndLabelMetrics(payload.PrometheusMetrics, payload.ExecutorName)
+			if err != nil {
+				// Just log the error but don't panic. The heartbeat is more important.
+				h.logger.Error("failed to decode metrics and apply labels for executor heartbeat", log.Error(err))
+				return
+			}
+
+			if err := h.metricsStore.Ingest(payload.ExecutorName, metrics); err != nil {
+				// Just log the error but don't panic. The heartbeat is more important.
+				h.logger.Error("failed to ingest metrics for executor heartbeat", log.Error(err))
+			}
+		}()
+
 		unknownIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
 		return http.StatusOK, unknownIDs, err
 	})
@@ -183,4 +207,41 @@ func (h *handler) wrapHandler(w http.ResponseWriter, r *http.Request, payload an
 	if status != http.StatusNoContent {
 		_, _ = io.Copy(w, bytes.NewReader(data))
 	}
+}
+
+// decodeAndLabelMetrics decodes the text serialized prometheus metrics dump and then
+// applies common labels.
+func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFamily, error) {
+	data := []*dto.MetricFamily{}
+
+	dec := expfmt.NewDecoder(strings.NewReader(encodedMetrics), expfmt.FmtText)
+	for {
+		var mf dto.MetricFamily
+		if err := dec.Decode(&mf); err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, errors.Wrap(err, "decoding metric family")
+		}
+
+		// Attach the extra labels.
+		metricLabelInstance := "sg_instance"
+		metricLabelJob := "sg_job"
+		job := "sourcegraph-executors"
+		for _, m := range mf.Metric {
+			var found bool
+			for _, l := range m.Label {
+				found = found || *l.Name == metricLabelInstance
+			}
+			if !found {
+				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
+			}
+			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &job})
+		}
+
+		data = append(data, &mf)
+	}
+
+	return data, nil
 }
