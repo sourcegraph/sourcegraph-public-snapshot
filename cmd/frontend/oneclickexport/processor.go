@@ -26,6 +26,9 @@ var _ Processor[ConfigRequest] = &CodeHostConfigProcessor{}
 type ConfigRequest struct {
 }
 
+type ConfigRequest struct {
+}
+
 type SiteConfigProcessor struct {
 	logger log.Logger
 	Type   string
