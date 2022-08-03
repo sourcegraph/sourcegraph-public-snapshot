@@ -35,7 +35,7 @@ const (
 	squasherContainerPostgresName = "postgres"
 )
 
-func SquashAll(database db.Database, inContainer, skipTeardown bool, filepath string) error {
+func SquashAll(database db.Database, inContainer, skipTeardown, skipData bool, filepath string) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func SquashAll(database db.Database, inContainer, skipTeardown bool, filepath st
 		leafIDs = append(leafIDs, leaf.ID)
 	}
 
-	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, skipTeardown)
+	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, skipTeardown, skipData)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func SquashAll(database db.Database, inContainer, skipTeardown bool, filepath st
 	return os.WriteFile(filepath, []byte(squashedUpMigration), os.ModePerm)
 }
 
-func Squash(database db.Database, commit string, inContainer, skipTeardown bool) error {
+func Squash(database db.Database, commit string, inContainer, skipTeardown, skipData bool) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 	}
 
 	// Run migrations up to the new selected root and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, skipTeardown)
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, skipTeardown, skipData)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
 // of a database up to a given migration index.
-func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, skipTeardown bool) (up, down string, err error) {
+func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, skipTeardown, skipData bool) (up, down string, err error) {
 	postgresDSN, teardown, err := setupDatabaseForSquash(database, inContainer)
 	if err != nil {
 		return "", "", err
@@ -198,7 +198,7 @@ func generateSquashedMigrations(database db.Database, targetVersions []int, inCo
 		return "", "", err
 	}
 
-	upMigration, err := generateSquashedUpMigration(database, postgresDSN)
+	upMigration, err := generateSquashedUpMigration(database, postgresDSN, skipData)
 	if err != nil {
 		return "", "", err
 	}
@@ -380,7 +380,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 
 // generateSquashedUpMigration returns the contents of an up migration file containing the
 // current contents of the given database.
-func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ string, err error) {
+func generateSquashedUpMigration(database db.Database, postgresDSN string, skipData bool) (_ string, err error) {
 	pending := std.Out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
 	defer func() {
 		if err == nil {
@@ -414,17 +414,19 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ st
 		return "", err
 	}
 
-	for _, table := range database.DataTables {
-		dataOutput, err := pgDump("--data-only", "--inserts", "--table", table)
-		if err != nil {
-			return "", err
+	if !skipData {
+		for _, table := range database.DataTables {
+			dataOutput, err := pgDump("--data-only", "--inserts", "--table", table)
+			if err != nil {
+				return "", err
+			}
+
+			pgDumpOutput += dataOutput
 		}
 
-		pgDumpOutput += dataOutput
-	}
-
-	for _, table := range database.CountTables {
-		pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", table)
+		for _, table := range database.CountTables {
+			pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", table)
+		}
 	}
 
 	return sanitizePgDumpOutput(pgDumpOutput), nil

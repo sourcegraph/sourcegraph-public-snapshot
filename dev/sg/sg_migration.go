@@ -53,6 +53,14 @@ var (
 		Destination: &skipTeardown,
 	}
 
+	skipSquashData     bool
+	skipSquashDataFlag = &cli.BoolFlag{
+		Name:        "skip-data",
+		Usage:       "Skip writing data rows into the squashed migration",
+		Value:       false,
+		Destination: &skipSquashData,
+	}
+
 	outputFilepath     string
 	outputFilepathFlag = &cli.StringFlag{
 		Name:        "f",
@@ -117,7 +125,7 @@ var (
 		ArgsUsage:   "<current-release>",
 		Usage:       "Collapse migration files from historic releases together",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag},
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, skipSquashDataFlag},
 		Action:      squashExec,
 	}
 
@@ -126,7 +134,7 @@ var (
 		ArgsUsage:   "",
 		Usage:       "Collapse schema definitions into a single SQL file",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, outputFilepathFlag},
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, skipSquashDataFlag, outputFilepathFlag},
 		Action:      squashAllExec,
 	}
 
@@ -341,7 +349,7 @@ func squashExec(ctx *cli.Context) (err error) {
 	}
 	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
-	return migration.Squash(database, commit, squashInContainer, skipTeardown)
+	return migration.Squash(database, commit, squashInContainer, skipTeardown, skipSquashData)
 }
 
 func visualizeExec(ctx *cli.Context) (err error) {
@@ -407,7 +415,7 @@ func squashAllExec(ctx *cli.Context) (err error) {
 		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
-	return migration.SquashAll(database, squashInContainer, skipTeardown, outputFilepath)
+	return migration.SquashAll(database, squashInContainer, skipTeardown, skipSquashData, outputFilepath)
 }
 
 func leavesExec(ctx *cli.Context) (err error) {
