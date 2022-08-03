@@ -972,7 +972,7 @@ func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTes
 		t.Fatal(diff)
 	}
 
-	return repo, fromDB
+	return repo, gitserverRepo
 }
 
 type createTestRepoPayload struct {
