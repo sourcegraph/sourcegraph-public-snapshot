@@ -8,19 +8,19 @@ To connect Bitbucket Cloud to Sourcegraph:
     1. *Site admin*: Go to **Site admin > Manage code hosts > Add repositories**
     1. *User*: Go to **Settings > Manage hosts**.
 1. Select **Bitbucket.org**.
-1. Configure the connection to Bitbucket Cloud using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Configure the connection to Bitbucket Cloud using the action buttons above the text field. Additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
 
 **NOTE** That adding code hosts as a user is currently in private beta.
 
 ## Repository syncing
 
-Currently, all repositories belonging the user configured will be synced.
+Currently, all repositories belonging to the user configured will be synced.
 
 In addition, there is one more field for configuring which repositories are mirrored:
 
 - [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams that the configured user has access to whose repositories should be synced.
-- [`exclude`](bitbucket_cloud.md#configuration)<br>A list of repositories to exclude which takes precedence over the `teams` field.
+- [`exclude`](bitbucket_cloud.md#configuration)<br>A list of repositories to exclude, which takes precedence over the `teams` field.
 
 ### HTTPS cloning
 
@@ -30,12 +30,12 @@ Sourcegraph clones repositories from your Bitbucket Cloud via HTTP(S), using the
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Bitbucket Cloud. 
 
-If enabled, the default rate is set at 7200 per hour (2 per second) which can be configured via the `requestsPerHour` field (see below):
+If enabled, the default rate is set at 7200 per hour (2 per second), which can be configured via the `requestsPerHour` field (see below):
 
 - For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 - For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
 
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+**NOTE** Internal rate limiting is only currently applied when synchronizing changesets in [batch changes](../../batch_changes/index.md), repository permissions, and repository metadata from code hosts.
 
 ## Configuration
 
@@ -47,7 +47,7 @@ Bitbucket Cloud connections support the following configuration options, which a
 
 > NOTE: Experimental webhook support for Bitbucket Cloud was added in Sourcegraph 3.40. Please <a href="https://about.sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
 
-To set up authentication for webhooks the `webhookSecret` setting has to be set, which is then used to authenticate incoming webhook requests to `/.api/bitbucket-cloud-webhooks`.
+To set up authentication for webhooks, set the `webhookSecret` setting, which is then used to authenticate incoming webhook requests to `/.api/bitbucket-cloud-webhooks`.
 
 ```json
 {
@@ -55,7 +55,7 @@ To set up authentication for webhooks the `webhookSecret` setting has to be set,
 }
 ```
 
-Using webhooks is highly recommended when using [Batch Changes](../../batch_changes/index.md), since they speed up the syncing of pull request data between Bitbucket Cloud and Sourcegraph and make it more efficient.
+Using webhooks is highly recommended when using [Batch Changes](../../batch_changes/index.md) since they speed up the syncing of pull request data between Bitbucket Cloud and Sourcegraph and make it more efficient.
 
 To set up webhooks:
 

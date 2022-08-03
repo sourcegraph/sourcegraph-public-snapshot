@@ -136,7 +136,7 @@ func (s *Serializer) UnmarshalLocations(data []byte) (locations []precise.Locati
 	return locations, err
 }
 
-// encode decompresses gob-decodes the given data and sets the given pointer. If the given data
+// decode decompresses gob-decodes the given data and sets the given pointer. If the given data
 // is empty, the pointer will not be assigned.
 func (s *Serializer) decode(data []byte, target any) (err error) {
 	if len(data) == 0 {

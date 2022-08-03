@@ -182,6 +182,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - Testing against code hosts
   - [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
   - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
+  - [Sync repositories from gitolite.sgdev.org](how-to/sync_repositories_from_gitolite_sgdev_org.md)
 
 ## [Contributing](./contributing/index.md)
 

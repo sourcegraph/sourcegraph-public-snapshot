@@ -48,7 +48,6 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
-    forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
     requestGraphQL: () => EMPTY,
@@ -119,7 +118,7 @@ const commonProps = () =>
         settingsCascade: NOOP_SETTINGS_CASCADE,
         onThemePreferenceChange: action('onThemePreferenceChange'),
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         setPatternType: action('setPatternType'),
         caseSensitive: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER },

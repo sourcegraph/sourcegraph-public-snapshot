@@ -161,7 +161,7 @@ export class Notebook {
                         }),
                         {
                             version: LATEST_VERSION,
-                            patternType: SearchPatternType.literal,
+                            patternType: SearchPatternType.standard,
                             caseSensitive: false,
                             trace: undefined,
                         }

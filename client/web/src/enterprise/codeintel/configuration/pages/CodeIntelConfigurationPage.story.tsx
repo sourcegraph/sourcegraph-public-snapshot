@@ -57,7 +57,6 @@ const localMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesResu
                         indexIntermediateCommits: true,
                         repository: null,
                         repositoryPatterns: [],
-                        lockfileIndexingEnabled: false,
                     },
                     {
                         __typename: 'CodeIntelligenceConfigurationPolicy' as const,
@@ -74,7 +73,6 @@ const localMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesResu
                         indexIntermediateCommits: true,
                         repository: null,
                         repositoryPatterns: [],
-                        lockfileIndexingEnabled: false,
                     },
                 ],
                 totalCount: 2,
@@ -110,7 +108,6 @@ const globalMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesRes
                         indexIntermediateCommits: false,
                         repository: null,
                         repositoryPatterns: [],
-                        lockfileIndexingEnabled: false,
                     },
                     {
                         __typename: 'CodeIntelligenceConfigurationPolicy' as const,
@@ -127,7 +124,6 @@ const globalMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesRes
                         indexIntermediateCommits: false,
                         repository: null,
                         repositoryPatterns: [],
-                        lockfileIndexingEnabled: false,
                     },
                 ],
                 totalCount: 2,

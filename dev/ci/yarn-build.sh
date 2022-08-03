@@ -20,4 +20,6 @@ yarn -s run build --color
 if [ "$CHECK_BUNDLESIZE" ] && jq -e '.scripts.bundlesize' package.json >/dev/null; then
   echo "--- bundlesize"
   yarn -s run bundlesize --enable-github-checks
+  echo "--- bundlesize:web:upload"
+  HONEYCOMB_API_KEY="$CI_HONEYCOMB_CLIENT_ENV_API_KEY" yarn workspace @sourcegraph/observability run bundlesize:web:upload
 fi

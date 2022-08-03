@@ -18,25 +18,27 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL                string
-	FrontendAuthorizationToken string
-	QueueName                  string
-	QueuePollInterval          time.Duration
-	MaximumNumJobs             int
-	FirecrackerImage           string
-	VMStartupScriptPath        string
-	VMPrefix                   string
-	KeepWorkspaces             bool
-	DockerHostMountPath        string
-	UseFirecracker             bool
-	JobNumCPUs                 int
-	JobMemory                  string
-	FirecrackerDiskSpace       string
-	MaximumRuntimePerJob       time.Duration
-	CleanupTaskInterval        time.Duration
-	NumTotalJobs               int
-	MaxActiveTime              time.Duration
-	WorkerHostname             string
+	FrontendURL                   string
+	FrontendAuthorizationToken    string
+	QueueName                     string
+	QueuePollInterval             time.Duration
+	MaximumNumJobs                int
+	FirecrackerImage              string
+	VMStartupScriptPath           string
+	VMPrefix                      string
+	KeepWorkspaces                bool
+	DockerHostMountPath           string
+	UseFirecracker                bool
+	JobNumCPUs                    int
+	JobMemory                     string
+	FirecrackerDiskSpace          string
+	MaximumRuntimePerJob          time.Duration
+	CleanupTaskInterval           time.Duration
+	NumTotalJobs                  int
+	MaxActiveTime                 time.Duration
+	NodeExporterURL               string
+	DockerRegistryNodeExporterURL string
+	WorkerHostname                string
 }
 
 func (c *Config) Load() {
@@ -57,6 +59,8 @@ func (c *Config) Load() {
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
+	c.NodeExporterURL = c.GetOptional("NODE_EXPORTER_URL", "The URL of the node_exporter instance, without the /metrics path.")
+	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 
 	hn := hostname.Get()
@@ -88,6 +92,9 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 			// git repositories that make it into commands or stdout/stderr streams.
 			c.FrontendAuthorizationToken: "SECRET_REMOVED",
 		},
+
+		NodeExporterEndpoint:               c.NodeExporterURL,
+		DockerRegistryNodeExporterEndpoint: c.DockerRegistryNodeExporterURL,
 	}
 }
 

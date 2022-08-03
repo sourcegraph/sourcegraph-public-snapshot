@@ -13,7 +13,6 @@ To add Python dependencies to Sourcegraph you need to setup a Python dependencie
 
 There are currently two ways to sync Python dependency repositories.
 
-* **Dependencies search**: Sourcegraph automatically syncs Python dependency repos that are found in some lockfiles files during a [dependencies search](../../code_search/how-to/dependencies_search.md).
 * **Code host configuration**: manually list dependencies in the `"dependencies"` section of the JSON configuration when creating the Python dependency code host. This method can be useful to verify that the credentials are picked up correctly without having to run a dependencies search.
 
 Sourcegraph tries to find each dependency repository in all configured `"urls"` until it's found. This means you can configure a public mirror first and fallback to a private one second (e.g. `"urls": ["https://pypi.org", "https://admin:foobar@nexus.yourcorp.com"]`).

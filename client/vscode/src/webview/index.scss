@@ -6,21 +6,6 @@
 @import './theming/monaco.scss';
 @import '../../../../node_modules/@vscode/codicons/dist/codicon.css';
 
-// Bootstrap configuration before Bootstrap is imported
-$popover-border-radius: var(--popover-border-radius);
-$grid-gutter-width: var(--grid-gutter-width);
-
-// Tables
-
-$table-cell-padding: var(--table-cell-padding);
-$table-border-color: var(--border-color);
-
-$hr-border-color: var(--border-color);
-$hr-margin-y: var(--hr-margin-y);
-
-// Disable transitions
-$input-transition: none;
-
 :root {
     // v2/debt: redefine our CSS variables using VS Code's CSS variables
     // instead of hackily overriding the necessary classes' properties.
@@ -148,20 +133,3 @@ code {
         color: var(--vscode-input-foreground);
     }
 }
-
-// Replace the old '../../../branded/src/global-styles/card' file
-$card-spacer-y: 0.5rem;
-$card-spacer-x: 0.5rem;
-$card-bg: var(--card-bg);
-$card-border-color: var(--card-border-color);
-$card-cap-bg: var(--color-bg-2);
-
-.card {
-    --card-bg: var(--color-bg-1);
-    --card-border-color: var(--border-color);
-    --card-spacer-y: #{$card-spacer-y};
-    --card-spacer-x: #{$card-spacer-x};
-}
-
-/* stylelint-disable-next-line @sourcegraph/no-restricted-imports */
-@import 'bootstrap/scss/card';
