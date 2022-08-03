@@ -78,7 +78,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
                 d="M17,18L12,15.82L7,18V5H17M17,3H7A2,2 0 0,0 5,5V21L12,18L19,21V5C19,3.89 18.1,3 17,3Z"
               />
             </svg>
-            Save search
+            Save Search
           </a>
         </li>
         <li
@@ -252,7 +252,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
                 d="M17,18L12,15.82L7,18V5H17M17,3H7A2,2 0 0,0 5,5V21L12,18L19,21V5C19,3.89 18.1,3 17,3Z"
               />
             </svg>
-            Save search
+            Save Search
           </a>
         </li>
         <li
@@ -423,7 +423,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
                 d="M17,18L12,15.82L7,18V5H17M17,3H7A2,2 0 0,0 5,5V21L12,18L19,21V5C19,3.89 18.1,3 17,3Z"
               />
             </svg>
-            Save search
+            Save Search
           </button>
         </li>
         <li
@@ -601,7 +601,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
                 d="M17,18L12,15.82L7,18V5H17M17,3H7A2,2 0 0,0 5,5V21L12,18L19,21V5C19,3.89 18.1,3 17,3Z"
               />
             </svg>
-            Save search
+            Save Search
           </a>
         </li>
         <li
@@ -772,7 +772,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
                 d="M17,18L12,15.82L7,18V5H17M17,3H7A2,2 0 0,0 5,5V21L12,18L19,21V5C19,3.89 18.1,3 17,3Z"
               />
             </svg>
-            Save search
+            Save Search
           </button>
         </li>
         <li
