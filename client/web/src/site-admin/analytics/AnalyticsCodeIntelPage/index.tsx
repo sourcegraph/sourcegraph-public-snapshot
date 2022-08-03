@@ -1,13 +1,17 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
+import { Card, H3, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
-import { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'
+import {
+    AnalyticsDateRange,
+    CodeIntelStatisticsResult,
+    CodeIntelStatisticsVariables,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
@@ -15,7 +19,6 @@ import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
-import { useChartFilters } from '../useChartFilters'
 import { StandardDatum } from '../utils'
 
 import { CODEINTEL_STATISTICS } from './queries'
@@ -23,13 +26,13 @@ import { CODEINTEL_STATISTICS } from './queries'
 import styles from './index.module.scss'
 
 export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'CodeIntel' })
+    const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
+    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_MONTH)
     const { data, error, loading } = useQuery<CodeIntelStatisticsResult, CodeIntelStatisticsVariables>(
         CODEINTEL_STATISTICS,
         {
             variables: {
-                dateRange: dateRange.value,
-                grouping: grouping.value,
+                dateRange,
             },
         }
     )
@@ -57,16 +60,14 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             {
                 id: 'references',
                 name:
-                    aggregation.selected === 'count'
-                        ? '"Find references" clicked'
-                        : 'Users who clicked "Find references"',
+                    eventAggregation === 'count' ? '"Find references" clicked' : 'Users who clicked "Find references"',
                 color: 'var(--cyan)',
                 data: referenceClicks.nodes.map(
                     node => ({
                         date: new Date(node.date),
-                        value: node[aggregation.selected],
+                        value: node[eventAggregation],
                     }),
-                    dateRange.value
+                    dateRange
                 ),
                 getXValue: ({ date }) => date,
                 getYValue: ({ value }) => value,
@@ -74,16 +75,16 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             {
                 id: 'definitions',
                 name:
-                    aggregation.selected === 'count'
+                    eventAggregation === 'count'
                         ? '"Go to definition" clicked'
                         : 'Users who clicked "Go to definition"',
                 color: 'var(--orange)',
                 data: definitionClicks.nodes.map(
                     node => ({
                         date: new Date(node.date),
-                        value: node[aggregation.selected],
+                        value: node[eventAggregation],
                     }),
-                    dateRange.value
+                    dateRange
                 ),
                 getXValue: ({ date }) => date,
                 getYValue: ({ value }) => value,
@@ -91,13 +92,13 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         ]
         const legends: ValueLegendListProps['items'] = [
             {
-                value: referenceClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: aggregation.selected === 'count' ? 'References' : 'Users using references',
+                value: referenceClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'References' : 'Users using references',
                 color: 'var(--cyan)',
             },
             {
-                value: definitionClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: aggregation.selected === 'count' ? 'Definitions' : 'Users using definitions',
+                value: definitionClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'Definitions' : 'Users using definitions',
                 color: 'var(--orange)',
             },
             {
@@ -113,7 +114,6 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         const calculatorProps = {
             page: 'CodeIntel',
             label: 'Intel events',
-            dateRange: dateRange.value,
             color: 'var(--purple)',
             description:
                 'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code intel to be able to independently value product capabilities.',
@@ -141,9 +141,12 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
                 },
                 {
-                    label: 'Precise code intel*',
+                    label: 'Precise code intel',
                     minPerItem: 1,
                     value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
+                    eventsLabel: `Events (${Math.floor(
+                        (preciseEvents.summary.totalCount * 100) / totalHoverEvents || 0
+                    )}%)*`,
                     description:
                         'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
                 },
@@ -151,7 +154,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         }
 
         return [stats, legends, calculatorProps]
-    }, [data, dateRange.value, aggregation.selected])
+    }, [data, dateRange, eventAggregation])
 
     if (error) {
         throw error
@@ -168,26 +171,58 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             <AnalyticsPageTitle>Analytics / Code intel</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
-                <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
-                    <HorizontalSelect<typeof dateRange.value> {...dateRange} />
+                <div className="d-flex justify-content-end align-items-stretch mb-2">
+                    <HorizontalSelect<AnalyticsDateRange>
+                        value={dateRange}
+                        label="Date&nbsp;range"
+                        onChange={value => {
+                            setDateRange(value)
+                            eventLogger.log(`AdminAnalyticsCodeIntelDateRange${value}Selected`)
+                        }}
+                        items={[
+                            { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
+                            { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
+                            { value: AnalyticsDateRange.LAST_THREE_MONTHS, label: 'Last 3 months' },
+                            { value: AnalyticsDateRange.CUSTOM, label: 'Custom (coming soon)', disabled: true },
+                        ]}
+                    />
                 </div>
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {stats && (
                     <div>
                         <ChartContainer
-                            title={aggregation.selected === 'count' ? 'Activity by day' : 'Unique users by day'}
+                            title={eventAggregation === 'count' ? 'Activity by day' : 'Unique users by day'}
                             labelX="Time"
-                            labelY={aggregation.selected === 'count' ? 'Activity' : 'Unique users'}
+                            labelY={eventAggregation === 'count' ? 'Activity' : 'Unique users'}
                         >
                             {width => <LineChart width={width} height={300} series={stats} />}
                         </ChartContainer>
-                        <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
-                            <HorizontalSelect<typeof grouping.value> {...grouping} className="mr-4" />
-                            <ToggleSelect<typeof aggregation.selected> {...aggregation} />
+                        <div className="d-flex justify-content-end align-items-stretch mb-2">
+                            <ToggleSelect<typeof eventAggregation>
+                                selected={eventAggregation}
+                                onChange={value => {
+                                    setEventAggregation(value)
+                                    eventLogger.log(
+                                        `AdminAnalyticsCodeIntelAgg${value === 'count' ? 'Totals' : 'Uniques'}Clicked`
+                                    )
+                                }}
+                                items={[
+                                    {
+                                        tooltip: 'total # of actions triggered',
+                                        label: 'Totals',
+                                        value: 'count',
+                                    },
+                                    {
+                                        tooltip: 'unique # of users triggered',
+                                        label: 'Uniques',
+                                        value: 'uniqueUsers',
+                                    },
+                                ]}
+                            />
                         </div>
                     </div>
                 )}
-                <H2 className="my-3">Total time saved</H2>
+                <H3 className="my-3">Time saved</H3>
                 {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
                 <div className={styles.suggestionBox}>
                     <H4 className="my-3">Suggestions</H4>

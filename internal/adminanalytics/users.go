@@ -12,13 +12,12 @@ import (
 
 type Users struct {
 	DateRange string
-	Grouping  string
 	DB        database.DB
 	Cache     bool
 }
 
 func (s *Users) Activity() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{})
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +25,6 @@ func (s *Users) Activity() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Users:Activity",
@@ -63,7 +61,7 @@ var (
 )
 
 func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) {
-	_, dateRangeCond, err := makeDateParameters(f.DateRange, f.Grouping, "event_logs.timestamp")
+	_, dateRangeCond, err := makeDateParameters(f.DateRange, "event_logs.timestamp")
 	if err != nil {
 		return nil, err
 	}

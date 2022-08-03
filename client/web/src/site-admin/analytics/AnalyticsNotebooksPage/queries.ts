@@ -15,10 +15,10 @@ const analyticsStatItemFragment = gql`
 `
 
 export const NOTEBOOKS_STATISTICS = gql`
-    query NotebooksStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
+    query NotebooksStatistics($dateRange: AnalyticsDateRange!) {
         site {
             analytics {
-                notebooks(dateRange: $dateRange, grouping: $grouping) {
+                notebooks(dateRange: $dateRange) {
                     creations {
                         ...AnalyticsStatItemFragment
                     }

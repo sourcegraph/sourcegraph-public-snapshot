@@ -12,11 +12,9 @@ var (
 	LastThreeMonths = "LAST_THREE_MONTHS"
 	LastMonth       = "LAST_MONTH"
 	LastWeek        = "LAST_WEEK"
-	Daily           = "DAILY"
-	Weekly          = "WEEKLY"
 )
 
-func makeDateParameters(dateRange string, grouping string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
+func makeDateParameters(dateRange string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
 	now := time.Now()
 	from, err := getFromDate(dateRange, now)
 	if err != nil {
@@ -24,9 +22,11 @@ func makeDateParameters(dateRange string, grouping string, dateColumnName string
 	}
 	var groupBy string
 
-	if grouping == Weekly {
+	if dateRange == LastThreeMonths {
 		groupBy = "week"
-	} else if grouping == Daily {
+	} else if dateRange == LastMonth {
+		groupBy = "day"
+	} else if dateRange == LastWeek {
 		groupBy = "day"
 	} else {
 		return nil, nil, errors.New("Invalid date range")
@@ -69,8 +69,8 @@ FROM
 %s
 `
 
-func makeEventLogsQueries(dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, grouping, "timestamp")
+func makeEventLogsQueries(dateRange string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, "timestamp")
 	if err != nil {
 		return nil, nil, err
 	}

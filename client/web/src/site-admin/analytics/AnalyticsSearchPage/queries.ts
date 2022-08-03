@@ -15,10 +15,10 @@ const analyticsStatItemFragment = gql`
 `
 
 export const SEARCH_STATISTICS = gql`
-    query SearchStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
+    query SearchStatistics($dateRange: AnalyticsDateRange!) {
         site {
             analytics {
-                search(dateRange: $dateRange, grouping: $grouping) {
+                search(dateRange: $dateRange) {
                     searches {
                         ...AnalyticsStatItemFragment
                     }

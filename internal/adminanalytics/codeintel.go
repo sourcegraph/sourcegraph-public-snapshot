@@ -9,13 +9,12 @@ import (
 
 type CodeIntel struct {
 	DateRange string
-	Grouping  string
 	DB        database.DB
 	Cache     bool
 }
 
 func (s *CodeIntel) ReferenceClicks() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"findReferences"})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"findReferences"})
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +22,6 @@ func (s *CodeIntel) ReferenceClicks() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:ReferenceClicks",
@@ -32,7 +30,7 @@ func (s *CodeIntel) ReferenceClicks() (*AnalyticsFetcher, error) {
 }
 
 func (s *CodeIntel) DefinitionClicks() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"goToDefinition.preloaded", "goToDefinition"})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"goToDefinition.preloaded", "goToDefinition"})
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +38,6 @@ func (s *CodeIntel) DefinitionClicks() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:DefinitionClicks",
@@ -50,7 +47,7 @@ func (s *CodeIntel) DefinitionClicks() (*AnalyticsFetcher, error) {
 
 func (s *CodeIntel) InAppEvents() (*AnalyticsFetcher, error) {
 	sourceCond := sqlf.Sprintf("source = 'WEB'")
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"goToDefinition.preloaded", "goToDefinition", "findReferences"}, sourceCond)
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"goToDefinition.preloaded", "goToDefinition", "findReferences"}, sourceCond)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +55,6 @@ func (s *CodeIntel) InAppEvents() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:InAppEvents",
@@ -68,7 +64,7 @@ func (s *CodeIntel) InAppEvents() (*AnalyticsFetcher, error) {
 
 func (s *CodeIntel) CodeHostEvents() (*AnalyticsFetcher, error) {
 	sourceCond := sqlf.Sprintf("source = 'CODEHOSTINTEGRATION'")
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"goToDefinition.preloaded", "goToDefinition", "findReferences"}, sourceCond)
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"goToDefinition.preloaded", "goToDefinition", "findReferences"}, sourceCond)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +72,6 @@ func (s *CodeIntel) CodeHostEvents() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:CodeHostEvents",
@@ -85,7 +80,7 @@ func (s *CodeIntel) CodeHostEvents() (*AnalyticsFetcher, error) {
 }
 
 func (s *CodeIntel) SearchBasedEvents() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{
 		"codeintel.searchDefinitions",
 		"codeintel.searchDefinitions.xrepo",
 		"codeintel.searchReferences",
@@ -98,7 +93,6 @@ func (s *CodeIntel) SearchBasedEvents() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:SearchBasedEvents",
@@ -107,7 +101,7 @@ func (s *CodeIntel) SearchBasedEvents() (*AnalyticsFetcher, error) {
 }
 
 func (s *CodeIntel) PreciseEvents() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{
 		"codeintel.lsifDefinitions",
 		"codeintel.lsifDefinitions.xrepo",
 		"codeintel.lsifReferences",
@@ -120,7 +114,6 @@ func (s *CodeIntel) PreciseEvents() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:PreciseEvents",
@@ -129,7 +122,7 @@ func (s *CodeIntel) PreciseEvents() (*AnalyticsFetcher, error) {
 }
 
 func (s *CodeIntel) CrossRepoEvents() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{
 		"codeintel.searchDefinitions.xrepo",
 		"codeintel.searchReferences.xrepo",
 		"codeintel.lsifDefinitions.xrepo",
@@ -142,7 +135,6 @@ func (s *CodeIntel) CrossRepoEvents() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:CrossRepoEvents",

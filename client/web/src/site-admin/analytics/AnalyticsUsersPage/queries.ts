@@ -1,10 +1,10 @@
 import { gql } from '@sourcegraph/http-client'
 
 export const USERS_STATISTICS = gql`
-    query UsersStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
+    query UsersStatistics($dateRange: AnalyticsDateRange!) {
         site {
             analytics {
-                users(dateRange: $dateRange, grouping: $grouping) {
+                users(dateRange: $dateRange) {
                     summary {
                         avgDAU
                         avgWAU

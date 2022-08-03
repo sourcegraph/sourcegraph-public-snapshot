@@ -10,7 +10,6 @@ import (
 
 type BatchChanges struct {
 	DateRange string
-	Grouping  string
 	DB        database.DB
 	Cache     bool
 }
@@ -40,7 +39,7 @@ var changesetsCreatedSummaryQuery = `
 `
 
 func (s *BatchChanges) ChangesetsCreated() (*AnalyticsFetcher, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(s.DateRange, s.Grouping, "changesets.created_at")
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(s.DateRange, "changesets.created_at")
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +50,6 @@ func (s *BatchChanges) ChangesetsCreated() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "BatchChanges:ChangesetsCreated",
@@ -93,7 +91,7 @@ var mergeEventKinds = sqlf.Join([]*sqlf.Query{
 }, ",")
 
 func (s *BatchChanges) ChangesetsMerged() (*AnalyticsFetcher, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(s.DateRange, s.Grouping, "changesets.created_at")
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(s.DateRange, "changesets.created_at")
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +102,6 @@ func (s *BatchChanges) ChangesetsMerged() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
-		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "BatchChanges:ChangesetsMerged",

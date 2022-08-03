@@ -15,14 +15,14 @@ const analyticsStatItemFragment = gql`
 `
 
 export const CODEINTEL_STATISTICS = gql`
-    query CodeIntelStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
+    query CodeIntelStatistics($dateRange: AnalyticsDateRange!) {
         site {
             analytics {
                 repos {
                     count
                     preciseCodeIntelCount
                 }
-                codeIntel(dateRange: $dateRange, grouping: $grouping) {
+                codeIntel(dateRange: $dateRange) {
                     referenceClicks {
                         ...AnalyticsStatItemFragment
                     }
