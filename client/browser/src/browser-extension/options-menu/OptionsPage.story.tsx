@@ -65,7 +65,6 @@ const WithAdvancedSettings: Story = args => {
             optionFlags={optionFlagValues}
             onChangeOptionFlag={setOptionFlag}
             {...args}
-            // sourcegraphUrl={args.sourcegraphUrl}
         />
     )
 }
