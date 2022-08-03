@@ -26,7 +26,7 @@ import {
     BATCH_CHANGE_CHANGESETS_RESULT,
     EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
 } from './BatchChangeDetailsPage.mock'
-// let SBSdefaultValue = false
+
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
     title: 'web/batches/details/BatchChangeDetailsPage',
@@ -40,7 +40,6 @@ const config: Meta = {
     argTypes: {
         supersedingBatchSpec: {
             control: { type: 'boolean' },
-            // defaultValue: SBSdefaultValue,
         },
         viewerCanAdminister: {
             control: { type: 'boolean' },
@@ -151,7 +150,6 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 const deleteBatchChange = () => Promise.resolve(undefined)
 
 const Template: Story = ({ url, supersededBatchSpec, ...args }) => {
-    // SBSdefaultValue = !!supersededBatchSpec
     const supersedingBatchSpec = args.supersedingBatchSpec
     const viewerCanAdminister = args.viewerCanAdminister
     const isClosed = args.isClosed
