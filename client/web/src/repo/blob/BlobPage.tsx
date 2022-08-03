@@ -42,7 +42,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob, fetchFormattedBlob } from './backend'
+import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -74,6 +74,14 @@ interface Props
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     repoUrl: string
+}
+
+/**
+ * Blob data including specific properties used in `BlobPage` but not `Blob`
+ */
+interface BlobPageInfo extends BlobInfo {
+    richHTML: string
+    aborted: boolean
 }
 
 export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
@@ -149,18 +157,15 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 return of(undefined)
             }
 
-            return fetchFormattedBlob({ repoName, commitID, filePath }).pipe(
+            return fetchBlob({ repoName, commitID, filePath, formatOnly: true }).pipe(
                 map(blob => {
                     if (blob === null) {
                         return blob
                     }
 
-                    const blobInfo: BlobInfo & {
-                        richHTML: string
-                        aborted: boolean
-                    } = {
+                    const blobInfo: BlobPageInfo = {
                         content: blob.content,
-                        html: blob.format.html,
+                        html: blob.highlight.html,
                         repoName,
                         revision,
                         commitID,
@@ -183,7 +188,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     // is bundled in one object whose creation is blocked by `fetchBlob` emission.
     const [nextFetchWithDisabledTimeout, highlightedBlobInfoOrError] = useEventObservable<
         void,
-        (BlobInfo & { richHTML: string; aborted: boolean }) | null | ErrorLike
+        BlobPageInfo | null | ErrorLike
     >(
         useCallback(
             (clicks: Observable<void>) =>
@@ -211,10 +216,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             }
                         }
 
-                        const blobInfo: BlobInfo & {
-                            richHTML: string
-                            aborted: boolean
-                        } = {
+                        const blobInfo: BlobPageInfo = {
                             content: blob.content,
                             html: blob.highlight.html,
                             lsif: blob.highlight.lsif,

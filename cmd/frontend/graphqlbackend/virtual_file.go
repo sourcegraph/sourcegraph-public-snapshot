@@ -97,21 +97,3 @@ func (r *virtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs
 		Revision: fmt.Sprintf("Preview file diff %s", r.stat.Name()),
 	})
 }
-
-var formatHistogram = promauto.NewHistogram(prometheus.HistogramOpts{
-	Name: "virtual_fileserver_format_req",
-	Help: "This measures the time for formatting requests",
-})
-
-func (r *virtualFileResolver) Format(ctx context.Context) (*highlightedFileResolver, error) {
-	content, err := r.Content(ctx)
-	if err != nil {
-		return nil, err
-	}
-	timer := prometheus.NewTimer(formatHistogram)
-	defer timer.ObserveDuration()
-	return highlightContent(ctx, &HighlightArgs{FormatOnly: true}, content, r.Path(), highlight.Metadata{
-		// TODO: Use `CanonicalURL` here for where to retrieve the file content, once we have a backend to retrieve such files.
-		Revision: fmt.Sprintf("Preview file diff %s", r.stat.Name()),
-	})
-}

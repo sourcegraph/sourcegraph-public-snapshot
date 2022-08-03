@@ -4370,10 +4370,6 @@ interface File2 {
     """
     externalURLs: [ExternalLink!]!
     """
-    Format the file.
-    """
-    format: FormattedFile!
-    """
     Highlight the file.
     """
     highlight(
@@ -4387,6 +4383,10 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Format the file as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4437,10 +4437,6 @@ type VirtualFile implements File2 {
     """
     externalURLs: [ExternalLink!]!
     """
-    Format the file.
-    """
-    format: FormattedFile!
-    """
     Highlight the file.
     """
     highlight(
@@ -4454,6 +4450,10 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Format the file as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4542,10 +4542,6 @@ type GitBlob implements TreeEntry & File2 {
     """
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     """
-    Format the blob contents.
-    """
-    format: FormattedFile!
-    """
     Highlight the blob contents.
     """
     highlight(
@@ -4559,6 +4555,10 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Format the file as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -4607,16 +4607,6 @@ type GitBlob implements TreeEntry & File2 {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
-}
-
-"""
-A formatted file.
-"""
-type FormattedFile {
-    """
-    The HTML table that can be used to display the formatted file.
-    """
-    html: String!
 }
 
 """
