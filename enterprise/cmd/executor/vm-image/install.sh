@@ -247,6 +247,8 @@ function setup_iptables() {
   iptables -A CNI-ADMIN -m udp --dport 53 -d 169.254.0.0/16 -j ACCEPT
   # Allow access to the gateway on the bridge network.
   iptables -A CNI-ADMIN -d 10.61.0.1 -j RETURN
+  # Disallow any host-VM network traffic
+  iptables -A CNI-ADMIN -d 10.0.1.0/24 -j DROP
   # Disallow any inter-VM traffic.
   # TODO: This rule doesn't do what we want yet.
   iptables -A CNI-ADMIN -s 10.61.0.1 -j RETURN
