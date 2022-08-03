@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiDotsHorizontal } from '@mdi/js'
+import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiDotsHorizontal, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
 import {
@@ -31,6 +31,7 @@ export interface SearchActionsMenuProps {
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
     onSaveQueryClick: () => void
+    onExportSearchResultsClick: () => void
 }
 
 export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> = ({
@@ -42,6 +43,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
     allExpanded,
     onExpandAllResultsToggle,
     onSaveQueryClick,
+    onExportSearchResultsClick,
 }) => (
     <Menu>
         {({ isExpanded }) => (
@@ -66,6 +68,10 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     svgPath={allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown}
                                 />
                                 {allExpanded ? 'Collapse all' : 'Expand all'}
+                            </MenuItem>
+                            <MenuItem onSelect={onExportSearchResultsClick}>
+                                <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
+                                Export Results
                             </MenuItem>
                         </>
                     )}

@@ -1,6 +1,14 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
+import {
+    mdiBookmarkOutline,
+    mdiMenu,
+    mdiMenuDown,
+    mdiMenuUp,
+    mdiArrowExpandDown,
+    mdiArrowCollapseUp,
+    mdiDownload,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -30,8 +38,8 @@ import {
     CreateAction,
 } from './createActions'
 import { CreateActionsMenu } from './CreateActionsMenu'
-import { ExportSearchResultsButton } from './ExportSearchResultsButton'
 import { SearchActionsMenu } from './SearchActionsMenu'
+import { useExportSearchResultsQuery } from './useExportSearchResultsQuery'
 
 import createActionsStyles from './CreateActions.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
@@ -253,27 +261,34 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     )
 
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
+    const [requestSearchResultsExport] = useExportSearchResultsQuery({
+        query: props.query,
+        patternType: props.patternType,
+        sourcegraphURL: props.platformContext.sourcegraphURL,
+        settingsCascade: props.settingsCascade,
+    })
+    const onExportSearchResultsClick = useCallback(() => {
+        // eslint-disable-next-line no-void
+        void requestSearchResultsExport()
+    }, [requestSearchResultsExport])
     const exportSearchResultsButton = useMemo(
         () =>
             extensionsAsCoreFeatures ? (
                 <Tooltip content="Export search results as CVS file">
                     <li className={classNames('mr-2', styles.navItem)}>
-                        <ExportSearchResultsButton
-                            query={props.query}
-                            patternType={props.patternType}
-                            sourcegraphURL={props.platformContext.sourcegraphURL}
-                            settingsCascade={props.settingsCascade}
-                        />
+                        <Button
+                            className="btn btn-sm btn-outline-secondary text-decoration-none"
+                            variant="secondary"
+                            outline={true}
+                            onClick={onExportSearchResultsClick}
+                        >
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
+                            Export Results
+                        </Button>
                     </li>
                 </Tooltip>
             ) : null,
-        [
-            extensionsAsCoreFeatures,
-            props.patternType,
-            props.platformContext.sourcegraphURL,
-            props.query,
-            props.settingsCascade,
-        ]
+        [extensionsAsCoreFeatures, onExportSearchResultsClick]
     )
 
     const extraContext = useMemo(
@@ -344,8 +359,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         )}
                     </ActionsContainer>
 
-                    {exportSearchResultsButton}
-
                     {(createActions.length > 0 ||
                         createCodeMonitorButton ||
                         saveSearchButton ||
@@ -361,9 +374,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                             allExpanded={props.allExpanded}
                             onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                             onSaveQueryClick={props.onSaveQueryClick}
+                            onExportSearchResultsClick={onExportSearchResultsClick}
                         />
                     ) : (
                         <>
+                            {exportSearchResultsButton}
+
                             {createActions.map(createActionButton => (
                                 <Tooltip
                                     key={createActionButton.label}

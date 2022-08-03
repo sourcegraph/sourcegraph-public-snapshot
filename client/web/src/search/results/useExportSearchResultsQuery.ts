@@ -1,7 +1,5 @@
 import { useContext } from 'react'
 
-import { mdiDownload } from '@mdi/js'
-
 import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
@@ -9,15 +7,19 @@ import { NotificationContext } from '@sourcegraph/shared/src/notifications/Notif
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { IQuery } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { getFromSettings } from '../../util/settings'
 
-interface Props extends SearchPatternTypeProps, SettingsCascadeProps, Pick<PlatformContext, 'sourcegraphURL'> {
+interface ExportSearchResultsConfig
+    extends SearchPatternTypeProps,
+        SettingsCascadeProps,
+        Pick<PlatformContext, 'sourcegraphURL'> {
     query?: string
 }
 
-interface SearchResultsQueryVariables extends SearchPatternTypeProps {
+type ExportSearchResultsQueryResult = Pick<IQuery, 'search'>
+
+interface ExportSearchResultsQueryVariables extends SearchPatternTypeProps {
     query: string
 }
 
@@ -90,14 +92,14 @@ const SEARCH_RESULTS_QUERY = gql`
     }
 `
 
-export const ExportSearchResultsButton: React.FC<Props> = ({
+export const useExportSearchResultsQuery = ({
     query = '',
     patternType,
     sourcegraphURL,
     settingsCascade,
-}) => {
+}: ExportSearchResultsConfig): ReturnType<typeof useLazyQuery<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables>> => {
     const { addNotification } = useContext(NotificationContext)
-    const [fetchCSV] = useLazyQuery<Pick<IQuery, 'search'>, SearchResultsQueryVariables>(SEARCH_RESULTS_QUERY, {
+    return useLazyQuery<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables>(SEARCH_RESULTS_QUERY, {
         variables: { query, patternType },
         onCompleted: data => {
             const results = data.search?.results.results
@@ -166,16 +168,4 @@ export const ExportSearchResultsButton: React.FC<Props> = ({
             })
         },
     })
-
-    return (
-        <Button
-            className="btn btn-sm btn-outline-secondary text-decoration-none"
-            variant="secondary"
-            outline={true}
-            onClick={() => fetchCSV()}
-        >
-            <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
-            Export Results
-        </Button>
-    )
 }
