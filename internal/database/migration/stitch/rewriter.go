@@ -101,6 +101,7 @@ func linkVirtualPrivilegedMigrations(definitionMap map[int]definition.Definition
 // subsequent rewriters.
 var rewriters = []func(schemaName string, version oobmigration.Version, migrationIDs []int, contents map[string]string){
 	rewriteInitialCodeinsightsMigration,
+	rewriteCodeinsightsTimescaleDBMigrations,
 	ensureParentMetadataExists,
 	extractPrivilegedQueriesFromSquashedMigrations,
 
@@ -120,6 +121,23 @@ func rewriteInitialCodeinsightsMigration(schemaName string, _ oobmigration.Versi
 	mapContents(contents, migrationFilename(1000000000, "metadata.yaml"), func(oldMetadata string) string {
 		return fmt.Sprintf("name: %s", squashedMigrationPrefix)
 	})
+}
+
+// rewriteCodeinsightsTimescaleDBMigrations (safely) removes references to TimescaleDB and PG catalog alterations
+// that do not make sense on the upgrade path to a version that has migrated away from TimescaleDB.
+func rewriteCodeinsightsTimescaleDBMigrations(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "codeinsights" {
+		return
+	}
+
+	for id := range []int{1000000002, 1000000004} {
+		mapContents(contents, migrationFilename(id, "up.sql"), func(oldQuery string) string {
+			return filterLinesContaining(oldQuery, []string{
+				`ALTER SYSTEM SET timescaledb.`,
+				`codeinsights_schema_migrations`,
+			})
+		})
+	}
 }
 
 // ensureParentMetadataExists adds parent information to the metadata file of each migration, prior to 3.37,
@@ -315,4 +333,30 @@ func partitionPrivilegedQueries(query string) (privileged string, unprivileged s
 	}
 
 	return strings.Join(matches, "\n\n"), alterExtensionPattern.ReplaceAllString(query, "")
+}
+
+// filterLinesContaining splits the given text into lines, removes any line containing any of the given substrings,
+// and joins the lines back via newlines.
+func filterLinesContaining(s string, substrings []string) string {
+	lines := strings.Split(s, "\n")
+
+	filtered := lines[:0]
+	for _, line := range lines {
+		if !containsAny(line, substrings) {
+			filtered = append(filtered, line)
+		}
+	}
+
+	return strings.Join(filtered, "\n")
+}
+
+// containsAny returns true if the string contains any of the given substrings.
+func containsAny(s string, substrings []string) bool {
+	for _, needle := range substrings {
+		if strings.Contains(s, needle) {
+			return true
+		}
+	}
+
+	return false
 }
