@@ -26,7 +26,7 @@ import {
     BATCH_CHANGE_CHANGESETS_RESULT,
     EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
 } from './BatchChangeDetailsPage.mock'
-let SBSdefaultValue = false
+let SBSdefaultValue = true
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
     title: 'web/batches/details/BatchChangeDetailsPage',

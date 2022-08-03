@@ -39,7 +39,6 @@ const config: Meta = {
                 type: 'select',
                 options: NotificationType as Record<keyof typeof NotificationType, NotificationTypeType>,
             },
-            defaultValue: NotificationType.Error,
         },
         source: {
             name: 'Source',
@@ -62,7 +61,11 @@ export const WithoutProgress: Story = args => {
         />
     )
 }
-
+WithoutProgress.argTypes = {
+    type: {
+        defaultValue: NotificationType.Error,
+    },
+}
 export const WithProgress: Story = args => {
     const message = args.message
     const type = args.type
@@ -95,6 +98,9 @@ WithProgress.argTypes = {
         name: 'Progress % (0-100)',
         control: { type: 'number', min: 0, max: 100 },
         defaultValue: 50,
+    },
+    type: {
+        defaultValue: NotificationType.Info,
     },
 }
 

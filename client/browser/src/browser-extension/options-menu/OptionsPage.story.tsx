@@ -40,7 +40,6 @@ const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partia
         sourcegraphUrl=""
         validateSourcegraphUrl={validateSourcegraphUrl}
         onChangeSourcegraphUrl={action('onChangeSourcegraphUrl')}
-        showSourcegraphCloudAlert={false}
         suggestedSourcegraphUrls={['https://k8s.sgdev.org', 'https://sourcegraph.com']}
         {...props}
     />
@@ -66,6 +65,7 @@ const WithAdvancedSettings: Story = args => {
             optionFlags={optionFlagValues}
             onChangeOptionFlag={setOptionFlag}
             {...args}
+            // sourcegraphUrl={args.sourcegraphUrl}
         />
     )
 }
@@ -81,11 +81,7 @@ export const AllOptionsPages: Story = (args = {}) => (
                 </div>
                 <div className="mx-4">
                     <H3 className="text-center">URL validation error</H3>
-                    <OptionsPageWrapper
-                        validateSourcegraphUrl={invalidSourcegraphUrl}
-                        // sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
-                        {...args}
-                    />
+                    <OptionsPageWrapper validateSourcegraphUrl={invalidSourcegraphUrl} {...args} />
                 </div>
                 <div className="mx-4">
                     <H3 className="text-center">With advanced settings</H3>
@@ -121,13 +117,13 @@ export const AllOptionsPages: Story = (args = {}) => (
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
                         hasRepoSyncError={true}
                         requestPermissionsHandler={requestPermissionsHandler}
-                        {...args}
+                        showSourcegraphCloudAlert={args.showSourcegraphCloudAlert}
+                        version={args.version}
                     />
                 </div>
                 <div className="mx-4">
                     <H3 className="text-center">Self-hosted</H3>
                     <OptionsPageWrapper
-                        // sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
                         hasRepoSyncError={true}
                         requestPermissionsHandler={requestPermissionsHandler}
@@ -137,7 +133,6 @@ export const AllOptionsPages: Story = (args = {}) => (
                 <div className="mx-4">
                     <H3 className="text-center">Self-hosted instance, user is admin</H3>
                     <OptionsPageWrapper
-                        // sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: true }}
                         hasRepoSyncError={true}
                         requestPermissionsHandler={requestPermissionsHandler}
