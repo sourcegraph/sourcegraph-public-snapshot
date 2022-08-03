@@ -130,7 +130,7 @@ func rewriteCodeinsightsTimescaleDBMigrations(schemaName string, _ oobmigration.
 		return
 	}
 
-	for id := range []int{1000000002, 1000000004} {
+	for _, id := range []int{1000000002, 1000000004} {
 		mapContents(contents, migrationFilename(id, "up.sql"), func(oldQuery string) string {
 			return filterLinesContaining(oldQuery, []string{
 				`ALTER SYSTEM SET timescaledb.`,
