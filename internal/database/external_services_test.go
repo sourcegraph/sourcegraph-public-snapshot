@@ -1514,6 +1514,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 			DisplayName:     "GITHUB #1",
 			Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 			NamespaceUserID: user.ID,
+			CloudDefault:    true,
 		},
 		{
 			Kind:        extsvc.KindGitHub,
@@ -1681,7 +1682,20 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 		// We should find all services were updated after a time in the past
 		if len(ess) != 3 {
-			t.Fatalf("Want 0 external service but got %d", len(ess))
+			t.Fatalf("Want 3 external services but got %d", len(ess))
+		}
+	})
+
+	t.Run("list cloud default services", func(t *testing.T) {
+		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+			OnlyCloudDefault: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We should find all services were updated after a time in the past
+		if len(ess) != 1 {
+			t.Fatalf("Want 0 external services but got %d", len(ess))
 		}
 	})
 }

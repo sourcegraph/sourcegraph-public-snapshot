@@ -794,6 +794,23 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `-f="<value>"`: The output filepath
 
+### sg migration rewrite
+
+Rewrite schemas definitions as they were at a particular version.
+
+Available schemas:
+
+* frontend
+* codeintel
+* codeinsights
+
+
+Flags:
+
+* `--db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--rev="<value>"`: The target revision
+
 ## sg insights
 
 Tools to interact with Code Insights data.

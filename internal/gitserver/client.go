@@ -57,7 +57,6 @@ var (
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	RepoInfo                func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
 	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
@@ -234,15 +233,6 @@ type Client interface {
 	// ResolveRevisions expands a set of RevisionSpecifiers (which may include hashes, globs, refs, or glob exclusions)
 	// into an equivalent set of commit hashes
 	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
-
-	// RepoInfo retrieves information about one or more repositories on gitserver.
-	//
-	// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
-	// will be false and the error will be nil.
-	//
-	// If multiple errors occurred, an incomplete result is returned along with an
-	// error.errors.
-	RepoInfo(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
 
 	// ReposStats will return a map of the ReposStats for each gitserver in a
 	// map. If we fail to fetch a stat from a gitserver, it won't be in the
@@ -1029,87 +1019,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	var err error
 	res := protocol.RepoCloneProgressResponse{
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-	}
-
-	for i := 0; i < cap(ch); i++ {
-		o := <-ch
-
-		if o.err != nil {
-			err = errors.Append(err, o.err)
-			continue
-		}
-
-		for repo, info := range o.res.Results {
-			res.Results[repo] = info
-		}
-	}
-
-	return &res, err
-}
-
-func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	if ClientMocks.RepoInfo != nil {
-		return ClientMocks.RepoInfo(ctx, repos...)
-	}
-
-	totalShards := len(c.Addrs())
-	shards := make(map[string]*protocol.RepoInfoRequest, totalShards)
-
-	// Build a map of each shards -> [list of repos that belong to that shard]. We do this so that
-	// we can send only one request with the entire list of repos for that shard. This allows us to
-	// get away with making only N HTTP requests, where N is the total number of shards.
-	for _, r := range repos {
-		addr, err := c.AddrForRepo(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-
-		repoInfoReq := shards[addr]
-		if repoInfoReq == nil {
-			repoInfoReq = new(protocol.RepoInfoRequest)
-			shards[addr] = repoInfoReq
-		}
-
-		repoInfoReq.Repos = append(repoInfoReq.Repos, r)
-	}
-
-	type op struct {
-		req *protocol.RepoInfoRequest
-		res *protocol.RepoInfoResponse
-		err error
-	}
-
-	ch := make(chan op, len(shards))
-	for _, req := range shards {
-		go func(o op) {
-			var resp *http.Response
-			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repos", o.req)
-			if o.err != nil {
-				ch <- o
-				return
-			}
-
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				o.err = &url.Error{
-					URL: resp.Request.URL.String(),
-					Op:  "RepoInfo",
-					Err: errors.Errorf("RepoInfo: http status code: %d, reason: %s", resp.StatusCode, readResponseBody(resp.Body)),
-				}
-
-				ch <- o
-				return // we never get an error status code AND result
-			}
-
-			o.res = new(protocol.RepoInfoResponse)
-			o.err = json.NewDecoder(resp.Body).Decode(o.res)
-			ch <- o
-		}(op{req: req})
-	}
-
-	var err error
-	res := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]*protocol.RepoInfo),
 	}
 
 	for i := 0; i < cap(ch); i++ {

@@ -4,8 +4,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { search, searchKeymap } from '@codemirror/search'
 import { EditorState, Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -42,6 +43,10 @@ const staticExtensions: Extension = [
             borderRight: 'initial',
         },
     }),
+    // Note that these only work out-of-the-box because the editor is
+    // *focusable* but read-only (see EditorState.readOnly above).
+    search({ top: true }),
+    keymap.of(searchKeymap),
 ]
 
 export const Blob: React.FunctionComponent<BlobProps> = ({

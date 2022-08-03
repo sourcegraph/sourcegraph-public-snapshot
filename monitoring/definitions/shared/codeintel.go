@@ -323,7 +323,7 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 // src_executor_run_lock_held_total
 func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName string) monitoring.Group {
 	constructor := func(metricNameRoot, legend string) Observable {
-		filters := makeFilters(containerName)
+		filters := makeFilters("sg_jobs", containerName)
 		return Observable{
 			Name:        metricNameRoot + "_total",
 			Description: fmt.Sprintf("milliseconds %s every 5m", legend),

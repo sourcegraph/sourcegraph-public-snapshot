@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -38,7 +38,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -52,8 +52,8 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	}
 	// Create a batch change and create a new spec targetting the same batch change again.
 	batchChangeName := "test-apply-preview-resolver"
-	batchChange := ct.CreateBatchChange(t, ctx, cstore, batchChangeName, userID, oldBatchSpec.ID)
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, batchChangeName, userID, batchChange.ID)
+	batchChange := bt.CreateBatchChange(t, ctx, cstore, batchChangeName, userID, oldBatchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, batchChangeName, userID, batchChange.ID)
 
 	esStore := database.ExternalServicesWith(logger, cstore)
 	repoStore := database.ReposWith(logger, cstore)
@@ -70,7 +70,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 
 	changesetSpecs := make([]*btypes.ChangesetSpec, 0, 2)
 	for i, r := range rs[:2] {
-		s := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		s := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      r.ID,
@@ -81,13 +81,13 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	}
 
 	// Add one changeset that doesn't match any new spec anymore but was there before (close, detach).
-	closingChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+	closingChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      rs[2].ID,
 		BatchSpec: oldBatchSpec.ID,
 		HeadRef:   "d34db33f-2",
 	})
-	closingChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	closingChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:             rs[2].ID,
 		BatchChange:      batchChange.ID,
 		CurrentSpec:      closingChangesetSpec.ID,
@@ -95,13 +95,13 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	})
 
 	// Add one changeset that doesn't matches a new spec (update).
-	updatedChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+	updatedChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
 		BatchSpec: oldBatchSpec.ID,
 		User:      userID,
 		Repo:      changesetSpecs[1].RepoID,
 		HeadRef:   changesetSpecs[1].Spec.HeadRef,
 	})
-	updatedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	updatedChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:               rs[1].ID,
 		BatchChange:        batchChange.ID,
 		CurrentSpec:        updatedChangesetSpec.ID,
@@ -266,7 +266,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	esStore := database.ExternalServicesWith(logger, bstore)
@@ -519,36 +519,36 @@ func newApplyPreviewTestFixture(
 	// with an explicit published field (so we can verify that UI publication
 	// states can't override that), and four changeset specs without published
 	// fields (one for each possible publication state).
-	batchSpec := ct.CreateBatchSpec(t, ctx, bstore, name, userID, 0)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, name, userID, 0)
 
 	return &applyPreviewTestFixture{
 		batchSpec: batchSpec,
-		specPublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specPublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "published " + name,
 			Published: true,
 		}),
-		specToBePublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specToBePublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be published " + name,
 		}),
-		specToBeDraft: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specToBeDraft: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be draft " + name,
 		}),
-		specToBeUnpublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specToBeUnpublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be unpublished " + name,
 		}),
-		specToBeOmitted: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specToBeOmitted: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
