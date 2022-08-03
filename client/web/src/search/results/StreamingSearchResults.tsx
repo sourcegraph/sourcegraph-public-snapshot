@@ -30,6 +30,7 @@ import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
+import { fetchRepository } from '../../repo/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
@@ -147,6 +148,17 @@ export const StreamingSearchResults: React.FunctionComponent<
 
     const results = useCachedSearchResults(streamSearch, query, options, extensionHostAPI, telemetryService)
 
+    useEffect(() => {
+        const repos = [...new Set(results?.results.map(result => result.repository))]
+        for (const repo of repos) {
+            console.log('Fetching'.repo)
+            // eslint-disable-next-line rxjs/no-ignored-observable
+            fetchRepository({ repoName: repo })
+        }
+        console.log(repos)
+    }, [results])
+
+    console.log(results)
     // Log events when search completes or fails
     useEffect(() => {
         if (results?.state === 'complete') {

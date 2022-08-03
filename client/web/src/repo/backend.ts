@@ -53,38 +53,38 @@ export const repositoryFragment = gql`
 /**
  * Fetch the repository.
  */
-export const fetchRepository = memoizeObservable(
-    (args: { repoName: string }): Observable<RepositoryFields> =>
-        requestGraphQL<RepositoryRedirectResult, RepositoryRedirectVariables>(
-            gql`
-                query RepositoryRedirect($repoName: String!) {
-                    repositoryRedirect(name: $repoName) {
-                        __typename
-                        ... on Repository {
-                            ...RepositoryFields
-                        }
-                        ... on Redirect {
-                            url
-                        }
+export const fetchRepository = memoizeObservable((args: { repoName: string }): Observable<RepositoryFields> => {
+    console.log('Fetching repository', args.repoName, Date.now())
+    return requestGraphQL<RepositoryRedirectResult, RepositoryRedirectVariables>(
+        gql`
+            query RepositoryRedirect($repoName: String!) {
+                repositoryRedirect(name: $repoName) {
+                    __typename
+                    ... on Repository {
+                        ...RepositoryFields
+                    }
+                    ... on Redirect {
+                        url
                     }
                 }
-                ${repositoryFragment}
-            `,
-            args
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(data => {
-                if (!data.repositoryRedirect) {
-                    throw new RepoNotFoundError(args.repoName)
-                }
-                if (data.repositoryRedirect.__typename === 'Redirect') {
-                    throw new RepoSeeOtherError(data.repositoryRedirect.url)
-                }
-                return data.repositoryRedirect
-            })
-        ),
-    makeRepoURI
-)
+            }
+            ${repositoryFragment}
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            console.log('Fetched repository', args.repoName, Date.now())
+            if (!data.repositoryRedirect) {
+                throw new RepoNotFoundError(args.repoName)
+            }
+            if (data.repositoryRedirect.__typename === 'Redirect') {
+                throw new RepoSeeOtherError(data.repositoryRedirect.url)
+            }
+            return data.repositoryRedirect
+        })
+    )
+}, makeRepoURI)
 
 export interface ResolvedRevision extends ResolvedRevisionSpec {
     defaultBranch: string
@@ -99,8 +99,9 @@ export interface ResolvedRevision extends ResolvedRevisionSpec {
  * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRevision = memoizeObservable(
-    ({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): Observable<ResolvedRevision> =>
-        queryGraphQL(
+    ({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): Observable<ResolvedRevision> => {
+        console.log('Resolving revision!', repoName, revision, Date.now())
+        return queryGraphQL(
             gql`
                 query ResolveRev($repoName: String!, $revision: String!) {
                     repositoryRedirect(name: $repoName) {
@@ -130,6 +131,7 @@ export const resolveRevision = memoizeObservable(
             { repoName, revision: revision || '' }
         ).pipe(
             map(({ data, errors }) => {
+                console.log('Resolved revision', repoName, revision, Date.now())
                 if (!data) {
                     throw createAggregateError(errors)
                 }
@@ -163,7 +165,8 @@ export const resolveRevision = memoizeObservable(
                     rootTreeURL: data.repositoryRedirect.commit.tree.url,
                 }
             })
-        ),
+        )
+    },
     makeRepoURI
 )
 
