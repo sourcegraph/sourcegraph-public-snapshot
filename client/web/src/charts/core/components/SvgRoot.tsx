@@ -138,6 +138,8 @@ export const SvgAxisLeft: FC<SvgAxisLeftProps> = props => {
 
 const defaultToString = <T,>(tick: T): string => `${tick}`
 const defaultTruncatedTick = (tick: string): string => (tick.length >= 15 ? `${tick.slice(0, 15)}...` : tick)
+
+// TODO: Support reverse truncation for some charts https://github.com/sourcegraph/sourcegraph/issues/39879
 export const reverseTruncatedTick = (tick: string): string => (tick.length >= 15 ? `...${tick.slice(-15)}` : tick)
 
 interface SvgAxisBottomProps<Tick> {
@@ -158,6 +160,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
 
     const axisGroupRef = useRef<SVGGElement>(null)
     const { ref } = useResizeObserver<SVGGElement>({
+        // TODO: Fix corner cases with axis sizes see https://github.com/sourcegraph/sourcegraph/issues/39876
         onResize: ({ height = 0 }) => setPadding(padding => ({ ...padding, bottom: height })),
     })
 
@@ -175,7 +178,6 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
     }, [ticks, tickFormat])
 
     const getXTickProps = (props: TickRendererProps): TickProps => {
-        // TODO: Add more sophisticated logic around labels overlapping calculation
         const measuredSize = ticks.length * maxWidth
         const rotate =
             upperRangeBound < measuredSize

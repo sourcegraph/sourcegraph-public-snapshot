@@ -17,8 +17,7 @@ import { formatYTick, getXScaleTicks, getYScaleTicks } from './tick-formatters'
 
 import styles from './Axis.module.scss'
 
-// TODO: Improve @visx/axis API in order to support value (tick) and values (ticks) props
-// on component level and not just in prop function level
+// TODO: Remove this prop generation, see https://github.com/sourcegraph/sourcegraph/issues/39874
 const getTickYLabelProps: TickLabelProps<number> = (value, index, values): Partial<TextProps> => ({
     dy: '0.25em',
     textAnchor: 'end',
@@ -77,8 +76,7 @@ export const AxisLeft = memo(
 
 AxisLeft.displayName = 'AxisLeft'
 
-// TODO: Improve @visx/axis API in order to support value (tick) and values (ticks) props
-// on component level and not just in prop function level
+// TODO: Remove this prop generation, see https://github.com/sourcegraph/sourcegraph/issues/39874
 const getTickXLabelProps: TickLabelProps<Date> = (value, index, values): Partial<TextProps> => ({
     'aria-label': `Tick axis ${index + 1} of ${values.length}. Value: ${value}`,
     textAnchor: 'middle',

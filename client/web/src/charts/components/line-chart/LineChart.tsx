@@ -2,7 +2,7 @@ import { ReactElement, useMemo, useState, SVGProps, CSSProperties, useRef } from
 
 import { Group } from '@visx/group'
 import { scaleTime, scaleLinear, getTicks } from '@visx/scale'
-import { AnyD3Scale } from '@visx/scale/lib/types/Scale';
+import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import { LinePath } from '@visx/shape'
 import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
@@ -65,7 +65,7 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
     dataKey === activeDataKey ? 1 : -1
 
-const identity = <T, >(argument: T): T => argument
+const identity = <T,>(argument: T): T => argument
 
 interface GetScaleTicksInput {
     scale: AnyD3Scale
@@ -231,7 +231,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             />
 
             <Group top={content.top} left={content.left}>
-                {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale}/>}
+                {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {sortedSeries.map(line => (
                     <LinePath
@@ -285,9 +285,10 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
 
             {activePoint && rootReference.current && (
                 <Tooltip
-                    containerElement={rootReference.current as unknown as HTMLElement}
-                    activeElement={activePoint.element as HTMLElement}>
-                    <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked}/>
+                    containerElement={(rootReference.current as unknown) as HTMLElement}
+                    activeElement={activePoint.element as HTMLElement}
+                >
+                    <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}
         </svg>
