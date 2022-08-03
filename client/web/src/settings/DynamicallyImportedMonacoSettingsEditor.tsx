@@ -85,9 +85,6 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                     if (action === 'REPLACE') {
                         return undefined
                     }
-                    console.log('action', action)
-                    console.log('loading', this.props.loading)
-                    console.log('isDirty', this.isDirty)
                     if (this.props.loading || this.isDirty) {
                         return 'Discard changes?'
                     }
