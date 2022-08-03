@@ -71,6 +71,7 @@ type UserStore interface {
 	HardDelete(context.Context, int32) error
 	HasTag(ctx context.Context, userID int32, tag string) (bool, error)
 	InvalidateSessionsByID(context.Context, int32) (err error)
+	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
@@ -715,19 +716,27 @@ func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 }
 
 func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err error) {
+	return u.InvalidateSessionsByIDs(ctx, []int32{id})
+}
+
+func (u *userStore) InvalidateSessionsByIDs(ctx context.Context, ids []int32) (err error) {
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
+	userIDs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		userIDs[i] = sqlf.Sprintf("%d", ids[i])
+	}
 	query := sqlf.Sprintf(`
 		UPDATE users
 		SET
 			updated_at=now(),
 			invalidated_sessions_at=now()
-		WHERE id=%d
-		`, id)
+		WHERE id IN (%d)`, sqlf.Join(userIDs, ","))
+
 	res, err := tx.ExecResult(ctx, query)
 	if err != nil {
 		return err
@@ -736,8 +745,8 @@ func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err e
 	if err != nil {
 		return err
 	}
-	if nrows == 0 {
-		return userNotFoundErr{args: []any{id}}
+	if nrows != int64(len(ids)) {
+		return errors.New("some users were not found")
 	}
 	return nil
 }

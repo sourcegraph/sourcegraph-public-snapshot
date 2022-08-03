@@ -33,10 +33,10 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 		conds = append(conds, sqlf.Sprintf("site_admin = %s", *args.SiteAdmin))
 	}
 	if args.Username != nil {
-		conds = append(conds, sqlf.Sprintf("username ILIKE %s", "%" + *args.Username + "%"))
+		conds = append(conds, sqlf.Sprintf("username ILIKE %s", "%"+*args.Username+"%"))
 	}
 	if args.Email != nil {
-		conds = append(conds, sqlf.Sprintf("email ILIKE %s", "%" + *args.Email + "%"))
+		conds = append(conds, sqlf.Sprintf("email ILIKE %s", "%"+*args.Email+"%"))
 	}
 	return &SiteUsersResolver{s.db, conds}, nil
 }

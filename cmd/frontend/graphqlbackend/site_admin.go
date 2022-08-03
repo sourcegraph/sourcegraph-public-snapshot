@@ -242,15 +242,28 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
 	UserID graphql.ID
 }) (*EmptyResponse, error) {
+	return r.InvalidateSessionsByIDs(ctx, &struct{ UserIDs []graphql.ID }{UserIDs: []graphql.ID{args.UserID}})
+}
+
+func (r *schemaResolver) InvalidateSessionsByIDs(ctx context.Context, args *struct {
+	UserIDs []graphql.ID
+}) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	userID, err := UnmarshalUserID(args.UserID)
-	if err != nil {
-		return nil, err
+	if len(args.UserIDs) == 0 {
+		return nil, errors.New("must specify at least one user ID")
 	}
-	if err := session.InvalidateSessionsByID(ctx, r.db, userID); err != nil {
+	userIDs := make([]int32, len(args.UserIDs))
+	for index, id := range args.UserIDs {
+		userID, err := UnmarshalUserID(id)
+		if err != nil {
+			return nil, err
+		}
+		userIDs[index] = userID
+	}
+	if err := session.InvalidateSessionsByIDs(ctx, r.db, userIDs); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
