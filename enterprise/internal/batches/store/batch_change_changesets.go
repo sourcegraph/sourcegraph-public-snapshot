@@ -123,6 +123,91 @@ WHERE
   batch_change_id = %s AND changeset_id = %s
 `
 
+func (s *Store) GetAssociatedChangeset(ctx context.Context, cs *btypes.Changeset) (ac *btypes.AssociatedChangeset, err error) {
+	// TODO: Not paginated because the previous implementation wasn't, but we
+	// should figure out if that's still a reasonable assumption here.
+	ctx, _, endObservation := s.operations.getAssociatedChangeset.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(
+		getAssociatedChangesetFmtstr,
+		sqlf.Join(batchChangeChangesetAssociationColumns, ","),
+		cs.ID,
+	)
+
+	ac = btypes.NewAssociatedChangeset(cs)
+	if err := s.query(ctx, q, func(sc dbutil.Scanner) error {
+		assoc := btypes.BatchChangeChangesetAssociation{}
+		if err := scanBatchChangeChangesetAssociation(&assoc, sc); err != nil {
+			return err
+		}
+
+		ac.AddAssociation(&assoc)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return ac, nil
+}
+
+const getAssociatedChangesetFmtstr = `
+-- source: batch_change_changesets.go:GetAssociatedChangeset
+SELECT
+  %s
+FROM
+  batch_change_changesets
+WHERE
+  changeset_id = %s
+`
+
+func (s *Store) UpsertAssociatedChangeset(ctx context.Context, ac *btypes.AssociatedChangeset) (err error) {
+	// TODO: delegate to either INSERT or UPDATE variant depending on ac.Changeset.ID.
+}
+
+// WITH
+//   inserted_a AS (
+//     INSERT INTO
+//       a (name)
+//     VALUES
+//       ('c')
+//     RETURNING
+//       id
+//   ),
+//   data (b, archived) AS (
+//     VALUES (1, false), (2, true)
+//   )
+// INSERT INTO
+//   j (a, b, archived)
+// SELECT
+//   inserted_a.id, data.b, data.archived
+// FROM
+//   inserted_a CROSS JOIN data;
+
+// WITH
+//   a (id) AS (
+//     SELECT 1
+//   ),
+//   data (b, archived) AS (
+//     VALUES (1, true), (2, false)
+//   ),
+//   deleted AS (
+//     DELETE FROM
+//       j
+//     USING
+//       a
+//     WHERE
+//       a = a.id
+//     RETURNING
+//       0
+//   )
+// INSERT INTO
+//   j (a, b, archived)
+// SELECT
+//   a.id, data.b, data.archived
+// FROM
+//   a CROSS JOIN data LEFT OUTER JOIN deleted ON TRUE;
+
 func (s *Store) GetBatchChangeChangesetAssociation(
 	ctx context.Context,
 	batchChangeID int64,

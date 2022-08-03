@@ -180,6 +180,7 @@ type operations struct {
 	getRepoDiffStat        *observation.Operation
 	listBatchChanges       *observation.Operation
 
+	getAssociatedChangeset                *observation.Operation
 	countBatchChangeChangesetAssociations *observation.Operation
 	createBatchChangeChangesetAssociation *observation.Operation
 	deleteBatchChangeChangesetAssociation *observation.Operation
@@ -321,6 +322,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getBatchChangeDiffStat: op("GetBatchChangeDiffStat"),
 			getRepoDiffStat:        op("GetRepoDiffStat"),
 
+			getAssociatedChangeset:                op("GetAssociatedChangeset"),
 			countBatchChangeChangesetAssociations: op("CountBatchChangeChangesetAssociations"),
 			createBatchChangeChangesetAssociation: op("CreateBatchChangeChangesetAssociation"),
 			deleteBatchChangeChangesetAssociation: op("DeleteBatchChangeChangesetAssociation"),

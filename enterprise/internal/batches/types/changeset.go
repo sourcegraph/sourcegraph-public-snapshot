@@ -300,10 +300,8 @@ func (c *Changeset) RecordID() int { return int(c.ID) }
 
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
-	tt := *c
-	tt.BatchChanges = make([]BatchChangeAssoc, len(c.BatchChanges))
-	copy(tt.BatchChanges, c.BatchChanges)
-	return &tt
+	// TODO: consider whether we need to clone the string pointer fields.
+	return &*c
 }
 
 // Closeable returns whether the Changeset is already closed or merged.
@@ -425,16 +423,6 @@ func (c *Changeset) SetMetadata(meta any) error {
 		return errors.New("unknown changeset type")
 	}
 	return nil
-}
-
-// RemoveBatchChangeID removes the given id from the Changesets BatchChangesIDs slice.
-// If the id is not in BatchChangesIDs calling this method doesn't have an effect.
-func (c *Changeset) RemoveBatchChangeID(id int64) {
-	for i := len(c.BatchChanges) - 1; i >= 0; i-- {
-		if c.BatchChanges[i].BatchChangeID == id {
-			c.BatchChanges = append(c.BatchChanges[:i], c.BatchChanges[i+1:]...)
-		}
-	}
 }
 
 // Title of the Changeset.
@@ -817,69 +805,6 @@ func (c *Changeset) BaseRef() (string, error) {
 	default:
 		return "", errors.New("unknown changeset type")
 	}
-}
-
-// AttachedTo returns true if the changeset is currently attached to the batch
-// change with the given batchChangeID.
-func (c *Changeset) AttachedTo(batchChangeID int64) bool {
-	for _, assoc := range c.BatchChanges {
-		if assoc.BatchChangeID == batchChangeID {
-			return true
-		}
-	}
-	return false
-}
-
-// Attach attaches the batch change with the given ID to the changeset.
-// If the batch change is already attached, this is a noop.
-// If the batch change is still attached but is marked as to be detached,
-// the detach flag is removed.
-func (c *Changeset) Attach(batchChangeID int64) {
-	for i := range c.BatchChanges {
-		if c.BatchChanges[i].BatchChangeID == batchChangeID {
-			c.BatchChanges[i].Detach = false
-			c.BatchChanges[i].IsArchived = false
-			c.BatchChanges[i].Archive = false
-			return
-		}
-	}
-	c.BatchChanges = append(c.BatchChanges, BatchChangeAssoc{BatchChangeID: batchChangeID})
-}
-
-// Detach marks the given batch change as to-be-detached. Returns true, if the
-// batch change currently is attached to the batch change. This function is a noop,
-// if the given batch change was not attached to the changeset.
-func (c *Changeset) Detach(batchChangeID int64) bool {
-	for i := range c.BatchChanges {
-		if c.BatchChanges[i].BatchChangeID == batchChangeID {
-			c.BatchChanges[i].Detach = true
-			return true
-		}
-	}
-	return false
-}
-
-// Archive marks the given changeset as to-be-archived. Returns true, if the
-// changeset currently is attached to the batch change and *not* archived. This
-// function is a noop, if the given changeset was already archived.
-func (c *Changeset) Archive(batchChangeID int64) bool {
-	for i := range c.BatchChanges {
-		if c.BatchChanges[i].BatchChangeID == batchChangeID && !c.BatchChanges[i].IsArchived {
-			c.BatchChanges[i].Archive = true
-			return true
-		}
-	}
-	return false
-}
-
-// ArchivedIn checks whether the changeset is archived in the given batch change.
-func (c *Changeset) ArchivedIn(batchChangeID int64) bool {
-	for i := range c.BatchChanges {
-		if c.BatchChanges[i].BatchChangeID == batchChangeID && c.BatchChanges[i].IsArchived {
-			return true
-		}
-	}
-	return false
 }
 
 // SupportsLabels returns whether the code host on which the changeset is
