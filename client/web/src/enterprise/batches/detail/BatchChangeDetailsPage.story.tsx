@@ -26,7 +26,7 @@ import {
     BATCH_CHANGE_CHANGESETS_RESULT,
     EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
 } from './BatchChangeDetailsPage.mock'
-let SBSdefaultValue = false
+// let SBSdefaultValue = false
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
     title: 'web/batches/details/BatchChangeDetailsPage',
@@ -40,7 +40,7 @@ const config: Meta = {
     argTypes: {
         supersedingBatchSpec: {
             control: { type: 'boolean' },
-            defaultValue: SBSdefaultValue,
+            // defaultValue: SBSdefaultValue,
         },
         viewerCanAdminister: {
             control: { type: 'boolean' },
@@ -151,7 +151,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 const deleteBatchChange = () => Promise.resolve(undefined)
 
 const Template: Story = ({ url, supersededBatchSpec, ...args }) => {
-    SBSdefaultValue = !!supersededBatchSpec
+    // SBSdefaultValue = !!supersededBatchSpec
     const supersedingBatchSpec = args.supersedingBatchSpec
     const viewerCanAdminister = args.viewerCanAdminister
     const isClosed = args.isClosed
@@ -228,25 +228,55 @@ const Template: Story = ({ url, supersededBatchSpec, ...args }) => {
 
 export const Overview = Template.bind({})
 Overview.args = { url: '/users/alice/batch-changes/awesome-batch-change' }
+Overview.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const BurndownChart = Template.bind({})
 BurndownChart.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' }
 BurndownChart.storyName = 'Burndown chart'
+BurndownChart.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const SpecFile = Template.bind({})
 SpecFile.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' }
 SpecFile.storyName = 'Spec file'
+SpecFile.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const Archived = Template.bind({})
 Archived.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' }
+Archived.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const BulkOperations = Template.bind({})
 BulkOperations.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations' }
 BulkOperations.storyName = 'Bulk operations'
+BulkOperations.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
 
 export const SupersededBatchSpec = Template.bind({})
 SupersededBatchSpec.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true }
 SupersededBatchSpec.storyName = 'Superseded batch-spec'
+SupersededBatchSpec.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: true,
+    },
+}
 
 export const EmptyChangesets: Story = () => {
     const mocks = new WildcardMockLink([
