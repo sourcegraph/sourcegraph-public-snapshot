@@ -11,15 +11,20 @@ use syntect::{
 mod sg_treesitter;
 pub use sg_treesitter::dump_document;
 pub use sg_treesitter::dump_document_range;
-pub use sg_treesitter::index_language as lsif_index;
-pub use sg_treesitter::index_language_with_config as lsif_index_with_config;
+pub use sg_treesitter::index_language as scip_index;
+pub use sg_treesitter::index_language_with_config as scip_index_with_config;
 pub use sg_treesitter::lsif_highlight;
 pub use sg_treesitter::make_highlight_config;
+pub use sg_treesitter::scip_highlight;
 pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 
 mod sg_syntect;
 use sg_syntect::ClassedTableGenerator;
+
+// TODO: Don't name it this, just wanted a different file
+mod sg_sciptect;
+// use sg_sciptect::DocumentGenerator;
 
 thread_local! {
     pub(crate) static SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
@@ -32,7 +37,7 @@ lazy_static::lazy_static! {
 /// Struct from: internal/gosyntect/gosyntect.go
 ///
 /// Keep in sync with that struct.
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct SourcegraphQuery {
     // Deprecated field with a default empty string value, kept for backwards
     // compatability with old clients.
@@ -64,6 +69,36 @@ pub struct SourcegraphQuery {
     pub code: String,
 }
 
+#[derive(Deserialize, Default)]
+pub enum SyntaxEngine {
+    #[default]
+    #[serde(rename = "syntect")]
+    Syntect,
+
+    #[serde(rename = "tree-sitter")]
+    TreeSitter,
+}
+
+#[derive(Deserialize, Default)]
+pub struct ScipHighlightQuery {
+    // Which highlighting engine to use.
+    pub engine: SyntaxEngine,
+
+    // Contents of the file
+    pub code: String,
+
+    // The language defined by the server. Required to tree-sitter to use for the filetype name.
+    // default empty string value for backwards compat with clients who do not specify this field.
+    pub language: Option<String>,
+
+    // filepath is only used if language is None.
+    pub filepath: String,
+
+    // line_length_limit is used to limit syntect problems when
+    // parsing very long lines
+    pub line_length_limit: Option<usize>,
+}
+
 pub fn determine_filetype(q: &SourcegraphQuery) -> String {
     let filetype = SYNTAX_SET.with(|syntax_set| match determine_language(q, syntax_set) {
         Ok(language) => language.name.clone(),
@@ -78,7 +113,7 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
     .to_lowercase()
 }
 
-fn determine_language<'a>(
+pub fn determine_language<'a>(
     q: &SourcegraphQuery,
     syntax_set: &'a SyntaxSet,
 ) -> Result<&'a SyntaxReference, JsonValue> {
@@ -197,10 +232,7 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
             )
             .generate();
 
-            json!({
-                "data": output,
-                "plaintext": syntax_def.name == "Plain Text",
-            })
+            json!({ "data": output, "plaintext": syntax_def.name == "Plain Text", })
         } else {
             // TODO(slimsag): return the theme's background color (and other info??) to caller?
             // https://github.com/trishume/syntect/blob/c8b47758a3872d478c7fc740782cd468b2c0a96b/examples/synhtml.rs#L24

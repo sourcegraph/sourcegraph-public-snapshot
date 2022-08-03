@@ -8,8 +8,8 @@ use rocket::serde::json::serde_json::json;
 use rocket::serde::json::Value as JsonValue;
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter as TSHighlighter};
 
-use crate::SourcegraphQuery;
-use sg_lsif::{Document, Occurrence, SyntaxKind};
+use crate::{determine_language, sg_sciptect, ScipHighlightQuery, SourcegraphQuery, SYNTAX_SET};
+use scip::types::{Document, Occurrence, SyntaxKind};
 use sg_macros::include_project_file_optional;
 
 #[rustfmt::skip]
@@ -108,6 +108,8 @@ pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
 }
 
+// TODO(cleanup_lsif): Remove this when we remove /lsif endpoint
+// Currently left unchanged
 pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     let filetype = q
         .filetype
@@ -124,6 +126,51 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
             "error": format!("{} is not a valid filetype for treesitter", filetype)
         })),
         Err(err) => Err(jsonify_err(err)),
+    }
+}
+
+pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
+    match q.engine {
+        crate::SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
+            let sg_query = SourcegraphQuery {
+                extension: "".to_string(),
+                filepath: q.filepath.clone(),
+                filetype: q.language.clone(),
+                css: true,
+                line_length_limit: None,
+                theme: Default::default(),
+                code: q.code.clone(),
+            };
+
+            let language = determine_language(&sg_query, &ss).map_err(jsonify_err)?;
+            let document = sg_sciptect::DocumentGenerator::new(
+                ss,
+                language,
+                q.code.as_str(),
+                q.line_length_limit,
+            )
+            .generate();
+            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+            Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+        }),
+        crate::SyntaxEngine::TreeSitter => {
+            let language = q
+                .language
+                .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
+                .to_lowercase();
+
+            match index_language(&language, &q.code) {
+                Ok(document) => {
+                    let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+
+                    Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+                }
+                Err(Error::InvalidLanguage) => Err(json!({
+                    "error": format!("{} is not a valid filetype for treesitter", language)
+                })),
+                Err(err) => Err(jsonify_err(err)),
+            }
+        }
     }
 }
 
@@ -172,7 +219,7 @@ pub fn index_language_with_config(
         CONFIGURATIONS.get(l)
     })?;
 
-    let mut emitter = LsifEmitter::new();
+    let mut emitter = ScipEmitter::new();
     emitter.render(highlights, &code, &get_syntax_kind_for_hl)
 }
 
@@ -299,14 +346,14 @@ impl Ord for PackedRange {
 }
 
 /// Converts a general-purpose syntax highlighting iterator into a sequence of lines of HTML.
-pub struct LsifEmitter {}
+pub struct ScipEmitter {}
 
 /// Our version of `tree_sitter_highlight::HtmlRenderer`, which emits stuff as a table.
 ///
 /// You can see the original version in the tree_sitter_highlight crate.
-impl LsifEmitter {
+impl ScipEmitter {
     pub fn new() -> Self {
-        LsifEmitter {}
+        ScipEmitter {}
     }
 
     pub fn render<F>(
@@ -340,7 +387,8 @@ impl LsifEmitter {
                 } => {
                     let mut occurrence = Occurrence::new();
                     occurrence.range = line_manager.range(start_byte, end_byte);
-                    occurrence.syntax_kind = get_syntax_kind_for_hl(*highlights.last().unwrap());
+                    occurrence.syntax_kind =
+                        get_syntax_kind_for_hl(*highlights.last().unwrap()).into();
 
                     doc.occurrences.push(occurrence);
                 }
@@ -361,7 +409,7 @@ pub struct FileRange {
 }
 
 pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
-    let mut occurrences = doc.get_occurrences().to_owned();
+    let mut occurrences = doc.occurrences.clone();
     occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range));
     let mut occurrences = VecDeque::from(occurrences);
 
@@ -384,7 +432,7 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
         result += "\n";
 
         while let Some(occ) = occurrences.pop_front() {
-            if occ.syntax_kind == SyntaxKind::UnspecifiedSyntaxKind {
+            if occ.syntax_kind.enum_value_or_default() == SyntaxKind::UnspecifiedSyntaxKind {
                 continue;
             }
 
