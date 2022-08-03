@@ -372,6 +372,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                             canCreateMonitor={canCreateMonitorFromQuery}
                             resultsFound={props.resultsFound}
                             allExpanded={props.allExpanded}
+                            extensionsAsCoreFeatures={extensionsAsCoreFeatures}
                             onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                             onSaveQueryClick={props.onSaveQueryClick}
                             onExportSearchResultsClick={onExportSearchResultsClick}

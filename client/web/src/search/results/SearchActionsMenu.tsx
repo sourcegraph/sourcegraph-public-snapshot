@@ -29,6 +29,7 @@ export interface SearchActionsMenuProps {
     canCreateMonitor: boolean
     resultsFound: boolean
     allExpanded: boolean
+    extensionsAsCoreFeatures?: boolean
     onExpandAllResultsToggle: () => void
     onSaveQueryClick: () => void
     onExportSearchResultsClick: () => void
@@ -41,6 +42,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
     canCreateMonitor,
     resultsFound,
     allExpanded,
+    extensionsAsCoreFeatures,
     onExpandAllResultsToggle,
     onSaveQueryClick,
     onExportSearchResultsClick,
@@ -69,10 +71,12 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                 />
                                 {allExpanded ? 'Collapse all' : 'Expand all'}
                             </MenuItem>
-                            <MenuItem onSelect={onExportSearchResultsClick}>
-                                <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
-                                Export Results
-                            </MenuItem>
+                            {extensionsAsCoreFeatures && (
+                                <MenuItem onSelect={onExportSearchResultsClick}>
+                                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
+                                    Export Results
+                                </MenuItem>
+                            )}
                         </>
                     )}
                     <MenuHeader>Search query</MenuHeader>
