@@ -14,7 +14,7 @@ func TestWarningError(t *testing.T) {
 	}
 
 	// Ensure that all warning type errors are indeed a Warning type error.
-	w := NewWarningError(err)
+	w := NewWarning(err)
 	if !As(w, &ref) {
 		t.Error(`Expected error "w" to be of type warning`)
 	}
