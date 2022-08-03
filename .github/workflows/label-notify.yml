@@ -8,9 +8,11 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-        - uses: jenschelkopf/issue-label-notification-action@f7d2363e5efa18b8aeea671ca8093e183ae8f218 # 1.3
+        - uses: felixfbecker/issue-label-notification-action@57b8a1f93c7951ce8af6cce8c6c90ae35a51c2e0
           with:
              token: "${{ secrets.LABELER_GITHUB_TOKEN }}"
+             edit_body: true
+             message: /cc {recipients}
              recipients: |
                   team/integrations=@muratsu @jjinnii @ryankscott
                   team/growth=@muratsu @a-bergevin
