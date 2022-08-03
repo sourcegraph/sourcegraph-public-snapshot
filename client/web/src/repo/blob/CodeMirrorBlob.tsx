@@ -43,6 +43,8 @@ const staticExtensions: Extension = [
             borderRight: 'initial',
         },
     }),
+    // Note that these only work out-of-the-box because the editor is
+    // *focusable* but read-only (see EditorState.readOnly above).
     search({ top: true }),
     keymap.of(searchKeymap),
 ]
