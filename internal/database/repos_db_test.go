@@ -326,10 +326,10 @@ func TestRepos_GetRepoDescriptionsByIDs(t *testing.T) {
 		},
 	})
 	want := map[api.RepoID]string{
-		created[0].ID: "A novel by Haruki Murakami",
+		created.ID: "A novel by Haruki Murakami",
 	}
 
-	repos, err := db.Repos().GetRepoDescriptionsByIDs(ctx, created[0].ID, 404)
+	repos, err := db.Repos().GetRepoDescriptionsByIDs(ctx, created.ID, 404)
 	if err != nil {
 		t.Fatal(err)
 	}
