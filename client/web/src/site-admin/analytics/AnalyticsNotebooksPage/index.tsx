@@ -1,17 +1,13 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, H3, Text, H4, AnchorLink } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, H2, Text, H4, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
-import {
-    AnalyticsDateRange,
-    NotebooksStatisticsResult,
-    NotebooksStatisticsVariables,
-} from '../../../graphql-operations'
+import { NotebooksStatisticsResult, NotebooksStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
@@ -19,6 +15,7 @@ import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculator } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { useChartFilters } from '../useChartFilters'
 import { StandardDatum } from '../utils'
 
 import { NOTEBOOKS_STATISTICS } from './queries'
@@ -26,13 +23,13 @@ import { NOTEBOOKS_STATISTICS } from './queries'
 import styles from './index.module.scss'
 
 export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
-    const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
-    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(AnalyticsDateRange.LAST_MONTH)
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Notebooks' })
     const { data, error, loading } = useQuery<NotebooksStatisticsResult, NotebooksStatisticsVariables>(
         NOTEBOOKS_STATISTICS,
         {
             variables: {
-                dateRange,
+                dateRange: dateRange.value,
+                grouping: grouping.value,
             },
         }
     )
@@ -47,28 +44,28 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
         const stats: Series<StandardDatum>[] = [
             {
                 id: 'creations',
-                name: eventAggregation === 'count' ? 'Notebooks created' : 'Users created notebooks',
+                name: aggregation.selected === 'count' ? 'Notebooks created' : 'Users created notebooks',
                 color: 'var(--cyan)',
                 data: creations.nodes.map(
                     node => ({
                         date: new Date(node.date),
-                        value: node[eventAggregation],
+                        value: node[aggregation.selected],
                     }),
-                    dateRange
+                    dateRange.value
                 ),
                 getXValue: ({ date }) => date,
                 getYValue: ({ value }) => value,
             },
             {
                 id: 'views',
-                name: eventAggregation === 'count' ? 'Notebook views' : 'Users viewed notebooks',
+                name: aggregation.selected === 'count' ? 'Notebook views' : 'Users viewed notebooks',
                 color: 'var(--orange)',
                 data: views.nodes.map(
                     node => ({
                         date: new Date(node.date),
-                        value: node[eventAggregation],
+                        value: node[aggregation.selected],
                     }),
-                    dateRange
+                    dateRange.value
                 ),
                 getXValue: ({ date }) => date,
                 getYValue: ({ value }) => value,
@@ -76,30 +73,30 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
         ]
         const legends: ValueLegendListProps['items'] = [
             {
-                value: creations.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: eventAggregation === 'count' ? 'Notebooks created' : 'Users created notebooks',
+                value: creations.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: aggregation.selected === 'count' ? 'Notebooks created' : 'Users created notebooks',
                 color: 'var(--cyan)',
                 tooltip:
-                    eventAggregation === 'count'
+                    aggregation.selected === 'count'
                         ? 'The number of notebooks created in the timeframe.'
                         : 'The number of users who created notebooks in the timeframe.',
             },
             {
-                value: views.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: eventAggregation === 'count' ? 'Notebook views' : 'Users viewed notebooks',
+                value: views.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: aggregation.selected === 'count' ? 'Notebook views' : 'Users viewed notebooks',
                 color: 'var(--orange)',
                 tooltip:
-                    eventAggregation === 'count'
+                    aggregation.selected === 'count'
                         ? 'The number of views of all notebooks in the timeframe.'
                         : 'The number of users who viewed notebooks in the timeframe.',
             },
             {
-                value: blockRuns.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: eventAggregation === 'count' ? 'Block runs' : 'Users ran blocks',
+                value: blockRuns.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: aggregation.selected === 'count' ? 'Block runs' : 'Users ran blocks',
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip:
-                    eventAggregation === 'count'
+                    aggregation.selected === 'count'
                         ? 'The number of of blocks within each notebook that are run. Some blocks such as the search results block must be run for the user to see code.'
                         : 'The number of users who ran blocks within each notebook in the timeframe.',
             },
@@ -109,6 +106,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
             page: 'Notebooks',
             label: 'Views',
             color: 'var(--body-color)',
+            dateRange: dateRange.value,
             value: views.summary.totalCount,
             minPerItem: 5,
             description:
@@ -116,7 +114,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
         }
 
         return [stats, legends, calculatorProps]
-    }, [data, dateRange, eventAggregation])
+    }, [data, dateRange.value, aggregation.selected])
 
     if (error) {
         throw error
@@ -131,58 +129,26 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
             <AnalyticsPageTitle>Analytics / Notebooks</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
-                <div className="d-flex justify-content-end align-items-stretch mb-2">
-                    <HorizontalSelect<AnalyticsDateRange>
-                        value={dateRange}
-                        label="Date&nbsp;range"
-                        onChange={value => {
-                            setDateRange(value)
-                            eventLogger.log(`AdminAnalyticsNotebooksDateRange${value}Selected`)
-                        }}
-                        items={[
-                            { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
-                            { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
-                            { value: AnalyticsDateRange.LAST_THREE_MONTHS, label: 'Last 3 months' },
-                            { value: AnalyticsDateRange.CUSTOM, label: 'Custom (coming soon)', disabled: true },
-                        ]}
-                    />
+                <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
+                    <HorizontalSelect<typeof dateRange.value> {...dateRange} />
                 </div>
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {stats && (
                     <div>
                         <ChartContainer
-                            title={eventAggregation === 'count' ? 'Activity by day' : 'Unique users by day'}
+                            title={aggregation.selected === 'count' ? 'Activity by day' : 'Unique users by day'}
                             labelX="Time"
-                            labelY={eventAggregation === 'count' ? 'Activity' : 'Unique users'}
+                            labelY={aggregation.selected === 'count' ? 'Activity' : 'Unique users'}
                         >
                             {width => <LineChart width={width} height={300} series={stats} />}
                         </ChartContainer>
-                        <div className="d-flex justify-content-end align-items-stretch mb-2">
-                            <ToggleSelect<typeof eventAggregation>
-                                selected={eventAggregation}
-                                onChange={value => {
-                                    setEventAggregation(value)
-                                    eventLogger.log(
-                                        `AdminAnalyticsNotebooksAgg${value === 'count' ? 'Totals' : 'Uniques'}Clicked`
-                                    )
-                                }}
-                                items={[
-                                    {
-                                        tooltip: 'total # of actions triggered',
-                                        label: 'Totals',
-                                        value: 'count',
-                                    },
-                                    {
-                                        tooltip: 'unique # of users triggered',
-                                        label: 'Uniques',
-                                        value: 'uniqueUsers',
-                                    },
-                                ]}
-                            />
+                        <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
+                            <HorizontalSelect<typeof grouping.value> {...grouping} className="mr-4" />
+                            <ToggleSelect<typeof aggregation.selected> {...aggregation} />
                         </div>
                     </div>
                 )}
-                <H3 className="my-3">Time saved</H3>
+                <H2 className="my-3">Total time saved</H2>
                 {calculatorProps && <TimeSavedCalculator {...calculatorProps} />}
                 <div className={styles.suggestionBox}>
                     <H4 className="my-3">Suggestions</H4>
