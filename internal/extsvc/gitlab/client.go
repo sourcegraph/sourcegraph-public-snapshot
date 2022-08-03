@@ -231,63 +231,12 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	//return c.doWithBaseURL(ctx, req, result)
-
-	return c.doWithBaseURLAndOAuthTokenRefresher(ctx, req, result)
+	return c.doWithBaseURL(ctx, req, result)
 }
 
-// doWithBaseURL will not amend the request URL.
-func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.Auth != nil {
-		if err := c.Auth.Authenticate(req); err != nil {
-			return nil, 0, errors.Wrap(err, "authenticating request")
-		}
-	}
-	var resp *http.Response
-
-	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
-	span.SetTag("URL", req.URL.String())
-	defer func() {
-		if err != nil {
-			span.SetTag("error", err.Error())
-		}
-		if resp != nil {
-			span.SetTag("status", resp.Status)
-		}
-		span.Finish()
-	}()
-
-	if c.rateLimiter != nil {
-		err = c.rateLimiter.Wait(ctx)
-		if err != nil {
-			return nil, 0, errors.Wrap(err, "rate limit")
-		}
-	}
-
-	resp, err = c.httpClient.Do(req.WithContext(ctx))
-	if err != nil {
-		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-		return nil, 0, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
-
-	c.rateLimitMonitor.Update(resp.Header)
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		// We swallow the error here, because we don't want to fail. Parsing the body
-		// is just optional to provide some more context.
-		body, _ := io.ReadAll(resp.Body)
-		err := NewHTTPError(resp.StatusCode, body)
-		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
-	}
-
-	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
-}
-
-// doWithBaseURLAndOAuthTokenRefresher doesn't amend the request URL. When an OAuth Bearer token is used for authentication,
+// doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is used for authentication,
 // it  will make a retry and refresh in case the token has expired.
-func (c *Client) doWithBaseURLAndOAuthTokenRefresher(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var responseStatus string
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")

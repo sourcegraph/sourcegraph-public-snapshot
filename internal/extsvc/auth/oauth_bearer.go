@@ -116,11 +116,3 @@ func (token *oauthBearerTokenWithGitHubApp) Hash() string {
 	shaSum := sha256.Sum256(token.rawKey)
 	return hex.EncodeToString(shaSum[:])
 }
-
-type oauthBearerTokenWithRefresher struct {
-	OAuthBearerToken
-
-	ClientID     string
-	ClientSecret string
-	RefreshToken string
-}
