@@ -13,7 +13,7 @@ const config: Meta = {
     decorators: [decorator],
     argTypes: {
         count: {
-            name: 'name',
+            name: 'Count',
             control: { type: 'number' },
             defaultValue: 1,
         },
