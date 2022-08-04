@@ -69,7 +69,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer)
 	id, err := client.FindSyncWebhook(ctx, job.RepoName) // TODO: Don't make API calls every time
-	if err != nil {
+	if err != nil && err.Error() != "unable to find webhook" {
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
 	}
 
@@ -94,7 +94,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: Marshal failed"))
 	}
 
-	id, err = client.CreateSyncWebhook(ctx, job.RepoName, globals.ExternalURL().Host, secret) // TODO: Add to DB
+	id, err = client.CreateSyncWebhook(ctx, job.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret) // TODO: Add to DB
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: CreateSyncWebhook failed")
 	}
