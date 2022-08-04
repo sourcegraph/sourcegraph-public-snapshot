@@ -1,6 +1,6 @@
 # Status bar item tutorial
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
 
 ![Status bar](img/status-bar.png)
 

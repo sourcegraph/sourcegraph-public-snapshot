@@ -1,6 +1,6 @@
 # Sourcegraph extensions
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](./deprecation.md).
 
 <p class="lead">
 If you've used Sourcegraph before, you've used a Sourcegraph extension: Sourcegraph extensions add features like git blame, code coverage, trace/log information, link previews, and third-party tool integrations. 

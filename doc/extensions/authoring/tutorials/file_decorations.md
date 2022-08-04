@@ -1,6 +1,6 @@
 # File decorations tutorial
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
 
 ![File decorations](img/file-decorations.png)
 
