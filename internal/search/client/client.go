@@ -237,6 +237,7 @@ func toFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
 		CodeOwnershipFilters:    flagSet.GetBoolOr("code-ownership", false),
+		AbLuckySearch:           flagSet.GetBoolOr("ab-lucky-search", false),
 	}
 }
 

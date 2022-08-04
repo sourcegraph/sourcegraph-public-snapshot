@@ -327,6 +327,10 @@ type Features struct {
 	// filter and allow users to search by code owners using the has.owner
 	// predicate.
 	CodeOwnershipFilters bool `json:"code-ownership"`
+
+	// When true lucky search runs by default. Adding for A/B testing in
+	// 08/2022. To be removed at latest by 12/2022.
+	AbLuckySearch bool `json:"ab-lucky-search"`
 }
 
 func (f *Features) String() string {
