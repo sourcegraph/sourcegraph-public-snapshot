@@ -26,13 +26,12 @@ const queryRepoChangesetsStats: typeof _queryRepoChangesetsStats = () =>
 
 export const RepoButton: Story = args => (
     <WebStory>
-        {() => (
-            <>
-                {(openValue = args.open)}
-                {(mergedValue = args.merged)}
-                <RepoBatchChangesButton repoName="Awesome Repo" queryRepoChangesetsStats={queryRepoChangesetsStats} />
-            </>
-        )}
+        {() => {
+            openValue = args.open
+            mergedValue = args.merged
+            
+            return <RepoBatchChangesButton repoName="Awesome Repo" queryRepoChangesetsStats={queryRepoChangesetsStats} />
+        }}
     </WebStory>
 )
 RepoButton.argTypes = {
