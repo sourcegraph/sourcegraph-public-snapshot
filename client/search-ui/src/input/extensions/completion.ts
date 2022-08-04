@@ -9,7 +9,6 @@ import {
     snippet,
     CompletionSource,
     acceptCompletion,
-    CompletionContext,
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
