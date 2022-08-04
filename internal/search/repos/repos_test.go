@@ -14,12 +14,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/grafana/regexp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -656,6 +658,103 @@ func TestRepoHasFileContent(t *testing.T) {
 			})
 			require.NoError(t, err)
 
+			require.Equal(t, tc.expected, resolved.RepoRevs)
+		})
+	}
+}
+
+func TestRepoHasCommitAfter(t *testing.T) {
+	repoA := types.MinimalRepo{ID: 1, Name: "example.com/1"}
+	repoB := types.MinimalRepo{ID: 2, Name: "example.com/2"}
+	repoC := types.MinimalRepo{ID: 3, Name: "example.com/3"}
+	repoD := types.MinimalRepo{ID: 4, Name: "example.com/4"}
+
+	mkHead := func(repo types.MinimalRepo) *search.RepositoryRevisions {
+		return &search.RepositoryRevisions{
+			Repo: repo,
+			Revs: []string{""},
+		}
+	}
+
+	mockGitserver := gitserver.NewMockClient()
+	mockGitserver.HasCommitAfterFunc.SetDefaultHook(func(_ context.Context, repoName api.RepoName, _ string, _ string, _ authz.SubRepoPermissionChecker) (bool, error) {
+		switch repoName {
+		case repoA.Name:
+			return true, nil
+		case repoB.Name:
+			return true, nil
+		case repoC.Name:
+			return false, nil
+		case repoD.Name:
+			return false, &gitdomain.RevisionNotFoundError{}
+		default:
+			panic("unreachable")
+		}
+	})
+
+	repos := database.NewMockRepoStore()
+	repos.ListMinimalReposFunc.SetDefaultHook(func(_ context.Context, opts database.ReposListOptions) ([]types.MinimalRepo, error) {
+		res := []types.MinimalRepo{}
+		for _, r := range []types.MinimalRepo{repoA, repoB, repoC, repoD} {
+			if matched, _ := regexp.MatchString(opts.IncludePatterns[0], string(r.Name)); matched {
+				res = append(res, r)
+			}
+		}
+		return res, nil
+	})
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	cases := []struct {
+		name        string
+		nameFilter  string
+		commitAfter string
+		expected    []*search.RepositoryRevisions
+		err         error
+	}{{
+		name:        "no filters",
+		nameFilter:  ".*",
+		commitAfter: "",
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoA),
+			mkHead(repoB),
+			mkHead(repoC),
+			mkHead(repoD),
+		},
+		err: nil,
+	}, {
+		name:        "commit after",
+		nameFilter:  ".*",
+		commitAfter: "yesterday",
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoA),
+			mkHead(repoB),
+		},
+		err: nil,
+	}, {
+		name:        "err commit after",
+		nameFilter:  "repoD",
+		commitAfter: "yesterday",
+		expected:    nil,
+		err:         ErrNoResolvedRepos,
+	}, {
+		name:        "no commit after",
+		nameFilter:  "repoC",
+		commitAfter: "yesterday",
+		expected:    nil,
+		err:         ErrNoResolvedRepos,
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := NewResolver(logtest.Scoped(t), db, endpoint.Static("test"), nil)
+			res.gitserver = mockGitserver
+			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
+				RepoFilters: []string{tc.nameFilter},
+				CommitAfter: tc.commitAfter,
+			})
+			require.Equal(t, tc.err, err)
 			require.Equal(t, tc.expected, resolved.RepoRevs)
 		})
 	}
