@@ -84,6 +84,7 @@ CREATE TRIGGER trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo R
 --------------------------------------------------------------------------------
 
 CREATE TABLE gitserver_repos_statistics (
+  -- In this table we have one row per shard_id
   shard_id text PRIMARY KEY,
 
   total       BIGINT NOT NULL DEFAULT 0,
@@ -120,23 +121,24 @@ COMMENT ON COLUMN gitserver_repos_statistics.not_cloned IS 'Number of repositori
 CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
+      INSERT INTO gitserver_repos_statistics(shard_id, total, not_cloned, cloning, cloned)
+      SELECT
+        newtab.shard_id AS shard_id,
+        COUNT(*) AS total,
+        COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,
+        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
+        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned
+      FROM
+        newtab
+      GROUP BY newtab.shard_id
+      ON CONFLICT(shard_id) DO
+      UPDATE
+      SET
+        total      = gitserver_repos_statistics2.total      + (excluded.total -      (SELECT COUNT(*)                                              FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        not_cloned = gitserver_repos_statistics2.not_cloned + (excluded.not_cloned - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        cloning    = gitserver_repos_statistics2.cloning    + (excluded.cloning -    (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        cloned     = gitserver_repos_statistics2.cloned     + (excluded.cloned -     (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
+      ;
 
       RETURN NULL;
   END
@@ -167,6 +169,7 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_insert() RETURNS
         cloning    = gitserver_repos_statistics.cloning    + excluded.cloning,
         cloned     = gitserver_repos_statistics.cloned     + excluded.cloned
       ;
+
       RETURN NULL;
   END
 $$;
@@ -177,30 +180,14 @@ CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_insert AFTER INSERT ON 
 CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      --- TODO
-      UPDATE gitserver_repos_statistics
+      UPDATE gitserver_repos_statistics grs
       SET
-        total      = gitserver_repos_statistics.total - (SELECT COUNT(*)                                           FROM oldtab WHERE oldtab.shard_id = gitserver_repos_statistics.shard_id),
-        not_cloned = gitserver_repos_statistics.total - (SELECT COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab WHERE oldtab.shard_id = gitserver_repos_statistics.shard_id),
-        cloning    = gitserver_repos_statistics.total - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab WHERE oldtab.shard_id = gitserver_repos_statistics.shard_id),
-        cloned     = gitserver_repos_statistics.total - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab WHERE oldtab.shard_id = gitserver_repos_statistics.shard_id)
+        total      = grs.total      - (SELECT COUNT(*)                                           FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        not_cloned = grs.not_cloned - (SELECT COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        cloning    = grs.cloning    - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        cloned     = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab WHERE oldtab.shard_id = grs.shard_id)
       ;
+
       RETURN NULL;
   END
 $$;
