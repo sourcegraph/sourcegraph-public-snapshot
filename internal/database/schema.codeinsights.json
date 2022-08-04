@@ -910,6 +910,19 @@
           "Comment": ""
         },
         {
+          "Name": "needs_migration",
+          "Index": 20,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "next_recording_after",
           "Index": 7,
           "TypeName": "timestamp without time zone",
