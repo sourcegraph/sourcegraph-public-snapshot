@@ -484,6 +484,8 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 	return cmd("git", "rev-parse", "HEAD")
 }
 
+const testServerHostname = "test-server-1"
+
 func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
 	if db == nil {
 		mDB := database.NewMockDB()
@@ -505,6 +507,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 		rpsLimiter:       ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		Hostname:         testServerHostname,
 	}
 
 	s.StartClonePipeline(ctx)
@@ -777,6 +780,9 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 			t.Fatalf("Expected 1 repo, got %d", len(repos))
 		}
 		dbRepo = repos[0]
+		if !dbRepo.IsDeleted() {
+			t.Fatal("repo is not deleted")
+		}
 	}
 
 	// Now we can delete it
@@ -807,7 +813,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {

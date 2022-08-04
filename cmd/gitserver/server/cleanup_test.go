@@ -729,7 +729,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		}
 		if err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
 			RepoID:      repo.ID,
-			ShardID:     "test",
+			ShardID:     testServerHostname,
 			CloneStatus: types.CloneStatusCloned,
 		}); err != nil {
 			t.Fatal(err)
@@ -742,6 +742,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		ReposDir: root,
 		DB:       db,
 		ctx:      ctx,
+		Hostname: testServerHostname,
 	}
 
 	// Remove everything but github.com/foo/survivor
