@@ -87,7 +87,7 @@ _04Completed.argTypes = {
         control: { type: 'boolean' },
         defaultValue: false,
     },
-    EnabledRepository: {
+    EnabledSharing: {
         control: { type: 'boolean' },
         defaultValue: false,
     },
