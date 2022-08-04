@@ -214,6 +214,10 @@ type Mutation {
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
     """
+    Bulk "deleteUser" action.
+    """
+    deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
+    """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
