@@ -321,7 +321,7 @@ type Features struct {
 	// HybridSearch when true will consult the Zoekt index when running
 	// unindexed searches. Searcher (unindexed search) will the only search
 	// what has changed since the indexed commit.
-	HybridSearch bool `json:"search-hybrd"`
+	HybridSearch bool `json:"search-hybrid"`
 
 	// CodeOwnershipFilters when true will add the code ownership post-search
 	// filter and allow users to search by code owners using the has.owner
