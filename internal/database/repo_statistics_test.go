@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -83,6 +84,8 @@ func TestRepoStatistics(t *testing.T) {
 	if err := db.Repos().Delete(ctx, repos[2].ID); err != nil {
 		t.Fatal(err)
 	}
+	deletedRepoName := queryRepoName(t, ctx, s, repos[2].ID)
+
 	// Deletion is reflected in repoStatistics
 	assertRepoStatistics(t, ctx, s, repoStatistics{
 		Total: 5, SoftDeleted: 1,
@@ -94,6 +97,25 @@ func TestRepoStatistics(t *testing.T) {
 		{ShardID: shards[1], Total: 1, Cloning: 1},
 		{ShardID: shards[2], Total: 3, Cloning: 2, Cloned: 1},
 	})
+	// Until we remove it from disk in gitserver, which causes the clone status
+	// to be set to not_cloned:
+	setCloneStatus(t, db, deletedRepoName, shards[2], types.CloneStatusNotCloned)
+	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 2, Cloning: 2},
+		{ShardID: shards[1], Total: 1, Cloning: 1},
+		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1},
+	})
+}
+
+func queryRepoName(t *testing.T, ctx context.Context, s *repoStatisticsStore, repoID api.RepoID) api.RepoName {
+	t.Helper()
+	var name api.RepoName
+	err := s.QueryRow(ctx, sqlf.Sprintf("SELECT name FROM repo WHERE id = %s", repoID)).Scan(&name)
+	if err != nil {
+		t.Fatalf("failed to query repo name: %s", err)
+	}
+	return name
 }
 
 func setCloneStatus(t *testing.T, db DB, repoName api.RepoName, shard string, status types.CloneStatus) {
