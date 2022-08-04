@@ -1,6 +1,7 @@
 package search
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -26,7 +27,7 @@ type Inputs struct {
 	PatternType         query.SearchType
 	UserSettings        *schema.Settings
 	OnSourcegraphDotCom bool
-	Features            *featureflag.FlagSet
+	Features            *Features
 	Protocol            Protocol
 }
 
@@ -315,17 +316,29 @@ type Features struct {
 	// ContentBasedLangFilters when true will use the language detected from
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
-	ContentBasedLangFilters bool
+	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
 
 	// HybridSearch when true will consult the Zoekt index when running
 	// unindexed searches. Searcher (unindexed search) will the only search
 	// what has changed since the indexed commit.
-	HybridSearch bool
+	HybridSearch bool `json:"search-hybrd"`
 
 	// CodeOwnershipFilters when true will add the code ownership post-search
 	// filter and allow users to search by code owners using the has.owner
 	// predicate.
-	CodeOwnershipFilters bool
+	CodeOwnershipFilters bool `json:"code-ownership"`
+}
+
+func (f *Features) String() string {
+	jsonObject, err := json.Marshal(f)
+	if err != nil {
+		return "error encoding features as string"
+	}
+	flagMap := featureflag.EvaluatedFlagSet{}
+	if err := json.Unmarshal(jsonObject, &flagMap); err != nil {
+		return "error decoding features"
+	}
+	return flagMap.String()
 }
 
 type RepoOptions struct {

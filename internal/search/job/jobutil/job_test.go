@@ -599,6 +599,7 @@ func TestNewPlanJob(t *testing.T) {
 				UserSettings:        &schema.Settings{},
 				PatternType:         query.SearchTypeLiteral,
 				Protocol:            tc.protocol,
+				Features:            &search.Features{},
 				OnSourcegraphDotCom: true,
 			}
 
