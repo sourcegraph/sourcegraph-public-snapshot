@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -55,6 +56,17 @@ func (s *store) Raw() conftypes.RawUnified {
 
 	s.rawMu.RLock()
 	defer s.rawMu.RUnlock()
+
+	if s.mock != nil {
+		raw, err := json.Marshal(s.mock.SiteConfig())
+		if err != nil {
+			return conftypes.RawUnified{}
+		}
+		return conftypes.RawUnified{
+			Site:               string(raw),
+			ServiceConnections: s.mock.ServiceConnectionConfig,
+		}
+	}
 	return s.raw
 }
 
