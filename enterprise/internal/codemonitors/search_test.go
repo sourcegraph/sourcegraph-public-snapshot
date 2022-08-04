@@ -71,6 +71,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 				UserSettings:        &schema.Settings{},
 				PatternType:         query.SearchTypeLiteral,
 				Protocol:            search.Streaming,
+				Features:            &search.Features{},
 				OnSourcegraphDotCom: true,
 			}
 			j, err := jobutil.NewPlanJob(inputs, plan)

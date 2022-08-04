@@ -5,13 +5,9 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -68,8 +64,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		children = append(children, j)
 	}
 
-	features := toFeatures(inputs.Features)
-
 	// Modify the input query if the user specified `file:contains.content()`
 	fileContainsPatterns := b.FileContainsContent()
 	originalQuery := b
@@ -99,7 +93,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			query:          b,
 			resultTypes:    resultTypes,
 			repoOptions:    repoOptions,
-			features:       &features,
+			features:       inputs.Features,
 			fileMatchLimit: fileMatchLimit,
 			selector:       selector,
 		}
@@ -189,7 +183,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); features.CodeOwnershipFilters == true && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipFilters == true && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
 			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
@@ -300,7 +294,6 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	fileMatchLimit := int32(computeFileMatchLimit(f.ToBasic(), searchInputs.Protocol))
 	selector, _ := filter.SelectPathFromString(f.FindValue(query.FieldSelect)) // Invariant: select is validated
 
-	features := toFeatures(searchInputs.Features)
 	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
 	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
@@ -325,7 +318,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
-					Features:        features,
+					Features:        *searchInputs.Features,
 				}
 
 				addJob(&repoPagerJob{
@@ -355,7 +348,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 		if resultTypes.Has(result.TypeStructural) {
 			typ := search.TextRequest
-			zoektQuery, err := zoekt.QueryToZoektQuery(f.ToBasic(), resultTypes, &features, typ)
+			zoektQuery, err := zoekt.QueryToZoektQuery(f.ToBasic(), resultTypes, searchInputs.Features, typ)
 			if err != nil {
 				return nil, err
 			}
@@ -369,7 +362,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
-				Features:        features,
+				Features:        *searchInputs.Features,
 			}
 
 			addJob(&structural.SearchJob{
@@ -473,11 +466,6 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 	return NewParallelJob(allJobs...), nil
 }
-
-var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_search_featureflag_unavailable",
-	Help: "temporary counter to check if we have feature flag available in practice.",
-})
 
 func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	if count := b.Count(); count != nil {
@@ -808,20 +796,6 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	runZoektOverRepos = !repoUniverseSearch || onSourcegraphDotCom
 
 	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
-}
-
-func toFeatures(flagSet *featureflag.FlagSet) search.Features {
-	if flagSet == nil {
-		flagSet = &featureflag.FlagSet{}
-		metricFeatureFlagUnavailable.Inc()
-		log15.Warn("search feature flags are not available")
-	}
-
-	return search.Features{
-		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
-		CodeOwnershipFilters:    flagSet.GetBoolOr("code-ownership", false),
-	}
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
