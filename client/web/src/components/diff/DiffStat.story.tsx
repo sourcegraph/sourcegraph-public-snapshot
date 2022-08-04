@@ -27,8 +27,8 @@ const config: Meta = {
 
 export default config
 
-export const CollapsedCounts: Story = args => (
-    <WebStory>{() => <DiffStat added={args.added} changed={args.changed} deleted={args.deleted} />}</WebStory>
+export const CollapsedCounts: Story<React.ComponentProps<typeof DiffStat>> = args => (
+    <WebStory>{() => <DiffStat {...args} />}</WebStory>
 )
 
 CollapsedCounts.storyName = 'Collapsed counts'
