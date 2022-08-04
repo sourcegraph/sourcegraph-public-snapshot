@@ -19,7 +19,11 @@ type commandRunner interface {
 	RunCommand(ctx context.Context, command command, logger Logger) error
 }
 
-const firecrackerContainerDir = "/work"
+const (
+	firecrackerContainerDir = "/work"
+	// NOTE: Has to match KERNEL_IMAGE in the VM install script.
+	igniteKernelImage = "sourcegraph/ignite-kernel:5.10.135"
+)
 
 // formatFirecrackerCommand constructs the command to run on the host via a Firecracker
 // virtual machine in order to invoke the given spec. If the spec specifies an image, then
@@ -61,6 +65,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "cni",
+			"--kernel-image", igniteKernelImage,
 			firecrackerResourceFlags(options.ResourceOptions),
 			firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
 			"--ssh",

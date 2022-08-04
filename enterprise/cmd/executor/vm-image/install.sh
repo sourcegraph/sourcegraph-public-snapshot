@@ -3,7 +3,8 @@ set -ex -o nounset -o pipefail
 
 export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
-export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
+export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135"
+export KERNEL_IMAGE_HASH="asdf"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
 export NODE_EXPORTER_ADDR="127.0.0.1:9100"
