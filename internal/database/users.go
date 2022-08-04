@@ -532,8 +532,8 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err != nil {
 		return err
 	}
-	if rows == int64(len(ids)) {
-		return errors.New("some users were not deleted")
+	if rows != int64(len(ids)) {
+		return userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to delete %d users, but deleted only %d", +len(ids), rows)}}
 	}
 
 	// Release the username so it can be used by another user or org.
@@ -635,7 +635,7 @@ func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error)
 		return err
 	}
 	if rows != int64(len(ids)) {
-		return errors.New("some users were not hard deleted")
+		return userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to hard delete %d users, but deleted only %d", +len(ids), rows)}}
 	}
 
 	logUserDeletionEvents(ctx, NewDBWith(u.logger, u), ids, SecurityEventNameAccountNuked)
@@ -655,8 +655,8 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 
 	now := time.Now()
 	events := make([]*SecurityEvent, len(ids))
-	for _, id := range ids {
-		events = append(events, &SecurityEvent{
+	for index, id := range ids {
+		events[index] = &SecurityEvent{
 			Name:            name,
 			URL:             "",
 			UserID:          uint32(id),
@@ -664,7 +664,7 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 			Argument:        arg,
 			Source:          "BACKEND",
 			Timestamp:       now,
-		})
+		}
 	}
 	db.SecurityEventLogs().LogEventList(ctx, events)
 }
@@ -775,7 +775,7 @@ func (u *userStore) InvalidateSessionsByIDs(ctx context.Context, ids []int32) (e
 		return err
 	}
 	if nrows != int64(len(ids)) {
-		return errors.New("some users were not found")
+		return userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to invalidate sessions of %d users, but invalidated sessions only %d", +len(ids), nrows)}}
 	}
 	return nil
 }

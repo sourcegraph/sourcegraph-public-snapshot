@@ -40,6 +40,10 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	if len(args.Users) == 0 {
+		return nil, errors.New("must specify at least one user ID")
+	}
+
 	// a must be authenticated at this point, CheckCurrentUserIsSiteAdmin enforces it.
 	a := actor.FromContext(ctx)
 
@@ -65,9 +69,9 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 		return nil, errors.Wrap(err, "list users by IDs")
 	}
 
-	var accountsList [][]*extsvc.Accounts
+	accountsList := make([][]*extsvc.Accounts, len(users))
 	var revokeUserPermissionsArgsList []*database.RevokeUserPermissionsArgs
-	for _, user := range users {
+	for index, user := range users {
 		var accounts []*extsvc.Accounts
 
 		extAccounts, err := r.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: user.ID})
@@ -99,7 +103,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 			AccountIDs:  append(emailStrs, user.Username),
 		})
 
-		accountsList = append(accountsList, accounts)
+		accountsList[index] = accounts
 
 		revokeUserPermissionsArgsList = append(revokeUserPermissionsArgsList, &database.RevokeUserPermissionsArgs{
 			UserID:   user.ID,

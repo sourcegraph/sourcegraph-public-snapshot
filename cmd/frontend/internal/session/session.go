@@ -287,8 +287,7 @@ func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error
 	return InvalidateSessionsByIDs(ctx, db, []int32{id})
 }
 
-// InvalidateSessionsByIDs invalidates all sessions for users
-// If an error occurs, it returns the error
+// Bulk "InvalidateSessionsByID" action.
 func InvalidateSessionsByIDs(ctx context.Context, db database.DB, ids []int32) error {
 	return db.Users().InvalidateSessionsByIDs(ctx, ids)
 }

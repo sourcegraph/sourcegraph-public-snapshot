@@ -6304,6 +6304,9 @@ type Analytics {
     batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
 }
 
+"""
+Site user.
+"""
 type SiteUser {
     """
     The unique ID for the user.
@@ -6339,13 +6342,34 @@ type SiteUser {
     eventsCount: Float!
 }
 
+"""
+SiteUserOrderBy enumerates the ways a users list can be ordered.
+"""
 enum SiteUserOrderBy {
     USERNAME
+    """
+    User's primary email.
+    """
     EMAIL
+    """
+    The total number of user's event_logs.
+    """
     EVENTS_COUNT
+    """
+    The last event_log datetime.
+    """
     LAST_ACTIVE_AT
+    """
+    The datetime when user was added to the system.
+    """
     CREATED_AT
+    """
+    The datetime when user was soft deleted.
+    """
     DELETED_AT
+    """
+    Whether the user is site admin or not.
+    """
     SITE_ADMIN
 }
 

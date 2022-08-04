@@ -88,23 +88,20 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEven
 
 func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
 	vals := make([]*sqlf.Query, len(events))
-	for _, event := range events {
+	for index, event := range events {
 		argument := event.Argument
 		if argument == nil {
 			argument = []byte(`{}`)
 		}
-		vals = append(
-			vals,
-			sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
-				event.Name,
-				event.URL,
-				event.UserID,
-				event.AnonymousUserID,
-				event.Source,
-				argument,
-				version.Version(),
-				event.Timestamp.UTC(),
-			),
+		vals[index] = sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
+			event.Name,
+			event.URL,
+			event.UserID,
+			event.AnonymousUserID,
+			event.Source,
+			argument,
+			version.Version(),
+			event.Timestamp.UTC(),
 		)
 	}
 	query := sqlf.Sprintf("INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES %s", sqlf.Join(vals, ","))
@@ -116,16 +113,7 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 }
 
 func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {
-	// We don't want to begin logging authentication or authorization events in
-	// on-premises installations yet.
-	if !envvar.SourcegraphDotComMode() {
-		return
-	}
-
-	if err := s.InsertList(ctx, []*SecurityEvent{e}); err != nil {
-		j, _ := json.Marshal(e)
-		trace.Logger(ctx, s.logger).Error(string(e.Name), log.String("event", string(j)), log.Error(err))
-	}
+	s.LogEventList(ctx, []*SecurityEvent{e})
 }
 
 func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*SecurityEvent) {
@@ -140,7 +128,7 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 		for i, e := range events {
 			names[i] = string(e.Name)
 		}
-		j, _ := json.Marshal(events)
+		j, _ := json.Marshal(&events)
 		trace.Logger(ctx, s.logger).Error(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
 	}
 }
