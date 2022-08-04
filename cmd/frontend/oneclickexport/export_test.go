@@ -40,9 +40,9 @@ func TestExport(t *testing.T) {
 	})
 	t.Cleanup(func() { conf.Mock(nil) })
 
-	exporter := &OneClickExporter{
+	exporter := &DataExporter{
 		logger: logger,
-		cfgProcessors: map[string]Processor[ConfigRequest]{
+		configProcessors: map[string]Processor[ConfigRequest]{
 			"siteConfig": &SiteConfigProcessor{
 				logger: logger,
 				Type:   "siteConfig",
@@ -50,7 +50,7 @@ func TestExport(t *testing.T) {
 		},
 	}
 
-	archive, err := exporter.Export(&ExportRequest{IncludeSiteConfig: true})
+	archive, err := exporter.Export(ExportRequest{IncludeSiteConfig: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestExport(t *testing.T) {
 }`
 
 	for _, f := range zr.File {
-		if f.Name != "site-config.txt" {
+		if f.Name != "site-config.json" {
 			continue
 		}
 		found = true
