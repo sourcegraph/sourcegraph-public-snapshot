@@ -78,7 +78,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
             (settingsCascade.final &&
                 !isErrorLike(settingsCascade.final) &&
                 (settingsCascade.final['search.defaultPatternType'] as SearchPatternType)) ||
-            SearchPatternType.literal,
+            SearchPatternType.standard,
         [settingsCascade.final]
     )
 

@@ -325,7 +325,7 @@ describe('Search', () => {
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
                 })
             })
         })

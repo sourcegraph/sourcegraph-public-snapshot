@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// readMigrations reads migrations from a locally available git revision for the given schema, and
+// ReadMigrations reads migrations from a locally available git revision for the given schema, and
 // rewrites old versions and explicit edge cases so that they can be more easily composed by the
 // migration stitch utilities.
 //
@@ -31,7 +31,7 @@ import (
 // stitch these relations back together, as it can't be done easily pre-composition across versions.
 //
 // See the method `linkVirtualPrivilegedMigrations`.
-func readMigrations(schemaName, root, rev string) (fs.FS, error) {
+func ReadMigrations(schemaName, root, rev string) (fs.FS, error) {
 	migrations, err := readRawMigrations(schemaName, root, rev)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func rewriteCodeinsightsTimescaleDBMigrations(schemaName string, _ oobmigration.
 		return
 	}
 
-	for id := range []int{1000000002, 1000000004} {
+	for _, id := range []int{1000000002, 1000000004} {
 		mapContents(contents, migrationFilename(id, "up.sql"), func(oldQuery string) string {
 			return filterLinesContaining(oldQuery, []string{
 				`ALTER SYSTEM SET timescaledb.`,
