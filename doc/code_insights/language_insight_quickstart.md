@@ -43,3 +43,4 @@ Example: if the Threshold is set to 3%, and 2% of your code is in python and 2% 
 ### 6. Click "create code insight" to view and save your insight
 
 You'll be taken to the sourcegraph.example.com/insights page and can view your insight.
+
