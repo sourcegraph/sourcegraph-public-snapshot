@@ -310,9 +310,23 @@ func TestExport_CumulativeTest(t *testing.T) {
 				Type:   "codeHostConfig",
 			},
 		},
+		dbProcessors: map[string]Processor[Limit]{
+			"externalServices": ExtSvcDBQueryProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "externalServices",
+			},
+		},
 	}
 
-	archive, err := exporter.Export(ctx, ExportRequest{IncludeSiteConfig: true, IncludeCodeHostConfig: true})
+	archive, err := exporter.Export(ctx, ExportRequest{
+		IncludeSiteConfig:     true,
+		IncludeCodeHostConfig: true,
+		DBQueries: []*DBQueryRequest{{
+			TableName: "externalServices",
+			Count:     1,
+		}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,8 +337,9 @@ func TestExport_CumulativeTest(t *testing.T) {
 	}
 
 	wantMap := map[string]string{
-		"site-config.json":      wantSiteConfig,
-		"code-host-config.json": wantCodeHostConfig,
+		"site-config.json":         wantSiteConfig,
+		"code-host-config.json":    wantCodeHostConfig,
+		"db-external-services.txt": wantExtSvcDBQueryResult,
 	}
 
 	for _, f := range zr.File {
