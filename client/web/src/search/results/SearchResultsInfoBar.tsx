@@ -244,7 +244,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     button={
                         <>
                             <Icon aria-hidden={true} className="mr-1" svgPath={mdiBookmarkOutline} />
-                            Save Search
+                            Save search
                         </>
                     }
                     icon={<BookmarkRadialGradientIcon />}

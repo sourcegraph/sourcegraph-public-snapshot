@@ -118,7 +118,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                     )}
                     <MenuItem onSelect={onSaveQueryClick} disabled={!authenticatedUser}>
                         <Icon aria-hidden={true} className="mr-1" svgPath={mdiBookmarkOutline} />
-                        Save Search
+                        Save search
                     </MenuItem>
                 </MenuList>
             </li>
