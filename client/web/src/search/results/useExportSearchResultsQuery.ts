@@ -1,5 +1,7 @@
 import { useContext } from 'react'
 
+import { QueryTuple } from '@apollo/client'
+
 import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
@@ -97,7 +99,7 @@ export const useExportSearchResultsQuery = ({
     patternType,
     sourcegraphURL,
     settingsCascade,
-}: ExportSearchResultsConfig): ReturnType<typeof useLazyQuery<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables>> => {
+}: ExportSearchResultsConfig): QueryTuple<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables> => {
     const { addNotification } = useContext(NotificationContext)
     return useLazyQuery<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables>(SEARCH_RESULTS_QUERY, {
         variables: { query, patternType },
