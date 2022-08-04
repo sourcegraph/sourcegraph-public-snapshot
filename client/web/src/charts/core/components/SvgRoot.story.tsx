@@ -11,7 +11,7 @@ import { formatDateTick } from './axis/tick-formatters'
 import { SvgRoot, SvgAxisLeft, SvgAxisBottom, SvgContent } from './SvgRoot'
 
 const StoryConfig: Meta = {
-    title: 'web/charts/axis',
+    title: 'web/charts/core/axis',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }
 

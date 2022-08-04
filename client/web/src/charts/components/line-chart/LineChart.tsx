@@ -284,10 +284,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             </Group>
 
             {activePoint && rootReference.current && (
-                <Tooltip
-                    containerElement={(rootReference.current as unknown) as HTMLElement}
-                    activeElement={activePoint.element as HTMLElement}
-                >
+                <Tooltip containerElement={rootReference.current} activeElement={activePoint.element as HTMLElement}>
                     <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}

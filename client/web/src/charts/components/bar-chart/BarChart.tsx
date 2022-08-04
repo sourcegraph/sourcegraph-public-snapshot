@@ -1,6 +1,7 @@
 import { ReactElement, SVGProps, useMemo } from 'react'
 
 import { scaleBand, scaleLinear } from '@visx/scale'
+import { ScaleBand } from 'd3-scale'
 import { noop } from 'lodash'
 
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core/components/SvgRoot'
@@ -71,11 +72,13 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
             <SvgAxisLeft />
             <SvgAxisBottom />
 
-            <SvgContent>
+            <SvgContent<ScaleBand<string>, any>>
                 {({ yScale, xScale, content }) => (
                     <BarChartContent<Datum>
-                        yScale={yScale as any}
-                        xScale={xScale as any}
+                        // Visx axis interfaces doesn't support scaleLiner scale in
+                        // axisScale interface
+                        yScale={yScale}
+                        xScale={xScale}
                         width={content.width}
                         height={content.height}
                         top={content.top}

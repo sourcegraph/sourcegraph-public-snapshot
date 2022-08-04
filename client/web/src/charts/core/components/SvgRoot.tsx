@@ -13,7 +13,7 @@ import {
     useState,
 } from 'react'
 
-import { AxisScale, TickRendererProps } from '@visx/axis/lib/types'
+import { AxisScale, TickRendererProps } from '@visx/axis'
 import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
 import { noop } from 'lodash'
@@ -212,21 +212,29 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
     )
 }
 
-interface SvgContentProps {
-    children: (input: { yScale: AxisScale; xScale: AxisScale; content: Rectangle }) => ReactNode
+interface SvgContentProps<XScale extends AxisScale, YScale extends AxisScale> {
+    children: (input: { xScale: XScale; yScale: YScale; content: Rectangle }) => ReactNode
 }
 
 /**
  * Compound svg canvas component, to render actual chart content on
  * SVG canvas with pre-calculated axes and paddings
  */
-export const SvgContent: FC<SvgContentProps> = props => {
+export function SvgContent<XScale extends AxisScale = AxisScale, YScale extends AxisScale = AxisScale>(
+    props: SvgContentProps<XScale, YScale>
+): ReactElement {
     const { children } = props
     const { content, xScale, yScale } = useContext(SVGRootContext)
 
     return (
         <Group top={content.top} left={content.left} width={content.width} height={content.height}>
-            {children({ xScale, yScale, content })}
+            {children({
+                // We need to cast scales here because there is no other way to type context
+                // shared data in TS, React interfaces.
+                xScale: xScale as XScale,
+                yScale: yScale as YScale,
+                content,
+            })}
         </Group>
     )
 }

@@ -95,7 +95,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
             )}
 
             {activeSegment && rootRef.current && (
-                <Tooltip containerElement={(rootRef.current as unknown) as HTMLElement}>
+                <Tooltip containerElement={rootRef.current}>
                     <BarTooltipContent
                         category={activeSegment.category}
                         activeBar={activeSegment.datum}
