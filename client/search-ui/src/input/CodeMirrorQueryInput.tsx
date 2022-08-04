@@ -121,7 +121,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 isSourcegraphDotCom,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions]
+        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(() => {
