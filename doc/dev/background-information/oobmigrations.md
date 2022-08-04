@@ -292,11 +292,11 @@ New fields can be added to the existing migration metadata entry in the file `in
   description: Re-encode our skunky data
   non_destructive: true
   is_enterprise: true 
-  introduced_major_version: 3
-  introduced_minor_version: 34
+  introduced_version_major: 3
+  introduced_version_minor: 34
   # NEW FIELDS:
-  deprecated_major_version: 3   -- The current major release
-  deprecated_minor_version: 39  -- The current minor release
+  deprecated_version_major: 3   -- The current major release
+  deprecated_version_minor: 39  -- The current minor release
 ```
 
 This date may be known at the time the migration is created, in which case it is fine to set both the introduced and the deprecated fields at the same time.
