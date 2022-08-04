@@ -10646,9 +10646,9 @@ Query: `sum(increase(src_codeintel_background_dependency_index_record_reset_erro
 
 ### Worker: Codeinsights: Query Runner Queue
 
-#### worker: insights_search_queue_queue_size
+#### worker: query_runner_worker_queue_size
 
-<p class="subtitle">Code insights search queue queue size</p>
+<p class="subtitle">Code insights query runner queue queue size</p>
 
 This panel has no related alerts.
 
@@ -10659,15 +10659,15 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102300` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_insights_search_queue_total{job=~"^worker.*"})`
+Query: `max(src_query_runner_worker_total{job=~"^worker.*"})`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_queue_growth_rate
+#### worker: query_runner_worker_queue_growth_rate
 
-<p class="subtitle">Code insights search queue queue growth rate over 30m</p>
+<p class="subtitle">Code insights query runner queue queue growth rate over 30m</p>
 
 This value compares the rate of enqueues against the rate of finished jobs.
 
@@ -10684,7 +10684,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102301` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_total{job=~"^worker.*"}[30m])) / sum(increase(src_insights_search_queue_processor_total{job=~"^worker.*"}[30m]))`
+Query: `sum(increase(src_query_runner_worker_total{job=~"^worker.*"}[30m])) / sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -10692,7 +10692,7 @@ Query: `sum(increase(src_insights_search_queue_total{job=~"^worker.*"}[30m])) / 
 
 ### Worker: Codeinsights: insights queue processor
 
-#### worker: insights_search_queue_handlers
+#### worker: query_runner_worker_handlers
 
 <p class="subtitle">Handler active handlers</p>
 
@@ -10705,13 +10705,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102400` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_insights_search_queue_processor_handlers{job=~"^worker.*"})`
+Query: `sum(src_query_runner_worker_processor_handlers{job=~"^worker.*"})`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_processor_total
+#### worker: query_runner_worker_processor_total
 
 <p class="subtitle">Handler operations every 5m</p>
 
@@ -10724,13 +10724,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102410` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_processor_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_processor_99th_percentile_duration
+#### worker: query_runner_worker_processor_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
 
@@ -10743,13 +10743,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102411` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_insights_search_queue_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_query_runner_worker_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_processor_errors_total
+#### worker: query_runner_worker_processor_errors_total
 
 <p class="subtitle">Handler operation errors every 5m</p>
 
@@ -10762,13 +10762,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102412` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_processor_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_processor_error_rate
+#### worker: query_runner_worker_processor_error_rate
 
 <p class="subtitle">Handler operation error rate over 5m</p>
 
@@ -10781,17 +10781,17 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102413` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_processor_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_insights_search_queue_processor_total{job=~"^worker.*"}[5m])) + sum(increase(src_insights_search_queue_processor_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[5m])) + sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Worker: Codeinsights: code insights search queue record resetter
+### Worker: Codeinsights: code insights query runner queue record resetter
 
-#### worker: insights_search_queue_record_resets_total
+#### worker: query_runner_worker_record_resets_total
 
-<p class="subtitle">Insights search queue records reset to queued state every 5m</p>
+<p class="subtitle">Insights query runner queue records reset to queued state every 5m</p>
 
 This panel has no related alerts.
 
@@ -10802,15 +10802,15 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102500` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_record_resets_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_record_resets_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_record_reset_failures_total
+#### worker: query_runner_worker_record_reset_failures_total
 
-<p class="subtitle">Insights search queue records reset to errored state every 5m</p>
+<p class="subtitle">Insights query runner queue records reset to errored state every 5m</p>
 
 This panel has no related alerts.
 
@@ -10821,15 +10821,15 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102501` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_record_reset_failures_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_record_reset_failures_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_record_reset_errors_total
+#### worker: query_runner_worker_record_reset_errors_total
 
-<p class="subtitle">Insights search queue operation errors every 5m</p>
+<p class="subtitle">Insights query runner queue operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -10840,7 +10840,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102502` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_record_reset_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_record_reset_errors_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -11017,7 +11017,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102700` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_insights_search_queue_total{job=~"^worker.*"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*",op="Dequeue"}[5m])) < 1`
+Query: `max(src_query_runner_worker_total{job=~"^worker.*"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*",op="Dequeue"}[5m])) < 1`
 
 </details>
 

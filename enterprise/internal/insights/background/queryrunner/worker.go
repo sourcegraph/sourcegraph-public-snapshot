@@ -67,7 +67,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	sharedCache := make(map[string]*types.InsightSeries)
 
 	prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_insights_search_queue_total",
+		Name: "src_query_runner_worker_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
 		count, err := workerStore.QueuedCount(context.Background(), false)
