@@ -114,7 +114,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 position: 'right',
                 color: 'var(--body-color)',
                 tooltip:
-                    'Cross repository code intel identifies symbols in code throughout your Sourcegraph instance, in a single click, without locating and downloading a repository.',
+                    'Cross repository code navigation identifies symbols in code throughout your Sourcegraph instance, in a single click, without locating and downloading a repository.',
             },
         ]
 
