@@ -328,8 +328,6 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 linkRowClick={this.linkRowClick}
                                 isActive={isActive}
                                 isSelected={isSelected}
-                                repoID={this.props.repoID}
-                                revision={this.props.revision}
                                 location={this.props.location}
                             />
                         )}

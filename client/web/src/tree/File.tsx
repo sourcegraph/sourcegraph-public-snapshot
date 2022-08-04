@@ -15,7 +15,7 @@ import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { InlineSymbolsResult, Scalars } from '../graphql-operations'
+import { InlineSymbolsResult } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
 import {
@@ -30,6 +30,7 @@ import {
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { FileDecorator } from './FileDecorator'
+import { useTreeRootContext } from './TreeContext'
 import { TreeLayerProps } from './TreeLayer'
 import { TreeEntryInfo, getTreeItemOffset } from './util'
 
@@ -50,8 +51,6 @@ interface FileProps extends ThemeProps {
     customIconPath?: string
 
     // For core workflow inline symbols redesign
-    repoID: Scalars['ID']
-    revision: string
     location: H.Location
 }
 
@@ -146,13 +145,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                 </TreeLayerCell>
             </TreeRow>
             {coreWorkflowImprovementsEnabled && props.isActive && (
-                <Symbols
-                    repoID={props.repoID}
-                    revision={props.revision}
-                    activePath={props.entryInfo.path}
-                    location={props.location}
-                    style={offsetStyle}
-                />
+                <Symbols activePath={props.entryInfo.path} location={props.location} style={offsetStyle} />
             )}
         </>
     )
@@ -205,10 +198,11 @@ export const SYMBOLS_QUERY = gql`
 `
 
 interface SymbolsProps
-    extends Pick<TreeLayerProps, 'repoID' | 'revision' | 'activePath' | 'location'>,
+    extends Pick<TreeLayerProps, 'activePath' | 'location'>,
         Pick<React.HTMLAttributes<HTMLDivElement>, 'style'> {}
 
-const Symbols: React.FunctionComponent<SymbolsProps> = ({ repoID, revision, activePath, location, style }) => {
+const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, location, style }) => {
+    const { repoID, revision } = useTreeRootContext()
     const { data, loading, error } = useQuery<InlineSymbolsResult>(SYMBOLS_QUERY, {
         variables: {
             repo: repoID,
