@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -84,18 +85,10 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: secret generation failed"))
 	}
 
-	found := findOrgInWebhooks(conn.Webhooks, job.Org)
-	if !found {
-		conn.Webhooks = append(conn.Webhooks, &schema.GitHubWebhook{
-			Org: job.Org, Secret: secret,
-		})
-
-		newConfig, err := json.Marshal(conn)
-		if err != nil {
+	if !webhookExists(conn.Webhooks, job.Org) {
+		if err := addSecretToExtSvc(svc, conn, job.Org, secret); err != nil {
 			return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: Marshal failed"))
 		}
-
-		svc.Config = string(newConfig)
 	}
 
 	id, err = client.CreateSyncWebhook(ctx, job.RepoName, globals.ExternalURL().Host, secret) // TODO: Add to DB
@@ -107,13 +100,27 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	return nil
 }
 
-func findOrgInWebhooks(webhooks []*schema.GitHubWebhook, org string) bool {
+func webhookExists(webhooks []*schema.GitHubWebhook, org string) bool {
 	for _, webhook := range webhooks {
 		if webhook.Org == org {
 			return true
 		}
 	}
 	return false
+}
+
+func addSecretToExtSvc(svc *types.ExternalService, conn *schema.GitHubConnection, org, secret string) error {
+	conn.Webhooks = append(conn.Webhooks, &schema.GitHubWebhook{
+		Org: org, Secret: secret,
+	})
+
+	newConfig, err := json.Marshal(conn)
+	if err != nil {
+		return err
+	}
+
+	svc.Config = string(newConfig)
+	return nil
 }
 
 func randomHex(n int) (string, error) {
