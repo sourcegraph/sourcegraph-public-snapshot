@@ -98,6 +98,8 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		))
 	}
 
+	// This is the status code we're expecting
+	// anything else is unexpected
 	if resp.StatusCode != http.StatusInternalServerError {
 		t.Fatalf("expected status code: 500, got %v", resp.StatusCode)
 	}
