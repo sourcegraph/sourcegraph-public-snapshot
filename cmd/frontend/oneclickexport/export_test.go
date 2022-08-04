@@ -264,9 +264,9 @@ func TestExport_CumulativeTest(t *testing.T) {
 	db := database.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-	exporter := &OneClickExporter{
+	exporter := &DataExporter{
 		logger: logger,
-		cfgProcessors: map[string]Processor[ConfigRequest]{
+		configProcessors: map[string]Processor[ConfigRequest]{
 			"siteConfig": &SiteConfigProcessor{
 				logger: logger,
 				Type:   "siteConfig",
@@ -279,7 +279,7 @@ func TestExport_CumulativeTest(t *testing.T) {
 		},
 	}
 
-	archive, err := exporter.Export(ctx, &ExportRequest{IncludeSiteConfig: true, IncludeCodeHostConfig: true})
+	archive, err := exporter.Export(ctx, ExportRequest{IncludeSiteConfig: true, IncludeCodeHostConfig: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -290,8 +290,8 @@ func TestExport_CumulativeTest(t *testing.T) {
 	}
 
 	wantMap := map[string]string{
-		"site-config.txt":      wantSiteConfig,
-		"code-host-config.txt": wantCodeHostConfig,
+		"site-config.json":      wantSiteConfig,
+		"code-host-config.json": wantCodeHostConfig,
 	}
 
 	for _, f := range zr.File {
@@ -388,9 +388,9 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 	db := database.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-	exporter := &OneClickExporter{
+	exporter := &DataExporter{
 		logger: logger,
-		cfgProcessors: map[string]Processor[ConfigRequest]{
+		configProcessors: map[string]Processor[ConfigRequest]{
 			"codeHostConfig": &CodeHostConfigProcessor{
 				db:     db,
 				logger: logger,
@@ -399,7 +399,7 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 		},
 	}
 
-	archive, err := exporter.Export(ctx, &ExportRequest{IncludeCodeHostConfig: true})
+	archive, err := exporter.Export(ctx, ExportRequest{IncludeCodeHostConfig: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -412,7 +412,7 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 	found := false
 
 	for _, f := range zr.File {
-		if f.Name != "code-host-config.txt" {
+		if f.Name != "code-host-config.json" {
 			continue
 		}
 		found = true

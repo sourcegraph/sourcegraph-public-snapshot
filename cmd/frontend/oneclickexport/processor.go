@@ -21,6 +21,7 @@ type Processor[T any] interface {
 }
 
 var _ Processor[ConfigRequest] = &SiteConfigProcessor{}
+var _ Processor[ConfigRequest] = &CodeHostConfigProcessor{}
 
 type ConfigRequest struct {
 }
@@ -59,10 +60,10 @@ type CodeHostConfigProcessor struct {
 
 // Process function of CodeHostConfigProcessor loads all code host configs
 // available and stores it in a provided tmp directory dir
-func (c CodeHostConfigProcessor) Process(ctx context.Context, _ *ConfigRequest, dir string) {
+func (c CodeHostConfigProcessor) Process(ctx context.Context, _ ConfigRequest, dir string) {
 	externalServices, err := c.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{})
 	if err != nil {
-		c.logger.Error("Error during getting external services", log.Error(err))
+		c.logger.Error("Error getting external services", log.Error(err))
 	}
 
 	if len(externalServices) == 0 {
@@ -85,10 +86,10 @@ func (c CodeHostConfigProcessor) Process(ctx context.Context, _ *ConfigRequest, 
 		c.logger.Error("Error during marshalling the code host config", log.Error(err))
 	}
 
-	err = ioutil.WriteFile(dir+"/code-host-config.txt", configBytes, 0644)
+	err = ioutil.WriteFile(dir+"/code-host-config.json", configBytes, 0644)
 
 	if err != nil {
-		c.logger.Error("Error during site config export", log.Error(err))
+		c.logger.Error("Error during code host config export", log.Error(err))
 	}
 }
 

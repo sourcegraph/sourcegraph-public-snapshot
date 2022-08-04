@@ -45,10 +45,10 @@ func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byt
 
 	// 2) tmp dir is passed to every processor
 	if request.IncludeSiteConfig {
-		e.configProcessors["siteConfig"].Process(ctx, &ConfigRequest{}, dir)
+		e.configProcessors["siteConfig"].Process(ctx, ConfigRequest{}, dir)
 	}
 	if request.IncludeCodeHostConfig {
-		e.configProcessors["codeHostConfig"].Process(ctx, &ConfigRequest{}, dir)
+		e.configProcessors["codeHostConfig"].Process(ctx, ConfigRequest{}, dir)
 	}
 
 	// 3) after all request parts are processed, zip the tmp dir and return its bytes
