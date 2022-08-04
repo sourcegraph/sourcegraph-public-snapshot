@@ -443,9 +443,6 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 
 		err = h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
 		if err != nil {
-			// TODO: Determine if seriesID should be reset.
-			// If it was Just In Time it shouldn't matter it will still display just in time and continue to attempt to convert
-			// If it was scoped backfilled it will show `no data` and will retry to backfill next time enquerer runs
 			log15.Error("unable to backfill scoped series", "series_id", series.SeriesID, "error", err)
 			continue
 		}
