@@ -16,9 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -635,6 +637,22 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
+
+		if conf.Get().ExperimentalFeatures.EnableWebhookSync {
+			job := &webhookworker.Job{
+				RepoID:     int32(sourced.ID),
+				RepoName:   string(sourced.Name),
+				Org:        strings.Split(string(sourced.Name), "/")[0],
+				ExtSvcID:   svc.ID,
+				ExtSvcKind: svc.Kind,
+			}
+
+			id, err := webhookworker.EnqueueJob(ctx, basestore.NewWithHandle(s.Store.Handle()), job)
+			if err != nil {
+				logger.Error("unable to enqueue webhook build job")
+			}
+			logger.Info(fmt.Sprintf("enqueued webhook build job with ID: %d", id))
+		}
 	}
 
 	// We don't delete any repos of site-level external services if there were any
