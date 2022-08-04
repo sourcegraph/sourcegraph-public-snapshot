@@ -55,33 +55,32 @@ func MakeExecutorMetricsGatherer(
 	go backgroundCollectMetrics(dockerRegistryEndpoint+"/proxy?module=registry", registryMetrics)
 	go backgroundCollectMetrics(dockerRegistryEndpoint+"/proxy?module=node", registryNodeMetrics)
 
-	return func() (mfs []*dto.MetricFamily, err error) {
+	return func() ([]*dto.MetricFamily, error) {
 		// notify to start a scrape
 		nodeMetrics.notify.Signal()
 		registryMetrics.notify.Signal()
 		registryNodeMetrics.notify.Signal()
 
-		mfs, err = gatherer.Gather()
-		if err != nil {
-			return nil, errors.Wrap(err, "getting default gatherer")
-		}
-
-		if nodeExporterEndpoint != "" {
-			result := <-nodeMetrics.result
-			if result.err != nil {
-				logger.Warn("failed to get metrics for node exporter", log.Error(result.err))
-			}
-			for key, mf := range result.metrics {
-				if filterMetric(key) {
-					continue
+		nodeMetricsGatherer := prometheus.GathererFunc(func() (mfs []*dto.MetricFamily, err error) {
+			if nodeExporterEndpoint != "" {
+				result := <-nodeMetrics.result
+				if result.err != nil {
+					logger.Warn("failed to get metrics for node exporter", log.Error(result.err))
 				}
+				for key, mf := range result.metrics {
+					if filterMetric(key) {
+						continue
+					}
 
-				mfs = append(mfs, mf)
+					mfs = append(mfs, mf)
+				}
 			}
-		}
 
-		if dockerRegistryEndpoint != "" {
-			{
+			return mfs, err
+		})
+
+		registryMetricsGatherer := prometheus.GathererFunc(func() (mfs []*dto.MetricFamily, err error) {
+			if dockerRegistryEndpoint != "" {
 				result := <-registryMetrics.result
 				if result.err != nil {
 					logger.Warn("failed to get metrics for docker registry", log.Error(result.err))
@@ -101,7 +100,12 @@ func MakeExecutorMetricsGatherer(
 					mfs = append(mfs, mf)
 				}
 			}
-			{
+
+			return mfs, err
+		})
+
+		registryNodeMetricsGatherer := prometheus.GathererFunc(func() (mfs []*dto.MetricFamily, err error) {
+			if dockerRegistryEndpoint != "" {
 				result := <-registryNodeMetrics.result
 				if result.err != nil {
 					logger.Warn("failed to get metrics for docker registry", log.Error(result.err))
@@ -121,9 +125,18 @@ func MakeExecutorMetricsGatherer(
 					mfs = append(mfs, mf)
 				}
 			}
+
+			return mfs, err
+		})
+
+		gatherers := prometheus.Gatherers{
+			gatherer,
+			nodeMetricsGatherer,
+			registryMetricsGatherer,
+			registryNodeMetricsGatherer,
 		}
 
-		return mfs, nil
+		return gatherers.Gather()
 	}
 }
 
