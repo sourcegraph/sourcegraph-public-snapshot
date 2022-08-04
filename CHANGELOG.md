@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fix issue in the streaming Compute API to return immediately when query parsing fails. [#39842](https://github.com/sourcegraph/sourcegraph/pull/39842)
 - Fix issue during conversion of just in time code insights to start backfilling data from the current time instead of the date the insight was created. [#39923](https://github.com/sourcegraph/sourcegraph/pull/39923)
 - Fix issue during code insight creation where selecting `"Run your insight over all your repositories"` reset the currently selected distance between data points. [#39261](https://github.com/sourcegraph/sourcegraph/pull/39261)
 - Fix issue where symbols in the side panel did not have file level permission filtering applied correctly. [#39592](https://github.com/sourcegraph/sourcegraph/pull/39592)
