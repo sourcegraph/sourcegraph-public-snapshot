@@ -57,7 +57,7 @@ func replaceRange(pattern string, groups []group) string {
 	for _, group := range groups {
 		sb.WriteString(pattern[offset:group.start])
 		sb.WriteString(group.value)
-		offset = group.end
+		offset = group.end + 1
 	}
 	if offset < len(pattern) {
 		sb.WriteString(pattern[offset:])
