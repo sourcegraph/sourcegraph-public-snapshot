@@ -434,8 +434,7 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 		series.SeriesID = ksuid.New().String()
 		series.CreatedAt = time.Now()
 
-		// Update the backfill attempts and insert the new series_ID and sets just_in_time false
-		// so seriesID is available jobs run
+		// Update the backfill attempts adjusts created date and inserts the new series_ID
 		incrementErr := h.dataSeriesStore.StartJustInTimeConversionAttempt(ctx, series)
 		if incrementErr != nil {
 			log15.Warn("unable to start jit conversion", "seriesId", oldSeriesId, "error", err)
