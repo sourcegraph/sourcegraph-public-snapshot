@@ -638,7 +638,8 @@ func (s *Syncer) SyncExternalService(
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 
-		if conf.Get().ExperimentalFeatures.EnableWebhookSync {
+		if conf.Get() != nil && conf.Get().ExperimentalFeatures != nil &&
+			conf.Get().ExperimentalFeatures.EnableWebhookSync {
 			job := &webhookworker.Job{
 				RepoID:     int32(sourced.ID),
 				RepoName:   string(sourced.Name),
