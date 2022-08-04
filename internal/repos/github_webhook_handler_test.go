@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -24,15 +23,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var updateHandler = flag.Bool("updateHandler", false, "update testdata for github webhook handler")
 
 func TestGitHubWebhookHandle(t *testing.T) {
 	ctx := context.Background()
@@ -112,10 +108,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	testName := "github-webhook-handler"
-	cf, save := httptestutil.NewGitHubRecorderFactory(t, *updateHandler, testName)
-	defer save()
-
+	cf := httpcli.NewExternalClientFactory()
 	opts := []httpcli.Opt{}
 	doer, err := cf.Doer(opts...)
 	if err != nil {
