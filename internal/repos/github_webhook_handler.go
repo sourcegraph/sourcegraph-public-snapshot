@@ -43,9 +43,10 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *
 
 func getNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
 	url := *event.Repo.URL
-	if len(url) > 8 {
-		repoName := url[8:] // [ https:// ] accounts for 8 chars
-		return api.RepoName(repoName), nil
+	if len(url) < 8 {
+		return api.RepoName(""), errors.Newf("expected URL length > 8, got %v", len(url))
 	}
-	return api.RepoName(""), errors.Newf("expected URL length > 8, got %v", len(url))
+	repoName := url[8:] // [ https:// ] accounts for 8 chars
+	return api.RepoName(repoName), nil
+
 }
