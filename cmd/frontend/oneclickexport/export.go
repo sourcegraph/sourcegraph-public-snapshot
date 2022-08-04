@@ -25,6 +25,23 @@ type DataExporter struct {
 	dbProcessors     map[string]Processor[Limit]
 }
 
+type ConfigRequest struct {
+}
+
+type DBQueryRequest struct {
+	TableName string `json:"tableName"`
+	Count     Limit  `json:"count"`
+}
+
+type Limit int
+
+func (l Limit) getOrDefault(defaultValue int) int {
+	if l == 0 {
+		return defaultValue
+	}
+	return int(l)
+}
+
 type ExportRequest struct {
 	IncludeSiteConfig     bool              `json:"includeSiteConfig"`
 	IncludeCodeHostConfig bool              `json:"includeCodeHostConfig"`

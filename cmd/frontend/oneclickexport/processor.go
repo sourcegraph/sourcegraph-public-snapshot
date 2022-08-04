@@ -23,9 +23,6 @@ type Processor[T any] interface {
 var _ Processor[ConfigRequest] = &SiteConfigProcessor{}
 var _ Processor[ConfigRequest] = &CodeHostConfigProcessor{}
 
-type ConfigRequest struct {
-}
-
 type SiteConfigProcessor struct {
 	logger log.Logger
 	Type   string

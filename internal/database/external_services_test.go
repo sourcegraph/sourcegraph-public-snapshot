@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -2370,4 +2371,103 @@ func TestConfigurationHasWebhooks(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestExternalServiceStore_ListRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create new user
+	user, err := db.Users().Create(ctx,
+		NewUser{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			Password:        "password",
+			EmailIsVerified: true,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create new org
+	displayName := "Acme org"
+	org, err := db.Orgs().Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const repoId = 1
+	err = db.Repos().Create(ctx, &types.Repo{ID: repoId, Name: "test1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id, org_id) VALUES ($1, $2, $3, $4, $5)",
+		es.ID,
+		repoId,
+		"cloneUrl",
+		user.ID,
+		org.ID,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check that repos are found with empty ExternalServiceReposListOptions
+	haveRepos, err := db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(haveRepos) != 1 {
+		t.Fatalf("Expected 1 external service repo, got %d", len(haveRepos))
+	}
+
+	have := haveRepos[0]
+
+	require.Exactly(t, es.ID, have.ExternalServiceID, "externalServiceID is incorrect")
+	require.Exactly(t, api.RepoID(repoId), have.RepoID, "repoID is incorrect")
+	require.Exactly(t, "cloneUrl", have.CloneURL, "cloneURL is incorrect")
+	require.Exactly(t, user.ID, have.UserID, "userID is incorrect")
+	require.Exactly(t, org.ID, have.OrgID, "orgID is incorrect")
+
+	// check that repos are found with given externalServiceID
+	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(haveRepos) != 1 {
+		t.Fatalf("Expected 1 external service repo, got %d", len(haveRepos))
+	}
+
+	// check that repos are limited
+	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 0}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(haveRepos) != 0 {
+		t.Fatalf("Expected 0 external service repos, got %d", len(haveRepos))
+	}
 }

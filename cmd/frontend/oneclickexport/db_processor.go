@@ -103,16 +103,35 @@ func convertExtSvcToRedacted(extSvc *types.ExternalService) (*RedactedExternalSe
 	}, nil
 }
 
-type Limit int
-
-func (l Limit) getOrDefault(defaultValue int) int {
-	if l == 0 {
-		return defaultValue
-	}
-	return int(l)
+type ExtSvcReposDBQueryProcessor struct {
+	db     database.DB
+	logger log.Logger
+	Type   string
 }
 
-type DBQueryRequest struct {
-	TableName string `json:"tableName"`
-	Count     Limit  `json:"count"`
+func (e ExtSvcReposDBQueryProcessor) Process(ctx context.Context, payload Limit, dir string) {
+	externalServiceRepos, err := e.db.ExternalServices().ListRepos(
+		ctx,
+		database.ExternalServiceReposListOptions{LimitOffset: &database.LimitOffset{Limit: payload.getOrDefault(DefaultLimit)}},
+	)
+	if err != nil {
+		e.logger.Error("Error during fetching external service repos from the DB", log.Error(err))
+		return
+	}
+
+	bytes, err := json.MarshalIndent(externalServiceRepos, "", "  ")
+	if err != nil {
+		e.logger.Error("Error during marshalling the result", log.Error(err))
+		return
+	}
+
+	err = ioutil.WriteFile(dir+"/db-external-service-repos.txt", bytes, 0644)
+
+	if err != nil {
+		e.logger.Error("Error during external_service_repos export", log.Error(err))
+	}
+}
+
+func (e ExtSvcReposDBQueryProcessor) ProcessorType() string {
+	return e.Type
 }

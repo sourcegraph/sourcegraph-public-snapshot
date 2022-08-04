@@ -41,7 +41,7 @@ type ExternalServiceStore interface {
 	// Count counts all external services that satisfy the options (ignoring limit and offset).
 	//
 	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
-	Count(ctx context.Context, opt ExternalServicesListOptions) (int, error)
+	Count(ctx context.Context, opts ExternalServicesListOptions) (int, error)
 
 	// Create creates an external service.
 	//
@@ -102,8 +102,13 @@ type ExternalServiceStore interface {
 	//
 	// 🚨 SECURITY: The caller must ensure one of the following:
 	// 	- The actor is a site admin
-	// 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
-	List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+	// 	- The opts.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
+	List(ctx context.Context, opts ExternalServicesListOptions) ([]*types.ExternalService, error)
+
+	// ListRepos returns external service repos for given externalServiceID.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
+	ListRepos(ctx context.Context, opts ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error)
 
 	// RepoCount returns the number of repos synced by the external service with the
 	// given id.
@@ -222,6 +227,8 @@ type ExternalServiceKind struct {
 	JSONSchema string // JSON Schema for the external service's configuration
 }
 
+type ExternalServiceReposListOptions ExternalServicesGetSyncJobsOptions
+
 type ExternalServicesGetSyncJobsOptions struct {
 	ExternalServiceID int64
 
@@ -324,16 +331,16 @@ func (e *ValidateExternalServiceConfigOptions) IsSiteOwned() bool {
 	return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0
 }
 
-type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
+type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalServiceStore, opts ValidateExternalServiceConfigOptions) (normalized []byte, err error)
 
 // ValidateExternalServiceConfig is the default non-enterprise version of our validation function
 var ValidateExternalServiceConfig = MakeValidateExternalServiceConfigFunc(nil, nil, nil, nil)
 
 func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHubConnection) error, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, bitbucketServerValidators []func(*schema.BitbucketServerConnection) error, perforceValidators []func(*schema.PerforceConnection) error) ValidateExternalServiceConfigFunc {
-	return func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
-		ext, ok := ExternalServiceKinds[opt.Kind]
+	return func(ctx context.Context, e ExternalServiceStore, opts ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
+		ext, ok := ExternalServiceKinds[opts.Kind]
 		if !ok {
-			return nil, errors.Errorf("invalid external service kind: %s", opt.Kind)
+			return nil, errors.Errorf("invalid external service kind: %s", opts.Kind)
 		}
 
 		// All configs must be valid JSON.
@@ -343,10 +350,10 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 		sl := gojsonschema.NewSchemaLoader()
 		sc, err := sl.Compile(gojsonschema.NewStringLoader(ext.JSONSchema))
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to compile schema for external service of kind %q", opt.Kind)
+			return nil, errors.Wrapf(err, "unable to compile schema for external service of kind %q", opts.Kind)
 		}
 
-		normalized, err = jsonc.Parse(opt.Config)
+		normalized, err = jsonc.Parse(opts.Config)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to normalize JSON")
 		}
@@ -366,7 +373,7 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 		}
 
 		// For user-added and org-added external services, we need to prevent them from using disallowed fields.
-		if !opt.IsSiteOwned() {
+		if !opts.IsSiteOwned() {
 			// We do not allow users to add external service other than GitHub.com and GitLab.com
 			result := gjson.GetBytes(normalized, "url")
 			baseURL, err := url.Parse(result.String())
@@ -388,7 +395,7 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			}
 
 			// Allow only create one external service per kind
-			if err := validateSingleKindPerNamespace(ctx, e, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID, opt.NamespaceOrgID); err != nil {
+			if err := validateSingleKindPerNamespace(ctx, e, opts.ExternalServiceID, opts.Kind, opts.NamespaceUserID, opts.NamespaceOrgID); err != nil {
 				return nil, err
 			}
 		}
@@ -408,27 +415,27 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 		}
 
 		// Extra validation not based on JSON Schema.
-		switch opt.Kind {
+		switch opts.Kind {
 		case extsvc.KindGitHub:
 			var c schema.GitHubConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitHubConnection(gitHubValidators, opt.ExternalServiceID, &c)
+			err = validateGitHubConnection(gitHubValidators, opts.ExternalServiceID, &c)
 
 		case extsvc.KindGitLab:
 			var c schema.GitLabConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitLabConnection(gitLabValidators, opt.ExternalServiceID, &c, opt.AuthProviders)
+			err = validateGitLabConnection(gitLabValidators, opts.ExternalServiceID, &c, opts.AuthProviders)
 
 		case extsvc.KindBitbucketServer:
 			var c schema.BitbucketServerConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateBitbucketServerConnection(bitbucketServerValidators, opt.ExternalServiceID, &c)
+			err = validateBitbucketServerConnection(bitbucketServerValidators, opts.ExternalServiceID, &c)
 
 		case extsvc.KindBitbucketCloud:
 			var c schema.BitbucketCloudConnection
@@ -441,7 +448,7 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validatePerforceConnection(perforceValidators, opt.ExternalServiceID, &c)
+			err = validatePerforceConnection(perforceValidators, opts.ExternalServiceID, &c)
 
 		case extsvc.KindOther:
 			var c schema.OtherExternalServiceConnection
@@ -538,26 +545,26 @@ func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnec
 
 // validateSingleKindPerNamespace returns an error if the user/org attempts to add more than one external service of the same kind.
 func validateSingleKindPerNamespace(ctx context.Context, e ExternalServiceStore, id int64, kind string, userID int32, orgID int32) error {
-	opt := ExternalServicesListOptions{
+	opts := ExternalServicesListOptions{
 		Kinds: []string{kind},
 		LimitOffset: &LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
 	}
 	if userID > 0 {
-		opt.NamespaceUserID = userID
+		opts.NamespaceUserID = userID
 	} else if orgID > 0 {
-		opt.NamespaceOrgID = orgID
+		opts.NamespaceOrgID = orgID
 	}
 	for {
-		svcs, err := e.List(ctx, opt)
+		svcs, err := e.List(ctx, opts)
 		if err != nil {
 			return errors.Wrap(err, "list")
 		}
 		if len(svcs) == 0 {
 			break // No more results, exiting
 		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+		opts.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		// Fail if a service already exists that is not the current service
 		for _, svc := range svcs {
@@ -565,7 +572,7 @@ func validateSingleKindPerNamespace(ctx context.Context, e ExternalServiceStore,
 				return errors.Errorf("existing external service, %q, of same kind already added", svc.DisplayName)
 			}
 		}
-		if len(svcs) < opt.Limit {
+		if len(svcs) < opts.Limit {
 			break // Less results than limit means we've reached end
 		}
 	}
@@ -1097,11 +1104,11 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 }
 
 func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
-	opt := ExternalServicesListOptions{
+	opts := ExternalServicesListOptions{
 		IDs: []int64{id},
 	}
 
-	ess, err := e.List(ctx, opt)
+	ess, err := e.List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -1284,16 +1291,16 @@ ORDER BY es.id, essj.finished_at DESC
 	return messages, nil
 }
 
-func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (e *externalServiceStore) List(ctx context.Context, opts ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
 	defer span.Finish()
 
-	if opt.OrderByDirection != "ASC" {
-		opt.OrderByDirection = "DESC"
+	if opts.OrderByDirection != "ASC" {
+		opts.OrderByDirection = "DESC"
 	}
 
 	var forUpdate *sqlf.Query
-	if opt.ForUpdate {
+	if opts.ForUpdate {
 		forUpdate = sqlf.Sprintf("FOR UPDATE SKIP LOCKED")
 	} else {
 		forUpdate = sqlf.Sprintf("")
@@ -1319,11 +1326,11 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			token_expires_at
 		FROM external_services
 		WHERE (%s)
-		ORDER BY id `+opt.OrderByDirection+`
+		ORDER BY id `+opts.OrderByDirection+`
 		%s
 		%s`,
-		sqlf.Join(opt.sqlConditions(), ") AND ("),
-		opt.LimitOffset.SQL(),
+		sqlf.Join(opts.sqlConditions(), ") AND ("),
+		opts.LimitOffset.SQL(),
 		forUpdate,
 	)
 
@@ -1423,6 +1430,72 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	return results, nil
 }
 
+func (e *externalServiceStore) ListRepos(ctx context.Context, opts ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
+	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.listRepos")
+	defer span.Finish()
+
+	predicate := sqlf.Sprintf("TRUE")
+
+	if opts.ExternalServiceID != 0 {
+		predicate = sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID)
+	}
+
+	q := sqlf.Sprintf(`
+		SELECT
+			external_service_id,
+			repo_id,
+			clone_url,
+			user_id,
+			org_id,
+			created_at
+		FROM external_service_repos
+		WHERE %s
+		%s`,
+		predicate,
+		opts.LimitOffset.SQL(),
+	)
+
+	rows, err := e.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var repos []*types.ExternalServiceRepo
+	for rows.Next() {
+		var (
+			repo   types.ExternalServiceRepo
+			userID sql.NullInt32
+			orgID  sql.NullInt32
+		)
+
+		if err := rows.Scan(
+			&repo.ExternalServiceID,
+			&repo.RepoID,
+			&repo.CloneURL,
+			&userID,
+			&orgID,
+			&repo.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		if userID.Valid {
+			repo.UserID = userID.Int32
+		}
+		if orgID.Valid {
+			repo.OrgID = orgID.Int32
+		}
+
+		repos = append(repos, &repo)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return repos, nil
+}
+
 func (e *externalServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {
 	q := sqlf.Sprintf(`
 SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
@@ -1442,8 +1515,8 @@ WHERE deleted_at IS NULL
 	return kinds, nil
 }
 
-func (e *externalServiceStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
+func (e *externalServiceStore) Count(ctx context.Context, opts ExternalServicesListOptions) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opts.sqlConditions(), ") AND ("))
 	var count int
 	if err := e.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
