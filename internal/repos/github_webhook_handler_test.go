@@ -85,6 +85,12 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// We've successfully made it all the way here,
+	// finally making a call to repo-updater
+	// And we're correctly getting a 'no such host' error
+	// as the server is not live
+	// This call to repo-updater is the last line of code
+	// to test before the end of the handler
 	if !(string(data) == `Post "http://repo-updater:3182/enqueue-repo-update": dial tcp: lookup repo-updater: no such host`+"\n") {
 		t.Fatal(errors.Newf(`expected body: [%s], got [%s]`,
 			`Post "http://repo-updater:3182/enqueue-repo-update": dial tcp: lookup repo-updater: no such host`,

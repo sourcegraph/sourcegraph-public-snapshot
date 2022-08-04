@@ -28,12 +28,10 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *
 	}
 
 	repoName := getNameFromEvent(event)
-
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
 		return err
 	}
-	fmt.Println(resp)
 
 	log.Scoped("GitHub handler", fmt.Sprintf("Successfully updated: %s", resp.Name))
 	return nil
