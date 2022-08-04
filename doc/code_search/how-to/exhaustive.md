@@ -17,7 +17,12 @@ Over time the priority of a query is reduced. This is to ensure that we have the
 There are two sources of timeouts in a `count:all` query:
 
 - A timeout in the HTTP load balancer in front of Sourcegraph (nginx/ELB/Cloudflare/etc). Your admin will likely need to increase timeouts for Sourcegraph endpoints. In particular the `.api/search/stream` path. This uses [SSE](https://en.wikipedia.org/wiki/Server-sent_events), so your reverse proxy may have specific support for these requests.
-- A maximum timeout enforced by Sourcegraph. Your admin may need to increase the site configuration value `search.limits.maxTimeoutSeconds` (default 60s).
+- A maximum timeout enforced by Sourcegraph. Your admin may need to increase the site configuration value (default 60s) with the following setting: 
+```json
+"search.limits": {
+    "maxTimeoutSeconds": 60,
+  },
+  ```
 
 ### Large result sets
 
