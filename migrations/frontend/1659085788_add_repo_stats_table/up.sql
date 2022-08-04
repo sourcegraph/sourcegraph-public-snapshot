@@ -138,6 +138,29 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS
         cloned     = grs.cloned     + (excluded.cloned -     (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
       ;
 
+      WITH moved AS (
+        SELECT
+          oldtab.shard_id AS shard_id,
+          COUNT(*) AS total,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned
+        FROM
+          oldtab
+        JOIN newtab ON newtab.repo_id = oldtab.repo_id
+        WHERE
+          oldtab.shard_id != newtab.shard_id
+        GROUP BY oldtab.shard_id
+      )
+      UPDATE gitserver_repos_statistics grs
+      SET
+        total      = grs.total      - moved.total,
+        not_cloned = grs.not_cloned - moved.not_cloned,
+        cloning    = grs.cloning    - moved.cloning,
+        cloned     = grs.cloned     - moved.cloned
+      FROM moved
+      WHERE moved.shard_id = grs.shard_id;
+
       RETURN NULL;
   END
 $$;
