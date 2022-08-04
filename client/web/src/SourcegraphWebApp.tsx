@@ -32,11 +32,14 @@ import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { FetchBlobParameters, fetchBlob } from '@sourcegraph/shared/src/backend/blob'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { ResolvedRevision, ResolvedRevisionParameters, resolveRevision } from '@sourcegraph/shared/src/backend/repo'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
+import { BlobFileFields } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
@@ -371,6 +374,9 @@ export class SourcegraphWebApp extends React.Component<
                                                                         fetchHighlightedFileLineRanges={
                                                                             this.fetchHighlightedFileLineRanges
                                                                         }
+                                                                        // File queries
+                                                                        resolveRevision={this.resolveRevision}
+                                                                        fetchBlob={this.fetchBlob}
                                                                         // Extensions
                                                                         platformContext={this.platformContext}
                                                                         extensionsController={this.extensionsController}
@@ -487,4 +493,10 @@ export class SourcegraphWebApp extends React.Component<
         force?: boolean | undefined
     ): Observable<string[][]> =>
         fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
+
+    private resolveRevision = (parameters: ResolvedRevisionParameters): Observable<ResolvedRevision> =>
+        resolveRevision({ ...parameters, requestGraphQL: this.platformContext.requestGraphQL })
+
+    private fetchBlob = (parameters: FetchBlobParameters): Observable<BlobFileFields | null> =>
+        fetchBlob({ ...parameters, requestGraphQL: this.platformContext.requestGraphQL })
 }

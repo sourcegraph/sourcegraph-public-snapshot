@@ -7,9 +7,11 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
 import { NavLink } from 'react-router-dom'
+import { Observable } from 'rxjs'
 import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
+import { ResolvedRevision, ResolvedRevisionParameters } from '@sourcegraph/shared/src/backend/repo'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -35,6 +37,8 @@ import { TreeEntryInfo, getTreeItemOffset } from './util'
 
 import styles from './File.module.scss'
 import treeStyles from './Tree.module.scss'
+import { FetchBlobParameters } from '@sourcegraph/shared/src/backend/blob'
+import { BlobFileFields } from '@sourcegraph/shared/src/graphql-operations'
 
 interface FileProps extends ThemeProps {
     fileDecorations?: FileDecoration[]
@@ -53,6 +57,9 @@ interface FileProps extends ThemeProps {
     repoID: Scalars['ID']
     revision: string
     location: H.Location
+
+    resolveRevision: (parameters: ResolvedRevisionParameters) => Observable<ResolvedRevision>
+    fetchBlob: (parameters: FetchBlobParameters) => Observable<BlobFileFields | null>
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
@@ -86,6 +93,8 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                 draggable={false}
                                 title={'Submodule: ' + props.entryInfo.submodule.url}
                                 data-tree-path={props.entryInfo.path}
+                                resolveRevision={props.resolveRevision}
+                                fetchBlob={props.fetchBlob}
                             >
                                 <TreeLayerRowContentsText>
                                     {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}

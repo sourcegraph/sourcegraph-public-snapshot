@@ -9,6 +9,8 @@ import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/Ta
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
+import { FetchBlobParameters } from '@sourcegraph/shared/src/backend/blob'
+import { ResolvedRevision, ResolvedRevisionParameters } from '@sourcegraph/shared/src/backend/repo'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
@@ -39,6 +41,7 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { BlobFileFields } from './graphql-operations'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import type { BlockInput } from './notebooks'
@@ -108,6 +111,10 @@ export interface LayoutProps
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     onCreateNotebookFromNotepad: (blocks: BlockInput[]) => void
+
+    // Files
+    resolveRevision: (parameters: ResolvedRevisionParameters) => Observable<ResolvedRevision>
+    fetchBlob: (parameters: FetchBlobParameters) => Observable<BlobFileFields | null>
 
     globbing: boolean
     isSourcegraphDotCom: boolean

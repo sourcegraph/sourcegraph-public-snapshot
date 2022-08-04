@@ -5,14 +5,14 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ParsedRepoURI, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { requestGraphQL } from '../../backend/graphql'
-import { BlobFileFields, BlobResult, BlobVariables } from '../../graphql-operations'
+import { BlobFileFields, BlobResult, BlobVariables } from '../graphql-operations'
+import { PlatformContext } from '../platform/context'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean; formatOnly?: boolean }): string {
     return `${makeRepoURI(parsed)}?disableTimeout=${parsed.disableTimeout}&formatOnly=${parsed.formatOnly}`
 }
 
-interface FetchBlobArguments {
+export interface FetchBlobParameters {
     repoName: string
     commitID: string
     filePath: string
@@ -22,14 +22,15 @@ interface FetchBlobArguments {
 
 export const fetchBlob = memoizeObservable(
     ({
+        requestGraphQL,
         repoName,
         commitID,
         filePath,
         disableTimeout = false,
         formatOnly = false,
-    }: FetchBlobArguments): Observable<BlobFileFields | null> =>
-        requestGraphQL<BlobResult, BlobVariables>(
-            gql`
+    }: FetchBlobParameters & Pick<PlatformContext, 'requestGraphQL'>): Observable<BlobFileFields | null> =>
+        requestGraphQL<BlobResult, BlobVariables>({
+            request: gql`
                 query Blob(
                     $repoName: String!
                     $commitID: String!
@@ -56,8 +57,9 @@ export const fetchBlob = memoizeObservable(
                     }
                 }
             `,
-            { repoName, commitID, filePath, disableTimeout, formatOnly }
-        ).pipe(
+            variables: { repoName, commitID, filePath, disableTimeout, formatOnly },
+            mightContainPrivateInfo: true,
+        }).pipe(
             map(dataOrThrowErrors),
             map(data => {
                 if (!data.repository?.commit) {
