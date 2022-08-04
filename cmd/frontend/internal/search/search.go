@@ -459,6 +459,17 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		Branches:     branches,
 	}
 
+	if len(rm.DescriptionMatches) > 0 {
+		dms := make([]streamhttp.Range, 0, len(rm.DescriptionMatches))
+		for _, matchRange := range rm.DescriptionMatches {
+			dms = append(dms, streamhttp.Range{
+				Start: fromLocation(matchRange.Start),
+				End:   fromLocation(matchRange.End),
+			})
+		}
+		repoEvent.DescriptionMatches = dms
+	}
+
 	if r, ok := repoCache[rm.ID]; ok {
 		repoEvent.RepoStars = r.Stars
 		repoEvent.RepoLastFetched = r.LastFetched
