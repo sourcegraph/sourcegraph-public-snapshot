@@ -42,7 +42,7 @@ func TestRepoStatistics(t *testing.T) {
 	createTestRepos(ctx, t, db, repos)
 
 	assertRepoStatistics(t, ctx, s, repoStatistics{
-		Total: 6, SoftDeleted: 0,
+		Total: 6, NotCloned: 6, SoftDeleted: 0,
 	})
 	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
 		{ShardID: "", Total: 6, NotCloned: 6},
@@ -52,18 +52,24 @@ func TestRepoStatistics(t *testing.T) {
 	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
 
+	assertRepoStatistics(t, ctx, s, repoStatistics{
+		Total: 6, SoftDeleted: 0, NotCloned: 4, Cloning: 2,
+	})
 	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
 		{ShardID: "", Total: 4, NotCloned: 4},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 	})
 
-	// Move to to shards[1] as cloning
+	// Move two repos to shards[1] as cloning
 	setCloneStatus(t, db, repos[2].Name, shards[1], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[3].Name, shards[1], types.CloneStatusCloning)
-	// Move to to shards[2] as cloning
+	// Move two repos to shards[2] as cloning
 	setCloneStatus(t, db, repos[4].Name, shards[2], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloning)
 
+	assertRepoStatistics(t, ctx, s, repoStatistics{
+		Total: 6, SoftDeleted: 0, Cloning: 6,
+	})
 	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
@@ -73,6 +79,9 @@ func TestRepoStatistics(t *testing.T) {
 
 	// Move from shards[0] to shards[2] and change status
 	setCloneStatus(t, db, repos[2].Name, shards[2], types.CloneStatusCloned)
+	assertRepoStatistics(t, ctx, s, repoStatistics{
+		Total: 6, SoftDeleted: 0, Cloning: 5, Cloned: 1,
+	})
 	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
@@ -88,7 +97,7 @@ func TestRepoStatistics(t *testing.T) {
 
 	// Deletion is reflected in repoStatistics
 	assertRepoStatistics(t, ctx, s, repoStatistics{
-		Total: 5, SoftDeleted: 1,
+		Total: 5, SoftDeleted: 1, Cloning: 5,
 	})
 	// But gitserverReposStatistics is unchanged
 	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
@@ -105,6 +114,10 @@ func TestRepoStatistics(t *testing.T) {
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 1, Cloning: 1},
 		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1},
+	})
+	// Global stats are unchanged
+	assertRepoStatistics(t, ctx, s, repoStatistics{
+		Total: 5, SoftDeleted: 1, Cloning: 5,
 	})
 }
 

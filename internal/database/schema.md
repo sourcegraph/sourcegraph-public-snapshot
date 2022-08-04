@@ -2441,6 +2441,9 @@ Indexes:
  id           | boolean |           | not null | true
  total        | bigint  |           | not null | 0
  soft_deleted | bigint  |           | not null | 0
+ not_cloned   | bigint  |           | not null | 0
+ cloning      | bigint  |           | not null | 0
+ cloned       | bigint  |           | not null | 0
 Indexes:
     "repo_statistics_pkey" PRIMARY KEY, btree (id)
 Check constraints:
