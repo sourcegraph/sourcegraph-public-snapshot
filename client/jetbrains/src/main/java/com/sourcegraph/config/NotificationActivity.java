@@ -6,12 +6,13 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
-import com.intellij.openapi.externalSystem.service.execution.NotSupportedException;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.Icons;
+import com.sourcegraph.common.BrowserErrorNotification;
 import com.sourcegraph.find.FindService;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,8 +32,8 @@ public class NotificationActivity implements StartupActivity.DumbAware {
         if (lastNotifiedPluginVersion == null || lastNotifiedPluginVersion.compareTo(latestReleaseMilestoneVersion) < 0) {
             notifyAboutUpdate(project);
         } else {
-            String url = ConfigUtil.getSourcegraphUrl(project);
-            if (!ConfigUtil.isUrlNotificationDismissed() && (url.length() == 0 || url.startsWith("https://sourcegraph.com"))) {
+            String url = ConfigUtil.getEnterpriseUrl(project);
+            if (!ConfigUtil.isUrlNotificationDismissed() && (url.length() == 0 || url.startsWith(ConfigUtil.DOTCOM_URL))) {
                 notifyAboutSourcegraphUrl();
             }
         }
@@ -66,14 +67,13 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     private void notifyAboutUpdate(@NotNull Project project) {
         // Display notification
         KeyboardShortcut altSShortcut = new KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.ALT_DOWN_MASK), null);
-        String altEnterShortcutText = KeymapUtil.getShortcutText(altSShortcut);
+        String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
         Notification notification = new Notification("Sourcegraph plugin updates", "Sourcegraph",
-            "Access the new plugin and try out code search with the shortcut " + altEnterShortcutText + "! Learn more about the plugin’s functionality in our blog post.", NotificationType.INFORMATION);
-        AnAction setUrlAction = new DumbAwareAction("Open Sourcegraph (" + altEnterShortcutText + ")") {
+            "Access the new plugin and try out code search with the shortcut " + altSShortcutText + "! Learn more about the plugin’s functionality in our blog post.", NotificationType.INFORMATION);
+        AnAction openAction = new DumbAwareAction("Open Sourcegraph (" + altSShortcutText + ")") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                FindService service = project.getService(FindService.class);
-                service.showPopup();
+                project.getService(FindService.class).showPopup();
                 notification.expire();
             }
         };
@@ -82,21 +82,23 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 String whatsNewUrl = "https://plugins.jetbrains.com/plugin/9682-sourcegraph#:~:text=What%E2%80%99s%20New";
 
-                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                    try {
-                        Desktop.getDesktop().browse(new URI(whatsNewUrl));
-                    } catch (IOException | URISyntaxException e) {
-                        throw new NotSupportedException("Can't open link. Wrong URL.");
-                    }
-                } else {
-                    throw new NotSupportedException("Can't open link. Desktop is not supported.");
+                URI uri;
+                try {
+                    uri = new URI(whatsNewUrl);
+                } catch (URISyntaxException e) {
+                    Logger logger = Logger.getInstance(this.getClass());
+                    logger.warn("Unable to create URI for url " + whatsNewUrl);
+                    return;
                 }
-
-
+                try {
+                    Desktop.getDesktop().browse(uri);
+                } catch (IOException | UnsupportedOperationException e) {
+                    BrowserErrorNotification.show(project, uri);
+                }
             }
         };
         notification.setIcon(Icons.SourcegraphLogo);
-        notification.addAction(setUrlAction);
+        notification.addAction(openAction);
         notification.addAction(learnMoreAction);
         Notifications.Bus.notify(notification);
 

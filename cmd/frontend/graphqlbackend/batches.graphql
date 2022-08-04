@@ -1463,6 +1463,11 @@ extend type Mutation {
         used to create) batch changes in this namespace.
         """
         namespace: ID!
+
+        """
+        The batch change this batch spec is associated with.
+        """
+        batchChange: ID!
     ): BatchSpec!
 
     """
@@ -1891,6 +1896,11 @@ extend type Query {
     This endpoint is used in src-cli to resolve workspaces.
     """
     resolveWorkspacesForBatchSpec(batchSpec: String!): [ResolvedBatchSpecWorkspace!]!
+
+    """
+    Returns the max number of changesets are allowed for License that does not have the batch change feature.
+    """
+    maxUnlicensedChangesets: Int!
 }
 
 """

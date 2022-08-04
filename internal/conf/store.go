@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -26,13 +27,6 @@ type store struct {
 	ready chan struct{}
 	once  sync.Once
 }
-
-// defaultStore is shared between client and server in the same process,
-// so we can make sure our writes in backend integration tests are immediately
-// effectual. Without a shared store, the client will asynchronously poll
-// for updates from the database, and we have no way to know when it's done,
-// since the state served from the GraphQL API is the one in the server store.
-var defaultStore = newStore()
 
 // newStore returns a new configuration store.
 func newStore() *store {
@@ -62,6 +56,17 @@ func (s *store) Raw() conftypes.RawUnified {
 
 	s.rawMu.RLock()
 	defer s.rawMu.RUnlock()
+
+	if s.mock != nil {
+		raw, err := json.Marshal(s.mock.SiteConfig())
+		if err != nil {
+			return conftypes.RawUnified{}
+		}
+		return conftypes.RawUnified{
+			Site:               string(raw),
+			ServiceConnections: s.mock.ServiceConnectionConfig,
+		}
+	}
 	return s.raw
 }
 

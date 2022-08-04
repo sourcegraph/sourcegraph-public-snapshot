@@ -59,7 +59,11 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import {
+    createDecorationType,
+    DecorationMapByLine,
+    groupDecorationsByLine,
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -100,9 +104,11 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
+export const blameDecorationType = createDecorationType('git-extras')({ display: 'column' })
+
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -122,6 +128,10 @@ export interface BlobProps
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
+    role?: string
+    ariaLabel?: string
+
+    blameDecorations?: TextDocumentDecoration[]
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -130,6 +140,9 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** The trusted syntax-highlighted code as HTML */
     html: string
+
+    /** LSIF syntax-highlighting data */
+    lsif?: string
 }
 
 const domFunctions = {
@@ -204,6 +217,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         blobInfo,
         platformContext,
         settingsCascade,
+        role,
+        ariaLabel,
         'data-testid': dataTestId,
     } = props
 
@@ -237,7 +252,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             codeViewReference.current = codeView
             codeViewElements.next(codeView)
         },
-        [codeViewElements]
+        // We dangerousSetInnerHTML and modify the <code> element.
+        // We need to listen to blobInfo to ensure that we correctly
+        // respond whenever this element updates.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [codeViewElements, blobInfo.html]
     )
 
     // Emits on changes from URL search params
@@ -313,7 +332,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     withLatestFrom(urlSearchParameters),
                     tap(([, parameters]) => {
                         parameters.delete('popover')
-                        updateBrowserHistoryIfNecessary(props.history, location, parameters)
+                        updateBrowserHistoryIfChanged(props.history, location, parameters)
                     })
                 ),
             [location, popoverCloses, props.history, urlSearchParameters]
@@ -391,6 +410,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
                         let query: string | undefined
+                        let replace = false
                         if (
                             position &&
                             event.shiftKey &&
@@ -410,6 +430,19 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                             })
                         } else {
                             query = toPositionOrRangeQueryParameter({ position })
+
+                            // Replace the current history entry instead of
+                            // adding a new one if the newly selected line is
+                            // within 10 lines of the currently selected one.
+                            // If the current position is a range a new entry
+                            // will always be added.
+                            const currentPosition = parseQueryAndHash(location.search, location.hash)
+                            replace = Boolean(
+                                position &&
+                                    currentPosition.line &&
+                                    !currentPosition.endLine &&
+                                    Math.abs(position.line - currentPosition.line) < 11
+                            )
                         }
 
                         const parameters = new URLSearchParams(location.search)
@@ -418,10 +451,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         if (position && !('character' in position)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
-                            updateBrowserHistoryIfNecessary(
+                            updateBrowserHistoryIfChanged(
                                 props.history,
                                 location,
-                                addLineRangeQueryParameter(parameters, query)
+                                addLineRangeQueryParameter(parameters, query),
+                                replace
                             )
                         }
                     }),
@@ -627,35 +661,19 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         column: [TextDocumentDecorationType, DecorationMapByLine][]
         inline: DecorationMapByLine
     } = useMemo(() => {
+        const blameDecorationsByLine = props.blameDecorations && groupDecorationsByLine(props.blameDecorations)
+        const columnWithBlame: [TextDocumentDecorationType, DecorationMapByLine][] =
+            !props.disableDecorations && blameDecorationsByLine ? [[blameDecorationType, blameDecorationsByLine]] : []
+
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            const { column, inline } = decorationsOrError.reduce(
-                (accumulator, [type, items]) => {
-                    if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
-                        const groupedByLine = groupDecorationsByLine(items)
-                        if (groupedByLine.size > 0) {
-                            accumulator.column.push([type, groupedByLine])
-                        }
-                    } else {
-                        accumulator.inline.push(...items)
-                    }
-
-                    return accumulator
-                },
-                {
-                    column: [] as [TextDocumentDecorationType, DecorationMapByLine][],
-                    inline: [] as TextDocumentDecoration[],
-                }
-            )
-
-            return {
-                // if extension contributes with a few decoration types let them go one by one
-                column: sortBy(column, ([{ extensionID }]) => extensionID),
-                inline: groupDecorationsByLine(inline),
-            }
+            return groupDecorations(decorationsOrError, enableExtensionsDecorationsColumnView, {
+                column: columnWithBlame,
+                inline: [],
+            })
         }
 
-        return { column: [], inline: new Map() }
-    }, [decorationsOrError, enableExtensionsDecorationsColumnView])
+        return { column: columnWithBlame, inline: new Map() }
+    }, [props.disableDecorations, props.blameDecorations, decorationsOrError, enableExtensionsDecorationsColumnView])
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -738,7 +756,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const context = { position: point, range }
                 const search = new URLSearchParams(location.search)
                 search.set('popover', 'pinned')
-                updateBrowserHistoryIfNecessary(
+                updateBrowserHistoryIfChanged(
                     props.history,
                     location,
                     addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
@@ -797,6 +815,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 className={classNames(props.className, styles.blob)}
                 ref={nextBlobElement}
                 tabIndex={-1}
+                role={role}
+                aria-label={ariaLabel}
             >
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
@@ -866,10 +886,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
  * from the current ones. This prevents adding a new entry when e.g. the user
  * clicks the same line multiple times.
  */
-export function updateBrowserHistoryIfNecessary(
+export function updateBrowserHistoryIfChanged(
     history: H.History,
     location: H.Location,
-    newSearchParameters: URLSearchParams
+    newSearchParameters: URLSearchParams,
+    /** If set to true replace the current history entry instead of adding a new one. */
+    replace: boolean = false
 ): void {
     const currentSearchParameters = [...new URLSearchParams(location.search).entries()]
 
@@ -883,10 +905,15 @@ export function updateBrowserHistoryIfNecessary(
         currentSearchParameters.some(([key, value]) => newSearchParameters.get(key) !== value)
 
     if (needsUpdate) {
-        history.push({
+        const entry = {
             ...location,
             search: formatSearchParameters(newSearchParameters),
-        })
+        }
+        if (replace) {
+            history.replace(entry)
+        } else {
+            history.push(entry)
+        }
     }
 }
 
@@ -901,5 +928,33 @@ export function getLSPTextDocumentPositionParameters(
         revision: position.revision,
         mode,
         position,
+    }
+}
+
+export function groupDecorations(
+    decorations: [TextDocumentDecorationType, TextDocumentDecoration[]][],
+    enableExtensionsDecorationsColumnView: boolean,
+    initialValue: { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: TextDocumentDecoration[] } = {
+        column: [],
+        inline: [],
+    }
+): { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: DecorationMapByLine } {
+    const { column, inline } = decorations.reduce((accumulator, [type, items]) => {
+        if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
+            const groupedByLine = groupDecorationsByLine(items)
+            if (groupedByLine.size > 0) {
+                accumulator.column.push([type, groupedByLine])
+            }
+        } else {
+            accumulator.inline.push(...items)
+        }
+
+        return accumulator
+    }, initialValue)
+
+    return {
+        // if extension contributes with a few decoration types let them go one by one
+        column: sortBy(column, ([{ extensionID }]) => extensionID),
+        inline: groupDecorationsByLine(inline),
     }
 }

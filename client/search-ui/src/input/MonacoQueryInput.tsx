@@ -14,8 +14,7 @@ import {
     EditorHint,
 } from '@sourcegraph/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
@@ -74,7 +73,6 @@ export interface MonacoQueryInputProps
     onEditorCreated?: (editor: IEditor) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
-    keyboardShortcutForFocus?: KeyboardShortcut
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -99,6 +97,15 @@ export interface MonacoQueryInputProps
     ariaLabel?: string
 
     editorClassName?: string
+
+    // CodeMirror specific
+    /**
+     * If set suggestions can be applied by pressing enter. In the past we
+     * didn't enable this behavior because it interfered with loading
+     * suggestions asynchronously, but CodeMirror allows us to disable selecting
+     * a suggestion by default. This is currently an experimental feature.
+     */
+    applySuggestionsOnEnter?: boolean
 }
 
 /**
@@ -180,6 +187,7 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     ariaLabel = 'Search query',
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    const focusSearchBarShortcut = useKeyboardShortcut('focusSearch')
 
     const onEditorCreated = useCallback(
         (editor: Monaco.editor.IStandaloneCodeEditor) => {
@@ -407,7 +415,7 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
                 options={editorOptions ?? DEFAULT_MONACO_OPTIONS}
                 border={false}
                 placeholder={placeholder}
-                keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                keyboardShortcutForFocus={focusSearchBarShortcut}
                 className={classNames('test-query-input', styles.monacoQueryInput, editorClassName)}
             />
         </div>

@@ -209,22 +209,6 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('dependencies({regex-pattern})'),
-        field: FilterType.repo,
-        description:
-            'Search inside repositories that are dependencies of repositories matched by the provided regex pattern. This parameter is experimental.',
-        examples: ['repo:deps(^github\\.com/sourcegraph/sourcegraph$@3.36:3.35)'],
-        showSuggestions: false,
-    },
-    {
-        ...createQueryExampleFromString('dependents({regex-pattern})'),
-        field: FilterType.repo,
-        description:
-            'Search inside repositories that depend on repositories matched by the provided regex pattern. This parameter is experimental.',
-        examples: ['repo:revdeps(^go/github\\.com/google/go-cmp$@v0.5.8)'],
-        showSuggestions: true,
-    },
-    {
         ...createQueryExampleFromString('has.description({regex-pattern})'),
         field: FilterType.repo,
         description: 'Search inside repositories that have a description matched by the provided regex pattern.',
@@ -359,8 +343,7 @@ const SearchReferenceExample: React.FunctionComponent<React.PropsWithChildren<Se
     example,
     onClick,
 }) => {
-    // All current examples are literal queries
-    const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
+    const scanResult = scanSearchQuery(example, false, SearchPatternType.standard)
     // We only use valid queries as examples, so this will always be true
     if (scanResult.type === 'success') {
         return (
@@ -440,49 +423,51 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>
-                    <div className={styles.description}>
-                        {searchReference.description && (
-                            <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
-                        )}
-                        {searchReference.alias && (
-                            <Text>
-                                Alias:{' '}
-                                <span className="text-code search-filter-keyword">
-                                    {searchReference.alias}
-                                    {isFilterInfo(searchReference) ? ':' : ''}
-                                </span>
-                            </Text>
-                        )}
-                        {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
-                            <Text>
-                                Negation:{' '}
-                                <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
-                                {searchReference.alias && (
-                                    <>
-                                        {' '}
-                                        |{' '}
-                                        <span className="test-code search-filter-keyword">
-                                            -{searchReference.alias}:
-                                        </span>
-                                    </>
-                                )}
-                                <br />
-                                <span className={styles.placeholder}>(opt + click filter in reference list)</span>
-                            </Text>
-                        )}
-                        {searchReference.examples && (
-                            <>
-                                <div className="font-weight-medium">Examples</div>
-                                <div className={classNames('text-code', styles.examples)}>
-                                    {searchReference.examples.map(example => (
-                                        <Text key={example}>
-                                            <SearchReferenceExample example={example} onClick={onExampleClick} />
-                                        </Text>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    {!collapsed && (
+                        <div className={styles.description}>
+                            {searchReference.description && (
+                                <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
+                            )}
+                            {searchReference.alias && (
+                                <Text>
+                                    Alias:{' '}
+                                    <span className="text-code search-filter-keyword">
+                                        {searchReference.alias}
+                                        {isFilterInfo(searchReference) ? ':' : ''}
+                                    </span>
+                                </Text>
+                            )}
+                            {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
+                                <Text>
+                                    Negation:{' '}
+                                    <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
+                                    {searchReference.alias && (
+                                        <>
+                                            {' '}
+                                            |{' '}
+                                            <span className="test-code search-filter-keyword">
+                                                -{searchReference.alias}:
+                                            </span>
+                                        </>
+                                    )}
+                                    <br />
+                                    <span className={styles.placeholder}>(opt + click filter in reference list)</span>
+                                </Text>
+                            )}
+                            {searchReference.examples && (
+                                <>
+                                    <div className="font-weight-medium">Examples</div>
+                                    <div className={classNames('text-code', styles.examples)}>
+                                        {searchReference.examples.map(example => (
+                                            <Text key={example}>
+                                                <SearchReferenceExample example={example} onClick={onExampleClick} />
+                                            </Text>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </CollapsePanel>
             </Collapse>
         </li>

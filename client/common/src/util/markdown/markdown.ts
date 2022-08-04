@@ -118,7 +118,6 @@ export const renderMarkdown = (
                 a: [
                     ...sanitize.defaults.allowedAttributes.a,
                     'title',
-                    'data-tooltip', // TODO support fancy tooltips through native titles
                     'class',
                     { name: 'rel', values: ['noopener', 'noreferrer'] },
                 ],

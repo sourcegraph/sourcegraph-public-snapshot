@@ -209,7 +209,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       data-testid="hierarchical-locations-view"
     >
       <div
+        aria-label="Hierarchical locations sidebar"
         class="panel panelLeft panelRelative"
+        role="region"
         style="width: 200px;"
       >
         <div

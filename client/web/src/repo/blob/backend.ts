@@ -8,20 +8,35 @@ import { ParsedRepoURI, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { requestGraphQL } from '../../backend/graphql'
 import { BlobFileFields, BlobResult, BlobVariables } from '../../graphql-operations'
 
-function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout: boolean }): string {
-    return makeRepoURI(parsed) + String(parsed.disableTimeout)
+function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean; formatOnly?: boolean }): string {
+    return `${makeRepoURI(parsed)}?disableTimeout=${parsed.disableTimeout}&formatOnly=${parsed.formatOnly}`
+}
+
+interface FetchBlobArguments {
+    repoName: string
+    commitID: string
+    filePath: string
+    disableTimeout?: boolean
+    formatOnly?: boolean
 }
 
 export const fetchBlob = memoizeObservable(
-    (args: {
-        repoName: string
-        commitID: string
-        filePath: string
-        disableTimeout: boolean
-    }): Observable<BlobFileFields | null> =>
+    ({
+        repoName,
+        commitID,
+        filePath,
+        disableTimeout = false,
+        formatOnly = false,
+    }: FetchBlobArguments): Observable<BlobFileFields | null> =>
         requestGraphQL<BlobResult, BlobVariables>(
             gql`
-                query Blob($repoName: String!, $commitID: String!, $filePath: String!, $disableTimeout: Boolean!) {
+                query Blob(
+                    $repoName: String!
+                    $commitID: String!
+                    $filePath: String!
+                    $disableTimeout: Boolean!
+                    $formatOnly: Boolean!
+                ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
@@ -34,14 +49,14 @@ export const fetchBlob = memoizeObservable(
                 fragment BlobFileFields on File2 {
                     content
                     richHTML
-                    highlight(disableTimeout: $disableTimeout) {
+                    highlight(disableTimeout: $disableTimeout, formatOnly: $formatOnly) {
                         aborted
                         html
                         lsif
                     }
                 }
             `,
-            args
+            { repoName, commitID, filePath, disableTimeout, formatOnly }
         ).pipe(
             map(dataOrThrowErrors),
             map(data => {

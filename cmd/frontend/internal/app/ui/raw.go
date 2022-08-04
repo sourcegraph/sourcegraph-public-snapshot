@@ -22,7 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // Examples:
@@ -90,11 +92,14 @@ func serveRaw(db database.DB) handlerFunc {
 			requestedPath = "/" + requestedPath
 		}
 
-		client := gitserver.NewClient(db)
 		if requestedPath == "/" && r.Method == "HEAD" {
-			_, err = client.RepoInfo(r.Context(), common.Repo.Name)
+			_, err := db.Repos().GetByName(r.Context(), common.Repo.Name)
 			if err != nil {
-				w.WriteHeader(http.StatusNotFound)
+				if errcode.IsNotFound(err) {
+					w.WriteHeader(http.StatusNotFound)
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
 				return err
 			}
 			w.WriteHeader(http.StatusOK)
@@ -115,10 +120,10 @@ func serveRaw(db database.DB) handlerFunc {
 		// Allow users to override the negotiated content type so that e.g. browser
 		// users can easily download tar/zip archives by adding ?format=zip etc. to
 		// the URL.
-		switch r.URL.Query().Get("format") {
-		case "zip":
+		switch gitserver.ArchiveFormat(r.URL.Query().Get("format")) {
+		case gitserver.ArchiveFormatZip:
 			contentType = applicationZip
-		case "tar":
+		case gitserver.ArchiveFormatTar:
 			contentType = applicationXTar
 		}
 
@@ -144,6 +149,8 @@ func serveRaw(db database.DB) handlerFunc {
 			}
 			metricRawDuration.WithLabelValues(contentType, requestType, errorS).Observe(duration.Seconds())
 		}()
+
+		gitserverClient := gitserver.NewClient(db)
 
 		switch contentType {
 		case applicationZip, applicationXTar:
@@ -182,8 +189,8 @@ func serveRaw(db database.DB) handlerFunc {
 			// caching locally is not useful. Additionally we transfer the output over the
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
-			f, err := gitserver.NewClient(db).ArchiveReader(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name,
-				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitserver.Pathspec{gitserver.PathspecLiteral(relativePath)}})
+			f, err := gitserverClient.ArchiveReader(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name,
+				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitdomain.Pathspec{gitdomain.PathspecLiteral(relativePath)}})
 			if err != nil {
 				return err
 			}
@@ -234,7 +241,7 @@ func serveRaw(db database.DB) handlerFunc {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 
-			fi, err := gitserver.NewClient(db).Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
+			fi, err := gitserverClient.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
 			if err != nil {
 				if os.IsNotExist(err) {
 					requestType = "404"
@@ -246,7 +253,7 @@ func serveRaw(db database.DB) handlerFunc {
 
 			if fi.IsDir() {
 				requestType = "dir"
-				infos, err := client.ReadDir(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath, false)
+				infos, err := gitserverClient.ReadDir(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath, false)
 				if err != nil {
 					return err
 				}
@@ -269,7 +276,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// File
 			requestType = "file"
 			size = fi.Size()
-			f, err := gitserver.NewClient(db).NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath, authz.DefaultSubRepoPermsChecker)
+			f, err := gitserverClient.NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return err
 			}

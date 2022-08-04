@@ -3,9 +3,7 @@
     <name>Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
-    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
@@ -19,6 +17,7 @@
             nonDefaultProject="false"
         />
         <notificationGroup id="Sourcegraph access" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph URL sharing" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
@@ -29,28 +28,28 @@
     <actions>
         <action
             id="sourcegraph.openFile"
-            class="com.sourcegraph.website.OpenFile"
+            class="com.sourcegraph.website.OpenFileAction"
             text="Open Selection in Sourcegraph Web"
             description="Open selection in Sourcegraph Web"
             icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.searchSelection"
-            class="com.sourcegraph.website.SearchSelection"
+            class="com.sourcegraph.website.SearchSelectionAction"
             text="Search Selection on Sourcegraph Web"
             description="Search selection on Sourcegraph web"
             icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.searchRepository"
-            class="com.sourcegraph.website.SearchRepository"
+            class="com.sourcegraph.website.SearchRepositoryAction"
             text="Search Selection in Repository on Sourcegraph Web"
             description="Search selection in repository on Sourcegraph web"
             icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.copy"
-            class="com.sourcegraph.website.Copy"
+            class="com.sourcegraph.website.CopyAction"
             text="Copy Sourcegraph File Link"
             description="Copy Sourcegraph file link"
             icon="/icons/sourcegraphLogo.svg">
@@ -82,7 +81,8 @@
             icon="/icons/sourcegraphLogo.svg">
         </action>
 
-        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph">
+        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
+               searchable="false">
             <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>
             <reference ref="sourcegraph.searchRepository"/>

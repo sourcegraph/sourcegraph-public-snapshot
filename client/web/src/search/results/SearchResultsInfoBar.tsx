@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import {
-    mdiFormatQuoteOpen,
-    mdiBookmarkOutline,
-    mdiMenu,
-    mdiMenuDown,
-    mdiMenuUp,
-    mdiArrowExpandDown,
-    mdiArrowCollapseUp,
-} from '@mdi/js'
+import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -25,7 +17,7 @@ import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
-import { SearchPatternType } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import {
@@ -43,7 +35,7 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'settings'>,
         TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
@@ -113,26 +105,6 @@ const ExperimentalActionButton: React.FunctionComponent<
         </ButtonLink>
     )
 }
-
-/**
- * A notice for when the user is searching literally and has quotes in their
- * query, in which case it is possible that they think their query `"foobar"`
- * will be searching literally for `foobar` (without quotes). This notice
- * informs them that this may be the case to avoid confusion.
- */
-const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
-    React.PropsWithChildren<SearchResultsInfoBarProps>
-> = props =>
-    props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
-        <Tooltip content="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search.">
-            <small className={styles.notice}>
-                <span>
-                    <Icon aria-hidden={true} svgPath={mdiFormatQuoteOpen} />
-                    Searching literally <strong>(including quotes)</strong>
-                </span>
-            </small>
-        </Tooltip>
-    ) : null
 
 /**
  * The info bar shown over the search results list that displays metadata
@@ -316,8 +288,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 {props.stats}
 
-                <QuotesInterpretedLiterallyNotice {...props} />
-
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
@@ -377,6 +347,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                             variant="secondary"
                                             outline={true}
                                             size="sm"
+                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                            onClick={
+                                                createActionButton.eventToLog
+                                                    ? () => {
+                                                          eventLogger.log(createActionButton.eventToLog!)
+                                                      }
+                                                    : undefined
+                                            }
                                         >
                                             <Icon
                                                 aria-hidden={true}

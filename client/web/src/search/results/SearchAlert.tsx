@@ -40,7 +40,7 @@ export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<Search
                                     '/search?' +
                                     buildSearchURLQuery(
                                         proposedQuery.query,
-                                        patternType || SearchPatternType.literal,
+                                        patternType || SearchPatternType.standard,
                                         caseSensitive,
                                         searchContextSpec
                                     )

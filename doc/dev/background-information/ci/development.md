@@ -93,7 +93,16 @@ The pipeline generator provides an API for this that, at a high level, works lik
 
 3. That's it!
 
+Linters implemented in `sg` automatically generate annotations with the `sg lint --annotations` flag.
+
 Part of the annotation that gets generated also includes a link to view the job output and, if the build is on the main branch, a link to view the job logs on Grafana.
+
+If you don't include a file extension in the annotation file, then the contents of the file are rendered terminal output.
+An annotation can be rendered as Markdown instead by using the `.md` extension, for example:
+
+```sh
+echo -e "$OUT" >./annotations/docsite.md
+```
 
 For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 

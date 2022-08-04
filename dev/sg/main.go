@@ -54,6 +54,8 @@ var (
 	// configOverwriteFile is the path to use with sgconf.Get - it must not be used before
 	// flag initialization.
 	configOverwriteFile string
+	// disableOverwrite causes configuration to ignore configOverwriteFile.
+	disableOverwrite bool
 
 	// Global verbose mode
 	verbose bool
@@ -77,7 +79,7 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 
 // sg is the main sg CLI application.
 //
-//go:generate go run . help -full -output ./doc/dev/background-information/sg/reference.md
+//go:generate go run . -disable-overwrite help -full -output ./doc/dev/background-information/sg/reference.md
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
@@ -111,6 +113,13 @@ var sg = &cli.App{
 			Destination: &configOverwriteFile,
 		},
 		&cli.BoolFlag{
+			Name:        "disable-overwrite",
+			Usage:       "disable loading additional sg configuration from overwrite file (see -overwrite)",
+			EnvVars:     []string{"SG_DISABLE_OVERWRITE"},
+			Value:       false,
+			Destination: &disableOverwrite,
+		},
+		&cli.BoolFlag{
 			Name:    "skip-auto-update",
 			Usage:   "prevent sg from automatically updating itself",
 			EnvVars: []string{"SG_SKIP_AUTO_UPDATE"},
@@ -141,10 +150,16 @@ var sg = &cli.App{
 			return nil
 		}
 
-		var (
-			start            = time.Now()
-			disableAnalytics = cmd.Bool("disable-analytics")
-		)
+		// Lots of setup happens in Before - we want to make sure anything that
+		// we collect a generate a helpful message here if anything goes wrong.
+		defer func() {
+			if p := recover(); p != nil {
+				std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
+					sgBugReportTemplate)
+				message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
+				err = cli.NewExitError(message, 1)
+			}
+		}()
 
 		// Let sg components register pre-interrupt hooks
 		interrupt.Listen()
@@ -152,35 +167,28 @@ var sg = &cli.App{
 		// Configure global output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
 
-		// Initialize context
+		// Set up analytics and hooks for each command - do this as the first context
+		// setup
+		if !cmd.Bool("disable-analytics") {
+			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
+			if err != nil {
+				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+			}
+
+			// Ensure analytics are persisted
+			interrupt.Register(func() { analytics.Persist(cmd.Context) })
+
+			// Add analytics to each command
+			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
+		}
+
+		// Initialize context after analytics are set up
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
 		}
 		cmd.Context = background.Context(cmd.Context, verbose)
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
-
-		// Set up analytics and hooks for each command.
-		if !disableAnalytics {
-			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
-			addAnalyticsHooks(start, []string{"sg"}, cmd.App.Commands)
-
-			// Lots of setup happens in Before - we want to make sure anything that
-			// happens here is tracked. We set this up here after setting up output and
-			// some initial safe setup.
-			defer func() {
-				if p := recover(); p != nil {
-					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
-						sgBugReportTemplate)
-					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
-					err = cli.NewExitError(message, 1)
-
-					event := analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
-					event.Properties["error_details"] = err.Error()
-					analytics.Persist(cmd.Context, "sg", cmd.FlagNames())
-				}
-			}()
-		}
 
 		// Configure logger, for commands that use components that use loggers
 		os.Setenv("SRC_DEVELOPMENT", "true")
@@ -233,6 +241,8 @@ var sg = &cli.App{
 		if !bashCompletionsMode {
 			// Wait for background jobs to finish up, iff not in autocomplete mode
 			background.Wait(cmd.Context, std.Out)
+			// Persist analytics
+			analytics.Persist(cmd.Context)
 		}
 
 		return nil
@@ -311,4 +321,11 @@ func loadSecrets() (*secrets.Store, error) {
 	}
 	fp := filepath.Join(homePath, secrets.DefaultFile)
 	return secrets.LoadFromFile(fp)
+}
+
+func getConfig() (*sgconf.Config, error) {
+	if disableOverwrite {
+		return sgconf.GetWithoutOverwrites(configFile)
+	}
+	return sgconf.Get(configFile, configOverwriteFile)
 }

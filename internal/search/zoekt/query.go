@@ -34,7 +34,6 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 
 	var and []zoekt.Q
 	if q != nil {
@@ -57,27 +56,6 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 			return nil, err
 		}
 		and = append(and, &zoekt.Not{Child: q})
-	}
-
-	// For conditionals that happen on a repo we can use type:repo queries. eg
-	// (type:repo file:foo) (type:repo file:bar) will match all repos which
-	// contain a filename matching "foo" and a filename matchinb "bar".
-	//
-	// Note: (type:repo file:foo file:bar) will only find repos with a
-	// filename containing both "foo" and "bar".
-	for _, i := range filesReposMustInclude {
-		q, err := FileRe(i, isCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoekt.Type{Type: zoekt.TypeRepo, Child: q})
-	}
-	for _, i := range filesReposMustExclude {
-		q, err := FileRe(i, isCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoekt.Not{Child: &zoekt.Type{Type: zoekt.TypeRepo, Child: q}})
 	}
 
 	// Languages are already partially expressed with IncludePatterns, but Zoekt creates

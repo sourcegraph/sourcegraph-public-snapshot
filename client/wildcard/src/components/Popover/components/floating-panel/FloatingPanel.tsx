@@ -5,9 +5,11 @@ import { createPortal } from 'react-dom'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
 import { ForwardReferenceComponent } from '../../../../types'
-import { createTether, Flipping, Overlapping, Position, Strategy, Tether } from '../../tether'
+import { createTether, Flipping, Overlapping, Padding, Position, Strategy, Tether } from '../../tether'
 
 import styles from './FloatingPanel.module.scss'
+
+const DEFAULT_PADDING: Padding = { top: 8, right: 8, bottom: 8, left: 8 }
 
 export interface FloatingPanelProps extends Omit<Tether, 'target' | 'element'>, React.HTMLAttributes<HTMLDivElement> {
     /**
@@ -40,7 +42,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         constrainToScrollParents = true,
         overflowToScrollParents = true,
         strategy = Strategy.Fixed,
-        windowPadding,
+        windowPadding = DEFAULT_PADDING,
         constraintPadding,
         targetPadding,
         constraint,

@@ -9,13 +9,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	jobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, 3)
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{
@@ -28,7 +29,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 	t.Run("Create", func(t *testing.T) {
 		for idx, job := range jobs {
-			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+			if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 				t.Fatal(err)
 			}
 
@@ -133,7 +134,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				job.PlaceInGlobalQueue = 0
 			}
 
-			ct.UpdateJobState(t, ctx, s, job)
+			bt.UpdateJobState(t, ctx, s, job)
 		}
 
 		t.Run("All", func(t *testing.T) {
@@ -195,16 +196,16 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 			jobs[0].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
 			jobs[0].FailureMessage = &message1
-			ct.UpdateJobState(t, ctx, s, jobs[0])
+			bt.UpdateJobState(t, ctx, s, jobs[0])
 
 			// has a failure message, but it's outdated, because job is processing
 			jobs[1].State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 			jobs[1].FailureMessage = &message2
-			ct.UpdateJobState(t, ctx, s, jobs[1])
+			bt.UpdateJobState(t, ctx, s, jobs[1])
 
 			jobs[2].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
 			jobs[2].FailureMessage = &message3
-			ct.UpdateJobState(t, ctx, s, jobs[2])
+			bt.UpdateJobState(t, ctx, s, jobs[2])
 
 			wantIDs := []int64{jobs[0].ID, jobs[2].ID}
 
@@ -296,7 +297,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatal(err)
 				}
 				record := records[0]
-				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateFailed; have != want {
+				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateCanceled; have != want {
 					t.Errorf("invalid state: have=%q want=%q", have, want)
 				}
 				if have, want := record.Cancel, true; have != want {
@@ -375,8 +376,8 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatal(err)
 				}
 
-				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
-				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID, UserID: spec.UserID}
+				if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
 				specJobIDs = append(specJobIDs, job.ID)
@@ -393,7 +394,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatal(err)
 				}
 				record := records[0]
-				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateFailed; have != want {
+				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateCanceled; have != want {
 					t.Errorf("invalid state: have=%q want=%q", have, want)
 				}
 				if have, want := record.Cancel, true; have != want {
@@ -618,7 +619,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				jobIDs[i] = j.ID
 			}
 
-			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
+			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -659,7 +660,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 			jobIDs = append(jobIDs, 999, 888, 777)
 
-			err = s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs)
+			err = s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs})
 			if err == nil {
 				t.Fatal("error is nil")
 			}
@@ -678,6 +679,58 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			if have, want := len(jobs), 0; have != want {
 				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
 			}
+		})
+
+		t.Run("by workspace IDs", func(t *testing.T) {
+			workspaces := createWorkspaces(t, ctx, s)
+			ids := workspacesIDs(t, workspaces)
+
+			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				BatchSpecWorkspaceIDs: ids,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := len(jobs), len(workspaces); have != want {
+				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
+			}
+
+			jobIDs := make([]int64, len(jobs))
+			for i, j := range jobs {
+				jobIDs[i] = j.ID
+			}
+
+			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{WorkspaceIDs: ids}); err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				IDs: jobIDs,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := len(jobs), 0; have != want {
+				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("invalid option", func(t *testing.T) {
+			err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{})
+			assert.Equal(t, "invalid options: would delete all jobs", err.Error())
+		})
+
+		t.Run("too many options", func(t *testing.T) {
+			err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{
+				IDs:          []int64{1, 2},
+				WorkspaceIDs: []int64{3, 4},
+			})
+			assert.Equal(t, "invalid options: multiple options not supported", err.Error())
 		})
 	})
 }

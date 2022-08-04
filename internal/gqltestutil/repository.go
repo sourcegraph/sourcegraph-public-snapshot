@@ -213,7 +213,10 @@ query Repository($name: String!) {
 // PermissionsInfo contains permissions information of a repository from
 // GraphQL.
 type PermissionsInfo struct {
-	SyncedAt time.Time
+	SyncedAt     time.Time
+	UpdatedAt    time.Time
+	Permissions  []string
+	Unrestricted bool
 }
 
 // RepositoryPermissionsInfo returns permissions information of the given
@@ -228,6 +231,7 @@ query RepositoryPermissionsInfo($name: String!) {
 			syncedAt
 			updatedAt
 			permissions
+			unrestricted
 		}
 	}
 }

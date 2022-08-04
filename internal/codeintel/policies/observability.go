@@ -8,6 +8,7 @@ import (
 )
 
 type operations struct {
+	// Not used yet.
 	commitsMatchingIndexingPolicies  *observation.Operation
 	commitsMatchingRetentionPolicies *observation.Operation
 	create                           *observation.Operation
@@ -15,6 +16,9 @@ type operations struct {
 	get                              *observation.Operation
 	list                             *observation.Operation
 	update                           *observation.Operation
+
+	// Configurations
+	getConfigurationPolicies *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -34,6 +38,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
+		// Not used yet.
 		commitsMatchingIndexingPolicies:  op("CommitsMatchingIndexingPolicies"),
 		commitsMatchingRetentionPolicies: op("CommitsMatchingRetentionPolicies"),
 		create:                           op("Create"),
@@ -41,5 +46,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		get:                              op("Get"),
 		list:                             op("List"),
 		update:                           op("Update"),
+
+		// Configurations
+		getConfigurationPolicies: op("GetConfigurationPolicies"),
 	}
 }

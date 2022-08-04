@@ -362,18 +362,21 @@ func (r *symbolLocationResolver) Line() int32 {
 	}
 	return int32(r.location.Range.Row)
 }
+
 func (r *symbolLocationResolver) Character() int32 {
 	if r.location.Range == nil {
 		return 0
 	}
 	return int32(r.location.Range.Column)
 }
+
 func (r *symbolLocationResolver) Length() int32 {
 	if r.location.Range == nil {
 		return 0
 	}
 	return int32(r.location.Range.Length)
 }
+
 func (r *symbolLocationResolver) Range() (*lineRangeResolver, error) {
 	if r.location.Range == nil {
 		return nil, nil

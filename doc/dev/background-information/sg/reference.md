@@ -15,6 +15,7 @@ Global flags:
 * `--config, -c="<value>"`: load sg configuration from `file` (default: sg.config.yaml)
 * `--disable-analytics`: disable event logging (logged to '~/.sourcegraph/events')
 * `--disable-output-detection`: use fixed output configuration instead of detecting terminal capabilities
+* `--disable-overwrite`: disable loading additional sg configuration from overwrite file (see -overwrite)
 * `--overwrite, -o="<value>"`: load sg configuration from `file` that is gitignored and can be used to, for example, add credentials (default: sg.config.overwrite.yaml)
 * `--skip-auto-update`: prevent sg from automatically updating itself
 * `--verbose, -v`: toggle verbose mode
@@ -86,10 +87,10 @@ Available commands in `sg.config.yaml`:
 * caddy
 * codeintel-executor
 * codeintel-worker
-* debug-env
-* docsite
+* debug-env: Debug env vars
+* docsite: Docsite instance serving the docs
 * executor-template
-* frontend
+* frontend: Enterprise frontend
 * github-proxy
 * gitserver
 * grafana
@@ -100,21 +101,21 @@ Available commands in `sg.config.yaml`:
 * oss-frontend
 * oss-repo-updater
 * oss-symbols
-* oss-web
+* oss-web: Open source version of the web app
 * oss-worker
-* otel-collector
+* otel-collector: OpenTelemetry collector
 * postgres_exporter
 * prometheus
-* redis-postgres
+* redis-postgres: Dockerized version of redis and postgres
 * repo-updater
 * searcher
-* server
+* server: Run an all-in-one sourcegraph/server image
 * storybook
 * symbols
 * syntax-highlighter
-* web
-* web-standalone-http
-* web-standalone-http-prod
+* web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
+* web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
+* web: Enterprise version of the web app
 * worker
 * zoekt-index-0
 * zoekt-index-1
@@ -483,7 +484,7 @@ Flags:
 
 Create an admin sourcegraph user.
 
-Run 'sg db add-user -name bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds
+Run 'sg db add-user -username bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds
 
 
 Flags:
@@ -710,6 +711,18 @@ Flags:
 * `--up`: The migration direction.
 * `--version="<value>"`: The migration `version` to log. (default: 0)
 
+### sg migration upgrade
+
+Upgrade Sourcegraph instance databases to a target version.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--from="<value>"`: The source (current) instance version. Must be of the form `v{Major}.{Minor}`.
+* `--skip-version-check`: Skip validation of the instance's current version.
+* `--to="<value>"`: The target instance version. Must be of the form `v{Major}.{Minor}`.
+
 ### sg migration leaves
 
 Identiy the migration leaves for the given commit.
@@ -743,6 +756,8 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
+* `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
+* `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 
 ### sg migration squash-all
@@ -761,6 +776,8 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
+* `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
+* `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
 
@@ -780,6 +797,23 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `-f="<value>"`: The output filepath
+
+### sg migration rewrite
+
+Rewrite schemas definitions as they were at a particular version.
+
+Available schemas:
+
+* frontend
+* codeintel
+* codeinsights
+
+
+Flags:
+
+* `--db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--rev="<value>"`: The target revision
 
 ## sg insights
 
@@ -1067,9 +1101,8 @@ Manage analytics collected by sg.
 
 Make sg better by submitting all analytics stored locally!.
 
-Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.
+Requires HONEYCOMB_ENV_TOKEN or OTEL_EXPORTER_OTLP_ENDPOINT to be set.
 
-Arguments: `[github username]`
 
 Flags:
 
