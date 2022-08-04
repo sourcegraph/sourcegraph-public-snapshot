@@ -27,8 +27,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - **IMPORTANT: Search queries with patterns surrounded by** `/.../` **will now be interpreted as regular expressions.** Existing search links or code monitors are unaffected. In the rare event where older links rely on the literal meaning of `/.../`, the string will be automatically quoted it in a `content` filter, preserving the original meaning. If you happen to use an existing older link and want `/.../` to work as a regular expression, add `patterntype:standard` to the query. New queries and code monitors will interpret `/.../` as regular expressions. [#38141](https://github.com/sourcegraph/sourcegraph/pull/38141).
-- Custom Git fetch configuration `experimentalFeatures.customGitFetch` now requires the environment variable `INSECURE_ENABLE_CUSTOM_GIT_FETCH` to be set to `true` to enable.
-- Custom Git fetch configuration `experimentalFeatures.customGitFetch` now requires the environment variable `INSECURE_ENABLE_CUSTOM_GIT_FETCH` to be set to `true` to enable. [#39630](https://github.com/sourcegraph/sourcegraph/pull/39630)
 - Custom Git fetch configuration `experimentalFeatures.customGitFetch` is now deprecated. The configuration is now moved to a file, use environment variable `CUSTOM_GIT_FETCH_CONF` to set the config file to read the settings from. [#39630](https://github.com/sourcegraph/sourcegraph/pull/39630)
 
 ### Fixed
