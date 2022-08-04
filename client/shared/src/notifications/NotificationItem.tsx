@@ -9,6 +9,7 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { NotificationWithId } from './notification'
+
 import styles from './NotificationItem.module.scss'
 
 export interface UnbrandedNotificationItemStyleProps {
