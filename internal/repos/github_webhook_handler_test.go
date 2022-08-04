@@ -69,7 +69,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	}
 
 	targetURL := fmt.Sprintf("%s/github-webhooks", globals.ExternalURL())
-	req, err := http.NewRequest("POST", targetURL, bytes.NewReader([]byte(payload)))
+	req, err := http.NewRequest("POST", targetURL, bytes.NewReader(payload))
 	if err != nil {
 		t.Fatal(err)
 	}
