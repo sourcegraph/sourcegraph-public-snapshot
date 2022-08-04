@@ -21,8 +21,8 @@ COMMENT ON COLUMN repo_statistics.soft_deleted IS 'Number of repositories that a
 -- Insert initial values into repo_statistics table
 INSERT INTO repo_statistics (total, soft_deleted)
 VALUES (
-  (SELECT COUNT(1) FROM repo WHERE deleted_at is NULL AND blocked IS NULL),
-  (SELECT COUNT(1) FROM repo WHERE deleted_at is NOT NULL AND blocked IS NULL)
+  (SELECT COUNT(*) FROM repo WHERE deleted_at is NULL AND blocked IS NULL),
+  (SELECT COUNT(*) FROM repo WHERE deleted_at is NOT NULL AND blocked IS NULL)
 );
 
 -- UPDATE
@@ -32,8 +32,8 @@ CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigg
       INSERT INTO
         repo_statistics (total, soft_deleted)
       VALUES (
-        (SELECT COUNT(1) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL) - (SELECT COUNT(1) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
-        (SELECT COUNT(1) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL) - (SELECT COUNT(1) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
       )
       ON CONFLICT(id) DO UPDATE
       SET
@@ -53,8 +53,8 @@ CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_insert() RETURNS trigg
       INSERT INTO
         repo_statistics (total, soft_deleted)
       VALUES (
-        (SELECT COUNT(1) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL),
-        (SELECT COUNT(1) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
       )
       ON CONFLICT(id) DO UPDATE
       SET
@@ -73,8 +73,8 @@ CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_delete() RETURNS trigg
     AS $$ BEGIN
       UPDATE repo_statistics
       SET
-        total        = repo_statistics.total        - (SELECT COUNT(1) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
-        soft_deleted = repo_statistics.soft_deleted - (SELECT COUNT(1) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
+        total        = repo_statistics.total        - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        soft_deleted = repo_statistics.soft_deleted - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL)
       WHERE id = TRUE;
       RETURN NULL;
   END
