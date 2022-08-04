@@ -56,6 +56,10 @@ func TestCustomGitFetch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Cleanup(func() {
+		os.Remove(customGitFetchCmdConf)
+	})
+
 	tests := []struct {
 		url          string
 		expectedArgs []string
@@ -93,7 +97,4 @@ func TestCustomGitFetch(t *testing.T) {
 		}
 	}
 
-	t.Cleanup(func() {
-		os.Remove(customGitFetchCmdConf)
-	})
 }
