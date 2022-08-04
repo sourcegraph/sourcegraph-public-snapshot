@@ -251,6 +251,25 @@ INSERT INTO insights_query_runner_jobs (
 RETURNING id
 `
 
+// PurgeJobsForSeries removes all jobs for a seriesID.
+func PurgeJobsForSeries(ctx context.Context, workerBaseStore *basestore.Store, seriesID string) (err error) {
+	tx, err := workerBaseStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	err = tx.Exec(ctx, sqlf.Sprintf(purgeJobsForSeriesFmtStr, seriesID))
+	return err
+
+}
+
+const purgeJobsForSeriesFmtStr = `
+-- source: enterprise/internal/insights/background/queryrunner/worker.go:purgeJobsForSeriesFmtStr
+DELETE FROM insights_query_runner_jobs
+WHERE series_id = %s
+`
+
 func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (_ *Job, err error) {
 	tx, err := workerBaseStore.Transact(ctx)
 	if err != nil {

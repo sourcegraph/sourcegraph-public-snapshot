@@ -385,24 +385,24 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	return scanDataSeries(s.Query(ctx, q))
 }
 
-// GetJustInTimeSearchSeriesToBackfill Is a special purpose func to get only just in time series that should
+// GetScopedSearchSeriesNeedBackfill Is a special purpose func to get only just in time series that should
 // be converted to scoped backfilled insights
-func (s *InsightStore) GetJustInTimeSearchSeriesToBackfill(ctx context.Context) ([]types.InsightSeries, error) {
+func (s *InsightStore) GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([]types.InsightSeries, error) {
 	preds := make([]*sqlf.Query, 0, 1)
 
 	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 	preds = append(preds, sqlf.Sprintf("CARDINALITY(repositories) > 0"))
-	preds = append(preds, sqlf.Sprintf("just_in_time = true"))
 	preds = append(preds, sqlf.Sprintf("backfill_attempts < 10"))
 	preds = append(preds, sqlf.Sprintf("generation_method !=  %s", "language-stats"))
+	preds = append(preds, sqlf.Sprintf("needs_migration = true"))
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
 	return scanDataSeries(s.Query(ctx, q))
 }
 
-// GetJustInTimeSearchSeriesToBackfill Is a special purpose func to convert a Just In Time search insight
+// CompleteJustInTimeConversionAttempt Is a special purpose func to convert a Just In Time search insight
 // to a scoped backfilled serach insight
-func (s *InsightStore) ConvertJustInTimeSearchSeriesToBackfill(ctx context.Context, series types.InsightSeries) error {
+func (s *InsightStore) CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
@@ -413,19 +413,20 @@ func (s *InsightStore) ConvertJustInTimeSearchSeriesToBackfill(ctx context.Conte
 	nextRecording := interval.StepForwards(s.Now())
 	nextSnapshot := NextSnapshot(s.Now())
 
-	return s.Exec(ctx, sqlf.Sprintf(convertJITSeriesToBackfillSql, nextRecording, nextSnapshot, series.SeriesID))
+	return s.Exec(ctx, sqlf.Sprintf(completeJustInTimeConversionAttemptSql, nextRecording, nextSnapshot, series.ID))
 
 }
 
-const convertJITSeriesToBackfillSql = `
--- source: enterprise/internal/insights/store/insight_store.go:ConvertJustInTimeSearchSeriesToBackfill
+const completeJustInTimeConversionAttemptSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:CompleteJustInTimeConversionAttempt
 UPDATE insight_series
 SET just_in_time = false,
     next_recording_after = %s,
 	next_snapshot_after = %s,
-	backfill_queued_at = now()
+	backfill_queued_at = now(),
+	needs_migration = false
 WHERE
-	series_id = %s
+	id = %d
 	AND generation_method !='language-stats'
 	AND deleted_at is null;
 `
@@ -726,6 +727,16 @@ const incrementSeriesBackfillAttemptsSql = `
 update insight_series set backfill_attempts = backfill_attempts + 1 where series_id = %s;
 `
 
+// StartJustInTimeConversionAttempt increments backfill_attempts and updates the created date and seriesID.
+func (s *InsightStore) StartJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
+	return s.Exec(ctx, sqlf.Sprintf(startJustInTimeConversionAttemptSql, series.CreatedAt, series.SeriesID, series.ID))
+}
+
+const startJustInTimeConversionAttemptSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:StartJITConversionAttempt
+update insight_series set backfill_attempts = backfill_attempts + 1, created_at=%s, series_id = %s where id = %d;
+`
+
 // CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.
 func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	if series.CreatedAt.IsZero() {
@@ -781,10 +792,11 @@ type DataSeriesStore interface {
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
-	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
+	StartJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
 	SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error
-	GetJustInTimeSearchSeriesToBackfill(ctx context.Context) ([]types.InsightSeries, error)
-	ConvertJustInTimeSearchSeriesToBackfill(ctx context.Context, series types.InsightSeries) error
+	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
+	GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([]types.InsightSeries, error)
+	CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
 }
 
 type InsightMetadataStore interface {
@@ -1006,8 +1018,8 @@ const createInsightSeriesSql = `
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
 							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-							just_in_time, generation_method, group_by)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+							just_in_time, generation_method, group_by, needs_migration)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
 RETURNING id;`
 
 const getInsightByViewSql = `
