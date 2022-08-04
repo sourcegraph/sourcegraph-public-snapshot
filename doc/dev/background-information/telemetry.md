@@ -19,7 +19,7 @@ A telemetry event is logged for every action that is executed by the user. By de
 
 Examples of builtin actions include `goToDefinition`, `goToDefinition.preloaded`, `findReferences`, and (soon) `toggleLineWrap`, `goToPermalink`, `toggleColorTheme`, etc. (i.e., the builtin buttons in the file header and global nav).
 
-Examples of extension actions include [`git.blame.toggle` from sourcegraph/git-extras](https://sourcegraph.com/extensions/sourcegraph/git-extras/-/contributions). An extension's action IDs are specified in its extension manifest and can be viewed on the **Contributions** tab of its extension registry listing.
+Examples of extension actions include [`git.blame.toggle` from sourcegraph/git-extras](https://github.com/sourcegraph/sourcegraph-git-extras/blob/master/package.json#L21-L73). An extension's action IDs are specified in its extension manifest and can be viewed on the **Contributions** tab of its extension registry listing.
 
 ## Browser extension telemetry
 

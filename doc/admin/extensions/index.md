@@ -1,6 +1,6 @@
 # Administration of Sourcegraph extensions and the extension registry
 
-[Sourcegraph extensions](../../extensions/index.md) add features to Sourcegraph. Sourcegraph Free and Enterprise instances allow users to view and enable extensions from the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions).
+[Sourcegraph extensions](../../extensions/index.md) add features to Sourcegraph. Sourcegraph Free and Enterprise instances allow users to view and enable extensions from the sourcegraph.com extension registry.
 
 Site administrators can customize how Sourcegraph extensions are used on their instance, with options for:
 
@@ -32,7 +32,7 @@ If a user's organization settings or user settings explicitly disable the extens
 
 ## Publish extensions to a private extension registry
 
-If you want to create extensions that are only visible to users on your Sourcegraph instance or make use of extensions from the [sourcegraph.com extensions registry](https://sourcegraph.com/extensions) on the air-gapped instances, you can use Sourcegraph Enterprise's private extension registry feature. This is enabled by default on Sourcegraph Enterprise.
+If you want to create extensions that are only visible to users on your Sourcegraph instance or make use of extensions from the sourcegraph.com extensions registry on the air-gapped instances, you can use Sourcegraph Enterprise's private extension registry feature. This is enabled by default on Sourcegraph Enterprise.
 
 To publish an extension to your instance's private extension registry (requires Internet access):
 
@@ -43,7 +43,7 @@ To publish an extension to your instance's private extension registry (requires 
 
 If you want to publish extensions to the air-gapped instance's private registry follow [this guide](https://github.com/sourcegraph/sourcegraph-extensions-cloning-scripts).
 
-On Sourcegraph Free, the only way to publish extensions is to publish them to the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions), where anyone on the web can view them.
+On Sourcegraph Free, the only way to publish extensions is to publish them to the sourcegraph.com extension registry, where anyone on the web can view them.
 
 ## Use extensions from Sourcegraph.com (or disable remote extensions)
 

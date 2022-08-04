@@ -126,12 +126,12 @@ The ESlint extension requires the eslint.insight.repository and eslint.insight.s
 This is most likely due to the file being opened in a Sourcegraph instance that does not have access to your files. You must first configure the plugin in order to use it with your private instance. See the plugin docs for more information.
 
 #### Search-export: Can I export search results?
-1. You can export search results by enabling the [Sourcegraph search results CSV export extension](https://sourcegraph.com/extensions/sourcegraph/search-export)
+1. You can export search results by enabling the [Sourcegraph search results CSV export extension](https://github.com/sourcegraph/sourcegraph-search-export).
 2. Once it is enabled, you will find an `Export to CSV` button in the Search-Results page
  
 #### Search-export: Network Error when downloading CSV
 
-It's likely that the CSV file exceeds the browser's limit for data URI size. Users can limit the size of search match preview size through their user settings (see ["contributions"](https://sourcegraph.com/extensions/sourcegraph/search-export/-/contributions) for search-export). If decreasing the size of search match previews doesn't resolve the issue, users can decrease the amount of search results exported with the `count:` filter in their search query.
+It's likely that the CSV file exceeds the browser's limit for data URI size. Users can limit the size of search match preview size through their user settings (see ["contributions"](https://github.com/sourcegraph/sourcegraph-search-export/blob/master/package.json#L26-L66) for search-export). If decreasing the size of search match previews doesn't resolve the issue, users can decrease the amount of search results exported with the `count:` filter in their search query.
 
 #### Search-export: The number of exported results does not match the number of results displayed on Sourcegraph
 

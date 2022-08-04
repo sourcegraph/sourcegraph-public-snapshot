@@ -3,7 +3,7 @@
 If you've used Sourcegraph before, you've used a Sourcegraph extension: Sourcegraph extensions add features like git blame, code coverage, trace/log information, link previews, and third-party tool integrations. 
 </p>
 
-For example, try hovering over tokens or toggling Git blame on [`tuf_store.go`](https://sourcegraph.com/github.com/theupdateframework/notary/-/blob/server/storage/tuf_store.go). Or see a [demo video of code coverage overlays](https://www.youtube.com/watch?v=j1eWBa3rWH8). The [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) lists all publicly available extensions. 
+For example, try hovering over tokens or toggling Git blame on [`tuf_store.go`](https://sourcegraph.com/github.com/theupdateframework/notary/-/blob/server/storage/tuf_store.go). Or see a [demo video of code coverage overlays](https://www.youtube.com/watch?v=j1eWBa3rWH8). The Sourcegraph.com extension registry lists all publicly available extensions. 
 
 Sourcegraph extensions are like editor extensions, but run anywhere you view code in your web browser. To get extensions on your code host and review tools, you need the [Chrome/Firefox Sourcegraph browser extension](../integration/browser_extension.md), or you must set up a [native integration](../integration/index.md) with your code host. 
 
@@ -20,12 +20,6 @@ Sourcegraph extensions are like editor extensions, but run anywhere you view cod
    <span>Using extensions</span>
    </br>
    How to enable extensions on Sourcegraph.
-  </a>
-
-  <a href="https://sourcegraph.com/extensions" class="btn">
-   <span>Extension registry</span>
-   </br>
-   Browse popular extensions like git extras, link previews, open-in-editor, Codecov, or Sonarqube.
   </a>
 
   <a href="security" class="btn">

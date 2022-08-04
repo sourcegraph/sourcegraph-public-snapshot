@@ -31,7 +31,6 @@ The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.ht
 - [Extension manifest (`package.json`)](manifest.md)
 - [Testing extensions](testing_extensions.md)
 - [Example extension: Token Highlights](https://github.com/sourcegraph/sourcegraph-extension-samples/tree/master/token-highlights)
-- [More examples: Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (most extensions link to their source repository)
 - [Cookbook (sample code)](cookbook.md)
 - [UX style guide](ux_style_guide.md)
 
