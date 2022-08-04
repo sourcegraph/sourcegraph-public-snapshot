@@ -1113,3 +1113,16 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
         map(data => data.featureFlags)
     )
 }
+
+export const REPOSITORY_STATS = gql`
+    query RepositoryStats {
+        repositoryStats {
+            __typename
+            total
+            notCloned
+            cloned
+            cloning
+            failedFetch
+        }
+    }
+`

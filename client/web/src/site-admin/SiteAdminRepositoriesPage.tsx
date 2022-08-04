@@ -4,9 +4,22 @@ import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon, H2, Text, Tooltip, Container } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Alert,
+    Icon,
+    H2,
+    Text,
+    Tooltip,
+    Container,
+    Card,
+    CardBody,
+    LoadingSpinner,
+} from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
 import {
@@ -15,10 +28,15 @@ import {
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
+import {
+    RepositoriesResult,
+    RepositoryStatsResult,
+    RepositoryStatsVariables,
+    SiteAdminRepositoryFields,
+} from '../graphql-operations'
 import { refreshSiteFlags } from '../site/backend'
 
-import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning, REPOSITORY_STATS } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo as RepoMirrorInfo } from './components/RepoMirrorInfo'
 
@@ -133,6 +151,9 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 .then(null, error => console.error(error))
         }
     }, [])
+
+    const { data, loading, error } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
+
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(args),
@@ -157,6 +178,60 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 </Link>
                 .
             </Text>
+            {error && !loading && (
+                <Alert variant="warning" as="p">
+                    {error.message}
+                </Alert>
+            )}
+            {loading && !error && <LoadingSpinner />}
+            {!loading && !error && data && (
+                <div className="d-flex justify-content-between text-center">
+                    <Card className="flex-grow-1">
+                        <CardBody>
+                            <span className={styles.repoStatsNumber}>{data.repositoryStats.total}</span>
+                            <Text className="mb-0">Repositories</Text>
+                        </CardBody>
+                    </Card>
+                    <Card className="flex-grow-1">
+                        <CardBody>
+                            <span className={styles.repoStatsNumber}>{data.repositoryStats.notCloned}</span>
+                            <Text className="mb-0">Not cloned</Text>
+                        </CardBody>
+                    </Card>
+                    <Card className="flex-grow-1">
+                        <CardBody>
+                            <span
+                                className={classNames(
+                                    styles.repoStatsNumber,
+                                    data.repositoryStats.cloning > 0 && 'text-success'
+                                )}
+                            >
+                                {data.repositoryStats.cloning}
+                            </span>
+                            <Text className="mb-0">Cloning</Text>
+                        </CardBody>
+                    </Card>
+                    <Card className="flex-grow-1">
+                        <CardBody>
+                            <span className={styles.repoStatsNumber}>{data.repositoryStats.cloned}</span>
+                            <Text className="mb-0">Cloned</Text>
+                        </CardBody>
+                    </Card>
+                    <Card className="flex-grow-1">
+                        <CardBody>
+                            <span
+                                className={classNames(
+                                    styles.repoStatsNumber,
+                                    data.repositoryStats.failedFetch > 0 && 'text-warning'
+                                )}
+                            >
+                                {data.repositoryStats.failedFetch}
+                            </span>
+                            <Text className="mb-0">Failed clone/fetch</Text>
+                        </CardBody>
+                    </Card>
+                </div>
+            )}
             <Container className="mb-3">
                 <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                     className="mb-0"
