@@ -575,6 +575,9 @@ type ReposListOptions struct {
 	// repositories returned in the list.
 	DescriptionPatterns []string
 
+	// TODO
+	MetadataFilters []RepoMetadataFilter
+
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
 	// with case sensitivity or not.
 	CaseSensitivePatterns bool
@@ -701,6 +704,11 @@ type ReposListOptions struct {
 	ExcludeSources bool
 
 	*LimitOffset
+}
+
+type RepoMetadataFilter struct {
+	Key   string
+	Value *string
 }
 
 type RepoListOrderBy []RepoListSort
@@ -1056,6 +1064,14 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+	}
+
+	if len(opt.MetadataFilters) > 0 {
+		var ands []*sqlf.Query
+		for _, filter := range opt.MetadataFilters {
+			ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_metadata WHERE key = %s AND value = %s)", filter.Key, filter.Value))
+		}
+		where = append(where, sqlf.Join(ands, "AND"))
 	}
 
 	baseConds := sqlf.Sprintf("TRUE")
