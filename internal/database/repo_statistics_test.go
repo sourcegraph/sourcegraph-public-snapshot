@@ -47,6 +47,7 @@ func TestRepoStatistics(t *testing.T) {
 		{ShardID: "", Total: 6, NotCloned: 6},
 	})
 
+	// Move to to shards[0] as cloning
 	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
 
@@ -55,8 +56,10 @@ func TestRepoStatistics(t *testing.T) {
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 	})
 
+	// Move to to shards[1] as cloning
 	setCloneStatus(t, db, repos[2].Name, shards[1], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[3].Name, shards[1], types.CloneStatusCloning)
+	// Move to to shards[2] as cloning
 	setCloneStatus(t, db, repos[4].Name, shards[2], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloning)
 
@@ -65,6 +68,31 @@ func TestRepoStatistics(t *testing.T) {
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 2, Cloning: 2},
 		{ShardID: shards[2], Total: 2, Cloning: 2},
+	})
+
+	// Move from shards[0] to shards[2] and change status
+	setCloneStatus(t, db, repos[2].Name, shards[2], types.CloneStatusCloned)
+	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 2, Cloning: 2},
+		{ShardID: shards[1], Total: 1, Cloning: 1},
+		{ShardID: shards[2], Total: 3, Cloning: 2, Cloned: 1},
+	})
+
+	// Soft delete repos
+	if err := db.Repos().Delete(ctx, repos[2].ID); err != nil {
+		t.Fatal(err)
+	}
+	// Deletion is reflected in repoStatistics
+	assertRepoStatistics(t, ctx, s, repoStatistics{
+		Total: 5, SoftDeleted: 1,
+	})
+	// But gitserverReposStatistics is unchanged
+	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 2, Cloning: 2},
+		{ShardID: shards[1], Total: 1, Cloning: 1},
+		{ShardID: shards[2], Total: 3, Cloning: 2, Cloned: 1},
 	})
 }
 
