@@ -29,69 +29,50 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     settingsCascade: NOOP_SETTINGS_CASCADE,
 }
 
+const renderSearchResultsInfoBar = (
+    props: Pick<SearchResultsInfoBarProps, 'enableCodeMonitoring'> & Partial<SearchResultsInfoBarProps>
+) =>
+    renderWithBrandedContext(
+        <MockedTestProvider>
+            <SearchResultsInfoBar {...COMMON_PROPS} {...props} />
+        </MockedTestProvider>,
+        { history }
+    )
+
 describe('SearchResultsInfoBar', () => {
     test('code monitoring feature flag disabled', () => {
         expect(
-            renderWithBrandedContext(
-                <MockedTestProvider>
-                    <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={false} query="foo type:diff" />
-                </MockedTestProvider>,
-                { history }
-            ).asFragment()
+            renderSearchResultsInfoBar({ query: 'foo type:diff', enableCodeMonitoring: false }).asFragment()
         ).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, cannot create monitor from query', () => {
-        expect(
-            renderWithBrandedContext(
-                <MockedTestProvider>
-                    <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo" />
-                </MockedTestProvider>,
-                { history }
-            ).asFragment()
-        ).toMatchSnapshot()
+        expect(renderSearchResultsInfoBar({ query: 'foo', enableCodeMonitoring: true }).asFragment()).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, can create monitor from query', () => {
         expect(
-            renderWithBrandedContext(
-                <MockedTestProvider>
-                    <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo type:diff" />
-                </MockedTestProvider>,
-                { history }
-            ).asFragment()
+            renderSearchResultsInfoBar({ query: 'foo type:diff', enableCodeMonitoring: true }).asFragment()
         ).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, can create monitor from query, user not logged in', () => {
         expect(
-            renderWithBrandedContext(
-                <MockedTestProvider>
-                    <SearchResultsInfoBar
-                        {...COMMON_PROPS}
-                        enableCodeMonitoring={true}
-                        query="foo type:diff"
-                        authenticatedUser={null}
-                    />
-                </MockedTestProvider>,
-                { history }
-            ).asFragment()
+            renderSearchResultsInfoBar({
+                query: 'foo type:diff',
+                enableCodeMonitoring: true,
+                authenticatedUser: null,
+            }).asFragment()
         ).toMatchSnapshot()
     })
 
     test('unauthenticated user', () => {
         expect(
-            renderWithBrandedContext(
-                <MockedTestProvider>
-                    <SearchResultsInfoBar
-                        {...COMMON_PROPS}
-                        enableCodeMonitoring={true}
-                        query="foo type:diff"
-                        authenticatedUser={null}
-                    />
-                </MockedTestProvider>,
-                { history }
-            ).asFragment()
+            renderSearchResultsInfoBar({
+                query: 'foo type:diff',
+                enableCodeMonitoring: true,
+                authenticatedUser: null,
+            }).asFragment()
         ).toMatchSnapshot()
     })
 })
