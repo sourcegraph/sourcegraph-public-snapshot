@@ -96,6 +96,8 @@ type SearchedRepo struct {
 	Stars int
 	// LastFetched is the time of the last fetch of new commits from the code host.
 	LastFetched *time.Time
+	// TODO
+	Metadata map[string]*string
 }
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.

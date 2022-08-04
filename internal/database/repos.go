@@ -360,6 +360,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			"repo.private",
 			"repo.stars",
 			"gr.last_fetched",
+			"(SELECT json_object_agg(key, value) FROM repo_metadata WHERE repo_metadata.repo_id = repo.id)",
 		},
 		// Required so gr.last_fetched is select-able
 		joinGitserverRepos: true,
@@ -368,6 +369,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	res := make([]*types.SearchedRepo, 0, len(ids))
 	scanMetadata := func(rows *sql.Rows) error {
 		var r types.SearchedRepo
+		var kvps repoMetadataKVPs
 		if err := rows.Scan(
 			&r.ID,
 			&r.Name,
@@ -377,15 +379,29 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			&r.Private,
 			&dbutil.NullInt{N: &r.Stars},
 			&r.LastFetched,
+			&kvps,
 		); err != nil {
 			return err
 		}
 
+		r.Metadata = kvps.kvps
 		res = append(res, &r)
 		return nil
 	}
 
 	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
+}
+
+type repoMetadataKVPs struct {
+	kvps map[string]*string
+}
+
+func (r *repoMetadataKVPs) Scan(value any) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &r.kvps)
 }
 
 const listReposQueryFmtstr = `
