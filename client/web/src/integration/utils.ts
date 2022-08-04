@@ -1,5 +1,5 @@
 import { EditorView } from '@codemirror/view'
-import { Page } from 'puppeteer'
+import { Page, JSHandle } from 'puppeteer'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
@@ -162,6 +162,10 @@ export interface EditorAPI {
      * Triggers application of the specified suggestion.
      */
     selectSuggestion: (label: string) => Promise<void>
+    /**
+     * Move cursor to 1-based position.
+     */
+    moveCursorTo: (line: number, character?: number) => Promise<void>
 }
 
 const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAPI> = {
@@ -216,6 +220,9 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     wait: { timeout: 5000 },
                 })
             },
+            moveCursorTo() {
+                throw new Error('moveCursorTo is not implemented for Monaco')
+            },
         }
         return api
     },
@@ -224,6 +231,32 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
         const readySelector = `${rootSelector} .cm-line`
         const completionSelector = `${rootSelector} .cm-tooltip-autocomplete`
         const completionLabelSelector = `${completionSelector} .cm-completionLabel`
+
+        let editorHandle: Promise<JSHandle<EditorView | undefined>> | null = null
+        function getEditorHandler(): Promise<JSHandle<EditorView | undefined>> {
+            if (editorHandle) {
+                return editorHandle
+            }
+            return (editorHandle = driver.page.evaluateHandle((selector: string) => {
+                // Typecast "as any" is used to avoid TypeScript complaining
+                // about window not having this property. We decided that
+                // it's fine to use this in a test context
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+                const fromDOM = (window as any).CodeMirrorFindFromDOM as typeof EditorView['findFromDOM'] | undefined
+                if (!fromDOM) {
+                    throw new Error(
+                        'CodeMirror DOM API not exposed. Ensure the web app is built with INTEGRATION_TESTS=true.'
+                    )
+                }
+                const editorElement = document.querySelector<HTMLElement>(selector)
+                if (editorElement) {
+                    // Returns an EditorView
+                    // See https://codemirror.net/docs/ref/#view.EditorView^findFromDOM
+                    return fromDOM(editorElement)
+                }
+                return undefined
+            }, rootSelector))
+        }
 
         const api: EditorAPI = {
             name: 'codemirror6',
@@ -234,28 +267,11 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                 await api.waitForIt()
                 await driver.page.click(rootSelector)
             },
-            getValue() {
-                return driver.page.evaluate((selector: string) => {
-                    // Typecast "as any" is used to avoid TypeScript complaining
-                    // about window not having this property. We decided that
-                    // it's fine to use this in a test context
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
-                    const fromDOM = (window as any).CodeMirrorFindFromDOM as
-                        | typeof EditorView['findFromDOM']
-                        | undefined
-                    if (!fromDOM) {
-                        throw new Error(
-                            'CodeMirror DOM API not exposed. Ensure the web app is built with INTEGRATION_TESTS=true.'
-                        )
-                    }
-                    const editorElement = document.querySelector<HTMLElement>(selector)
-                    if (editorElement) {
-                        // Returns an EditorView
-                        // See https://codemirror.net/docs/ref/#view.EditorView^findFromDOM
-                        return fromDOM(editorElement)?.state.sliceDoc()
-                    }
-                    return undefined
-                }, rootSelector)
+            async getValue() {
+                return driver.page.evaluate(
+                    (editor: EditorView | undefined) => editor?.state.sliceDoc(),
+                    await getEditorHandler()
+                )
             },
             replace(newText: string, method = 'type') {
                 return driver.replaceText({
@@ -289,6 +305,20 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     selector: completionLabelSelector,
                     wait: { timeout: 5000 },
                 })
+            },
+            async moveCursorTo(line: number, character: number = 1): Promise<void> {
+                return driver.page.evaluate(
+                    (editor: EditorView | undefined, lineNumber: number, character: number) => {
+                        if (!editor) {
+                            throw new Error('editor is not defined')
+                        }
+                        const line = editor.state.doc.line(lineNumber)
+                        editor.dispatch({ selection: { anchor: line.from + character - 1 } }) // -1 because 1-based
+                    },
+                    await getEditorHandler(),
+                    line,
+                    character
+                )
             },
         }
         return api
@@ -324,6 +354,8 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
         case 'monaco':
         case 'codemirror6':
             break
+        case undefined:
+            throw new Error("Can't determine editor, data-editor=... is not set.")
         default:
             throw new Error(`${editor} is not a supported editor`)
     }
