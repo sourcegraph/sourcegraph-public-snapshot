@@ -26,7 +26,7 @@ const defaultProps: MonacoQueryInputProps = {
     globbing: false,
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     caseSensitive: false,
     selectedSearchContextSpec: 'global',
     onChange: () => {},

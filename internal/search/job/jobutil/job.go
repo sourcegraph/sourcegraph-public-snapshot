@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/keyword"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/lucky"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -42,12 +43,19 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	}
 
 	jobTree := NewOrJob(children...)
-
+	newJob := func(b query.Basic) (job.Job, error) {
+		return NewBasicJob(inputs, b)
+	}
 	if inputs.PatternType == query.SearchTypeLucky {
-		newJob := func(b query.Basic) (job.Job, error) {
-			return NewBasicJob(inputs, b)
-		}
 		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
+	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
+		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
+		if err != nil {
+			return nil, err
+		}
+		if newJobTree != nil {
+			jobTree = newJobTree
+		}
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
@@ -634,8 +642,6 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	return search.RepoOptions{
 		RepoFilters:         repoFilters,
 		MinusRepoFilters:    minusRepoFilters,
-		Dependencies:        b.Dependencies(),
-		Dependents:          b.Dependents(),
 		DescriptionPatterns: b.RepoHasDescription(),
 		SearchContextSpec:   searchContextSpec,
 		ForkSet:             b.Fork() != nil,
@@ -757,6 +763,8 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 				// We allow -repo: in global search.
 				return n.Negated
 			case query.FieldRepoHasFile:
+				return false
+			case query.FieldRepoHasCommitAfter:
 				return false
 			default:
 				return true

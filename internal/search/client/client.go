@@ -177,6 +177,8 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 			searchType = query.SearchTypeStructural
 		case "lucky":
 			searchType = query.SearchTypeLucky
+		case "keyword":
+			searchType = query.SearchTypeKeyword
 		default:
 			return -1, errors.Errorf("unrecognized patternType %q", *patternType)
 		}
@@ -215,6 +217,8 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeStructural
 		case "lucky":
 			searchType = query.SearchTypeLucky
+		case "keyword":
+			searchType = query.SearchTypeKeyword
 		}
 	})
 	return searchType

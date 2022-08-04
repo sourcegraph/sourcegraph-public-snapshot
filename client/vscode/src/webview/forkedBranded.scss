@@ -165,20 +165,3 @@ input[type='checkbox'] {
         cursor: pointer;
     }
 }
-
-// Replace the old '../../../branded/src/global-styles/card' file
-$card-spacer-y: 0.5rem;
-$card-spacer-x: 0.5rem;
-$card-bg: var(--card-bg);
-$card-border-color: var(--card-border-color);
-$card-cap-bg: var(--color-bg-2);
-
-.card {
-    --card-bg: var(--color-bg-1);
-    --card-border-color: var(--border-color);
-    --card-spacer-y: #{$card-spacer-y};
-    --card-spacer-x: #{$card-spacer-x};
-}
-
-/* stylelint-disable-next-line @sourcegraph/no-restricted-imports */
-@import 'bootstrap/scss/card';

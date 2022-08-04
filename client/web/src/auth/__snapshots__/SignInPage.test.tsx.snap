@@ -46,7 +46,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
       <h1
         class="h1 title"
       >
-        Sign in to Sourcegraph Cloud
+        Sign in to Sourcegraph
       </h1>
       <div
         class="mb-4 pb-5 signinPageContainer"
@@ -222,7 +222,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
       <h1
         class="h1 title"
       >
-        Sign in to Sourcegraph Server
+        Sign in to Sourcegraph
       </h1>
       <div
         class="mb-4 pb-5 signinPageContainer"

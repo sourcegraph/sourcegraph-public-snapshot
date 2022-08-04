@@ -64,12 +64,14 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN     *string `json:"sentryDSN"`
-	SiteID        string  `json:"siteID"`
-	SiteGQLID     string  `json:"siteGQLID"`
-	Debug         bool    `json:"debug"`
-	NeedsSiteInit bool    `json:"needsSiteInit"`
-	EmailEnabled  bool    `json:"emailEnabled"`
+	SentryDSN     *string               `json:"sentryDSN"`
+	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
+
+	SiteID        string `json:"siteID"`
+	SiteGQLID     string `json:"siteGQLID"`
+	Debug         bool   `json:"debug"`
+	NeedsSiteInit bool   `json:"needsSiteInit"`
+	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -104,7 +106,6 @@ type JSContext struct {
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
-	CodeIntelLockfileIndexingEnabled         bool `json:"codeIntelLockfileIndexingEnabled"`
 
 	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
@@ -113,6 +114,8 @@ type JSContext struct {
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
+
+	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -169,6 +172,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
+	var openTelemetry *schema.OpenTelemetry
+	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
+		openTelemetry = clientObservability.OpenTelemetry
+	}
+
 	var githubAppCloudSlug string
 	var githubAppCloudClientID string
 	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
@@ -176,6 +184,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
+	var enableLegacyExtensions = true
+	if siteConfig.ExperimentalFeatures != nil {
+		enableLegacyExtensions = siteConfig.ExperimentalFeatures.EnableLegacyExtensions
+	}
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -189,6 +201,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Version:                    version.Version(),
 		IsAuthenticatedUser:        actor.IsAuthenticated(),
 		SentryDSN:                  sentryDSN,
+		OpenTelemetry:              openTelemetry,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
 		Debug:                      env.InsecureDev,
 		SiteID:                     siteID,
@@ -232,13 +245,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
-		CodeIntelLockfileIndexingEnabled:         conf.CodeIntelLockfileIndexingEnabled(),
 
 		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
+
+		EnableLegacyExtensions: enableLegacyExtensions,
 	}
 }
 

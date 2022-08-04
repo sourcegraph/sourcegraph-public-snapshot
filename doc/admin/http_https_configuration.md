@@ -37,7 +37,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.42.0
+  sourcegraph/server:3.42.1
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
@@ -196,6 +196,7 @@ In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-
    ```
    - '/LOCAL/KEY/PATH.key:/sourcegraph.key'
    ```
+**NOTE**: When adding your certs to your instance, make sure they are in the `deploy-sourcegraph-docker` folder, not outside of it. They will not be recognized otherwise.
 
 ## Other Sourcegraph clusters (e.g. pure-Docker)
 

@@ -74,16 +74,17 @@ func InitializeCodeInsightsDB(app string) (edb.InsightsDB, error) {
 }
 
 func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	var insightsMigrator oobmigration.Migrator
 	if !IsEnabled() {
-		return nil
+		// This allows this migration to be "complete" even when insights is not enabled.
+		insightsMigrator = migration.NewMigratorNoOp()
+	} else {
+		insightsDB, err := InitializeCodeInsightsDB("worker-oobmigrator")
+		if err != nil {
+			return err
+		}
+		insightsMigrator = migration.NewMigrator(insightsDB, db)
 	}
-
-	insightsDB, err := InitializeCodeInsightsDB("worker-oobmigrator")
-	if err != nil {
-		return err
-	}
-
-	insightsMigrator := migration.NewMigrator(insightsDB, db)
 
 	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
 	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {

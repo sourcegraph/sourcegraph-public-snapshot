@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// readMigrations reads migrations from a locally available git revision for the given schema, and
+// ReadMigrations reads migrations from a locally available git revision for the given schema, and
 // rewrites old versions and explicit edge cases so that they can be more easily composed by the
 // migration stitch utilities.
 //
@@ -31,7 +31,7 @@ import (
 // stitch these relations back together, as it can't be done easily pre-composition across versions.
 //
 // See the method `linkVirtualPrivilegedMigrations`.
-func readMigrations(schemaName, root, rev string) (fs.FS, error) {
+func ReadMigrations(schemaName, root, rev string) (fs.FS, error) {
 	migrations, err := readRawMigrations(schemaName, root, rev)
 	if err != nil {
 		return nil, err
@@ -101,6 +101,7 @@ func linkVirtualPrivilegedMigrations(definitionMap map[int]definition.Definition
 // subsequent rewriters.
 var rewriters = []func(schemaName string, version oobmigration.Version, migrationIDs []int, contents map[string]string){
 	rewriteInitialCodeinsightsMigration,
+	rewriteCodeinsightsTimescaleDBMigrations,
 	ensureParentMetadataExists,
 	extractPrivilegedQueriesFromSquashedMigrations,
 
@@ -120,6 +121,23 @@ func rewriteInitialCodeinsightsMigration(schemaName string, _ oobmigration.Versi
 	mapContents(contents, migrationFilename(1000000000, "metadata.yaml"), func(oldMetadata string) string {
 		return fmt.Sprintf("name: %s", squashedMigrationPrefix)
 	})
+}
+
+// rewriteCodeinsightsTimescaleDBMigrations (safely) removes references to TimescaleDB and PG catalog alterations
+// that do not make sense on the upgrade path to a version that has migrated away from TimescaleDB.
+func rewriteCodeinsightsTimescaleDBMigrations(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "codeinsights" {
+		return
+	}
+
+	for _, id := range []int{1000000002, 1000000004} {
+		mapContents(contents, migrationFilename(id, "up.sql"), func(oldQuery string) string {
+			return filterLinesContaining(oldQuery, []string{
+				`ALTER SYSTEM SET timescaledb.`,
+				`codeinsights_schema_migrations`,
+			})
+		})
+	}
 }
 
 // ensureParentMetadataExists adds parent information to the metadata file of each migration, prior to 3.37,
@@ -221,27 +239,35 @@ func reorderMigrations(schemaName string, version oobmigration.Version, _ []int,
 		return
 	}
 
-	for oldID, newID := range map[int]int{
-		1528395945: 1528395961,
-		1528395946: 1528395962,
-		1528395947: 1528395963,
-		1528395948: 1528395964,
+	for _, p := range []struct{ oldID, newID int }{
+		{1528395945, 1528395961},
+		{1528395946, 1528395962},
+		{1528395947, 1528395963},
+		{1528395948, 1528395964},
 	} {
-		if _, ok := contents[migrationFilename(oldID, "metadata.yaml")]; !ok {
+		if _, ok := contents[migrationFilename(p.oldID, "metadata.yaml")]; !ok {
 			// File doesn't exist at this verson (nothing to rewrite)
 			continue
 		}
 
 		// Move new contents and replace previous contents
 		noopContents := "-- NO-OP to fix out of sequence migrations"
-		contents[migrationFilename(newID, "up.sql")] = contents[migrationFilename(oldID, "up.sql")]
-		contents[migrationFilename(newID, "down.sql")] = contents[migrationFilename(oldID, "down.sql")]
-		contents[migrationFilename(oldID, "up.sql")] = noopContents
-		contents[migrationFilename(oldID, "down.sql")] = noopContents
+		contents[migrationFilename(p.newID, "up.sql")] = contents[migrationFilename(p.oldID, "up.sql")]
+		contents[migrationFilename(p.newID, "down.sql")] = contents[migrationFilename(p.oldID, "down.sql")]
+		contents[migrationFilename(p.oldID, "up.sql")] = noopContents
+		contents[migrationFilename(p.oldID, "down.sql")] = noopContents
+
+		// Determine parent, which changes depending on the exact migration
+		// version. This check guarantees that we don't refer to a missing
+		// migration `1528395960`.
+		parent := p.newID - 1
+		if _, ok := contents[migrationFilename(parent, "metadata.yaml")]; !ok {
+			parent = p.oldID - 1
+		}
 
 		// Write new metadata
-		oldMetadata := contents[migrationFilename(oldID, "metadata.yaml")]
-		contents[migrationFilename(newID, "metadata.yaml")] = replaceParents(oldMetadata, newID-1)
+		oldMetadata := contents[migrationFilename(p.oldID, "metadata.yaml")]
+		contents[migrationFilename(p.newID, "metadata.yaml")] = replaceParents(oldMetadata, parent)
 	}
 }
 
@@ -307,4 +333,30 @@ func partitionPrivilegedQueries(query string) (privileged string, unprivileged s
 	}
 
 	return strings.Join(matches, "\n\n"), alterExtensionPattern.ReplaceAllString(query, "")
+}
+
+// filterLinesContaining splits the given text into lines, removes any line containing any of the given substrings,
+// and joins the lines back via newlines.
+func filterLinesContaining(s string, substrings []string) string {
+	lines := strings.Split(s, "\n")
+
+	filtered := lines[:0]
+	for _, line := range lines {
+		if !containsAny(line, substrings) {
+			filtered = append(filtered, line)
+		}
+	}
+
+	return strings.Join(filtered, "\n")
+}
+
+// containsAny returns true if the string contains any of the given substrings.
+func containsAny(s string, substrings []string) bool {
+	for _, needle := range substrings {
+		if strings.Contains(s, needle) {
+			return true
+		}
+	}
+
+	return false
 }

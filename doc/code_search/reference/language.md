@@ -103,7 +103,7 @@ of examples to get you started. It is complementary to our [syntax reference](..
 tables.
 
 **How to read railroad diagrams.** Follow the lines in these railroad diagrams to see
-how pieces of syntax combine. When a line splits it means there are multiple options
+how pieces of syntax combine. When a line splits, it means there are multiple options
 available. When it is possible to repeat a previous syntax, the split line will loop back
 on itself like this:
 
@@ -159,11 +159,11 @@ ComplexDiagram(
         Terminal("quoted string", {href: "#quoted-string"}))).addTo();
 </script>
 
-A pattern to search. By default the pattern is searched literally. The kind of search may be toggled to change how a pattern matches:
+A pattern to search. By default, the pattern is searched literally. The kind of search may be toggled to change how a pattern matches:
 <ul class="r">
-    <li class="r"><span class="toggle-container"><img class="toggle" src="../img/regex.png"></span> Perform a [regular expression search](queries.md#regular-expression-search). We support [RE2 syntax](https://golang.org/s/re2syntax). Quoting patterns performs a literal search.<br>
+    <li class="r"><span class="toggle-container"><img class="toggle" src="../img/regex.png"></span> Perform a [regular expression search](queries.md#regular-expression-search). We support [RE2 syntax](https://golang.org/s/re2syntax). Quoting a pattern will perform a literal search.<br>
     <strong>Example:</strong><a href="https://sourcegraph.com/search?q=foo+bar&patternType=regexp"> <code>foo.*bar.*baz</code> ↗</a> <a href="https://sourcegraph.com/search?q=%22foo+bar%22&patternType=regexp"><code>"foo bar"</code> ↗</a></li>
-    <li class="r"><span class="toggle-container"><img class="toggle" src="../img/brackets.png"></span> Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural sexarch. <br><strong>Example:</strong> <a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural"><code>fmt.Sprintf(":[format]", :[args])</code> ↗</a></li>
+    <li class="r"><span class="toggle-container"><img class="toggle" src="../img/brackets.png"></span> Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural search. <br><strong>Example:</strong> <a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural"><code>fmt.Sprintf(":[format]", :[args])</code> ↗</a></li>
 </ul>
 
 
@@ -219,7 +219,7 @@ ComplexDiagram(
 </script>
 
 Search repositories that match the regular expression. A `-` before `repo`
-excludes the repository. By default the repository will be searched at the
+excludes the repository. By default, the repository will be searched at the
 `HEAD` commit of the default branch. You can optionally change the
 [revision](#revision).
 
@@ -238,7 +238,7 @@ ComplexDiagram(
 </script>
 
 
-Search a repository at a given revision. For example, a branch name, commit hash, or git tag.
+Search a repository at a given revision. For example: a branch name, commit hash, or git tag.
 
 **Example:** [`repo:^github\.com/gorilla/mux$@948bec34 testroute` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24%40948bec34+testroute&patternType=literal) or [`repo:^github\.com/gorilla/mux$ rev:v1.8.0 testroute` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux+rev:v1.8.0+testroute&patternType=literal)
 
@@ -335,8 +335,8 @@ Selects the specified result type from the set of search results. If a query pro
 selected type, the results will be converted to the selected type.
 
 For example, the query `file:package.json lodash` will return content matches for `lodash` in `package.json` files.
-If `select:repo` is added, the repository those matches belong to is pulled out and it now only returns
-_repositories_ that contain `package.json` files that contain the term `lodash`. All selected results are deduplicated,
+If `select:repo` is added, the containing repository will be selected and the
+_repositories_ that contain `package.json` files that contain the term `lodash` will be returned. All selected results are deduplicated,
 so if there are multiple content matches in a repository, `select:repo` will still only return unique results.
 
 A query like `type:commit example select:symbol` will return no results because commits have no associated symbol
@@ -437,7 +437,7 @@ ComplexDiagram(
 </script>
 
 Set whether the search pattern should perform a search of a certain type.
-Notable search types are symbol, commit, and diff searches.
+Notable search types are: symbol, commit, and diff.
 
 **Example:** [`type:symbol path` ↗](https://sourcegraph.com/search?q=type:symbol+path) [`type:commit author:nick` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph%24+type:commit+author:nick&patternType=regexp)
 
@@ -553,7 +553,7 @@ ComplexDiagram(
 Set a search timeout. The time value is a string like 10s or 100ms, which is
 parsed by the Go time
 package's [ParseDuration](https://golang.org/pkg/time/#ParseDuration).
-By default the timeout is set to 10 seconds, and the search will optimize for
+By default, the timeout is set to 10 seconds, and the search will optimize for
 returning results as soon as possible. The timeout value cannot be set longer
 than 1 minute.
 
@@ -588,9 +588,7 @@ ComplexDiagram(
 
 
 Set whether the pattern should run a literal search, regular expression search,
-or a structural search pattern. This parameter is available as a command-line and
-accessibility option, and synonymous with the visual [search pattern](#search-pattern) toggles.
-in [search pattern](#search-pattern).
+or structural search. This parameter is available as a command-line and accessibility option and is synonymous with the visual [search pattern](#search-pattern) toggles.
 
 ## Built-in repo predicate
 
@@ -696,7 +694,7 @@ ComplexDiagram(
     Terminal(")")).addTo();
 </script>
 
-Search only inside repositores which have a description matching the given regular expresion.
+Search only inside repositories having a description matching the given regular expression.
 
 **Example:** [`repo:has.description(go package)` ↗](https://sourcegraph.com/search?q=context:global+repo:has.description%28go.*package%29+&patternType=literal)
 
@@ -791,7 +789,7 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Include results which have a commit date before the specified time frame.
+Include results having a commit date before the specified time frame.
 Many forms are accepted for the argument, such as:
 - `november 1 2019`
 - `1 november 2019`
@@ -823,7 +821,7 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Include results which have a commit date after the specified time frame.
+Include results having a commit date after the specified time frame.
 Many forms are accepted for the argument, such as:
 - `november 1 2019`
 - `1 november 2019`
@@ -856,7 +854,7 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Include results which have commit messages containing the string.
+Include results having a commit message containing the string.
 
 **Example:** [`type:commit message:"testing"` ↗](https://sourcegraph.com/search?q=type:commit+message:%22testing%22+repo:sourcegraph/sourcegraph%24+&patternType=regexp)
 

@@ -1887,6 +1887,7 @@ enum SearchPatternType {
     regexp
     structural
     lucky
+    keyword
 }
 
 """
@@ -4383,6 +4384,10 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4446,6 +4451,10 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4547,6 +4556,10 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -6006,6 +6019,20 @@ enum AnalyticsDateRange {
 }
 
 """
+Group site analytics by period.
+"""
+enum AnalyticsGrouping {
+    """
+    Group data by day.
+    """
+    DAILY
+    """
+    Group data by week.
+    """
+    WEEKLY
+}
+
+"""
 Analytics for certain date.
 """
 type AnalyticsStatItemNode {
@@ -6224,19 +6251,19 @@ type Analytics {
     """
     Search statistics.
     """
-    search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
+    search(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsSearchResult!
     """
     Notebooks statistics.
     """
-    notebooks(dateRange: AnalyticsDateRange): AnalyticsNotebooksResults!
+    notebooks(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsNotebooksResults!
     """
     Users statistics.
     """
-    users(dateRange: AnalyticsDateRange): AnalyticsUsersResult!
+    users(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsUsersResult!
     """
     Code-intelligence statistics.
     """
-    codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
+    codeIntel(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodeIntelResult!
     """
     Repositories summary statistics.
     """
@@ -6244,7 +6271,7 @@ type Analytics {
     """
     Batch changes statistics
     """
-    batchChanges(dateRange: AnalyticsDateRange): AnalyticsBatchChangesResult!
+    batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
 }
 
 """

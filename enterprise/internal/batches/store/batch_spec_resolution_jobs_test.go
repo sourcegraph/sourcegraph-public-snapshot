@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func testStoreBatchSpecResolutionJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecResolutionJobs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	jobs := make([]*btypes.BatchSpecResolutionJob, 0, 2)
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecResolutionJob{
@@ -155,13 +155,13 @@ func TestBatchSpecResolutionJobs_BatchSpecIDUnique(t *testing.T) {
 	// This test is a separate test so we can test the database constraints,
 	// because in the store tests the constraints are all deferred.
 	ctx := context.Background()
-	c := &ct.TestClock{Time: timeutil.Now()}
+	c := &bt.TestClock{Time: timeutil.Now()}
 	logger := logtest.Scoped(t)
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
 	batchSpec := &btypes.BatchSpec{
 		UserID:          user.ID,
