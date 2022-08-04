@@ -97,6 +97,15 @@ export interface MonacoQueryInputProps
     ariaLabel?: string
 
     editorClassName?: string
+
+    // CodeMirror specific
+    /**
+     * If set suggestions can be applied by pressing enter. In the past we
+     * didn't enable this behavior because it interfered with loading
+     * suggestions asynchronously, but CodeMirror allows us to disable selecting
+     * a suggestion by default. This is currently an experimental feature.
+     */
+    applySuggestionsOnEnter?: boolean
 }
 
 /**

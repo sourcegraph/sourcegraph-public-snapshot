@@ -22,7 +22,7 @@ export interface SearchBoxProps
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'>,
-        Pick<LazyMonacoQueryInputProps, 'editorComponent'> {
+        Pick<LazyMonacoQueryInputProps, 'editorComponent' | 'applySuggestionsOnEnter'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
@@ -125,6 +125,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         patternType={props.patternType}
                         queryState={props.queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
+                        applySuggestionsOnEnter={props.applySuggestionsOnEnter}
                     />
                     <Toggles
                         patternType={props.patternType}

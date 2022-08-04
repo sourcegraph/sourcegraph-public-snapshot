@@ -1470,10 +1470,10 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@codemirror/autocomplete@^6.0.0", "@codemirror/autocomplete@^6.0.4":
-  version "6.0.4"
-  resolved "https://registry.npmjs.org/@codemirror/autocomplete/-/autocomplete-6.0.4.tgz#90a9c81cfddac528b9e9dc07415a7c6554dbe85c"
-  integrity sha512-uP7UodCRykPNwSAN+wYa/AS9gJI/V47echCAXUYgCgBXy3l19nwO7W/d29COtG/dfAsjBOhMDeh3Ms8Y5VZbrA==
+"@codemirror/autocomplete@^6.0.0", "@codemirror/autocomplete@^6.1.0":
+  version "6.1.0"
+  resolved "https://registry.npmjs.org/@codemirror/autocomplete/-/autocomplete-6.1.0.tgz#7d3ca6d49e3a71cfd366c0af16172f5c128376eb"
+  integrity sha512-wtO4O5WDyXhhCd4q4utDIDZxnQfmJ++3dGBCG9LMtI79+92OcA1DVk/n7BEupKmjIr8AzvptDz7YQ9ud6OkU+A==
   dependencies:
     "@codemirror/language" "^6.0.0"
     "@codemirror/state" "^6.0.0"
