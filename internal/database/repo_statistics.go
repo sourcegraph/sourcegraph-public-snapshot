@@ -14,6 +14,9 @@ import (
 type repoStatistics struct {
 	Total       int
 	SoftDeleted int
+	NotCloned   int
+	Cloning     int
+	Cloned      int
 }
 
 // gitserverRepoStatistics represents the contents of the
@@ -50,7 +53,8 @@ func (s *repoStatisticsStore) Transact(ctx context.Context) (*repoStatisticsStor
 
 func (s *repoStatisticsStore) GetRepoStatistics(ctx context.Context) (repoStatistics, error) {
 	var rs repoStatistics
-	err := s.QueryRow(ctx, sqlf.Sprintf(getRepoStatisticsQueryFmtstr)).Scan(&rs.Total, &rs.SoftDeleted)
+	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoStatisticsQueryFmtstr))
+	err := row.Scan(&rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned)
 	if err != nil {
 		return rs, err
 	}
@@ -61,7 +65,10 @@ const getRepoStatisticsQueryFmtstr = `
 -- source: internal/database/repo_statistics.go:repoStatisticsStore.GetRepoStatistics
 SELECT
 	total,
-	soft_deleted
+	soft_deleted,
+	not_cloned,
+	cloning,
+	cloned
 FROM repo_statistics
 `
 
