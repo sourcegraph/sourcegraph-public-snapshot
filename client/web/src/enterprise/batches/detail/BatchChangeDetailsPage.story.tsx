@@ -276,7 +276,7 @@ SupersededBatchSpec.argTypes = {
     },
 }
 
-export const EmptyChangesets: Story = () => {
+export const EmptyChangesets: Story = args => {
     const mocks = new WildcardMockLink([
         {
             request: {
@@ -310,11 +310,29 @@ export const EmptyChangesets: Story = () => {
                         extensionsController={{} as any}
                         platformContext={{} as any}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        {...args}
                     />
                 </MockedTestProvider>
             )}
         </WebStory>
     )
+}
+EmptyChangesets.argTypes = {
+    supersedingBatchSpec: {
+        table: {
+            disable: true,
+        },
+    },
+    viewerCanAdminister: {
+        table: {
+            disable: true,
+        },
+    },
+    isClosed: {
+        table: {
+            disable: true,
+        },
+    },
 }
 
 EmptyChangesets.storyName = 'Empty changesets'

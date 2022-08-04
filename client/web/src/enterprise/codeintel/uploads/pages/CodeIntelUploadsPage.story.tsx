@@ -109,14 +109,6 @@ const story: Meta = {
         },
     },
     argTypes: {
-        stale: {
-            control: { type: 'boolean' },
-            defaultValue: false,
-        },
-        updatedAt: {
-            control: { type: 'boolean' },
-            defaultValue: true,
-        },
         now: {
             table: {
                 disable: true,
@@ -128,6 +120,11 @@ const story: Meta = {
             },
         },
         queryLsifUploadsByRepository: {
+            table: {
+                disable: true,
+            },
+        },
+        queryLsifUploadsList: {
             table: {
                 disable: true,
             },
@@ -174,10 +171,34 @@ EmptyRepositoryPage.args = {
 }
 
 export const RepositoryPage = Template.bind({})
+EmptyRepositoryPage.argTypes = {
+    stale: {
+        name: 'staleCommitGraph',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    updatedAt: {
+        name: 'previouslyUpdatedCommitGraph',
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
+}
 RepositoryPage.args = {
     ...defaults,
     repo: { id: 'sourcegraph' },
     queryLsifUploadsByRepository: () => of(makeResponse(testUploads)),
+}
+RepositoryPage.argTypes = {
+    stale: {
+        name: 'staleCommitGraph',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    updatedAt: {
+        name: 'previouslyUpdatedCommitGraph',
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
 }
 RepositoryPage.parameters = {
     // Keep snapshots for one variant

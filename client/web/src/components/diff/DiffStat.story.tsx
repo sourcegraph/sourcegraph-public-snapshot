@@ -33,22 +33,20 @@ export const CollapsedCounts: Story<React.ComponentProps<typeof DiffStat>> = arg
 
 CollapsedCounts.storyName = 'Collapsed counts'
 
-export const ExpandedCounts: Story = args => (
-    <WebStory>
-        {() => <DiffStat added={args.added} changed={args.changed} deleted={args.deleted} expandedCounts={true} />}
-    </WebStory>
+export const ExpandedCounts: Story<React.ComponentProps<typeof DiffStat>> = args => (
+    <WebStory>{() => <DiffStat {...args} expandedCounts={true} />}</WebStory>
 )
 
 ExpandedCounts.storyName = 'Expanded counts'
 
-export const DiffStatSquaresStory: Story = args => (
-    <WebStory>{() => <DiffStatSquares added={args.added} changed={args.changed} deleted={args.deleted} />}</WebStory>
+export const DiffStatSquaresStory: Story<React.ComponentProps<typeof DiffStatSquares>> = args => (
+    <WebStory>{() => <DiffStatSquares {...args} />}</WebStory>
 )
 
 DiffStatSquaresStory.storyName = 'DiffStatSquares'
 
-export const DiffStatStackStory: Story = args => (
-    <WebStory>{() => <DiffStatStack added={args.added} changed={args.changed} deleted={args.deleted} />}</WebStory>
+export const DiffStatStackStory: Story<React.ComponentProps<typeof DiffStatStack>> = args => (
+    <WebStory>{() => <DiffStatStack {...args} />}</WebStory>
 )
 
 DiffStatStackStory.storyName = 'DiffStatStack'

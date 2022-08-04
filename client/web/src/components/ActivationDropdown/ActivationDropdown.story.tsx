@@ -126,7 +126,7 @@ _14Completed.argTypes = {
         control: { type: 'boolean' },
         defaultValue: false,
     },
-    EnabledRepository: {
+    EnabledSharing: {
         control: { type: 'boolean' },
         defaultValue: false,
     },
