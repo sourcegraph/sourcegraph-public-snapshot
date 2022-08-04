@@ -52,6 +52,8 @@ func (s SiteConfigProcessor) ProcessorType() string {
 	return s.Type
 }
 
+var _ Processor[ConfigRequest] = &CodeHostConfigProcessor{}
+
 type CodeHostConfigProcessor struct {
 	db     database.DB
 	logger log.Logger

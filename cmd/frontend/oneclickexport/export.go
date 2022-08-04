@@ -22,11 +22,13 @@ var _ Exporter = &DataExporter{}
 type DataExporter struct {
 	logger           log.Logger
 	configProcessors map[string]Processor[ConfigRequest]
+	dbProcessors     map[string]Processor[Limit]
 }
 
 type ExportRequest struct {
-	IncludeSiteConfig     bool `json:"includeSiteConfig"`
-	IncludeCodeHostConfig bool `json:"includeCodeHostConfig"`
+	IncludeSiteConfig     bool              `json:"includeSiteConfig"`
+	IncludeCodeHostConfig bool              `json:"includeCodeHostConfig"`
+	DBQueries             []*DBQueryRequest `json:"dbQueries"`
 }
 
 // Export generates and returns a ZIP archive with the data, specified in request.
@@ -49,6 +51,9 @@ func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byt
 	}
 	if request.IncludeCodeHostConfig {
 		e.configProcessors["codeHostConfig"].Process(ctx, ConfigRequest{}, dir)
+	}
+	for _, dbQuery := range request.DBQueries {
+		e.dbProcessors[dbQuery.TableName].Process(ctx, dbQuery.Count, dir)
 	}
 
 	// 3) after all request parts are processed, zip the tmp dir and return its bytes

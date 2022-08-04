@@ -95,6 +95,96 @@ const (
     }
   }
 ]`
+	wantExtSvcDBQueryResult = `[
+  {
+    "ID": 0,
+    "Kind": "GITHUB",
+    "DisplayName": "Github - Test1",
+    "Config": {
+      "url": "https://ghe.org/",
+      "token": "REDACTED",
+      "repos": [
+        "sgtest/test-repo1",
+        "sgtest/test-repo2",
+        "sgtest/test-repo3",
+        "sgtest/test-repo4",
+        "sgtest/test-repo5",
+        "sgtest/test-repo6",
+        "sgtest/test-repo7",
+        "sgtest/test-repo8"
+      ],
+      "repositoryPathPattern": "github.com/{nameWithOwner}"
+    },
+    "CreatedAt": "0001-01-01T00:00:00Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "DeletedAt": "0001-01-01T00:00:00Z",
+    "LastSyncAt": "0001-01-01T00:00:00Z",
+    "NextSyncAt": "0001-01-01T00:00:00Z",
+    "NamespaceUserID": 0,
+    "NamespaceOrgID": 0,
+    "Unrestricted": false,
+    "CloudDefault": false,
+    "HasWebhooks": null,
+    "TokenExpiresAt": null
+  },
+  {
+    "ID": 0,
+    "Kind": "GITHUB",
+    "DisplayName": "Github - Test2",
+    "Config": {
+      "url": "https://ghe.org/",
+      "token": "REDACTED",
+      "repos": [
+        "sgtest/test-repo1",
+        "sgtest/test-repo2",
+        "sgtest/test-repo3",
+        "sgtest/test-repo4",
+        "sgtest/test-repo5",
+        "sgtest/test-repo6",
+        "sgtest/test-repo7",
+        "sgtest/test-repo8"
+      ],
+      "repositoryPathPattern": "github.com/{nameWithOwner}"
+    },
+    "CreatedAt": "0001-01-01T00:00:00Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "DeletedAt": "0001-01-01T00:00:00Z",
+    "LastSyncAt": "0001-01-01T00:00:00Z",
+    "NextSyncAt": "0001-01-01T00:00:00Z",
+    "NamespaceUserID": 0,
+    "NamespaceOrgID": 0,
+    "Unrestricted": false,
+    "CloudDefault": false,
+    "HasWebhooks": null,
+    "TokenExpiresAt": null
+  },
+  {
+    "ID": 0,
+    "Kind": "BITBUCKETCLOUD",
+    "DisplayName": "GitLab - Test1",
+    "Config": {
+      "url": "https://bitbucket.org",
+      "token": "someToken",
+      "username": "user",
+      "repos": [
+        "SOURCEGRAPH/repo-0",
+        "SOURCEGRAPH/repo-1"
+      ],
+      "repositoryPathPattern": "bbs/{projectKey}/{repositorySlug}"
+    },
+    "CreatedAt": "0001-01-01T00:00:00Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "DeletedAt": "0001-01-01T00:00:00Z",
+    "LastSyncAt": "0001-01-01T00:00:00Z",
+    "NextSyncAt": "0001-01-01T00:00:00Z",
+    "NamespaceUserID": 0,
+    "NamespaceOrgID": 0,
+    "Unrestricted": false,
+    "CloudDefault": false,
+    "HasWebhooks": null,
+    "TokenExpiresAt": null
+  }
+]`
 )
 
 func TestExport(t *testing.T) {
@@ -205,64 +295,7 @@ func TestExport_CumulativeTest(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
 
 	// Mocking external services for code host configs export
-	externalServices := database.NewMockExternalServiceStore()
-	externalServices.ListFunc.SetDefaultReturn([]*types.ExternalService{
-		{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test1",
-			Config: `{
-      "url": "https://ghe.org/",
-      "token": "someToken",
-      "repos": [
-        "sgtest/test-repo1",
-        "sgtest/test-repo2",
-        "sgtest/test-repo3",
-        "sgtest/test-repo4",
-        "sgtest/test-repo5",
-        "sgtest/test-repo6",
-        "sgtest/test-repo7",
-        "sgtest/test-repo8"
-      ],
-      "repositoryPathPattern": "github.com/{nameWithOwner}"
-    }`,
-		},
-		{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test2",
-			Config: `{
-      "url": "https://ghe.org/",
-      "token": "someToken",
-      "repos": [
-        "sgtest/test-repo1",
-        "sgtest/test-repo2",
-        "sgtest/test-repo3",
-        "sgtest/test-repo4",
-        "sgtest/test-repo5",
-        "sgtest/test-repo6",
-        "sgtest/test-repo7",
-        "sgtest/test-repo8"
-      ],
-      "repositoryPathPattern": "github.com/{nameWithOwner}"
-    }`,
-		},
-		{
-			Kind:        extsvc.KindBitbucketCloud,
-			DisplayName: "GitLab - Test1",
-			Config: `{
-      "url": "https://bitbucket.org",
-      "token": "someToken",
-      "username": "user",
-      "repos": [
-        "SOURCEGRAPH/repo-0",
-        "SOURCEGRAPH/repo-1"
-      ],
-      "repositoryPathPattern": "bbs/{projectKey}/{repositorySlug}"
-    }`,
-		},
-	}, nil)
-
-	db := database.NewMockDB()
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db := mockExternalServicesDB()
 
 	exporter := &DataExporter{
 		logger: logger,
@@ -329,6 +362,59 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
+	db := mockExternalServicesDB()
+
+	exporter := &DataExporter{
+		logger: logger,
+		configProcessors: map[string]Processor[ConfigRequest]{
+			"codeHostConfig": &CodeHostConfigProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "codeHostConfig",
+			},
+		},
+	}
+
+	archive, err := exporter.Export(ctx, ExportRequest{IncludeCodeHostConfig: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := false
+
+	for _, f := range zr.File {
+		if f.Name != "code-host-config.json" {
+			continue
+		}
+		found = true
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		haveBytes, err := io.ReadAll(rc)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have := string(haveBytes)
+
+		if diff := cmp.Diff(wantCodeHostConfig, have); diff != "" {
+			t.Fatalf("Exported site config is different. (-want +got):\n%s", diff)
+		}
+	}
+
+	if !found {
+		t.Fatal(errors.New("site config file not found in exported zip archive"))
+	}
+}
+
+func mockExternalServicesDB() *database.MockDB {
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn([]*types.ExternalService{
 		{
@@ -387,19 +473,29 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 
 	db := database.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	return db
+}
+
+func TestExport_DB_ExternalServices(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := mockExternalServicesDB()
 
 	exporter := &DataExporter{
 		logger: logger,
-		configProcessors: map[string]Processor[ConfigRequest]{
-			"codeHostConfig": &CodeHostConfigProcessor{
+		dbProcessors: map[string]Processor[Limit]{
+			"externalServices": ExtSvcDBQueryProcessor{
 				db:     db,
 				logger: logger,
-				Type:   "codeHostConfig",
+				Type:   "externalServices",
 			},
 		},
 	}
 
-	archive, err := exporter.Export(ctx, ExportRequest{IncludeCodeHostConfig: true})
+	archive, err := exporter.Export(ctx, ExportRequest{DBQueries: []*DBQueryRequest{{
+		TableName: "externalServices",
+		Count:     1,
+	}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -412,7 +508,7 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 	found := false
 
 	for _, f := range zr.File {
-		if f.Name != "code-host-config.json" {
+		if f.Name != "db-external-services.txt" {
 			continue
 		}
 		found = true
@@ -430,12 +526,12 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 
 		fmt.Println(have)
 
-		if diff := cmp.Diff(wantCodeHostConfig, have); diff != "" {
-			t.Fatalf("Exported site config is different. (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wantExtSvcDBQueryResult, have); diff != "" {
+			t.Fatalf("Exported external services are different. (-want +got):\n%s", diff)
 		}
 	}
 
 	if !found {
-		t.Fatal(errors.New("site config file not found in exported zip archive"))
+		t.Fatal(errors.New("external services file not found in exported zip archive"))
 	}
 }
