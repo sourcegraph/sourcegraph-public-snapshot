@@ -27,18 +27,25 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
 	}
 
-	repoName := getNameFromEvent(event)
-	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
+	repoName, err := getNameFromEvent(event)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "handleGitHubWebhook: get name failed")
 	}
 
-	log.Scoped("GitHub handler", fmt.Sprintf("Successfully updated: %s", resp.Name))
+	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
+	if err != nil {
+		return errors.Wrap(err, "handleGitHubWebhook: EnqueueRepoUpdate failed")
+	}
+
+	log.Scoped("GitHubWebhookhandler", fmt.Sprintf("Successfully updated: %s", resp.Name))
 	return nil
 }
 
-func getNameFromEvent(event *gh.PushEvent) api.RepoName {
+func getNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
 	url := *event.Repo.URL
-	repoName := url[8:] // [ https:// ] accounts for 8 chars
-	return api.RepoName(repoName)
+	if len(url) > 8 {
+		repoName := url[8:] // [ https:// ] accounts for 8 chars
+		return api.RepoName(repoName), nil
+	}
+	return api.RepoName(""), errors.Newf("expected URL length > 8, got %v", len(url))
 }

@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -22,11 +23,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var updateHandler = flag.Bool("updateHandler", false, "update testdata for github webhook handler")
 
 func TestGitHubWebhookHandle(t *testing.T) {
 	ctx := context.Background()
@@ -34,7 +40,16 @@ func TestGitHubWebhookHandle(t *testing.T) {
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := repos.NewStore(logger, db)
+	repoStore := store.RepoStore()
 	esStore := store.ExternalServiceStore()
+
+	repo := &types.Repo{
+		ID:   1,
+		Name: "ghe.sgdev.org/milton/test",
+	}
+	if err := repoStore.Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
 
 	conn := *&schema.GitHubConnection{
 		Url:      extsvc.KindGitHub,
@@ -63,6 +78,55 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	}
 	handler.Register(router)
 
+	mux := http.NewServeMux()
+	mux.HandleFunc("/enqueue-repo-update", func(w http.ResponseWriter, r *http.Request) {
+		reqBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		var req protocol.RepoUpdateRequest
+		if err := json.Unmarshal(reqBody, &req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		repos, err := repoStore.List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		}
+		if len(repos) != 1 {
+			http.Error(w, fmt.Sprintf("expected 1 repo, got %v", len(repos)), http.StatusNotFound)
+		}
+
+		repo := repos[0]
+		res := &protocol.RepoUpdateResponse{
+			ID:   repo.ID,
+			Name: string(repo.Name),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(res)
+	})
+
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	testName := "github-webhook-handler"
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, *updateHandler, testName)
+	defer save()
+
+	opts := []httpcli.Opt{}
+	doer, err := cf.Doer(opts...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repoupdater.DefaultClient = &repoupdater.Client{
+		URL:        server.URL,
+		HTTPClient: doer,
+	}
+
 	payload, err := os.ReadFile(filepath.Join("testdata", "github-ping.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -80,30 +144,9 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	router.ServeHTTP(rec, req)
 	resp := rec.Result()
 
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status code: 200, got %v", resp.StatusCode)
 	}
-
-	// We've successfully made it all the way here,
-	// finally making a call to repo-updater
-	// And we're correctly getting a 'no such host' error
-	// as the server is not live
-	// This call to repo-updater is the last line of code
-	// to test before the end of the handler
-	if !(string(data) == `Post "http://repo-updater:3182/enqueue-repo-update": dial tcp: lookup repo-updater: no such host`+"\n") {
-		t.Fatal(errors.Newf(`expected body: [%s], got [%s]`,
-			`Post "http://repo-updater:3182/enqueue-repo-update": dial tcp: lookup repo-updater: no such host`,
-			string(data),
-		))
-	}
-
-	// This is the status code we're expecting
-	// anything else is unexpected
-	if resp.StatusCode != http.StatusInternalServerError {
-		t.Fatalf("expected status code: 500, got %v", resp.StatusCode)
-	}
-
 }
 
 func sign(t *testing.T, message, secret []byte) string {
