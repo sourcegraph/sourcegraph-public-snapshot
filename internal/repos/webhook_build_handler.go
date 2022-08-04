@@ -73,10 +73,15 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
 	}
 
-	// found the webhook
+	// found webhook from GitHub API
 	// don't build a new one
 	if id != 0 {
 		logger.Info(fmt.Sprintf("Webhook exists with ID: %d", id))
+		return nil
+	}
+
+	if webhookExistsInConfig(conn.Webhooks, job.Org) {
+		logger.Info("Webhook found, no need to build new webhook")
 		return nil
 	}
 
@@ -85,10 +90,8 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: secret generation failed"))
 	}
 
-	if !webhookExists(conn.Webhooks, job.Org) {
-		if err := addSecretToExtSvc(svc, conn, job.Org, secret); err != nil {
-			return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: addSecretToExtSvc failed"))
-		}
+	if err := addSecretToExtSvc(svc, conn, job.Org, secret); err != nil {
+		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: Marshal failed"))
 	}
 
 	id, err = client.CreateSyncWebhook(ctx, job.RepoName, globals.ExternalURL().Host, secret) // TODO: Add to DB
@@ -100,7 +103,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	return nil
 }
 
-func webhookExists(webhooks []*schema.GitHubWebhook, org string) bool {
+func webhookExistsInConfig(webhooks []*schema.GitHubWebhook, org string) bool {
 	for _, webhook := range webhooks {
 		if webhook.Org == org {
 			return true
