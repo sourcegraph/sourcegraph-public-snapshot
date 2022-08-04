@@ -3,6 +3,7 @@ package oneclickexport
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -13,7 +14,7 @@ import (
 type Exporter interface {
 	// Export accepts an ExportRequest and returns bytes of a zip archive
 	// with requested data.
-	Export(request ExportRequest) ([]byte, error)
+	Export(ctx context.Context, request ExportRequest) ([]byte, error)
 }
 
 var _ Exporter = &DataExporter{}
@@ -24,7 +25,8 @@ type DataExporter struct {
 }
 
 type ExportRequest struct {
-	IncludeSiteConfig bool `json:"includeSiteConfig"`
+	IncludeSiteConfig     bool `json:"includeSiteConfig"`
+	IncludeCodeHostConfig bool `json:"includeCodeHostConfig"`
 }
 
 // Export generates and returns a ZIP archive with the data, specified in request.
@@ -33,7 +35,7 @@ type ExportRequest struct {
 // this directory is zipped in the end)
 // 2) ExportRequest is read and each corresponding processor is invoked
 // 3) Tmp directory is zipped after all the Processors finished their job
-func (e *DataExporter) Export(request ExportRequest) ([]byte, error) {
+func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byte, error) {
 	// 1) creating a tmp dir
 	dir, err := os.MkdirTemp(os.TempDir(), "export-*")
 	if err != nil {
@@ -43,7 +45,10 @@ func (e *DataExporter) Export(request ExportRequest) ([]byte, error) {
 
 	// 2) tmp dir is passed to every processor
 	if request.IncludeSiteConfig {
-		e.configProcessors["siteConfig"].Process(ConfigRequest{}, dir)
+		e.configProcessors["siteConfig"].Process(ctx, ConfigRequest{}, dir)
+	}
+	if request.IncludeCodeHostConfig {
+		e.configProcessors["codeHostConfig"].Process(ctx, ConfigRequest{}, dir)
 	}
 
 	// 3) after all request parts are processed, zip the tmp dir and return its bytes
