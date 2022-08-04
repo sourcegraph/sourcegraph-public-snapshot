@@ -33,8 +33,8 @@ import {
     BackendInsightErrorAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
+    parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
-import { parseSeriesLimit } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import {
     BackendInsightData,
     ALL_INSIGHTS_DASHBOARD,
