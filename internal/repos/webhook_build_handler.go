@@ -87,7 +87,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 
 	if !webhookExists(conn.Webhooks, job.Org) {
 		if err := addSecretToExtSvc(svc, conn, job.Org, secret); err != nil {
-			return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: Marshal failed"))
+			return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: addSecretToExtSvc failed"))
 		}
 	}
 
