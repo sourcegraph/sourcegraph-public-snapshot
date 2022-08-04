@@ -34,7 +34,7 @@ func newWebhookBuildHandler(store Store, doer httpcli.Doer) *webhookBuildHandler
 func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	job, ok := record.(*webhookworker.Job)
 	if !ok {
-		return errors.Newf("expected Job, got %T", record)
+		return errcode.MakeNonRetryable(errors.Newf("expected Job, got %T", record))
 	}
 
 	switch job.ExtSvcKind {
