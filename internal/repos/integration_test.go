@@ -7,11 +7,13 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // This error is passed to txstore.Done in order to always
@@ -24,12 +26,11 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
-	// conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-	// 	ExperimentalFeatures: &schema.ExperimentalFeatures{
-	// 		EnableWebhookRepoSync: true,
-	// 	},
-	// }})
-	// conf.Get().Exper
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			EnableWebhookRepoSync: true,
+		},
+	}})
 
 	logger := logtest.Scoped(t)
 	t.Parallel()
@@ -43,6 +44,7 @@ func TestIntegration(t *testing.T) {
 		{"EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob},
 		{"ListExternalServiceUserIDsByRepoID", testStoreListExternalServiceUserIDsByRepoID},
 		{"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
+		{"WebhookWorker/EnqueueWebhookBuildJob", testEnqueueWebhookBuildJob},
 		{"Syncer/SyncWorker", testSyncWorkerPlumbing},
 		{"Syncer/Sync", testSyncerSync},
 		{"Syncer/SyncRepo", testSyncRepo},
@@ -59,7 +61,6 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
-		{"WebhookWorker/EnqueueWebhookBuildJob", testEnqueueWebhookBuildJob},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
