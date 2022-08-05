@@ -23,6 +23,7 @@ import {
     mdiFileDocument,
     mdiFilterOutline,
     mdiFunction,
+    mdiHistory,
     mdiKey,
     mdiLink,
     mdiMatrix,
@@ -61,7 +62,7 @@ import { queryTokens } from './parsedQuery'
 
 import styles from '../CodeMirrorQueryInput.module.scss'
 
-type CompletionType = SymbolKind | 'queryfilter' | 'repository'
+type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
 // See SymbolIcon
 const typeIconMap: Record<CompletionType, string> = {
@@ -94,6 +95,7 @@ const typeIconMap: Record<CompletionType, string> = {
     UNKNOWN: mdiShape,
     queryfilter: mdiFilterOutline,
     repository: mdiSourceBranch,
+    searchhistory: mdiHistory,
 }
 
 function createIcon(pathSpec: string): Node {
@@ -155,9 +157,6 @@ export function searchQueryAutocompletion(
         // This renders the completion icon
         {
             render(completion) {
-                if (completion.type === 'search-history') {
-                    return null
-                }
                 return createIcon(
                     completion.type && completion.type in typeIconMap
                         ? typeIconMap[completion.type as CompletionType]
@@ -170,7 +169,7 @@ export function searchQueryAutocompletion(
         },
         {
             render(completion) {
-                if (completion.type !== 'search-history') {
+                if (completion.type !== 'searchhistory') {
                     return null
                 }
                 const tokens = scanSearchQuery(completion.label)
@@ -240,10 +239,10 @@ export function searchQueryAutocompletion(
             '.cm-tooltip-autocomplete svg path': {
                 fillOpacity: 0.6,
             },
-            '.completion-type-search-history > .cm-completionLabel': {
+            '.completion-type-searchhistory > .cm-completionLabel': {
                 display: 'none',
             },
-            'li.completion-type-search-history': {
+            'li.completion-type-searchhistory': {
                 height: 'initial !important',
                 minHeight: '1.3rem',
             },

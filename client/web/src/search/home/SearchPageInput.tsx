@@ -79,9 +79,14 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const suggestionSources = useMemo(
         () =>
             coreWorkflowImprovementsEnabled && props.authenticatedUser
-                ? [searchQueryHistorySource(props.authenticatedUser.id)]
+                ? [
+                      searchQueryHistorySource({
+                          userId: props.authenticatedUser.id,
+                          selectedSearchContext: props.selectedSearchContextSpec,
+                      }),
+                  ]
                 : [],
-        [props.authenticatedUser, coreWorkflowImprovementsEnabled]
+        [props.authenticatedUser, props.selectedSearchContextSpec, coreWorkflowImprovementsEnabled]
     )
 
     const quickLinks =
@@ -146,7 +151,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
+                        autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                         applySuggestionsOnEnter={applySuggestionsOnEnter}

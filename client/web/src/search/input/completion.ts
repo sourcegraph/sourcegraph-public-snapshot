@@ -3,6 +3,8 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { StandardSuggestionSource } from '@sourcegraph/search-ui'
+import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { SearchHistoryQueryResult, SearchHistoryQueryVariables } from '../../graphql-operations'
@@ -35,8 +37,14 @@ const SEARCH_HISTORY_QUERY = gql`
     }
 `
 
-export function searchQueryHistorySource(userId: string): StandardSuggestionSource {
-    return async (context, tokens) => {
+export function searchQueryHistorySource({
+    userId,
+    selectedSearchContext,
+}: {
+    userId: string
+    selectedSearchContext?: string
+}): StandardSuggestionSource {
+    return async (_context, tokens) => {
         if (tokens.length > 0) {
             return null
         }
@@ -68,11 +76,37 @@ export function searchQueryHistorySource(userId: string): StandardSuggestionSour
             return {
                 from: 0,
                 filter: false,
-                options: searches.map(search => ({
-                    // TODO: filter out invalid searches
-                    label: search.searchText,
-                    type: 'search-history',
-                })),
+                options: searches.map(search => {
+                    let query = search.searchText
+
+                    {
+                        const result = scanSearchQuery(search.searchText)
+                        if (result.type === 'success') {
+                            query = stringHuman(
+                                result.term.filter(term => {
+                                    switch (term.type) {
+                                        case 'filter':
+                                            if (
+                                                term.field.value === 'context' &&
+                                                term.value?.value === selectedSearchContext
+                                            ) {
+                                                return false
+                                            }
+                                            return true
+                                        default:
+                                            return true
+                                    }
+                                })
+                            )
+                        }
+                    }
+
+                    return {
+                        // TODO: filter out invalid searches
+                        label: query,
+                        type: 'searchhistory',
+                    }
+                }),
             }
         } catch {
             return null
