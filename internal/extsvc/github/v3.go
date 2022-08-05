@@ -847,19 +847,19 @@ func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Web
 }
 
 // FindSyncWebhook looks for any webhook with the targetURL ending in /github-webhooks
-func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*WebhookPayload, error) {
+func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, error) {
 	payloads, err := c.ListSyncWebhooks(ctx, repoName)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	for _, payload := range payloads {
 		if strings.Contains(payload.Config.URL, "github-webhooks") {
-			return &payload, nil
+			return payload.ID, nil
 		}
 	}
 
-	return nil, errors.New("unable to find webhook")
+	return 0, errors.New("unable to find webhook")
 }
 
 // DeleteSyncWebhook returns a boolean answer as to whether the target repo was deleted or not
