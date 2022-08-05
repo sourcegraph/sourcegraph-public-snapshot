@@ -75,7 +75,7 @@ type group struct {
 
 // findGroups will extract all capturing and non-capturing groups from a
 // **valid** regexp string. If the provided string is not a valid regexp this
-// function may panic.
+// function may panic or otherwise return undefined results.
 // This will return all groups (including nested), but not necessarily in any interesting order.
 func findGroups(pattern string) (groups []group) {
 	var opens []group
