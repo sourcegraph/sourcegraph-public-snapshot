@@ -78,8 +78,11 @@ function install_ignite() {
   mv ignite /usr/local/bin
 }
 
+## Install the CNI plus plugins, used by ignite.
 function install_cni() {
   mkdir -p /opt/cni/bin
+  curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
+  # Also install the isolation plugin.
   curl -sSL https://github.com/AkihiroSuda/cni-isolation/releases/download/v0.0.4/cni-isolation-amd64.tgz | tar -xz -C /opt/cni/bin
 }
 
