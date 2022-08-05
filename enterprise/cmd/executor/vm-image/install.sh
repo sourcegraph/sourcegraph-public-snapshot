@@ -215,7 +215,7 @@ function configure_cni() {
       "bridge": "ignite0",
       "isGateway": true,
       "isDefaultGateway": true,
-      "promiscMode": true,
+      "promiscMode": false,
       "ipMasq": true,
       "ipam": {
         "type": "host-local",
