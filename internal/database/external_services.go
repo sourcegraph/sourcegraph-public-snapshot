@@ -92,10 +92,10 @@ type ExternalServiceStore interface {
 	GetSyncJobByID(ctx context.Context, id int64) (job *types.ExternalServiceSyncJob, err error)
 
 	// GetSyncJobs gets all sync jobs.
-	GetSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
+	GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
 
 	// CountSyncJobs counts all sync jobs.
-	CountSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (int64, error)
+	CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error)
 
 	// List returns external services under given namespace.
 	// If no namespace is given, it returns all external services.
@@ -104,6 +104,11 @@ type ExternalServiceStore interface {
 	// 	- The actor is a site admin
 	// 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
 	List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+
+	// ListRepos returns external service repos for given externalServiceID.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
+	ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error)
 
 	// RepoCount returns the number of repos synced by the external service with the
 	// given id.
@@ -221,6 +226,8 @@ type ExternalServiceKind struct {
 
 	JSONSchema string // JSON Schema for the external service's configuration
 }
+
+type ExternalServiceReposListOptions ExternalServicesGetSyncJobsOptions
 
 type ExternalServicesGetSyncJobsOptions struct {
 	ExternalServiceID int64
@@ -1131,18 +1138,18 @@ ORDER BY
 %s
 `
 
-func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
+func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
 	var preds []*sqlf.Query
 
-	if opts.ExternalServiceID != 0 {
-		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	if opt.ExternalServiceID != 0 {
+		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
 	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"), opts.LimitOffset.SQL())
+	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"), opt.LimitOffset.SQL())
 
 	rows, err := e.Query(ctx, q)
 	if err != nil {
@@ -1172,11 +1179,11 @@ FROM
 WHERE %s
 `
 
-func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (int64, error) {
+func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error) {
 	var preds []*sqlf.Query
 
-	if opts.ExternalServiceID != 0 {
-		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	if opt.ExternalServiceID != 0 {
+		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
 	}
 
 	if len(preds) == 0 {
@@ -1421,6 +1428,72 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 
 	return results, nil
+}
+
+func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
+	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.listRepos")
+	defer span.Finish()
+
+	predicate := sqlf.Sprintf("TRUE")
+
+	if opt.ExternalServiceID != 0 {
+		predicate = sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID)
+	}
+
+	q := sqlf.Sprintf(`
+SELECT
+	external_service_id,
+	repo_id,
+	clone_url,
+	user_id,
+	org_id,
+	created_at
+FROM external_service_repos
+WHERE %s
+%s`,
+		predicate,
+		opt.LimitOffset.SQL(),
+	)
+
+	rows, err := e.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var repos []*types.ExternalServiceRepo
+	for rows.Next() {
+		var (
+			repo   types.ExternalServiceRepo
+			userID sql.NullInt32
+			orgID  sql.NullInt32
+		)
+
+		if err := rows.Scan(
+			&repo.ExternalServiceID,
+			&repo.RepoID,
+			&repo.CloneURL,
+			&userID,
+			&orgID,
+			&repo.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		if userID.Valid {
+			repo.UserID = userID.Int32
+		}
+		if orgID.Valid {
+			repo.OrgID = orgID.Int32
+		}
+
+		repos = append(repos, &repo)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return repos, nil
 }
 
 func (e *externalServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {

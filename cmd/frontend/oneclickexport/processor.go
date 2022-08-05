@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"path"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -23,9 +24,6 @@ type Processor[T any] interface {
 var _ Processor[ConfigRequest] = &SiteConfigProcessor{}
 var _ Processor[ConfigRequest] = &CodeHostConfigProcessor{}
 
-type ConfigRequest struct {
-}
-
 type SiteConfigProcessor struct {
 	logger log.Logger
 	Type   string
@@ -36,15 +34,15 @@ type SiteConfigProcessor struct {
 func (s SiteConfigProcessor) Process(_ context.Context, _ ConfigRequest, dir string) {
 	siteConfig, err := conf.RedactSecrets(conf.Raw())
 	if err != nil {
-		s.logger.Error("Error during site config redacting", log.Error(err))
+		s.logger.Error("error during site config redacting", log.Error(err))
 	}
 
 	configBytes := []byte(siteConfig.Site)
 
-	err = ioutil.WriteFile(dir+"/site-config.json", configBytes, 0644)
-
+	outputFile := path.Join(dir, "site-config.json")
+	err = ioutil.WriteFile(outputFile, configBytes, 0644)
 	if err != nil {
-		s.logger.Error("Error during site config export", log.Error(err))
+		s.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
 }
 
@@ -65,7 +63,7 @@ type CodeHostConfigProcessor struct {
 func (c CodeHostConfigProcessor) Process(ctx context.Context, _ ConfigRequest, dir string) {
 	externalServices, err := c.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{})
 	if err != nil {
-		c.logger.Error("Error getting external services", log.Error(err))
+		c.logger.Error("error getting external services", log.Error(err))
 	}
 
 	if len(externalServices) == 0 {
@@ -77,7 +75,7 @@ func (c CodeHostConfigProcessor) Process(ctx context.Context, _ ConfigRequest, d
 		summary, err := convertToSummary(extSvc)
 		if err != nil {
 			// basically this is the only error that can occur
-			c.logger.Error("Error during redacting the code host config", log.Error(err))
+			c.logger.Error("error during redacting the code host config", log.Error(err))
 			return
 		}
 		summaries[idx] = summary
@@ -85,13 +83,13 @@ func (c CodeHostConfigProcessor) Process(ctx context.Context, _ ConfigRequest, d
 
 	configBytes, err := json.MarshalIndent(summaries, "", "  ")
 	if err != nil {
-		c.logger.Error("Error during marshalling the code host config", log.Error(err))
+		c.logger.Error("error during marshalling the code host config", log.Error(err))
 	}
 
-	err = ioutil.WriteFile(dir+"/code-host-config.json", configBytes, 0644)
-
+	outputFile := path.Join(dir, "code-host-config.json")
+	err = ioutil.WriteFile(outputFile, configBytes, 0644)
 	if err != nil {
-		c.logger.Error("Error during code host config export", log.Error(err))
+		c.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
 }
 
