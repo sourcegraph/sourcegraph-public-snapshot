@@ -535,7 +535,7 @@ describe('Search', () => {
                     })
                 })
 
-                test('updates the query input and triggers suggestions', async () => {
+                test.skip('updates the query input and triggers suggestions', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
                     await driver.page.waitForSelector('[data-testid="search-type-suggest"]')
                     await driver.page.click('[data-testid="search-type-suggest"]')
