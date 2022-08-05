@@ -256,18 +256,14 @@ function setup_iptables() {
   # Disallow any host-VM network traffic from the guests, except connections made
   # FROM the host (to ssh into the guest).
   iptables -A INPUT -d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # TODO: Can those be combined?
-  iptables -A INPUT -s 10.61.0.0/16 -p tcp -j DROP
-  iptables -A INPUT -s 10.61.0.0/16 -p udp -j DROP
-  iptables -A INPUT -s 10.61.0.0/16 -p icmp --icmp-type echo-request -j DROP
+  iptables -A INPUT -s 10.61.0.0/16 -j DROP
 
   # Disallow any inter-VM traffic.
-  # TODO: This rule doesn't do what we want yet.
-  # iptables -A CNI-ADMIN -s 10.61.0.1 -j RETURN
-  # iptables -A CNI-ADMIN -d 10.61.0.0/16 -j DROP
+  iptables -A CNI-ADMIN -s 10.61.0.1/32 -d 10.61.0.0/16 -j ACCEPT
+  iptables -A CNI-ADMIN -d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.61.0.0/16 -j DROP
 
   # Disallow local networks access.
-  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.61.0.0/16 -j ACCEPT
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.0.0.0/8 -p tcp -j DROP
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 192.168.0.0/16 -p tcp -j DROP
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 172.16.0.0/12 -p tcp -j DROP
