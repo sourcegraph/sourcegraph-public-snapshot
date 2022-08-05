@@ -25,8 +25,9 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
-	logger := logtest.Scoped(t)
 	conf.Get().ExperimentalFeatures.EnableWebhookSync = true
+
+	logger := logtest.Scoped(t)
 	t.Parallel()
 
 	for _, tc := range []struct {
@@ -54,7 +55,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
-		{"WebhookWorker/EnqueueSingleWebhookBuildJob", testEnqueueSingleWebhookBuildJob},
+		{"WebhookWorker/EnqueueSingleWebhookBuildJob", testEnqueueWebhookBuildJob},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))

@@ -2367,7 +2367,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	return syncer, dbRepos
 }
 
-func testEnqueueSingleWebhookBuildJob(s repos.Store) func(*testing.T) {
+func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		logger := logtest.Scoped(t)
