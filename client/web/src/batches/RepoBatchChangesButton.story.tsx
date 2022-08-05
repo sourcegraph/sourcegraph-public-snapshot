@@ -29,8 +29,10 @@ export const RepoButton: Story = args => (
         {() => {
             openValue = args.open
             mergedValue = args.merged
-            
-            return <RepoBatchChangesButton repoName="Awesome Repo" queryRepoChangesetsStats={queryRepoChangesetsStats} />
+
+            return (
+                <RepoBatchChangesButton repoName="Awesome Repo" queryRepoChangesetsStats={queryRepoChangesetsStats} />
+            )
         }}
     </WebStory>
 )
