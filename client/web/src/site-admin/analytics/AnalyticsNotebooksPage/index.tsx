@@ -97,8 +97,8 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 position: 'right',
                 tooltip:
                     aggregation.selected === 'count'
-                        ? 'The number of of blocks within each notebook that are run. Some blocks such as the search results block must be run for the user to see code.'
-                        : 'The number of users who ran blocks within each notebook in the timeframe.',
+                        ? 'The number of blocks within each notebook that have been run. Some blocks such as the search results block must be run for the user to see code.'
+                        : 'The number of users who ran notebook blocks in the timeframe.',
             },
         ]
 
