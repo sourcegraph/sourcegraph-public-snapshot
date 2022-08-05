@@ -17,17 +17,19 @@ type repoStatistics struct {
 	NotCloned   int
 	Cloning     int
 	Cloned      int
+	FailedFetch int
 }
 
 // gitserverRepoStatistics represents the contents of the
 // gitserver_repo_statistics table, where each gitserver shard should have a
 // separate row and gitserver_repos that haven't been assigned a shard yet have an empty ShardID.
 type gitserverReposStatistics struct {
-	ShardID   string
-	Total     int
-	NotCloned int
-	Cloning   int
-	Cloned    int
+	ShardID     string
+	Total       int
+	NotCloned   int
+	Cloning     int
+	Cloned      int
+	FailedFetch int
 }
 
 // repoStatisticsStore is responsible for data stored in the repo_statistics
@@ -54,7 +56,7 @@ func (s *repoStatisticsStore) Transact(ctx context.Context) (*repoStatisticsStor
 func (s *repoStatisticsStore) GetRepoStatistics(ctx context.Context) (repoStatistics, error) {
 	var rs repoStatistics
 	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoStatisticsQueryFmtstr))
-	err := row.Scan(&rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned)
+	err := row.Scan(&rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned, &rs.FailedFetch)
 	if err != nil {
 		return rs, err
 	}
@@ -68,7 +70,8 @@ SELECT
 	soft_deleted,
 	not_cloned,
 	cloning,
-	cloned
+	cloned,
+	failed_fetch
 FROM repo_statistics
 `
 
@@ -89,7 +92,8 @@ SELECT
 	total,
 	not_cloned,
 	cloning,
-	cloned
+	cloned,
+	failed_fetch
 FROM gitserver_repos_statistics
 `
 
@@ -103,6 +107,7 @@ func scanGitserverReposStatistics(rows *sql.Rows) ([]gitserverReposStatistics, e
 			&gs.NotCloned,
 			&gs.Cloning,
 			&gs.Cloned,
+			&gs.FailedFetch,
 		)
 		if err != nil {
 			return nil, err
