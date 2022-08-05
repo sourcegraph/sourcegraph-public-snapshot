@@ -16,6 +16,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { InlineSymbolsResult } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import {
@@ -55,7 +56,11 @@ interface FileProps extends ThemeProps {
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
+    const { commitID } = useTreeRootContext()
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const lazyBlobSyntaxHighlightingEnabled = useExperimentalFeatures(
+        features => features.enableLazyBlobSyntaxHighlighting ?? false
+    )
 
     const renderedFileDecorations = (
         <FileDecorator
@@ -85,6 +90,8 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                 draggable={false}
                                 title={'Submodule: ' + props.entryInfo.submodule.url}
                                 data-tree-path={props.entryInfo.path}
+                                commitID={commitID}
+                                prefetch={lazyBlobSyntaxHighlightingEnabled}
                             >
                                 <TreeLayerRowContentsText>
                                     {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
@@ -121,6 +128,8 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             // needed because of dynamic styling
                             style={offsetStyle}
                             tabIndex={-1}
+                            commitID={commitID}
+                            prefetch={lazyBlobSyntaxHighlightingEnabled}
                         >
                             <TreeLayerRowContentsText className="d-flex">
                                 <TreeRowIcon onClick={props.noopRowClick}>
