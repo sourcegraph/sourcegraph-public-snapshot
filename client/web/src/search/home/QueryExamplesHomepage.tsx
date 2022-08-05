@@ -56,7 +56,7 @@ const queryExampleSectionsColumns = [
             title: 'Get advanced',
             queryExamples: [{ id: 'contains-commit-after', query: 'repo:contains.commit.after(yesterday)' }],
             footer: (
-                <small className="d-block mt-2">
+                <small className="d-block mt-3">
                     <Link target="blank" to="/help/code_search/reference/queries">
                         Complete query reference{' '}
                         <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
@@ -189,7 +189,7 @@ export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection>
 }) => (
     <div className={styles.queryExamplesSection}>
         <div className={styles.queryExamplesSectionTitle}>{title}</div>
-        <div>
+        <div className={styles.queryExamplesItems}>
             {queryExamples.map(({ id, query, helperText }) => (
                 <QueryExampleChip
                     id={id}
@@ -222,7 +222,7 @@ export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = 
     className,
     onClick,
 }) => (
-    <span className={classNames('d-flex align-items-center mb-1', className)}>
+    <span className={classNames('d-flex align-items-center', className)}>
         <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query)}>
             <SyntaxHighlightedSearchQuery query={query} />
         </Button>
