@@ -638,9 +638,7 @@ func (s *Syncer) SyncExternalService(
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 
-		fmt.Println("Decide")
 		if conf.Get().ExperimentalFeatures != nil && conf.Get().ExperimentalFeatures.EnableWebhookRepoSync {
-			fmt.Println("YES")
 			job := &webhookworker.Job{
 				RepoID:     int32(sourced.ID),
 				RepoName:   string(sourced.Name),
