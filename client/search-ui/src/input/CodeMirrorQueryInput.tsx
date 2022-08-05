@@ -171,7 +171,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             // sure that. Since `showSuggestionsOnFocus` is currently only
             // enabled when we show search history suggestions, we use a single
             // listener to handle that case too.
-            const TIMEOUT = 500
+            const TIMEOUT = 1000
             let timer: number | null = null
             const clear = () => {
                 if (timer !== null) {
