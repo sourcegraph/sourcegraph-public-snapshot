@@ -2376,6 +2376,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 
 		esStore := s.ExternalServiceStore()
 		repoStore := s.RepoStore()
+		workerStore := webhookworker.CreateWorkerStore(s.Handle())
 
 		repo := &types.Repo{
 			ID:   1,
@@ -2419,17 +2420,13 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 		}
 
 		jobChan := make(chan *webhookworker.Job)
-		workerStore := webhookworker.CreateWorkerStore(s.Handle())
 		metrics := workerutil.NewMetrics(&observation.Context{
 			Logger:     logger,
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}, fmt.Sprintf("%s_processor", "webhook_build_worker"))
 
-		worker := webhookworker.NewWorker(ctx, &fakeWebhookBuildHandler{
-			store:   s,
-			jobChan: jobChan,
-		}, workerStore, metrics)
+		worker := webhookworker.NewWorker(ctx, &fakeWebhookBuildHandler{jobChan: jobChan}, workerStore, metrics)
 
 		go worker.Start()
 		defer worker.Stop()
@@ -2455,7 +2452,6 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 }
 
 type fakeWebhookBuildHandler struct {
-	store   repos.Store
 	jobChan chan *webhookworker.Job
 }
 
