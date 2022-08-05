@@ -2449,10 +2449,9 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 
 		select {
 		case have = <-jobChan:
-			if (cmp.Diff(have, want, jobComparer)) == "" {
-				return
+			if diff := cmp.Diff(have, want, jobComparer); diff != "" {
+				t.Fatalf("mismatched jobs, (-want +got):\n%s", diff)
 			}
-			t.Fatal("have, want not the same")
 		case <-time.After(5 * time.Second):
 			t.Fatal("Timeout")
 		}
