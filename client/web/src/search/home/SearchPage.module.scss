@@ -32,6 +32,10 @@
     &--with-content-below {
         flex-grow: 0;
         margin-bottom: 5rem;
+
+        :global(.core-workflow-improvements-enabled) & {
+            margin-bottom: 2.25rem;
+        }
     }
 }
 

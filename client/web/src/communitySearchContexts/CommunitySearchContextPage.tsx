@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepositoryMultiple, mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,7 +6,7 @@ import * as H from 'history'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -56,6 +56,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     React.PropsWithChildren<CommunitySearchContextPageProps>
 > = (props: CommunitySearchContextPageProps) => {
     const LOADING = 'loading' as const
+
+    const [queryState, setQueryState] = useState<QueryState>({
+        query: '',
+    })
 
     useEffect(
         () =>
@@ -113,12 +117,16 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                 {props.communitySearchContextMetadata.lowProfile ? (
                     <SearchPageInput
                         {...props}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
                         selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
                         source="communitySearchContextPage"
                     />
                 ) : (
                     <SearchPageInput
                         {...props}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
                         selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
                         source="communitySearchContextPage"
                     />
