@@ -120,7 +120,7 @@ func TestDBTransactions(t *testing.T) {
 
 			// Lifetime of tx2
 			{
-				tx2, err := db.Repos().Transact(ctx)
+				tx2, err := tx1.Transact(ctx)
 				require.NoError(t, err)
 
 				err = tx2.Create(ctx, &types.Repo{ID: 2, Name: "test2"})
@@ -135,22 +135,21 @@ func TestDBTransactions(t *testing.T) {
 				// outside the transaction
 				_, err = db.Repos().Get(ctx, 2)
 				require.Error(t, err)
-				_, err = tx1.Get(ctx, 2)
-				require.Error(t, err)
 
 				tx2.Done(nil)
 			}
 
 			// After committing the transaction, repo 2 should be visible
 			// outside the transaction
-			r, err = db.Repos().Get(ctx, 2)
-			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test2"), r.Name)
 			r, err = tx1.Get(ctx, 2)
 			require.NoError(t, err)
 			require.Equal(t, api.RepoName("test2"), r.Name)
 
 			tx1.Done(nil)
+
+			r, err = db.Repos().Get(ctx, 2)
+			require.NoError(t, err)
+			require.Equal(t, api.RepoName("test2"), r.Name)
 		}
 
 		// After committing the transaction, repo 1 should be visible
@@ -184,7 +183,7 @@ func TestDBTransactions(t *testing.T) {
 
 			// Lifetime of tx2
 			{
-				tx2, err := db.Repos().Transact(ctx)
+				tx2, err := tx1.Transact(ctx)
 				require.NoError(t, err)
 
 				err = tx2.Create(ctx, &types.Repo{ID: 2, Name: "test2"})
@@ -198,8 +197,6 @@ func TestDBTransactions(t *testing.T) {
 				// Before committing the transaction, repo 2 should not be visible
 				// outside the transaction
 				_, err = db.Repos().Get(ctx, 2)
-				require.Error(t, err)
-				_, err = tx1.Get(ctx, 2)
 				require.Error(t, err)
 
 				tx2.Done(errors.New("force rollback"))
