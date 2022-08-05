@@ -1,9 +1,8 @@
+/* eslint-disable @typescript-eslint/no-require-imports, import/no-dynamic-require, @typescript-eslint/no-var-requires */
 import { statSync } from 'fs'
 import path from 'path'
 
 import glob from 'glob'
-
-import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
 interface BundleSizeConfig {
     files: {
@@ -17,15 +16,33 @@ interface BundleSizeStats {
         raw: number
         gzip: number
         brotli: number
+        isInitial: boolean
+        isDynamicImport: boolean
+        isDefaultVendors: boolean
+        isCss: boolean
+        isJs: boolean
     }
+}
+
+interface GetBundleSizeStatsOptions {
+    staticAssetsPath: string
+    bundlesizeConfigPath: string
+    webpackManifestPath: string
 }
 
 /**
  * Get a list of files specified by bundlesize config glob and their respective sizes.
  */
-export function getBundleSizeStats(bundlesizeConfigPath: string): BundleSizeStats {
-    // eslint-disable-next-line import/no-dynamic-require, @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+export function getBundleSizeStats(options: GetBundleSizeStatsOptions): BundleSizeStats {
+    const { bundlesizeConfigPath, webpackManifestPath, staticAssetsPath } = options
     const bundleSizeConfig = require(bundlesizeConfigPath) as BundleSizeConfig
+    const webpackManifest = require(webpackManifestPath) as Record<string, string>
+
+    const initialResources = new Set(
+        Object.values(webpackManifest).map(resourcePath =>
+            path.join(staticAssetsPath, resourcePath.replace('/.assets/', ''))
+        )
+    )
 
     return bundleSizeConfig.files.reduce<BundleSizeStats>((result, file) => {
         const filePaths = glob.sync(file.path)
@@ -37,10 +54,15 @@ export function getBundleSizeStats(bundlesizeConfigPath: string): BundleSizeStat
 
             return {
                 ...fileStats,
-                [noCompressionFilePath.replace(`${STATIC_ASSETS_PATH}/`, '')]: {
+                [noCompressionFilePath.replace(`${staticAssetsPath}/`, '')]: {
                     raw: statSync(noCompressionFilePath).size,
                     gzip: statSync(gzipFilePath).size,
                     brotli: statSync(brotliFilePath).size,
+                    isInitial: initialResources.has(noCompressionFilePath),
+                    isDynamicImport: name.startsWith('sg_'),
+                    isDefaultVendors: /\d+.chunk.js/.test(name),
+                    isCss: path.parse(name).ext === '.css',
+                    isJs: path.parse(name).ext === '.js',
                 },
             }
         }, {})
