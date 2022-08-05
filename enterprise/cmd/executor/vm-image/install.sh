@@ -255,7 +255,7 @@ function setup_iptables() {
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.61.0.0/16 -j ACCEPT
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.0.0.0/8 -p tcp -j DROP
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 192.168.0.0/16 -p tcp -j DROP
-  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 172.16.0.0/16 -p tcp -j DROP
+  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 172.16.0.0/12 -p tcp -j DROP
   # Disallow any inter-VM traffic.
   # TODO: This rule doesn't do what we want yet.
   iptables -A CNI-ADMIN -s 10.61.0.1 -j RETURN
