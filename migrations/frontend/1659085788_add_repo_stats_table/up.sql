@@ -224,13 +224,12 @@ GROUP BY shard_id
 ON CONFLICT(shard_id)
 DO UPDATE
 SET
-  total        = grs.total        + excluded.total,
-  not_cloned   = grs.not_cloned   + excluded.not_cloned,
-  cloning      = grs.cloning      + excluded.cloning,
-  cloned       = grs.cloned       + excluded.cloned,
-  failed_fetch = grs.failed_fetch + excluded.failed_fetch
+  total        = gitserver_repos_statistics.total        + excluded.total,
+  not_cloned   = gitserver_repos_statistics.not_cloned   + excluded.not_cloned,
+  cloning      = gitserver_repos_statistics.cloning      + excluded.cloning,
+  cloned       = gitserver_repos_statistics.cloned       + excluded.cloned,
+  failed_fetch = gitserver_repos_statistics.failed_fetch + excluded.failed_fetch
 ;
-
 
 -- UPDATE
 CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
