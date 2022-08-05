@@ -222,24 +222,19 @@ func templatize(pattern string, env *MetaEnvironment) string {
 			templatized = append(templatized, string(a))
 		case Variable:
 			if _, ok := builtinVariables[a.Name[1:]]; ok {
-				name := a.Name[1:]
-				if name == "date.year" {
-					constant := strconv.Itoa(env.Date.Year())
-					templatized = append(templatized, constant)
-				} else if name == "date.month.name" {
-					constant := env.Date.Month().String()
-					templatized = append(templatized, constant)
-				} else if name == "date.month" {
-					constant := fmt.Sprintf("%02d", int(env.Date.Month()))
-					templatized = append(templatized, constant)
-				} else if name == "date.day" {
-					constant := strconv.Itoa(env.Date.Day())
-					templatized = append(templatized, constant)
-				} else if name == "date" {
-					constant := env.Date.Format("2006-01-02")
-					templatized = append(templatized, constant)
-				} else {
-					templateVar := strings.Title(name)
+				switch a.Name[1:] {
+				case "date.year":
+					templatized = append(templatized, strconv.Itoa(env.Date.Year()))
+				case "date.month.name":
+					templatized = append(templatized, env.Date.Month().String())
+				case "date.month":
+					templatized = append(templatized, fmt.Sprintf("%02d", int(env.Date.Month())))
+				case "date.day":
+					templatized = append(templatized, strconv.Itoa(env.Date.Day()))
+				case "date":
+					templatized = append(templatized, env.Date.Format("2006-01-02"))
+				default:
+					templateVar := strings.Title(a.Name[1:])
 					templatized = append(templatized, `{{.`+templateVar+`}}`)
 				}
 				continue
