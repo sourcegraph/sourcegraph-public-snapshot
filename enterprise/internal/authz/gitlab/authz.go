@@ -4,8 +4,8 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -130,7 +130,7 @@ var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
 		refreshToken = op.Token
 	}
 
-	helper := &oauth.RefreshTokenHelperForExternalService{
+	helper := &database.RefreshTokenHelperForExternalService{
 		DB:                op.db,
 		ExternalServiceID: op.ExternalService.ID,
 		OauthRefreshToken: refreshToken,

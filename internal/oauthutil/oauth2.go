@@ -88,7 +88,7 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 		if resp.StatusCode == http.StatusUnauthorized && auther != nil {
 			if err = getOAuthErrorDetails(body); err != nil {
 				if _, ok := err.(*oauthError); ok {
-					//Refresh the token
+					// Refresh the token
 					newToken, err := tokenRefresher(ctx, doer, oauthCtx)
 					if err != nil {
 						return 0, nil, nil, errors.Wrap(err, "refresh token")
@@ -96,10 +96,10 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 					auther = auther.WithToken(newToken)
 					continue
 				}
-				return 0, nil, nil, errors.Errorf("got unexpected OAuth error %T", err)
+				return 0, nil, nil, errors.Errorf("unexpected OAuth error %T", err)
 			}
 		}
 		return resp.StatusCode, resp.Header, body, nil
 	}
-	return 0, nil, nil, errors.Errorf("retries exceeded for OAuth refresher with status code %d and body %q", code, string(body))
+	return 0, nil, nil, errors.Errorf("retries exceeded with status code %d and body %q", code, string(body))
 }

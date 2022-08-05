@@ -1,11 +1,10 @@
-package oauth
+package database
 
 import (
 	"context"
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -14,19 +13,19 @@ import (
 )
 
 type RefreshTokenHelperForExternalAccount struct {
-	DB                database.DB
+	DB                DB
 	ExternalAccountID int32
 	OauthRefreshToken string
 }
 
 type RefreshTokenHelperForExternalService struct {
-	DB                database.DB
+	DB                DB
 	ExternalServiceID int64
 	OauthRefreshToken string
 }
 
 func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error) {
-	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
+	refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
 
 	defer func() {
 		success := err == nil
@@ -47,18 +46,22 @@ func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context,
 	return "", nil
 }
 
-func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error) {
-	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
-
+func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (token string, err error) {
 	defer func() {
 		success := err == nil
 		gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
 	}()
 
+	refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
+	if err != nil {
+		return "", errors.Wrap(err, "refreshing token")
+	}
+
 	extsvc, err := r.DB.ExternalServices().GetByID(ctx, r.ExternalServiceID)
 	if err != nil {
 		return "", errors.Wrap(err, "getting external service")
 	}
+
 	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.AccessToken, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "updating OAuth token")
