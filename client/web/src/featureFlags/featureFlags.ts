@@ -14,6 +14,7 @@ export type FeatureFlagName =
     | 'contrast-compliant-syntax-highlighting'
     | 'admin-analytics-disabled'
     | 'admin-analytics-cache-disabled'
+    | 'ab-lucky-search' // To be removed at latest by 12/2022.
 
 interface OrgFlagOverride {
     orgID: string
