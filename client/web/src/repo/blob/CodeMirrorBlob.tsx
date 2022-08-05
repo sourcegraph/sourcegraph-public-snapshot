@@ -218,8 +218,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         if (editor && !blobIsLoading) {
             selectLines(editor, position.line ? position : null)
         }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
     }, [editor, position, blobIsLoading])
 
     // Update pinned hovercard range
@@ -235,13 +233,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
 }
 
+/**
+ * Returns true when the URL indicates that the hovercard at the URL position
+ * should be shown on load (the hovercard is "pinned").
+ */
 function urlIsPinned(search: string): boolean {
     return new URLSearchParams(search).get('popover') === 'pinned'
 }
 
 /**
  * Because the location changes before new blob info is available we often apply
- * updates to the old document, which can be problematic or thorw errors. This
+ * updates to the old document, which can be problematic or throw errors. This
  * helper hook keeps track of which path is set when the blob info updates
  * and compares it against the current path.
  */
