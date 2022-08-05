@@ -116,6 +116,30 @@ func TestRepoStatistics(t *testing.T) {
 		// But now it's reflected as NotCloned
 		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1},
 	})
+
+	// Now we set errors on 2 non-deleted repositories
+	setLastError(t, db, repos[0].Name, shards[0], "internet broke repo-1")
+	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-3")
+	assertRepoStatistics(t, ctx, s, repoStatistics{
+		// Only FailedFetch changed
+		Total: 5, SoftDeleted: 1, Cloning: 5, FailedFetch: 2,
+	}, []gitserverReposStatistics{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
+		{ShardID: shards[1], Total: 1, Cloning: 1, FailedFetch: 1},
+		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1},
+	})
+	// Now we move a repo and set an error
+	setLastError(t, db, repos[1].Name, shards[1], "internet broke repo-2")
+	assertRepoStatistics(t, ctx, s, repoStatistics{
+		// Only FailedFetch changed
+		Total: 5, SoftDeleted: 1, Cloning: 5, FailedFetch: 3,
+	}, []gitserverReposStatistics{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 1, Cloning: 1, FailedFetch: 1},
+		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 2},
+		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1},
+	})
 }
 
 func queryRepoName(t *testing.T, ctx context.Context, s *repoStatisticsStore, repoID api.RepoID) api.RepoName {
@@ -131,6 +155,13 @@ func queryRepoName(t *testing.T, ctx context.Context, s *repoStatisticsStore, re
 func setCloneStatus(t *testing.T, db DB, repoName api.RepoName, shard string, status types.CloneStatus) {
 	t.Helper()
 	if err := db.GitserverRepos().SetCloneStatus(context.Background(), repoName, status, shard); err != nil {
+		t.Fatalf("failed to set clone status for repo %s: %s", repoName, err)
+	}
+}
+
+func setLastError(t *testing.T, db DB, repoName api.RepoName, shard string, msg string) {
+	t.Helper()
+	if err := db.GitserverRepos().SetLastError(context.Background(), repoName, msg, shard); err != nil {
 		t.Fatalf("failed to set clone status for repo %s: %s", repoName, err)
 	}
 }
