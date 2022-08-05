@@ -15,9 +15,11 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { fetchBlob } from '@sourcegraph/shared/src/backend/blob'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -34,7 +36,7 @@ import { LastSyncedIcon } from './LastSyncedIcon'
 
 import styles from './FileMatchChildren.module.scss'
 
-interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
+interface FileMatchProps extends SettingsCascadeProps, TelemetryProps, PlatformContextProps<'requestGraphQL'> {
     location?: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
@@ -308,6 +310,18 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
+    const prefetchFile = useCallback(() => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        fetchBlob({
+            // TOOD: Work out why commitID doesn't match
+            commitID: '587fa5e1b30b145f3b824ccd58c14d1056514a8a',
+            filePath: result.path,
+            repoName: result.repository,
+            formatOnly: true,
+            requestGraphQL: props.platformContext.requestGraphQL,
+        }).toPromise()
+    }, [props.platformContext.requestGraphQL, result.path, result.repository])
+
     return (
         <div
             className={classNames(
@@ -315,6 +329,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 coreWorkflowImprovementsEnabled && result.type === 'symbol' && styles.symbols
             )}
             data-testid="file-match-children"
+            onMouseOver={prefetchFile}
+            onFocus={prefetchFile}
         >
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}

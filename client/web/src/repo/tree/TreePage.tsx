@@ -214,6 +214,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         codeIntelligenceEnabled,
         batchChangesEnabled,
         location,
+        platformContext: props.platformContext,
     }
 
     const [selectedTab, setSelectedTab] = useState('home')

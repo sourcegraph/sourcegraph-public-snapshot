@@ -9,6 +9,8 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
+import { fetchBlob } from '@sourcegraph/shared/src/backend/blob'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, H2, Text } from '@sourcegraph/wildcard'
@@ -22,7 +24,6 @@ import {
     GitCommitFields,
     TreePageRepositoryFields,
 } from '../../graphql-operations'
-import { fetchBlob } from '../blob/backend'
 import { BlobInfo } from '../blob/Blob'
 import { RenderedFile } from '../blob/RenderedFile'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -31,7 +32,7 @@ import { fetchTreeCommits } from './TreePageContent'
 
 import styles from './HomeTab.module.scss'
 
-interface Props extends SettingsCascadeProps, CodeIntelligenceProps, BatchChangesProps {
+interface Props extends SettingsCascadeProps, CodeIntelligenceProps, BatchChangesProps, PlatformContextProps<'requestGraphQL'> {
     repo: TreePageRepositoryFields
     filePath: string
     commitID: string
@@ -78,6 +79,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                             commitID,
                             filePath: `${filePath}/README.md`,
                             disableTimeout,
+                            requestGraphQL: props.platformContext.requestGraphQL,
                         })
                     ),
                     map(blob => {

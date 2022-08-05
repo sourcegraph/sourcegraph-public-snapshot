@@ -129,6 +129,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
                             as="li"
+                            platformContext={platformContext}
                         />
                     )
                 case 'commit':

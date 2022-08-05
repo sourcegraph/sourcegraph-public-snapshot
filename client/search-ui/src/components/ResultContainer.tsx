@@ -165,6 +165,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             onResultClicked()
         }
     }
+
     return (
         <Component
             className={classNames('test-search-result', styles.resultContainer, className)}
