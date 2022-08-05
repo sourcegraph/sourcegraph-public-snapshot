@@ -223,7 +223,6 @@
     "prebuild": "yarn build-inline-extensions",
     "prewatch": "yarn build-inline-extensions",
     "vscode:prepublish": "yarn build-inline-extensions && yarn build",
-    "fetch-code-intel-extensions": "node scripts/fetch-code-intel-extensions",
     "build-inline-extensions": "node scripts/build-inline-extensions",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
