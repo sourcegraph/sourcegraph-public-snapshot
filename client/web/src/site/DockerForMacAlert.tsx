@@ -21,7 +21,6 @@ export const DockerForMacAlert: React.FunctionComponent<React.PropsWithChildren<
         <span>
             It looks like you're using Docker for Mac. Due to known issues related to Docker for Mac's file system
             access, search performance and cloning repositories on Sourcegraph will be much slower.&nbsp;
-
             <Link to="/help/admin">Run Sourcegraph on a different platform or deploy it to a server</Link> for much
             faster performance.
         </span>
