@@ -9,7 +9,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
 import { BarChart } from '../../../../../../../../charts/components/bar-chart/BarChart'
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData, CategoricalChartContent, InsightContent } from '../../../../../../core'
+import { BackendInsightData, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
@@ -54,56 +54,57 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
     const { setHoveredId } = seriesToggleState
 
-    const hasViewManySeries = isManyKeysInsight(data)
-    const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
-
-    const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
     const isEmptyDataset = useMemo(() => hasNoData(data), [data])
 
+    const hasViewManySeries = isManyKeysInsight(data)
+    const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
+    const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
+    const isSeriesLikeInsight = data.type === InsightContentType.Series
+
     return (
-        <div ref={ref} className={classNames(className, styles.root, { [styles.rootHorizontal]: isHorizontalMode })}>
-            {width && (
-                <>
-                    <ParentSize
-                        debounceTime={0}
-                        enableDebounceLeadingCall={true}
-                        className={styles.responsiveContainer}
-                    >
-                        {parent => (
-                            <>
-                                <BackendAlertOverlay
-                                    hasNoData={isEmptyDataset}
-                                    isFetchingHistoricalData={isFetchingHistoricalData}
-                                    className={styles.alertOverlay}
-                                />
+        <div
+            ref={ref}
+            className={classNames(className, styles.root, {
+                [styles.rootHorizontal]: isHorizontalMode,
+                [styles.rootWithLegend]: isSeriesLikeInsight,
+            })}
+        >
+            <ParentSize
+                debounceTime={0}
+                enableDebounceLeadingCall={true}
+                className={styles.responsiveContainer}
+            >
+                {parent => (
+                    <>
+                        <BackendAlertOverlay
+                            hasNoData={isEmptyDataset}
+                            isFetchingHistoricalData={isFetchingHistoricalData}
+                            className={styles.alertOverlay}
+                        />
 
-                                {data.type === InsightContentType.Series ? (
-                                    <SeriesChart
-                                        type={SeriesBasedChartTypes.Line}
-                                        width={parent.width}
-                                        height={parent.height}
-                                        locked={locked}
-                                        className={styles.chart}
-                                        onDatumClick={onDatumClick}
-                                        zeroYAxisMin={zeroYAxisMin}
-                                        seriesToggleState={seriesToggleState}
-                                        {...data.content}
-                                    />
-                                ) : (
-                                    <BarChart width={parent.width} height={parent.height} {...data.content} />
-                                )}
-                            </>
-                        )}
-                    </ParentSize>
-
-                    <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
                         {data.type === InsightContentType.Series ? (
-                            <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
+                            <SeriesChart
+                                type={SeriesBasedChartTypes.Line}
+                                width={parent.width}
+                                height={parent.height}
+                                locked={locked}
+                                className={styles.chart}
+                                onDatumClick={onDatumClick}
+                                zeroYAxisMin={zeroYAxisMin}
+                                seriesToggleState={seriesToggleState}
+                                {...data.content}
+                            />
                         ) : (
-                            <CategoricalLegends data={data.content} />
+                            <BarChart width={parent.width} height={parent.height} {...data.content} />
                         )}
-                    </ScrollBox>
-                </>
+                    </>
+                )}
+            </ParentSize>
+
+            {isSeriesLikeInsight && (
+                <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
+                    <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
+                </ScrollBox>
             )}
         </div>
     )
@@ -158,29 +159,6 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         )
                     }
                     onMouseEnter={() => setHoveredId(`${item.id}`)}
-                    // prevent accidental dragging events
-                    onMouseDown={event => event.stopPropagation()}
-                />
-            ))}
-        </LegendList>
-    )
-}
-
-interface CategoricalLegendsProps {
-    data: CategoricalChartContent<any>
-}
-
-const CategoricalLegends: FC<CategoricalLegendsProps> = props => {
-    const { data } = props
-
-    return (
-        <LegendList className={styles.legendList}>
-            {data.data.map(item => (
-                <LegendItem
-                    key={item.id as string}
-                    color={data.getDatumColor(item) ?? 'gray'}
-                    name={data.getDatumName(item)}
-                    className={styles.legendListItem}
                     // prevent accidental dragging events
                     onMouseDown={event => event.stopPropagation()}
                 />
