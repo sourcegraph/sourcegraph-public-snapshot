@@ -43,69 +43,111 @@ func MakeExecutorMetricsGatherer(
 	// nodeExporterEndpoint is the URL of the local node_exporter endpoint, without
 	// the /metrics path. Disabled, when an empty string.
 	nodeExporterEndpoint string,
-	// dockerRegsitryEndpoint is the URL of the intermediary caching docker registry,
+	// dockerRegistryEndpoint is the URL of the intermediary caching docker registry,
 	// for scraping and forwarding metrics. Disabled, when an empty string.
-	dockerRegistryNodeExporterEndpoint string,
+	dockerRegistryEndpoint string,
 ) prometheus.GathererFunc {
 	nodeMetrics := newMetricsSyncPoint()
 	registryMetrics := newMetricsSyncPoint()
+	registryNodeMetrics := newMetricsSyncPoint()
 
-	go backgroundCollectNodeExporterMetrics(nodeExporterEndpoint, nodeMetrics)
-	go backgroundCollectNodeExporterMetrics(dockerRegistryNodeExporterEndpoint, registryMetrics)
+	go backgroundCollectMetrics(nodeExporterEndpoint+"/metrics", nodeMetrics)
+	go backgroundCollectMetrics(dockerRegistryEndpoint+"/proxy?module=registry", registryMetrics)
+	go backgroundCollectMetrics(dockerRegistryEndpoint+"/proxy?module=node", registryNodeMetrics)
 
-	return func() (mfs []*dto.MetricFamily, err error) {
+	return func() ([]*dto.MetricFamily, error) {
 		// notify to start a scrape
 		nodeMetrics.notify.Signal()
 		registryMetrics.notify.Signal()
+		registryNodeMetrics.notify.Signal()
 
-		mfs, err = gatherer.Gather()
-		if err != nil {
-			return nil, errors.Wrap(err, "getting default gatherer")
+		nodeMetricsGatherer := prometheus.GathererFunc(func() (mfs []*dto.MetricFamily, err error) {
+			if nodeExporterEndpoint != "" {
+				result := <-nodeMetrics.result
+				if result.err != nil {
+					logger.Warn("failed to get metrics for node exporter", log.Error(result.err))
+				}
+				for key, mf := range result.metrics {
+					if filterMetric(key) {
+						continue
+					}
+
+					mfs = append(mfs, mf)
+				}
+			}
+
+			return mfs, err
+		})
+
+		registryMetricsGatherer := prometheus.GathererFunc(func() (mfs []*dto.MetricFamily, err error) {
+			if dockerRegistryEndpoint != "" {
+				result := <-registryMetrics.result
+				if result.err != nil {
+					logger.Warn("failed to get metrics for docker registry", log.Error(result.err))
+				}
+				for key, mf := range result.metrics {
+					if filterMetric(key) {
+						continue
+					}
+
+					// should only be 1 registry, so we give it a set instance value
+					metricLabelInstance := "sg_instance"
+					instanceName := "docker-registry"
+					for _, m := range mf.Metric {
+						m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
+					}
+
+					mfs = append(mfs, mf)
+				}
+			}
+
+			return mfs, err
+		})
+
+		registryNodeMetricsGatherer := prometheus.GathererFunc(func() (mfs []*dto.MetricFamily, err error) {
+			if dockerRegistryEndpoint != "" {
+				result := <-registryNodeMetrics.result
+				if result.err != nil {
+					logger.Warn("failed to get metrics for docker registry", log.Error(result.err))
+				}
+				for key, mf := range result.metrics {
+					if filterMetric(key) {
+						continue
+					}
+
+					// should only be 1 registry, so we give it a set instance value
+					metricLabelInstance := "sg_instance"
+					instanceName := "docker-registry"
+					for _, m := range mf.Metric {
+						m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
+					}
+
+					mfs = append(mfs, mf)
+				}
+			}
+
+			return mfs, err
+		})
+
+		gatherers := prometheus.Gatherers{
+			gatherer,
+			nodeMetricsGatherer,
+			registryMetricsGatherer,
+			registryNodeMetricsGatherer,
 		}
 
-		if nodeExporterEndpoint != "" {
-			result := <-registryMetrics.result
-			if result.err != nil {
-				logger.Warn("failed to get metrics for node exporter", log.Error(result.err))
-			}
-			for key, mf := range result.metrics {
-				if strings.HasPrefix(key, "go_") || strings.HasPrefix(key, "promhttp_") || strings.HasPrefix(key, "process_") {
-					continue
-				}
-
-				mfs = append(mfs, mf)
-			}
-		}
-
-		if dockerRegistryNodeExporterEndpoint != "" {
-			result := <-registryMetrics.result
-			if result.err != nil {
-				logger.Warn("failed to get metrics for docker registry", log.Error(result.err))
-			}
-			for key, mf := range result.metrics {
-				if strings.HasPrefix(key, "go_") || strings.HasPrefix(key, "promhttp_") || strings.HasPrefix(key, "process_") {
-					continue
-				}
-
-				// should only be 1 registry, so we give it a set instance value
-				metricLabelInstance := "sg_instance"
-				instanceName := "docker-regsitry"
-				for _, m := range mf.Metric {
-					m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
-				}
-
-				mfs = append(mfs, mf)
-			}
-		}
-
-		return mfs, nil
+		return gatherers.Gather()
 	}
+}
+
+func filterMetric(key string) bool {
+	return strings.HasPrefix(key, "go_") || strings.HasPrefix(key, "promhttp_") || strings.HasPrefix(key, "process_")
 }
 
 // On notify, scrapes the specified endpoint for prometheus metrics and sends them down the
 // associated channel. If the endpoint is "", then the channel is closed so that subsequent
 // reads return an empty value instead of blocking indefinitely.
-func backgroundCollectNodeExporterMetrics(endpoint string, syncPoint metricsSyncPoint) {
+func backgroundCollectMetrics(endpoint string, syncPoint metricsSyncPoint) {
 	if endpoint == "" {
 		close(syncPoint.result)
 		return
@@ -114,7 +156,7 @@ func backgroundCollectNodeExporterMetrics(endpoint string, syncPoint metricsSync
 	collect := func() (map[string]*dto.MetricFamily, error) {
 		resp, err := (&http.Client{
 			Timeout: 2 * time.Second,
-		}).Get(endpoint + "/metrics")
+		}).Get(endpoint)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +169,7 @@ func backgroundCollectNodeExporterMetrics(endpoint string, syncPoint metricsSync
 
 		var parser expfmt.TextParser
 		mfMap, err := parser.TextToMetricFamilies(bytes.NewReader(b))
-		return mfMap, errors.Wrapf(err, "parsing node_exporter metrics, response: %s", string(b))
+		return mfMap, errors.Wrapf(err, "parsing metrics, response: %s", string(b))
 	}
 
 	for {

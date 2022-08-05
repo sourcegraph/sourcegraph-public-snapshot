@@ -108,7 +108,10 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 description: aggregation.selected === 'count' ? 'File opens' : 'Users opened files',
                 color: 'var(--body-color)',
                 position: 'right',
-                tooltip: 'File views can be generated from a search result, or be linked to directly.',
+                tooltip:
+                    aggregation.selected === 'count'
+                        ? 'The number of times a file is opened in the code host or IDE.'
+                        : 'The number users who opened file in the code host or IDE.',
             },
         ]
         return [stats, legends]

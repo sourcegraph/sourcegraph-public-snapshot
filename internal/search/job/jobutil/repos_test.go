@@ -16,6 +16,7 @@ func Test_descriptionMatchRanges(t *testing.T) {
 		2: "description for tests and validating input, among other things",
 		3: "description containing go but also\na newline",
 		4: "---zb bz zb bz---",
+		5: "this description has unicode 🙈 characters",
 	}
 
 	// NOTE: Any pattern passed into repo:has.description() is converted to the format `(?:*).*?(?:*)` when the predicate
@@ -118,6 +119,26 @@ func Test_descriptionMatchRanges(t *testing.T) {
 							Offset: 11,
 							Line:   0,
 							Column: 11,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:          "counts unicode characters correctly",
+			inputPatterns: []*regexp.Regexp{regexp.MustCompile(`(?is)(?:unicode).*?(?:🙈).*?(?:char)`)},
+			want: map[api.RepoID][]result.Range{
+				5: {
+					result.Range{
+						Start: result.Location{
+							Offset: 21,
+							Line:   0,
+							Column: 21,
+						},
+						End: result.Location{
+							Offset: 38,
+							Line:   0,
+							Column: 35,
 						},
 					},
 				},

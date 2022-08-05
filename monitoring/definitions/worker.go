@@ -181,7 +181,7 @@ func Worker() *monitoring.Dashboard {
 					Name:           "insights_queue_unutilized_size",
 					Description:    "insights queue size that is not utilized (not processing)",
 					Owner:          monitoring.ObservableOwnerCodeInsights,
-					Query:          "max(src_insights_search_queue_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
+					Query:          "max(src_query_runner_worker_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
 					DataMustExist:  false,
 					Warning:        monitoring.Alert().Greater(0.0).For(time.Minute * 30),
 					NextSteps:      "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",

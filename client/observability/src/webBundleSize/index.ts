@@ -15,7 +15,7 @@ import path from 'path'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { cleanEnv, bool, str } from 'envalid'
 
-import { WORKSPACES_PATH } from '@sourcegraph/build-config'
+import { STATIC_ASSETS_PATH, WORKSPACES_PATH } from '@sourcegraph/build-config'
 
 import { BUILDKITE_INFO, SDK_INFO } from '../constants'
 import { libhoneySDK } from '../sdk'
@@ -27,14 +27,19 @@ const environment = cleanEnv(process.env, {
     NODE_ENV: str({ choices: ['development', 'production'] }),
 })
 
-const bundleSizeStats = getBundleSizeStats(path.join(WORKSPACES_PATH, 'web/bundlesize.config'))
+const bundleSizeStats = getBundleSizeStats({
+    staticAssetsPath: STATIC_ASSETS_PATH,
+    bundlesizeConfigPath: path.join(WORKSPACES_PATH, 'web/bundlesize.config'),
+    webpackManifestPath: path.join(STATIC_ASSETS_PATH, 'webpack.manifest.json'),
+})
+
 const commit = execSync('git rev-parse HEAD').toString().trim()
 const branch = process.env.BUILDKITE_BRANCH || execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
 
 /**
  * Log every file size as a separate event to Honeycomb.
  */
-for (const [baseFilePath, fileSizes] of Object.entries(bundleSizeStats)) {
+for (const [baseFilePath, fileInfo] of Object.entries(bundleSizeStats)) {
     libhoneySDK.sendNow({
         name: 'bundlesize',
         [SemanticResourceAttributes.SERVICE_NAME]: 'bundlesize',
@@ -43,9 +48,14 @@ for (const [baseFilePath, fileSizes] of Object.entries(bundleSizeStats)) {
         'service.branch': branch,
 
         'bundle.file.name': baseFilePath,
-        'bundle.file.size.raw': fileSizes.raw,
-        'bundle.file.size.gzip': fileSizes.gzip,
-        'bundle.file.size.brotli': fileSizes.brotli,
+        'bundle.file.size.raw': fileInfo.raw,
+        'bundle.file.size.gzip': fileInfo.gzip,
+        'bundle.file.size.brotli': fileInfo.brotli,
+        'bundle.file.isInitial': fileInfo.isInitial,
+        'bundle.file.isDynamicImport': fileInfo.isDynamicImport,
+        'bundle.file.isDefaultVendors': fileInfo.isDefaultVendors,
+        'bundle.file.isCss': fileInfo.isCss,
+        'bundle.file.isJs': fileInfo.isJs,
         'bundle.enterprise': environment.ENTERPRISE,
         'bundle.env': environment.NODE_ENV,
 

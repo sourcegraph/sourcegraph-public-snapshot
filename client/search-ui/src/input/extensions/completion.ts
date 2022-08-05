@@ -8,6 +8,7 @@ import {
     Completion,
     snippet,
     CompletionSource,
+    acceptCompletion,
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
@@ -130,7 +131,10 @@ type SuggestionSource<R, C extends SuggestionContext> = (
  * provided suggestion sources.
  */
 export function searchQueryAutocompletion(
-    sources: SuggestionSource<CompletionResult | null, SuggestionContext>[]
+    sources: SuggestionSource<CompletionResult | null, SuggestionContext>[],
+    // By default we do not enable suggestion selection with enter because that
+    // interferes with the query submission logic.
+    applyOnEnter = false
 ): Extension {
     const override: CompletionSource[] = sources.map(source => context => {
         const position = context.pos
@@ -143,14 +147,48 @@ export function searchQueryAutocompletion(
         )
     })
 
+    // Customizing how completion items are rendered
+    const addToOptions: NonNullable<Parameters<typeof autocompletion>[0]>['addToOptions'] = [
+        // This renders the completion icon
+        {
+            render(completion) {
+                return createIcon(
+                    completion.type && completion.type in typeIconMap
+                        ? typeIconMap[completion.type as CompletionType]
+                        : typeIconMap[SymbolKind.UNKNOWN]
+                )
+            },
+            // Per CodeMirror documentation, 20 is the default icon
+            // position
+            position: 20,
+        },
+    ]
+
+    if (!applyOnEnter) {
+        // This renders the "Tab" indicator after the details text. It's
+        // only visible for the currently selected suggestion (handled
+        // by CSS).
+        addToOptions.push({
+            render() {
+                const node = document.createElement('span')
+                node.classList.add('completion-hint', styles.tabStyle)
+                node.textContent = 'Tab'
+                return node
+            },
+            position: 200,
+        })
+    }
+
     return [
         // Uses the default keymapping but changes accepting suggestions from Enter
         // to Tab
         Prec.highest(
             keymap.of(
-                completionKeymap.map(keybinding =>
-                    keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
-                )
+                applyOnEnter
+                    ? [...completionKeymap, { key: 'Tab', run: acceptCompletion }]
+                    : completionKeymap.map(keybinding =>
+                          keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
+                      )
             )
         ),
         EditorView.theme({
@@ -187,33 +225,8 @@ export function searchQueryAutocompletion(
             optionClass: completionItem => 'completion-type-' + (completionItem.type ?? ''),
             icons: false,
             closeOnBlur: true,
-            addToOptions: [
-                // This renders the completion icon
-                {
-                    render(completion) {
-                        return createIcon(
-                            completion.type && completion.type in typeIconMap
-                                ? typeIconMap[completion.type as CompletionType]
-                                : typeIconMap[SymbolKind.UNKNOWN]
-                        )
-                    },
-                    // Per CodeMirror documentation, 20 is the default icon
-                    // position
-                    position: 20,
-                },
-                // This renders the "Tab" indicator after the details text. It's
-                // only visible for the currently selected suggestion (handled
-                // by CSS).
-                {
-                    render() {
-                        const node = document.createElement('span')
-                        node.classList.add('completion-hint', styles.tabStyle)
-                        node.textContent = 'Tab'
-                        return node
-                    },
-                    position: 200,
-                },
-            ],
+            selectOnOpen: !applyOnEnter,
+            addToOptions,
         }),
     ]
 }

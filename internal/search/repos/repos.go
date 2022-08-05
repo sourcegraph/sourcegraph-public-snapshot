@@ -461,8 +461,11 @@ func (r *Resolver) filterHasCommitAfter(
 			rev := rev
 			g.Go(func(ctx context.Context) error {
 				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, rev, authz.DefaultSubRepoPermsChecker); err != nil {
-					if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
-						return err
+					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
+						// If the revision does not exist or the repo does not exist,
+						// it certainly does not have any commits after some time.
+						// Ignore the error, but filter this repo out.
+						return nil
 					}
 					return err
 				} else if !hasCommitAfter {

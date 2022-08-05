@@ -94,11 +94,19 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 value: referenceClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'References' : 'Users using references',
                 color: 'var(--cyan)',
+                tooltip:
+                    aggregation.selected === 'count'
+                        ? "The number of times users clicked 'References' in code navigation hovers to view usages of an item."
+                        : "The number of users who clicked 'References'. in code navigation hovers to view usages of an item.",
             },
             {
                 value: definitionClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'Definitions' : 'Users using definitions',
                 color: 'var(--orange)',
+                tooltip:
+                    aggregation.selected === 'count'
+                        ? "The number of times users clicked 'Definitions' in code navigation hovers to view the definition of an item."
+                        : "The number of users who clicked 'Definitions' in code navigation hovers to view the definition of an item.",
             },
             {
                 value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
@@ -106,7 +114,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 position: 'right',
                 color: 'var(--body-color)',
                 tooltip:
-                    'Cross repository code intel identifies symbols in code throughout your Sourcegraph instance, in a single click, without locating and downloading a repository.',
+                    'Cross repository code navigation identifies symbols in code throughout your Sourcegraph instance, in a single click, without locating and downloading a repository.',
             },
         ]
 
