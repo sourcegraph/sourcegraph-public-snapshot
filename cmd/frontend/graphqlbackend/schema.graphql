@@ -418,6 +418,10 @@ type Mutation {
         date: String
     ): GitCommit
     """
+    Logs a user event. No longer used, only here for backwards compatibility with IDE and browser extensions.
+    """
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
+    """
     Logs an event.
     """
     logEvent(
@@ -5952,6 +5956,33 @@ type UserUsageStatistics {
     The last time the user was active on a code host integration.
     """
     lastActiveCodeHostIntegrationTime: String
+}
+
+"""
+A user event.
+"""
+enum UserEvent {
+    PAGEVIEW
+    SEARCHQUERY
+    CODEINTEL
+    CODEINTELREFS
+    CODEINTELINTEGRATION
+    CODEINTELINTEGRATIONREFS
+
+    """
+    Product stages
+    """
+    STAGEMANAGE
+    STAGEPLAN
+    STAGECODE
+    STAGEREVIEW
+    STAGEVERIFY
+    STAGEPACKAGE
+    STAGEDEPLOY
+    STAGECONFIGURE
+    STAGEMONITOR
+    STAGESECURE
+    STAGEAUTOMATE
 }
 
 """

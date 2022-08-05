@@ -68,6 +68,15 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 	return nil
 }
 
+// No longer used, only here for backwards compatibility with IDE and browser extensions.
+// Functionality removed in https://github.com/sourcegraph/sourcegraph/pull/38826.
+func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
+	Event        string
+	UserCookieID string
+}) (*EmptyResponse, error) {
+	return nil, nil
+}
+
 type Event struct {
 	Event          string
 	UserCookieID   string
