@@ -5,10 +5,10 @@ import { useMemo } from 'react'
 import { of } from 'rxjs'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
-import { authenticatedUser } from '@sourcegraph/web/src/auth'
+import { useExperimentalFeatures } from '@sourcegraph/web/src/stores/experimentalFeatures'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../web/src/stores'
+// import { useExperimentalFeatures } from '../../../../web/src/stores/'
 import { AuthenticatedUser } from '../../auth'
 
 import { Completion, resolveFieldAlias } from './filters'
@@ -171,7 +171,7 @@ export function useComputeResults(
     authenticatedUser: AuthenticatedUser | null,
     computeOutput: string
 ): { isLoading: boolean; results: Set<string> } {
-    const checkHomePanelsFeatureFlag = useExperimentalFeatures((features: { homePanelsComputeSuggestions: unknown }) => features.homePanelsComputeSuggestions)
+    const checkHomePanelsFeatureFlag = useExperimentalFeatures()
     const gitRecentFiles = useObservable(
         useMemo(
             () =>
@@ -208,11 +208,12 @@ export function useComputeResults(
 export const predicateCompletion = (field: string): Completion[] => {
     if (field === 'repo') {
         return [
-            {
+            // this snipped isn't working because it's in the wrong place
+            /* {
                 label: useComputeResults(authenticatedUser, '$repo › $path'),
                 insertText: '$repo',
 
-            },
+            },*/
             {
                 label: 'contains.file(...)',
                 insertText: 'contains.file(${1:CHANGELOG})',
