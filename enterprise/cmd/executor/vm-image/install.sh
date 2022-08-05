@@ -271,13 +271,7 @@ function setup_iptables() {
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 169.254.0.0/16 -j DROP
 
   # Store the iptables config.
-  iptables-save >/etc/iptables-store.conf
-  # And make sure it gets loaded on boot.
-  cat <<EOF >/etc/network/if-up.d/iptables
-#!/bin/sh
-iptables-restore < /etc/iptables-store.conf
-EOF
-  chmod +x /etc/network/if-up.d/iptables
+  iptables-save >/etc/iptables/rules.v4
 }
 
 function cleanup() {
