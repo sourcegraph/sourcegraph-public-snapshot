@@ -3,8 +3,9 @@ package querybuilder
 import (
 	"fmt"
 	"reflect"
-	"sort"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/grafana/regexp"
 )
@@ -79,39 +80,68 @@ func Test_findGroups(t *testing.T) {
 	}
 }
 
-func TestThing(t *testing.T) {
-	pattern := `name:\((.*)\)(.*) [(] asdf`
-
-	text := `name:(test1)bob ( asdf`
-
-	reg, err := regexp.Compile(pattern)
-	if err != nil {
-		panic(err)
+func Test_replaceCaptureGroupsWithString(t *testing.T) {
+	tests := []struct {
+		name     string
+		pattern  string
+		text     string
+		expected string
+		maxGroup int
+	}{
+		{
+			name:     "1",
+			pattern:  `(\w+)-(\w+)`,
+			text:     `cat-cow dog-bat`,
+			expected: `(?:cat|dog)-(?:cow|bat)`,
+			maxGroup: -1,
+		},
+		{
+			name:     "2",
+			pattern:  `(\w+)-(\w+)`,
+			text:     `cat-cow dog-bat`,
+			expected: `(\w+)-(\w+)`,
+			maxGroup: 0,
+		},
+		{
+			name:     "3",
+			pattern:  `(\w+)-(\w+)`,
+			text:     `cat-cow dog-bat`,
+			expected: `(?:cat|dog)-(\w+)`,
+			maxGroup: 1,
+		},
+		{
+			name:     "4",
+			pattern:  `(\w+)-(\w+)`,
+			text:     `cat-cow dog-bat`,
+			expected: `(?:cat|dog)-(?:cow|bat)`,
+			maxGroup: 2,
+		},
+		{
+			name:     "5",
+			pattern:  `(\w+)-(?:\w+)-(\w+)`,
+			text:     `cat-cow-camel`,
+			expected: `(?:cat)-(?:\w+)-(?:camel)`,
+			maxGroup: -1,
+		},
+		{
+			name:     "6",
+			pattern:  `(\w+)-(?:\w+)-(\w+)`,
+			text:     `cat-cow-camel`,
+			expected: `(?:cat)-(?:\w+)-(\w+)`,
+			maxGroup: 1,
+		},
 	}
-
-	matches := reg.FindStringSubmatch(text)
-	println(len(matches))
-	for _, match := range matches {
-		fmt.Println(match)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			reg, err := regexp.Compile(test.pattern)
+			if err != nil {
+				return
+			}
+			matches := reg.FindAllStringSubmatch(test.text, -1)
+			groups := findGroups(test.pattern)
+			if diff := cmp.Diff(test.expected, replaceCaptureGroupsWithString(test.pattern, groups, matches, test.maxGroup)); diff != "" {
+				t.Errorf("unexpected pattern (want/got): %s", diff)
+			}
+		})
 	}
-
-	groups := findGroups(pattern)
-
-	var replacements []group
-	for i := range groups {
-		if !groups[i].capturing {
-			continue
-		}
-		groups[i].value = matches[groups[i].number]
-		replacements = append(replacements, groups[i])
-	}
-
-	sort.Slice(replacements, func(i, j int) bool {
-		return replacements[i].number < replacements[j].number
-	})
-
-	fmt.Println(groups)
-	fmt.Println(fmt.Sprintf("old_pattern: %s", pattern))
-	fmt.Println(fmt.Sprintf("document: %s", text))
-	fmt.Println(fmt.Sprintf("new_pattern: %s", replaceRange(pattern, replacements)))
 }
