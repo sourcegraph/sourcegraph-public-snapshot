@@ -53,13 +53,13 @@ import {
 import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { queryTokens } from './parsedQuery'
 
 import styles from '../CodeMirrorQueryInput.module.scss'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 type CompletionType = SymbolKind | 'queryfilter' | 'repository'
 
@@ -178,19 +178,19 @@ export function searchQueryAutocompletion(
                     throw new Error('this should not happen')
                 }
                 const nodes = tokens.term
-                .flatMap(token => decorate(token))
-                .map(token => {
-                    const decoration = toDecoration(completion.label, token)
-                    const node = document.createElement('span')
-                    node.className = decoration.className
-                    node.textContent = decoration.value
-                    return node
-                })
+                    .flatMap(token => decorate(token))
+                    .map(token => {
+                        const decoration = toDecoration(completion.label, token)
+                        const node = document.createElement('span')
+                        node.className = decoration.className
+                        node.textContent = decoration.value
+                        return node
+                    })
 
                 const container = document.createElement('div')
                 container.style.whiteSpace = 'initial'
                 for (const node of nodes) {
-                    container.appendChild(node)
+                    container.append(node)
                 }
                 return container
             },

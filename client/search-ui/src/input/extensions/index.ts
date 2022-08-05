@@ -12,7 +12,6 @@ import {
     StandardSuggestionSource,
 } from './completion'
 import { loadingIndicator } from './loading-indicator'
-import { CompletionResult } from '@codemirror/autocomplete'
 
 export { createDefaultSuggestionSources, searchQueryAutocompletion, StandardSuggestionSource }
 
@@ -77,7 +76,7 @@ export const createDefaultSuggestions = ({
      * Whether or not to allow suggestions selection by Enter key.
      */
     applyOnEnter?: boolean
-}) => [
+}): Extension => [
     searchQueryAutocompletion(
         createDefaultSuggestionSources({
             fetchSuggestions: createCancelableFetchSuggestions(fetchSuggestions),

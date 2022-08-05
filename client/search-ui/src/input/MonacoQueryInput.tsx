@@ -20,11 +20,11 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { StandardSuggestionSource } from './extensions'
 import { IEditor } from './LazyMonacoQueryInput'
 import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
-import { StandardSuggestionSource } from './extensions'
 
 export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,
