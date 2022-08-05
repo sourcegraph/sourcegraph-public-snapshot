@@ -3,6 +3,8 @@ package querybuilder
 import (
 	"sort"
 	"strings"
+
+	"github.com/grafana/regexp"
 )
 
 // replaceCaptureGroupsWithString will replace capturing groups in a regexp
@@ -22,9 +24,16 @@ func replaceCaptureGroupsWithString(pattern string, groups []group, matches [][]
 	}
 	var sb strings.Builder
 
+	capturing := make([]group, 0, len(groups))
+	for _, g := range groups {
+		if g.capturing {
+			capturing = append(capturing, g)
+		}
+	}
+
 	// groups need to be in stable order
-	sort.Slice(groups, func(i, j int) bool {
-		return groups[i].start < groups[j].start
+	sort.Slice(capturing, func(i, j int) bool {
+		return capturing[i].start < capturing[j].start
 	})
 	// todo handle nested groups by generating a set of non-overlapping groups
 
@@ -35,7 +44,7 @@ func replaceCaptureGroupsWithString(pattern string, groups []group, matches [][]
 	}
 	for _, match := range matches {
 		for inner, literal := range match {
-			pivotMatches[inner] = append(pivotMatches[inner], literal)
+			pivotMatches[inner] = append(pivotMatches[inner], regexp.QuoteMeta(literal))
 		}
 	}
 
@@ -43,10 +52,10 @@ func replaceCaptureGroupsWithString(pattern string, groups []group, matches [][]
 		// even though the length of groups isn't necessarily the number of matched
 		// groups we can still use that as the max index here. The iteration will
 		// effectively become the minimum of this and the actual length. We
-		maxGroup = len(groups)
+		maxGroup = len(capturing)
 	}
 	offset := 0
-	for groupIndex, group := range groups {
+	for groupIndex, group := range capturing {
 		if !group.capturing {
 			continue
 		} else if groupIndex > (maxGroup - 1) {

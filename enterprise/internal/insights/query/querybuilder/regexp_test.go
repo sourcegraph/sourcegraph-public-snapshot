@@ -130,6 +130,20 @@ func Test_replaceCaptureGroupsWithString(t *testing.T) {
 			expected: `(?:cat)-(?:\w+)-(\w+)`,
 			maxGroup: 1,
 		},
+		{
+			name:     "7 ensure non-capturing groups don't count towards group numbers",
+			pattern:  `(\w+)-(?:\w+)-(\w+)`,
+			text:     `cat-cow-camel`,
+			expected: `(?:cat)-(?:\w+)-(?:camel)`,
+			maxGroup: 2,
+		},
+		{
+			name:     "ensure literal values are escaped in the new pattern",
+			pattern:  `(.*)`,
+			text:     `\w`,
+			expected: `(?:\\w)`,
+			maxGroup: -1,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
