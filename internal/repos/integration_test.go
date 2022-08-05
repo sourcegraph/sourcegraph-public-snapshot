@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -25,7 +26,8 @@ func TestIntegration(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	conf.Get().ExperimentalFeatures.EnableWebhookSync = true
+	// t.Parallel()
 
 	for _, tc := range []struct {
 		name string
@@ -52,6 +54,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
+		{"WebhookWorker/EnqueueSingleWebhookBuildJob", testEnqueueSingleWebhookBuildJob},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))

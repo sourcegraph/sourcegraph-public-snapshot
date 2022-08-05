@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -55,6 +56,7 @@ func main() {
 		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
+		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
 		// fresh
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),

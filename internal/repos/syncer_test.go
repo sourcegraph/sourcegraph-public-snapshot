@@ -2,8 +2,10 @@ package repos_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -13,11 +15,18 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -2356,4 +2365,121 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 		),
 	}
 	return syncer, dbRepos
+}
+
+func testEnqueueSingleWebhookBuildJob(s repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+		logger := logtest.Scoped(t)
+
+		token := os.Getenv("GITHUB_TOKEN")
+
+		esStore := s.ExternalServiceStore()
+		repoStore := s.RepoStore()
+
+		repo := &types.Repo{
+			ID:   1,
+			Name: api.RepoName("ghe.sgdev.org/milton/test"),
+		}
+		if err := repoStore.Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+
+		ghConn := &schema.GitHubConnection{
+			Url:      extsvc.KindGitHub,
+			Token:    token,
+			Repos:    []string{string(repo.Name)},
+			Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
+		}
+		bs, err := json.Marshal(ghConn)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		config := string(bs)
+		svc := &types.ExternalService{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "TestService",
+			Config:      config,
+		}
+		if err := esStore.Upsert(ctx, svc); err != nil {
+			t.Fatal(err)
+		}
+
+		sourcer := repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, repo))
+		syncer := &repos.Syncer{
+			Logger:  logger,
+			Sourcer: sourcer,
+			Store:   s,
+			Now:     time.Now,
+		}
+
+		if err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond); err != nil {
+			t.Fatal(err)
+		}
+
+		jobChan := make(chan *webhookworker.Job)
+		workerStore := webhookworker.CreateWorkerStore(s.Handle())
+		metrics := workerutil.NewMetrics(&observation.Context{
+			Logger:     logger,
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}, fmt.Sprintf("%s_processor", "webhook_build_worker"))
+
+		worker := webhookworker.NewWorker(ctx, &fakeWebhookBuildHandler{
+			store:   s,
+			jobChan: jobChan,
+		}, workerStore, metrics)
+
+		go worker.Start()
+		defer worker.Stop()
+
+		want := &webhookworker.Job{
+			RepoID:     int32(repo.ID),
+			RepoName:   string(repo.Name),
+			Org:        strings.Split(string(repo.Name), "/")[0],
+			ExtSvcID:   svc.ID,
+			ExtSvcKind: svc.Kind,
+		}
+
+		var have *webhookworker.Job
+
+		select {
+		case have = <-jobChan:
+			assertSameJob(t, want, have)
+			return
+		case <-time.After(5 * time.Second):
+			t.Fatal("Timeout")
+		}
+	}
+}
+
+type fakeWebhookBuildHandler struct {
+	store   repos.Store
+	jobChan chan *webhookworker.Job
+}
+
+func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	job, ok := record.(*webhookworker.Job)
+	if !ok {
+		return errors.Newf("expected webhookworker.Job, got %T", record)
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case h.jobChan <- job:
+		return nil
+	}
+}
+
+func assertSameJob(t *testing.T, want, have *webhookworker.Job) {
+	t.Helper()
+
+	if want.RepoID != have.RepoID ||
+		want.RepoName != have.RepoName ||
+		want.Org != have.Org ||
+		want.ExtSvcID != have.ExtSvcID ||
+		want.ExtSvcKind != have.ExtSvcKind {
+		t.Fatal("have, want not the same")
+	}
 }
