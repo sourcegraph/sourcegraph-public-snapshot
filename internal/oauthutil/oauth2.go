@@ -17,9 +17,8 @@ import (
 
 type Endpoint = oauth2.Endpoint
 
-// OauthContext contains configuration that is used in requests to refresh expired oauth tokens
+// OauthContext contains the configuration used in the requests to get a new token.
 type OauthContext struct {
-	//ServiceType string
 	// ClientID is the application's ID.
 	ClientID string
 	// ClientSecret is the application's secret.
@@ -42,12 +41,8 @@ func (e oauthError) Error() string {
 	return fmt.Sprintf("OAuth response error %q description %q", e.Err, e.ErrorDescription)
 }
 
-// getOAuthErrorDetails only returns error if it's an OAuth error. For other
-// errors like 404 we don't return error. We do this because this method is only
-// intended to be used by oauth to refresh access token on expiration.
-//
-// When it's error like 404, GitLab API doesn't return it as error so we keep
-// the similar behavior and let caller check the response status code.
+// getOAuthErrorDetails is a method that only returns OAuth errors.
+// It is intended to be used in the oauth flow, when refreshing an expired token.
 func getOAuthErrorDetails(body []byte) error {
 	var oe oauthError
 	if err := json.Unmarshal(body, &oe); err != nil {
@@ -66,7 +61,9 @@ func getOAuthErrorDetails(body []byte) error {
 // TokenRefresher is a function to refresh and return the new OAuth token.
 type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext) (string, error)
 
-// DoRequest makes a http request and retries it once if an "401" error is returned due to the token being expired.
+// DoRequest is a function that uses the Doer interface to make HTTP requests and to handle "401 Unauthorized" errors.
+// When the 401 error is due to a token being expired, it will use the TokenRefresher function to update the token.
+// If the token is updated successfully, a new request will be made. Only one retry is allowed.
 func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx OauthContext) (code int, header http.Header, body []byte, err error) {
 	for i := 0; i < 2; i++ {
 		if auther != nil {
@@ -93,7 +90,6 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 				if _, ok := err.(*oauthError); ok {
 					//Refresh the token
 					newToken, err := tokenRefresher(ctx, doer, oauthCtx)
-
 					if err != nil {
 						return 0, nil, nil, errors.Wrap(err, "refresh token")
 					}

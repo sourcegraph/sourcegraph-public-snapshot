@@ -31,7 +31,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, nil)
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -43,7 +43,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	t.Run("not the code host of the account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -91,6 +91,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				}, nil
 			},
 		},
+		nil,
 	)
 
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
@@ -120,7 +121,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, nil)
 		_, err := p.FetchRepoPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -132,7 +133,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("not the code host of the repository", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, nil)
 		_, err := p.FetchRepoPerms(context.Background(),
 			&extsvc.Repository{
 				URI: "github.com/user/repo",
@@ -188,6 +189,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 					}, nil
 				},
 			},
+			nil,
 		)
 
 		accountIDs, err := p.FetchRepoPerms(context.Background(),
@@ -245,6 +247,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 					}, nil
 				},
 			},
+			nil,
 		)
 
 		accountIDs, err := p.FetchRepoPerms(context.Background(),

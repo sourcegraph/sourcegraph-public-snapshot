@@ -1,7 +1,6 @@
 package oauthutil
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,46 +16,51 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Token represents the credentials used to authorize
-// the requests to access protected resources on the OAuth 2.0
-// provider's backend.
+// Adapted from
+// https://github.com/golang/oauth2/blob/2e8d9340160224d36fd555eaf8837240a7e239a7/token.go
 //
-// This type is a mirror of oauth2.Token and exists to break
-// an otherwise-circular dependency. Other internal packages
-// should convert this Token into an oauth2.Token before use.
+// Copyright (c) 2009 The Go Authors. All rights reserved.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+// * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Token contains the credentials used during the flow to retrieve and refresh an expired token
 type Token struct {
-	// AccessToken is the token that authorizes and authenticates
-	// the requests.
-	AccessToken string
-
-	// TokenType is the type of token.
-	// The Type method returns either this or "Bearer", the default.
-	TokenType string
-
-	// RefreshToken is a token that's used by the application
-	// (as opposed to the user) to refresh the access token
-	// if it expires.
+	AccessToken  string
+	TokenType    string
 	RefreshToken string
-
-	// Expiry is the optional expiration time of the access token.
-	//
-	// If zero, TokenSource implementations will reuse the same
-	// token forever and RefreshToken or equivalent
-	// mechanisms for that TokenSource will not be used.
-	Expiry time.Time
-
-	// Raw optionally contains extra metadata from the server
-	// when updating a token.
-	Raw interface{}
+	Expiry       time.Time
+	Raw          interface{}
 }
 
-// tokenJSON is the struct representing the HTTP response from OAuth2
-// providers returning a token or error in JSON form.
+// tokenJSON represents the HTTP response
 type tokenJSON struct {
 	AccessToken      string         `json:"access_token"`
 	TokenType        string         `json:"token_type"`
 	RefreshToken     string         `json:"refresh_token"`
-	ExpiresIn        expirationTime `json:"expires_in"` // at least PayPal returns string, while most return number
+	ExpiresIn        expirationTime `json:"expires_in"`
 	Error            string         `json:"error"`
 	ErrorDescription string         `json:"error_description"`
 	ErrorURI         string         `json:"error_uri"`
@@ -91,15 +95,6 @@ func (e *expirationTime) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// RegisterBrokenAuthHeaderProvider previously did something. It is now a no-op.
-//
-// Deprecated: this function no longer does anything. Caller code that
-// wants to avoid potential extra HTTP requests made during
-// auto-probing of the provider's auth style should set
-// Endpoint.AuthStyle.
-func RegisterBrokenAuthHeaderProvider(tokenURL string) {}
-
-// AuthStyle is a copy of the golang.org/x/oauth2 package's AuthStyle type.
 type AuthStyle int
 
 const (
@@ -111,10 +106,7 @@ const (
 // from tokenURL using the provided clientID, clientSecret, and POST
 // body parameters.
 //
-// inParams is whether the clientID & clientSecret should be encoded
-// as the POST body. An 'inParams' value of true means to send it in
-// the POST body (along with any values in v); false means to send it
-// in the Authorization header.
+// If AuthStyleInParams is true, the provided values will be encoded in the POST body.
 func newTokenRequest(oauthCtx OauthContext, refeshToken string, authStyle AuthStyle) (*http.Request, error) {
 	v := url.Values{}
 	if authStyle == AuthStyleInParams {
@@ -136,28 +128,24 @@ func newTokenRequest(oauthCtx OauthContext, refeshToken string, authStyle AuthSt
 	return req, nil
 }
 
-func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
+func RetrieveToken(doer httpcli.Doer, oauthCtx OauthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
 	req, err := newTokenRequest(oauthCtx, refreshToken, authStyle)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := doTokenRoundTrip(ctx, doer, req)
+	token, err := doTokenRoundTrip(doer, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do token round trip")
 	}
 
-	// Don't overwrite `RefreshToken` with an empty value
-	// if this was a token refreshing request.
 	if token != nil && token.RefreshToken == "" {
-		//token.RefreshToken = oauthCtx.RefreshToken
 		token.RefreshToken = refreshToken
 	}
-
 	return token, err
 }
 
-func doTokenRoundTrip(ctx context.Context, doer httpcli.Doer, req *http.Request) (*Token, error) {
+func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 	r, err := doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
