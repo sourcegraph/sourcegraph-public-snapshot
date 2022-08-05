@@ -44,7 +44,7 @@
     margin-bottom: 1.5rem;
     flex-shrink: 0;
 
-    & > span {
+    > span {
         display: block;
         max-height: max(15vh, 80px);
         overflow-y: auto;
