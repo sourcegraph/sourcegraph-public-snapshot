@@ -2449,8 +2449,10 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 
 		select {
 		case have = <-jobChan:
-			assertSameJob(t, want, have)
-			return
+			if (cmp.Diff(have, want, jobComparer)) == "" {
+				return
+			}
+			t.Fatal("have, want not the same")
 		case <-time.After(5 * time.Second):
 			t.Fatal("Timeout")
 		}
@@ -2474,14 +2476,10 @@ func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger,
 	}
 }
 
-func assertSameJob(t *testing.T, want, have *webhookworker.Job) {
-	t.Helper()
-
-	if want.RepoID != have.RepoID ||
-		want.RepoName != have.RepoName ||
-		want.Org != have.Org ||
-		want.ExtSvcID != have.ExtSvcID ||
-		want.ExtSvcKind != have.ExtSvcKind {
-		t.Fatal("have, want not the same")
-	}
-}
+var jobComparer = cmp.Comparer(func(x, y *webhookworker.Job) bool {
+	return x.RepoID == y.RepoID &&
+		x.RepoName == y.RepoName &&
+		x.Org == y.Org &&
+		x.ExtSvcID == y.ExtSvcID &&
+		x.ExtSvcKind == y.ExtSvcKind
+})
