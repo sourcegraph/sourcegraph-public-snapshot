@@ -69,11 +69,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                 [styles.rootWithLegend]: isSeriesLikeInsight,
             })}
         >
-            <ParentSize
-                debounceTime={0}
-                enableDebounceLeadingCall={true}
-                className={styles.responsiveContainer}
-            >
+            <ParentSize debounceTime={0} enableDebounceLeadingCall={true} className={styles.responsiveContainer}>
                 {parent => (
                     <>
                         <BackendAlertOverlay
