@@ -147,7 +147,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
         if (preventNewLine) {
             // NOTE: If a submit handler is assigned to the query input then the pressing
-            // enter won't insert a line break anyway. In that case, this exnteions ensures
+            // enter won't insert a line break anyway. In that case, this extensions ensures
             // that line breaks are stripped from pasted input.
             extensions.push(singleLine)
         } else {
@@ -164,10 +164,35 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
 
         if (showSuggestionsOnFocus) {
+            // This is currently used when search history suggestions are
+            // enabled. It looks like CodeMirror doesn't automatically trigger
+            // the autocompletion again when the cursor is at the start of the
+            // input after deleting some characters. This update listener makes
+            // sure that. Since `showSuggestionsOnFocus` is currently only
+            // enabled when we show search history suggestions, we use a single
+            // listener to handle that case too.
+            const TIMEOUT = 500
+            let timer: number | null = null
+            const clear = () => {
+                if (timer !== null) {
+                    clearTimeout(timer)
+                }
+                timer = null
+            }
+
             extensions.push(
                 EditorView.updateListener.of(update => {
-                    if (update.focusChanged && update.view.hasFocus && update.view.state.doc.length === 0) {
-                        startCompletion(update.view)
+                    if (update.view.state.doc.length === 0) {
+                        if (update.focusChanged && update.view.hasFocus) {
+                            startCompletion(update.view)
+                        } else if (update.docChanged) {
+                            timer = window.setTimeout(() => {
+                                timer = null
+                                startCompletion(update.view)
+                            }, TIMEOUT)
+                        }
+                    } else {
+                        clear()
                     }
                 })
             )
