@@ -67,34 +67,34 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return nil
 	}
 
-	secret, err := randomHex(32)
-	if err != nil {
-		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: secret generation failed"))
-	}
-
 	baseURL, err := url.Parse("")
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: parse baseURL failed"))
 	}
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer)
 
-	id, err := client.FindSyncWebhook(ctx, job.RepoName)
+	payload, err := client.FindSyncWebhook(ctx, job.RepoName)
 	if err != nil && err.Error() != "unable to find webhook" {
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
 	}
 
 	// found webhook from GitHub API
 	// don't build a new one
-	if id != 0 {
-		if err := addSecretToExtSvc(svc, conn, job.Org, secret); err != nil {
+	if payload != nil {
+		if err := addSecretToExtSvc(svc, conn, job.Org, payload.Config.Secret); err != nil {
 			logger.Error("handleKindGitHub: Webhook found but addSecretToExtSvc failed")
 		}
 
-		logger.Info(fmt.Sprintf("Webhook exists with ID: %d", id))
+		logger.Info("webhook found", log.Int("ID", payload.ID))
 		return nil
 	}
 
-	id, err = client.CreateSyncWebhook(ctx, job.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret) // TODO: Add to DB
+	secret, err := randomHex(32)
+	if err != nil {
+		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: secret generation failed"))
+	}
+
+	id, err := client.CreateSyncWebhook(ctx, job.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret)
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: CreateSyncWebhook failed")
 	}
@@ -103,7 +103,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		logger.Error("handleKindGitHub: Webhook created but addSecretToExtSvc failed")
 	}
 
-	logger.Info(fmt.Sprintf("Created webhook with ID: %d", id))
+	logger.Info("webhook created", log.Int("ID", id))
 	return nil
 }
 
