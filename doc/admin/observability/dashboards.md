@@ -18510,7 +18510,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100800`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_cpu_seconds_total{sg_job=~"sourcegraph-executors",mode!~"(idle|iowait)",sg_instance=~".*"}[$__rate_interval])) by(sg_instance) / count(node_cpu_seconds_total{sg_job=~"sourcegraph-executors",mode="system",sg_instance=~".*"}) by (sg_instance) * 100`
+Query: `sum(rate(node_cpu_seconds_total{sg_job=~"sourcegraph-executors-registry",mode!~"(idle|iowait)",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) / count(node_cpu_seconds_total{sg_job=~"sourcegraph-executors-registry",mode="system",sg_instance=~"docker-registry"}) by (sg_instance) * 100`
 
 </details>
 
@@ -18530,7 +18530,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100801`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])`
+Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
 
 </details>
 
@@ -18550,7 +18550,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100810`
 <details>
 <summary>Technical details</summary>
 
-Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"sourcegraph-executors",sg_instance=~".*"}) by (sg_instance) / sum(node_memory_MemTotal_bytes{sg_job=~"sourcegraph-executors",sg_instance=~".*"}) by (sg_instance)) * 100`
+Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}) by (sg_instance) / sum(node_memory_MemTotal_bytes{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}) by (sg_instance)) * 100`
 
 </details>
 
@@ -18570,7 +18570,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100811`
 <details>
 <summary>Technical details</summary>
 
-Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])) * 100`
+Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) * 100`
 
 </details>
 
@@ -18590,7 +18590,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100812`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])`
+Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
 
 </details>
 
@@ -18610,7 +18610,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100820`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk) * 100`
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk) * 100`
 
 </details>
 
@@ -18630,7 +18630,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100821`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk)`
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk)`
 
 </details>
 
@@ -18650,7 +18650,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100822`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])`
+Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
 
 </details>
 
@@ -18670,7 +18670,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100830`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])) by(sg_instance) * 8`
+Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) * 8`
 
 </details>
 
@@ -18690,7 +18690,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100831`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_drop_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])) by(sg_instance)`
+Query: `sum(rate(node_network_receive_drop_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18710,7 +18710,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100832`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_errs_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])) by(sg_instance)`
+Query: `sum(rate(node_network_receive_errs_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18730,7 +18730,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100840`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])) by(sg_instance) * 8`
+Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) * 8`
 
 </details>
 
@@ -18750,7 +18750,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100841`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])) by(sg_instance)`
+Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18770,7 +18770,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100842`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"sourcegraph-executors",sg_instance=~".*"}[$__rate_interval])) by(sg_instance)`
+Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
