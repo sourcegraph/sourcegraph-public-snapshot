@@ -41,7 +41,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fix issue in the streaming Compute API to return immediately when query parsing fails. [#39842](https://github.com/sourcegraph/sourcegraph/pull/39842)
+- Fix issue with capture group insights to fail immediately if they contain invalid queries. [#39842](https://github.com/sourcegraph/sourcegraph/pull/39842)
 - Fix issue during conversion of just in time code insights to start backfilling data from the current time instead of the date the insight was created. [#39923](https://github.com/sourcegraph/sourcegraph/pull/39923)
 
 ## 3.42.1
