@@ -2372,6 +2372,12 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 		ctx := context.Background()
 		logger := logtest.Scoped(t)
 
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableWebhookRepoSync: true,
+			},
+		}})
+
 		token := os.Getenv("GITHUB_TOKEN")
 
 		esStore := s.ExternalServiceStore()
