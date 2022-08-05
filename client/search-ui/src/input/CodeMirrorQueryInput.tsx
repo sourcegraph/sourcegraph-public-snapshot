@@ -173,7 +173,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             // listener to handle that case too.
             const TIMEOUT = 1000
             let timer: number | null = null
-            const clear = () => {
+            const clear = (): void => {
                 if (timer !== null) {
                     clearTimeout(timer)
                 }
