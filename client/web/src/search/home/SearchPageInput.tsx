@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -18,6 +18,7 @@ import { ActivationProps } from '@sourcegraph/shared/src/components/activation/A
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -31,6 +32,7 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
+import { searchQueryHistorySource } from '../input/completion'
 import { QuickLinks } from '../QuickLinks'
 
 import styles from './SearchPageInput.module.scss'
@@ -71,6 +73,20 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter = useExperimentalFeatures(
         features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
+    const suggestionSources = useMemo(
+        () =>
+            coreWorkflowImprovementsEnabled && props.authenticatedUser
+                ? [
+                      searchQueryHistorySource({
+                          userId: props.authenticatedUser.id,
+                          selectedSearchContext: props.selectedSearchContextSpec,
+                      }),
+                  ]
+                : [],
+        [props.authenticatedUser, props.selectedSearchContextSpec, coreWorkflowImprovementsEnabled]
     )
 
     const quickLinks =
@@ -135,10 +151,13 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
+                        autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                         applySuggestionsOnEnter={applySuggestionsOnEnter}
+                        suggestionSources={suggestionSources}
+                        defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
+                        showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
