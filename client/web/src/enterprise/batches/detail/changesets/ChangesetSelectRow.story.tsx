@@ -52,7 +52,7 @@ export const AllStates: Story = args => {
     // totalChangesets should be used to set the max of the range for visibleChangesets and selectableChangesets
     // selectableChangesets should be used to set the max of the range for selectedChangesets
     // This is an edge case that can be done with Storybook knobs but cannot be done with Storybook controls at this time, however this is the intended use of the controls
-    const totalChangesets = 100
+    // totalChangesets default value should be 100
     const visibleChangesets = args.visibleChangesets
     const selectableChangesets = args.selectableChangesets
     const selectedChangesets = args.selectedChangesets
