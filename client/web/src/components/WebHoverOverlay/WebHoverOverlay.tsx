@@ -35,15 +35,16 @@ export interface WebHoverOverlayProps
 }
 
 export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<WebHoverOverlayProps>> = props => {
+    const { onAlertDismissed: outerOnAlertDismissed } = props
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
             if (!dismissedAlerts.includes(alertType)) {
                 setDismissedAlerts([...dismissedAlerts, alertType])
-                props.onAlertDismissed?.(alertType)
+                outerOnAlertDismissed?.(alertType)
             }
         },
-        [dismissedAlerts, setDismissedAlerts]
+        [dismissedAlerts, setDismissedAlerts, outerOnAlertDismissed]
     )
 
     let propsToUse = props
