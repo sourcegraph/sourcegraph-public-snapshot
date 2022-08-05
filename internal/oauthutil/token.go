@@ -46,7 +46,7 @@ import (
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Token contains the credentials used during the flow to retrieve and refresh an expired token
+// Token contains the credentials used during the flow to retrieve and refresh an expired token.
 type Token struct {
 	AccessToken  string
 	TokenType    string
@@ -107,13 +107,13 @@ const (
 // body parameters.
 //
 // If AuthStyleInParams is true, the provided values will be encoded in the POST body.
-func newTokenRequest(oauthCtx OauthContext, refeshToken string, authStyle AuthStyle) (*http.Request, error) {
+func newTokenRequest(oauthCtx OauthContext, refreshToken string, authStyle AuthStyle) (*http.Request, error) {
 	v := url.Values{}
 	if authStyle == AuthStyleInParams {
 		v.Set("client_id", oauthCtx.ClientID)
 		v.Set("client_secret", oauthCtx.ClientSecret)
 		v.Set("grant_type", "refresh_token")
-		v.Set("refresh_token", refeshToken)
+		v.Set("refresh_token", refreshToken)
 	}
 
 	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, strings.NewReader(v.Encode()))
@@ -209,7 +209,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 			Expiry:       tj.expiry(),
 			Raw:          make(map[string]interface{}),
 		}
-		json.Unmarshal(body, &token.Raw) // no error checks for optional fields
+		json.Unmarshal(body, &token.Raw) // no error checks for optional fields.
 	}
 	if token.AccessToken == "" {
 		return nil, errors.New("oauth2: server response missing access_token")
