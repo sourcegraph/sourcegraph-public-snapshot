@@ -244,7 +244,7 @@ EOF
 ## vector and talking to link-local services like the google metadata server.
 function setup_iptables() {
   # Make sure the below install doesn't block.
-  apt-get install -y dialog apt-utils
+  echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
   # Ensure iptables-persistent is installed.
   apt-get install -y iptables-persistent
 
