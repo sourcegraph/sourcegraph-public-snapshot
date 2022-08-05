@@ -201,6 +201,11 @@ require (
 require github.com/hmarr/codeowners v0.4.0
 
 require (
+	github.com/shurcooL/githubv4 v0.0.0-20220520033151-0b4e3294ff00 // indirect
+	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29 // indirect
+)
+
+require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.101.0 // indirect
 	cloud.google.com/go/compute v1.6.1 // indirect

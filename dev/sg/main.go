@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
+	"github.com/sourcegraph/sourcegraph/dev/sg/news"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -243,6 +244,8 @@ var sg = &cli.App{
 			background.Wait(cmd.Context, std.Out)
 			// Persist analytics
 			analytics.Persist(cmd.Context)
+			// Prompt user to check news if anything important is there
+			news.Prompt(cmd.Context, std.Out)
 		}
 
 		return nil
