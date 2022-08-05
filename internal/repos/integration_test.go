@@ -27,7 +27,7 @@ func TestIntegration(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	conf.Get().ExperimentalFeatures.EnableWebhookSync = true
-	// t.Parallel()
+	t.Parallel()
 
 	for _, tc := range []struct {
 		name string
