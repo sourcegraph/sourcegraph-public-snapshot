@@ -24,6 +24,7 @@ import { IEditor } from './LazyMonacoQueryInput'
 import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
+import { StandardSuggestionSource } from './extensions'
 
 export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,
@@ -106,6 +107,20 @@ export interface MonacoQueryInputProps
      * a suggestion by default. This is currently an experimental feature.
      */
     applySuggestionsOnEnter?: boolean
+    /**
+     * Additional sources to use for autocompletion.
+     */
+    suggestionSources?: StandardSuggestionSource[]
+    /**
+     * Show suggestions from default sources when query is empty. Defaults to
+     * true.
+     */
+    defaultSuggestionsShowWhenEmpty?: boolean
+    /**
+     * Automatically show suggestions when the input receives focus and it is
+     * empty. Defaults to false.
+     */
+    showSuggestionsOnFocus?: boolean
 }
 
 /**

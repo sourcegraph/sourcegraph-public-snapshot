@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
+import { closeCompletion, CompletionResult, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { Diagnostic as CMDiagnostic, linter } from '@codemirror/lint'
 import {
@@ -85,7 +85,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
-    applySuggestionsOnEnter,
+    // CodeMirror implementation specific options
+    applySuggestionsOnEnter = false,
+    suggestionSources,
+    defaultSuggestionsShowWhenEmpty = true,
+    showSuggestionsOnFocus = false,
     // Used by the VSCode extension (which doesn't use this component directly,
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
@@ -120,8 +124,18 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 globbing,
                 isSourcegraphDotCom,
                 applyOnEnter: applySuggestionsOnEnter,
+                additionalSources: suggestionSources,
+                showWhenEmpty: defaultSuggestionsShowWhenEmpty,
             }),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions, applySuggestionsOnEnter]
+        [
+            selectedSearchContextSpec,
+            globbing,
+            isSourcegraphDotCom,
+            fetchStreamSuggestions,
+            applySuggestionsOnEnter,
+            suggestionSources,
+            defaultSuggestionsShowWhenEmpty,
+        ]
     )
 
     const extensions = useMemo(() => {
@@ -148,8 +162,18 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         if (editorOptions?.readOnly) {
             extensions.push(EditorView.editable.of(false))
         }
+
+        if (showSuggestionsOnFocus) {
+            extensions.push(
+                EditorView.updateListener.of(update => {
+                    if (update.focusChanged && update.view.hasFocus && update.view.state.doc.length === 0) {
+                        startCompletion(update.view)
+                    }
+                })
+            )
+        }
         return extensions
-    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions])
+    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions, showSuggestionsOnFocus])
 
     // Update callback functions via effects. This avoids reconfiguring the
     // whole editor when a callback changes.

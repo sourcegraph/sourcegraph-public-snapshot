@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -34,6 +34,8 @@ import { submitSearch } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
 import styles from './SearchPageInput.module.scss'
+import { searchQueryHistorySource } from '../input/completion'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -71,6 +73,15 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter = useExperimentalFeatures(
         features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
+    const suggestionSources = useMemo(
+        () =>
+            coreWorkflowImprovementsEnabled && props.authenticatedUser
+                ? [searchQueryHistorySource(props.authenticatedUser.id)]
+                : [],
+        [props.authenticatedUser, coreWorkflowImprovementsEnabled]
     )
 
     const quickLinks =
@@ -139,6 +150,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                         applySuggestionsOnEnter={applySuggestionsOnEnter}
+                        suggestionSources={suggestionSources}
+                        defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
+                        showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />

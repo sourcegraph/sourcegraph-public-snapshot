@@ -106,9 +106,12 @@
             padding: 0;
             color: var(--search-query-text-color);
             background-color: var(--color-bg-1);
+            // Default is 50vw
+            max-width: 70vw;
 
             > ul {
                 font-family: var(--code-font-family);
+                max-height: 15rem;
 
                 > li {
                     box-sizing: content-box;
