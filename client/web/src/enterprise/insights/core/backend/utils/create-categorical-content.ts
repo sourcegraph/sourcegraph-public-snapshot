@@ -15,7 +15,7 @@ export function createComputeCategoricalChart(
     seriesData: InsightDataSeries[]
 ): CategoricalChartContent<CategoricalDatum> {
     const seriesGroups = groupBy(
-        seriesData.filter(series => series.label),
+        seriesData.filter(series => series.label && series.points.length),
         series => series.label
     )
 
