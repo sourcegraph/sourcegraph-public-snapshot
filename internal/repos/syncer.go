@@ -642,7 +642,7 @@ func (s *Syncer) SyncExternalService(
 			job := &webhookworker.Job{
 				RepoID:     int32(sourced.ID),
 				RepoName:   string(sourced.Name),
-				Org:        strings.Split(string(sourced.Name), "/")[0],
+				Org:        getOrgFromRepoName(sourced.Name),
 				ExtSvcID:   svc.ID,
 				ExtSvcKind: svc.Kind,
 			}
@@ -929,4 +929,12 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
+}
+
+func getOrgFromRepoName(repoName api.RepoName) string {
+	parts := strings.Split(string(repoName), "/")
+	if len(parts) == 1 {
+		return string(repoName)
+	}
+	return parts[1]
 }
