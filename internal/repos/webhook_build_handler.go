@@ -63,7 +63,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	}
 
 	if webhookExistsInConfig(conn.Webhooks, job.Org) {
-		logger.Info("Webhook found, no need to build new webhook")
+		logger.Info("Webhook found", log.String("Org", job.Org))
 		return nil
 	}
 
