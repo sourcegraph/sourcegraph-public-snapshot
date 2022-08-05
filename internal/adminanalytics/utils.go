@@ -29,7 +29,7 @@ func makeDateParameters(dateRange string, grouping string, dateColumnName string
 	} else if grouping == Daily {
 		groupBy = "day"
 	} else {
-		return nil, nil, errors.New("Invalid date range")
+		return nil, nil, errors.New("Invalid groupBy")
 	}
 
 	return sqlf.Sprintf(fmt.Sprintf(`DATE_TRUNC('%s', %s::date)`, groupBy, dateColumnName)), sqlf.Sprintf(`BETWEEN %s AND %s`, from.Format(time.RFC3339), now.Format(time.RFC3339)), nil
