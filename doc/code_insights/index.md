@@ -69,3 +69,4 @@ Code Insights is based on our universal code search, making it precise and confi
 - [Licensing and limited access](references/license.md)
 - [Managing code insights with the API](../api/graphql/managing-code-insights-with-api.md)
 - [Requirements](references/requirements.md)
+
