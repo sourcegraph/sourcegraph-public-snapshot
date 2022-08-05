@@ -271,6 +271,7 @@ function setup_iptables() {
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 169.254.0.0/16 -j DROP
 
   # Store the iptables config.
+  mkdir -p /etc/iptables
   iptables-save >/etc/iptables/rules.v4
 }
 
