@@ -204,6 +204,7 @@ function preheat_kernel_image() {
 ## This is to prevent cross-network communication (which currently doesn't happen
 ## as we only have 1 bridge).
 function configure_cni() {
+  mkdir -p /etc/cni/net.d
   cat <<EOF >/etc/cni/net.d/10-ignite.conflist
 {
   "cniVersion": "0.4.0",
