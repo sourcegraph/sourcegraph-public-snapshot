@@ -638,8 +638,7 @@ func (s *Syncer) SyncExternalService(
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 
-		if conf.Get() != nil && conf.Get().ExperimentalFeatures != nil &&
-			conf.Get().ExperimentalFeatures.EnableWebhookSync {
+		if conf.Get().ExperimentalFeatures != nil && conf.Get().ExperimentalFeatures.EnableWebhookRepoSync {
 			job := &webhookworker.Job{
 				RepoID:     int32(sourced.ID),
 				RepoName:   string(sourced.Name),
@@ -652,7 +651,7 @@ func (s *Syncer) SyncExternalService(
 			if err != nil {
 				logger.Error("unable to enqueue webhook build job")
 			}
-			logger.Info(fmt.Sprintf("enqueued webhook build job with ID: %d", id))
+			logger.Info("enqueued webhook build job", log.Int("ID", id))
 		}
 	}
 

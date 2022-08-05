@@ -451,7 +451,7 @@
             }
           ]
         },
-        "enableWebhookSync": {
+        "enableWebhookRepoSync": {
           "description": "Enable syncing repos using webhooks",
           "type": "boolean",
           "default": false,

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // This error is passed to txstore.Done in order to always
@@ -25,7 +26,13 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
-	conf.Get().ExperimentalFeatures.EnableWebhookSync = true
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			EnableWebhookRepoSync: &schema.EnableWebhookRepoSync{
+				Enabled: true,
+			},
+		},
+	}})
 
 	logger := logtest.Scoped(t)
 	t.Parallel()
