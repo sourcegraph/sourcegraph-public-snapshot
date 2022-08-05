@@ -91,7 +91,11 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 )}
 
                 {coreWorkflowImprovementsEnabled && !showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
-                    <QueryExamplesHomepage queryState={queryState} setQueryState={setQueryState} />
+                    <QueryExamplesHomepage
+                        telemetryService={props.telemetryService}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
+                    />
                 )}
             </div>
 

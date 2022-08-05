@@ -5,11 +5,12 @@ import classNames from 'classnames'
 
 import { EditorHint, QueryState } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import styles from './QueryExamplesHomepage.module.scss'
 
-export interface QueryExamplesHomepageProps {
+export interface QueryExamplesHomepageProps extends TelemetryProps {
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
 }
@@ -56,7 +57,7 @@ const queryExampleSectionsColumns = [
             queryExamples: [{ id: 'contains-commit-after', query: 'repo:contains.commit.after(yesterday)' }],
             footer: (
                 <small className="d-block mt-2">
-                    <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
+                    <Link target="blank" to="/help/code_search/reference/queries">
                         Complete query reference{' '}
                         <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                     </Link>
@@ -84,6 +85,7 @@ export const queryToTip = (id: string | undefined): Tip | null => {
 }
 
 export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepageProps> = ({
+    telemetryService,
     queryState,
     setQueryState,
 }) => {
@@ -93,6 +95,8 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string) => {
             setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
+
+            telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
 
             // Clear any previously set timeout.
             if (selectTipTimeout) {
@@ -114,7 +118,15 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                 setSelectedTip(null)
             }
         },
-        [queryState.query, setQueryState, selectedTip, setSelectedTip, selectTipTimeout, setSelectTipTimeout]
+        [
+            telemetryService,
+            queryState.query,
+            setQueryState,
+            selectedTip,
+            setSelectedTip,
+            selectTipTimeout,
+            setSelectTipTimeout,
+        ]
     )
 
     return (

@@ -18,7 +18,7 @@
 
     &:focus {
         border: 1px solid transparent;
-        box-shadow: 0px 0px 0px 2px var(--primary-2);
+        box-shadow: 0 0 0 0.125rem var(--primary-2);
         outline: none;
     }
 }
