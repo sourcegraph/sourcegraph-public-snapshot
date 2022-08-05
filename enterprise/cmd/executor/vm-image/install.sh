@@ -243,6 +243,9 @@ EOF
 ## traffic except the traffic to nameservers. This is to prevent any internal attack
 ## vector and talking to link-local services like the google metadata server.
 function setup_iptables() {
+  # Ensure iptables-persistent is installed.
+  apt-get install -y iptables-persistent
+
   # Ensure the chain exists.
   iptables --list | grep CNI-ADMIN 1>/dev/null || iptables -N CNI-ADMIN
 
