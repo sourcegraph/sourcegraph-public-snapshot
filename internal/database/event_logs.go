@@ -623,7 +623,7 @@ func (l *eventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startD
 }
 
 func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, conds []*sqlf.Query) (int, error) {
-	if conds == nil {
+	if len(conds) == 0 {
 		conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	}
 	fmt.Println(sqlf.Join(conds, ") AND ("))
