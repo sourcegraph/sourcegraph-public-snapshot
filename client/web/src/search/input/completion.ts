@@ -76,37 +76,39 @@ export function searchQueryHistorySource({
             return {
                 from: 0,
                 filter: false,
-                options: searches.map(search => {
-                    let query = search.searchText
+                options: searches
+                    .map(search => {
+                        let query = search.searchText
 
-                    {
-                        const result = scanSearchQuery(search.searchText)
-                        if (result.type === 'success') {
-                            query = stringHuman(
-                                result.term.filter(term => {
-                                    switch (term.type) {
-                                        case 'filter':
-                                            if (
-                                                term.field.value === 'context' &&
-                                                term.value?.value === selectedSearchContext
-                                            ) {
-                                                return false
-                                            }
-                                            return true
-                                        default:
-                                            return true
-                                    }
-                                })
-                            )
+                        {
+                            const result = scanSearchQuery(search.searchText)
+                            if (result.type === 'success') {
+                                query = stringHuman(
+                                    result.term.filter(term => {
+                                        switch (term.type) {
+                                            case 'filter':
+                                                if (
+                                                    term.field.value === 'context' &&
+                                                    term.value?.value === selectedSearchContext
+                                                ) {
+                                                    return false
+                                                }
+                                                return true
+                                            default:
+                                                return true
+                                        }
+                                    })
+                                )
+                            }
+                            // TODO: filter out invalid searches
                         }
-                    }
 
-                    return {
-                        // TODO: filter out invalid searches
-                        label: query,
-                        type: 'searchhistory',
-                    }
-                }),
+                        return {
+                            label: query,
+                            type: 'searchhistory',
+                        }
+                    })
+                    .filter(item => item.label.trim() !== ''),
             }
         } catch {
             return null
