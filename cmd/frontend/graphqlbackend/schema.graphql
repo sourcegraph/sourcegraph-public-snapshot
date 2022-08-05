@@ -214,6 +214,10 @@ type Mutation {
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
     """
+    Bulk "deleteUser" action.
+    """
+    deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
+    """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
@@ -535,6 +539,10 @@ type Mutation {
     Only site admins may perform this mutation.
     """
     invalidateSessionsByID(userID: ID!): EmptyResponse
+    """
+    Bulk "invalidateSessionsByID" action.
+    """
+    invalidateSessionsByIDs(userIDs: [ID!]!): EmptyResponse
     """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
@@ -5688,6 +5696,28 @@ type Site implements SettingsSubject {
     analytics: Analytics!
 
     """
+    List all users.
+    """
+    users(
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+        """
+        Returns users who have been active in a given period of time.
+        """
+        siteAdmin: Boolean
+        """
+        Returns users that contain filter in the username field.
+        """
+        username: String
+        """
+        Returns users that contain filter in the email field.
+        """
+        email: String
+    ): SiteUsers!
+
+    """
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
     is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
@@ -6272,6 +6302,102 @@ type Analytics {
     Batch changes statistics
     """
     batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
+}
+
+"""
+Site user.
+"""
+type SiteUser {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    User's username.
+    """
+    username: String!
+    """
+    User's primary email.
+    """
+    email: String
+    """
+    The datetime when user was created in the system.
+    """
+    createdAt: String!
+    """
+    The datetime when user was last active.
+    """
+    lastActiveAt: String
+    """
+    The datetime when user was deleted.
+    """
+    deletedAt: String
+    """
+    Whether user is site admin or not.
+    """
+    siteAdmin: Boolean!
+    """
+    Total number of user's event_logs.
+    """
+    eventsCount: Float!
+}
+
+"""
+SiteUserOrderBy enumerates the ways a users list can be ordered.
+"""
+enum SiteUserOrderBy {
+    USERNAME
+    """
+    User's primary email.
+    """
+    EMAIL
+    """
+    The total number of user's event_logs.
+    """
+    EVENTS_COUNT
+    """
+    The last event_log datetime.
+    """
+    LAST_ACTIVE_AT
+    """
+    The datetime when user was added to the system.
+    """
+    CREATED_AT
+    """
+    The datetime when user was soft deleted.
+    """
+    DELETED_AT
+    """
+    Whether the user is site admin or not.
+    """
+    SITE_ADMIN
+}
+
+"""
+Site users.
+"""
+type SiteUsers {
+    """
+    User total count.
+    """
+    totalCount: Float!
+    """
+    List of users.
+    """
+    nodes(
+        """
+        Returns the first n users from the list.
+        """
+        first: Int
+        """
+        Returns users ordered by a given column.
+        """
+        orderBy: SiteUserOrderBy
+        """
+        Returns ordered users in descending order provided by orderBy field.
+        """
+        descending: Boolean
+    ): [SiteUser!]!
 }
 
 """

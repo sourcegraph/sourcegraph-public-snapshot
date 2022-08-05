@@ -156,19 +156,26 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *database.Authori
 // which implements the database.AuthzStore interface. It proactively clean up left-over pending permissions to
 // prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
 func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *database.RevokeUserPermissionsArgs) (err error) {
+	return s.RevokeUserPermissionsList(ctx, []*database.RevokeUserPermissionsArgs{args})
+}
+
+// Bulk "RevokeUserPermissions" action.
+func (s *authzStore) RevokeUserPermissionsList(ctx context.Context, argsList []*database.RevokeUserPermissionsArgs) (err error) {
 	txs, err := s.store.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "start transaction")
 	}
 	defer func() { err = txs.Done(err) }()
 
-	if err = txs.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
-		return errors.Wrap(err, "delete all user permissions")
-	}
+	for _, args := range argsList {
+		if err = txs.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
+			return errors.Wrap(err, "delete all user permissions")
+		}
 
-	for _, accounts := range args.Accounts {
-		if err := txs.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
-			return errors.Wrap(err, "delete all user pending permissions")
+		for _, accounts := range args.Accounts {
+			if err := txs.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
+				return errors.Wrap(err, "delete all user pending permissions")
+			}
 		}
 	}
 	return nil
