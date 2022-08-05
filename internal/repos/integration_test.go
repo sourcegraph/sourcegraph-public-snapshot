@@ -28,9 +28,7 @@ func TestIntegration(t *testing.T) {
 
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			EnableWebhookRepoSync: &schema.EnableWebhookRepoSync{
-				Enabled: true,
-			},
+			EnableWebhookRepoSync: true,
 		},
 	}})
 
