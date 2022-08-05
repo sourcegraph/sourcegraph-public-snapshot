@@ -243,6 +243,8 @@ EOF
 ## traffic except the traffic to nameservers. This is to prevent any internal attack
 ## vector and talking to link-local services like the google metadata server.
 function setup_iptables() {
+  # Make sure the below install doesn't block.
+  apt-get install -y dialog apt-utils
   # Ensure iptables-persistent is installed.
   apt-get install -y iptables-persistent
 
