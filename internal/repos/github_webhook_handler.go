@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 
 	gh "github.com/google/go-github/v43/github"
 
@@ -15,9 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GitHubWebhookHandler struct{}
+type GitHubWebhookHandler struct {
+	logger log.Logger
+}
 
 func (g *GitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
+	g.logger = log.Scoped("repos.GitHubWebhookHandler", "github webhook handler")
 	router.Register(g.handleGitHubWebhook, "push")
 }
 
@@ -37,7 +39,7 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *
 		return errors.Wrap(err, "handleGitHubWebhook: EnqueueRepoUpdate failed")
 	}
 
-	log.Scoped("GitHubWebhookhandler", fmt.Sprintf("Successfully updated: %s", resp.Name))
+	g.logger.Info("successfully updated", log.String("name", resp.Name))
 	return nil
 }
 
