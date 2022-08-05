@@ -2434,7 +2434,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 		want := &webhookworker.Job{
 			RepoID:     int32(repo.ID),
 			RepoName:   string(repo.Name),
-			Org:        strings.Split(string(repo.Name), "/")[0],
+			Org:        strings.Split(string(repo.Name), "/")[1],
 			ExtSvcID:   svc.ID,
 			ExtSvcKind: svc.Kind,
 		}
