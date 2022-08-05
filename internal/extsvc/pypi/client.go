@@ -36,6 +36,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"golang.org/x/net/html"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -70,8 +71,8 @@ func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
 }
 
 // Project returns the Files of the simple-API /<project>/ endpoint.
-func (c *Client) Project(ctx context.Context, project string) ([]File, error) {
-	data, err := c.get(ctx, normalize(project))
+func (c *Client) Project(ctx context.Context, project reposource.PackageName) ([]File, error) {
+	data, err := c.get(ctx, reposource.PackageName(normalize(string(project))))
 	if err != nil {
 		return nil, errors.Wrap(err, "PyPI")
 	}
@@ -80,7 +81,7 @@ func (c *Client) Project(ctx context.Context, project string) ([]File, error) {
 
 // Version returns the File of a project at a specific version from
 // the simple-API /<project>/ endpoint.
-func (c *Client) Version(ctx context.Context, project, version string) (File, error) {
+func (c *Client) Version(ctx context.Context, project reposource.PackageName, version string) (File, error) {
 	files, err := c.Project(ctx, project)
 	if err != nil {
 		return File{}, err
@@ -405,7 +406,7 @@ func ToWheel(f File) (*Wheel, error) {
 	}
 }
 
-func (c *Client) get(ctx context.Context, project string) (respBody []byte, err error) {
+func (c *Client) get(ctx context.Context, project reposource.PackageName) (respBody []byte, err error) {
 	var (
 		reqURL *url.URL
 		req    *http.Request
@@ -426,7 +427,7 @@ func (c *Client) get(ctx context.Context, project string) (respBody []byte, err 
 		// canonicalized URL with the trailing slash. PyPI maintainers have been
 		// struggling to handle a piece of software with this User-Agent overloading our
 		// backends with requests resulting in redirects.
-		reqURL.Path = path.Join(reqURL.Path, project) + "/"
+		reqURL.Path = path.Join(reqURL.Path, string(project)) + "/"
 
 		req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
 		if err != nil {

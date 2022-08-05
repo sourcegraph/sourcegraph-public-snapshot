@@ -146,16 +146,6 @@ func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db database.DB) (_ j
 	return json.Marshal(growthStatistics)
 }
 
-func getAndMarshalCTAUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCTAUsageJSON")(&err)
-
-	ctaUsage, err := usagestats.GetCTAUsage(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(ctaUsage)
-}
-
 func getAndMarshalSavedSearchesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
 
@@ -394,7 +384,6 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		SearchUsage:                   []byte("{}"),
 		BatchChangesUsage:             []byte("{}"),
 		GrowthStatistics:              []byte("{}"),
-		CTAUsage:                      []byte("{}"),
 		SavedSearches:                 []byte("{}"),
 		HomepagePanels:                []byte("{}"),
 		Repositories:                  []byte("{}"),
@@ -470,11 +459,6 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
-		}
-
-		r.CTAUsage, err = getAndMarshalCTAUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("telemetry: updatecheck.getAndMarshalCTAUsageJSON failed", "error", err)
 		}
 
 		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)

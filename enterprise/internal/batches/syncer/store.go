@@ -11,6 +11,7 @@ import (
 
 type SyncStore interface {
 	ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*btypes.CodeHost, error)
+	ListChangesets(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error)
 	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error)
 	GetChangeset(context.Context, store.GetChangesetOpts) (*btypes.Changeset, error)
 	UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Changeset) error

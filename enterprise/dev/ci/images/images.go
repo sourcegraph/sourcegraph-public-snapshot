@@ -8,6 +8,7 @@ package images
 
 import (
 	"fmt"
+	"time"
 )
 
 const (
@@ -83,12 +84,19 @@ var DeploySourcegraphDockerImages = []string{
 	"worker",
 	"migrator",
 	"executor",
+	"opentelemetry-collector",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
 //
 // Note that the availability of this image depends on whether a candidate gets built,
 // as determined in `addDockerImages()`.
-func CandidateImageTag(commit, buildNumber string) string {
-	return fmt.Sprintf("%s_%s_candidate", commit, buildNumber)
+func CandidateImageTag(commit string, buildNumber int) string {
+	return fmt.Sprintf("%s_%d_candidate", commit, buildNumber)
+}
+
+// MainBranchImageTag provides the tag for all commits built on main, which are used for
+// continuous deployment.
+func MainBranchImageTag(now time.Time, commit string, buildNumber int) string {
+	return fmt.Sprintf("%05d_%10s_%.12s", buildNumber, now.Format("2006-01-02"), commit)
 }

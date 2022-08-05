@@ -15,6 +15,7 @@ Global flags:
 * `--config, -c="<value>"`: load sg configuration from `file` (default: sg.config.yaml)
 * `--disable-analytics`: disable event logging (logged to '~/.sourcegraph/events')
 * `--disable-output-detection`: use fixed output configuration instead of detecting terminal capabilities
+* `--disable-overwrite`: disable loading additional sg configuration from overwrite file (see -overwrite)
 * `--overwrite, -o="<value>"`: load sg configuration from `file` that is gitignored and can be used to, for example, add credentials (default: sg.config.overwrite.yaml)
 * `--skip-auto-update`: prevent sg from automatically updating itself
 * `--verbose, -v`: toggle verbose mode
@@ -86,10 +87,10 @@ Available commands in `sg.config.yaml`:
 * caddy
 * codeintel-executor
 * codeintel-worker
-* debug-env
-* docsite
+* debug-env: Debug env vars
+* docsite: Docsite instance serving the docs
 * executor-template
-* frontend
+* frontend: Enterprise frontend
 * github-proxy
 * gitserver
 * grafana
@@ -100,21 +101,21 @@ Available commands in `sg.config.yaml`:
 * oss-frontend
 * oss-repo-updater
 * oss-symbols
-* oss-web
+* oss-web: Open source version of the web app
 * oss-worker
-* otel-collector
+* otel-collector: OpenTelemetry collector
 * postgres_exporter
 * prometheus
-* redis-postgres
+* redis-postgres: Dockerized version of redis and postgres
 * repo-updater
 * searcher
-* server
+* server: Run an all-in-one sourcegraph/server image
 * storybook
 * symbols
 * syntax-highlighter
-* web
-* web-standalone-http
-* web-standalone-http-prod
+* web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
+* web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
+* web: Enterprise version of the web app
 * worker
 * zoekt-index-0
 * zoekt-index-1
@@ -178,10 +179,6 @@ $ sg ci build --force --commit my-commit main-dry-run
 # View the available special build types
 $ sg ci build --help
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg ci preview
 
@@ -347,7 +344,7 @@ $ sg lint --help
 
 Flags:
 
-* `--annotations`: Write helpful output to annotations directory
+* `--annotations`: Write helpful output to ./annotations directory
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
@@ -459,10 +456,6 @@ $ sg db reset-redis
 $ sg db add-user -name=foo
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg db reset-pg
 
 Drops, recreates and migrates the specified Sourcegraph database.
@@ -491,7 +484,7 @@ Flags:
 
 Create an admin sourcegraph user.
 
-Run 'sg db add-user -name bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds
+Run 'sg db add-user -username bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds
 
 
 Flags:
@@ -517,10 +510,6 @@ $ sg migration add --db codeintel 'add missing index'
 # Squash migrations for default database
 $ sg migration squash
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration add
 
@@ -574,8 +563,11 @@ Flags:
 * `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
+* `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
 * `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration upto
 
@@ -596,8 +588,10 @@ Flags:
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration undo
 
@@ -638,8 +632,9 @@ Flags:
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration validate
 
@@ -656,6 +651,7 @@ Flags:
 
 * `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
 ### sg migration describe
 
@@ -715,6 +711,18 @@ Flags:
 * `--up`: The migration direction.
 * `--version="<value>"`: The migration `version` to log. (default: 0)
 
+### sg migration upgrade
+
+Upgrade Sourcegraph instance databases to a target version.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--from="<value>"`: The source (current) instance version. Must be of the form `v{Major}.{Minor}`.
+* `--skip-version-check`: Skip validation of the instance's current version.
+* `--to="<value>"`: The target instance version. Must be of the form `v{Major}.{Minor}`.
+
 ### sg migration leaves
 
 Identiy the migration leaves for the given commit.
@@ -748,6 +756,8 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
+* `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
+* `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 
 ### sg migration squash-all
@@ -766,6 +776,8 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
+* `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
+* `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
 
@@ -786,14 +798,27 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `-f="<value>"`: The output filepath
 
-## sg insights
+### sg migration rewrite
 
-Tools to interact with Code Insights data.
+Rewrite schemas definitions as they were at a particular version.
+
+Available schemas:
+
+* frontend
+* codeintel
+* codeinsights
 
 
 Flags:
 
+* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--rev="<value>"`: The target revision
+
+## sg insights
+
+Tools to interact with Code Insights data.
+
 
 ### sg insights decode-id
 
@@ -838,10 +863,6 @@ $ sg secret list
 # ease of use
 $ sg secret reset buildkite
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg secret reset
 
@@ -891,10 +912,6 @@ $ sg teammate time thorsten ball
 # Open their handbook bio
 $ sg teammate handbook asdine
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg teammate time
 
@@ -963,10 +980,6 @@ $ sg adr view 420
 # Create a new ADR!
 $ sg adr create my ADR title
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg adr list
 
@@ -1042,10 +1055,6 @@ Commands used by operations teams to perform common tasks.
 Supports internal deploy-sourcegraph repos (non-customer facing)
 
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg ops update-images
 
 Updates images in given directory to latest published image.
@@ -1060,25 +1069,40 @@ Flags:
 * `--cr-password="<value>"`: `password` or access token for the container registry
 * `--cr-username="<value>"`: `username` for the container registry
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--kind="<value>"`: the `kind` of deployment (one of 'k8s', 'helm') (default: k8s)
-* `--pin-tag="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)
+* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
+* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
+
+### sg ops inspect-tag
+
+Inspect main branch tag details from a image or tag.
+
+```sh
+# Inspect a full image
+$ sg ops inspect-tag index.docker.io/sourcegraph/cadvisor:159625_2022-07-11_225c8ae162cc@sha256:foobar
+
+# Inspect just the tag
+$ sg ops inspect-tag 159625_2022-07-11_225c8ae162cc
+
+# Get the build number
+$ sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--property, -p="<value>"`: only output a specific `property` (one of: 'build', 'date', 'commit')
 
 ## sg analytics
 
 Manage analytics collected by sg.
 
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg analytics submit
 
 Make sg better by submitting all analytics stored locally!.
 
-Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.
+Requires HONEYCOMB_ENV_TOKEN or OTEL_EXPORTER_OTLP_ENDPOINT to be set.
 
-Arguments: `[github username]`
 
 Flags:
 

@@ -14,9 +14,9 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.sourcegraph.Icons;
-import com.sourcegraph.website.Copy;
-import com.sourcegraph.website.FileAction;
-import com.sourcegraph.website.OpenFile;
+import com.sourcegraph.website.CopyAction;
+import com.sourcegraph.website.FileActionBase;
+import com.sourcegraph.website.OpenFileAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -136,8 +136,8 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
                 }
             }
         });
-        group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFile(), editor));
-        group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new Copy(), editor));
+        group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFileAction(), editor));
+        group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new CopyAction(), editor));
         return group;
     }
 
@@ -148,10 +148,10 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     }
 
     class SimpleEditorFileAction extends DumbAwareAction {
-        FileAction action;
-        Editor editor;
+        final FileActionBase action;
+        final Editor editor;
 
-        SimpleEditorFileAction(String text, FileAction action, Editor editor) {
+        SimpleEditorFileAction(String text, FileActionBase action, Editor editor) {
             super(text, text, Icons.SourcegraphLogo);
             this.action = action;
             this.editor = editor;

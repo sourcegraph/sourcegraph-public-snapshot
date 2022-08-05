@@ -66,6 +66,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
+		// When we are building a release, we do not want to cache the client bundle.
+		//
+		// This is a defensive measure, as caching the client bundle is tricky when it comes to invalidating it.
+		// This makes sure that we're running integration tests on a fresh bundle and, the image
+		// that 99% of our customers are using is exactly the same as the other deployments.
+		env["SERVER_NO_CLIENT_BUNDLE_CACHE"] = "true"
 	}
 
 	// Build options for pipeline operations that spawn more build steps
@@ -77,7 +83,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.41.0"
+	const minimumUpgradeableVersion = "3.42.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -114,7 +120,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			testBuilds := operations.NewNamedSet("Test builds")
 			scanBuilds := operations.NewNamedSet("Scan test builds")
 			for _, image := range images.SourcegraphDockerImages {
-				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag()))
+				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
 				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
 			}
 			ops.Merge(testBuilds)
@@ -126,7 +132,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage("server", c.Version, c.candidateImageTag(), false),
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// always include very backend-oriented changes in this set of tests
@@ -184,7 +190,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
@@ -205,14 +211,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
 			wait,
 			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
 
 	case runtype.ExecutorPatchNoTest:
@@ -231,7 +237,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			// Only upload sourcemaps for the "frontend" image, on the Main branch build
+			uploadSourcemaps := false
+			if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
+				uploadSourcemaps = true
+			}
+			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
 		}
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch)
@@ -295,8 +306,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
-		Env: env,
-
+		Env:   env,
+		Steps: []any{},
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,

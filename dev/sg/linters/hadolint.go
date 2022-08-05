@@ -68,7 +68,7 @@ func hadolint() *linter {
 		// Download
 		os.MkdirAll("./.bin", os.ModePerm)
 		std.Out.WriteNoticef("Downloading hadolint from %s", url)
-		if err := download.Executable(ctx, url, hadolintBinary); err != nil {
+		if _, err := download.Executable(ctx, url, hadolintBinary); err != nil {
 			return errors.Wrap(err, "downloading hadolint")
 		}
 

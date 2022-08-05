@@ -1,20 +1,16 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiSourceRepositoryMultiple, mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -40,9 +36,8 @@ export interface CommunitySearchContextPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
-        KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
     authenticatedUser: AuthenticatedUser | null
@@ -61,6 +56,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     React.PropsWithChildren<CommunitySearchContextPageProps>
 > = (props: CommunitySearchContextPageProps) => {
     const LOADING = 'loading' as const
+
+    const [queryState, setQueryState] = useState<QueryState>({
+        query: '',
+    })
 
     useEffect(
         () =>
@@ -118,12 +117,16 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                 {props.communitySearchContextMetadata.lowProfile ? (
                     <SearchPageInput
                         {...props}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
                         selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
                         source="communitySearchContextPage"
                     />
                 ) : (
                     <SearchPageInput
                         {...props}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
                         selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
                         source="communitySearchContextPage"
                     />
@@ -132,7 +135,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">
                     <div className={classNames('col-xs-12 col-lg-7', styles.column)}>
-                        <Text weight="regular" className={classNames('h5 mb-4', styles.contentDescription)}>
+                        <Text weight="regular" className={classNames('mb-4', styles.contentDescription)}>
                             {props.communitySearchContextMetadata.description}
                         </Text>
 
@@ -167,7 +170,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                         <div className="order-2-lg order-1-xs">
                             <Card className={styles.repoCard}>
                                 <H2>
-                                    <Icon className="mr-2" as={SourceRepositoryMultipleIcon} aria-hidden={true} />
+                                    <Icon className="mr-2" aria-hidden={true} svgPath={mdiSourceRepositoryMultiple} />
                                     Repositories
                                 </H2>
                                 <Text>
@@ -226,7 +229,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('github.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={GithubIcon} aria-hidden={true} />
+                    <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiGithub} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -236,7 +239,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('gitlab.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={GitlabIcon} aria-hidden={true} />
+                    <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiGitlab} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -246,7 +249,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('bitbucket.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={BitbucketIcon} aria-hidden={true} />
+                    <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiBitbucket} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}

@@ -136,7 +136,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('no decoration for literal', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.literal))))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.standard))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1514,6 +1514,49 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 20,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight repo:has.description predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.description(.*)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 20,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 21,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 23,
                 "scopes": "metaPredicateParenthesis"
               }
             ]

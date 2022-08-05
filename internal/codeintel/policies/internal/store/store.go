@@ -15,7 +15,12 @@ import (
 
 // Store provides the interface for policies storage.
 type Store interface {
+	// Not used yet.
 	List(ctx context.Context, opts ListOpts) (policies []shared.Policy, err error)
+
+	// Configurations
+	GetConfigurationPolicies(ctx context.Context, opts shared.GetConfigurationPoliciesOptions) (_ []shared.ConfigurationPolicy, totalCount int, err error)
+	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
 }
 
 // store manages the policies store.
@@ -25,7 +30,7 @@ type store struct {
 }
 
 // New returns a new policies store.
-func New(db database.DB, observationContext *observation.Context) *store {
+func New(db database.DB, observationContext *observation.Context) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext),

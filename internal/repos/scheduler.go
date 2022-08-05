@@ -302,7 +302,7 @@ func (s *UpdateScheduler) UpdateFromDiff(diff Diff) {
 	for _, r := range diff.Added {
 		s.upsert(r, true)
 	}
-	for _, r := range diff.Modified {
+	for _, r := range diff.Modified.Repos() {
 		s.upsert(r, true)
 	}
 
@@ -446,7 +446,7 @@ func (s *UpdateScheduler) DebugDump(ctx context.Context) any {
 	}
 
 	var err error
-	data.SyncJobs, err = s.db.ExternalServices().GetSyncJobs(ctx)
+	data.SyncJobs, err = s.db.ExternalServices().GetSyncJobs(ctx, database.ExternalServicesGetSyncJobsOptions{})
 	if err != nil {
 		s.logger.Warn("getting external service sync jobs for debug page", log.Error(err))
 	}

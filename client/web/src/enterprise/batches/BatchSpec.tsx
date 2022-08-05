@@ -8,6 +8,7 @@ import { Link, Button, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { MonacoBatchSpecEditor } from './batch-spec/edit/editor/MonacoBatchSpecEditor'
 
@@ -29,7 +30,7 @@ export interface BatchSpecProps extends ThemeProps {
     className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<React.PropsWithChildren<BatchSpecProps>> = ({
+export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
     originalInput,
     isLightTheme,
     className,
@@ -72,6 +73,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             target="_blank"
             rel="noopener noreferrer"
             className={className}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
         >
             {children}
         </Button>
@@ -80,6 +82,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             download={getFileName(name)}
             to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
             className={className}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
         >
             {children}
         </Link>
@@ -90,19 +93,12 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
 
 // TODO: Consider merging this component with BatchSpecDownloadLink
 export const BatchSpecDownloadButton: React.FunctionComponent<
-    React.PropsWithChildren<BatchSpecProps & Pick<BatchChangeFields, 'name'>>
+    BatchSpecProps & Pick<BatchChangeFields, 'name'>
 > = React.memo(function BatchSpecDownloadButton(props) {
     return (
-        <Button
-            className="text-right text-nowrap"
-            {...props}
-            variant="secondary"
-            outline={true}
-            as={BatchSpecDownloadLink}
-            asButton={false}
-        >
+        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
             <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
-        </Button>
+        </BatchSpecDownloadLink>
     )
 })
 

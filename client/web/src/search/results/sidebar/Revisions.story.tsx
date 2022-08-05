@@ -95,7 +95,7 @@ export function RevisionsSection() {
                             style={{ border: '1px solid #AAA', borderRadius: '3px', padding: '1rem', margin: '1rem' }}
                         >
                             <H2>{title}</H2>
-                            <div className={sidebarStyles.searchSidebar}>
+                            <div className={sidebarStyles.sidebar}>
                                 <MockedTestProvider mocks={mocks}>
                                     <Revisions {...props} />
                                 </MockedTestProvider>

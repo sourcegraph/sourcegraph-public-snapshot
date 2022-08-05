@@ -1,5 +1,7 @@
-// This rule is disable to preserve 1-1 mapping between `DecoratedToken` types and classes.
+// This rule needs to be disabled so that we can override CodeMirror's classes
 /* stylelint-disable selector-class-pattern */
+@import 'wildcard/src/global-styles/breakpoints';
+
 .root {
     flex: 1;
     min-width: 0;
@@ -29,6 +31,17 @@
             &:global(.focus-visible),
             &:focus-visible {
                 box-shadow: none;
+            }
+
+            @media (--xs-breakpoint-down) {
+                // Automatically enable line wrapping on small screens.
+                // CodeMirror's own lineWrapping extension does the same
+                // (also see https://codemirror.net/examples/styling/)
+                white-space: pre-wrap; // For IE
+                white-space: break-spaces;
+                word-break: break-word; // For Safari, which doesn't support overflow-wrap: anywhere
+                overflow-wrap: anywhere;
+                flex-shrink: 1;
             }
         }
 
@@ -165,22 +178,21 @@
     }
 }
 
-.diagnosticError {
-    background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%206%203'%20enable-background%3D'new%200%200%206%203'%20height%3D'3'%20width%3D'6'%3E%3Cg%20fill%3D'%23e51400'%3E%3Cpolygon%20points%3D'5.5%2C0%202.5%2C3%201.1%2C3%204.1%2C0'%2F%3E%3Cpolygon%20points%3D'4%2C0%206%2C2%206%2C0.6%205.4%2C0'%2F%3E%3Cpolygon%20points%3D'0%2C2%201%2C3%202.4%2C3%200%2C0.6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
-        repeat-x bottom left;
-}
-
-.diagnosticWarning {
-    background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%206%203'%20enable-background%3D'new%200%200%206%203'%20height%3D'3'%20width%3D'6'%3E%3Cg%20fill%3D'%23bf8803'%3E%3Cpolygon%20points%3D'5.5%2C0%202.5%2C3%201.1%2C3%204.1%2C0'%2F%3E%3Cpolygon%20points%3D'4%2C0%206%2C2%206%2C0.6%205.4%2C0'%2F%3E%3Cpolygon%20points%3D'0%2C2%201%2C3%202.4%2C3%200%2C0.6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
-        repeat-x bottom left;
-}
-
+// .placeholder needs to explicilty have the same background color because it
+// appears to be placed outside of .focusedFilter rather than within it.
+.placeholder,
 .focusedFilter {
     background-color: var(--gray-02);
 
     :global(.theme-dark) & {
         background-color: var(--gray-08);
     }
+}
+
+.placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+    pointer-events: none;
 }
 
 // Copied and adapted from the Wildcard LoadingSpinner component

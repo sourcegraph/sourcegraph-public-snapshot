@@ -123,7 +123,6 @@ func publishSourcegraphDotComEvents(events []Event) error {
 	if pubSubDotComEventsTopicID == "" {
 		return nil
 	}
-
 	pubsubEvents, err := serializePublishSourcegraphDotComEvents(events)
 	if err != nil {
 		return err

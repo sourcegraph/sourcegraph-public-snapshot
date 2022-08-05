@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -115,6 +117,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 		dbStore,
 		uploadSvc,
 		autoIndexingSvc,
+		logtest.Scoped(t),
 		newMetrics(&observation.TestContext),
 	)
 

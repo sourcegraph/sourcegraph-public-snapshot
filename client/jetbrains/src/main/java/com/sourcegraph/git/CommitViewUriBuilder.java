@@ -2,18 +2,20 @@ package com.sourcegraph.git;
 
 import com.google.common.base.Strings;
 import com.sourcegraph.config.ConfigUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 public class CommitViewUriBuilder {
-    public URI build(String sourcegraphBase, String revisionNumber, RepoInfo repoInfo, String productName, String productVersion) {
+    @NotNull
+    public URI build(@NotNull String sourcegraphBase, @NotNull String revisionNumber, @NotNull RepoInfo repoInfo, @NotNull String productName, @NotNull String productVersion) {
         if (Strings.isNullOrEmpty(sourcegraphBase)) {
             throw new RuntimeException("Missing sourcegraph URI for commit uri.");
         } else if (Strings.isNullOrEmpty(revisionNumber)) {
             throw new RuntimeException("Missing revision number for commit uri.");
-        } else if (repoInfo == null || Strings.isNullOrEmpty(repoInfo.remoteUrl)) {
+        } else if (repoInfo.remoteUrl.equals("")) {
             throw new RuntimeException("Missing remote URL for commit uri.");
         }
 

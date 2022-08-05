@@ -1,9 +1,9 @@
 import { FunctionComponent } from 'react'
 
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link, H3 } from '@sourcegraph/wildcard'
+import { Link, H3, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { LsifIndexFields } from '../../../../graphql-operations'
@@ -53,9 +53,9 @@ export const CodeIntelAssociatedUpload: FunctionComponent<React.PropsWithChildre
                     </span>
                     <span>
                         <Link
-                            to={`/${node.projectRoot.repository.name}/-/code-intelligence/uploads/${node.associatedUpload.id}`}
+                            to={`/${node.projectRoot.repository.name}/-/code-graph/uploads/${node.associatedUpload.id}`}
                         >
-                            <ChevronRightIcon />
+                            <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
                         </Link>
                     </span>
                 </div>

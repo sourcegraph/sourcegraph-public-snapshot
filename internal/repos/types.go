@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -134,12 +136,12 @@ type ScopeCache interface {
 //
 // Currently only GitHub and GitLab external services with user or org namespace are supported,
 // other code hosts will simply return an empty slice
-func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *types.ExternalService) ([]string, error) {
+func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db database.DB, svc *types.ExternalService) ([]string, error) {
 	externalServicesStore := db.ExternalServices()
 	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
-	src, err := NewSource(ctx, db, svc, nil)
+	src, err := NewSource(ctx, logger.Scoped("Source", ""), db, svc, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating source")
 	}
@@ -159,7 +161,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *t
 		}
 
 		// Slow path
-		src, err := NewGithubSource(externalServicesStore, svc, nil)
+		src, err := NewGithubSource(logger.Scoped("GithubSource", ""), externalServicesStore, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}
@@ -188,7 +190,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *t
 		}
 
 		// Slow path
-		src, err := NewGitLabSource(ctx, db, svc, nil)
+		src, err := NewGitLabSource(ctx, logger.Scoped("GitLabSource", ""), db, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}

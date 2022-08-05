@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // migrator configures an out of band migration runner process to execute in the background.
@@ -53,6 +54,10 @@ func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
+
+	if outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
+		return nil, errors.Wrap(err, "failed to synchronized out of band migration metadata")
+	}
 
 	if err := m.registerMigrators(db, outOfBandMigrationRunner); err != nil {
 		return nil, err

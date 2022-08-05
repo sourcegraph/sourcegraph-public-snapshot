@@ -18,7 +18,7 @@
       "group": "Search"
     },
     "search.index.enabled": {
-      "description": "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
+      "description": "Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Search"
@@ -65,6 +65,59 @@
       "type": "boolean",
       "default": false
     },
+    "exportUsageTelemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topicName", "topicProjectName"],
+      "properties": {
+        "enabled": {
+          "description": "Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.",
+          "type": "boolean",
+          "default": false
+        },
+        "batchSize": {
+          "description": "Maximum number of events scraped from the events table in a single scrape.",
+          "type": "integer",
+          "default": 5000,
+          "minimum": 1
+        },
+        "topicProjectName": {
+          "type": "string",
+          "description": "GCP project name containing the usage data pubsub topic"
+        },
+        "topicName": {
+          "type": "string",
+          "description": "Destination pubsub topic name to export usage data"
+        }
+      }
+    },
+    "auth.passwordPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+      "properties": {
+        "enabled": {
+          "description": "Enables password policy",
+          "type": "boolean",
+          "default": false
+        },
+        "numberOfSpecialCharacters": {
+          "description": "The required number of special characters",
+          "type": "integer",
+          "length": 2
+        },
+        "requireAtLeastOneNumber": {
+          "description": "Does the password require a number",
+          "type": "boolean",
+          "default": true
+        },
+        "requireUpperandLowerCase": {
+          "description": "Require Mixed characters",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -82,7 +135,7 @@
           "default": "enabled"
         },
         "passwordPolicy": {
-          "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+          "description": "DEPRECATED: this is now a standard feature see: auth.passwordPolicy",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -92,15 +145,14 @@
               "default": true
             },
             "minimumLength": {
-              "description": "The minimum length required for a password",
+              "description": "DEPRECATED: replaced by auth.minPasswordLength",
               "type": "integer",
-              "length": 12,
               "default": 12
             },
             "numberOfSpecialCharacters": {
               "description": "The required number of special characters",
               "type": "integer",
-              "length": 2
+              "default": 2
             },
             "requireAtLeastOneNumber": {
               "description": "Does the password require a number",
@@ -138,12 +190,6 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "dependenciesSearch": {
-          "description": "Enables support for repo:dependencies predicate queries.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "andOrQuery": {
           "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
@@ -168,11 +214,35 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "jvmPackages": {
-          "description": "Allow adding JVM packages code host connections",
+        "goPackages": {
+          "description": "Allow adding Go package host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "disabled"
+        },
+        "jvmPackages": {
+          "description": "Allow adding JVM package host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "npmPackages": {
+          "description": "Allow adding npm package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "pythonPackages": {
+          "description": "Allow adding Python package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "rustPackages": {
+          "description": "Allow adding Rust package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         },
         "pagure": {
           "description": "Allow adding Pagure code host connections",
@@ -208,12 +278,6 @@
               "minimum": 1
             }
           }
-        },
-        "npmPackages": {
-          "description": "Allow adding npm packages code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
         },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
@@ -427,7 +491,7 @@
           "default": false
         },
         "enableGitServerCommandExecFilter": {
-          "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
+          "description": "DEPRECATED: Setting any value to this flag has no effect.",
           "type": "boolean",
           "default": true
         },
@@ -443,6 +507,11 @@
               "github.com/foo/bar2": "gitserverHostname2"
             }
           ]
+        },
+        "enableLegacyExtensions": {
+          "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
+          "type": "boolean",
+          "default": true
         }
       },
       "examples": [
@@ -552,6 +621,12 @@
       "group": "BatchChanges",
       "default": false
     },
+    "batchChanges.changesetsRetention": {
+      "description": "How long changesets will be retained after they have been detached from a batch change.",
+      "type": "string",
+      "group": "BatchChanges",
+      "examples": ["336h", "48h", "5h30m40s"]
+    },
     "codeIntelAutoIndexing.enabled": {
       "description": "Enables/disables the code intel auto-indexing feature. Currently experimental.",
       "type": "boolean",
@@ -574,7 +649,7 @@
       "default": false
     },
     "codeIntelLockfileIndexing.enabled": {
-      "description": "Enables/disables the code intel lockfile-indexing feature. Currently experimental.",
+      "description": "DEPRECATED: Enables/disables the code intel lockfile-indexing feature. Currently experimental.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
@@ -1090,15 +1165,37 @@
               "pattern": "^https?://"
             }
           }
+        },
+        "gitserver.accessLogs": {
+          "description": "Enable gitserver access logging.",
+          "type": "boolean",
+          "default": false
         }
-      },
-      "examples": [{ "sentry": { "dsn": "https://mykey@sentry.io/myproject" } }],
-      "group": "Misc."
+      }
     },
     "externalURL": {
       "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
+    },
+    "observability.client": {
+      "description": "EXPERIMENTAL: Configuration for client observability",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "openTelemetry": {
+          "description": "Configuration for the client OpenTelemetry exporter",
+          "type": "object",
+          "properties": {
+            "endpoint": {
+              "description": "OpenTelemetry tracing collector endpoint",
+              "type": "string",
+              "examples": ["/-/debug/otlp", "https://COLLECTOR_ENDPOINT"],
+              "default": "/-/debug/otlp"
+            }
+          }
+        }
+      }
     },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
@@ -1120,6 +1217,12 @@
           "description": "Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.",
           "type": "boolean",
           "default": false
+        },
+        "urlTemplate": {
+          "description": "Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'.",
+          "type": "string",
+          "default": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}",
+          "examples": ["https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"]
         }
       }
     },
@@ -1229,14 +1332,14 @@
       "!go": { "pointer": true }
     },
     "insights.compute.graphql": {
-      "description": "Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
+      "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "CodeInsights",
       "default": false
     },
     "insights.search.graphql": {
-      "description": "Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
+      "description": "DEPRECATED: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "CodeInsights",

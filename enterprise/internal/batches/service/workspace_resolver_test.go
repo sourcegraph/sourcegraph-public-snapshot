@@ -12,11 +12,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -61,12 +62,12 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, &observation.TestContext, nil)
 
-	u := ct.CreateTestUser(t, db, false)
+	u := bt.CreateTestUser(t, db, false)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 7)
-	unsupported, _ := ct.CreateAWSCodeCommitTestRepos(t, ctx, db, 1)
+	rs, _ := bt.CreateTestRepos(t, ctx, db, 7)
+	unsupported, _ := bt.CreateAWSCodeCommitTestRepos(t, ctx, db, 1)
 	// Allow access to all repos but rs[4].
-	ct.MockRepoPermissions(t, db, u.ID, rs[0].ID, rs[1].ID, rs[2].ID, rs[3].ID, rs[5].ID, rs[6].ID, unsupported[0].ID)
+	bt.MockRepoPermissions(t, db, u.ID, rs[0].ID, rs[1].ID, rs[2].ID, rs[3].ID, rs[5].ID, rs[6].ID, unsupported[0].ID)
 
 	defaultBranches := map[api.RepoName]defaultBranch{
 		rs[0].Name:          {branch: "branch-1", commit: api.CommitID("6f152ece24b9424edcd4da2b82989c5c2bea64c3")},
@@ -112,7 +113,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 	newGitserverClient := func(commitMap map[api.CommitID]bool, branches map[string]api.CommitID) gitserver.Client {
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.GetDefaultBranchFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (string, api.CommitID, error) {
+		gitserverClient.GetDefaultBranchFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, short bool) (string, api.CommitID, error) {
 			if res, ok := defaultBranches[repo]; ok {
 				return res.branch, res.commit, nil
 			}
@@ -402,14 +403,12 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			},
 		)
 
-		// We want both workspaces, but only one of them has steps that need to run
-		ws0 := buildRepoWorkspace(rs[0], "", "", []string{})
-		// ws0.Steps = conditionalSteps
-		// ws0.SkippedSteps = []int32{0}
 		ws1 := buildRepoWorkspace(rs[1], "", "", []string{})
-		// ws1.Steps = conditionalSteps
 
-		want := []*RepoWorkspace{ws0, ws1}
+		// ws0 has no steps to run, so it is excluded.
+		// TODO: Later we might want to add an additional flag to the workspace
+		// to indicate this in the UI.
+		want := []*RepoWorkspace{ws1}
 		resolveWorkspacesAndCompare(t, s, gs, u, map[string][]streamhttp.EventMatch{}, batchSpec, want)
 	})
 }
@@ -480,9 +479,17 @@ type defaultBranch struct {
 
 func TestFindWorkspaces(t *testing.T) {
 	repoRevs := []*RepoRevision{
-		{Repo: &types.Repo{ID: 1, Name: "github.com/sourcegraph/automation-testing"}},
-		{Repo: &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph"}},
-		{Repo: &types.Repo{ID: 3, Name: "bitbucket.sgdev.org/SOUR/automation-testing"}},
+		{Repo: &types.Repo{ID: 1, Name: "github.com/sourcegraph/automation-testing"}, FileMatches: []string{}},
+		{Repo: &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph"}, FileMatches: []string{}},
+		{Repo: &types.Repo{ID: 3, Name: "bitbucket.sgdev.org/SOUR/automation-testing"}, FileMatches: []string{}},
+		// This one has file matches.
+		{
+			Repo: &types.Repo{
+				ID:   4,
+				Name: "github.com/sourcegraph/src-cli",
+			},
+			FileMatches: []string{"a/b", "a/b/c", "d/e/f"},
+		},
 	}
 	steps := []batcheslib.Step{{Run: "echo 1"}}
 
@@ -494,6 +501,7 @@ func TestFindWorkspaces(t *testing.T) {
 
 		// workspaces in which repo/path they are executed
 		wantWorkspaces []*RepoWorkspace
+		wantErr        error
 	}{
 		"no workspace configuration": {
 			spec:          &batcheslib.BatchSpec{Steps: steps},
@@ -502,6 +510,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[0], Path: ""},
 				{RepoRevision: repoRevs[1], Path: ""},
 				{RepoRevision: repoRevs[2], Path: ""},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
 
@@ -517,6 +526,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[0], Path: ""},
 				{RepoRevision: repoRevs[1], Path: ""},
 				{RepoRevision: repoRevs[2], Path: ""},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
 
@@ -533,6 +543,7 @@ func TestFindWorkspaces(t *testing.T) {
 			},
 			wantWorkspaces: []*RepoWorkspace{
 				{RepoRevision: repoRevs[1], Path: ""},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
 
@@ -555,6 +566,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[2], Path: "a/b"},
 				{RepoRevision: repoRevs[2], Path: "a/b/c"},
 				{RepoRevision: repoRevs[2], Path: "d/e/f"},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
 
@@ -581,8 +593,10 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[2], Path: "a/b", OnlyFetchWorkspace: true},
 				{RepoRevision: repoRevs[2], Path: "a/b/c", OnlyFetchWorkspace: true},
 				{RepoRevision: repoRevs[2], Path: "d/e/f", OnlyFetchWorkspace: true},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
+
 		"workspace configuration without 'in' matches all": {
 			spec: &batcheslib.BatchSpec{
 				Steps: steps,
@@ -601,6 +615,46 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[2], Path: "a/b"},
 			},
 		},
+		"workspace configuration matching two repos": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{
+						RootAtLocationOf: "package.json",
+						In:               string(repoRevs[0].Repo.Name),
+					},
+					{
+						RootAtLocationOf: "go.mod",
+						In:               string(repoRevs[0].Repo.Name),
+					},
+				},
+			},
+			finderResults: finderResults{
+				repoRevs[0].Key(): {"a/b"},
+			},
+			wantErr: errors.New(`repository github.com/sourcegraph/automation-testing matches multiple workspaces.in globs in the batch spec. glob: "github.com/sourcegraph/automation-testing"`),
+		},
+		"workspace gets subset of search_result_paths": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{
+						In:               "*src-cli",
+						RootAtLocationOf: "package.json",
+					},
+				},
+			},
+			finderResults: finderResults{
+				repoRevs[3].Key(): {"a/b", "d"},
+			},
+			wantWorkspaces: []*RepoWorkspace{
+				{RepoRevision: repoRevs[0], Path: ""},
+				{RepoRevision: repoRevs[1], Path: ""},
+				{RepoRevision: repoRevs[2], Path: ""},
+				{RepoRevision: &RepoRevision{Repo: repoRevs[3].Repo, Branch: repoRevs[3].Branch, Commit: repoRevs[3].Commit, FileMatches: []string{"a/b", "a/b/c"}}, Path: "a/b"},
+				{RepoRevision: &RepoRevision{Repo: repoRevs[3].Repo, Branch: repoRevs[3].Branch, Commit: repoRevs[3].Commit, FileMatches: []string{"d/e/f"}}, Path: "d"},
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -608,7 +662,11 @@ func TestFindWorkspaces(t *testing.T) {
 			finder := &mockDirectoryFinder{results: tt.finderResults}
 			workspaces, err := findWorkspaces(context.Background(), tt.spec, finder, repoRevs)
 			if err != nil {
-				t.Fatalf("unexpected err: %s", err)
+				if tt.wantErr != nil {
+					require.Exactly(t, tt.wantErr.Error(), err.Error(), "wrong error returned")
+				} else {
+					t.Fatalf("unexpected err: %s", err)
+				}
 			}
 
 			// Sort by ID, easier than by name for tests.

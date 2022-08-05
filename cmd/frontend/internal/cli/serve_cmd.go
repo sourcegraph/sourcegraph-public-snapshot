@@ -169,6 +169,10 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		}
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
 
+		if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
+			return errors.Wrap(err, "failed to synchronized out of band migration metadata")
+		}
+
 		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
 			return errors.Wrap(err, "failed to validate out of band migrations")
 		}

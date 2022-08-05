@@ -10,6 +10,14 @@
     min-height: 0;
     width: 100%;
     margin-top: 1.5rem;
+
+    @media (--lg-breakpoint-down) {
+        overflow-x: auto;
+    }
+
+    @media (--md-breakpoint-down) {
+        min-height: 95vh;
+    }
 }
 
 // Constrain the width of the video player at different viewpoint sizes to prevent layout
@@ -41,4 +49,8 @@
     display: flex;
     flex: 1;
     min-height: 0;
+
+    @media (--lg-breakpoint-down) {
+        min-width: min(50rem, 165vw);
+    }
 }

@@ -1,7 +1,9 @@
 import { ReactElement } from 'react'
 
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import { mdiChevronDown } from '@mdi/js'
 import { components, DropdownIndicatorProps } from 'react-select'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import { MultiSelectOption } from './types'
 
@@ -12,6 +14,11 @@ export const DropdownIndicator = <OptionValue extends unknown = unknown>(
     props: DropdownIndicatorProps<MultiSelectOption<OptionValue>, true>
 ): ReactElement => (
     <components.DropdownIndicator {...props}>
-        <ChevronDownIcon className={props.isDisabled ? styles.dropdownIconDisabled : styles.dropdownIcon} />
+        <Icon
+            className={props.isDisabled ? styles.dropdownIconDisabled : styles.dropdownIcon}
+            svgPath={mdiChevronDown}
+            inline={false}
+            aria-hidden={true}
+        />
     </components.DropdownIndicator>
 )

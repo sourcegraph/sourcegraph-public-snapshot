@@ -1,10 +1,9 @@
 import React from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import { mdiCheckCircle, mdiAlertCircle } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
-import { LoadingSpinner, CardBody, Card } from '@sourcegraph/wildcard'
+import { LoadingSpinner, CardBody, Card, Icon } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
@@ -42,9 +41,19 @@ export const ExecutionLogEntry: React.FunctionComponent<React.PropsWithChildren<
                 {logEntry.exitCode !== null && (
                     <>
                         {logEntry.exitCode === 0 ? (
-                            <CheckCircleIcon className="text-success mr-1" />
+                            <Icon
+                                className="text-success mr-1"
+                                svgPath={mdiCheckCircle}
+                                inline={false}
+                                aria-label="Success"
+                            />
                         ) : (
-                            <AlertCircleIcon className="text-danger mr-1" />
+                            <Icon
+                                className="text-danger mr-1"
+                                svgPath={mdiAlertCircle}
+                                inline={false}
+                                aria-label="Failed"
+                            />
                         )}
                     </>
                 )}

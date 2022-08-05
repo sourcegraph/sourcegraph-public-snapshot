@@ -73,6 +73,10 @@ type MigratorOptions struct {
 	ticker glock.Ticker
 }
 
+func (r *Runner) SynchronizeMetadata(ctx context.Context) error {
+	return r.store.SynchronizeMetadata(ctx)
+}
+
 // Register correlates the given migrator with the given migration identifier. An error is
 // returned if a migrator is already associated with this migration.
 func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) error {
@@ -130,7 +134,7 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 
 	errs := make([]error, 0, len(migrations))
 	for _, migration := range migrations {
-		currentVersionCmpIntroduced := compareVersions(currentVersion, migration.Introduced)
+		currentVersionCmpIntroduced := CompareVersions(currentVersion, migration.Introduced)
 		if currentVersionCmpIntroduced == VersionOrderBefore && migration.Progress != 0 {
 			// Unfinished rollback: currentVersion before introduced version and progress > 0
 			errs = append(errs, newMigrationStatusError(migration.ID, 0, migration.Progress))
@@ -140,13 +144,13 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 			continue
 		}
 
-		firstVersionCmpDeprecated := compareVersions(firstVersion, *migration.Deprecated)
+		firstVersionCmpDeprecated := CompareVersions(firstVersion, *migration.Deprecated)
 		if firstVersionCmpDeprecated != VersionOrderBefore {
 			// Edge case: sourcegraph instance booted on or after deprecation version
 			continue
 		}
 
-		currentVersionCmpDeprecated := compareVersions(currentVersion, *migration.Deprecated)
+		currentVersionCmpDeprecated := CompareVersions(currentVersion, *migration.Deprecated)
 		if currentVersionCmpDeprecated != VersionOrderBefore && migration.Progress != 1 {
 			// Unfinished migration: currentVersion on or after deprecated version, progress < 1
 			errs = append(errs, newMigrationStatusError(migration.ID, 1, migration.Progress))

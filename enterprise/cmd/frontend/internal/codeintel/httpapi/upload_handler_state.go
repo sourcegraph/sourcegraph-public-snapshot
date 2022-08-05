@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -127,7 +125,7 @@ func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db databas
 			return 0, http.StatusInternalServerError, err
 		}
 
-		log15.Warn("Accepting LSIF upload with unresolvable commit", "reason", reason)
+		logger.Warn("Accepting LSIF upload with unresolvable commit", log.String("reason", reason))
 	}
 
 	return int(repo.ID), 0, nil

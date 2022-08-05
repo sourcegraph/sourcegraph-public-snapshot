@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiEarth, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiLock, mdiBlockHelper } from '@mdi/js'
+import { mdiEarth, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiLock, mdiBlockHelper, mdiOpenInNew } from '@mdi/js'
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { Observable } from 'rxjs'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
@@ -102,7 +101,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
                 <div className={styles.version}>v{version}</div>
             </section>
             <section className={styles.section}>
-                Get code intelligence tooltips while browsing and reviewing code on your code host.{' '}
+                Get code navigation tooltips while browsing and reviewing code on your code host.{' '}
                 <Link to="https://docs.sourcegraph.com/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
                     Learn more
                 </Link>{' '}
@@ -136,7 +135,15 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
                     {...NEW_TAB_LINK_PROPS}
                     className="d-block mb-1"
                 >
-                    <small>How do we keep your code private?</small> <OpenInNewIcon size="0.75rem" className="ml-2" />
+                    <small>How do we keep your code private?</small>{' '}
+                    <Icon
+                        className="ml-2"
+                        svgPath={mdiOpenInNew}
+                        inline={false}
+                        aria-hidden={true}
+                        height="0.75rem"
+                        width="0.75rem"
+                    />
                 </Link>
                 <Text className="mb-0">
                     <Button

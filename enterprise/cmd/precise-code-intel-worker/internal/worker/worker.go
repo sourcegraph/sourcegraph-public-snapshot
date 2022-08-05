@@ -31,7 +31,7 @@ func NewWorker(
 	maximumRuntimePerJob time.Duration,
 	workerMetrics workerutil.WorkerMetrics,
 ) *workerutil.Worker {
-	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+	rootContext := actor.WithInternalActor(context.Background())
 	observationContext := observation.Context{
 		Tracer: &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		HoneyDataset: &honey.Dataset{

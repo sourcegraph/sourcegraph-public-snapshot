@@ -531,19 +531,18 @@ func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 	return qs, nil
 }
 
-func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID int64) ([]*search.RepositoryRevisions, error) {
+func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID int64) ([]search.RepositoryRevisions, error) {
 	searchContextRepositoryRevisions, err := db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, searchContextID)
 	if err != nil {
 		return nil, err
 	}
 
-	repositoryRevisions := make([]*search.RepositoryRevisions, 0, len(searchContextRepositoryRevisions))
+	repositoryRevisions := make([]search.RepositoryRevisions, 0, len(searchContextRepositoryRevisions))
 	for _, searchContextRepositoryRevision := range searchContextRepositoryRevisions {
-		revisionSpecs := make([]search.RevisionSpecifier, 0, len(searchContextRepositoryRevision.Revisions))
-		for _, revision := range searchContextRepositoryRevision.Revisions {
-			revisionSpecs = append(revisionSpecs, search.RevisionSpecifier{RevSpec: revision})
-		}
-		repositoryRevisions = append(repositoryRevisions, &search.RepositoryRevisions{Repo: searchContextRepositoryRevision.Repo, Revs: revisionSpecs})
+		repositoryRevisions = append(repositoryRevisions, search.RepositoryRevisions{
+			Repo: searchContextRepositoryRevision.Repo,
+			Revs: searchContextRepositoryRevision.Revisions,
+		})
 	}
 	return repositoryRevisions, nil
 }

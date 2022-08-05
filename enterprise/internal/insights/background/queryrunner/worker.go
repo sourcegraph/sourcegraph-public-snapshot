@@ -11,11 +11,11 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -67,10 +67,10 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	sharedCache := make(map[string]*types.InsightSeries)
 
 	prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_insights_search_queue_total",
+		Name: "src_query_runner_worker_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), false, nil)
+		count, err := workerStore.QueuedCount(context.Background(), false)
 		if err != nil {
 			logger.Error("Failed to get queued job count", log.Error(err))
 		}
@@ -85,7 +85,6 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		limiter:         limiter,
 		metadadataStore: store.NewInsightStoreWith(insightsStore),
 		seriesCache:     sharedCache,
-		search:          query.Search,
 		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
 			decoder, streamResults := streaming.TabulationDecoder()
 			err := streaming.Search(ctx, query, decoder)
@@ -94,7 +93,6 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 			}
 			return streamResults, nil
 		},
-		computeSearch: query.ComputeSearch,
 		computeSearchStream: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
 			decoder, streamResults := streaming.MatchContextComputeDecoder()
 			err := streaming.ComputeMatchContextStream(ctx, query, decoder)
@@ -251,6 +249,25 @@ INSERT INTO insights_query_runner_jobs (
 	persist_mode
 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
+`
+
+// PurgeJobsForSeries removes all jobs for a seriesID.
+func PurgeJobsForSeries(ctx context.Context, workerBaseStore *basestore.Store, seriesID string) (err error) {
+	tx, err := workerBaseStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	err = tx.Exec(ctx, sqlf.Sprintf(purgeJobsForSeriesFmtStr, seriesID))
+	return err
+
+}
+
+const purgeJobsForSeriesFmtStr = `
+-- source: enterprise/internal/insights/background/queryrunner/worker.go:purgeJobsForSeriesFmtStr
+DELETE FROM insights_query_runner_jobs
+WHERE series_id = %s
 `
 
 func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (_ *Job, err error) {

@@ -48,7 +48,6 @@ import {
     setUserPublicRepositories,
 } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { externalServiceUserModeFromTags, Owner } from '../cloud-ga'
 
 import {
@@ -62,9 +61,7 @@ import { CheckboxRepositoryNode } from './RepositoryNode'
 
 import styles from './UserSettingsManageRepositoriesPage.module.scss'
 
-interface Props
-    extends TelemetryProps,
-        Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onSyncedPublicRepositoriesUpdate'> {
+interface Props extends TelemetryProps {
     owner: Owner
     routingPrefix: string
 }
@@ -168,7 +165,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
     owner,
     routingPrefix,
     telemetryService,
-    onSyncedPublicRepositoriesUpdate,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
@@ -509,7 +505,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
             eventLogger.log('UserSettingsManageRepositoriesSaved', loggerPayload, loggerPayload)
 
             setFetchingRepos('loading')
-            onSyncedPublicRepositoriesUpdate(publicRepos.length)
 
             if (!isOrgOwner) {
                 try {
@@ -562,7 +557,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
             publicRepoState.repos,
             selectionState.radio,
             selectionState.repos,
-            onSyncedPublicRepositoriesUpdate,
             isOrgOwner,
             history,
             routingPrefix,

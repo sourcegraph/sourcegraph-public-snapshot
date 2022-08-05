@@ -77,6 +77,14 @@
   ],
   "Functions": [
     {
+      "Name": "batch_spec_workspace_execution_last_dequeues_upsert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.batch_spec_workspace_execution_last_dequeues_upsert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        batch_spec_workspace_execution_last_dequeues\n    SELECT\n        user_id,\n        MAX(started_at) as latest_dequeue\n    FROM\n        newtab\n    GROUP BY\n        user_id\n    ON CONFLICT (user_id) DO UPDATE SET\n        latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);\n\n    RETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "changesets_computed_state_ensure",
+      "Definition": "CREATE OR REPLACE FUNCTION public.changesets_computed_state_ensure()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n\n    NEW.computed_state = CASE\n        WHEN NEW.reconciler_state = 'errored' THEN 'RETRYING'\n        WHEN NEW.reconciler_state = 'failed' THEN 'FAILED'\n        WHEN NEW.reconciler_state = 'scheduled' THEN 'SCHEDULED'\n        WHEN NEW.reconciler_state != 'completed' THEN 'PROCESSING'\n        WHEN NEW.publication_state = 'UNPUBLISHED' THEN 'UNPUBLISHED'\n        ELSE NEW.external_state\n    END AS computed_state;\n\n    RETURN NEW;\nEND $function$\n"
+    },
+    {
       "Name": "delete_batch_change_reference_on_changesets",
       "Definition": "CREATE OR REPLACE FUNCTION public.delete_batch_change_reference_on_changesets()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE\n          changesets\n        SET\n          batch_change_ids = changesets.batch_change_ids - OLD.id::text\n        WHERE\n          changesets.batch_change_ids ? OLD.id::text;\n\n        RETURN OLD;\n    END;\n$function$\n"
     },
@@ -415,11 +423,29 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "event_logs_export_allowlist_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "event_logs_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "event_logs_scrape_state_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -776,6 +802,15 @@
     },
     {
       "Name": "users_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "webhook_build_jobs_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -1518,8 +1553,21 @@
           "Name": "batch_spec_id",
           "Index": 2,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -1687,7 +1735,7 @@
           "Name": "state",
           "Index": 3,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "'queued'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -1771,7 +1819,7 @@
           "Name": "batch_spec_workspace_id",
           "Index": 2,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -1940,7 +1988,7 @@
           "Name": "state",
           "Index": 3,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "'queued'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -1966,7 +2014,7 @@
           "Name": "user_id",
           "Index": 18,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -2050,6 +2098,69 @@
           "ConstraintDefinition": "FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
+      "Triggers": [
+        {
+          "Name": "batch_spec_workspace_execution_last_dequeues_insert",
+          "Definition": "CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert()"
+        },
+        {
+          "Name": "batch_spec_workspace_execution_last_dequeues_update",
+          "Definition": "CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert()"
+        }
+      ]
+    },
+    {
+      "Name": "batch_spec_workspace_execution_last_dequeues",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "latest_dequeue",
+          "Index": 2,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "batch_spec_workspace_execution_last_dequeues_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_workspace_execution_last_dequeues_pkey ON batch_spec_workspace_execution_last_dequeues USING btree (user_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "batch_spec_workspace_execution_last_dequeues_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -2060,7 +2171,7 @@
           "Name": "batch_spec_id",
           "Index": 2,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -2099,7 +2210,7 @@
           "Name": "changeset_spec_ids",
           "Index": 3,
           "TypeName": "jsonb",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "'{}'::jsonb",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -2203,7 +2314,7 @@
           "Name": "repo_id",
           "Index": 4,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -2338,6 +2449,19 @@
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "batch_change_id",
+          "Index": 14,
+          "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -2512,6 +2636,13 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "batch_specs_batch_change_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "batch_changes",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE"
+        },
         {
           "Name": "batch_specs_has_1_namespace",
           "ConstraintType": "c",
@@ -2710,6 +2841,19 @@
           "Comment": ""
         },
         {
+          "Name": "cancel",
+          "Index": 21,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "changeset_id",
           "Index": 5,
           "TypeName": "integer",
@@ -2895,7 +3039,7 @@
           "Name": "state",
           "Index": 8,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "'queued'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -3323,11 +3467,37 @@
           "Comment": ""
         },
         {
+          "Name": "cancel",
+          "Index": 40,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "closing",
           "Index": 29,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "computed_state",
+          "Index": 42,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -3352,6 +3522,19 @@
           "Name": "current_spec_id",
           "Index": 19,
           "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "detached_at",
+          "Index": 41,
+          "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -3869,6 +4052,26 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "changesets_computed_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changesets_computed_state ON changesets USING btree (computed_state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "changesets_detached_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changesets_detached_at ON changesets USING btree (detached_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "changesets_external_state_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -3974,12 +4177,30 @@
           "ConstraintDefinition": "CHECK (external_branch ~~ 'refs/heads/%'::text)"
         }
       ],
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "changesets_update_computed_state",
+          "Definition": "CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure()"
+        }
+      ]
     },
     {
       "Name": "cm_action_jobs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 18,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "email",
           "Index": 2,
@@ -4212,6 +4433,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX cm_action_jobs_pkey ON cm_action_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "cm_action_jobs_state_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -5092,6 +5323,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 19,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 16,
           "TypeName": "json[]",
@@ -5310,6 +5554,26 @@
           "IndexDefinition": "CREATE UNIQUE INDEX cm_trigger_jobs_pkey ON cm_trigger_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "cm_trigger_jobs_finished_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finished_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "cm_trigger_jobs_state_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -5818,6 +6082,32 @@
           "Comment": "A 40-char revhash. Note that this commit may not be resolvable in the future."
         },
         {
+          "Name": "created_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Time when lockfile was indexed"
+        },
+        {
+          "Name": "fidelity",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'flat'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ..."
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -5855,6 +6145,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Time when lockfile index was updated"
         }
       ],
       "Indexes": [
@@ -6990,6 +7293,108 @@
       "Triggers": []
     },
     {
+      "Name": "event_logs_export_allowlist",
+      "Comment": "An allowlist of events that are approved for export if the scraping job is enabled",
+      "Columns": [
+        {
+          "Name": "event_name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Name of the event that corresponds to event_logs.name"
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('event_logs_export_allowlist_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "event_logs_export_allowlist_event_name_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_export_allowlist_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX event_logs_export_allowlist_pkey ON event_logs_export_allowlist USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "event_logs_scrape_state",
+      "Comment": "Contains state for the periodic telemetry job that scrapes events if enabled.",
+      "Columns": [
+        {
+          "Name": "bookmark_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Bookmarks the maximum most recent successful event_logs.id that was scraped"
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('event_logs_scrape_state_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "event_logs_scrape_state_pk",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX event_logs_scrape_state_pk ON event_logs_scrape_state USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "executor_heartbeats",
       "Comment": "Tracks the most recent activity of executors attached to this Sourcegraph instance.",
       "Columns": [
@@ -7179,6 +7584,19 @@
       "Name": "explicit_permissions_bitbucket_projects_jobs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "execution_logs",
           "Index": 11,
@@ -7613,6 +8031,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 15,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 11,
           "TypeName": "json[]",
@@ -7629,7 +8060,7 @@
           "Name": "external_service_id",
           "Index": 8,
           "TypeName": "bigint",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -8443,6 +8874,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "delete_source",
           "Index": 16,
           "TypeName": "boolean",
@@ -8898,6 +9342,19 @@
       "Name": "insights_query_runner_jobs",
       "Comment": "See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job\u0026patternType=literal)",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 19,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "cost",
           "Index": 16,
@@ -9782,6 +10239,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 16,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 10,
           "TypeName": "json[]",
@@ -10086,6 +10556,19 @@
       "Name": "lsif_dependency_syncing_jobs",
       "Comment": "Tracks jobs that scan imports of indexes to schedule auto-index jobs.",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 14,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "execution_logs",
           "Index": 10,
@@ -10468,6 +10951,19 @@
       "Name": "lsif_indexes",
       "Comment": "Stores metadata about a code intel index job.",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 23,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "commit",
           "Index": 2,
@@ -11398,6 +11894,19 @@
           "Comment": ""
         },
         {
+          "Name": "cancel",
+          "Index": 29,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "commit",
           "Index": 2,
           "TypeName": "text",
@@ -12156,6 +12665,19 @@
       "Name": "migration_logs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "backfilled",
+          "Index": 10,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "error_message",
           "Index": 9,
@@ -13827,10 +14349,62 @@
           "Comment": ""
         },
         {
+          "Name": "license_expires_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "license_key",
           "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "license_tags",
+          "Index": 6,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "license_user_count",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "license_version",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -13880,6 +14454,19 @@
       "Name": "product_subscriptions",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "account_number",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "archived_at",
           "Index": 6,
@@ -14895,7 +15482,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 4,
+          "Index": 3,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "",
@@ -14908,7 +15495,7 @@
         },
         {
           "Name": "user_ids_ints",
-          "Index": 5,
+          "Index": 4,
           "TypeName": "bigint[]",
           "IsNullable": false,
           "Default": "'{}'::integer[]",
@@ -16791,7 +17378,7 @@
         },
         {
           "Name": "object_ids_ints",
-          "Index": 9,
+          "Index": 8,
           "TypeName": "integer[]",
           "IsNullable": false,
           "Default": "'{}'::integer[]",
@@ -16830,19 +17417,6 @@
         },
         {
           "Name": "service_id",
-          "Index": 8,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "service_type",
           "Index": 7,
           "TypeName": "text",
           "IsNullable": false,
@@ -16855,8 +17429,21 @@
           "Comment": ""
         },
         {
-          "Name": "updated_at",
+          "Name": "service_type",
           "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 5,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "",
@@ -17461,6 +18048,247 @@
       ]
     },
     {
+      "Name": "webhook_build_jobs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "execution_logs",
+          "Index": 13,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "extsvc_id",
+          "Index": 17,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "extsvc_kind",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "failure_message",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "finished_at",
+          "Index": 9,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('webhook_build_jobs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_heartbeat_at",
+          "Index": 14,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_failures",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_resets",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "org",
+          "Index": 16,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "process_after",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "queued_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "started_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "state",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'queued'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "worker_hostname",
+          "Index": 15,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "webhook_build_jobs_queued_at_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "webhook_logs",
       "Comment": "",
       "Columns": [
@@ -17617,11 +18445,11 @@
     },
     {
       "Name": "batch_spec_workspace_execution_queue",
-      "Definition": " WITH user_queues AS (\n         SELECT exec.user_id,\n            max(exec.started_at) AS latest_dequeue\n           FROM batch_spec_workspace_execution_jobs exec\n          GROUP BY exec.user_id\n        ), queue_candidates AS (\n         SELECT exec.id,\n            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue\n           FROM (batch_spec_workspace_execution_jobs exec\n             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))\n          WHERE (exec.state = 'queued'::text)\n          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST\n        )\n SELECT queue_candidates.id,\n    row_number() OVER () AS place_in_global_queue,\n    queue_candidates.place_in_user_queue\n   FROM queue_candidates;"
+      "Definition": " WITH queue_candidates AS (\n         SELECT exec.id,\n            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue\n           FROM (batch_spec_workspace_execution_jobs exec\n             JOIN batch_spec_workspace_execution_last_dequeues queue ON ((queue.user_id = exec.user_id)))\n          WHERE (exec.state = 'queued'::text)\n          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST\n        )\n SELECT queue_candidates.id,\n    row_number() OVER () AS place_in_global_queue,\n    queue_candidates.place_in_user_queue\n   FROM queue_candidates;"
     },
     {
       "Name": "branch_changeset_specs_and_changesets",
-      "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));"
+      "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state,\n    changesets.computed_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));"
     },
     {
       "Name": "external_service_sync_jobs_with_next_sync_at",
@@ -17649,7 +18477,7 @@
     },
     {
       "Name": "reconciler_changesets",
-      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_changed,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
+      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_changed,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
     },
     {
       "Name": "site_config",
@@ -17657,7 +18485,7 @@
     },
     {
       "Name": "tracking_changeset_specs_and_changesets",
-      "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    repo.name AS repo_name,\n    COALESCE((changesets.metadata -\u003e\u003e 'Title'::text), (changesets.metadata -\u003e\u003e 'title'::text)) AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));"
+      "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    repo.name AS repo_name,\n    COALESCE((changesets.metadata -\u003e\u003e 'Title'::text), (changesets.metadata -\u003e\u003e 'title'::text)) AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state,\n    changesets.computed_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));"
     }
   ]
 }

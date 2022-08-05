@@ -17,6 +17,79 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
+func TestSynchronizeMetadata(t *testing.T) {
+	// Note: this blocks test parallelism
+	testEnterprise(t)
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := NewStoreWithDB(db)
+
+	compareMigrations := func() {
+		migrations, err := store.List(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error getting migrations: %s", err)
+		}
+
+		var yamlizedMigrations []yamlMigration
+		for _, migration := range migrations {
+			yamlMigration := yamlMigration{
+				ID:                     migration.ID,
+				Team:                   migration.Team,
+				Component:              migration.Component,
+				Description:            migration.Description,
+				NonDestructive:         migration.NonDestructive,
+				IsEnterprise:           migration.IsEnterprise,
+				IntroducedVersionMajor: migration.Introduced.Major,
+				IntroducedVersionMinor: migration.Introduced.Minor,
+			}
+
+			if migration.Deprecated != nil {
+				yamlMigration.DeprecatedVersionMajor = &migration.Deprecated.Major
+				yamlMigration.DeprecatedVersionMinor = &migration.Deprecated.Minor
+			}
+
+			yamlizedMigrations = append(yamlizedMigrations, yamlMigration)
+		}
+
+		sort.Slice(yamlizedMigrations, func(i, j int) bool {
+			return yamlizedMigrations[i].ID < yamlizedMigrations[j].ID
+		})
+
+		if diff := cmp.Diff(yamlMigrations, yamlizedMigrations); diff != "" {
+			t.Errorf("unexpected migrations (-want +got):\n%s", diff)
+		}
+	}
+
+	if err := store.SynchronizeMetadata(ctx); err != nil {
+		t.Fatalf("unexpected error synchronizing metadata: %s", err)
+	}
+
+	compareMigrations()
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`
+		UPDATE out_of_band_migrations SET
+			team = 'overwritten',
+			component = 'overwritten',
+			description = 'overwritten',
+			non_destructive = false,
+			is_enterprise = false,
+			introduced_version_major = -1,
+			introduced_version_minor = -1,
+			deprecated_version_major = -1,
+			deprecated_version_minor = -1
+	`)); err != nil {
+		t.Fatalf("unexpected error updating migrations: %s", err)
+	}
+
+	if err := store.SynchronizeMetadata(ctx); err != nil {
+		t.Fatalf("unexpected error synchronizing metadata: %s", err)
+	}
+
+	compareMigrations()
+}
+
 func TestList(t *testing.T) {
 	t.Parallel()
 
@@ -41,12 +114,12 @@ func TestList(t *testing.T) {
 }
 
 func TestListEnterprise(t *testing.T) {
+	// Note: this blocks test parallelism
+	testEnterprise(t)
+
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(t, db)
-
-	ReturnEnterpriseMigrations = true
-	defer func() { ReturnEnterpriseMigrations = false }()
 
 	migrations, err := store.List(context.Background())
 	if err != nil {
@@ -261,6 +334,7 @@ var testMigrations = []Migration{
 		Created:        testTime,
 		LastUpdated:    nil,
 		NonDestructive: false,
+		IsEnterprise:   false,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
@@ -276,6 +350,7 @@ var testMigrations = []Migration{
 		Created:        testTime.Add(time.Hour * 1),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
+		IsEnterprise:   false,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors: []MigrationError{
@@ -294,6 +369,7 @@ var testMigrations = []Migration{
 		Created:        testTime.Add(time.Hour * 3),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 4)),
 		NonDestructive: false,
+		IsEnterprise:   false,
 		ApplyReverse:   true,
 		Metadata:       json.RawMessage(`{}`),
 		Errors: []MigrationError{
@@ -315,6 +391,7 @@ var testEnterpriseMigrations = []Migration{
 		Created:        testTime,
 		LastUpdated:    nil,
 		NonDestructive: false,
+		IsEnterprise:   true,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
@@ -330,6 +407,7 @@ var testEnterpriseMigrations = []Migration{
 		Created:        testTime.Add(time.Hour * 1),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
+		IsEnterprise:   true,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
@@ -342,6 +420,11 @@ func timePtr(t time.Time) *time.Time { return &t }
 func newVersionPtr(major, minor int) *Version {
 	v := NewVersion(major, minor)
 	return &v
+}
+
+func testEnterprise(t *testing.T) {
+	ReturnEnterpriseMigrations = true
+	t.Cleanup(func() { ReturnEnterpriseMigrations = false })
 }
 
 func testStore(t *testing.T, db database.DB) *Store {

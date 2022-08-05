@@ -19,7 +19,7 @@ SOURCEGRAPH_SUDO_TOKEN=<YOUR SOURCEGRAPH API ACCESS TOKEN>
 
 ## Testing
 
-1. Ensure these repositories exist on your instance (in `Site Admin` -> `Manage repositories` -> `GitHub`):
+1. Ensure these repositories exist on your instance (in `Site Admin` -> `Manage code hosts` -> `GitHub`):
 
 ```
   "repos": [

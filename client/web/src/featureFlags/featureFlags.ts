@@ -11,9 +11,9 @@ export type FeatureFlagName =
     | 'insight-polling-enabled'
     | 'ab-visitor-tour-with-notebooks'
     | 'ab-email-verification-alert'
-    | 'hide-run-batch-spec-for-mi'
     | 'contrast-compliant-syntax-highlighting'
-    | 'admin-analytics-enabled'
+    | 'admin-analytics-disabled'
+    | 'admin-analytics-cache-disabled'
 
 interface OrgFlagOverride {
     orgID: string

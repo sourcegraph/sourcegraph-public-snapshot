@@ -184,7 +184,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 						return swapNodePtr(node, name), nil
 					}
 				}
-				found, err := squirrel.lookupFieldJava(ctx, ClassType{def: swapNode(node, cur)}, ident)
+				found, err := squirrel.lookupFieldJava(ctx, ClassTypeJava{def: swapNode(node, cur)}, ident)
 				if err != nil {
 					return nil, err
 				}
@@ -400,11 +400,11 @@ func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object Node, 
 	return squirrel.lookupFieldJava(ctx, ty, field)
 }
 
-func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty Type, field string) (ret *Node, err error) {
+func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJava, field string) (ret *Node, err error) {
 	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
 
 	switch ty2 := ty.(type) {
-	case ClassType:
+	case ClassTypeJava:
 		body := ty2.def.ChildByFieldName("body")
 		if body == nil {
 			return nil, nil
@@ -451,10 +451,10 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty Type, f
 			}
 		}
 		return nil, nil
-	case FnType:
+	case FnTypeJava:
 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
 		return nil, nil
-	case PrimType:
+	case PrimTypeJava:
 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
 		return nil, nil
 	default:
@@ -463,10 +463,10 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty Type, f
 	}
 }
 
-func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret Type, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyTypeStringer(&ret))()
+func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret TypeJava, err error) {
+	defer squirrel.onCall(node, String(node.Type()), lazyTypeJavaStringer(&ret))()
 
-	onIdent := func() (Type, error) {
+	onIdent := func() (TypeJava, error) {
 		found, err := squirrel.getDefJava(ctx, node)
 		if err != nil {
 			return nil, err
@@ -474,7 +474,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		if found == nil {
 			return nil, nil
 		}
-		return squirrel.defToType(ctx, *found)
+		return squirrel.defToTypeJava(ctx, *found)
 	}
 
 	switch node.Type() {
@@ -524,7 +524,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		if found == nil {
 			return nil, nil
 		}
-		return squirrel.defToType(ctx, *found)
+		return squirrel.defToTypeJava(ctx, *found)
 	case "method_invocation":
 		name := node.ChildByFieldName("name")
 		if name == nil {
@@ -538,7 +538,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 			return nil, nil
 		}
 		switch ty2 := ty.(type) {
-		case FnType:
+		case FnTypeJava:
 			return ty2.ret, nil
 		default:
 			squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefJava: expected method, got %q", ty.variant()))
@@ -567,13 +567,13 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		}
 		return squirrel.getTypeDefJava(ctx, swapNode(node, ty))
 	case "void_type":
-		return PrimType{noad: node, varient: "void"}, nil
+		return PrimTypeJava{noad: node, varient: "void"}, nil
 	case "integral_type":
-		return PrimType{noad: node, varient: "integral"}, nil
+		return PrimTypeJava{noad: node, varient: "integral"}, nil
 	case "floating_point_type":
-		return PrimType{noad: node, varient: "floating"}, nil
+		return PrimTypeJava{noad: node, varient: "floating"}, nil
 	case "boolean_type":
-		return PrimType{noad: node, varient: "boolean"}, nil
+		return PrimTypeJava{noad: node, varient: "boolean"}, nil
 	default:
 		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
 		return nil, nil
@@ -729,62 +729,62 @@ func getSuperclassJava(declaration Node) *Node {
 	return swapNodePtr(declaration, class)
 }
 
-type Type interface {
+type TypeJava interface {
 	variant() string
 	node() Node
 }
 
-type FnType struct {
-	ret  Type
+type FnTypeJava struct {
+	ret  TypeJava
 	noad Node
 }
 
-func (t FnType) variant() string {
+func (t FnTypeJava) variant() string {
 	return "fn"
 }
 
-func (t FnType) node() Node {
+func (t FnTypeJava) node() Node {
 	return t.noad
 }
 
-type ClassType struct {
+type ClassTypeJava struct {
 	def Node
 }
 
-func (t ClassType) variant() string {
+func (t ClassTypeJava) variant() string {
 	return "class"
 }
 
-func (t ClassType) node() Node {
+func (t ClassTypeJava) node() Node {
 	return t.def
 }
 
-type PrimType struct {
+type PrimTypeJava struct {
 	noad    Node
 	varient string
 }
 
-func (t PrimType) variant() string {
+func (t PrimTypeJava) variant() string {
 	return fmt.Sprintf("prim:%s", t.varient)
 }
 
-func (t PrimType) node() Node {
+func (t PrimTypeJava) node() Node {
 	return t.noad
 }
 
-func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type, error) {
+func (squirrel *SquirrelService) defToTypeJava(ctx context.Context, def Node) (TypeJava, error) {
 	parent := def.Node.Parent()
 	if parent == nil {
 		return nil, nil
 	}
 	switch parent.Type() {
 	case "class_declaration":
-		return (Type)(ClassType{def: swapNode(def, parent)}), nil
+		return (TypeJava)(ClassTypeJava{def: swapNode(def, parent)}), nil
 	case "method_declaration":
 		retTyNode := parent.ChildByFieldName("type")
 		if retTyNode == nil {
 			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
-			return (Type)(FnType{
+			return (TypeJava)(FnTypeJava{
 				ret:  nil,
 				noad: swapNode(def, parent),
 			}), nil
@@ -793,7 +793,7 @@ func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type,
 		if err != nil {
 			return nil, err
 		}
-		return (Type)(FnType{
+		return (TypeJava)(FnTypeJava{
 			ret:  retTy,
 			noad: swapNode(def, parent),
 		}), nil
@@ -823,7 +823,7 @@ func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type,
 	}
 }
 
-func lazyTypeStringer(ty *Type) func() fmt.Stringer {
+func lazyTypeJavaStringer(ty *TypeJava) func() fmt.Stringer {
 	return func() fmt.Stringer {
 		if ty != nil && *ty != nil {
 			return String((*ty).variant())

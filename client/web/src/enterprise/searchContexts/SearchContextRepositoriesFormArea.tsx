@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { mdiCheck } from '@mdi/js'
 import * as jsonc from 'jsonc-parser'
-import CheckIcon from 'mdi-react/CheckIcon'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
@@ -171,7 +171,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
                             data-testid="repositories-config-success"
                             className="text-success mr-1"
                         >
-                            <CheckIcon />{' '}
+                            <Icon svgPath={mdiCheck} inline={false} aria-hidden={true} />{' '}
                         </Icon>
                         <span>Valid configuration</span>
                     </span>

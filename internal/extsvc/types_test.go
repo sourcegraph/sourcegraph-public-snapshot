@@ -126,7 +126,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:   "Go mod default",
 			config: `{"urls": ["https://example.com"]}`,
-			kind:   KindGoModules,
+			kind:   KindGoPackages,
 			want:   57600.0 / 3600.0,
 		},
 		{

@@ -1,4 +1,4 @@
-import { SeriesChartContent } from '../../../core'
+import { CategoricalChartContent, SeriesChartContent } from '../../../core'
 
 const getYValue = (datum: MockSeriesDatum): number => datum.value
 const getXValue = (datum: MockSeriesDatum): Date => new Date(datum.x)
@@ -41,6 +41,107 @@ export const SERIES_MOCK_CHART: SeriesChartContent<MockSeriesDatum> = {
             color: 'var(--oc-orange-7)',
             getYValue,
             getXValue,
+        },
+    ],
+}
+
+interface LanguageUsageDatum {
+    name: string
+    value: number
+    fill: string
+    linkURL: string
+    group?: string
+}
+
+export const COMPUTE_MOCK_CHART: CategoricalChartContent<LanguageUsageDatum> = {
+    getDatumValue: datum => datum.value,
+    getDatumName: datum => datum.name,
+    getDatumColor: datum => datum.fill,
+    getCategory: datum => datum.group,
+    data: [
+        {
+            group: 'Group 1',
+            name: 'Name 1',
+            value: 241,
+            fill: 'var(--oc-yellow-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 1',
+            name: 'Name 2',
+            value: 148,
+            fill: 'var(--oc-grape-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 1',
+            name: 'Name 3',
+            value: 87,
+            fill: 'var(--oc-cyan-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 2',
+            name: 'Name 1',
+            value: 168,
+            fill: 'var(--oc-yellow-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 2',
+            name: 'Name 2',
+            value: 130,
+            fill: 'var(--oc-grape-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 2',
+            name: 'Name 3',
+            value: 118,
+            fill: 'var(--oc-cyan-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 3',
+            name: 'Name 1',
+            value: 125,
+            fill: 'var(--oc-yellow-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 3',
+            name: 'Name 2',
+            value: 100,
+            fill: 'var(--oc-grape-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 3',
+            name: 'Name 3',
+            value: 157,
+            fill: 'var(--oc-cyan-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 4',
+            name: 'Name 1',
+            value: 60,
+            fill: 'var(--oc-yellow-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 4',
+            name: 'Name 2',
+            value: 114,
+            fill: 'var(--oc-grape-9)',
+            linkURL: '',
+        },
+        {
+            group: 'Group 4',
+            name: 'Name 3',
+            value: 191,
+            fill: 'var(--oc-cyan-9)',
+            linkURL: '',
         },
     ],
 }

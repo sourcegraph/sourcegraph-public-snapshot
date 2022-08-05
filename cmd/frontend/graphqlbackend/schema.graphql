@@ -214,6 +214,10 @@ type Mutation {
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
     """
+    Bulk "deleteUser" action.
+    """
+    deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
+    """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
@@ -536,6 +540,10 @@ type Mutation {
     """
     invalidateSessionsByID(userID: ID!): EmptyResponse
     """
+    Bulk "invalidateSessionsByID" action.
+    """
+    invalidateSessionsByIDs(userIDs: [ID!]!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 
@@ -753,6 +761,13 @@ type Mutation {
     Only administrators can use this API.
     """
     sendTestEmail(to: String!): String!
+
+    """
+    Enqueues a sync for the external service. It will be picked up in the background.
+
+    Site-admin or owner of the external service only.
+    """
+    syncExternalService(id: ID!): EmptyResponse!
 }
 
 """
@@ -1082,11 +1097,7 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "You use Sourcegraph to...".
-    """
-    useCases: [SurveyUseCase!]
-    """
-    The answer to "What else do you use Sourcegraph to do?".
+    The answer to "What do you use Sourcegraph for?".
     """
     otherUseCase: String
     """
@@ -1884,6 +1895,7 @@ enum SearchPatternType {
     regexp
     structural
     lucky
+    keyword
 }
 
 """
@@ -2346,38 +2358,47 @@ type ExternalService implements Node {
     The external service's unique ID.
     """
     id: ID!
+
     """
     The kind of external service.
     """
     kind: ExternalServiceKind!
+
     """
     The display name of the external service.
     """
     displayName: String!
+
     """
     The JSON configuration of the external service.
     """
     config: JSONCString!
+
     """
     When the external service was created.
     """
     createdAt: DateTime!
+
     """
     When the external service was last updated.
     """
     updatedAt: DateTime!
+
     """
     The namespace this external service belongs to.
     """
     namespace: Namespace
+
     """
     The number of repos synced by the external service.
     """
     repoCount: Int!
+
     """
     An optional URL that will be populated when webhooks have been configured for the external service.
     """
     webhookURL: String
+
     """
     This is an optional field that's populated when we ran into errors on the
     backend side when trying to create/update an ExternalService, but the
@@ -2386,16 +2407,19 @@ type ExternalService implements Node {
     not break the API and stay backwards compatible.
     """
     warning: String
+
     """
     External services are synced with code hosts in the background. This optional field
     will contain any errors that occured during the most recent completed sync.
     """
     lastSyncError: String
+
     """
     LastSyncAt is the time the last sync job was run for this code host. Null if it
     has never been synced so far.
     """
     lastSyncAt: DateTime
+
     """
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
@@ -2404,6 +2428,7 @@ type ExternalService implements Node {
     """
     Returns a list of scopes granted by the code host. It is based on the token used
     when configuring the external service.
+
     NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
     so it should be used sparingly.
     """
@@ -2454,6 +2479,97 @@ type ExternalService implements Node {
     reaches out to the code host directly which is wasteful if repositories are already cloned.
     """
     invitableCollaborators: [Person!]!
+
+    """
+    The list of recent sync jobs for this external service.
+    """
+    syncJobs(first: Int): ExternalServiceSyncJobConnection!
+}
+
+"""
+A list of external service sync jobs.
+"""
+type ExternalServiceSyncJobConnection {
+    """
+    A list of sync jobs.
+    """
+    nodes: [ExternalServiceSyncJob!]!
+
+    """
+    The total number of jobs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+The possible states of an external service sync job.
+"""
+enum ExternalServiceSyncJobState {
+    """
+    Not yet started. Will be picked up by a worker eventually.
+    """
+    QUEUED
+
+    """
+    Currently syncing.
+    """
+    PROCESSING
+
+    """
+    An error occured while syncing. Will be retried eventually.
+    """
+    ERRORED
+
+    """
+    A fatal error occured while syncing. No retries will be made.
+    """
+    FAILED
+
+    """
+    Sync finished successfully.
+    """
+    COMPLETED
+}
+
+"""
+An external service sync job represents one sync with the code host. It's a background
+job that will eventually be run by the repo syncer.
+"""
+type ExternalServiceSyncJob implements Node {
+    """
+    The unique identifier of the sync job.
+    """
+    id: ID!
+
+    """
+    The current state of the sync job.
+    """
+    state: ExternalServiceSyncJobState!
+
+    """
+    When the sync job was added to the queue.
+    """
+    queuedAt: DateTime!
+
+    """
+    Set when sync begins.
+    """
+    startedAt: DateTime
+
+    """
+    Set when sync finished.
+    """
+    finishedAt: DateTime
+
+    """
+    Error message, if the sync failed.
+    """
+    failureMessage: String
 }
 
 """
@@ -4276,6 +4392,10 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4339,6 +4459,10 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4440,6 +4564,10 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        """
+        formatOnly: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -5568,6 +5696,28 @@ type Site implements SettingsSubject {
     analytics: Analytics!
 
     """
+    List all users.
+    """
+    users(
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+        """
+        Returns users who have been active in a given period of time.
+        """
+        siteAdmin: Boolean
+        """
+        Returns users that contain filter in the username field.
+        """
+        username: String
+        """
+        Returns users that contain filter in the email field.
+        """
+        email: String
+    ): SiteUsers!
+
+    """
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
     is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
@@ -5899,6 +6049,20 @@ enum AnalyticsDateRange {
 }
 
 """
+Group site analytics by period.
+"""
+enum AnalyticsGrouping {
+    """
+    Group data by day.
+    """
+    DAILY
+    """
+    Group data by week.
+    """
+    WEEKLY
+}
+
+"""
 Analytics for certain date.
 """
 type AnalyticsStatItemNode {
@@ -5909,16 +6073,16 @@ type AnalyticsStatItemNode {
     """
     Total number of events.
     """
-    count: Int!
+    count: Float!
     """
     Unique number of users who triggered event.
     This counts deleted users as well as anonymous users.
     """
-    uniqueUsers: Int!
+    uniqueUsers: Float!
     """
     Unique number of currently registered users who triggered event.
     """
-    registeredUsers: Int!
+    registeredUsers: Float!
 }
 
 """
@@ -5928,16 +6092,16 @@ type AnalyticsStatItemSummary {
     """
     Total number of events.
     """
-    totalCount: Int!
+    totalCount: Float!
     """
     Total unique number of users who triggered event.
     This counts deleted users as well as anonymous users.
     """
-    totalUniqueUsers: Int!
+    totalUniqueUsers: Float!
     """
     Total unique number of currently registered users who triggered event.
     """
-    totalRegisteredUsers: Int!
+    totalRegisteredUsers: Float!
 }
 
 """
@@ -6001,11 +6165,11 @@ type AnalyticsUsersFrequencyItem {
     """
     Number of days used
     """
-    daysUsed: Int!
+    daysUsed: Float!
     """
     Number of users.
     """
-    frequency: Int!
+    frequency: Float!
     """
     Percentage of users from total frequencies.
     """
@@ -6019,15 +6183,15 @@ type AnalyticsUsersSummaryResult {
     """
     Average DAUs
     """
-    avgDAU: AnalyticsStatItemSummary!
+    avgDAU: Float!
     """
     Average WAUs
     """
-    avgWAU: AnalyticsStatItemSummary!
+    avgWAU: Float!
     """
     Average MAUs
     """
-    avgMAU: AnalyticsStatItemSummary!
+    avgMAU: Float!
 }
 
 """
@@ -6061,9 +6225,13 @@ type AnalyticsCodeIntelResult {
     """
     definitionClicks: AnalyticsStatItem!
     """
-    Browser extension installs
+    Code Intel events made from web
     """
-    browserExtensionInstalls: AnalyticsStatItem!
+    inAppEvents: AnalyticsStatItem!
+    """
+    Code Intel events made from code host
+    """
+    codeHostEvents: AnalyticsStatItem!
     """
     Search based events
     """
@@ -6085,11 +6253,25 @@ type AnalyticsReposSummartResult {
     """
     Total number of repositories.
     """
-    count: Int!
+    count: Float!
     """
     Total number of repositories with precise code-intel.
     """
-    preciseCodeIntelCount: Int!
+    preciseCodeIntelCount: Float!
+}
+
+"""
+Batch changes analytics.
+"""
+type AnalyticsBatchChangesResult {
+    """
+    Changesets created
+    """
+    changesetsCreated: AnalyticsStatItem!
+    """
+    Changesets merged
+    """
+    changesetsMerged: AnalyticsStatItem!
 }
 
 """
@@ -6099,23 +6281,123 @@ type Analytics {
     """
     Search statistics.
     """
-    search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
+    search(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsSearchResult!
     """
     Notebooks statistics.
     """
-    notebooks(dateRange: AnalyticsDateRange): AnalyticsNotebooksResults!
+    notebooks(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsNotebooksResults!
     """
     Users statistics.
     """
-    users(dateRange: AnalyticsDateRange): AnalyticsUsersResult!
+    users(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsUsersResult!
     """
     Code-intelligence statistics.
     """
-    codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
+    codeIntel(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodeIntelResult!
     """
     Repositories summary statistics.
     """
     repos: AnalyticsReposSummartResult!
+    """
+    Batch changes statistics
+    """
+    batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
+}
+
+"""
+Site user.
+"""
+type SiteUser {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    User's username.
+    """
+    username: String!
+    """
+    User's primary email.
+    """
+    email: String
+    """
+    The datetime when user was created in the system.
+    """
+    createdAt: String!
+    """
+    The datetime when user was last active.
+    """
+    lastActiveAt: String
+    """
+    The datetime when user was deleted.
+    """
+    deletedAt: String
+    """
+    Whether user is site admin or not.
+    """
+    siteAdmin: Boolean!
+    """
+    Total number of user's event_logs.
+    """
+    eventsCount: Float!
+}
+
+"""
+SiteUserOrderBy enumerates the ways a users list can be ordered.
+"""
+enum SiteUserOrderBy {
+    USERNAME
+    """
+    User's primary email.
+    """
+    EMAIL
+    """
+    The total number of user's event_logs.
+    """
+    EVENTS_COUNT
+    """
+    The last event_log datetime.
+    """
+    LAST_ACTIVE_AT
+    """
+    The datetime when user was added to the system.
+    """
+    CREATED_AT
+    """
+    The datetime when user was soft deleted.
+    """
+    DELETED_AT
+    """
+    Whether the user is site admin or not.
+    """
+    SITE_ADMIN
+}
+
+"""
+Site users.
+"""
+type SiteUsers {
+    """
+    User total count.
+    """
+    totalCount: Float!
+    """
+    List of users.
+    """
+    nodes(
+        """
+        Returns the first n users from the list.
+        """
+        first: Int
+        """
+        Returns users ordered by a given column.
+        """
+        orderBy: SiteUserOrderBy
+        """
+        Returns ordered users in descending order provided by orderBy field.
+        """
+        descending: Boolean
+    ): [SiteUser!]!
 }
 
 """
@@ -6242,11 +6524,7 @@ type SurveyResponse {
     """
     better: String
     """
-    The answer to "You use Sourcegraph to...".
-    """
-    useCases: [SurveyUseCase!]
-    """
-    The answer to "What else do you use Sourcegraph to do?".
+    The answer to "What do you use Sourcegraph for?".
     """
     otherUseCase: String
     """

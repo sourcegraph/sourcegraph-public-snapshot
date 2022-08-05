@@ -57,7 +57,7 @@ exports[`NewProductSubscriptionPaymentSection new subscription 1`] = `
       <div
         aria-label="Loading"
         aria-live="polite"
-        class="iconInline loadingSpinner invisible"
+        class="mdi-icon iconInline loadingSpinner invisible"
         role="img"
       />
     </div>

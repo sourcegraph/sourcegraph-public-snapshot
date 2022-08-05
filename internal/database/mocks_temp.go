@@ -1687,6 +1687,10 @@ type MockAuthzStore struct {
 	// RevokeUserPermissionsFunc is an instance of a mock function object
 	// controlling the behavior of the method RevokeUserPermissions.
 	RevokeUserPermissionsFunc *AuthzStoreRevokeUserPermissionsFunc
+	// RevokeUserPermissionsListFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// RevokeUserPermissionsList.
+	RevokeUserPermissionsListFunc *AuthzStoreRevokeUserPermissionsListFunc
 }
 
 // NewMockAuthzStore creates a new mock of the AuthzStore interface. All
@@ -1705,6 +1709,11 @@ func NewMockAuthzStore() *MockAuthzStore {
 		},
 		RevokeUserPermissionsFunc: &AuthzStoreRevokeUserPermissionsFunc{
 			defaultHook: func(context.Context, *RevokeUserPermissionsArgs) (r0 error) {
+				return
+			},
+		},
+		RevokeUserPermissionsListFunc: &AuthzStoreRevokeUserPermissionsListFunc{
+			defaultHook: func(context.Context, []*RevokeUserPermissionsArgs) (r0 error) {
 				return
 			},
 		},
@@ -1730,6 +1739,11 @@ func NewStrictMockAuthzStore() *MockAuthzStore {
 				panic("unexpected invocation of MockAuthzStore.RevokeUserPermissions")
 			},
 		},
+		RevokeUserPermissionsListFunc: &AuthzStoreRevokeUserPermissionsListFunc{
+			defaultHook: func(context.Context, []*RevokeUserPermissionsArgs) error {
+				panic("unexpected invocation of MockAuthzStore.RevokeUserPermissionsList")
+			},
+		},
 	}
 }
 
@@ -1745,6 +1759,9 @@ func NewMockAuthzStoreFrom(i AuthzStore) *MockAuthzStore {
 		},
 		RevokeUserPermissionsFunc: &AuthzStoreRevokeUserPermissionsFunc{
 			defaultHook: i.RevokeUserPermissions,
+		},
+		RevokeUserPermissionsListFunc: &AuthzStoreRevokeUserPermissionsListFunc{
+			defaultHook: i.RevokeUserPermissionsList,
 		},
 	}
 }
@@ -2070,6 +2087,114 @@ func (c AuthzStoreRevokeUserPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AuthzStoreRevokeUserPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AuthzStoreRevokeUserPermissionsListFunc describes the behavior when the
+// RevokeUserPermissionsList method of the parent MockAuthzStore instance is
+// invoked.
+type AuthzStoreRevokeUserPermissionsListFunc struct {
+	defaultHook func(context.Context, []*RevokeUserPermissionsArgs) error
+	hooks       []func(context.Context, []*RevokeUserPermissionsArgs) error
+	history     []AuthzStoreRevokeUserPermissionsListFuncCall
+	mutex       sync.Mutex
+}
+
+// RevokeUserPermissionsList delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockAuthzStore) RevokeUserPermissionsList(v0 context.Context, v1 []*RevokeUserPermissionsArgs) error {
+	r0 := m.RevokeUserPermissionsListFunc.nextHook()(v0, v1)
+	m.RevokeUserPermissionsListFunc.appendCall(AuthzStoreRevokeUserPermissionsListFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// RevokeUserPermissionsList method of the parent MockAuthzStore instance is
+// invoked and the hook queue is empty.
+func (f *AuthzStoreRevokeUserPermissionsListFunc) SetDefaultHook(hook func(context.Context, []*RevokeUserPermissionsArgs) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RevokeUserPermissionsList method of the parent MockAuthzStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AuthzStoreRevokeUserPermissionsListFunc) PushHook(hook func(context.Context, []*RevokeUserPermissionsArgs) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AuthzStoreRevokeUserPermissionsListFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []*RevokeUserPermissionsArgs) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AuthzStoreRevokeUserPermissionsListFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []*RevokeUserPermissionsArgs) error {
+		return r0
+	})
+}
+
+func (f *AuthzStoreRevokeUserPermissionsListFunc) nextHook() func(context.Context, []*RevokeUserPermissionsArgs) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AuthzStoreRevokeUserPermissionsListFunc) appendCall(r0 AuthzStoreRevokeUserPermissionsListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AuthzStoreRevokeUserPermissionsListFuncCall
+// objects describing the invocations of this function.
+func (f *AuthzStoreRevokeUserPermissionsListFunc) History() []AuthzStoreRevokeUserPermissionsListFuncCall {
+	f.mutex.Lock()
+	history := make([]AuthzStoreRevokeUserPermissionsListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AuthzStoreRevokeUserPermissionsListFuncCall is an object that describes
+// an invocation of method RevokeUserPermissionsList on an instance of
+// MockAuthzStore.
+type AuthzStoreRevokeUserPermissionsListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []*RevokeUserPermissionsArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AuthzStoreRevokeUserPermissionsListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AuthzStoreRevokeUserPermissionsListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -7691,6 +7816,9 @@ type MockEventLogStore struct {
 	// ListAllFunc is an instance of a mock function object controlling the
 	// behavior of the method ListAll.
 	ListAllFunc *EventLogStoreListAllFunc
+	// ListExportableEventsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListExportableEvents.
+	ListExportableEventsFunc *EventLogStoreListExportableEventsFunc
 	// ListUniqueUsersAllFunc is an instance of a mock function object
 	// controlling the behavior of the method ListUniqueUsersAll.
 	ListUniqueUsersAllFunc *EventLogStoreListUniqueUsersAllFunc
@@ -7853,12 +7981,17 @@ func NewMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		LatestPingFunc: &EventLogStoreLatestPingFunc{
-			defaultHook: func(context.Context) (r0 *types.Event, r1 error) {
+			defaultHook: func(context.Context) (r0 *Event, r1 error) {
 				return
 			},
 		},
 		ListAllFunc: &EventLogStoreListAllFunc{
-			defaultHook: func(context.Context, EventLogsListOptions) (r0 []*types.Event, r1 error) {
+			defaultHook: func(context.Context, EventLogsListOptions) (r0 []*Event, r1 error) {
+				return
+			},
+		},
+		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
+			defaultHook: func(context.Context, int, int) (r0 []*Event, r1 error) {
 				return
 			},
 		},
@@ -8040,13 +8173,18 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		LatestPingFunc: &EventLogStoreLatestPingFunc{
-			defaultHook: func(context.Context) (*types.Event, error) {
+			defaultHook: func(context.Context) (*Event, error) {
 				panic("unexpected invocation of MockEventLogStore.LatestPing")
 			},
 		},
 		ListAllFunc: &EventLogStoreListAllFunc{
-			defaultHook: func(context.Context, EventLogsListOptions) ([]*types.Event, error) {
+			defaultHook: func(context.Context, EventLogsListOptions) ([]*Event, error) {
 				panic("unexpected invocation of MockEventLogStore.ListAll")
+			},
+		},
+		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
+			defaultHook: func(context.Context, int, int) ([]*Event, error) {
+				panic("unexpected invocation of MockEventLogStore.ListExportableEvents")
 			},
 		},
 		ListUniqueUsersAllFunc: &EventLogStoreListUniqueUsersAllFunc{
@@ -8180,6 +8318,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		ListAllFunc: &EventLogStoreListAllFunc{
 			defaultHook: i.ListAll,
+		},
+		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
+			defaultHook: i.ListExportableEvents,
 		},
 		ListUniqueUsersAllFunc: &EventLogStoreListUniqueUsersAllFunc{
 			defaultHook: i.ListUniqueUsersAll,
@@ -11095,15 +11236,15 @@ func (c EventLogStoreInsertFuncCall) Results() []interface{} {
 // EventLogStoreLatestPingFunc describes the behavior when the LatestPing
 // method of the parent MockEventLogStore instance is invoked.
 type EventLogStoreLatestPingFunc struct {
-	defaultHook func(context.Context) (*types.Event, error)
-	hooks       []func(context.Context) (*types.Event, error)
+	defaultHook func(context.Context) (*Event, error)
+	hooks       []func(context.Context) (*Event, error)
 	history     []EventLogStoreLatestPingFuncCall
 	mutex       sync.Mutex
 }
 
 // LatestPing delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockEventLogStore) LatestPing(v0 context.Context) (*types.Event, error) {
+func (m *MockEventLogStore) LatestPing(v0 context.Context) (*Event, error) {
 	r0, r1 := m.LatestPingFunc.nextHook()(v0)
 	m.LatestPingFunc.appendCall(EventLogStoreLatestPingFuncCall{v0, r0, r1})
 	return r0, r1
@@ -11112,7 +11253,7 @@ func (m *MockEventLogStore) LatestPing(v0 context.Context) (*types.Event, error)
 // SetDefaultHook sets function that is called when the LatestPing method of
 // the parent MockEventLogStore instance is invoked and the hook queue is
 // empty.
-func (f *EventLogStoreLatestPingFunc) SetDefaultHook(hook func(context.Context) (*types.Event, error)) {
+func (f *EventLogStoreLatestPingFunc) SetDefaultHook(hook func(context.Context) (*Event, error)) {
 	f.defaultHook = hook
 }
 
@@ -11120,7 +11261,7 @@ func (f *EventLogStoreLatestPingFunc) SetDefaultHook(hook func(context.Context) 
 // LatestPing method of the parent MockEventLogStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *EventLogStoreLatestPingFunc) PushHook(hook func(context.Context) (*types.Event, error)) {
+func (f *EventLogStoreLatestPingFunc) PushHook(hook func(context.Context) (*Event, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11128,20 +11269,20 @@ func (f *EventLogStoreLatestPingFunc) PushHook(hook func(context.Context) (*type
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EventLogStoreLatestPingFunc) SetDefaultReturn(r0 *types.Event, r1 error) {
-	f.SetDefaultHook(func(context.Context) (*types.Event, error) {
+func (f *EventLogStoreLatestPingFunc) SetDefaultReturn(r0 *Event, r1 error) {
+	f.SetDefaultHook(func(context.Context) (*Event, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreLatestPingFunc) PushReturn(r0 *types.Event, r1 error) {
-	f.PushHook(func(context.Context) (*types.Event, error) {
+func (f *EventLogStoreLatestPingFunc) PushReturn(r0 *Event, r1 error) {
+	f.PushHook(func(context.Context) (*Event, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreLatestPingFunc) nextHook() func(context.Context) (*types.Event, error) {
+func (f *EventLogStoreLatestPingFunc) nextHook() func(context.Context) (*Event, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11179,7 +11320,7 @@ type EventLogStoreLatestPingFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *types.Event
+	Result0 *Event
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -11200,15 +11341,15 @@ func (c EventLogStoreLatestPingFuncCall) Results() []interface{} {
 // EventLogStoreListAllFunc describes the behavior when the ListAll method
 // of the parent MockEventLogStore instance is invoked.
 type EventLogStoreListAllFunc struct {
-	defaultHook func(context.Context, EventLogsListOptions) ([]*types.Event, error)
-	hooks       []func(context.Context, EventLogsListOptions) ([]*types.Event, error)
+	defaultHook func(context.Context, EventLogsListOptions) ([]*Event, error)
+	hooks       []func(context.Context, EventLogsListOptions) ([]*Event, error)
 	history     []EventLogStoreListAllFuncCall
 	mutex       sync.Mutex
 }
 
 // ListAll delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockEventLogStore) ListAll(v0 context.Context, v1 EventLogsListOptions) ([]*types.Event, error) {
+func (m *MockEventLogStore) ListAll(v0 context.Context, v1 EventLogsListOptions) ([]*Event, error) {
 	r0, r1 := m.ListAllFunc.nextHook()(v0, v1)
 	m.ListAllFunc.appendCall(EventLogStoreListAllFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -11217,7 +11358,7 @@ func (m *MockEventLogStore) ListAll(v0 context.Context, v1 EventLogsListOptions)
 // SetDefaultHook sets function that is called when the ListAll method of
 // the parent MockEventLogStore instance is invoked and the hook queue is
 // empty.
-func (f *EventLogStoreListAllFunc) SetDefaultHook(hook func(context.Context, EventLogsListOptions) ([]*types.Event, error)) {
+func (f *EventLogStoreListAllFunc) SetDefaultHook(hook func(context.Context, EventLogsListOptions) ([]*Event, error)) {
 	f.defaultHook = hook
 }
 
@@ -11225,7 +11366,7 @@ func (f *EventLogStoreListAllFunc) SetDefaultHook(hook func(context.Context, Eve
 // ListAll method of the parent MockEventLogStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *EventLogStoreListAllFunc) PushHook(hook func(context.Context, EventLogsListOptions) ([]*types.Event, error)) {
+func (f *EventLogStoreListAllFunc) PushHook(hook func(context.Context, EventLogsListOptions) ([]*Event, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11233,20 +11374,20 @@ func (f *EventLogStoreListAllFunc) PushHook(hook func(context.Context, EventLogs
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EventLogStoreListAllFunc) SetDefaultReturn(r0 []*types.Event, r1 error) {
-	f.SetDefaultHook(func(context.Context, EventLogsListOptions) ([]*types.Event, error) {
+func (f *EventLogStoreListAllFunc) SetDefaultReturn(r0 []*Event, r1 error) {
+	f.SetDefaultHook(func(context.Context, EventLogsListOptions) ([]*Event, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreListAllFunc) PushReturn(r0 []*types.Event, r1 error) {
-	f.PushHook(func(context.Context, EventLogsListOptions) ([]*types.Event, error) {
+func (f *EventLogStoreListAllFunc) PushReturn(r0 []*Event, r1 error) {
+	f.PushHook(func(context.Context, EventLogsListOptions) ([]*Event, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreListAllFunc) nextHook() func(context.Context, EventLogsListOptions) ([]*types.Event, error) {
+func (f *EventLogStoreListAllFunc) nextHook() func(context.Context, EventLogsListOptions) ([]*Event, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11287,7 +11428,7 @@ type EventLogStoreListAllFuncCall struct {
 	Arg1 EventLogsListOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.Event
+	Result0 []*Event
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -11302,6 +11443,120 @@ func (c EventLogStoreListAllFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreListAllFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreListExportableEventsFunc describes the behavior when the
+// ListExportableEvents method of the parent MockEventLogStore instance is
+// invoked.
+type EventLogStoreListExportableEventsFunc struct {
+	defaultHook func(context.Context, int, int) ([]*Event, error)
+	hooks       []func(context.Context, int, int) ([]*Event, error)
+	history     []EventLogStoreListExportableEventsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListExportableEvents delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) ListExportableEvents(v0 context.Context, v1 int, v2 int) ([]*Event, error) {
+	r0, r1 := m.ListExportableEventsFunc.nextHook()(v0, v1, v2)
+	m.ListExportableEventsFunc.appendCall(EventLogStoreListExportableEventsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListExportableEvents
+// method of the parent MockEventLogStore instance is invoked and the hook
+// queue is empty.
+func (f *EventLogStoreListExportableEventsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]*Event, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListExportableEvents method of the parent MockEventLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EventLogStoreListExportableEventsFunc) PushHook(hook func(context.Context, int, int) ([]*Event, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreListExportableEventsFunc) SetDefaultReturn(r0 []*Event, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]*Event, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreListExportableEventsFunc) PushReturn(r0 []*Event, r1 error) {
+	f.PushHook(func(context.Context, int, int) ([]*Event, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreListExportableEventsFunc) nextHook() func(context.Context, int, int) ([]*Event, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreListExportableEventsFunc) appendCall(r0 EventLogStoreListExportableEventsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EventLogStoreListExportableEventsFuncCall
+// objects describing the invocations of this function.
+func (f *EventLogStoreListExportableEventsFunc) History() []EventLogStoreListExportableEventsFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreListExportableEventsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreListExportableEventsFuncCall is an object that describes an
+// invocation of method ListExportableEvents on an instance of
+// MockEventLogStore.
+type EventLogStoreListExportableEventsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*Event
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreListExportableEventsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreListExportableEventsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -12179,6 +12434,9 @@ type MockExternalServiceStore struct {
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *ExternalServiceStoreCountFunc
+	// CountSyncJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountSyncJobs.
+	CountSyncJobsFunc *ExternalServiceStoreCountSyncJobsFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *ExternalServiceStoreCreateFunc
@@ -12200,6 +12458,9 @@ type MockExternalServiceStore struct {
 	// GetLastSyncErrorFunc is an instance of a mock function object
 	// controlling the behavior of the method GetLastSyncError.
 	GetLastSyncErrorFunc *ExternalServiceStoreGetLastSyncErrorFunc
+	// GetSyncJobByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method GetSyncJobByID.
+	GetSyncJobByIDFunc *ExternalServiceStoreGetSyncJobByIDFunc
 	// GetSyncJobsFunc is an instance of a mock function object controlling
 	// the behavior of the method GetSyncJobs.
 	GetSyncJobsFunc *ExternalServiceStoreGetSyncJobsFunc
@@ -12242,6 +12503,11 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 				return
 			},
 		},
+		CountSyncJobsFunc: &ExternalServiceStoreCountSyncJobsFunc{
+			defaultHook: func(context.Context, ExternalServicesGetSyncJobsOptions) (r0 int64, r1 error) {
+				return
+			},
+		},
 		CreateFunc: &ExternalServiceStoreCreateFunc{
 			defaultHook: func(context.Context, func() *conf.Unified, *types.ExternalService) (r0 error) {
 				return
@@ -12277,8 +12543,13 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 				return
 			},
 		},
+		GetSyncJobByIDFunc: &ExternalServiceStoreGetSyncJobByIDFunc{
+			defaultHook: func(context.Context, int64) (r0 *types.ExternalServiceSyncJob, r1 error) {
+				return
+			},
+		},
 		GetSyncJobsFunc: &ExternalServiceStoreGetSyncJobsFunc{
-			defaultHook: func(context.Context) (r0 []*types.ExternalServiceSyncJob, r1 error) {
+			defaultHook: func(context.Context, ExternalServicesGetSyncJobsOptions) (r0 []*types.ExternalServiceSyncJob, r1 error) {
 				return
 			},
 		},
@@ -12340,6 +12611,11 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 				panic("unexpected invocation of MockExternalServiceStore.Count")
 			},
 		},
+		CountSyncJobsFunc: &ExternalServiceStoreCountSyncJobsFunc{
+			defaultHook: func(context.Context, ExternalServicesGetSyncJobsOptions) (int64, error) {
+				panic("unexpected invocation of MockExternalServiceStore.CountSyncJobs")
+			},
+		},
 		CreateFunc: &ExternalServiceStoreCreateFunc{
 			defaultHook: func(context.Context, func() *conf.Unified, *types.ExternalService) error {
 				panic("unexpected invocation of MockExternalServiceStore.Create")
@@ -12375,8 +12651,13 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 				panic("unexpected invocation of MockExternalServiceStore.GetLastSyncError")
 			},
 		},
+		GetSyncJobByIDFunc: &ExternalServiceStoreGetSyncJobByIDFunc{
+			defaultHook: func(context.Context, int64) (*types.ExternalServiceSyncJob, error) {
+				panic("unexpected invocation of MockExternalServiceStore.GetSyncJobByID")
+			},
+		},
 		GetSyncJobsFunc: &ExternalServiceStoreGetSyncJobsFunc{
-			defaultHook: func(context.Context) ([]*types.ExternalServiceSyncJob, error) {
+			defaultHook: func(context.Context, ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error) {
 				panic("unexpected invocation of MockExternalServiceStore.GetSyncJobs")
 			},
 		},
@@ -12436,6 +12717,9 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 		CountFunc: &ExternalServiceStoreCountFunc{
 			defaultHook: i.Count,
 		},
+		CountSyncJobsFunc: &ExternalServiceStoreCountSyncJobsFunc{
+			defaultHook: i.CountSyncJobs,
+		},
 		CreateFunc: &ExternalServiceStoreCreateFunc{
 			defaultHook: i.Create,
 		},
@@ -12456,6 +12740,9 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 		},
 		GetLastSyncErrorFunc: &ExternalServiceStoreGetLastSyncErrorFunc{
 			defaultHook: i.GetLastSyncError,
+		},
+		GetSyncJobByIDFunc: &ExternalServiceStoreGetSyncJobByIDFunc{
+			defaultHook: i.GetSyncJobByID,
 		},
 		GetSyncJobsFunc: &ExternalServiceStoreGetSyncJobsFunc{
 			defaultHook: i.GetSyncJobs,
@@ -12595,6 +12882,117 @@ func (c ExternalServiceStoreCountFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ExternalServiceStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExternalServiceStoreCountSyncJobsFunc describes the behavior when the
+// CountSyncJobs method of the parent MockExternalServiceStore instance is
+// invoked.
+type ExternalServiceStoreCountSyncJobsFunc struct {
+	defaultHook func(context.Context, ExternalServicesGetSyncJobsOptions) (int64, error)
+	hooks       []func(context.Context, ExternalServicesGetSyncJobsOptions) (int64, error)
+	history     []ExternalServiceStoreCountSyncJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountSyncJobs delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockExternalServiceStore) CountSyncJobs(v0 context.Context, v1 ExternalServicesGetSyncJobsOptions) (int64, error) {
+	r0, r1 := m.CountSyncJobsFunc.nextHook()(v0, v1)
+	m.CountSyncJobsFunc.appendCall(ExternalServiceStoreCountSyncJobsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountSyncJobs method
+// of the parent MockExternalServiceStore instance is invoked and the hook
+// queue is empty.
+func (f *ExternalServiceStoreCountSyncJobsFunc) SetDefaultHook(hook func(context.Context, ExternalServicesGetSyncJobsOptions) (int64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountSyncJobs method of the parent MockExternalServiceStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExternalServiceStoreCountSyncJobsFunc) PushHook(hook func(context.Context, ExternalServicesGetSyncJobsOptions) (int64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServiceStoreCountSyncJobsFunc) SetDefaultReturn(r0 int64, r1 error) {
+	f.SetDefaultHook(func(context.Context, ExternalServicesGetSyncJobsOptions) (int64, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServiceStoreCountSyncJobsFunc) PushReturn(r0 int64, r1 error) {
+	f.PushHook(func(context.Context, ExternalServicesGetSyncJobsOptions) (int64, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExternalServiceStoreCountSyncJobsFunc) nextHook() func(context.Context, ExternalServicesGetSyncJobsOptions) (int64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreCountSyncJobsFunc) appendCall(r0 ExternalServiceStoreCountSyncJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExternalServiceStoreCountSyncJobsFuncCall
+// objects describing the invocations of this function.
+func (f *ExternalServiceStoreCountSyncJobsFunc) History() []ExternalServiceStoreCountSyncJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreCountSyncJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreCountSyncJobsFuncCall is an object that describes an
+// invocation of method CountSyncJobs on an instance of
+// MockExternalServiceStore.
+type ExternalServiceStoreCountSyncJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExternalServicesGetSyncJobsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int64
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreCountSyncJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreCountSyncJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -13353,28 +13751,139 @@ func (c ExternalServiceStoreGetLastSyncErrorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// ExternalServiceStoreGetSyncJobByIDFunc describes the behavior when the
+// GetSyncJobByID method of the parent MockExternalServiceStore instance is
+// invoked.
+type ExternalServiceStoreGetSyncJobByIDFunc struct {
+	defaultHook func(context.Context, int64) (*types.ExternalServiceSyncJob, error)
+	hooks       []func(context.Context, int64) (*types.ExternalServiceSyncJob, error)
+	history     []ExternalServiceStoreGetSyncJobByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetSyncJobByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExternalServiceStore) GetSyncJobByID(v0 context.Context, v1 int64) (*types.ExternalServiceSyncJob, error) {
+	r0, r1 := m.GetSyncJobByIDFunc.nextHook()(v0, v1)
+	m.GetSyncJobByIDFunc.appendCall(ExternalServiceStoreGetSyncJobByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetSyncJobByID
+// method of the parent MockExternalServiceStore instance is invoked and the
+// hook queue is empty.
+func (f *ExternalServiceStoreGetSyncJobByIDFunc) SetDefaultHook(hook func(context.Context, int64) (*types.ExternalServiceSyncJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetSyncJobByID method of the parent MockExternalServiceStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExternalServiceStoreGetSyncJobByIDFunc) PushHook(hook func(context.Context, int64) (*types.ExternalServiceSyncJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServiceStoreGetSyncJobByIDFunc) SetDefaultReturn(r0 *types.ExternalServiceSyncJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*types.ExternalServiceSyncJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServiceStoreGetSyncJobByIDFunc) PushReturn(r0 *types.ExternalServiceSyncJob, r1 error) {
+	f.PushHook(func(context.Context, int64) (*types.ExternalServiceSyncJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExternalServiceStoreGetSyncJobByIDFunc) nextHook() func(context.Context, int64) (*types.ExternalServiceSyncJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreGetSyncJobByIDFunc) appendCall(r0 ExternalServiceStoreGetSyncJobByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExternalServiceStoreGetSyncJobByIDFuncCall
+// objects describing the invocations of this function.
+func (f *ExternalServiceStoreGetSyncJobByIDFunc) History() []ExternalServiceStoreGetSyncJobByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreGetSyncJobByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreGetSyncJobByIDFuncCall is an object that describes an
+// invocation of method GetSyncJobByID on an instance of
+// MockExternalServiceStore.
+type ExternalServiceStoreGetSyncJobByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.ExternalServiceSyncJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreGetSyncJobByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreGetSyncJobByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // ExternalServiceStoreGetSyncJobsFunc describes the behavior when the
 // GetSyncJobs method of the parent MockExternalServiceStore instance is
 // invoked.
 type ExternalServiceStoreGetSyncJobsFunc struct {
-	defaultHook func(context.Context) ([]*types.ExternalServiceSyncJob, error)
-	hooks       []func(context.Context) ([]*types.ExternalServiceSyncJob, error)
+	defaultHook func(context.Context, ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
+	hooks       []func(context.Context, ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
 	history     []ExternalServiceStoreGetSyncJobsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetSyncJobs delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockExternalServiceStore) GetSyncJobs(v0 context.Context) ([]*types.ExternalServiceSyncJob, error) {
-	r0, r1 := m.GetSyncJobsFunc.nextHook()(v0)
-	m.GetSyncJobsFunc.appendCall(ExternalServiceStoreGetSyncJobsFuncCall{v0, r0, r1})
+func (m *MockExternalServiceStore) GetSyncJobs(v0 context.Context, v1 ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error) {
+	r0, r1 := m.GetSyncJobsFunc.nextHook()(v0, v1)
+	m.GetSyncJobsFunc.appendCall(ExternalServiceStoreGetSyncJobsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GetSyncJobs method
 // of the parent MockExternalServiceStore instance is invoked and the hook
 // queue is empty.
-func (f *ExternalServiceStoreGetSyncJobsFunc) SetDefaultHook(hook func(context.Context) ([]*types.ExternalServiceSyncJob, error)) {
+func (f *ExternalServiceStoreGetSyncJobsFunc) SetDefaultHook(hook func(context.Context, ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)) {
 	f.defaultHook = hook
 }
 
@@ -13383,7 +13892,7 @@ func (f *ExternalServiceStoreGetSyncJobsFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ExternalServiceStoreGetSyncJobsFunc) PushHook(hook func(context.Context) ([]*types.ExternalServiceSyncJob, error)) {
+func (f *ExternalServiceStoreGetSyncJobsFunc) PushHook(hook func(context.Context, ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -13392,19 +13901,19 @@ func (f *ExternalServiceStoreGetSyncJobsFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ExternalServiceStoreGetSyncJobsFunc) SetDefaultReturn(r0 []*types.ExternalServiceSyncJob, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]*types.ExternalServiceSyncJob, error) {
+	f.SetDefaultHook(func(context.Context, ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ExternalServiceStoreGetSyncJobsFunc) PushReturn(r0 []*types.ExternalServiceSyncJob, r1 error) {
-	f.PushHook(func(context.Context) ([]*types.ExternalServiceSyncJob, error) {
+	f.PushHook(func(context.Context, ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error) {
 		return r0, r1
 	})
 }
 
-func (f *ExternalServiceStoreGetSyncJobsFunc) nextHook() func(context.Context) ([]*types.ExternalServiceSyncJob, error) {
+func (f *ExternalServiceStoreGetSyncJobsFunc) nextHook() func(context.Context, ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -13441,6 +13950,9 @@ type ExternalServiceStoreGetSyncJobsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExternalServicesGetSyncJobsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*types.ExternalServiceSyncJob
@@ -13452,7 +13964,7 @@ type ExternalServiceStoreGetSyncJobsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ExternalServiceStoreGetSyncJobsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -17552,12 +18064,12 @@ type MockGitserverRepoStore struct {
 	// object controlling the behavior of the method
 	// TotalErroredCloudDefaultRepos.
 	TotalErroredCloudDefaultReposFunc *GitserverRepoStoreTotalErroredCloudDefaultReposFunc
+	// UpdateFunc is an instance of a mock function object controlling the
+	// behavior of the method Update.
+	UpdateFunc *GitserverRepoStoreUpdateFunc
 	// UpdateRepoSizesFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateRepoSizes.
 	UpdateRepoSizesFunc *GitserverRepoStoreUpdateRepoSizesFunc
-	// UpsertFunc is an instance of a mock function object controlling the
-	// behavior of the method Upsert.
-	UpsertFunc *GitserverRepoStoreUpsertFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *GitserverRepoStoreWithFunc
@@ -17579,7 +18091,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (r0 []*types.GitserverRepo, r1 error) {
+			defaultHook: func(context.Context, ...api.RepoName) (r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
 				return
 			},
 		},
@@ -17599,7 +18111,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		IterateWithNonemptyLastErrorFunc: &GitserverRepoStoreIterateWithNonemptyLastErrorFunc{
-			defaultHook: func(context.Context, func(repo types.RepoGitserverStatus) error) (r0 error) {
+			defaultHook: func(context.Context, func(repo api.RepoName) error) (r0 error) {
 				return
 			},
 		},
@@ -17633,13 +18145,13 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 				return
 			},
 		},
-		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
-			defaultHook: func(context.Context, string, map[api.RepoID]int64) (r0 error) {
+		UpdateFunc: &GitserverRepoStoreUpdateFunc{
+			defaultHook: func(context.Context, ...*types.GitserverRepo) (r0 error) {
 				return
 			},
 		},
-		UpsertFunc: &GitserverRepoStoreUpsertFunc{
-			defaultHook: func(context.Context, ...*types.GitserverRepo) (r0 error) {
+		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
+			defaultHook: func(context.Context, string, map[api.RepoID]int64) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -17667,7 +18179,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
-			defaultHook: func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+			defaultHook: func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.GetByNames")
 			},
 		},
@@ -17687,7 +18199,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		IterateWithNonemptyLastErrorFunc: &GitserverRepoStoreIterateWithNonemptyLastErrorFunc{
-			defaultHook: func(context.Context, func(repo types.RepoGitserverStatus) error) error {
+			defaultHook: func(context.Context, func(repo api.RepoName) error) error {
 				panic("unexpected invocation of MockGitserverRepoStore.IterateWithNonemptyLastError")
 			},
 		},
@@ -17721,14 +18233,14 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.TotalErroredCloudDefaultRepos")
 			},
 		},
-		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
-			defaultHook: func(context.Context, string, map[api.RepoID]int64) error {
-				panic("unexpected invocation of MockGitserverRepoStore.UpdateRepoSizes")
+		UpdateFunc: &GitserverRepoStoreUpdateFunc{
+			defaultHook: func(context.Context, ...*types.GitserverRepo) error {
+				panic("unexpected invocation of MockGitserverRepoStore.Update")
 			},
 		},
-		UpsertFunc: &GitserverRepoStoreUpsertFunc{
-			defaultHook: func(context.Context, ...*types.GitserverRepo) error {
-				panic("unexpected invocation of MockGitserverRepoStore.Upsert")
+		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
+			defaultHook: func(context.Context, string, map[api.RepoID]int64) (int, error) {
+				panic("unexpected invocation of MockGitserverRepoStore.UpdateRepoSizes")
 			},
 		},
 		WithFunc: &GitserverRepoStoreWithFunc{
@@ -17783,11 +18295,11 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		TotalErroredCloudDefaultReposFunc: &GitserverRepoStoreTotalErroredCloudDefaultReposFunc{
 			defaultHook: i.TotalErroredCloudDefaultRepos,
 		},
+		UpdateFunc: &GitserverRepoStoreUpdateFunc{
+			defaultHook: i.Update,
+		},
 		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
 			defaultHook: i.UpdateRepoSizes,
-		},
-		UpsertFunc: &GitserverRepoStoreUpsertFunc{
-			defaultHook: i.Upsert,
 		},
 		WithFunc: &GitserverRepoStoreWithFunc{
 			defaultHook: i.With,
@@ -18015,15 +18527,15 @@ func (c GitserverRepoStoreGetByNameFuncCall) Results() []interface{} {
 // GetByNames method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreGetByNamesFunc struct {
-	defaultHook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)
-	hooks       []func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)
+	defaultHook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
+	hooks       []func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
 	history     []GitserverRepoStoreGetByNamesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetByNames delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoName) ([]*types.GitserverRepo, error) {
+func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 	r0, r1 := m.GetByNamesFunc.nextHook()(v0, v1...)
 	m.GetByNamesFunc.appendCall(GitserverRepoStoreGetByNamesFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -18032,7 +18544,7 @@ func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoNa
 // SetDefaultHook sets function that is called when the GetByNames method of
 // the parent MockGitserverRepoStore instance is invoked and the hook queue
 // is empty.
-func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)) {
+func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)) {
 	f.defaultHook = hook
 }
 
@@ -18040,7 +18552,7 @@ func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Cont
 // GetByNames method of the parent MockGitserverRepoStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)) {
+func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -18048,20 +18560,20 @@ func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, .
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultReturn(r0 []*types.GitserverRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultReturn(r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreGetByNamesFunc) PushReturn(r0 []*types.GitserverRepo, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) PushReturn(r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
+	f.PushHook(func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreGetByNamesFunc) nextHook() func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) nextHook() func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -18102,7 +18614,7 @@ type GitserverRepoStoreGetByNamesFuncCall struct {
 	Arg1 []api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.GitserverRepo
+	Result0 map[api.RepoName]*types.GitserverRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -18454,15 +18966,15 @@ func (c GitserverRepoStoreIterateRepoGitserverStatusFuncCall) Results() []interf
 // when the IterateWithNonemptyLastError method of the parent
 // MockGitserverRepoStore instance is invoked.
 type GitserverRepoStoreIterateWithNonemptyLastErrorFunc struct {
-	defaultHook func(context.Context, func(repo types.RepoGitserverStatus) error) error
-	hooks       []func(context.Context, func(repo types.RepoGitserverStatus) error) error
+	defaultHook func(context.Context, func(repo api.RepoName) error) error
+	hooks       []func(context.Context, func(repo api.RepoName) error) error
 	history     []GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall
 	mutex       sync.Mutex
 }
 
 // IterateWithNonemptyLastError delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) IterateWithNonemptyLastError(v0 context.Context, v1 func(repo types.RepoGitserverStatus) error) error {
+func (m *MockGitserverRepoStore) IterateWithNonemptyLastError(v0 context.Context, v1 func(repo api.RepoName) error) error {
 	r0 := m.IterateWithNonemptyLastErrorFunc.nextHook()(v0, v1)
 	m.IterateWithNonemptyLastErrorFunc.appendCall(GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall{v0, v1, r0})
 	return r0
@@ -18471,7 +18983,7 @@ func (m *MockGitserverRepoStore) IterateWithNonemptyLastError(v0 context.Context
 // SetDefaultHook sets function that is called when the
 // IterateWithNonemptyLastError method of the parent MockGitserverRepoStore
 // instance is invoked and the hook queue is empty.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultHook(hook func(context.Context, func(repo types.RepoGitserverStatus) error) error) {
+func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultHook(hook func(context.Context, func(repo api.RepoName) error) error) {
 	f.defaultHook = hook
 }
 
@@ -18480,7 +18992,7 @@ func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultHook(hook
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(context.Context, func(repo types.RepoGitserverStatus) error) error) {
+func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(context.Context, func(repo api.RepoName) error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -18489,19 +19001,19 @@ func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, func(repo types.RepoGitserverStatus) error) error {
+	f.SetDefaultHook(func(context.Context, func(repo api.RepoName) error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, func(repo types.RepoGitserverStatus) error) error {
+	f.PushHook(func(context.Context, func(repo api.RepoName) error) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) nextHook() func(context.Context, func(repo types.RepoGitserverStatus) error) error {
+func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) nextHook() func(context.Context, func(repo api.RepoName) error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -18541,7 +19053,7 @@ type GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 func(repo types.RepoGitserverStatus) error
+	Arg1 func(repo api.RepoName) error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -19228,28 +19740,140 @@ func (c GitserverRepoStoreTotalErroredCloudDefaultReposFuncCall) Results() []int
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// GitserverRepoStoreUpdateFunc describes the behavior when the Update
+// method of the parent MockGitserverRepoStore instance is invoked.
+type GitserverRepoStoreUpdateFunc struct {
+	defaultHook func(context.Context, ...*types.GitserverRepo) error
+	hooks       []func(context.Context, ...*types.GitserverRepo) error
+	history     []GitserverRepoStoreUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// Update delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) Update(v0 context.Context, v1 ...*types.GitserverRepo) error {
+	r0 := m.UpdateFunc.nextHook()(v0, v1...)
+	m.UpdateFunc.appendCall(GitserverRepoStoreUpdateFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Update method of the
+// parent MockGitserverRepoStore instance is invoked and the hook queue is
+// empty.
+func (f *GitserverRepoStoreUpdateFunc) SetDefaultHook(hook func(context.Context, ...*types.GitserverRepo) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Update method of the parent MockGitserverRepoStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverRepoStoreUpdateFunc) PushHook(hook func(context.Context, ...*types.GitserverRepo) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreUpdateFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ...*types.GitserverRepo) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreUpdateFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ...*types.GitserverRepo) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreUpdateFunc) nextHook() func(context.Context, ...*types.GitserverRepo) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreUpdateFunc) appendCall(r0 GitserverRepoStoreUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreUpdateFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverRepoStoreUpdateFunc) History() []GitserverRepoStoreUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreUpdateFuncCall is an object that describes an
+// invocation of method Update on an instance of MockGitserverRepoStore.
+type GitserverRepoStoreUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []*types.GitserverRepo
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverRepoStoreUpdateFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // GitserverRepoStoreUpdateRepoSizesFunc describes the behavior when the
 // UpdateRepoSizes method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreUpdateRepoSizesFunc struct {
-	defaultHook func(context.Context, string, map[api.RepoID]int64) error
-	hooks       []func(context.Context, string, map[api.RepoID]int64) error
+	defaultHook func(context.Context, string, map[api.RepoID]int64) (int, error)
+	hooks       []func(context.Context, string, map[api.RepoID]int64) (int, error)
 	history     []GitserverRepoStoreUpdateRepoSizesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateRepoSizes delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) UpdateRepoSizes(v0 context.Context, v1 string, v2 map[api.RepoID]int64) error {
-	r0 := m.UpdateRepoSizesFunc.nextHook()(v0, v1, v2)
-	m.UpdateRepoSizesFunc.appendCall(GitserverRepoStoreUpdateRepoSizesFuncCall{v0, v1, v2, r0})
-	return r0
+func (m *MockGitserverRepoStore) UpdateRepoSizes(v0 context.Context, v1 string, v2 map[api.RepoID]int64) (int, error) {
+	r0, r1 := m.UpdateRepoSizesFunc.nextHook()(v0, v1, v2)
+	m.UpdateRepoSizesFunc.appendCall(GitserverRepoStoreUpdateRepoSizesFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the UpdateRepoSizes
 // method of the parent MockGitserverRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context.Context, string, map[api.RepoID]int64) error) {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context.Context, string, map[api.RepoID]int64) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -19258,7 +19882,7 @@ func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Context, string, map[api.RepoID]int64) error) {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Context, string, map[api.RepoID]int64) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -19266,20 +19890,20 @@ func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, map[api.RepoID]int64) error {
-		return r0
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, map[api.RepoID]int64) (int, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, map[api.RepoID]int64) error {
-		return r0
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, string, map[api.RepoID]int64) (int, error) {
+		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) nextHook() func(context.Context, string, map[api.RepoID]int64) error {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) nextHook() func(context.Context, string, map[api.RepoID]int64) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -19324,7 +19948,10 @@ type GitserverRepoStoreUpdateRepoSizesFuncCall struct {
 	Arg2 map[api.RepoID]int64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -19336,119 +19963,7 @@ func (c GitserverRepoStoreUpdateRepoSizesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreUpdateRepoSizesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// GitserverRepoStoreUpsertFunc describes the behavior when the Upsert
-// method of the parent MockGitserverRepoStore instance is invoked.
-type GitserverRepoStoreUpsertFunc struct {
-	defaultHook func(context.Context, ...*types.GitserverRepo) error
-	hooks       []func(context.Context, ...*types.GitserverRepo) error
-	history     []GitserverRepoStoreUpsertFuncCall
-	mutex       sync.Mutex
-}
-
-// Upsert delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) Upsert(v0 context.Context, v1 ...*types.GitserverRepo) error {
-	r0 := m.UpsertFunc.nextHook()(v0, v1...)
-	m.UpsertFunc.appendCall(GitserverRepoStoreUpsertFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Upsert method of the
-// parent MockGitserverRepoStore instance is invoked and the hook queue is
-// empty.
-func (f *GitserverRepoStoreUpsertFunc) SetDefaultHook(hook func(context.Context, ...*types.GitserverRepo) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Upsert method of the parent MockGitserverRepoStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverRepoStoreUpsertFunc) PushHook(hook func(context.Context, ...*types.GitserverRepo) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverRepoStoreUpsertFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...*types.GitserverRepo) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreUpsertFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...*types.GitserverRepo) error {
-		return r0
-	})
-}
-
-func (f *GitserverRepoStoreUpsertFunc) nextHook() func(context.Context, ...*types.GitserverRepo) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverRepoStoreUpsertFunc) appendCall(r0 GitserverRepoStoreUpsertFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverRepoStoreUpsertFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverRepoStoreUpsertFunc) History() []GitserverRepoStoreUpsertFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverRepoStoreUpsertFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverRepoStoreUpsertFuncCall is an object that describes an
-// invocation of method Upsert on an instance of MockGitserverRepoStore.
-type GitserverRepoStoreUpsertFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []*types.GitserverRepo
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverRepoStoreUpsertFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverRepoStoreUpsertFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverRepoStoreWithFunc describes the behavior when the With method of
@@ -19580,7 +20095,7 @@ func NewMockGlobalStateStore() *MockGlobalStateStore {
 			},
 		},
 		GetFunc: &GlobalStateStoreGetFunc{
-			defaultHook: func(context.Context) (r0 *GlobalState, r1 error) {
+			defaultHook: func(context.Context) (r0 GlobalState, r1 error) {
 				return
 			},
 		},
@@ -19602,7 +20117,7 @@ func NewStrictMockGlobalStateStore() *MockGlobalStateStore {
 			},
 		},
 		GetFunc: &GlobalStateStoreGetFunc{
-			defaultHook: func(context.Context) (*GlobalState, error) {
+			defaultHook: func(context.Context) (GlobalState, error) {
 				panic("unexpected invocation of MockGlobalStateStore.Get")
 			},
 		},
@@ -19742,15 +20257,15 @@ func (c GlobalStateStoreEnsureInitializedFuncCall) Results() []interface{} {
 // GlobalStateStoreGetFunc describes the behavior when the Get method of the
 // parent MockGlobalStateStore instance is invoked.
 type GlobalStateStoreGetFunc struct {
-	defaultHook func(context.Context) (*GlobalState, error)
-	hooks       []func(context.Context) (*GlobalState, error)
+	defaultHook func(context.Context) (GlobalState, error)
+	hooks       []func(context.Context) (GlobalState, error)
 	history     []GlobalStateStoreGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGlobalStateStore) Get(v0 context.Context) (*GlobalState, error) {
+func (m *MockGlobalStateStore) Get(v0 context.Context) (GlobalState, error) {
 	r0, r1 := m.GetFunc.nextHook()(v0)
 	m.GetFunc.appendCall(GlobalStateStoreGetFuncCall{v0, r0, r1})
 	return r0, r1
@@ -19759,7 +20274,7 @@ func (m *MockGlobalStateStore) Get(v0 context.Context) (*GlobalState, error) {
 // SetDefaultHook sets function that is called when the Get method of the
 // parent MockGlobalStateStore instance is invoked and the hook queue is
 // empty.
-func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (*GlobalState, error)) {
+func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (GlobalState, error)) {
 	f.defaultHook = hook
 }
 
@@ -19767,7 +20282,7 @@ func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (*Gl
 // Get method of the parent MockGlobalStateStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (*GlobalState, error)) {
+func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (GlobalState, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -19775,20 +20290,20 @@ func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (*GlobalSt
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GlobalStateStoreGetFunc) SetDefaultReturn(r0 *GlobalState, r1 error) {
-	f.SetDefaultHook(func(context.Context) (*GlobalState, error) {
+func (f *GlobalStateStoreGetFunc) SetDefaultReturn(r0 GlobalState, r1 error) {
+	f.SetDefaultHook(func(context.Context) (GlobalState, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GlobalStateStoreGetFunc) PushReturn(r0 *GlobalState, r1 error) {
-	f.PushHook(func(context.Context) (*GlobalState, error) {
+func (f *GlobalStateStoreGetFunc) PushReturn(r0 GlobalState, r1 error) {
+	f.PushHook(func(context.Context) (GlobalState, error) {
 		return r0, r1
 	})
 }
 
-func (f *GlobalStateStoreGetFunc) nextHook() func(context.Context) (*GlobalState, error) {
+func (f *GlobalStateStoreGetFunc) nextHook() func(context.Context) (GlobalState, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -19826,7 +20341,7 @@ type GlobalStateStoreGetFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *GlobalState
+	Result0 GlobalState
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -26680,6 +27195,9 @@ type MockRepoStore struct {
 	// object controlling the behavior of the method
 	// GetFirstRepoNameByCloneURL.
 	GetFirstRepoNameByCloneURLFunc *RepoStoreGetFirstRepoNameByCloneURLFunc
+	// GetRepoDescriptionsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRepoDescriptionsByIDs.
+	GetRepoDescriptionsByIDsFunc *RepoStoreGetRepoDescriptionsByIDsFunc
 	// GetReposSetByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetReposSetByIDs.
 	GetReposSetByIDsFunc *RepoStoreGetReposSetByIDsFunc
@@ -26758,6 +27276,11 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
 			defaultHook: func(context.Context, string) (r0 api.RepoName, r1 error) {
+				return
+			},
+		},
+		GetRepoDescriptionsByIDsFunc: &RepoStoreGetRepoDescriptionsByIDsFunc{
+			defaultHook: func(context.Context, ...api.RepoID) (r0 map[api.RepoID]string, r1 error) {
 				return
 			},
 		},
@@ -26863,6 +27386,11 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.GetFirstRepoNameByCloneURL")
 			},
 		},
+		GetRepoDescriptionsByIDsFunc: &RepoStoreGetRepoDescriptionsByIDsFunc{
+			defaultHook: func(context.Context, ...api.RepoID) (map[api.RepoID]string, error) {
+				panic("unexpected invocation of MockRepoStore.GetRepoDescriptionsByIDs")
+			},
+		},
 		GetReposSetByIDsFunc: &RepoStoreGetReposSetByIDsFunc{
 			defaultHook: func(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
 				panic("unexpected invocation of MockRepoStore.GetReposSetByIDs")
@@ -26946,6 +27474,9 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		},
 		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
 			defaultHook: i.GetFirstRepoNameByCloneURL,
+		},
+		GetRepoDescriptionsByIDsFunc: &RepoStoreGetRepoDescriptionsByIDsFunc{
+			defaultHook: i.GetRepoDescriptionsByIDs,
 		},
 		GetReposSetByIDsFunc: &RepoStoreGetReposSetByIDsFunc{
 			defaultHook: i.GetReposSetByIDs,
@@ -27954,6 +28485,124 @@ func (c RepoStoreGetFirstRepoNameByCloneURLFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreGetFirstRepoNameByCloneURLFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoStoreGetRepoDescriptionsByIDsFunc describes the behavior when the
+// GetRepoDescriptionsByIDs method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreGetRepoDescriptionsByIDsFunc struct {
+	defaultHook func(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
+	hooks       []func(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
+	history     []RepoStoreGetRepoDescriptionsByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepoDescriptionsByIDs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockRepoStore) GetRepoDescriptionsByIDs(v0 context.Context, v1 ...api.RepoID) (map[api.RepoID]string, error) {
+	r0, r1 := m.GetRepoDescriptionsByIDsFunc.nextHook()(v0, v1...)
+	m.GetRepoDescriptionsByIDsFunc.appendCall(RepoStoreGetRepoDescriptionsByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRepoDescriptionsByIDs method of the parent MockRepoStore instance is
+// invoked and the hook queue is empty.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) SetDefaultHook(hook func(context.Context, ...api.RepoID) (map[api.RepoID]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepoDescriptionsByIDs method of the parent MockRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) PushHook(hook func(context.Context, ...api.RepoID) (map[api.RepoID]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) SetDefaultReturn(r0 map[api.RepoID]string, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoID) (map[api.RepoID]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) PushReturn(r0 map[api.RepoID]string, r1 error) {
+	f.PushHook(func(context.Context, ...api.RepoID) (map[api.RepoID]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) nextHook() func(context.Context, ...api.RepoID) (map[api.RepoID]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) appendCall(r0 RepoStoreGetRepoDescriptionsByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreGetRepoDescriptionsByIDsFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) History() []RepoStoreGetRepoDescriptionsByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreGetRepoDescriptionsByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreGetRepoDescriptionsByIDsFuncCall is an object that describes an
+// invocation of method GetRepoDescriptionsByIDs on an instance of
+// MockRepoStore.
+type RepoStoreGetRepoDescriptionsByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[api.RepoID]string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c RepoStoreGetRepoDescriptionsByIDsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreGetRepoDescriptionsByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -32217,9 +32866,15 @@ type MockSecurityEventLogsStore struct {
 	// InsertFunc is an instance of a mock function object controlling the
 	// behavior of the method Insert.
 	InsertFunc *SecurityEventLogsStoreInsertFunc
+	// InsertListFunc is an instance of a mock function object controlling
+	// the behavior of the method InsertList.
+	InsertListFunc *SecurityEventLogsStoreInsertListFunc
 	// LogEventFunc is an instance of a mock function object controlling the
 	// behavior of the method LogEvent.
 	LogEventFunc *SecurityEventLogsStoreLogEventFunc
+	// LogEventListFunc is an instance of a mock function object controlling
+	// the behavior of the method LogEventList.
+	LogEventListFunc *SecurityEventLogsStoreLogEventListFunc
 }
 
 // NewMockSecurityEventLogsStore creates a new mock of the
@@ -32237,8 +32892,18 @@ func NewMockSecurityEventLogsStore() *MockSecurityEventLogsStore {
 				return
 			},
 		},
+		InsertListFunc: &SecurityEventLogsStoreInsertListFunc{
+			defaultHook: func(context.Context, []*SecurityEvent) (r0 error) {
+				return
+			},
+		},
 		LogEventFunc: &SecurityEventLogsStoreLogEventFunc{
 			defaultHook: func(context.Context, *SecurityEvent) {
+				return
+			},
+		},
+		LogEventListFunc: &SecurityEventLogsStoreLogEventListFunc{
+			defaultHook: func(context.Context, []*SecurityEvent) {
 				return
 			},
 		},
@@ -32260,9 +32925,19 @@ func NewStrictMockSecurityEventLogsStore() *MockSecurityEventLogsStore {
 				panic("unexpected invocation of MockSecurityEventLogsStore.Insert")
 			},
 		},
+		InsertListFunc: &SecurityEventLogsStoreInsertListFunc{
+			defaultHook: func(context.Context, []*SecurityEvent) error {
+				panic("unexpected invocation of MockSecurityEventLogsStore.InsertList")
+			},
+		},
 		LogEventFunc: &SecurityEventLogsStoreLogEventFunc{
 			defaultHook: func(context.Context, *SecurityEvent) {
 				panic("unexpected invocation of MockSecurityEventLogsStore.LogEvent")
+			},
+		},
+		LogEventListFunc: &SecurityEventLogsStoreLogEventListFunc{
+			defaultHook: func(context.Context, []*SecurityEvent) {
+				panic("unexpected invocation of MockSecurityEventLogsStore.LogEventList")
 			},
 		},
 	}
@@ -32279,8 +32954,14 @@ func NewMockSecurityEventLogsStoreFrom(i SecurityEventLogsStore) *MockSecurityEv
 		InsertFunc: &SecurityEventLogsStoreInsertFunc{
 			defaultHook: i.Insert,
 		},
+		InsertListFunc: &SecurityEventLogsStoreInsertListFunc{
+			defaultHook: i.InsertList,
+		},
 		LogEventFunc: &SecurityEventLogsStoreLogEventFunc{
 			defaultHook: i.LogEvent,
+		},
+		LogEventListFunc: &SecurityEventLogsStoreLogEventListFunc{
+			defaultHook: i.LogEventList,
 		},
 	}
 }
@@ -32489,6 +33170,114 @@ func (c SecurityEventLogsStoreInsertFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// SecurityEventLogsStoreInsertListFunc describes the behavior when the
+// InsertList method of the parent MockSecurityEventLogsStore instance is
+// invoked.
+type SecurityEventLogsStoreInsertListFunc struct {
+	defaultHook func(context.Context, []*SecurityEvent) error
+	hooks       []func(context.Context, []*SecurityEvent) error
+	history     []SecurityEventLogsStoreInsertListFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertList delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSecurityEventLogsStore) InsertList(v0 context.Context, v1 []*SecurityEvent) error {
+	r0 := m.InsertListFunc.nextHook()(v0, v1)
+	m.InsertListFunc.appendCall(SecurityEventLogsStoreInsertListFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the InsertList method of
+// the parent MockSecurityEventLogsStore instance is invoked and the hook
+// queue is empty.
+func (f *SecurityEventLogsStoreInsertListFunc) SetDefaultHook(hook func(context.Context, []*SecurityEvent) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertList method of the parent MockSecurityEventLogsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SecurityEventLogsStoreInsertListFunc) PushHook(hook func(context.Context, []*SecurityEvent) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SecurityEventLogsStoreInsertListFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []*SecurityEvent) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SecurityEventLogsStoreInsertListFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []*SecurityEvent) error {
+		return r0
+	})
+}
+
+func (f *SecurityEventLogsStoreInsertListFunc) nextHook() func(context.Context, []*SecurityEvent) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SecurityEventLogsStoreInsertListFunc) appendCall(r0 SecurityEventLogsStoreInsertListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SecurityEventLogsStoreInsertListFuncCall
+// objects describing the invocations of this function.
+func (f *SecurityEventLogsStoreInsertListFunc) History() []SecurityEventLogsStoreInsertListFuncCall {
+	f.mutex.Lock()
+	history := make([]SecurityEventLogsStoreInsertListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SecurityEventLogsStoreInsertListFuncCall is an object that describes an
+// invocation of method InsertList on an instance of
+// MockSecurityEventLogsStore.
+type SecurityEventLogsStoreInsertListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []*SecurityEvent
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SecurityEventLogsStoreInsertListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SecurityEventLogsStoreInsertListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // SecurityEventLogsStoreLogEventFunc describes the behavior when the
 // LogEvent method of the parent MockSecurityEventLogsStore instance is
 // invoked.
@@ -32590,6 +33379,111 @@ func (c SecurityEventLogsStoreLogEventFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SecurityEventLogsStoreLogEventFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// SecurityEventLogsStoreLogEventListFunc describes the behavior when the
+// LogEventList method of the parent MockSecurityEventLogsStore instance is
+// invoked.
+type SecurityEventLogsStoreLogEventListFunc struct {
+	defaultHook func(context.Context, []*SecurityEvent)
+	hooks       []func(context.Context, []*SecurityEvent)
+	history     []SecurityEventLogsStoreLogEventListFuncCall
+	mutex       sync.Mutex
+}
+
+// LogEventList delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSecurityEventLogsStore) LogEventList(v0 context.Context, v1 []*SecurityEvent) {
+	m.LogEventListFunc.nextHook()(v0, v1)
+	m.LogEventListFunc.appendCall(SecurityEventLogsStoreLogEventListFuncCall{v0, v1})
+	return
+}
+
+// SetDefaultHook sets function that is called when the LogEventList method
+// of the parent MockSecurityEventLogsStore instance is invoked and the hook
+// queue is empty.
+func (f *SecurityEventLogsStoreLogEventListFunc) SetDefaultHook(hook func(context.Context, []*SecurityEvent)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LogEventList method of the parent MockSecurityEventLogsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SecurityEventLogsStoreLogEventListFunc) PushHook(hook func(context.Context, []*SecurityEvent)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SecurityEventLogsStoreLogEventListFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(context.Context, []*SecurityEvent) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SecurityEventLogsStoreLogEventListFunc) PushReturn() {
+	f.PushHook(func(context.Context, []*SecurityEvent) {
+		return
+	})
+}
+
+func (f *SecurityEventLogsStoreLogEventListFunc) nextHook() func(context.Context, []*SecurityEvent) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SecurityEventLogsStoreLogEventListFunc) appendCall(r0 SecurityEventLogsStoreLogEventListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SecurityEventLogsStoreLogEventListFuncCall
+// objects describing the invocations of this function.
+func (f *SecurityEventLogsStoreLogEventListFunc) History() []SecurityEventLogsStoreLogEventListFuncCall {
+	f.mutex.Lock()
+	history := make([]SecurityEventLogsStoreLogEventListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SecurityEventLogsStoreLogEventListFuncCall is an object that describes an
+// invocation of method LogEventList on an instance of
+// MockSecurityEventLogsStore.
+type SecurityEventLogsStoreLogEventListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []*SecurityEvent
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SecurityEventLogsStoreLogEventListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SecurityEventLogsStoreLogEventListFuncCall) Results() []interface{} {
 	return []interface{}{}
 }
 
@@ -41421,6 +42315,9 @@ type MockUserStore struct {
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
 	DeleteFunc *UserStoreDeleteFunc
+	// DeleteListFunc is an instance of a mock function object controlling
+	// the behavior of the method DeleteList.
+	DeleteListFunc *UserStoreDeleteListFunc
 	// DeletePasswordResetCodeFunc is an instance of a mock function object
 	// controlling the behavior of the method DeletePasswordResetCode.
 	DeletePasswordResetCodeFunc *UserStoreDeletePasswordResetCodeFunc
@@ -41451,12 +42348,18 @@ type MockUserStore struct {
 	// HardDeleteFunc is an instance of a mock function object controlling
 	// the behavior of the method HardDelete.
 	HardDeleteFunc *UserStoreHardDeleteFunc
+	// HardDeleteListFunc is an instance of a mock function object
+	// controlling the behavior of the method HardDeleteList.
+	HardDeleteListFunc *UserStoreHardDeleteListFunc
 	// HasTagFunc is an instance of a mock function object controlling the
 	// behavior of the method HasTag.
 	HasTagFunc *UserStoreHasTagFunc
 	// InvalidateSessionsByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method InvalidateSessionsByID.
 	InvalidateSessionsByIDFunc *UserStoreInvalidateSessionsByIDFunc
+	// InvalidateSessionsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method InvalidateSessionsByIDs.
+	InvalidateSessionsByIDsFunc *UserStoreInvalidateSessionsByIDsFunc
 	// IsPasswordFunc is an instance of a mock function object controlling
 	// the behavior of the method IsPassword.
 	IsPasswordFunc *UserStoreIsPasswordFunc
@@ -41542,6 +42445,11 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
+		DeleteListFunc: &UserStoreDeleteListFunc{
+			defaultHook: func(context.Context, []int32) (r0 error) {
+				return
+			},
+		},
 		DeletePasswordResetCodeFunc: &UserStoreDeletePasswordResetCodeFunc{
 			defaultHook: func(context.Context, int32) (r0 error) {
 				return
@@ -41592,6 +42500,11 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
+		HardDeleteListFunc: &UserStoreHardDeleteListFunc{
+			defaultHook: func(context.Context, []int32) (r0 error) {
+				return
+			},
+		},
 		HasTagFunc: &UserStoreHasTagFunc{
 			defaultHook: func(context.Context, int32, string) (r0 bool, r1 error) {
 				return
@@ -41599,6 +42512,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		InvalidateSessionsByIDFunc: &UserStoreInvalidateSessionsByIDFunc{
 			defaultHook: func(context.Context, int32) (r0 error) {
+				return
+			},
+		},
+		InvalidateSessionsByIDsFunc: &UserStoreInvalidateSessionsByIDsFunc{
+			defaultHook: func(context.Context, []int32) (r0 error) {
 				return
 			},
 		},
@@ -41714,6 +42632,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.Delete")
 			},
 		},
+		DeleteListFunc: &UserStoreDeleteListFunc{
+			defaultHook: func(context.Context, []int32) error {
+				panic("unexpected invocation of MockUserStore.DeleteList")
+			},
+		},
 		DeletePasswordResetCodeFunc: &UserStoreDeletePasswordResetCodeFunc{
 			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.DeletePasswordResetCode")
@@ -41764,6 +42687,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.HardDelete")
 			},
 		},
+		HardDeleteListFunc: &UserStoreHardDeleteListFunc{
+			defaultHook: func(context.Context, []int32) error {
+				panic("unexpected invocation of MockUserStore.HardDeleteList")
+			},
+		},
 		HasTagFunc: &UserStoreHasTagFunc{
 			defaultHook: func(context.Context, int32, string) (bool, error) {
 				panic("unexpected invocation of MockUserStore.HasTag")
@@ -41772,6 +42700,11 @@ func NewStrictMockUserStore() *MockUserStore {
 		InvalidateSessionsByIDFunc: &UserStoreInvalidateSessionsByIDFunc{
 			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.InvalidateSessionsByID")
+			},
+		},
+		InvalidateSessionsByIDsFunc: &UserStoreInvalidateSessionsByIDsFunc{
+			defaultHook: func(context.Context, []int32) error {
+				panic("unexpected invocation of MockUserStore.InvalidateSessionsByIDs")
 			},
 		},
 		IsPasswordFunc: &UserStoreIsPasswordFunc{
@@ -41872,6 +42805,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		DeleteFunc: &UserStoreDeleteFunc{
 			defaultHook: i.Delete,
 		},
+		DeleteListFunc: &UserStoreDeleteListFunc{
+			defaultHook: i.DeleteList,
+		},
 		DeletePasswordResetCodeFunc: &UserStoreDeletePasswordResetCodeFunc{
 			defaultHook: i.DeletePasswordResetCode,
 		},
@@ -41902,11 +42838,17 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		HardDeleteFunc: &UserStoreHardDeleteFunc{
 			defaultHook: i.HardDelete,
 		},
+		HardDeleteListFunc: &UserStoreHardDeleteListFunc{
+			defaultHook: i.HardDeleteList,
+		},
 		HasTagFunc: &UserStoreHasTagFunc{
 			defaultHook: i.HasTag,
 		},
 		InvalidateSessionsByIDFunc: &UserStoreInvalidateSessionsByIDFunc{
 			defaultHook: i.InvalidateSessionsByID,
+		},
+		InvalidateSessionsByIDsFunc: &UserStoreInvalidateSessionsByIDsFunc{
+			defaultHook: i.InvalidateSessionsByIDs,
 		},
 		IsPasswordFunc: &UserStoreIsPasswordFunc{
 			defaultHook: i.IsPassword,
@@ -42706,6 +43648,110 @@ func (c UserStoreDeleteFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreDeleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserStoreDeleteListFunc describes the behavior when the DeleteList method
+// of the parent MockUserStore instance is invoked.
+type UserStoreDeleteListFunc struct {
+	defaultHook func(context.Context, []int32) error
+	hooks       []func(context.Context, []int32) error
+	history     []UserStoreDeleteListFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteList delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUserStore) DeleteList(v0 context.Context, v1 []int32) error {
+	r0 := m.DeleteListFunc.nextHook()(v0, v1)
+	m.DeleteListFunc.appendCall(UserStoreDeleteListFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteList method of
+// the parent MockUserStore instance is invoked and the hook queue is empty.
+func (f *UserStoreDeleteListFunc) SetDefaultHook(hook func(context.Context, []int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteList method of the parent MockUserStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserStoreDeleteListFunc) PushHook(hook func(context.Context, []int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreDeleteListFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreDeleteListFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []int32) error {
+		return r0
+	})
+}
+
+func (f *UserStoreDeleteListFunc) nextHook() func(context.Context, []int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreDeleteListFunc) appendCall(r0 UserStoreDeleteListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreDeleteListFuncCall objects
+// describing the invocations of this function.
+func (f *UserStoreDeleteListFunc) History() []UserStoreDeleteListFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreDeleteListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreDeleteListFuncCall is an object that describes an invocation of
+// method DeleteList on an instance of MockUserStore.
+type UserStoreDeleteListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreDeleteListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreDeleteListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -43779,6 +44825,111 @@ func (c UserStoreHardDeleteFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// UserStoreHardDeleteListFunc describes the behavior when the
+// HardDeleteList method of the parent MockUserStore instance is invoked.
+type UserStoreHardDeleteListFunc struct {
+	defaultHook func(context.Context, []int32) error
+	hooks       []func(context.Context, []int32) error
+	history     []UserStoreHardDeleteListFuncCall
+	mutex       sync.Mutex
+}
+
+// HardDeleteList delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserStore) HardDeleteList(v0 context.Context, v1 []int32) error {
+	r0 := m.HardDeleteListFunc.nextHook()(v0, v1)
+	m.HardDeleteListFunc.appendCall(UserStoreHardDeleteListFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the HardDeleteList
+// method of the parent MockUserStore instance is invoked and the hook queue
+// is empty.
+func (f *UserStoreHardDeleteListFunc) SetDefaultHook(hook func(context.Context, []int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HardDeleteList method of the parent MockUserStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UserStoreHardDeleteListFunc) PushHook(hook func(context.Context, []int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreHardDeleteListFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreHardDeleteListFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []int32) error {
+		return r0
+	})
+}
+
+func (f *UserStoreHardDeleteListFunc) nextHook() func(context.Context, []int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreHardDeleteListFunc) appendCall(r0 UserStoreHardDeleteListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreHardDeleteListFuncCall objects
+// describing the invocations of this function.
+func (f *UserStoreHardDeleteListFunc) History() []UserStoreHardDeleteListFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreHardDeleteListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreHardDeleteListFuncCall is an object that describes an invocation
+// of method HardDeleteList on an instance of MockUserStore.
+type UserStoreHardDeleteListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreHardDeleteListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreHardDeleteListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // UserStoreHasTagFunc describes the behavior when the HasTag method of the
 // parent MockUserStore instance is invoked.
 type UserStoreHasTagFunc struct {
@@ -43994,6 +45145,114 @@ func (c UserStoreInvalidateSessionsByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreInvalidateSessionsByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserStoreInvalidateSessionsByIDsFunc describes the behavior when the
+// InvalidateSessionsByIDs method of the parent MockUserStore instance is
+// invoked.
+type UserStoreInvalidateSessionsByIDsFunc struct {
+	defaultHook func(context.Context, []int32) error
+	hooks       []func(context.Context, []int32) error
+	history     []UserStoreInvalidateSessionsByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// InvalidateSessionsByIDs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUserStore) InvalidateSessionsByIDs(v0 context.Context, v1 []int32) error {
+	r0 := m.InvalidateSessionsByIDsFunc.nextHook()(v0, v1)
+	m.InvalidateSessionsByIDsFunc.appendCall(UserStoreInvalidateSessionsByIDsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// InvalidateSessionsByIDs method of the parent MockUserStore instance is
+// invoked and the hook queue is empty.
+func (f *UserStoreInvalidateSessionsByIDsFunc) SetDefaultHook(hook func(context.Context, []int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InvalidateSessionsByIDs method of the parent MockUserStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserStoreInvalidateSessionsByIDsFunc) PushHook(hook func(context.Context, []int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreInvalidateSessionsByIDsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreInvalidateSessionsByIDsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []int32) error {
+		return r0
+	})
+}
+
+func (f *UserStoreInvalidateSessionsByIDsFunc) nextHook() func(context.Context, []int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreInvalidateSessionsByIDsFunc) appendCall(r0 UserStoreInvalidateSessionsByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreInvalidateSessionsByIDsFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreInvalidateSessionsByIDsFunc) History() []UserStoreInvalidateSessionsByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreInvalidateSessionsByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreInvalidateSessionsByIDsFuncCall is an object that describes an
+// invocation of method InvalidateSessionsByIDs on an instance of
+// MockUserStore.
+type UserStoreInvalidateSessionsByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreInvalidateSessionsByIDsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreInvalidateSessionsByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

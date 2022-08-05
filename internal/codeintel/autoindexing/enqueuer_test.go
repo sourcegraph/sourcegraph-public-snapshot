@@ -67,7 +67,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 	inferenceService := NewMockInferenceService()
 
 	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
-	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", config, false)
+	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", config, false, false)
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
@@ -179,7 +179,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 	inferenceService := NewMockInferenceService()
 
 	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
-	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false)
+	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false)
 
 	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to GetIndexConfigurationByRepositoryID. want=%d have=%d", 1, len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()))
@@ -297,7 +297,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 
 	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
 
-	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false); err != nil {
+	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -398,7 +398,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
 
 	for _, id := range []int{41, 42, 43, 44} {
-		if _, err := scheduler.QueueIndexes(context.Background(), id, "HEAD", "", false); err != nil {
+		if _, err := scheduler.QueueIndexes(context.Background(), id, "HEAD", "", false, false); err != nil {
 			t.Fatalf("unexpected error performing update: %s", err)
 		}
 	}
@@ -461,7 +461,7 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 	maximumIndexJobsPerInferredConfiguration = 20
 	scheduler := newService(nil, mockDBStore, mockGitserverClient, nil, inferenceService, &observation.TestContext)
 
-	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false); err != nil {
+	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 

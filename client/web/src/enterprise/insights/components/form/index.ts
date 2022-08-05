@@ -14,7 +14,7 @@ export { useForm, FORM_ERROR } from './hooks/useForm'
 export type { Form, ValidationResult, SubmissionErrors, FormChangeEvent } from './hooks/useForm'
 
 export { useField } from './hooks/useField'
-export type { useFieldAPI } from './hooks/useField'
+export type { useFieldAPI, Validator } from './hooks/useField'
+export type { AsyncValidator } from './hooks/utils/use-async-validation'
 
 export { useCheckboxes } from './hooks/useCheckboxes'
-export { useAsyncInsightTitleValidator } from './hooks/use-async-insight-title-validator'

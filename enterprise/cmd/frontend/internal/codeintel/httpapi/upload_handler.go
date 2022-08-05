@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
 	sglog "github.com/sourcegraph/log"
@@ -36,6 +35,9 @@ func NewUploadHandler(
 	operations *Operations,
 ) http.Handler {
 	handler := &UploadHandler{
+		logger: sglog.Scoped("UploadHandler", "").With(
+			sglog.Bool("internal", internal),
+		),
 		db:          db,
 		dbStore:     dbStore,
 		uploadStore: uploadStore,
@@ -115,7 +117,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	}()
 	if err != nil {
 		if statusCode >= 500 {
-			log15.Error("codeintel.httpapi: failed to enqueue payload", "error", err)
+			h.logger.Error("codeintel.httpapi: failed to enqueue payload", sglog.Error(err))
 		}
 
 		http.Error(w, fmt.Sprintf("failed to enqueue payload: %s", err.Error()), statusCode)
@@ -130,7 +132,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(payload)
 	if err != nil {
-		log15.Error("codeintel.httpapi: failed to serialize result", "error", err)
+		h.logger.Error("codeintel.httpapi: failed to serialize result", sglog.Error(err))
 		http.Error(w, fmt.Sprintf("failed to serialize result: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -139,7 +141,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 
 	if _, err := io.Copy(w, bytes.NewReader(data)); err != nil {
-		log15.Error("codeintel.httpapi: failed to write payload to client", "error", err)
+		h.logger.Error("codeintel.httpapi: failed to write payload to client", sglog.Error(err))
 	}
 }
 

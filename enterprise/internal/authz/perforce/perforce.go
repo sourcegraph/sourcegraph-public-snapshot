@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -24,6 +26,8 @@ import (
 
 var _ authz.Provider = (*Provider)(nil)
 
+const cacheTTL = time.Hour
+
 // Provider implements authz.Provider for Perforce depot permissions.
 type Provider struct {
 	urn      string
@@ -36,10 +40,17 @@ type Provider struct {
 
 	p4Execer p4Execer
 
-	// NOTE: We do not need mutex because there is no concurrent access to these
-	// 	fields in the current implementation.
-	cachedAllUserEmails map[string]string   // username -> email
-	cachedGroupMembers  map[string][]string // group -> members
+	emailsCacheMutex      sync.RWMutex
+	cachedAllUserEmails   map[string]string // username -> email
+	emailsCacheLastUpdate time.Time
+
+	groupsCacheMutex      sync.RWMutex
+	cachedGroupMembers    map[string][]string // group -> members
+	groupsCacheLastUpdate time.Time
+}
+
+func cacheIsUpToDate(lastUpdate time.Time) bool {
+	return time.Since(lastUpdate) < cacheTTL
 }
 
 type p4Execer interface {
@@ -139,7 +150,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 // FetchUserPerms returns a list of depot prefixes that the given user has
 // access to on the Perforce Server.
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -179,16 +190,18 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 // FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
 // token.
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPermsByToken(_ context.Context, _ string, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchUserPermsByToken"}
 }
 
 // getAllUserEmails returns a set of username -> email pairs of all users in the Perforce server.
 func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, error) {
-	if p.cachedAllUserEmails != nil {
+	if p.cachedAllUserEmails != nil && cacheIsUpToDate(p.emailsCacheLastUpdate) {
 		return p.cachedAllUserEmails, nil
 	}
 
+	p.emailsCacheMutex.Lock()
+	defer p.emailsCacheMutex.Unlock()
 	userEmails := make(map[string]string)
 	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "users")
 	if err != nil {
@@ -209,6 +222,7 @@ func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, err
 	}
 
 	p.cachedAllUserEmails = userEmails
+	p.emailsCacheLastUpdate = time.Now()
 	return p.cachedAllUserEmails, nil
 }
 
@@ -219,6 +233,8 @@ func (p *Provider) getAllUsers(ctx context.Context) ([]string, error) {
 		return nil, errors.Wrap(err, "get all user emails")
 	}
 
+	p.emailsCacheMutex.RLock()
+	defer p.emailsCacheMutex.RUnlock()
 	users := make([]string, 0, len(userEmails))
 	for name := range userEmails {
 		users = append(users, name)
@@ -228,10 +244,12 @@ func (p *Provider) getAllUsers(ctx context.Context) ([]string, error) {
 
 // getGroupMembers returns all members of the given group in the Perforce server.
 func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string, error) {
-	if p.cachedGroupMembers[group] != nil {
+	if p.cachedGroupMembers[group] != nil && cacheIsUpToDate(p.groupsCacheLastUpdate) {
 		return p.cachedGroupMembers[group], nil
 	}
 
+	p.groupsCacheMutex.Lock()
+	defer p.groupsCacheMutex.Unlock()
 	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "group", "-o", group)
 	if err != nil {
 		return nil, errors.Wrap(err, "list group members")
@@ -267,12 +285,45 @@ func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string,
 	_, _ = io.Copy(io.Discard, rc)
 
 	p.cachedGroupMembers[group] = members
+	p.groupsCacheLastUpdate = time.Now()
 	return p.cachedGroupMembers[group], nil
+}
+
+// excludeGroupMembers excludes members of a given group from provided users map
+func (p *Provider) excludeGroupMembers(ctx context.Context, group string, users map[string]struct{}) error {
+	members, err := p.getGroupMembers(ctx, group)
+	if err != nil {
+		return errors.Wrapf(err, "list members of group %q", group)
+	}
+
+	p.groupsCacheMutex.RLock()
+	defer p.groupsCacheMutex.RUnlock()
+
+	for _, member := range members {
+		delete(users, member)
+	}
+	return nil
+}
+
+// includeGroupMembers includes members of a given group to provided users map
+func (p *Provider) includeGroupMembers(ctx context.Context, group string, users map[string]struct{}) error {
+	members, err := p.getGroupMembers(ctx, group)
+	if err != nil {
+		return errors.Wrapf(err, "list members of group %q", group)
+	}
+
+	p.groupsCacheMutex.RLock()
+	defer p.groupsCacheMutex.RUnlock()
+
+	for _, member := range members {
+		users[member] = struct{}{}
+	}
+	return nil
 }
 
 // FetchRepoPerms returns a list of users that have access to the given
 // repository on the Perforce Server.
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, _ authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
@@ -303,6 +354,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return nil, errors.Wrap(err, "get all user emails")
 	}
 	extIDs := make([]extsvc.AccountID, 0, len(users))
+	p.emailsCacheMutex.RLock()
+	defer p.emailsCacheMutex.RUnlock()
 	for user := range users {
 		email, ok := userEmails[user]
 		if !ok {
@@ -325,7 +378,7 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
+func (p *Provider) ValidateConnection(_ context.Context) (problems []string) {
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
 	rc, _, err := p.p4Execer.P4Exec(context.Background(), p.host, p.user, p.password, "protects", "-u", p.user)
 	if err == nil {

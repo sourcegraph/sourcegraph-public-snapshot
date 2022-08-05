@@ -91,14 +91,6 @@ func workspacesListArgsToDBOpts(args *graphqlbackend.ListWorkspacesArgs) (opts s
 			t := true
 			opts.Cancel = &t
 			opts.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-		} else if *args.State == "CANCELED" {
-			t := true
-			opts.Cancel = &t
-			opts.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
-		} else if *args.State == "FAILED" {
-			f := false
-			opts.Cancel = &f
-			opts.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
 		} else if *args.State == "SKIPPED" {
 			t := true
 			opts.Skipped = &t

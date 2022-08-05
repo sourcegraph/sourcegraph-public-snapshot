@@ -11,7 +11,9 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -51,6 +53,25 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 	}
 
 	return ""
+}
+
+func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return results, nil
+	}
+	// Filter out results from files we don't have access to:
+	act := actor.FromContext(ctx)
+	filtered := results[:0]
+	for i, r := range results {
+		ok, err := authz.FilterActorPath(ctx, checker, act, repo, r.File.Path)
+		if err != nil {
+			return nil, errors.Wrap(err, "checking permissions")
+		}
+		if ok {
+			filtered = append(filtered, results[i])
+		}
+	}
+	return filtered, nil
 }
 
 func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
@@ -171,13 +192,20 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	return
 }
 
-func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
-		return searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
+		results, err := searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
+		if err != nil {
+			return nil, errors.Wrap(err, "zoekt symbol search")
+		}
+		results, err = filterZoektResults(ctx, checker, repoName.Name, results)
+		if err != nil {
+			return nil, errors.Wrap(err, "checking permissions")
+		}
+		return results, nil
 	}
-
 	serverTimeout := 5 * time.Second
 	clientTimeout := 2 * serverTimeout
 
@@ -230,12 +258,12 @@ func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.Commi
 
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func GetMatchAtLineCharacter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
-	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
+	symbolMatches, err := Compute(ctx, checker, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
 	if err != nil {
 		return nil, err
 	}

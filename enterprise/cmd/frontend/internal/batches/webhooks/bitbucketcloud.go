@@ -204,7 +204,7 @@ func bitbucketCloudRepoCommitStatusEventPRs(
 	// Now we can look up the changeset(s).
 	changesets, _, err := bstore.ListChangesets(ctx, store.ListChangesetsOpts{
 		BitbucketCloudCommit: e.CommitStatus.Commit.Hash,
-		RepoID:               repo.ID,
+		RepoIDs:              []api.RepoID{repo.ID},
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing changesets matched to repo ID=%d", repo.ID)

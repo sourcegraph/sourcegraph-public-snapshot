@@ -47,7 +47,7 @@ export interface SiteAdminAreaRouteContext
     isSourcegraphDotCom: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
-    overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
+    overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
 }
 
 export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
@@ -86,16 +86,16 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/users',
         },
         {
-            label: 'Code insights (soon)',
-            to: '/site-admin/analytics/code-insights',
-        },
-        {
-            label: 'Batch changes (soon)',
+            label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
         },
         {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
+        },
+        {
+            label: 'Code insights (soon)',
+            to: '/site-admin/analytics/code-insights',
         },
         {
             label: 'Extensions (soon)',
@@ -112,17 +112,17 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
 export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsSearchPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage'),
         exact: true,
     },
     {
         path: '/analytics/code-intel',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsCodeIntelPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsCodeIntelPage'), 'AnalyticsCodeIntelPage'),
         exact: true,
     },
     {
         path: '/analytics/users',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsUsersPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage'),
         exact: true,
     },
     {
@@ -132,12 +132,12 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/batch-changes',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsBatchChangesPage'), 'AnalyticsBatchChangesPage'),
         exact: true,
     },
     {
         path: '/analytics/notebooks',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsNotebooksPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsNotebooksPage'), 'AnalyticsNotebooksPage'),
         exact: true,
     },
     {
@@ -163,14 +163,14 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         }
     }, [pathname])
 
-    const [isAdminAnalyticsEnabled] = useFeatureFlag('admin-analytics-enabled', false)
+    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
     const adminSideBarGroups = useMemo(
-        () => (isAdminAnalyticsEnabled ? [analyticsGroup, ...props.sideBarGroups] : props.sideBarGroups),
-        [isAdminAnalyticsEnabled, props.sideBarGroups]
+        () => (!isAdminAnalyticsDisabled ? [analyticsGroup, ...props.sideBarGroups] : props.sideBarGroups),
+        [isAdminAnalyticsDisabled, props.sideBarGroups]
     )
-    const routes = useMemo(() => (isAdminAnalyticsEnabled ? [...analyticsRoutes, ...props.routes] : props.routes), [
-        isAdminAnalyticsEnabled,
+    const routes = useMemo(() => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes), [
+        isAdminAnalyticsDisabled,
         props.routes,
     ])
 

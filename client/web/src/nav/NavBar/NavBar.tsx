@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState, forwardRef } from 'react'
 
+import { mdiChevronDown, mdiChevronUp, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 import H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
@@ -41,24 +39,24 @@ export interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationSta
     variant?: 'compact'
 }
 
-const useOutsideClickDetector = (
+const useOnClickDetector = (
     reference: React.RefObject<HTMLDivElement>
 ): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
-    const [outsideClick, setOutsideClick] = useState(false)
+    const [onClick, setOnClick] = useState(false)
 
     useEffect(() => {
-        function handleClickOutside(event: MouseEvent): void {
-            if (reference.current && !reference.current.contains(event.target as Node | null)) {
-                setOutsideClick(false)
+        function handleToggleOpen(): void {
+            if (reference.current) {
+                setOnClick(false)
             }
         }
-        document.addEventListener('mouseup', handleClickOutside)
+        document.addEventListener('mouseup', handleToggleOpen)
         return () => {
-            document.removeEventListener('mouseup', handleClickOutside)
+            document.removeEventListener('mouseup', handleToggleOpen)
         }
-    }, [reference, setOutsideClick])
+    }, [reference, setOnClick])
 
-    return [outsideClick, setOutsideClick]
+    return [onClick, setOnClick]
 }
 
 export const NavBar = forwardRef(
@@ -77,13 +75,13 @@ export const NavBar = forwardRef(
 
 export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     const menuReference = useRef<HTMLDivElement>(null)
-    const [open, setOpen] = useOutsideClickDetector(menuReference)
+    const [open, setOpen] = useOnClickDetector(menuReference)
 
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
             <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
-                <Icon as={MenuIcon} aria-hidden={true} />
-                <Icon as={open ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiMenu} />
+                <Icon svgPath={open ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
             </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>

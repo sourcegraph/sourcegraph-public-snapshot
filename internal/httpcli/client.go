@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -156,6 +157,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		),
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
+		RequestClientTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -281,25 +283,11 @@ func GerritUnauthenticateMiddleware(cli Doer) Doer {
 func ExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {
-		// TODO(keegancsmith) for now we don't support unwrappable
-		// transports. https://github.com/sourcegraph/sourcegraph/pull/7741
-		// https://github.com/sourcegraph/sourcegraph/pull/71
-		if isUnwrappableTransport(cli) {
-			return nil
-		}
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
 	cli.Transport = &externalTransport{base: tr}
 	return nil
-}
-
-func isUnwrappableTransport(cli *http.Client) bool {
-	if cli.Transport == nil {
-		return false
-	}
-	_, ok := cli.Transport.(interface{ UnwrappableTransport() })
-	return ok
 }
 
 // NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
@@ -608,15 +596,30 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		cli.Transport = http.DefaultTransport
 	}
 
-	tr, ok := cli.Transport.(*http.Transport)
-	if !ok {
-		return nil, errors.Errorf("http.Client.Transport is not an *http.Transport: %T", cli.Transport)
+	// Try to get the underlying, concrete *http.Transport implementation, copy it, and
+	// replace it.
+	var transport *http.Transport
+	switch v := cli.Transport.(type) {
+	case *http.Transport:
+		transport = v.Clone()
+		// Replace underlying implementation
+		cli.Transport = transport
+
+	case WrappedTransport:
+		wrapped := unwrapAll(v)
+		t, ok := (*wrapped).(*http.Transport)
+		if !ok {
+			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Transport)
+		}
+		transport = t.Clone()
+		// Replace underlying implementation
+		*wrapped = transport
+
+	default:
+		return nil, errors.Errorf("http.Client.Transport cannot be cast as a *http.Transport: %T", cli.Transport)
 	}
 
-	tr = tr.Clone()
-	cli.Transport = tr
-
-	return tr, nil
+	return transport, nil
 }
 
 // ActorTransportOpt wraps an existing http.Transport of an http.Client to pull the actor
@@ -628,7 +631,27 @@ func ActorTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &actor.HTTPTransport{RoundTripper: cli.Transport}
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+// RequestClientTransportOpt wraps an existing http.Transport of an http.Client to pull
+// the original client's IP from the context and add it to each request's HTTP headers.
+//
+// Servers can use requestclient.HTTPMiddleware to populate client context from incoming requests.
+func RequestClientTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
 
 	return nil
 }

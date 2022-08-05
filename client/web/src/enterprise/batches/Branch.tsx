@@ -28,6 +28,7 @@ export const Branch: React.FunctionComponent<React.PropsWithChildren<BranchProps
         variant={variant !== undefined ? variant : deleted ? 'danger' : 'secondary'}
         className={classNames('text-monospace', className)}
         as={deleted ? 'del' : undefined}
+        aria-label={`${deleted ? 'Deleted ' : ''}Branch: `}
     >
         {!forkTarget || forkTarget.namespace === null ? (
             name
@@ -54,7 +55,9 @@ export const BranchMerge: React.FunctionComponent<React.PropsWithChildren<Branch
 }) => (
     <div className="d-block d-sm-inline-block">
         <Branch name={baseRef} />
-        <span className="p-1">&larr;</span>
+        <Icon as="span" inline={false} className="p-1" aria-label="Update with">
+            &larr;
+        </Icon>
         <Branch name={headRef} forkTarget={forkTarget} />
     </div>
 )

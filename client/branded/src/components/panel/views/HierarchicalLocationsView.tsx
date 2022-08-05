@@ -257,6 +257,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                         storageKey={`hierarchical-locations-view-resizable:${group.name}`}
                                         minSize={100}
                                         defaultSize={group.defaultSize}
+                                        ariaLabel="Hierarchical locations sidebar"
                                     >
                                         <div
                                             data-testid="hierarchical-locations-view-list"

@@ -21,12 +21,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -38,17 +39,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Test struct {
-	Name                             string
-	Request                          *http.Request
-	ExpectedCode                     int
-	ExpectedBody                     string
-	ExpectedTrailers                 http.Header
-	EnableGitServerCommandExecFilter bool
+	Name             string
+	Request          *http.Request
+	ExpectedCode     int
+	ExpectedBody     string
+	ExpectedTrailers http.Header
 }
 
 func TestRequest(t *testing.T) {
@@ -117,39 +115,22 @@ func TestRequest(t *testing.T) {
 			},
 		},
 		{
-			Name:         "EmptyBody",
-			Request:      httptest.NewRequest("POST", "/exec", nil),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: `EOF`,
-		},
-		{
 			Name:         "EmptyInput",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
-		},
-		{
-			Name:                             "EmptyInput/EnableGitServerCommandExecFilter",
-			Request:                          httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode:                     http.StatusBadRequest,
-			ExpectedBody:                     "invalid command",
-			EnableGitServerCommandExecFilter: true,
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "invalid command",
 		},
 		{
 			Name:         "BadCommand",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
-		},
-		{
-			Name:                             "BadCommand/EnableGitServerCommandExecFilter",
-			Request:                          httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
-			ExpectedCode:                     http.StatusBadRequest,
-			ExpectedBody:                     "invalid command",
-			EnableGitServerCommandExecFilter: true,
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "invalid command",
 		},
 	}
 
+	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
 		Logger:            logtest.Scoped(t),
 		ReposDir:          "/testroot",
@@ -160,6 +141,7 @@ func TestRequest(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
+		DB: db,
 	}
 	h := s.Handler()
 
@@ -192,14 +174,6 @@ func TestRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						EnableGitServerCommandExecFilter: test.EnableGitServerCommandExecFilter,
-					},
-				},
-			})
-
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
 			h.ServeHTTP(&w, test.Request)
 
@@ -261,6 +235,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 	s := &Server{
 		Logger:            logtest.Scoped(t),
 		skipCloneForTests: true,
+		DB:                database.NewMockDB(),
 	}
 	h := s.Handler()
 
@@ -510,6 +485,12 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 }
 
 func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
+	if db == nil {
+		mDB := database.NewMockDB()
+		gr := database.NewMockGitserverRepoStore()
+		mDB.GitserverReposFunc.SetDefaultReturn(gr)
+		db = mDB
+	}
 	s := &Server{
 		Logger:           logtest.Scoped(t),
 		ReposDir:         repoDir,
@@ -562,16 +543,8 @@ func TestCloneRepo(t *testing.T) {
 		assert.Equal(t, errString, fromDB.LastError)
 	}
 
-	gr := types.GitserverRepo{
-		RepoID:      dbRepo.ID,
-		ShardID:     "test",
-		CloneStatus: types.CloneStatusNotCloned,
-	}
-	err := db.GitserverRepos().Upsert(ctx, &gr)
-	assertRepoState(types.CloneStatusNotCloned, 0, err)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Verify the gitserver repo entry exists.
+	assertRepoState(types.CloneStatusNotCloned, 0, nil)
 
 	repo := remote
 	cmd := func(name string, arg ...string) string {
@@ -585,7 +558,7 @@ func TestCloneRepo(t *testing.T) {
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	_, err = s.cloneRepo(ctx, repoName, nil)
+	_, err := s.cloneRepo(ctx, repoName, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -654,6 +627,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	if err := db.Repos().Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
+
 	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
 		t.Helper()
 		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
@@ -669,17 +643,8 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		assert.Equal(t, errString, fromDB.LastError)
 	}
 
-	// Insert initial gitserver_repos state
-	gr := types.GitserverRepo{
-		RepoID:      dbRepo.ID,
-		ShardID:     "test",
-		CloneStatus: types.CloneStatusNotCloned,
-	}
-	err := db.GitserverRepos().Upsert(ctx, &gr)
-	assertRepoState(types.CloneStatusNotCloned, 0, err)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Verify the gitserver repo entry exists.
+	assertRepoState(types.CloneStatusNotCloned, 0, nil)
 
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
@@ -1097,13 +1062,15 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	// let's run the same request again.
 	// If the repo is already cloned, handleRepoUpdate will trigger an update instead of a clone.
 	// Because this test doesn't mock that code path, the method will return an error.
-	resp = runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
+	runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
 	// we ignore the error, since this should trigger a fetch and fail because the URI is fake
 
 	// the repo should still be cloned though
-	if !resp.Cloned {
-		t.Fatal("expected cloned to be true")
+	gr, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
 	}
+	require.Equal(t, gr.CloneStatus, types.CloneStatusCloned)
 }
 
 func TestRemoveBadRefs(t *testing.T) {
@@ -1320,6 +1287,7 @@ func TestHostnameMatch(t *testing.T) {
 			s := Server{
 				Logger:   logtest.Scoped(t),
 				Hostname: tc.hostname,
+				DB:       database.NewMockDB(),
 			}
 			have := s.hostnameMatch(tc.addr)
 			if have != tc.shouldMatch {
@@ -1532,6 +1500,7 @@ func TestHandleBatchLog(t *testing.T) {
 			server := &Server{
 				Logger:                  logtest.Scoped(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
+				DB:                      database.NewMockDB(),
 			}
 			h := server.Handler()
 
@@ -1552,6 +1521,53 @@ func TestHandleBatchLog(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRunCommandGraceful(t *testing.T) {
+	t.Parallel()
+
+	t.Run("no timeout", func(t *testing.T) {
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		cmd := exec.Command("sleep", "0.1")
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, 0, exitStatus)
+	})
+
+	t.Run("context cancel", func(t *testing.T) {
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		t.Cleanup(cancel)
+
+		cmd := exec.Command("testdata/signaltest.sh")
+		var stdOut bytes.Buffer
+		cmd.Stdout = &stdOut
+
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Equal(t, 0, exitStatus)
+		assert.Equal(t, "trapped the INT signal\n", stdOut.String())
+	})
+
+	t.Run("context cancel, command doesn't exit", func(t *testing.T) {
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		t.Cleanup(cancel)
+
+		cmd := exec.Command("testdata/signaltest_noexit.sh")
+
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Equal(t, -1, exitStatus)
+	})
 }
 
 func mustEncodeJSONResponse(value any) string {

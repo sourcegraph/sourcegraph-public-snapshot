@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -47,7 +47,7 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 			// Skip auth check if it's not enabled in the instance's site configuration, if this
 			// user is a site admin (who can upload LSIF to any repository on the instance), or
 			// if the request a subsequent request of a multi-part upload.
-			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasQuery(r, "uploadId") {
+			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, operation.Logger, db) || hasQuery(r, "uploadId") {
 				trace.Log(log.Event("bypassing code host auth check"))
 				return 0, nil
 			}
@@ -68,7 +68,7 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 		}()
 		if err != nil {
 			if statusCode >= 500 {
-				log15.Error("codeintel.httpapi: failed to authorize request", "error", err)
+				operation.Logger.Error("codeintel.httpapi: failed to authorize request", sglog.Error(err))
 			}
 
 			http.Error(w, fmt.Sprintf("failed to authorize request: %s", err.Error()), statusCode)
@@ -79,14 +79,14 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 	})
 }
 
-func isSiteAdmin(ctx context.Context, db database.DB) bool {
+func isSiteAdmin(ctx context.Context, logger sglog.Logger, db database.DB) bool {
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return false
 		}
 
-		log15.Error("codeintel.httpapi: failed to get up current user", "error", err)
+		logger.Error("codeintel.httpapi: failed to get up current user", sglog.Error(err))
 		return false
 	}
 

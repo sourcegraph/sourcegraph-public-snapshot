@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/segmentio/ksuid"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -419,8 +420,8 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 
 func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 
-	log15.Debug("fetching data series to convert from just in time and backfill")
-	foundSeries, err := h.dataSeriesStore.GetJustInTimeSearchSeriesToBackfill(ctx)
+	log15.Debug("fetching scoped search series that need a backfill")
+	foundSeries, err := h.dataSeriesStore.GetScopedSearchSeriesNeedBackfill(ctx)
 	if err != nil {
 		log15.Error("unable to find series to convert to backfilled", "error", err)
 		return
@@ -428,19 +429,32 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 
 	for _, series := range foundSeries {
 		log15.Info("loaded just in time data series for conversion to backfilled", "series_id", series.SeriesID)
-		incrementErr := h.dataSeriesStore.IncrementBackfillAttempts(ctx, series)
+
+		oldSeriesId := series.SeriesID
+		series.SeriesID = ksuid.New().String()
+		series.CreatedAt = time.Now()
+
+		// Update the backfill attempts adjusts created date and inserts the new series_ID
+		incrementErr := h.dataSeriesStore.StartJustInTimeConversionAttempt(ctx, series)
 		if incrementErr != nil {
-			log15.Warn("unable to update backfill attempts", "seriesId", series.SeriesID, "error", err)
+			log15.Warn("unable to start jit conversion", "seriesId", oldSeriesId, "error", err)
+			continue
 		}
-		err := h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
+
+		err = h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
 		if err != nil {
 			log15.Error("unable to backfill scoped series", "series_id", series.SeriesID, "error", err)
 			continue
 		}
 
-		err = h.dataSeriesStore.ConvertJustInTimeSearchSeriesToBackfill(ctx, series)
+		err = h.dataSeriesStore.CompleteJustInTimeConversionAttempt(ctx, series)
 		if err != nil {
-			log15.Error("unable to convert insight from jit to backfilled", "series_id", series.SeriesID, "error", err)
+			log15.Error("unable to complete insight from jit to backfilled", "series_id", series.SeriesID, "error", err)
+		}
+
+		err = queryrunner.PurgeJobsForSeries(ctx, h.scopedBackfiller.workerBaseStore, oldSeriesId)
+		if err != nil {
+			log15.Warn("unable to purge jobs for old seriesID", "seriesId", oldSeriesId, "error", err)
 		}
 
 	}
@@ -680,20 +694,23 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	}
 
 	// Construct the search query that will generate data for this repository and time (revision) tuple.
-	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
+	var newQueryStr string
+	modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
 	if err != nil {
 		err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
 		return
 	}
+	newQueryStr = modifiedQuery.String()
 	if bctx.series.GroupBy != nil {
-		modifiedQuery, err = querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy))
-		if err != nil {
+		computeQuery, computeErr := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy))
+		if computeErr != nil {
 			err = errors.Append(err, errors.Wrap(err, "ComputeInsightCommandQuery"))
 			return
 		}
+		newQueryStr = computeQuery.String()
 	}
 
-	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, modifiedQuery, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
+	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	return err, job, preempted
 }
 

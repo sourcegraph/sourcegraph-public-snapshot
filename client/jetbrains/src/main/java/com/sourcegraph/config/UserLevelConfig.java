@@ -27,7 +27,7 @@ public class UserLevelConfig {
     @NotNull
     public static String getSourcegraphUrl() {
         Properties properties = readProperties();
-        return properties.getProperty("url", "https://sourcegraph.com/");
+        return properties.getProperty("url", "");
     }
 
     // readProps returns the first properties file it's able to parse from the following paths:

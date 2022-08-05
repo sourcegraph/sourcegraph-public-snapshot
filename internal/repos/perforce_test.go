@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -60,9 +59,6 @@ func TestPerforceSource_ListRepos(t *testing.T) {
 		tc := tc
 		tc.name = "PERFORCE-LIST-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindPerforce,
 				Config: marshalJSON(t, tc.conf),

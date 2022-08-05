@@ -216,7 +216,7 @@ export const WithDismissibleAlertWithIcon: Story = () => (
                     summary: {
                         kind: MarkupKind.Markdown,
                         value:
-                            'Search based result.<br /> [Learn more about precise code intelligence](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions/-/blob/shared/indicators.ts#L67)',
+                            'Search based result.<br /> [Learn more about precise code navigation](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions/-/blob/shared/indicators.ts#L67)',
                     },
                     type: 'test-alert-type',
                     iconKind: 'info',

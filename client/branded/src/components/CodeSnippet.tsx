@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { highlightCodeSafe } from '@sourcegraph/common'
-import { Button, Code } from '@sourcegraph/wildcard'
+import { Button, Code, Icon } from '@sourcegraph/wildcard'
 
 import styles from './CodeSnippet.module.scss'
 
@@ -31,7 +31,7 @@ export const CodeSnippet: React.FunctionComponent<React.PropsWithChildren<CodeSn
         <pre className={classNames('bg-code rounded border p-3 position-relative', className)}>
             {withCopyButton && (
                 <Button className={styles.copyButton} onClick={() => copy(code)}>
-                    <ContentCopyIcon className="pr-2 pt-2" />
+                    <Icon className="pr-2 pt-2" svgPath={mdiContentCopy} inline={false} aria-label="Copy" />
                 </Button>
             )}
             <Code dangerouslySetInnerHTML={highlightedInput} />

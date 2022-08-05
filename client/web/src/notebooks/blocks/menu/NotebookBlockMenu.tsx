@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Button, ButtonProps } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, ButtonProps } from '@sourcegraph/wildcard'
 
 import styles from './NotebookBlockMenu.module.scss'
 
@@ -39,34 +39,42 @@ const BlockMenuActionComponent: React.FunctionComponent<
 > = props => {
     const { className, label, type, id, isDisabled, icon, iconClassName, variant } = props
 
-    const element = type === 'button' ? 'button' : 'a'
-    const elementSpecificProps =
-        props.type === 'button'
-            ? { onClick: () => id && props.onClick(id) }
-            : { href: props.url, target: '_blank', rel: 'noopener noreferrer' }
+    const commonProps = {
+        key: label,
+        className: classNames('d-flex align-items-center', className, styles.actionButton),
+        disabled: isDisabled,
+        role: 'menuitem',
+        'data-testid': label,
+        'aria-label': label,
+        size: 'sm',
+        variant,
+    } as const
 
-    return (
-        <Button
-            key={label}
-            as={element as 'button'}
-            className={classNames('d-flex align-items-center', className, styles.actionButton)}
-            disabled={isDisabled}
-            role="menuitem"
-            data-testid={label}
-            aria-label={label}
-            size="sm"
-            variant={variant}
-            {...elementSpecificProps}
-        >
+    const commonContent = (
+        <>
             <div className={iconClassName}>{icon}</div>
             <div className={classNames('ml-1', styles.hideOnSmallScreen)}>{label}</div>
             <div className={classNames('flex-grow-1', styles.hideOnSmallScreen)} />
-            {type === 'button' && props.keyboardShortcutLabel && (
-                <small className={classNames(props.keyboardShortcutLabelClassName, styles.hideOnSmallScreen)}>
-                    {props.keyboardShortcutLabel}
-                </small>
-            )}
-        </Button>
+        </>
+    )
+
+    if (type === 'button') {
+        return (
+            <Button {...commonProps} onClick={() => id && props.onClick(id)}>
+                {commonContent}
+                {props.keyboardShortcutLabel && (
+                    <small className={classNames(props.keyboardShortcutLabelClassName, styles.hideOnSmallScreen)}>
+                        {props.keyboardShortcutLabel}
+                    </small>
+                )}
+            </Button>
+        )
+    }
+
+    return (
+        <ButtonLink {...commonProps} to={props.url} target="_blank" rel="noopener noreferrer">
+            {commonContent}
+        </ButtonLink>
     )
 }
 

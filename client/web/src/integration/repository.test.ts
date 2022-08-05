@@ -26,7 +26,7 @@ import {
     createFileNamesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { percySnapshotWithVariants } from './utils'
+import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
@@ -82,6 +82,7 @@ describe('Repository', () => {
             const shortRepositoryName = 'sourcegraph/jsonrpc2'
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`
+            const commitUrl = `${repositorySourcegraphUrl}/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81?visible=1`
             const clickedFileName = 'async.go'
             const clickedCommit = ''
             const fileEntries = ['jsonrpc2.go', clickedFileName]
@@ -136,10 +137,8 @@ describe('Repository', () => {
                                                     '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                                        canonicalURL:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                                        url: commitUrl,
+                                        canonicalURL: commitUrl,
                                         externalURLs: [
                                             {
                                                 url:
@@ -312,9 +311,8 @@ describe('Repository', () => {
                                         '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                 },
                             ],
-                            url: '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                            canonicalURL:
-                                '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                            url: commitUrl,
+                            canonicalURL: commitUrl,
                             externalURLs: [
                                 {
                                     url:
@@ -414,7 +412,7 @@ describe('Repository', () => {
                 })
             }, 'Blob')
 
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
             await driver.assertWindowLocation(`/${repositoryName}/-/blob/${clickedFileName}`)
 
             // Assert breadcrumb order
@@ -436,7 +434,10 @@ describe('Repository', () => {
                 selector: '[data-testid="git-commit-node-oid"]',
                 action: 'click',
             })
+            await driver.page.waitForSelector('[data-testid="repository-commit-page"]')
             await driver.page.waitForSelector('[data-testid="git-commit-node-message-subject"]')
+            await driver.assertWindowLocation(commitUrl)
+
             await assertSelectorHasText(
                 '[data-testid="git-commit-node-message-subject"]',
                 'update LSIF indexing CI workflow'
@@ -488,13 +489,21 @@ describe('Repository', () => {
             )
             await driver.page.waitForSelector('.test-tree-file-link')
             assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector('.test-tree-file-link')?.textContent),
+                await driver.page.evaluate(
+                    () =>
+                        document.querySelector(
+                            '.test-tree-file-link[href="/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql"]'
+                        )?.textContent
+                ),
                 fileName
             )
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
-            await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.$eval(
+                '.test-tree-file-link[href="/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql"]',
+                linkElement => (linkElement as HTMLElement).click()
+            )
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
@@ -506,18 +515,13 @@ describe('Repository', () => {
                 "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
             ])
 
-            await driver.page.waitForSelector('#monaco-query-input .view-lines')
-            // TODO: find a more reliable way to get the current search query,
-            // to account for the fact that it may _actually_ contain non-breaking spaces
-            // (and not just have spaces rendered as non-breaking in the DOM by Monaco)
-            // https://github.com/sourcegraph/sourcegraph/issues/14756
-            const searchQuery = (
-                await driver.page.evaluate(() => document.querySelector('#monaco-query-input .view-lines')?.textContent)
-            )?.replace(/\u00A0/g, ' ')
-            assert.strictEqual(
-                searchQuery,
-                "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
-            )
+            {
+                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
+                assert.strictEqual(
+                    await queryInput.getValue(),
+                    "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
+                )
+            }
 
             await driver.page.waitForSelector('.test-go-to-code-host')
             assert.strictEqual(
@@ -527,7 +531,9 @@ describe('Repository', () => {
                 "https://github.com/ggilmore/q-test/blob/master/Geoffrey's%20random%20queries.32r242442bf/%25%20token.4288249258.sql"
             )
 
-            const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
+            const blobContent = await driver.page.evaluate(
+                () => document.querySelector('[data-testid="repo-blob"]')?.textContent
+            )
             assert.strictEqual(blobContent, `content for: ${filePath}\nsecond line\nthird line`)
         })
 
@@ -547,19 +553,14 @@ describe('Repository', () => {
             await assertSelectorHasText('div.test-tree-page-title', shortRepositoryName)
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
-            await driver.page.waitForSelector('#monaco-query-input .view-lines')
-            // TODO: find a more reliable way to get the current search query,
-            // to account for the fact that it may _actually_ contain non-breaking spaces
-            // (and not just have spaces rendered as non-breaking in the DOM by Monaco)
-            // https://github.com/sourcegraph/sourcegraph/issues/14756
-            const searchQuery = (
-                await driver.page.evaluate(() => document.querySelector('#monaco-query-input .view-lines')?.textContent)
-            )?.replace(/\u00A0/g, ' ')
-            assert.strictEqual(searchQuery, 'repo:^ubuntu/\\+source/quemu$ ') // + should be escaped in regular expression
+            {
+                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
+                assert.strictEqual(await queryInput.getValue(), 'repo:^ubuntu/\\+source/quemu$ ') // + should be escaped in regular expression
+            }
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
@@ -586,7 +587,7 @@ describe('Repository', () => {
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
@@ -1057,7 +1058,7 @@ describe('Repository', () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
             try {
-                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 5000 })
+                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 10000 })
             } catch {
                 throw new Error('Expected to see file decorations')
             }
@@ -1551,6 +1552,8 @@ describe('Repository', () => {
                 })
                 await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
                 await driver.page.waitForSelector('.test-filtered-tags-connection')
+                await driver.page.click('input[name="query"]')
+                await driver.page.waitForSelector('input[name="query"].focus-visible')
                 await percySnapshotWithVariants(driver.page, 'Repository tags page')
                 await accessibilityAudit(driver.page)
             })

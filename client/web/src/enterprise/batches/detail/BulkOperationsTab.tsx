@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiMapSearch } from '@mdi/js'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { dismissAlert } from '../../../components/DismissibleAlert'
 import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
@@ -68,7 +68,7 @@ export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<
 
 const EmptyBulkOperationsListElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <MapSearchIcon className="icon" />
+        <Icon className="icon" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <div className="pt-2">No bulk operations have been run on this batch change.</div>
     </div>
 )

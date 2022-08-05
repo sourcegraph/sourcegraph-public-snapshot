@@ -5,7 +5,7 @@ import { ObservableStatus, useObservableWithStatus } from '@sourcegraph/wildcard
 import { TemporarySettings } from './TemporarySettings'
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
 
-type UseTemporarySettingsReturnType<K extends keyof TemporarySettings> = [
+export type UseTemporarySettingsReturnType<K extends keyof TemporarySettings> = [
     TemporarySettings[K],
     (newValue: TemporarySettings[K] | ((previousValue: TemporarySettings[K]) => TemporarySettings[K])) => void,
     TemporarySettingsLoadStatus

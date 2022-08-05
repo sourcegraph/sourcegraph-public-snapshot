@@ -1,14 +1,14 @@
-# Adding Precise Code Intelligence to CI/CD workflows
+# Adding precise code navigation to CI/CD workflows
 
 ## [Language-specific guides](index.md)
 
-We are working on creating language specific guides for use with different indexers, so make sure to check for the documentation for your language! If there isn't a guide for your language, this general guide will help you through the precise code intelligence setup process.
+We are working on creating language specific guides for use with different indexers, so make sure to check for the documentation for your language! If there isn't a guide for your language, this general guide will help you through the precise code navigation setup process.
 
 > NOTE: First make sure to complete the [how-to guides on indexing](../how-to/index.md).
 
 ## Benefits of CI integration
 
-Setting up a source code indexing job in your CI build provides you with fast code intelligence that gives you more control on when source code gets indexed, and ensures accuracy of your code intelligence by keeping in sync with changes in your repository. Due to the large number of CI frameworks and languages we may not have specific documentation for your use case. Feel free to [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if you're having difficulties and we can help troubleshoot your setup.
+Setting up a source code indexing job in your CI build provides you with fast code navigation that gives you more control on when source code gets indexed, and ensures accuracy of your code navigation by keeping in sync with changes in your repository. Due to the large number of CI frameworks and languages we may not have specific documentation for your use case. Feel free to [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if you're having difficulties and we can help troubleshoot your setup.
 
 ## Index
 
@@ -197,10 +197,10 @@ We recommend that you start with a CI job that runs on every commit (including b
 
 If you see too much load on your CI, your Sourcegraph instance, or a rapid decrease in free disk space on your Sourcegraph instance, you can instead index only the default branch, or set up a periodic job (e.g. daily) in CI that indexes your default branch.
 
-With periodic jobs, you should still receive precise code intelligence on non-indexed commits on lines that are unchanged since the nearest indexed commit. This requires that the indexed commit be a direct ancestor or descendant no more than [100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) away. If your commit frequency is too high and your index frequency is too low, you may find commits with no precise code intelligence at all. In this case, we recommend you try to increase your index frequency if possible.
+With periodic jobs, you should still receive precise code navigation on non-indexed commits on lines that are unchanged since the nearest indexed commit. This requires that the indexed commit be a direct ancestor or descendant no more than [100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) away. If your commit frequency is too high and your index frequency is too low, you may find commits with no precise code navigation at all. In this case, we recommend you try to increase your index frequency if possible.
 
 ## Uploading indexes to Sourcegraph.com
 
-Indexes can be uploaded to a self-hosted Sourcegraph instance or to [Sourcegraph.com](https://sourcegraph.com). Using the [Sourcegraph.com](https://sourcegraph.com) endpoint will surface code intelligence for your public repositories directly on GitHub via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension) and at `https://sourcegraph.com/github.com/<your-username>/<your-repo>`.
+Indexes can be uploaded to a self-hosted Sourcegraph instance or to [Sourcegraph.com](https://sourcegraph.com). Using the [Sourcegraph.com](https://sourcegraph.com) endpoint will surface code navigation for your public repositories directly on GitHub via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension) and at `https://sourcegraph.com/github.com/<your-username>/<your-repo>`.
 
 Using the [Sourcegraph.com](https://sourcegraph.com) endpoint is free and your index is treated as User-Generated Content (you own it, as covered in our [Sourcegraph.com terms of service](https://about.sourcegraph.com/terms-dotcom#3-proprietary-rights-and-licenses)). If you run into trouble, or a situation arises where you need all of your index expunged, please reach out to us at [support@sourcegraph.com](mailto:support@sourcegraph.com).

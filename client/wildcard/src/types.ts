@@ -6,6 +6,10 @@ export type ForwardReferenceExoticComponent<E, OwnProps> = React.ForwardRefExoti
     Merge<E extends React.ElementType ? React.ComponentPropsWithRef<E> : never, OwnProps & { as?: E }>
 >
 
+type PropsWithChildren<P> = P &
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ({ children?: React.ReactNode | undefined } | { children: (...args: any[]) => React.ReactNode })
+
 export interface ForwardReferenceComponent<
     IntrinsicElementString,
     OwnProps = {}
@@ -25,7 +29,7 @@ export interface ForwardReferenceComponent<
     <As = IntrinsicElementString>(
         props: As extends ''
             ? { as: keyof JSX.IntrinsicElements }
-            : As extends React.ComponentType<React.PropsWithChildren<infer P>>
+            : As extends React.ComponentType<PropsWithChildren<infer P>>
             ? Merge<P, OwnProps & { as: As }>
             : As extends keyof JSX.IntrinsicElements
             ? Merge<JSX.IntrinsicElements[As], OwnProps & { as: As }>

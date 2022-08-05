@@ -27,10 +27,9 @@ type State<D> =
     | { status: StateStatus.Intact }
 
 export function useLivePreview<D>(input: Input<D>): Output<D> {
+    // Synthetic deps to trigger dry run for fetching live preview data
     const [lastPreviewVersion, setLastPreviewVersion] = useState(0)
     const [state, setState] = useState<State<D>>({ status: StateStatus.Intact })
-
-    // Synthetic deps to trigger dry run for fetching live preview data
     const debouncedInput = useDebounce(input, 500)
 
     useEffect(() => {

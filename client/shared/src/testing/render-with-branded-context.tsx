@@ -11,13 +11,18 @@ export interface RenderWithBrandedContextResult extends RenderResult {
     history: MemoryHistory
 }
 
+interface RenderWithBrandedContextOptions {
+    route?: string
+    history?: MemoryHistory<unknown>
+}
+
 const wildcardTheme: WildcardTheme = {
     isBranded: true,
 }
 
 export function renderWithBrandedContext(
     children: ReactNode,
-    { route = '/', history = createMemoryHistory({ initialEntries: [route] }) } = {}
+    { route = '/', history = createMemoryHistory({ initialEntries: [route] }) }: RenderWithBrandedContextOptions = {}
 ): RenderWithBrandedContextResult {
     return {
         ...render(

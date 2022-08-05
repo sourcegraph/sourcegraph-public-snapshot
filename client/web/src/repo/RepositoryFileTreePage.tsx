@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Redirect, RouteComponentProps } from 'react-router'
 
-import { appendLineRangeQueryParameter, isErrorLike } from '@sourcegraph/common'
+import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
@@ -11,7 +11,6 @@ import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
-import { InstallIntegrationsAlert } from './actions/InstallIntegrationsAlert'
 import { BlobPage } from './blob/BlobPage'
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -39,9 +38,9 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         resolvedRev: { commitID, defaultBranch },
         match,
         globbing,
-        onExtensionAlertDismissed,
         ...context
     } = props
+
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
     // and https://github.com/ReactTraining/history/issues/505
@@ -89,11 +88,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         globbing,
     }
 
-    const codeHostIntegrationMessaging: 'native-integration' | 'browser-extension' =
-        (!isErrorLike(context.settingsCascade.final) &&
-            context.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-        'browser-extension'
-
     return (
         <>
             <RepoRevisionSidebar
@@ -113,12 +107,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                     <ErrorBoundary location={context.location}>
                         {objectType === 'blob' ? (
                             <>
-                                <InstallIntegrationsAlert
-                                    codeHostIntegrationMessaging={codeHostIntegrationMessaging}
-                                    page="file"
-                                    externalURLs={repo.externalURLs}
-                                    onExtensionAlertDismissed={onExtensionAlertDismissed}
-                                />
                                 <BlobPage
                                     {...context}
                                     {...repoRevisionProps}

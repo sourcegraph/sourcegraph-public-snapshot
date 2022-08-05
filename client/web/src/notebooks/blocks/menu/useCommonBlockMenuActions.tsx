@@ -1,9 +1,6 @@
 import { useMemo } from 'react'
 
-import ArrowDownIcon from 'mdi-react/ArrowDownIcon'
-import ArrowUpIcon from 'mdi-react/ArrowUpIcon'
-import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
+import { mdiContentDuplicate, mdiArrowUp, mdiArrowDown, mdiDelete } from '@mdi/js'
 
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { Icon } from '@sourcegraph/wildcard'
@@ -32,28 +29,28 @@ export const useCommonBlockMenuActions = ({
             {
                 type: 'button',
                 label: 'Duplicate',
-                icon: <Icon aria-hidden={true} as={ContentDuplicateIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiContentDuplicate} />,
                 onClick: onDuplicateBlock,
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
             },
             {
                 type: 'button',
                 label: 'Move Up',
-                icon: <Icon aria-hidden={true} as={ArrowUpIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiArrowUp} />,
                 onClick: id => onMoveBlock(id, 'up'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
             },
             {
                 type: 'button',
                 label: 'Move Down',
-                icon: <Icon aria-hidden={true} as={ArrowDownIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiArrowDown} />,
                 onClick: id => onMoveBlock(id, 'down'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
             },
             {
                 type: 'button',
                 label: 'Delete',
-                icon: <Icon aria-hidden={true} as={DeleteIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiDelete} />,
                 onClick: onDeleteBlock,
                 keyboardShortcutLabel: !isInputFocused ? (isMacPlatform ? '⌘ + ⌫' : 'Del') : '',
             },

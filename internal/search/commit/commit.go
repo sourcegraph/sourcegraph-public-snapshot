@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type SearchJob struct {
@@ -53,7 +53,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return nil, err
 	}
 
-	searchRepoRev := func(repoRev *search.RepositoryRevisions) error {
+	searchRepoRev := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			return nil
@@ -94,22 +94,18 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
-	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
-		bounded := goroutine.NewBounded(j.Concurrency)
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
+	return nil, repos.Paginate(ctx, j.RepoOpts, func(page *searchrepos.Resolved) error {
+		g := group.New().WithContext(ctx).WithMaxConcurrency(j.Concurrency).WithFirstError()
 
 		for _, repoRev := range page.RepoRevs {
 			repoRev := repoRev
-			if ctx.Err() != nil {
-				// Don't keep spinning up goroutines if context has been canceled
-				return ctx.Err()
-			}
-			bounded.Go(func() error {
-				return searchRepoRev(repoRev)
+			g.Go(func(ctx context.Context) error {
+				return searchRepoRev(ctx, repoRev)
 			})
 		}
 
-		return bounded.Wait()
+		return g.Wait()
 	})
 }
 
@@ -224,6 +220,9 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 
 	// Convert parameters to nodes
 	for _, parameter := range b.Parameters {
+		if parameter.Annotation.Labels.IsSet(query.IsPredicate) {
+			continue
+		}
 		newPred := queryParameterToPredicate(parameter, caseSensitive, diff)
 		if newPred != nil {
 			res = append(res, newPred)
@@ -239,13 +238,11 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
 }
 
-func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
+func searchRevsToGitserverRevs(in []string) []gitprotocol.RevisionSpecifier {
 	out := make([]gitprotocol.RevisionSpecifier, 0, len(in))
 	for _, rev := range in {
 		out = append(out, gitprotocol.RevisionSpecifier{
-			RevSpec:        rev.RevSpec,
-			RefGlob:        rev.RefGlob,
-			ExcludeRefGlob: rev.ExcludeRefGlob,
+			RevSpec: rev,
 		})
 	}
 	return out
@@ -340,8 +337,10 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var diffPreview, messagePreview *result.MatchedString
+	var structuredDiff []result.DiffFile
 	if diff {
 		diffPreview = &in.Diff
+		structuredDiff, _ = result.ParseDiffString(in.Diff.Content)
 	} else {
 		messagePreview = &in.Message
 	}
@@ -364,6 +363,7 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		},
 		Repo:           repo,
 		DiffPreview:    diffPreview,
+		Diff:           structuredDiff,
 		MessagePreview: messagePreview,
 		ModifiedFiles:  in.ModifiedFiles,
 	}

@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -85,7 +87,7 @@ func TestNpmCloneCommand(t *testing.T) {
 	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
 
 	client := npmtest.MockClient{
-		Packages: map[string]*npm.PackageInfo{
+		Packages: map[reposource.PackageName]*npm.PackageInfo{
 			"example": {
 				Versions: map[string]*npm.DependencyInfo{
 					exampleNpmVersion: {
@@ -103,7 +105,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), livedependencies.NewSyncer())
+	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},

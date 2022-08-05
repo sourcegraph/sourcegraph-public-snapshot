@@ -112,7 +112,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
                             .&nbsp;
                             <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
                                 {indexedRef.skippedIndexed.count} {pluralize('file', indexedRef.skippedIndexed.count)}{' '}
-                                not indexed
+                                skipped during indexing
                             </Link>
                             .
                         </span>

@@ -247,17 +247,6 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 		Enabled:   enableForTeammatesOnly(),
 		Checks: []*dependency{
 			dependencyGcloud(),
-			{
-				Name:  "1password",
-				Check: checkAction(check1password()),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, "brew install --cask 1password/tap/1password-cli").StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-
-					return opLoginFix()(ctx, cio, args)
-				},
-			},
 		},
 	},
 }

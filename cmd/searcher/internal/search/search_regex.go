@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -187,6 +186,9 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protoc
 
 	// find limit+1 matches so we know whether we hit the limit
 	locs := rg.re.FindAllIndex(fileMatchBuf, limit+1)
+	if len(locs) == 0 {
+		return nil, nil // short-circuit if we have no matches
+	}
 	ranges := locsToRanges(fileBuf, locs)
 	chunks := chunkRanges(ranges, 0)
 	return chunksToMatches(fileBuf, chunks), nil
@@ -286,8 +288,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	defer cancel()
 
 	var (
-		filesmu sync.Mutex // protects files
-		files   = zf.Files
+		files = zf.Files
 	)
 
 	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
@@ -306,26 +307,33 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	}
 
 	var (
+		lastFileIdx   = atomic.NewInt32(-1)
 		filesSkipped  atomic.Uint32
 		filesSearched atomic.Uint32
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
 
+	contextCanceled := atomic.NewBool(false)
+	done := make(chan struct{})
+	go func() {
+		<-ctx.Done()
+		contextCanceled.Store(true)
+		close(done)
+	}()
+	defer func() { cancel(); <-done }()
+
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
 		rg := rg.Copy()
 		g.Go(func() error {
-			for ctx.Err() == nil {
-				// grab a file to work on
-				filesmu.Lock()
-				if len(files) == 0 {
-					filesmu.Unlock()
+			for !contextCanceled.Load() {
+				idx := int(lastFileIdx.Inc())
+				if idx >= len(files) {
 					return nil
 				}
-				f := &files[0]
-				files = files[1:]
-				filesmu.Unlock()
+
+				f := &files[idx]
 
 				// decide whether to process, record that decision
 				if !rg.matchPath.MatchPath(f.Name) {

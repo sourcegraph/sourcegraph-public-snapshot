@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -59,7 +60,9 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	}
 
 	db := database.NewMockDB()
-	client := gitserver.NewClient(db)
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
+	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
 	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -76,6 +79,8 @@ func TestRepository_FileSystem(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	// In all tests, repo should contain three commits. The first commit
 	// (whose ID is in the 'first' field) has a file at dir1/file1 with the
@@ -111,7 +116,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewClient(db)
+	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
 	for label, test := range tests {
 		// notafile should not exist.
 		if _, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
@@ -137,7 +142,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(gitdomain.ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
-		client := gitserver.NewClient(db)
+		client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
@@ -272,6 +277,8 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	// The repo contains 3 files: one whose filename includes a
 	// non-ASCII char, one whose filename contains a double quote, and
@@ -304,7 +311,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewClient(db)
+	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -345,6 +352,8 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	submodDir := InitGitRepository(t,
 		"touch f",
@@ -365,7 +374,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewClient(db)
+	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {

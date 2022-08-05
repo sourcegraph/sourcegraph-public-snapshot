@@ -19,7 +19,12 @@ func stringHumanPattern(nodes []Node) string {
 			if n.Annotation.Labels.IsSet(Regexp) {
 				v = fmt.Sprintf("/%s/", v)
 			}
-			if n.Negated {
+			if n.Annotation.Labels.IsSet(IsAlias) {
+				v = fmt.Sprintf("content:%s", v)
+				if n.Negated {
+					v = "-" + v
+				}
+			} else if n.Negated {
 				v = fmt.Sprintf("(NOT %s)", v)
 			}
 			result = append(result, v)
@@ -48,10 +53,27 @@ func stringHumanParameters(parameters []Parameter) string {
 		if p.Annotation.Labels.IsSet(Quoted) {
 			v = strconv.Quote(v)
 		}
+		field := p.Field
+		if p.Annotation.Labels.IsSet(IsAlias) {
+			// Preserve alias for fields in the query for fields
+			// with only one alias. We don't know which alias was in
+			// the original query for fields that have multiple
+			// aliases.
+			switch p.Field {
+			case FieldRepo:
+				field = "r"
+			case FieldAfter:
+				field = "since"
+			case FieldBefore:
+				field = "until"
+			case FieldRev:
+				field = "revision"
+			}
+		}
 		if p.Negated {
-			result = append(result, fmt.Sprintf("-%s:%s", p.Field, v))
+			result = append(result, fmt.Sprintf("-%s:%s", field, v))
 		} else {
-			result = append(result, fmt.Sprintf("%s:%s", p.Field, v))
+			result = append(result, fmt.Sprintf("%s:%s", field, v))
 		}
 	}
 	return strings.Join(result, " ")

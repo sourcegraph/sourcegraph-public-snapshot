@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
 import * as React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
 
@@ -24,6 +25,11 @@ const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
     ADDED: '+',
     UNCHANGED: ' ',
     DELETED: '-',
+}
+const diffHunkTypeDescriptions: Record<DiffHunkLineType, string> = {
+    ADDED: 'added line',
+    UNCHANGED: 'unchanged line',
+    DELETED: 'deleted line',
 }
 interface DiffHunkProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
@@ -138,6 +144,7 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                             style={lineStyle}
                             data-diff-marker={diffHunkTypeIndicators[line.kind]}
                         >
+                            <VisuallyHidden>{diffHunkTypeDescriptions[line.kind]}</VisuallyHidden>
                             <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
                             {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)

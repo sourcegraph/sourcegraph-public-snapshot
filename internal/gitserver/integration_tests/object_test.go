@@ -2,6 +2,7 @@ package inttests
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,7 +35,7 @@ func TestGetObject(t *testing.T) {
 
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			obj, err := gitserver.NewClient(database.NewMockDB()).GetObject(context.Background(), test.repo, test.objectName)
+			obj, err := gitserver.NewTestClient(http.DefaultClient, database.NewMockDB(), gitserverAddresses).GetObject(context.Background(), test.repo, test.objectName)
 			if err != nil {
 				t.Fatal(err)
 			}

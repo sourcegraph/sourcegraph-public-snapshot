@@ -7,10 +7,10 @@ import { filter } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
-import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 /**
@@ -67,24 +67,30 @@ export class GoToPermalinkAction extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink file={true} to={this.permalinkURL} onSelect={this.onClick.bind(this)}>
+                <RepoHeaderActionMenuLink
+                    as={Link}
+                    file={true}
+                    to={this.permalinkURL}
+                    onSelect={this.onClick.bind(this)}
+                >
                     <Icon aria-hidden={true} svgPath={mdiLink} />
                     <span>Permalink (with full Git commit SHA)</span>
-                </RepoHeaderActionButtonLink>
+                </RepoHeaderActionMenuLink>
             )
         }
 
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                to={this.permalinkURL}
-                onSelect={this.onClick.bind(this)}
-                data-tooltip="Permalink (with full Git commit SHA)"
-                aria-label="Permalink (with full Git commit SHA)"
-            >
-                <Icon aria-hidden={true} svgPath={mdiLink} />
-            </RepoHeaderActionButtonLink>
+            <Tooltip content="Permalink (with full Git commit SHA)">
+                <RepoHeaderActionButtonLink
+                    aria-label="Permalink"
+                    className="btn-icon"
+                    file={false}
+                    to={this.permalinkURL}
+                    onSelect={this.onClick.bind(this)}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiLink} />
+                </RepoHeaderActionButtonLink>
+            </Tooltip>
         )
     }
 

@@ -27,7 +27,7 @@ func latestPingHandler(db database.DB) func(w http.ResponseWriter, r *http.Reque
 		case sql.ErrNoRows:
 			_, _ = io.WriteString(w, "{}")
 		case nil:
-			_, _ = io.WriteString(w, ping.Argument)
+			_, _ = io.WriteString(w, string(ping.Argument))
 		default:
 			log15.Error("pings.latest", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)

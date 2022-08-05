@@ -3,7 +3,6 @@ import com.sourcegraph.git.RepoInfo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EmptySource;
-import org.junit.jupiter.params.provider.NullSource;
 
 import java.net.URI;
 
@@ -19,7 +18,7 @@ public class CommitViewUriBuilderTest {
     RepoInfo repoInfo = new RepoInfo("", "https://github.com/sourcegraph/sourcegraph-jetbrains.git", "main");
 
     URI got = builder.build("https://www.sourcegraph.com",
-        "1fa8d5d6286c24924b55c15ed4d1a0b85ccab4d5",
+        "1fa8d5d6286c24924b55c15ed4d1a0b85c44b4d5",
         repoInfo,
         "intellij",
         "1.1");
@@ -29,7 +28,6 @@ public class CommitViewUriBuilderTest {
   }
 
   @ParameterizedTest
-  @NullSource
   @EmptySource
   public void testBuild_MissingRevision(String revision) {
     CommitViewUriBuilder builder = new CommitViewUriBuilder();
@@ -43,33 +41,26 @@ public class CommitViewUriBuilderTest {
   }
 
   @ParameterizedTest
-  @NullSource
   @EmptySource
   public void testBuild_MissingBaseUri(String baseUri) {
     CommitViewUriBuilder builder = new CommitViewUriBuilder();
     RepoInfo repoInfo = new RepoInfo("", "https://github.com/sourcegraph/sourcegraph-jetbrains.git", "main");
 
     assertThrows(RuntimeException.class, () -> builder.build(baseUri,
-        "1fa8d5d6286c24924b55c15ed4d1a0b85ccab4d5",
+        "1fa8d5d6286c24924b55c15ed4d1a0b85c44b4d5",
         repoInfo,
         "intellij",
         "1.1"));
   }
   @Test
   public void testBuild_MissingRemoteUrl() {
-    CommitViewUriBuilder builder = new CommitViewUriBuilder();
-    RepoInfo repoInfo = new RepoInfo("", "", "main");
+      CommitViewUriBuilder builder = new CommitViewUriBuilder();
+      RepoInfo repoInfo = new RepoInfo("", "", "main");
 
-    assertThrows(RuntimeException.class, () -> builder.build("https://www.sourcegraph.com",
-        "1fa8d5d6286c24924b55c15ed4d1a0b85ccab4d5",
-        repoInfo,
-        "intellij",
-        "1.1"));
-
-    assertThrows(RuntimeException.class, () -> builder.build("https://www.sourcegraph.com",
-        "1fa8d5d6286c24924b55c15ed4d1a0b85ccab4d5",
-        null,
-        "intellij",
-        "1.1"));
+      assertThrows(RuntimeException.class, () -> builder.build("https://www.sourcegraph.com",
+          "1fa8d5d6286c24924b55c15ed4d1a0b85c44b4d5",
+          repoInfo,
+          "intellij",
+          "1.1"));
   }
 }

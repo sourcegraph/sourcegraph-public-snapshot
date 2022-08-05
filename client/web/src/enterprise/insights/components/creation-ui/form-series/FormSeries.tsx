@@ -26,10 +26,23 @@ export interface FormSeriesProps {
      * solution, see https://github.com/sourcegraph/sourcegraph/issues/38236
      */
     queryFieldDescription?: ReactNode
+
+    /**
+     * This prop hides color picker from the series form. This field is needed for
+     * compute powered insight creation UI, see https://github.com/sourcegraph/sourcegraph/issues/38832
+     * for more details compute doesn't have series colors
+     */
+    showColorPicker?: boolean
 }
 
 export const FormSeries: FC<FormSeriesProps> = props => {
-    const { seriesField, showValidationErrorsOnMount, repositories, queryFieldDescription } = props
+    const {
+        seriesField,
+        showValidationErrorsOnMount,
+        repositories,
+        queryFieldDescription,
+        showColorPicker = true,
+    } = props
 
     const { licensed } = useUiFeatures()
     const { series, changeSeries, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries(seriesField)
@@ -47,6 +60,7 @@ export const FormSeries: FC<FormSeriesProps> = props => {
                         autofocus={line.autofocus}
                         repositories={repositories}
                         queryFieldDescription={queryFieldDescription}
+                        showColorPicker={showColorPicker}
                         className={classNames('p-3', styles.formSeriesItem)}
                         onSubmit={editCommit}
                         onCancel={() => cancelEdit(line.id)}
@@ -60,6 +74,7 @@ export const FormSeries: FC<FormSeriesProps> = props => {
                             onEdit={() => editRequest(line.id)}
                             onRemove={() => deleteSeries(line.id)}
                             className={styles.formSeriesItem}
+                            showColor={showColorPicker}
                             {...line}
                         />
                     )

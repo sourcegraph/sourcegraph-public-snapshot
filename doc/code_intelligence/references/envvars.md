@@ -1,10 +1,10 @@
-# Code intelligence environment variables
+# Code navigation environment variables
 
 All of the following environment variables are prefixed with `PRECISE_CODE_INTEL`.
 
 ## frontend
 
-The following are variables are read from the `frontend` service to control code intelligence behavior exposed via the GraphQL API.
+The following are variables are read from the `frontend` service to control code navigation behavior exposed via the GraphQL API.
 
 | Name | Default | Description |
 | ---- | ------- | ----------- |
@@ -28,7 +28,7 @@ The following settings should be the same for the [`precise-code-intel-worker`](
 
 | Name | Default | Description |
 | ---- | ------- | ----------- |
-| `_UPLOAD_BACKEND` | `MinIO` | The target file service for code intelligence uploads. S3, GCS, and MinIO are supported. |
+| `_UPLOAD_BACKEND` | `MinIO` | The target file service for code graph uploads. S3, GCS, and MinIO are supported. |
 | `_UPLOAD_MANAGE_BUCKET` | `false` | Whether or not the client should manage the target bucket configuration |
 | `_UPLOAD_BUCKET` | `lsif-uploads` | The name of the bucket to store LSIF uploads in |
 | `_UPLOAD_TTL` | `168h` | The maximum age of an upload before deletion |
@@ -43,7 +43,7 @@ The following settings should be the same for the [`codeintel-auto-indexing`](#c
 
 ## worker
 
-The following are variables are read from the `worker` service to control code intelligence behavior run in asynchronous background tasks.
+The following are variables are read from the `worker` service to control code graph data behavior run in asynchronous background tasks.
 
 ### `codeintel-commitgraph`
 
@@ -51,8 +51,8 @@ The following variables influence the behavior of the [`codeintel-commitgraph` w
 
 | Name | Default | Description |
 | ---- | ------- | ----------- |
-| `_MAX_AGE_FOR_NON_STALE_BRANCHES` | `2160h` (about 3 months) | The age after which a branch should be considered stale. Code intelligence indexes will be evicted from stale branches. |
-| `_MAX_AGE_FOR_NON_STALE_TAGS` | `8760h` (about 1 year) | The age after which a tagged commit should be considered stale. Code intelligence indexes will be evicted from stale tagged commits. |
+| `_MAX_AGE_FOR_NON_STALE_BRANCHES` | `2160h` (about 3 months) | The age after which a branch should be considered stale. Code graph indexes will be evicted from stale branches. |
+| `_MAX_AGE_FOR_NON_STALE_TAGS` | `8760h` (about 1 year) | The age after which a tagged commit should be considered stale. Code graph indexes will be evicted from stale tagged commits. |
 | `_COMMIT_GRAPH_UPDATE_TASK_INTERVAL` | `10s` | The frequency with which to run periodic codeintel commit graph update tasks. |
 
 ### `codeintel-auto-indexing`
@@ -102,7 +102,7 @@ The following variables influence the behavior of the [`codeintel-janitor` worke
 
 ## precise-code-intel-worker
 
-The following are variables are read from the `precise-code-intel-worker` service to control code intelligence upload processing behavior.
+The following are variables are read from the `precise-code-intel-worker` service to control code graph data upload processing behavior.
 
 | Name | Default | Description |
 | ---- | ------- | ----------- |
@@ -114,7 +114,7 @@ The following settings should be the same for the [`frontend`](#frontend) servic
 
 | Name | Default | Description |
 | ---- | ------- | ----------- |
-| `_UPLOAD_BACKEND` | `MinIO` | The target file service for code intelligence uploads. S3, GCS, and MinIO are supported. |
+| `_UPLOAD_BACKEND` | `MinIO` | The target file service for code graph data uploads. S3, GCS, and MinIO are supported. |
 | `_UPLOAD_MANAGE_BUCKET` | `false` | Whether or not the client should manage the target bucket configuration |
 | `_UPLOAD_BUCKET` | `lsif-uploads` | The name of the bucket to store LSIF uploads in |
 | `_UPLOAD_TTL` | `168h` | The maximum age of an upload before deletion |

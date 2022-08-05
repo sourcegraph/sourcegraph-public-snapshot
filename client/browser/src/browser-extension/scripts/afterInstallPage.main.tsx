@@ -3,7 +3,7 @@ import '../../shared/polyfills'
 
 import React from 'react'
 
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
@@ -23,4 +23,6 @@ const AfterInstallPage: React.FunctionComponent<React.PropsWithChildren<unknown>
     </ThemeWrapper>
 )
 
-render(<AfterInstallPage />, document.querySelector('#root'))
+const root = createRoot(document.querySelector('#root')!)
+
+root.render(<AfterInstallPage />)

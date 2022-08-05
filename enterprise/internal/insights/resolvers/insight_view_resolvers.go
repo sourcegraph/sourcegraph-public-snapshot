@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/grafana/regexp"
@@ -356,9 +354,10 @@ func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 	return i.view.IsFrozen, nil
 }
 
-func (i *insightViewResolver) SeriesCount(ctx context.Context) (int32, error) {
+func (i *insightViewResolver) SeriesCount(ctx context.Context) (*int32, error) {
 	_, err := i.computeDataSeries(ctx)
-	return int32(i.totalSeries), err
+	total := int32(i.totalSeries)
+	return &total, err
 }
 
 type searchInsightDataSeriesDefinitionResolver struct {
@@ -512,7 +511,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, view, series)
+		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, r.insightEnqueuer, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
@@ -603,33 +602,18 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
-			_, err = createAndAttachSeries(ctx, tx, r.backfiller, view, series)
+			_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
 		} else {
-			// If it's a frontend series, we can just update it.
-			existingRepos := getExistingSeriesRepositories(*series.SeriesId, views[0].Series)
-			if len(series.RepositoryScope.Repositories) > 0 && len(existingRepos) > 0 {
-				err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
-					SeriesID:          *series.SeriesId,
-					Query:             series.Query,
-					Repositories:      series.RepositoryScope.Repositories,
-					StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-					StepIntervalValue: int(series.TimeScope.StepInterval.Value),
-				})
-				if err != nil {
-					return nil, errors.Wrap(err, "UpdateFrontendSeries")
-				}
-			} else {
-				err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
-				if err != nil {
-					return nil, errors.Wrap(err, "RemoveViewSeries")
-				}
-				_, err = createAndAttachSeries(ctx, tx, r.backfiller, view, series)
-				if err != nil {
-					return nil, errors.Wrap(err, "createAndAttachSeries")
-				}
+			err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "RemoveViewSeries")
+			}
+			_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
+			if err != nil {
+				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
 
 			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
@@ -1010,7 +994,7 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 	return nil
 }
 
-func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
+func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, insightEnqueuer *background.InsightEnqueuer, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
@@ -1019,12 +1003,10 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	var groupBy *string
+	groupBy := lowercaseGroupBy(series.GroupBy)
 	var nextRecordingAfter time.Time
 	var oldestHistoricalAt time.Time
 	if series.GroupBy != nil {
-		temp := strings.ToLower(*series.GroupBy)
-		groupBy = &temp
 		// We want to disable interval recording for compute types.
 		// December 31, 9999 is the maximum possible date in postgres.
 		nextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
@@ -1068,11 +1050,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			return nil, errors.Wrap(err, "CreateSeries")
 		}
 		if groupBy != nil {
-			enqueueQueryRunnerJob := func(ctx context.Context, job *queryrunner.Job) error {
-				_, err := queryrunner.EnqueueJob(ctx, tx.Store, job)
-				return err
-			}
-			insightEnqueuer := background.NewInsightEnqueuer(time.Now, enqueueQueryRunnerJob)
 			if err := insightEnqueuer.EnqueueSingle(ctx, seriesToAdd, store.SnapshotMode, tx.StampSnapshot); err != nil {
 				return nil, errors.Wrap(err, "GroupBy.EnqueueSingle")
 			}
@@ -1112,6 +1089,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 
 func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {
 	if series.GeneratedFromCaptureGroups != nil && *series.GeneratedFromCaptureGroups {
+		if series.GroupBy != nil {
+			return types.MappingCompute
+		}
 		return types.SearchCompute
 	}
 	return types.Search
@@ -1321,4 +1301,12 @@ func minInt(a, b int32) int32 {
 		return a
 	}
 	return b
+}
+
+func lowercaseGroupBy(groupBy *string) *string {
+	if groupBy != nil {
+		temp := strings.ToLower(*groupBy)
+		return &temp
+	}
+	return groupBy
 }

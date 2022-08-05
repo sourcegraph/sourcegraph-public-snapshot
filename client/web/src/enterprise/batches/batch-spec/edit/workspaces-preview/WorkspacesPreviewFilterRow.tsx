@@ -59,6 +59,7 @@ export const WorkspacePreviewFilterRow: React.FunctionComponent<
                         ref={searchElement}
                         defaultValue={search}
                         placeholder="Search repository name"
+                        aria-label="Search repository name"
                     />
                 </Form>
             </div>

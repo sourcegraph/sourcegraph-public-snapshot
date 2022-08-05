@@ -12,6 +12,7 @@ type CheckArgs struct {
 
 	ConfigFile          string
 	ConfigOverwriteFile string
+	DisableOverwrite    bool
 }
 
 type category = check.Category[CheckArgs]

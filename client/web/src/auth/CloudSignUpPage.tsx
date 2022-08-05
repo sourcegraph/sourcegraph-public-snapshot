@@ -1,8 +1,8 @@
 import React from 'react'
 
+import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -25,7 +25,10 @@ interface Props extends ThemeProps, TelemetryProps {
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'>
+    context: Pick<
+        SourcegraphContext,
+        'authProviders' | 'experimentalFeatures' | 'authPasswordPolicy' | 'authMinPasswordLength'
+    >
 }
 
 const SourceToTitleMap = {
@@ -87,6 +90,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
             }}
             context={{
                 authProviders: [],
+                authMinPasswordLength: context.authMinPasswordLength,
                 sourcegraphDotComMode: true,
                 experimentalFeatures: context.experimentalFeatures,
             }}
@@ -118,7 +122,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <Icon className={styles.backIcon} as={ChevronLeftIcon} aria-hidden={true} />
+                    <Icon className={styles.backIcon} aria-hidden={true} svgPath={mdiChevronLeft} />
                     Go back
                 </Link>
             </small>

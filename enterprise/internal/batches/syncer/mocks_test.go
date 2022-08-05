@@ -45,6 +45,9 @@ type MockSyncStore struct {
 	// ListChangesetSyncDataFunc is an instance of a mock function object
 	// controlling the behavior of the method ListChangesetSyncData.
 	ListChangesetSyncDataFunc *SyncStoreListChangesetSyncDataFunc
+	// ListChangesetsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListChangesets.
+	ListChangesetsFunc *SyncStoreListChangesetsFunc
 	// ListCodeHostsFunc is an instance of a mock function object
 	// controlling the behavior of the method ListCodeHosts.
 	ListCodeHostsFunc *SyncStoreListCodeHostsFunc
@@ -107,6 +110,11 @@ func NewMockSyncStore() *MockSyncStore {
 		},
 		ListChangesetSyncDataFunc: &SyncStoreListChangesetSyncDataFunc{
 			defaultHook: func(context.Context, store.ListChangesetSyncDataOpts) (r0 []*types.ChangesetSyncData, r1 error) {
+				return
+			},
+		},
+		ListChangesetsFunc: &SyncStoreListChangesetsFunc{
+			defaultHook: func(context.Context, store.ListChangesetsOpts) (r0 types.Changesets, r1 int64, r2 error) {
 				return
 			},
 		},
@@ -187,6 +195,11 @@ func NewStrictMockSyncStore() *MockSyncStore {
 				panic("unexpected invocation of MockSyncStore.ListChangesetSyncData")
 			},
 		},
+		ListChangesetsFunc: &SyncStoreListChangesetsFunc{
+			defaultHook: func(context.Context, store.ListChangesetsOpts) (types.Changesets, int64, error) {
+				panic("unexpected invocation of MockSyncStore.ListChangesets")
+			},
+		},
 		ListCodeHostsFunc: &SyncStoreListCodeHostsFunc{
 			defaultHook: func(context.Context, store.ListCodeHostsOpts) ([]*types.CodeHost, error) {
 				panic("unexpected invocation of MockSyncStore.ListCodeHosts")
@@ -247,6 +260,9 @@ func NewMockSyncStoreFrom(i SyncStore) *MockSyncStore {
 		},
 		ListChangesetSyncDataFunc: &SyncStoreListChangesetSyncDataFunc{
 			defaultHook: i.ListChangesetSyncData,
+		},
+		ListChangesetsFunc: &SyncStoreListChangesetsFunc{
+			defaultHook: i.ListChangesets,
 		},
 		ListCodeHostsFunc: &SyncStoreListCodeHostsFunc{
 			defaultHook: i.ListCodeHosts,
@@ -1106,6 +1122,117 @@ func (c SyncStoreListChangesetSyncDataFuncCall) Args() []interface{} {
 // invocation.
 func (c SyncStoreListChangesetSyncDataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// SyncStoreListChangesetsFunc describes the behavior when the
+// ListChangesets method of the parent MockSyncStore instance is invoked.
+type SyncStoreListChangesetsFunc struct {
+	defaultHook func(context.Context, store.ListChangesetsOpts) (types.Changesets, int64, error)
+	hooks       []func(context.Context, store.ListChangesetsOpts) (types.Changesets, int64, error)
+	history     []SyncStoreListChangesetsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListChangesets delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSyncStore) ListChangesets(v0 context.Context, v1 store.ListChangesetsOpts) (types.Changesets, int64, error) {
+	r0, r1, r2 := m.ListChangesetsFunc.nextHook()(v0, v1)
+	m.ListChangesetsFunc.appendCall(SyncStoreListChangesetsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the ListChangesets
+// method of the parent MockSyncStore instance is invoked and the hook queue
+// is empty.
+func (f *SyncStoreListChangesetsFunc) SetDefaultHook(hook func(context.Context, store.ListChangesetsOpts) (types.Changesets, int64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListChangesets method of the parent MockSyncStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *SyncStoreListChangesetsFunc) PushHook(hook func(context.Context, store.ListChangesetsOpts) (types.Changesets, int64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SyncStoreListChangesetsFunc) SetDefaultReturn(r0 types.Changesets, r1 int64, r2 error) {
+	f.SetDefaultHook(func(context.Context, store.ListChangesetsOpts) (types.Changesets, int64, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SyncStoreListChangesetsFunc) PushReturn(r0 types.Changesets, r1 int64, r2 error) {
+	f.PushHook(func(context.Context, store.ListChangesetsOpts) (types.Changesets, int64, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *SyncStoreListChangesetsFunc) nextHook() func(context.Context, store.ListChangesetsOpts) (types.Changesets, int64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SyncStoreListChangesetsFunc) appendCall(r0 SyncStoreListChangesetsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SyncStoreListChangesetsFuncCall objects
+// describing the invocations of this function.
+func (f *SyncStoreListChangesetsFunc) History() []SyncStoreListChangesetsFuncCall {
+	f.mutex.Lock()
+	history := make([]SyncStoreListChangesetsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SyncStoreListChangesetsFuncCall is an object that describes an invocation
+// of method ListChangesets on an instance of MockSyncStore.
+type SyncStoreListChangesetsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.ListChangesetsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.Changesets
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int64
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SyncStoreListChangesetsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SyncStoreListChangesetsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // SyncStoreListCodeHostsFunc describes the behavior when the ListCodeHosts

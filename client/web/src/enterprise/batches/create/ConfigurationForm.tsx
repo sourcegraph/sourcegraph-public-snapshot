@@ -9,12 +9,8 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsCascadeProps,
-    // SettingsOrgSubject,
-    // SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Input, Icon, RadioButton, Tooltip } from '@sourcegraph/wildcard'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -24,6 +20,7 @@ import {
     CreateEmptyBatchChangeVariables,
     Scalars,
 } from '../../../graphql-operations'
+import { useBatchChangesLicense } from '../useBatchChangesLicense'
 
 import { CREATE_BATCH_SPEC_FROM_RAW, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { NamespaceSelector } from './NamespaceSelector'
@@ -98,6 +95,8 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         setIsNameValid(NAME_PATTERN.test(event.target.value))
     }, [])
 
+    const { isUnlicensed, maxUnlicensedChangesets } = useBatchChangesLicense()
+
     const history = useHistory()
     const location = useLocation()
     const handleCancel = (): void => history.goBack()
@@ -119,10 +118,16 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 }
 
                 const template = renderTemplate(nameInput)
+                const batchChangeID = args.data?.createEmptyBatchChange.id
 
-                return args.data?.createEmptyBatchChange.id && template
+                return batchChangeID && template
                     ? createBatchSpecFromRaw({
-                          variables: { namespace: selectedNamespace.id, spec: template, noCache: false },
+                          variables: {
+                              namespace: selectedNamespace.id,
+                              spec: template,
+                              noCache: false,
+                              batchChange: batchChangeID,
+                          },
                       }).then(() => Promise.resolve(args))
                     : Promise.resolve(args)
             })
@@ -138,6 +143,18 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     return (
         <Form className={styles.form} onSubmit={handleCreate}>
             <Container className="mb-4">
+                {isUnlicensed && (
+                    <Alert variant="info">
+                        <div className="mb-2">
+                            <strong>
+                                Your license only allows for {maxUnlicensedChangesets} changesets per batch change
+                            </strong>
+                        </div>
+                        You can execute this batch spec and see how it operates, but if more than{' '}
+                        {maxUnlicensedChangesets} changesets are generated, you won't be able to apply the batch change
+                        and actually publish the changesets to the code host.
+                    </Alert>
+                )}
                 {error && <ErrorAlert error={error} />}
                 <NamespaceSelector
                     namespaces={namespaces}
@@ -150,6 +167,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     disabled={true}
                 />
                 <Input
+                    autoFocus={true}
                     label="Batch change name"
                     value={nameInput}
                     onChange={onNameChange}

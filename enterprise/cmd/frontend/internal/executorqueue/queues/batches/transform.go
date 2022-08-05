@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"path/filepath"
 
 	"github.com/sourcegraph/log"
 
@@ -14,9 +13,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,7 +21,6 @@ import (
 
 const (
 	srcInputPath = "input.json"
-	srcCacheDir  = "cache"
 	srcTempDir   = ".src-tmp"
 	srcRepoDir   = "repository"
 )
@@ -37,7 +33,7 @@ type BatchesStore interface {
 }
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob) (apiclient.Job, error) {
 	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
 		return apiclient.Job{}, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
@@ -85,46 +81,36 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		},
 	}
 
-	frontendURL := conf.ExecutorsFrontendURL()
-
-	srcEndpoint, err := makeURL(frontendURL, accessToken)
-	if err != nil {
-		return apiclient.Job{}, err
+	// Check if we have a cache result for the workspace, if so, add it to the execution
+	// input.
+	if !batchSpec.NoCache {
+		// Find the cache entry for the _last_ step. src-cli only needs the most
+		// recent cache entry to do its work.
+		latestStepIndex := -1
+		for stepIndex := range workspace.StepCacheResults {
+			if stepIndex > latestStepIndex {
+				latestStepIndex = stepIndex
+			}
+		}
+		if latestStepIndex != -1 {
+			cacheEntry, ok := workspace.StepCacheResult(latestStepIndex)
+			// Technically this should never be not ok, but computers.
+			if ok {
+				executionInput.CachedStepResultFound = true
+				executionInput.CachedStepResult = *cacheEntry.Value
+			}
+		}
 	}
 
-	redactedSrcEndpoint, err := makeURL(frontendURL, "PASSWORD_REMOVED")
-	if err != nil {
-		return apiclient.Job{}, err
-	}
-
+	// Marshal the execution input into JSON and add it to the files passed to
+	// the VM.
 	marshaledInput, err := json.Marshal(executionInput)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
-
 	files := map[string]string{srcInputPath: string(marshaledInput)}
 
-	if !batchSpec.NoCache {
-		// Find the cache entry for the _last_ step. src-cli only needs the most
-		// recent cache entry to do its work.
-		latestIndex := -1
-		for idx := range workspace.StepCacheResults {
-			if idx > latestIndex {
-				latestIndex = idx
-			}
-		}
-		if latestIndex != -1 {
-			cacheEntry, _ := workspace.StepCacheResult(latestIndex)
-			serializedCacheEntry, err := json.Marshal(cacheEntry.Value)
-			if err != nil {
-				return apiclient.Job{}, errors.Wrap(err, "serializing cache entry")
-			}
-			// Add file to VirtualMachineFiles.
-			cacheFilePath := filepath.Join(srcCacheDir, fmt.Sprintf("%s.json", cacheEntry.Key))
-			files[cacheFilePath] = string(serializedCacheEntry)
-		}
-	}
-
+	// If we only want to fetch the workspace, we add a sparse checkout pattern.
 	sparseCheckout := []string{}
 	if workspace.OnlyFetchWorkspace {
 		sparseCheckout = []string{
@@ -149,37 +135,16 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 					"exec",
 					"-f", srcInputPath,
 					"-repo", srcRepoDir,
-					// Tell src where to look for cache files.
-					"-cache", srcCacheDir,
 					// Tell src to store tmp files inside the workspace. Src currently
 					// runs on the host and we don't want pollution outside of the workspace.
 					"-tmp", srcTempDir,
-					// Tell src which version of Sourcegraph it's talking to
-					// to enable the right feature gates.
-					"-sourcegraphVersion", version.Version(),
 				},
 				Dir: ".",
-				Env: []string{
-					// Make sure src never talks to any Sourcegraph instance.
-					// TODO: This can go away once the execution mode is stripped down even
-					// further. There should be no code path doing a request, but you never
-					// know, software.
-					fmt.Sprintf("SRC_ENDPOINT=%s", "http://this-will-never-exist-i-hope"),
-				},
+				Env: []string{},
 			},
 		},
-		RedactedValues: map[string]string{
-			// 🚨 SECURITY: Catch leak of upload endpoint. This is necessary in addition
-			// to the below in case the username or password contains illegal URL characters,
-			// which are then urlencoded and are not replaceable via byte comparison.
-			srcEndpoint: redactedSrcEndpoint,
-
-			// 🚨 SECURITY: Catch uses of fragments pulled from URL to construct another target
-			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
-			// ship the values to a third party, but not to trust to ensure the values are absent
-			// from the command's stdout or stderr streams.
-			accessToken: "PASSWORD_REMOVED",
-		},
+		// Nothing to redact for now. We want to add secrets here once implemented.
+		RedactedValues: map[string]string{},
 	}, nil
 }
 

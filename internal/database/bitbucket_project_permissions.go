@@ -110,6 +110,25 @@ VALUES (%s, %s, %s, %s) RETURNING id
 	return jobID, nil
 }
 
+var BitbucketProjectPermissionsColumnExpressions = []*sqlf.Query{
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.id"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.state"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.failure_message"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.queued_at"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.started_at"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.finished_at"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.process_after"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.num_resets"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.num_failures"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.last_heartbeat_at"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.execution_logs"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.worker_hostname"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.project_key"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.external_service_id"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.permissions"),
+	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.unrestricted"),
+}
+
 // ScanFirstBitbucketProjectPermissionsJob scans a single job from the return value of `*Store.query`.
 func ScanFirstBitbucketProjectPermissionsJob(rows *sql.Rows, queryErr error) (_ *types.BitbucketProjectPermissionJob, exists bool, err error) {
 	if queryErr != nil {

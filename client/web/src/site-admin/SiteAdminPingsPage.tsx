@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { json } from '@codemirror/lang-json'
 import { foldGutter } from '@codemirror/language'
-import { EditorView } from '@codemirror/view'
+import { search, searchKeymap } from '@codemirror/search'
+import { EditorState } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
 import { isEmpty } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
@@ -46,7 +48,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         useMemo(
             () => [
                 EditorView.darkTheme.of(isLightTheme === false),
-                EditorView.editable.of(false),
+                EditorState.readOnly.of(true),
                 json(),
                 foldGutter(),
                 editorHeight({ height: '300px' }),
@@ -60,6 +62,8 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 }),
                 defaultEditorTheme,
                 jsonHighlighting,
+                search({ top: true }),
+                keymap.of(searchKeymap),
             ],
             [isLightTheme]
         )
@@ -127,7 +131,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>Whether new user signup is allowed (true/false)</li>
                 <li>Whether a repository has ever been added (true/false)</li>
                 <li>Whether a code search has ever been executed (true/false)</li>
-                <li>Whether code intelligence has ever been used (true/false)</li>
+                <li>Whether code navigation has ever been used (true/false)</li>
                 <li>Aggregate counts of current daily, weekly, and monthly users</li>
                 <li>
                     Aggregate counts of current daily, weekly, and monthly users, by:
@@ -141,21 +145,20 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>
                     Aggregate daily, weekly, and monthly counts of:
                     <ul>
-                        <li>Code intelligence events (e.g., hover tooltips)</li>
+                        <li>Code navigation events (e.g., hover tooltips)</li>
                         <li>Searches using each search mode (interactive search, plain-text search)</li>
                         <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
                 <li>
-                    Code intelligence usage data
+                    Code navigation usage data
                     <ul>
                         <li>Total number of repositories with and without an uploaded LSIF index</li>
                         <li>
-                            Total number of code intelligence queries (e.g., hover tooltips) per week grouped by
-                            language
+                            Total number of code navigation queries (e.g., hover tooltips) per week grouped by language
                         </li>
                         <li>
-                            Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped
+                            Number of users performing code navigation queries (e.g., hover tooltips) per week grouped
                             by language
                         </li>
                     </ul>
@@ -344,37 +347,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>Total number of added notebook file blocks</li>
                         <li>Total number of added notebook symbol blocks</li>
                         <li>Total number of added notebook compute blocks</li>
-                    </ul>
-                </li>
-                <li>
-                    CTA usage data
-                    <ul>
-                        <li>
-                            Browser extension
-                            <ul>
-                                <li>
-                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
-                                    / search pages today
-                                </li>
-                                <li>
-                                    Number of views / clicks on the "install browser extension" CTA on the file / search
-                                    pages today
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            IDE extension
-                            <ul>
-                                <li>
-                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
-                                    search pages today
-                                </li>
-                                <li>
-                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
-                                    pages today
-                                </li>
-                            </ul>
-                        </li>
                     </ul>
                 </li>
                 <li>

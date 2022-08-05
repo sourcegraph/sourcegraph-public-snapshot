@@ -12,7 +12,7 @@ describe('getSanitizedRepositories', () => {
         ])
     })
 
-    it('should return repositories list with addtional whitespaces and commas', () => {
+    it('should return repositories list with additional whitespaces and commas', () => {
         expect(getSanitizedRepositories('   github.com/a/a, github.com/b/a  ,   ,')).toStrictEqual([
             'github.com/a/a',
             'github.com/b/a',

@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { ApolloError } from '@apollo/client'
 import { mdiDelete } from '@mdi/js'
 import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
@@ -16,7 +16,6 @@ import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-o
 import { BranchTargetSettings } from '../components/BranchTargetSettings'
 import { FlashMessage } from '../components/FlashMessage'
 import { IndexingSettings } from '../components/IndexSettings'
-import { LockfileIndexingSettings } from '../components/LockfileIndexSettings'
 import { RetentionSettings } from '../components/RetentionSettings'
 import { useDeletePolicies } from '../hooks/useDeletePolicies'
 import { usePolicyConfigurationByID } from '../hooks/usePolicyConfigurationById'
@@ -29,7 +28,6 @@ export interface CodeIntelConfigurationPolicyPageProps
     repo?: { id: string }
     indexingEnabled?: boolean
     history: H.History
-    lockfileIndexingEnabled?: boolean
 }
 
 export const CodeIntelConfigurationPolicyPage: FunctionComponent<
@@ -42,9 +40,9 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     history,
     telemetryService,
-    lockfileIndexingEnabled = window.context?.codeIntelLockfileIndexingEnabled,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
+    const location = useLocation<{ message: string; modal: string }>()
 
     const { policyConfig, loadingPolicyConfig, policyConfigError } = usePolicyConfigurationByID(id)
     const [saved, setSaved] = useState<CodeIntelligenceConfigurationPolicyFields>()
@@ -112,7 +110,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
 
     return (
         <>
-            <PageTitle title="Precise code intelligence configuration policy" />
+            <PageTitle title="Precise code graph configuration policy" />
             <PageHeader
                 headingElement="h2"
                 path={[
@@ -129,9 +127,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
             {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
 
-            {history.location.state && (
-                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
-            )}
+            {location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             {policy.protected ? (
                 <Alert variant="info">
@@ -143,11 +139,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
                     <Container className="mb-3">
                         <Tooltip
                             content={`Deleting this policy may immediate affect data retention${
-                                indexingEnabled
-                                    ? ' and auto-indexing'
-                                    : lockfileIndexingEnabled
-                                    ? ' and lockfile-indexing'
-                                    : ''
+                                indexingEnabled ? ' and auto-indexing' : ''
                             }.`}
                         >
                             <Button
@@ -183,9 +175,6 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
                 <RetentionSettings policy={policy} setPolicy={setPolicy} />
 
                 {indexingEnabled && <IndexingSettings repo={repo} policy={policy} setPolicy={setPolicy} />}
-                {lockfileIndexingEnabled && (
-                    <LockfileIndexingSettings repo={repo} policy={policy} setPolicy={setPolicy} />
-                )}
             </Container>
 
             <div className="mb-3">
@@ -259,7 +248,6 @@ function comparePolicies(
         a.indexCommitMaxAgeHours === b.indexCommitMaxAgeHours,
         a.indexIntermediateCommits === b.indexIntermediateCommits,
         comparePatterns(a.repositoryPatterns, b.repositoryPatterns),
-        a.lockfileIndexingEnabled === b.lockfileIndexingEnabled,
     ]
 
     return equalityConditions.every(isEqual => isEqual)

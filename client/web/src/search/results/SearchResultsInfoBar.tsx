@@ -1,14 +1,8 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
-import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
-import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
-import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
@@ -17,12 +11,13 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
-import { SearchPatternType } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import {
@@ -33,13 +28,14 @@ import {
     CreateAction,
 } from './createActions'
 import { CreateActionsMenu } from './CreateActionsMenu'
+import { SearchActionsMenu } from './SearchActionsMenu'
 
 import createActionsStyles from './CreateActions.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'settings'>,
         TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
@@ -111,33 +107,14 @@ const ExperimentalActionButton: React.FunctionComponent<
 }
 
 /**
- * A notice for when the user is searching literally and has quotes in their
- * query, in which case it is possible that they think their query `"foobar"`
- * will be searching literally for `foobar` (without quotes). This notice
- * informs them that this may be the case to avoid confusion.
- */
-const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
-    React.PropsWithChildren<SearchResultsInfoBarProps>
-> = props =>
-    props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
-        <small
-            className={styles.notice}
-            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
-        >
-            <span>
-                <Icon aria-hidden={true} as={FormatQuoteOpenIcon} />
-                Searching literally <strong>(including quotes)</strong>
-            </span>
-        </small>
-    ) : null
-
-/**
  * The info bar shown over the search results list that displays metadata
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
     const canCreateMonitorFromQuery = useMemo(() => {
         if (!props.query) {
             return false
@@ -155,7 +132,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         () =>
             [
                 getBatchChangeCreateAction(
-                    props.query as string,
+                    props.query,
                     props.patternType,
                     props.authenticatedUser,
                     props.batchChangesExecutionEnabled
@@ -190,51 +167,52 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         }
 
         return (
-            <li
-                className={classNames('mr-2', createActionsStyles.button, styles.navItem)}
-                data-tooltip={
+            <Tooltip
+                content={
                     props.authenticatedUser && !canCreateMonitorFromQuery
                         ? 'Code monitors only support type:diff or type:commit searches.'
                         : undefined
                 }
-                data-placement="bottom"
+                placement="bottom"
             >
-                {/*
+                <li className={classNames('mr-2', createActionsStyles.button, styles.navItem)}>
+                    {/*
                     a11y-ignore
                     Rule: "color-contrast" (Elements must have sufficient color contrast)
                     GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                 */}
-                <ExperimentalActionButton
-                    showExperimentalVersion={showActionButtonExperimentalVersion}
-                    nonExperimentalLinkTo={createCodeMonitorAction.url}
-                    isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
-                    className="a11y-ignore create-code-monitor-button"
-                    button={
-                        <>
-                            <Icon
-                                aria-hidden={true}
-                                className="mr-1"
-                                {...(typeof createCodeMonitorAction.icon === 'string'
-                                    ? { svgPath: createCodeMonitorAction.icon }
-                                    : { as: createCodeMonitorAction.icon })}
-                            />
-                            {createCodeMonitorAction.label}
-                        </>
-                    }
-                    icon={<CodeMonitorRadialGradientIcon />}
-                    title="Monitor code for changes"
-                    copyText="Create a monitor and get notified when your code changes. Free for registered users."
-                    telemetryService={props.telemetryService}
-                    source="Monitor"
-                    viewEventName="SearchResultMonitorCTAShown"
-                    returnTo={createCodeMonitorAction.url}
-                    ariaLabel={
-                        props.authenticatedUser && !canCreateMonitorFromQuery
-                            ? 'Code monitors only support type:diff or type:commit searches.'
-                            : undefined
-                    }
-                />
-            </li>
+                    <ExperimentalActionButton
+                        showExperimentalVersion={showActionButtonExperimentalVersion}
+                        nonExperimentalLinkTo={createCodeMonitorAction.url}
+                        isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
+                        className="a11y-ignore create-code-monitor-button"
+                        button={
+                            <>
+                                <Icon
+                                    aria-hidden={true}
+                                    className="mr-1"
+                                    {...(typeof createCodeMonitorAction.icon === 'string'
+                                        ? { svgPath: createCodeMonitorAction.icon }
+                                        : { as: createCodeMonitorAction.icon })}
+                                />
+                                {createCodeMonitorAction.label}
+                            </>
+                        }
+                        icon={<CodeMonitorRadialGradientIcon />}
+                        title="Monitor code for changes"
+                        copyText="Create a monitor and get notified when your code changes. Free for registered users."
+                        telemetryService={props.telemetryService}
+                        source="Monitor"
+                        viewEventName="SearchResultMonitorCTAShown"
+                        returnTo={createCodeMonitorAction.url}
+                        ariaLabel={
+                            props.authenticatedUser && !canCreateMonitorFromQuery
+                                ? 'Code monitors only support type:diff or type:commit searches.'
+                                : undefined
+                        }
+                    />
+                </li>
+            </Tooltip>
         )
     }, [
         createCodeMonitorAction,
@@ -253,7 +231,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="test-save-search-link"
                     button={
                         <>
-                            <Icon aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiBookmarkOutline} />
                             Save search
                         </>
                     }
@@ -303,14 +281,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     size="sm"
                     aria-label={`${showFilters ? 'Hide' : 'Show'} filters`}
                 >
-                    <Icon aria-hidden={true} className="mr-1" as={MenuIcon} />
+                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiMenu} />
                     Filters
-                    <Icon aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
+                    <Icon aria-hidden={true} svgPath={showFilters ? mdiMenuUp : mdiMenuDown} />
                 </Button>
 
                 {props.stats}
-
-                <QuotesInterpretedLiterallyNotice {...props} />
 
                 <div className={styles.expander} />
 
@@ -340,72 +316,107 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         )}
                     </ActionsContainer>
 
-                    {(createActions.length > 0 || createCodeMonitorButton || saveSearchButton) && (
-                        <li className={styles.divider} aria-hidden="true" />
-                    )}
+                    {(createActions.length > 0 ||
+                        createCodeMonitorButton ||
+                        saveSearchButton ||
+                        coreWorkflowImprovementsEnabled) && <li className={styles.divider} aria-hidden="true" />}
 
-                    {createActions.map(createActionButton => (
-                        <li
-                            key={createActionButton.label}
-                            data-tooltip={createActionButton.tooltip}
-                            data-placement="bottom"
-                            className={classNames('nav-item mr-2', createActionsStyles.button)}
-                        >
-                            <ButtonLink
-                                to={createActionButton.url}
-                                className="text-decoration-none"
-                                variant="secondary"
-                                outline={true}
-                                size="sm"
-                            >
-                                <Icon
-                                    aria-hidden={true}
-                                    className="mr-1"
-                                    {...(typeof createActionButton.icon === 'string'
-                                        ? { svgPath: createActionButton.icon }
-                                        : { as: createActionButton.icon })}
-                                />
-                                {createActionButton.label}
-                            </ButtonLink>
-                        </li>
-                    ))}
-
-                    {createCodeMonitorButton}
-
-                    {(createActions.length > 0 || createCodeMonitorAction) && (
-                        <CreateActionsMenu
+                    {coreWorkflowImprovementsEnabled ? (
+                        <SearchActionsMenu
+                            authenticatedUser={props.authenticatedUser}
                             createActions={createActions}
                             createCodeMonitorAction={createCodeMonitorAction}
                             canCreateMonitor={canCreateMonitorFromQuery}
-                            authenticatedUser={props.authenticatedUser}
+                            resultsFound={props.resultsFound}
+                            allExpanded={props.allExpanded}
+                            onExpandAllResultsToggle={props.onExpandAllResultsToggle}
+                            onSaveQueryClick={props.onSaveQueryClick}
                         />
-                    )}
-
-                    {saveSearchButton}
-
-                    {props.resultsFound && (
+                    ) : (
                         <>
-                            <li className={styles.divider} aria-hidden="true" />
-                            <li className={classNames(styles.navItem)}>
-                                <Button
-                                    onClick={props.onExpandAllResultsToggle}
-                                    className="text-decoration-none"
-                                    data-placement="bottom"
-                                    data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
-                                    aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
-                                    aria-live="polite"
-                                    data-testid="search-result-expand-btn"
-                                    outline={true}
-                                    variant="secondary"
-                                    size="sm"
+                            {createActions.map(createActionButton => (
+                                <Tooltip
+                                    key={createActionButton.label}
+                                    content={createActionButton.tooltip}
+                                    placement="bottom"
                                 >
-                                    <Icon
-                                        aria-hidden={true}
-                                        className="mr-0"
-                                        as={props.allExpanded ? ArrowCollapseUpIcon : ArrowExpandDownIcon}
-                                    />
-                                </Button>
-                            </li>
+                                    <li className={classNames('nav-item mr-2', createActionsStyles.button)}>
+                                        <ButtonLink
+                                            to={createActionButton.url}
+                                            className="text-decoration-none"
+                                            variant="secondary"
+                                            outline={true}
+                                            size="sm"
+                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                            onClick={
+                                                createActionButton.eventToLog
+                                                    ? () => {
+                                                          eventLogger.log(createActionButton.eventToLog!)
+                                                      }
+                                                    : undefined
+                                            }
+                                        >
+                                            <Icon
+                                                aria-hidden={true}
+                                                className="mr-1"
+                                                {...(typeof createActionButton.icon === 'string'
+                                                    ? { svgPath: createActionButton.icon }
+                                                    : { as: createActionButton.icon })}
+                                            />
+                                            {createActionButton.label}
+                                        </ButtonLink>
+                                    </li>
+                                </Tooltip>
+                            ))}
+
+                            {createCodeMonitorButton}
+
+                            {(createActions.length > 0 || createCodeMonitorAction) && (
+                                <CreateActionsMenu
+                                    createActions={createActions}
+                                    createCodeMonitorAction={createCodeMonitorAction}
+                                    canCreateMonitor={canCreateMonitorFromQuery}
+                                    authenticatedUser={props.authenticatedUser}
+                                />
+                            )}
+
+                            {saveSearchButton}
+
+                            {props.resultsFound && (
+                                <>
+                                    <li className={styles.divider} aria-hidden="true" />
+                                    <li className={classNames(styles.navItem)}>
+                                        <Tooltip
+                                            content={`${
+                                                props.allExpanded ? 'Hide' : 'Show'
+                                            } more matches on all results`}
+                                            placement="bottom"
+                                        >
+                                            <Button
+                                                aria-label={props.allExpanded ? 'Collapse' : 'Expand'}
+                                                onClick={props.onExpandAllResultsToggle}
+                                                className="text-decoration-none"
+                                                aria-live="polite"
+                                                data-testid="search-result-expand-btn"
+                                                data-test-tooltip-content={`${
+                                                    props.allExpanded ? 'Hide' : 'Show'
+                                                } more matches on all results`}
+                                                outline={true}
+                                                variant="secondary"
+                                                size="sm"
+                                            >
+                                                <Icon
+                                                    aria-hidden={true}
+                                                    className="mr-0"
+                                                    svgPath={
+                                                        props.allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown
+                                                    }
+                                                />
+                                            </Button>
+                                        </Tooltip>
+                                    </li>
+                                </>
+                            )}
                         </>
                     )}
                 </ul>

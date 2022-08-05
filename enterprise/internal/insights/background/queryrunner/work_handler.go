@@ -12,14 +12,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -41,15 +39,13 @@ type workHandler struct {
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
 
-	search       func(context.Context, string) (*query.GqlSearchResponse, error)
 	searchStream func(context.Context, string) (*streaming.TabulationResult, error)
 
-	computeSearch          func(context.Context, string) ([]query.ComputeResult, error)
 	computeSearchStream    func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 	computeTextExtraSearch func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 }
 
-type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
+type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error)
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
 	var val *types.InsightSeries
@@ -145,37 +141,6 @@ func ToRecording(record *Job, value float64, recordTime time.Time, repoName stri
 	return args
 }
 
-func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
-	results, err := r.computeSearch(ctx, job.SearchQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	checker := authz.DefaultSubRepoPermsChecker
-	var recordings []store.RecordSeriesPointArgs
-
-	groupedByRepo := query.GroupByRepository(results)
-	for repoKey, byRepo := range groupedByRepo {
-		groupedByCapture := query.GroupByCaptureMatch(byRepo)
-		repoId, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repoKey))
-		if idErr != nil {
-			err = errors.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
-			continue
-		}
-		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
-		var subRepoEnabled bool
-		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, repoId, err)
-		if subRepoEnabled {
-			continue
-		}
-		for _, group := range groupedByCapture {
-			capture := group.Value
-			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &capture)...)
-		}
-	}
-	return recordings, nil
-}
-
 type streamComputeProvider func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 
 func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime time.Time, provider streamComputeProvider) (_ []store.RecordSeriesPointArgs, err error) {
@@ -213,94 +178,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 	return recordings, nil
 }
 
-func (r *workHandler) generateSearchRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-	results, err := r.search(ctx, job.SearchQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(results.Errors) > 0 {
-		return nil, errors.Errorf("GraphQL errors: %v", results.Errors)
-	}
-	if alert := results.Data.Search.Results.Alert; alert != nil {
-		if alert.Title == "No repositories found" {
-			// We got zero results and no repositories matched. This could be for a few reasons:
-			//
-			// 1. The repo hasn't been cloned by Sourcegraph yet.
-			// 2. The repo has been cloned by Sourcegraph, but the user hasn't actually pushed it
-			//    to the code host yet so it's empty.
-			// 3. This is a search query for backfilling data, and the repository is a fork/archive
-			//    which are excluded from search results by default (and the user didn't put `fork:yes`
-			//    etc. in their search query.)
-			//
-			// In any case, this is not a problem - we want to record that we got zero results in
-			// general.
-		} else {
-			// Maybe the user's search query is actually wrong.
-			return nil, errors.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
-		}
-	}
-	if results.Data.Search.Results.LimitHit {
-		log15.Error("insights query issue", "problem", "limit hit", "query", job.SearchQuery)
-		dq := types.DirtyQuery{
-			Query:   job.SearchQuery,
-			ForTime: recordTime,
-			Reason:  "limit hit",
-		}
-		if err := r.metadadataStore.InsertDirtyQuery(ctx, series, &dq); err != nil {
-			return nil, errors.Wrap(err, "failed to write dirty query record")
-		}
-	}
-	if cloning := len(results.Data.Search.Results.Cloning); cloning > 0 {
-		log15.Error("insights query issue", "cloning_repos", cloning, "query", job.SearchQuery)
-	}
-	if missing := len(results.Data.Search.Results.Missing); missing > 0 {
-		log15.Error("insights query issue", "missing_repos", missing, "query", job.SearchQuery)
-	}
-	if timedout := len(results.Data.Search.Results.Timedout); timedout > 0 {
-		log15.Error("insights query issue", "timedout_repos", timedout, "query", job.SearchQuery)
-	}
-
-	checker := authz.DefaultSubRepoPermsChecker
-	var recordings []store.RecordSeriesPointArgs
-
-	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
-	repoNames := make(map[string]string, len(matchesPerRepo))
-	for _, result := range results.Data.Search.Results.Results {
-		decoded, err := query.DecodeResult(result)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
-		}
-		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
-		var subRepoEnabled bool
-		subRepoEnabled, _ = checkSubRepoPermissions(ctx, checker, decoded.RepoID(), err)
-		if subRepoEnabled {
-			continue
-		}
-		repoNames[decoded.RepoID()] = decoded.RepoName()
-		matchesPerRepo[decoded.RepoID()] = matchesPerRepo[decoded.RepoID()] + decoded.MatchCount()
-	}
-
-	// Record the number of results we got, one data point per-repository.
-	for graphQLRepoID, matchCount := range matchesPerRepo {
-		dbRepoID, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
-		if idErr != nil {
-			err = errors.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryID"))
-			continue
-		}
-		repoName := repoNames[graphQLRepoID]
-		if len(repoName) == 0 {
-			// this really should never happen, expect if for some reason the gql response is broken
-			err = errors.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
-			continue
-		}
-
-		recordings = append(recordings, ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)...)
-	}
-	return recordings, nil
-}
-
-func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *Job, _ *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *Job, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 	tabulationResult, err := r.searchStream(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
@@ -335,64 +213,34 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 	return recordings, nil
 }
 
-func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	if series.JustInTime {
-		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
-	}
-
-	searchDelegate := r.generateSearchRecordingsStream
-	useGraphQL := conf.Get().InsightsSearchGraphql
-	if useGraphQL != nil && *useGraphQL {
-		searchDelegate = r.generateSearchRecordings
-	}
-
-	recordings, err := searchDelegate(ctx, job, series, recordTime)
+func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	recordings, err := r.generateSearchRecordingsStream(ctx, job, recordTime)
 	if err != nil {
-		return err
+		return nil, errors.Wrapf(err, "searchHandler")
 	}
-
-	err = r.persistRecordings(ctx, job, series, recordings)
-	return err
+	return recordings, nil
 }
 
-func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	if series.JustInTime {
-		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
-	}
-
+func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 	computeDelegate := func(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
 		return r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeSearchStream)
 	}
-	useGraphQL := conf.Get().InsightsComputeGraphql
-	if useGraphQL != nil && *useGraphQL {
-		computeDelegate = r.generateComputeRecordings
-	}
-
 	recordings, err := computeDelegate(ctx, job, recordTime)
 	if err != nil {
-		return err
+		return nil, errors.Wrapf(err, "computeHandler")
 	}
-
-	err = r.persistRecordings(ctx, job, series, recordings)
-	return err
+	return recordings, nil
 }
 
-func (r *workHandler) mappingComputeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	if series.JustInTime {
-		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
-	}
-
+func (r *workHandler) mappingComputeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 	recordings, err := r.generateComputeRecordingsStream(ctx, job, recordTime, r.computeTextExtraSearch)
 	if err != nil {
-		return err
+		return nil, errors.Wrapf(err, "mappingComputeHandler")
 	}
-
-	err = r.persistRecordings(ctx, job, series, recordings)
-	return err
+	return recordings, err
 }
 
 func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) (err error) {
-
 	tx, err := r.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -471,6 +319,9 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	if err != nil {
 		return errors.Wrap(err, "getSeries")
 	}
+	if series.JustInTime {
+		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
+	}
 
 	recordTime := time.Now()
 	if job.RecordTime != nil {
@@ -487,5 +338,10 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	if !ok {
 		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
 	}
-	return executableHandler(ctx, job, series, recordTime)
+
+	recordings, err := executableHandler(ctx, job, series, recordTime)
+	if err != nil {
+		return err
+	}
+	return r.persistRecordings(ctx, job, series, recordings)
 }

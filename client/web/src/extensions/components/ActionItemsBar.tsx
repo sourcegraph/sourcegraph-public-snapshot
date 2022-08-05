@@ -1,14 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiMenuUp, mdiMenuDown, mdiPlus, mdiChevronDoubleUp, mdiPuzzleOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
-import ChevronDoubleUpIcon from 'mdi-react/ChevronDoubleUpIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { BehaviorSubject } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
@@ -22,7 +18,7 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -219,7 +215,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         variant="link"
                         aria-label="Scroll up"
                     >
-                        <Icon as={MenuUpIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
                 <ActionsContainer
@@ -280,20 +276,21 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         variant="link"
                         aria-label="Scroll down"
                     >
-                        <Icon as={MenuDownIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiMenuDown} />
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
                 <div className="list-unstyled m-0">
                     <div className={styles.listItem}>
-                        <Link
-                            to="/extensions"
-                            className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
-                            data-tooltip="Add extensions"
-                            aria-label="Add extensions"
-                        >
-                            <Icon as={PlusIcon} aria-hidden={true} />
-                        </Link>
+                        <Tooltip content="Add extensions">
+                            <Link
+                                to="/extensions"
+                                className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
+                                aria-label="Add"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPlus} />
+                            </Link>
+                        </Tooltip>
                     </div>
                 </div>
             </ErrorBoundary>
@@ -327,26 +324,37 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
             <li className={styles.dividerVertical} />
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
-                    <ButtonLink
-                        data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
-                        aria-label={
-                            isOpen
-                                ? 'Close extensions panel. Press the down arrow key to enter the extensions panel.'
-                                : 'Open extensions panel'
-                        }
-                        className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
-                        onSelect={toggle}
-                        ref={toggleReference}
-                    >
-                        {!haveExtensionsLoaded ? (
-                            <LoadingSpinner />
-                        ) : isOpen ? (
-                            <Icon data-testid="action-items-toggle-open" as={ChevronDoubleUpIcon} aria-hidden={true} />
-                        ) : (
-                            <Icon as={PuzzleOutlineIcon} aria-hidden={true} />
-                        )}
-                        {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
-                    </ButtonLink>
+                    <Tooltip content={`${isOpen ? 'Close' : 'Open'} extensions panel`}>
+                        {/**
+                         * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+                         * break its onClick handler and it will no longer prevent the default page reload (with no href).
+                         */}
+                        <span>
+                            <ButtonLink
+                                aria-label={
+                                    isOpen
+                                        ? 'Close extensions panel. Press the down arrow key to enter the extensions panel.'
+                                        : 'Open extensions panel'
+                                }
+                                className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
+                                onSelect={toggle}
+                                ref={toggleReference}
+                            >
+                                {!haveExtensionsLoaded ? (
+                                    <LoadingSpinner />
+                                ) : isOpen ? (
+                                    <Icon
+                                        data-testid="action-items-toggle-open"
+                                        aria-hidden={true}
+                                        svgPath={mdiChevronDoubleUp}
+                                    />
+                                ) : (
+                                    <Icon aria-hidden={true} svgPath={mdiPuzzleOutline} />
+                                )}
+                                {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
+                            </ButtonLink>
+                        </span>
+                    </Tooltip>
                 </div>
             </li>
         </>

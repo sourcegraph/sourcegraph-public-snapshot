@@ -137,7 +137,7 @@ write user alice * //TestDepot/.../spec/...
 
 #### File-level permissions
 
-> NOTE: See [below](#experimental-support-for-path-level-permissions) for details on experimental support for file level permissions
+> NOTE: See [below](#experimental-support-for-file-level-permissions) for details on experimental support for file level permissions
 
 Sourcegraph does not support file-level permissions, as allowed in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). That means if a user has access to a directory and also has exclusions to some subdirectories, _those exclusions will not be enforced in Sourcegraph_ because Sourcegraph does not support file-level permissions.
 

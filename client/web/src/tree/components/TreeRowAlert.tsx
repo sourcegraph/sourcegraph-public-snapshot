@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert, ErrorAlertProps } from '@sourcegraph/branded/src/components/alerts'
 
-import styles from './TreeRowAlert.module.scss'
+import styles from '../Tree.module.scss'
 
 type TreeRowAlertProps = ErrorAlertProps
 

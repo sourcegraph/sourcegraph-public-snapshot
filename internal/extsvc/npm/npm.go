@@ -29,12 +29,12 @@ type Client interface {
 	GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackageName) (*PackageInfo, error)
 
 	// GetDependencyInfo gets a dependency's data from the registry.
-	GetDependencyInfo(ctx context.Context, dep *reposource.NpmPackageVersion) (*DependencyInfo, error)
+	GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (*DependencyInfo, error)
 
 	// FetchTarball fetches the sources in .tar.gz format for a dependency.
 	//
 	// The caller should close the returned reader after reading.
-	FetchTarball(ctx context.Context, dep *reposource.NpmPackageVersion) (io.ReadCloser, error)
+	FetchTarball(ctx context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error)
 }
 
 func init() {
@@ -42,11 +42,11 @@ func init() {
 	// so we don't need to set up any on-disk caching here.
 }
 
-func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmPackageVersion) (tarball io.ReadCloser, err error) {
+func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmVersionedPackage) (tarball io.ReadCloser, err error) {
 	operations := getOperations()
 
 	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.PackageVersionSyntax()),
+		otlog.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -162,8 +162,8 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.Re
 	return io.NopCloser(&bodyBuffer), nil
 }
 
-func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmPackageVersion) (*DependencyInfo, error) {
-	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getpackageversion
+func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (*DependencyInfo, error) {
+	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getVersionedPackage
 	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PackageSyntax(), dep.Version)
 	body, err := client.makeGetRequest(ctx, url)
 	if err != nil {
@@ -176,7 +176,7 @@ func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource
 	return &info, nil
 }
 
-func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmPackageVersion) (io.ReadCloser, error) {
+func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error) {
 	if dep.TarballURL == "" {
 		return nil, errors.New("empty TarballURL")
 	}

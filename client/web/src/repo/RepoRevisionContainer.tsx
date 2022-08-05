@@ -22,7 +22,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -37,7 +37,6 @@ import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import type { ExtensionAlertProps } from './actions/InstallIntegrationsAlert'
 import { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
@@ -68,8 +67,7 @@ export interface RepoRevisionContainerContext
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
-        CodeInsightsProps,
-        ExtensionAlertProps {
+        CodeInsightsProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -104,8 +102,7 @@ interface RepoRevisionContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
-        ExtensionAlertProps {
+        CodeInsightsProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -154,7 +151,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                     : revision) ||
                     resolvedRevisionOrError.defaultBranch ||
                     'HEAD'}
-                <Icon as={RepoRevisionChevronDownIcon} aria-hidden={true} />
+                <RepoRevisionChevronDownIcon aria-hidden={true} />
             </PopoverTrigger>
             <PopoverContent
                 position={Position.bottomStart}

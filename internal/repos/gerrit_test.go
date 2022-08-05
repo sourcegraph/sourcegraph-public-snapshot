@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -19,9 +17,6 @@ func TestGerritSource_ListRepos(t *testing.T) {
 	}
 	cf, save := newClientFactory(t, t.Name(), httpcli.GerritUnauthenticateMiddleware)
 	defer save(t)
-
-	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
 
 	svc := &types.ExternalService{
 		Kind:   extsvc.KindGerrit,

@@ -59,6 +59,7 @@ type FakeChangesetSource struct {
 	AuthenticatedUsernameCalled bool
 	ValidateAuthenticatorCalled bool
 	MergeChangesetCalled        bool
+	IsArchivedPushErrorCalled   bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -101,10 +102,16 @@ type FakeChangesetSource struct {
 
 	// Username is the username returned by AuthenticatedUsername
 	Username string
+
+	// IsArchivedPushErrorTrue is returned when IsArchivedPushError is invoked.
+	IsArchivedPushErrorTrue bool
 }
 
-var _ sources.ChangesetSource = &FakeChangesetSource{}
-var _ sources.DraftChangesetSource = &FakeChangesetSource{}
+var (
+	_ sources.ChangesetSource           = &FakeChangesetSource{}
+	_ sources.ArchivableChangesetSource = &FakeChangesetSource{}
+	_ sources.DraftChangesetSource      = &FakeChangesetSource{}
+)
 
 func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
 	s.CreateDraftChangesetCalled = true
@@ -315,4 +322,9 @@ func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string
 func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *sources.Changeset, squash bool) error {
 	s.MergeChangesetCalled = true
 	return s.Err
+}
+
+func (s *FakeChangesetSource) IsArchivedPushError(output string) bool {
+	s.IsArchivedPushErrorCalled = true
+	return s.IsArchivedPushErrorTrue
 }

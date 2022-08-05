@@ -108,7 +108,7 @@ describe('Search contexts', () => {
         await clearLocalStorage()
     })
 
-    withSearchQueryInput((editorName, editorSelector) => {
+    withSearchQueryInput(editorName => {
         test(`Unavailable search context should remain in the query and disable the search context dropdown (${editorName})`, async () => {
             testContext.overrideGraphQL({
                 ...testContextForSearchContexts,
@@ -123,14 +123,12 @@ describe('Search contexts', () => {
                 }),
             })
 
-            const editor = createEditorAPI(driver, editorName, editorSelector)
-
             await driver.page.goto(
                 driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
                 { waitUntil: 'networkidle0' }
             )
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            await editor.waitForIt()
+            const editor = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
             expect(await editor.getValue()).toStrictEqual('context:@unavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
         })
@@ -204,13 +202,10 @@ describe('Search contexts', () => {
         // Enter repositories
         const repositoriesConfig =
             '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
-        await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
-        await driver.replaceText({
-            selector: '[data-testid="repositories-config-area"] .monaco-editor',
-            newText: repositoriesConfig,
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="repositories-config-area"] .test-editor')
+            await editor.replace(repositoriesConfig, 'paste')
+        }
 
         // Test configuration
         await driver.page.click('[data-testid="repositories-config-button"]')
@@ -280,20 +275,14 @@ describe('Search contexts', () => {
         await driver.page.click('#search-context-type-dynamic')
 
         // Wait for search query input
-        const searchQueryInputSelector = '[data-testid="search-context-dynamic-query"] .monaco-editor .view-lines'
-        await driver.page.waitForSelector(searchQueryInputSelector)
-        await driver.page.click(searchQueryInputSelector)
+        const editor = await createEditorAPI(driver, '[data-testid="search-context-dynamic-query"] .test-query-input')
+        await editor.focus()
 
         // Take Snapshot
         await percySnapshotWithVariants(driver.page, 'Create dynamic query search context page')
 
         // Enter search query
-        await driver.replaceText({
-            selector: searchQueryInputSelector,
-            newText: 'repo:abc',
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
+        await editor.replace('repo:abc')
 
         await accessibilityAudit(driver.page)
         // Click create
@@ -389,13 +378,8 @@ describe('Search contexts', () => {
         // Enter repositories
         const repositoriesConfig =
             '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
-        await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
-        await driver.replaceText({
-            selector: '[data-testid="repositories-config-area"] .monaco-editor',
-            newText: repositoriesConfig,
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
+        const editor = await createEditorAPI(driver, '[data-testid="repositories-config-area"] .test-editor')
+        await editor.replace(repositoriesConfig, 'paste')
 
         // Test configuration
         await driver.page.click('[data-testid="repositories-config-button"]')

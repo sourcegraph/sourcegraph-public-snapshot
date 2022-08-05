@@ -68,6 +68,9 @@ export function renderReactApp(): void {
     const node = document.querySelector('#main') as HTMLDivElement
     render(
         <App
+            // Make sure we recreate the React app when the instance URL or access token changes to
+            // avoid showing stale data.
+            key={`${instanceURL}-${accessToken}`}
             isDarkTheme={isDarkTheme}
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
@@ -92,11 +95,11 @@ export function applyConfig(config: PluginConfig): void {
     polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 }
 
-export function applyTheme(theme: Theme): void {
+export function applyTheme(theme: Theme, rootElement: Element = document.documentElement): void {
     // Dark/light theme
-    document.documentElement.classList.add('theme')
-    document.documentElement.classList.remove(theme.isDarkTheme ? 'theme-light' : 'theme-dark')
-    document.documentElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
+    rootElement.classList.add('theme')
+    rootElement.classList.remove(theme.isDarkTheme ? 'theme-light' : 'theme-dark')
+    rootElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
     isDarkTheme = theme.isDarkTheme
 
     // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
@@ -111,21 +114,28 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
     root.style.setProperty('--dropdown-link-hover-bg', intelliJTheme['ToolbarComboWidget.hoverBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
+    root.style.setProperty('--tooltip-bg', intelliJTheme['ToolTip.background'])
+    root.style.setProperty('--tooltip-color', intelliJTheme['ToolTip.foreground'])
 
+    root.style.setProperty('--jb-list-bg', intelliJTheme['List.background'])
     root.style.setProperty('--jb-button-bg', intelliJTheme['Button.startBackground'])
     root.style.setProperty('--jb-text-color', intelliJTheme.text)
     root.style.setProperty('--jb-inactive-text-color', intelliJTheme.textInactiveText)
     root.style.setProperty('--jb-hover-button-bg', intelliJTheme['ActionButton.hoverBackground'])
     root.style.setProperty('--jb-input-bg', intelliJTheme['TextField.background'])
+    root.style.setProperty('--jb-selection-bg', intelliJTheme['TextField.selectionBackground'] || '#2675bf')
+    root.style.setProperty('--jb-selection-color', intelliJTheme['TextField.selectionForeground'] || '#ffffff')
     root.style.setProperty('--jb-tooltip-bg', intelliJTheme['ToolTip.background'])
     root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
     root.style.setProperty('--jb-focus-border-color', intelliJTheme['Component.focusedBorderColor'])
     root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
+    root.style.setProperty('--jb-info-text-color', intelliJTheme['Component.infoForeground'])
+    root.style.setProperty('--jb-secondary-info-text-color', intelliJTheme['Component.infoForeground'] + '80') // 50% opacity
 
     // There is no color for this in the serialized theme, so I have picked this option from the
     // Dracula theme
     root.style.setProperty('--code-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
-    root.style.setProperty('--body-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
+    root.style.setProperty('--body-bg', intelliJTheme['List.background'])
 }
 
 function applyLastSearch(lastSearch: Search | null): void {

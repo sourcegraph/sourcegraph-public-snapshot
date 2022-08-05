@@ -161,7 +161,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
       <div
         aria-label="Loading"
         aria-live="polite"
-        class="iconInline loadingSpinner"
+        class="mdi-icon iconInline loadingSpinner"
         role="img"
       />
       Add repositories

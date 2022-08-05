@@ -148,6 +148,9 @@ An example use of `Skip`:
  }
 ```
 
+> NOTE: If it's hard to make sure that the flake is fixed, another approach is to monitor the step wihout breaking the build, see [How to allow a CI step to fail without breaking the build and still receive a notification](../../how-to/ci_soft_failure_and_still_notify.md).
+
+
 ##### Assessing flaky client steps
 
 See more information on how to assess flaky client steps [here](../../how-to/testing.md#assessing-flaky-client-steps).

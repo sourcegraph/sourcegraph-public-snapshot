@@ -3,9 +3,7 @@
     <name>Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
-    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
@@ -18,7 +16,10 @@
             displayName="Sourcegraph"
             nonDefaultProject="false"
         />
-        <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph access" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph URL sharing" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
@@ -27,35 +28,37 @@
     <actions>
         <action
             id="sourcegraph.openFile"
-            class="com.sourcegraph.website.OpenFile"
+            class="com.sourcegraph.website.OpenFileAction"
             text="Open Selection in Sourcegraph Web"
-            description="Open selection in Sourcegraph Web">
+            description="Open selection in Sourcegraph Web"
+            icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.searchSelection"
-            class="com.sourcegraph.website.SearchSelection"
+            class="com.sourcegraph.website.SearchSelectionAction"
             text="Search Selection on Sourcegraph Web"
             description="Search selection on Sourcegraph web"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.searchRepository"
-            class="com.sourcegraph.website.SearchRepository"
+            class="com.sourcegraph.website.SearchRepositoryAction"
             text="Search Selection in Repository on Sourcegraph Web"
             description="Search selection in repository on Sourcegraph web"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.copy"
-            class="com.sourcegraph.website.Copy"
+            class="com.sourcegraph.website.CopyAction"
             text="Copy Sourcegraph File Link"
             description="Copy Sourcegraph file link"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="com.sourcegraph.website.OpenRevisionAction"
             class="com.sourcegraph.website.OpenRevisionAction"
-            text="Open Revision Diff in Sourcegraph Web">
+            text="Open Revision Diff in Sourcegraph Web"
+            icon="/icons/sourcegraphLogo.svg">
             <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
             <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
             <add-to-group group-id="VcsHistoryActionsGroup.Toolbar" anchor="last"/>
@@ -66,12 +69,20 @@
             class="com.sourcegraph.find.OpenFindAction"
             text="Find with Sourcegraph..."
             description="Search all your repos on Sourcegraph"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
             <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
             <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
+        <action
+            id="sourcegraph.login"
+            class="com.sourcegraph.config.OpenPluginSettingsAction"
+            text="Log in to Sourcegraph"
+            description="Log in to Sourcegraph"
+            icon="/icons/sourcegraphLogo.svg">
+        </action>
 
-        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.png" popup="true" text="Sourcegraph">
+        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
+               searchable="false">
             <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>
             <reference ref="sourcegraph.searchRepository"/>

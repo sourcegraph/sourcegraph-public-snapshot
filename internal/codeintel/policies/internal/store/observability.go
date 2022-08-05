@@ -8,7 +8,12 @@ import (
 )
 
 type operations struct {
+	// Not used yet.
 	list *observation.Operation
+
+	// Configurations
+	getConfigurationPolicies    *observation.Operation
+	updateReposMatchingPatterns *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +33,11 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
+		// Not used yet.
 		list: op("List"),
+
+		// Configurations
+		getConfigurationPolicies:    op("GetConfigurationPolicies"),
+		updateReposMatchingPatterns: op("UpdateReposMatchingPatterns"),
 	}
 }

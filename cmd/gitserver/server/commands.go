@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -20,6 +21,11 @@ func handleGetObject(getObject gitdomain.GetObjectFunc) func(w http.ResponseWrit
 			logger.Error("decoding body", log.Error(err))
 			return
 		}
+
+		// Log which which actor is accessing the repo.
+		accesslog.Record(r.Context(), string(req.Repo), map[string]string{
+			"objectname": req.ObjectName,
+		})
 
 		obj, err := getObject(r.Context(), req.Repo, req.ObjectName)
 		if err != nil {

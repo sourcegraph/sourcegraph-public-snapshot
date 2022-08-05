@@ -5,7 +5,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
 import {
     IEditor,
     LazyMonacoQueryInput,
@@ -13,7 +13,6 @@ import {
 } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -46,7 +45,6 @@ export interface JetBrainsSearchBoxProps
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
-    keyboardShortcutForFocus?: KeyboardShortcut
     className?: string
     containerClassName?: string
 
@@ -99,8 +97,17 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                 {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
-                            /* eslint-disable-next-line no-restricted-syntax */
-                            {...props}
+                            authenticatedUser={props.authenticatedUser}
+                            searchContextsEnabled={props.searchContextsEnabled}
+                            showSearchContextManagement={props.showSearchContextManagement}
+                            defaultSearchContextSpec={props.defaultSearchContextSpec}
+                            setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            fetchSearchContexts={props.fetchSearchContexts}
+                            fetchAutoDefinedSearchContexts={props.fetchAutoDefinedSearchContexts}
+                            getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
+                            telemetryService={props.telemetryService}
+                            platformContext={props.platformContext}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
                             className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
@@ -119,9 +126,18 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         <Search />
                     </div>
                     <LazyMonacoQueryInput
-                        /* eslint-disable-next-line no-restricted-syntax */
-                        {...props}
-                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                        preventNewLine={true}
+                        autoFocus={props.autoFocus}
+                        caseSensitive={props.caseSensitive}
+                        fetchStreamSuggestions={props.fetchStreamSuggestions}
+                        globbing={props.globbing}
+                        isLightTheme={props.isLightTheme}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        onChange={props.onChange}
+                        onSubmit={props.onSubmit}
+                        patternType={props.patternType}
+                        queryState={props.queryState}
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
@@ -136,9 +152,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
-                        showCopyQueryButton={props.showCopyQueryButton}
                         structuralSearchDisabled={props.structuralSearchDisabled}
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                         clearSearch={clearSearch}
                     />
                 </div>

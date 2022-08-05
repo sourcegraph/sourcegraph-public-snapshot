@@ -10,15 +10,17 @@ import React, {
     useLayoutEffect,
 } from 'react'
 
+import {
+    mdiBookPlusOutline,
+    mdiChevronUp,
+    mdiDelete,
+    mdiMagnify,
+    mdiFileDocumentOutline,
+    mdiCodeBrackets,
+    mdiTextBox,
+} from '@mdi/js'
 import classNames from 'classnames'
 import type { LocationDescriptorObject } from 'history'
-import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
-import TextBoxIcon from 'mdi-react/TextBoxIcon'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -28,7 +30,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import {
@@ -82,7 +84,7 @@ function useHasNewEntry(entries: NotepadEntry[]): boolean {
 }
 
 export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <Icon as={BookPlusOutlineIcon} aria-hidden={true} />
+    <Icon aria-hidden={true} svgPath={mdiBookPlusOutline} />
 )
 
 export interface NotepadContainerProps {
@@ -98,8 +100,10 @@ export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<N
     const entries = useNotepadState(state => state.entries)
     const canRestore = useNotepadState(state => state.canRestoreSession)
     const [enableNotepad] = useTemporarySetting('search.notepad.enabled')
+    // Taken from global-styles/breakpoints.css , $viewport-md
+    const isWideScreen = useMatchMedia('(min-width: 768px)')
 
-    if (enableNotepad) {
+    if (enableNotepad && isWideScreen) {
         return (
             <Notepad
                 className={styles.fixed}
@@ -143,7 +147,6 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
     selectable = true,
 }) => {
     const [open, setOpen] = useState(initialOpen)
-    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
     const [selectedEntries, setSelectedEntries] = useState<number[]>([])
     const isMacPlatform_ = useMemo(isMacPlatform, [])
 
@@ -325,6 +328,15 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
         [reversedEntries, selectedEntries, deleteSelectedEntries, isMacPlatform_]
     )
 
+    // Focus the cancel button when the remove all confirmation box is shown
+    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
+    const cancelRemoveAll = useRef<HTMLButtonElement>(null)
+    useEffect(() => {
+        if (confirmRemoveAll) {
+            cancelRemoveAll.current?.focus()
+        }
+    }, [confirmRemoveAll])
+
     return (
         <aside
             className={classNames(styles.root, className, { [styles.open]: open })}
@@ -347,7 +359,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     </small>
                 </span>
                 <span className={styles.toggleIcon}>
-                    <Icon aria-label={(open ? 'Close' : 'Open') + ' Notepad'} as={ChevronUpIcon} />
+                    <Icon aria-label={(open ? 'Close' : 'Open') + ' Notepad'} svgPath={mdiChevronUp} />
                 </span>
             </Button>
             {open && (
@@ -394,7 +406,11 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                         <div className="p-2">
                             <Text>Are you sure you want to delete all entries?</Text>
                             <div className="d-flex justify-content-between">
-                                <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setConfirmRemoveAll(false)}
+                                    ref={cancelRemoveAll}
+                                >
                                     Cancel
                                 </Button>
                                 <Button
@@ -438,7 +454,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             disabled={entries.length === 0}
                             onClick={() => setConfirmRemoveAll(true)}
                         >
-                            <Icon aria-hidden={true} as={DeleteIcon} />
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
                         </Button>
                     </div>
                 </>
@@ -468,7 +484,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                         addEntry(entry)
                     }}
                 >
-                    <Icon aria-hidden={true} as={SearchIcon} /> Add search
+                    <Icon aria-hidden={true} svgPath={mdiMagnify} /> Add search
                 </Button>
             )
             break
@@ -486,7 +502,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                             addEntry(entry, 'file')
                         }}
                     >
-                        <Icon aria-hidden={true} as={FileDocumentOutlineIcon} /> Add as file
+                        <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> Add as file
                     </Button>
                     {entry.lineRange && (
                         <Button
@@ -500,7 +516,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                                 addEntry(entry, 'range')
                             }}
                         >
-                            <Icon aria-hidden={true} as={CodeBracketsIcon} /> Add as range{' '}
+                            <Icon aria-hidden={true} svgPath={mdiCodeBrackets} /> Add as range{' '}
                             {formatLineRange(entry.lineRange)}
                         </Button>
                     )}
@@ -586,7 +602,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             toggleAnnotationInput(!showAnnotationInput)
                         }}
                     >
-                        <Icon aria-hidden={true} as={TextBoxIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiTextBox} />
                     </Button>
                     <Button
                         aria-label={deletionLabel}
@@ -598,7 +614,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             onDelete(entry)
                         }}
                     >
-                        <Icon aria-hidden={true} as={DeleteIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
                 </span>
             </div>
@@ -640,7 +656,7 @@ function getUIComponentsForEntry(
     switch (entry.type) {
         case 'search':
             return {
-                icon: <Icon aria-label="Search" as={SearchIcon} />,
+                icon: <Icon aria-label="Search" svgPath={mdiMagnify} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
                 location: {
                     pathname: '/search',
@@ -654,7 +670,7 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon aria-label="File" as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
+                icon: <Icon aria-label="File" svgPath={entry.lineRange ? mdiCodeBrackets : mdiFileDocumentOutline} />,
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}
@@ -690,7 +706,7 @@ function getLabel(entry: NotepadEntry): string {
 
 function toSearchQuery(entry: SearchEntry): string {
     let { query } = entry
-    if (entry.patternType !== SearchPatternType.literal) {
+    if (entry.patternType !== SearchPatternType.standard) {
         query = updateFilter(entry.query, FilterType.patterntype, entry.patternType)
     }
     if (entry.caseSensitive) {

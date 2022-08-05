@@ -1,6 +1,6 @@
 # Using a managed object storage service (S3 or GCS)
 
-By default, Sourcegraph will use a MinIO server bundled with the instance to temporarily store precise code intelligence indexes uploaded by users. MinIO shouldn’t be accessible outside of the cluster/docker-compose network so it shouldn’t need anything other than the default credentials. However, if you do want to change the default credentials, you can supply the following environment variables to the MinIO container in your deployment:
+By default, Sourcegraph will use a MinIO server bundled with the instance to temporarily store code graph indexes uploaded by users. MinIO shouldn’t be accessible outside of the cluster/docker-compose network so it shouldn’t need anything other than the default credentials. However, if you do want to change the default credentials, you can supply the following environment variables to the MinIO container in your deployment:
 
 - `MINIO_ACCESS_KEY=<access key>`
 - `MINIO_SECRET_KEY=<secret key>`

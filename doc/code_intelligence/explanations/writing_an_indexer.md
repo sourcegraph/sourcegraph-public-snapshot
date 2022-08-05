@@ -4,6 +4,7 @@ This page describes the [SCIP Code Intelligence Protocol](https://github.com/sou
 and how you can write an indexer to emit SCIP.
 
 At a high level, you need to follow these steps:
+
 1. Familiarize yourself with the [SCIP protobuf schema][].
 1. Import or generate SCIP bindings.
 1. Generate minimal index with occurrence information.
@@ -33,7 +34,7 @@ Optionally, an index can also provide
 hover documentation for external symbols
 that will not be indexed.
 
-[`Index`]:
+[`Index`]: https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/scip%24+%5Emessage+Index+%7B%5Cn%28.%2B%5Cn%29%2B%7D&patternType=regexp
 
 A [`Document`][] has a unique path relative to the project root.
 It also has a list of occurrences,
@@ -44,6 +45,7 @@ in the document.
 [`Document`]: https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/scip%24+message+Document+%7B...%7D&patternType=structural
 
 The information covered by an [`Occurrence`][] can be syntactic or semantic:
+
 - Syntactic information such as the `syntax_kind` field
   is used for highlighting.
 - Semantic information such as the `symbol` and `symbol_role` fields
@@ -96,7 +98,7 @@ As a first pass,
 we recommend generating occurrences for a subset of declarations
 and checking that the generation works from end-to-end.
 
-In the context of a precise code intel indexer,
+In the context of an indexer,
 this typically involves using a compiler frontend or a language server as a library.
 First, run the compiler pipeline until semantic analysis is completed.
 Next, perform a top-down traversal of ASTs for all files,
@@ -159,25 +161,27 @@ running `scip-typescript` over itself:
 ```
 
 The carets and contextual information make it easy to visually check that:
+
 - Occurrences are being emitted for the right source ranges.
 - Occurrences have the expected symbol strings.
   The exact syntax for the symbol strings is described
-  in the doc comment for [`Symbol`] in the SCIP Protobuf schema.
+  in the doc comment for [`Symbol`][] in the SCIP Protobuf schema.
 - Symbols correspond to the right package.
   For example, the `ScriptElementKind` is defined in the
   `typescript` package (the compiler) whereas
   `scriptElementKind` is defined in `@sourcegraph/scip-typescript`.
 
-[`Symbol`][]: https://sourcegraph.com/github.com/sourcegraph/scip@12459c75fc15117e68b4c15a58e8581b738b855f/-/blob/scip.proto?L87-115
+[`Symbol`]: https://sourcegraph.com/github.com/sourcegraph/scip@12459c75fc15117e68b4c15a58e8581b738b855f/-/blob/scip.proto?L87-115
 
 ## Progressively adding support for language features
 
 We recommend adding support for different features in the following order:
+
 1. Emit occurrences and symbols for a single file.
    - Iterate over different kinds of entities (functions, classes, properties etc.)
-2. Emit hover documentation for entities.
+1. Emit hover documentation for entities.
    If the markup is in a format other than CommonMark,
    we recommend addressing that difference after addressing other features.
-3. Add support for implementation relationships, enabling Find implementations.
-4. (Optional) If the hover documentation uses markup in a format other than CommonMark,
+1. Add support for implementation relationships, enabling Find implementations.
+1. (Optional) If the hover documentation uses markup in a format other than CommonMark,
    implement a conversion from the custom markup language to CommonMark.

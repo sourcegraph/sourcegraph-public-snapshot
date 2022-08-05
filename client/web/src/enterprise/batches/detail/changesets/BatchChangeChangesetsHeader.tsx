@@ -16,12 +16,14 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<
     <>
         <span className="d-none d-md-block" />
         {toggleSelectAll && (
+            // eslint-disable-next-line no-restricted-syntax
             <InputTooltip
                 type="checkbox"
                 className="ml-2"
                 checked={allSelected}
                 onChange={toggleSelectAll}
                 disabled={!!disabled}
+                placement="right"
                 tooltip={
                     disabled ? 'You do not have permission to perform this operation' : 'Click to select all changesets'
                 }

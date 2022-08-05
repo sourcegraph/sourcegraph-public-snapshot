@@ -12,6 +12,7 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './LineDecorator.module.scss'
 
@@ -27,7 +28,7 @@ export interface LineDecoratorProps extends ThemeProps {
 /**
  * Component that decorates lines of code and appends line attachments set by extensions
  */
-export const LineDecorator = React.memo<LineDecoratorProps>(
+const LineDecorator = React.memo<LineDecoratorProps>(
     ({ getCodeElementFromLineNumber, line, decorations, portalID, isLightTheme, codeViewElements }) => {
         const [portalNode, setPortalNode] = React.useState<HTMLDivElement | null>(null)
 
@@ -134,18 +135,32 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
 
         // Render decoration attachments into portal
         return ReactDOM.createPortal(
-            decorations?.filter(property('after', isDefined)).map((decoration, index) => {
-                const attachment = decoration.after
-                const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+            <LineDecoratorContents decorations={decorations} isLightTheme={isLightTheme} />,
+            portalNode
+        )
+    }
+)
 
-                return (
+export const LineDecoratorContents: React.FunctionComponent<{
+    decorations: TextDocumentDecoration[] | undefined
+    isLightTheme: boolean
+    portalRoot?: HTMLElement
+}> = ({ decorations, isLightTheme }) => (
+    <>
+        {decorations?.filter(property('after', isDefined)).map((decoration, index) => {
+            const attachment = decoration.after
+            const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+
+            return (
+                <Tooltip
+                    content={attachment.hoverMessage}
+                    // Key by content, use index to remove possibility of duplicate keys
+                    key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
+                >
                     <LinkOrSpan
-                        // Key by content, use index to remove possibility of duplicate keys
-                        key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
                         className={styles.lineDecorationAttachment}
                         data-line-decoration-attachment={true}
                         to={attachment.linkURL}
-                        data-tooltip={attachment.hoverMessage}
                         // Use target to open external URLs
                         target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
                         // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
@@ -162,9 +177,12 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                             data-contents={attachment.contentText || ''}
                         />
                     </LinkOrSpan>
-                )
-            }),
-            portalNode
-        )
-    }
+                </Tooltip>
+            )
+        })}
+    </>
 )
+
+LineDecorator.displayName = 'LineDecorator'
+
+export { LineDecorator }

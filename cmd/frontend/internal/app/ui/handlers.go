@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -252,6 +251,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
 				ctx,
+				authz.DefaultSubRepoPermsChecker,
 				types.MinimalRepo{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
 				strings.TrimLeft(blobPath, "/"),
@@ -264,7 +264,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 		common.Metadata.ShowPreview = true
 		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange)
-		common.Metadata.Description = fmt.Sprintf("%s/%s", globals.ExternalURL(), mux.Vars(r)["Repo"])
+		common.Metadata.Description = ""
 		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange, symbolResult)
 	}
 

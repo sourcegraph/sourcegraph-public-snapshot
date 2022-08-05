@@ -94,12 +94,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 				continue
 			}
 
-			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx, clients.DB)
-			if err != nil {
-				return err
-			}
-
-			for _, rev := range revSpecs {
+			for _, rev := range repoAllRevs.Revs {
 				rev := rev // capture rev
 				limitCtx, limitDone, err := textSearchLimiter.Acquire(ctx)
 				if err != nil {
@@ -116,7 +111,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []search.RevisionSpecifier{{RevSpec: rev}}, repoLimitHit, false, err)
+					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
 						Stats: streaming.Stats{
 							Status:     status,
@@ -193,14 +188,6 @@ func (s *TextSearchJob) searchFilesInRepo(
 		return false, err
 	}
 
-	shouldBeSearched, err := repoShouldBeSearched(ctx, searcherURLs, info, repo, commit, fetchTimeout)
-	if err != nil {
-		return false, err
-	}
-	if !shouldBeSearched {
-		return false, err
-	}
-
 	// Structural and hybrid search both speak to zoekt so need the endpoints.
 	var indexerEndpoints []string
 	if info.IsStructuralPat || s.Features.HybridSearch {
@@ -265,67 +252,4 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 		})
 	}
 	return matches
-}
-
-// repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
-// fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func repoShouldBeSearched(
-	ctx context.Context,
-	searcherURLs *endpoint.Map,
-	searchPattern *search.TextPatternInfo,
-	repo types.MinimalRepo,
-	commit api.CommitID,
-	fetchTimeout time.Duration,
-) (shouldBeSearched bool, err error) {
-	shouldBeSearched = true
-	flagInQuery := len(searchPattern.FilePatternsReposMustInclude) > 0
-	if flagInQuery {
-		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, true, searchPattern.FilePatternsReposMustInclude, repo, commit, fetchTimeout)
-		if err != nil {
-			return shouldBeSearched, err
-		}
-	}
-	negFlagInQuery := len(searchPattern.FilePatternsReposMustExclude) > 0
-	if negFlagInQuery {
-		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, false, searchPattern.FilePatternsReposMustExclude, repo, commit, fetchTimeout)
-		if err != nil {
-			return shouldBeSearched, err
-		}
-	}
-	return shouldBeSearched, nil
-}
-
-// repoHasFilesWithNamesMatching searches in a repository for matches for the patterns in the `repohasfile` or `-repohasfile` flags, and returns
-// whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
-func repoHasFilesWithNamesMatching(
-	ctx context.Context,
-	searcherURLs *endpoint.Map,
-	include bool,
-	repoHasFileFlag []string,
-	repo types.MinimalRepo,
-	commit api.CommitID,
-	fetchTimeout time.Duration,
-) (bool, error) {
-	for _, pattern := range repoHasFileFlag {
-		foundMatches := false
-		onMatches := func(matches []*protocol.FileMatch) {
-			if len(matches) > 0 {
-				foundMatches = true
-			}
-		}
-		// TODO(keegancsmith) we should be passing in more state here like
-		// indexer endpoints and features.
-		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, search.Features{}, onMatches)
-		if err != nil {
-			return false, err
-		}
-		if include && !foundMatches || !include && foundMatches {
-			// repo shouldn't be searched if it does not have matches for the patterns in `repohasfile`
-			// or if it has file matches for the patterns in `-repohasfile`.
-			return false, nil
-		}
-	}
-
-	return true, nil
 }

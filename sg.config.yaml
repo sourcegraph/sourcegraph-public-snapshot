@@ -46,16 +46,17 @@ env:
   SRC_PROF_SERVICES: |
     [
       { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
-      { "Name": "enterprise-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
       { "Name": "gitserver", "Host": "127.0.0.1:6068" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
+      { "Name": "oss-symbols", "Host": "127.0.0.1:6071" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
       { "Name": "oss-repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
+      { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
       { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
       { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
@@ -114,8 +115,13 @@ env:
   DISABLE_CODE_INSIGHTS: true
   ENABLE_STREAMING_REPOS_SYNCER: true
 
+  # # OpenTelemetry in dev - use single http/json endpoint
+  # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+  # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
+
 commands:
   server:
+    description: Run an all-in-one sourcegraph/server image
     cmd: ./dev/run-server-image.sh
     env:
       TAG: insiders
@@ -142,19 +148,20 @@ commands:
       - cmd/frontend
 
   frontend:
+    description: Enterprise frontend
     cmd: |
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       # If EXTSVC_CONFIG_FILE is *unset*, set a default.
       export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
 
-      .bin/enterprise-frontend
+      .bin/frontend
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    checkBinary: .bin/enterprise-frontend
+      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
@@ -242,13 +249,13 @@ commands:
       - cmd/repo-updater
 
   repo-updater:
-    cmd: .bin/enterprise-repo-updater
+    cmd: .bin/repo-updater
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
-    checkBinary: .bin/enterprise-repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+    checkBinary: .bin/repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
@@ -278,15 +285,15 @@ commands:
       - cmd/symbols
 
   symbols:
-    cmd: .bin/enterprise-symbols
+    cmd: .bin/symbols
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
 
       ./cmd/symbols/build-ctags.sh &&
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
-    checkBinary: .bin/enterprise-symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+    checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
@@ -320,16 +327,20 @@ commands:
       CADDY_VERSION: 2.4.5
 
   oss-web:
+    description: Open source version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
 
   web:
+    description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
+      ENABLE_OPEN_TELEMETRY: true
 
   web-standalone-http:
+    description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: |
       yarn --no-progress
@@ -339,6 +350,7 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
+    description: Standalone web frontend (production) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:prod
     install: yarn workspace @sourcegraph/web run build
     env:
@@ -347,8 +359,9 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   docsite:
+    description: Docsite instance serving the docs
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: "installDocsite"
+    install_func: 'installDocsite'
     env:
       DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
 
@@ -365,9 +378,6 @@ commands:
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
       # Pull syntax-highlighter latest insider image, only during install
       docker pull -q sourcegraph/syntax-highlighter:insiders
-    env:
-      # This is not needed actually
-      INSECURE_DEV: 1
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
@@ -386,7 +396,6 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
-      GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
 
   zoekt-index-0:
@@ -412,7 +421,7 @@ commands:
     checkBinary: .bin/zoekt-webserver
     env:
       JAEGER_DISABLED: false
-      GOGC: 50
+      GOGC: 25
 
   zoekt-web-0:
     <<: *zoekt_webserver_template
@@ -423,13 +432,13 @@ commands:
     cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
 
   codeintel-worker:
-    cmd: .bin/precise-code-intel-worker
+    cmd: .bin/codeintel-worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
-    checkBinary: .bin/precise-code-intel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+    checkBinary: .bin/codeintel-worker
     watch:
       - lib
       - internal
@@ -519,16 +528,18 @@ commands:
     #       PGUSER: sourcegraph
     #
     # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
+    description: Dockerized version of redis and postgres
     cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
     env:
       COMPOSE_ARGS: --force-recreate
 
   jaeger:
     cmd: |
+      echo "Jaeger will be available on http://localhost:16686/-/debug/jaeger/search"
       .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
     install_func: installJaeger
     env:
-      JAEGER_VERSION: 1.30.0
+      JAEGER_VERSION: 1.36.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
       JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
@@ -562,7 +573,7 @@ commands:
     install: |
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-
+      export CACHE=true
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       ./docker-images/grafana/build.sh
     env:
@@ -582,8 +593,6 @@ commands:
       DOCKER_USER: ''
       ADD_HOST_FLAG: ''
       CACHE: false
-    watch:
-      - monitoring
 
   prometheus:
     cmd: |
@@ -665,6 +674,8 @@ commands:
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   otel-collector:
+    install: docker-images/opentelemetry-collector/build.sh
+    description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
       if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -675,13 +686,20 @@ commands:
         JAEGER_HOST="localhost"
       fi
 
-      docker run --rm --name=otel-collector $DOCKER_NET \
-        -p 4317:4317 -p 55679:55679 \
+      docker container rm otel-collector
+      docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
+        -p 4317:4317 -p 4318:4318 -p 55679:55679 \
         -e JAEGER_HOST=$JAEGER_HOST \
-        -v "$(pwd)"/dev/otel-collector/config.yaml:/etc/otel-collector/config.yaml \
-        otel/opentelemetry-collector:${OTEL_COLLECTOR_VERISON} --config /etc/otel-collector/config.yaml
+        -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
+        -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
+        $IMAGE --config "/etc/otel-collector/$CONFIGURATION_FILE"
     env:
-      OTEL_COLLECTOR_VERISON: '0.54.0'
+      IMAGE: sourcegraph/opentelemetry-collector:dev
+      # Overwrite the following in sg.config.overwrite.yaml, based on which collector
+      # config you are using - see docker-images/opentelemetry-collector for more details.
+      CONFIGURATION_FILE: 'configs/jaeger.yaml'
+      # HONEYCOMB_API_KEY: ''
+      # HONEYCOMB_DATASET: ''
 
   storybook:
     cmd: yarn storybook
@@ -690,6 +708,7 @@ commands:
   # This will execute `env`, a utility to print the process environment. Can
   # be used to debug which global vars `sg` uses.
   debug-env:
+    description: Debug env vars
     cmd: env
 
   bext:
@@ -752,7 +771,7 @@ commandsets:
     env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
-      EXTSVC_CONFIG_FILE: ""
+      EXTSVC_CONFIG_FILE: ''
 
   dotcom:
     <<: *enterprise_set
@@ -928,7 +947,7 @@ commandsets:
       - web-standalone-http-prod
       - caddy
 
-  # For testing out OpenTelemetry stack
+  # For testing our OpenTelemetry stack
   otel:
     checks:
       - docker
@@ -953,7 +972,6 @@ tests:
 
   web-integration:
     cmd: yarn test-integration
-    install: ENTERPRISE=1 yarn build-web
 
   bext:
     cmd: yarn workspace @sourcegraph/browser test
@@ -1000,9 +1018,9 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        provider: "gcloud"
-        project: "sourcegraph-ci"
-        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
+        provider: 'gcloud'
+        project: 'sourcegraph-ci'
+        name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

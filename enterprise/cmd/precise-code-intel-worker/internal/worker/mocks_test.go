@@ -3242,6 +3242,9 @@ type MockWorkerStore struct {
 	// AddExecutionLogEntryFunc is an instance of a mock function object
 	// controlling the behavior of the method AddExecutionLogEntry.
 	AddExecutionLogEntryFunc *WorkerStoreAddExecutionLogEntryFunc
+	// CanceledJobsFunc is an instance of a mock function object controlling
+	// the behavior of the method CanceledJobs.
+	CanceledJobsFunc *WorkerStoreCanceledJobsFunc
 	// DequeueFunc is an instance of a mock function object controlling the
 	// behavior of the method Dequeue.
 	DequeueFunc *WorkerStoreDequeueFunc
@@ -3289,6 +3292,11 @@ func NewMockWorkerStore() *MockWorkerStore {
 				return
 			},
 		},
+		CanceledJobsFunc: &WorkerStoreCanceledJobsFunc{
+			defaultHook: func(context.Context, []int, store.CanceledJobsOptions) (r0 []int, r1 error) {
+				return
+			},
+		},
 		DequeueFunc: &WorkerStoreDequeueFunc{
 			defaultHook: func(context.Context, string, []*sqlf.Query) (r0 workerutil.Record, r1 bool, r2 error) {
 				return
@@ -3325,7 +3333,7 @@ func NewMockWorkerStore() *MockWorkerStore {
 			},
 		},
 		QueuedCountFunc: &WorkerStoreQueuedCountFunc{
-			defaultHook: func(context.Context, bool, []*sqlf.Query) (r0 int, r1 error) {
+			defaultHook: func(context.Context, bool) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -3359,6 +3367,11 @@ func NewStrictMockWorkerStore() *MockWorkerStore {
 		AddExecutionLogEntryFunc: &WorkerStoreAddExecutionLogEntryFunc{
 			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
 				panic("unexpected invocation of MockWorkerStore.AddExecutionLogEntry")
+			},
+		},
+		CanceledJobsFunc: &WorkerStoreCanceledJobsFunc{
+			defaultHook: func(context.Context, []int, store.CanceledJobsOptions) ([]int, error) {
+				panic("unexpected invocation of MockWorkerStore.CanceledJobs")
 			},
 		},
 		DequeueFunc: &WorkerStoreDequeueFunc{
@@ -3397,7 +3410,7 @@ func NewStrictMockWorkerStore() *MockWorkerStore {
 			},
 		},
 		QueuedCountFunc: &WorkerStoreQueuedCountFunc{
-			defaultHook: func(context.Context, bool, []*sqlf.Query) (int, error) {
+			defaultHook: func(context.Context, bool) (int, error) {
 				panic("unexpected invocation of MockWorkerStore.QueuedCount")
 			},
 		},
@@ -3431,6 +3444,9 @@ func NewMockWorkerStoreFrom(i store.Store) *MockWorkerStore {
 	return &MockWorkerStore{
 		AddExecutionLogEntryFunc: &WorkerStoreAddExecutionLogEntryFunc{
 			defaultHook: i.AddExecutionLogEntry,
+		},
+		CanceledJobsFunc: &WorkerStoreCanceledJobsFunc{
+			defaultHook: i.CanceledJobs,
 		},
 		DequeueFunc: &WorkerStoreDequeueFunc{
 			defaultHook: i.Dequeue,
@@ -3585,6 +3601,117 @@ func (c WorkerStoreAddExecutionLogEntryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c WorkerStoreAddExecutionLogEntryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// WorkerStoreCanceledJobsFunc describes the behavior when the CanceledJobs
+// method of the parent MockWorkerStore instance is invoked.
+type WorkerStoreCanceledJobsFunc struct {
+	defaultHook func(context.Context, []int, store.CanceledJobsOptions) ([]int, error)
+	hooks       []func(context.Context, []int, store.CanceledJobsOptions) ([]int, error)
+	history     []WorkerStoreCanceledJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// CanceledJobs delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockWorkerStore) CanceledJobs(v0 context.Context, v1 []int, v2 store.CanceledJobsOptions) ([]int, error) {
+	r0, r1 := m.CanceledJobsFunc.nextHook()(v0, v1, v2)
+	m.CanceledJobsFunc.appendCall(WorkerStoreCanceledJobsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CanceledJobs method
+// of the parent MockWorkerStore instance is invoked and the hook queue is
+// empty.
+func (f *WorkerStoreCanceledJobsFunc) SetDefaultHook(hook func(context.Context, []int, store.CanceledJobsOptions) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CanceledJobs method of the parent MockWorkerStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *WorkerStoreCanceledJobsFunc) PushHook(hook func(context.Context, []int, store.CanceledJobsOptions) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkerStoreCanceledJobsFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int, store.CanceledJobsOptions) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkerStoreCanceledJobsFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, []int, store.CanceledJobsOptions) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *WorkerStoreCanceledJobsFunc) nextHook() func(context.Context, []int, store.CanceledJobsOptions) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkerStoreCanceledJobsFunc) appendCall(r0 WorkerStoreCanceledJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkerStoreCanceledJobsFuncCall objects
+// describing the invocations of this function.
+func (f *WorkerStoreCanceledJobsFunc) History() []WorkerStoreCanceledJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkerStoreCanceledJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkerStoreCanceledJobsFuncCall is an object that describes an invocation
+// of method CanceledJobs on an instance of MockWorkerStore.
+type WorkerStoreCanceledJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 store.CanceledJobsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkerStoreCanceledJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkerStoreCanceledJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -4360,24 +4487,24 @@ func (c WorkerStoreMaxDurationInQueueFuncCall) Results() []interface{} {
 // WorkerStoreQueuedCountFunc describes the behavior when the QueuedCount
 // method of the parent MockWorkerStore instance is invoked.
 type WorkerStoreQueuedCountFunc struct {
-	defaultHook func(context.Context, bool, []*sqlf.Query) (int, error)
-	hooks       []func(context.Context, bool, []*sqlf.Query) (int, error)
+	defaultHook func(context.Context, bool) (int, error)
+	hooks       []func(context.Context, bool) (int, error)
 	history     []WorkerStoreQueuedCountFuncCall
 	mutex       sync.Mutex
 }
 
 // QueuedCount delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockWorkerStore) QueuedCount(v0 context.Context, v1 bool, v2 []*sqlf.Query) (int, error) {
-	r0, r1 := m.QueuedCountFunc.nextHook()(v0, v1, v2)
-	m.QueuedCountFunc.appendCall(WorkerStoreQueuedCountFuncCall{v0, v1, v2, r0, r1})
+func (m *MockWorkerStore) QueuedCount(v0 context.Context, v1 bool) (int, error) {
+	r0, r1 := m.QueuedCountFunc.nextHook()(v0, v1)
+	m.QueuedCountFunc.appendCall(WorkerStoreQueuedCountFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the QueuedCount method
 // of the parent MockWorkerStore instance is invoked and the hook queue is
 // empty.
-func (f *WorkerStoreQueuedCountFunc) SetDefaultHook(hook func(context.Context, bool, []*sqlf.Query) (int, error)) {
+func (f *WorkerStoreQueuedCountFunc) SetDefaultHook(hook func(context.Context, bool) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -4385,7 +4512,7 @@ func (f *WorkerStoreQueuedCountFunc) SetDefaultHook(hook func(context.Context, b
 // QueuedCount method of the parent MockWorkerStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *WorkerStoreQueuedCountFunc) PushHook(hook func(context.Context, bool, []*sqlf.Query) (int, error)) {
+func (f *WorkerStoreQueuedCountFunc) PushHook(hook func(context.Context, bool) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4394,19 +4521,19 @@ func (f *WorkerStoreQueuedCountFunc) PushHook(hook func(context.Context, bool, [
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WorkerStoreQueuedCountFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, bool, []*sqlf.Query) (int, error) {
+	f.SetDefaultHook(func(context.Context, bool) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WorkerStoreQueuedCountFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, bool, []*sqlf.Query) (int, error) {
+	f.PushHook(func(context.Context, bool) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *WorkerStoreQueuedCountFunc) nextHook() func(context.Context, bool, []*sqlf.Query) (int, error) {
+func (f *WorkerStoreQueuedCountFunc) nextHook() func(context.Context, bool) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4445,9 +4572,6 @@ type WorkerStoreQueuedCountFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 bool
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []*sqlf.Query
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -4459,7 +4583,7 @@ type WorkerStoreQueuedCountFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c WorkerStoreQueuedCountFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

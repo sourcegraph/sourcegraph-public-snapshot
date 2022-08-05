@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -238,7 +239,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				Head:      string(cmp.head.OID()),
 				RangeType: cmp.rangeType,
 				Paths:     paths,
-			})
+			}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return
 			}
@@ -297,9 +298,7 @@ func NewFileDiffConnectionResolver(
 		db:      db,
 		base:    base,
 		head:    head,
-		first:   args.First,
-		after:   args.After,
-		paths:   args.Paths,
+		args:    args,
 		compute: compute,
 		newFile: newFileFunc,
 	}
@@ -309,15 +308,13 @@ type fileDiffConnectionResolver struct {
 	db      database.DB
 	base    *GitCommitResolver
 	head    *GitCommitResolver
-	first   *int32
-	after   *string
-	paths   *[]string
+	args    *FileDiffsConnectionArgs
 	compute ComputeDiffFunc
 	newFile NewFileFunc
 }
 
 func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, error) {
-	fileDiffs, afterIdx, _, err := r.compute(ctx, &FileDiffsConnectionArgs{First: r.first, After: r.after, Paths: r.paths})
+	fileDiffs, afterIdx, _, err := r.compute(ctx, r.args)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +340,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, err
 }
 
 func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	fileDiffs, _, hasNextPage, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	fileDiffs, _, hasNextPage, err := r.compute(ctx, r.args)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +352,7 @@ func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, er
 }
 
 func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, afterIdx, hasNextPage, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	_, afterIdx, hasNextPage, err := r.compute(ctx, r.args)
 	if err != nil {
 		return nil, err
 	}
@@ -363,14 +360,14 @@ func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 		return graphqlutil.HasNextPage(hasNextPage), nil
 	}
 	next := afterIdx
-	if r.first != nil {
-		next += *r.first
+	if r.args.First != nil {
+		next += *r.args.First
 	}
 	return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
 }
 
 func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, error) {
-	fileDiffs, _, _, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	fileDiffs, _, _, err := r.compute(ctx, r.args)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +381,7 @@ func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, e
 }
 
 func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error) {
-	fileDiffs, _, _, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	fileDiffs, _, _, err := r.compute(ctx, r.args)
 	if err != nil {
 		return "", err
 	}
@@ -564,9 +561,17 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			lastMinus = i
 		}
 	}
+
+	// Lines in highlightedBase and highlightedHead are 0-indexed.
+	baseLine := r.hunk.OrigStartLine - 1
+	headLine := r.hunk.NewStartLine - 1
+
 	// Empty "-" line that's not followed by an unchanged line, so cut it out
 	if lastMinus > -1 {
 		hunkLines = append(hunkLines[:lastMinus], hunkLines[lastMinus+1:]...)
+		// Removing the empty "-" line causes a mismatch in position between hunkLines and highlightedBase. hunkLines
+		// will be behind by one line.
+		baseLine++
 	}
 
 	// Even after all the logic above, we were still hitting out-of-bounds panics:
@@ -584,9 +589,6 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 	}
 
 	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
-	// Lines in highlightedBase and highlightedHead are 0-indexed.
-	baseLine := r.hunk.OrigStartLine - 1
-	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
 		if hunkLine[0] == ' ' {

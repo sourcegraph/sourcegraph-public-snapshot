@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import { useLocation } from 'react-router'
 
 import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } from '@sourcegraph/wildcard'
@@ -161,7 +160,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                         <span className={navItemStyles.itemFocusableContent}>
                                             <Icon
                                                 className={navItemStyles.icon}
-                                                as={isExpanded ? ChevronUpIcon : ChevronDownIcon}
+                                                svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
                                                 aria-hidden={true}
                                             />
                                         </span>

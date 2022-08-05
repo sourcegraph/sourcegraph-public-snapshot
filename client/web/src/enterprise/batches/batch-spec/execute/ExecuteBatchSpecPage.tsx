@@ -154,6 +154,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
         <div className={layoutStyles.pageContainer}>
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader
+                    className={styles.header}
                     namespace={{
                         to: `${batchChange.namespace.url}/batch-changes`,
                         text: batchChange.namespace.namespaceName,
@@ -168,18 +169,16 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         </>
                     }
                 />
-                <div className="d-flex align-items-center mb-1">
-                    {batchSpec.source === BatchSpecSource.REMOTE ? (
-                        <BatchSpecStateBadge state={batchSpec.state} className="mr-2" />
-                    ) : (
-                        <Badge
-                            className="mr-2"
-                            variant="secondary"
-                            tooltip="This batch spec was executed with src-cli."
-                        >
-                            LOCAL
-                        </Badge>
-                    )}
+                <div className={styles.statsBar}>
+                    <div className={styles.stateBadge}>
+                        {batchSpec.source === BatchSpecSource.REMOTE ? (
+                            <BatchSpecStateBadge state={batchSpec.state} />
+                        ) : (
+                            <Badge variant="secondary" tooltip="This batch spec was executed with src-cli.">
+                                LOCAL
+                            </Badge>
+                        )}
+                    </div>
                     {batchSpec.startedAt && (
                         <ExecutionStat>
                             <Icon aria-label="Duration" className={styles.durationIcon} svgPath={mdiProgressClock} />
@@ -189,7 +188,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
                 </div>
 
-                <ActionButtons className="ml-2 flex-shrink-0">
+                <ActionButtons className="flex-shrink-0">
                     <ActionsMenu />
                 </ActionButtons>
             </div>

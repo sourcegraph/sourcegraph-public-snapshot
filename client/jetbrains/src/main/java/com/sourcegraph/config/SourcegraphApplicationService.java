@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
     storages = {@Storage("sourcegraph.xml")})
 public class SourcegraphApplicationService implements PersistentStateComponent<SourcegraphApplicationService> {
     @Nullable
+    public String instanceType;
+    @Nullable
     public String url;
     @Nullable
     public String accessToken;
@@ -24,11 +26,20 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     public String anonymousUserId;
     public boolean isInstallEventLogged;
     public boolean isUrlNotificationDismissed;
+    @Nullable
+    public Boolean authenticationFailedLastTime;
+    @Nullable
+    public String lastUpdateNotificationPluginVersion; // The version of the plugin that last notified the user about an update
 
     @NotNull
     public static SourcegraphApplicationService getInstance() {
         return ApplicationManager.getApplication()
             .getService(SourcegraphApplicationService.class);
+    }
+
+    @Nullable
+    public String getInstanceType() {
+        return instanceType;
     }
 
     @Nullable
@@ -69,6 +80,16 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     }
 
     @Nullable
+    public Boolean getAuthenticationFailedLastTime() {
+        return authenticationFailedLastTime;
+    }
+
+    @Nullable
+    public String getLastUpdateNotificationPluginVersion() {
+        return lastUpdateNotificationPluginVersion;
+    }
+
+    @Nullable
     @Override
     public SourcegraphApplicationService getState() {
         return this;
@@ -76,6 +97,7 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
 
     @Override
     public void loadState(@NotNull SourcegraphApplicationService settings) {
+        this.instanceType = settings.instanceType;
         this.url = settings.url;
         this.accessToken = settings.accessToken;
         this.defaultBranch = settings.defaultBranch;
@@ -83,5 +105,7 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
         this.isGlobbingEnabled = settings.isGlobbingEnabled;
         this.anonymousUserId = settings.anonymousUserId;
         this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
+        this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
+        this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
     }
 }

@@ -70,9 +70,9 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			Published: parsePublishedFieldString(t, "false"),
 		},
 
-		Result: execution.Result{
+		Result: execution.AfterStepResult{
 			Diff: "cool diff",
-			ChangedFiles: &git.Changes{
+			ChangedFiles: git.Changes{
 				Modified: []string{"README.md"},
 			},
 			Outputs: map[string]any{},

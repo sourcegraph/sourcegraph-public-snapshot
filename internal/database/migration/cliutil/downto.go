@@ -23,7 +23,12 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 	}
 	unprivilegedOnlyFlag := &cli.BoolFlag{
 		Name:  "unprivileged-only",
-		Usage: "Do not apply privileged migrations.",
+		Usage: "Refuse to apply privileged migrations.",
+		Value: false,
+	}
+	noopPrivilegedFlag := &cli.BoolFlag{
+		Name:  "noop-privileged",
+		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
 		Value: false,
 	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
@@ -32,7 +37,12 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 		Value: development,
 	}
 
-	makeOptions := func(cmd *cli.Context, versions []int) runner.Options {
+	makeOptions := func(cmd *cli.Context, out *output.Output, versions []int) (runner.Options, error) {
+		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+		if err != nil {
+			return runner.Options{}, err
+		}
+
 		return runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
@@ -41,9 +51,9 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 					TargetVersions: versions,
 				},
 			},
-			UnprivilegedOnly:     unprivilegedOnlyFlag.Get(cmd),
+			PrivilegedMode:       privilegedMode,
 			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
-		}
+		}, nil
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
@@ -59,7 +69,13 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 		if err != nil {
 			return err
 		}
-		return r.Run(ctx, makeOptions(cmd, versions))
+
+		options, err := makeOptions(cmd, out, versions)
+		if err != nil {
+			return err
+		}
+
+		return r.Run(ctx, options)
 	})
 
 	return &cli.Command{
@@ -72,6 +88,7 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 			schemaNameFlag,
 			targetFlag,
 			unprivilegedOnlyFlag,
+			noopPrivilegedFlag,
 			ignoreSingleDirtyLogFlag,
 		},
 	}

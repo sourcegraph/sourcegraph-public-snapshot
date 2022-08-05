@@ -108,10 +108,12 @@ Hello world example in go
 
 	// we expect one command against git, lets just fake it.
 	ts := httptest.NewServer(&search.Service{
-		GitOutput: func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error) {
-			want := []string{"diff", "-z", "--name-status", "--no-renames", "indexedfdeadbeefdeadbeefdeadbeefdeadbeef", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}
-			if d := cmp.Diff(want, args); d != "" {
-				return nil, errors.Errorf("git diff mismatch (-want, +got):\n%s", d)
+		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+			if commitA != "indexedfdeadbeefdeadbeefdeadbeefdeadbeef" {
+				return nil, errors.Errorf("expected first commit to be indexed, got: %s", commitA)
+			}
+			if commitB != "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" {
+				return nil, errors.Errorf("expected first commit to be unindexed, got: %s", commitB)
 			}
 			return []byte(gitDiffOutput), nil
 		},

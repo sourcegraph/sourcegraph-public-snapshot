@@ -77,12 +77,12 @@ func main() {
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(context.Background())
-	worker, canceler := worker.NewWorker(nameSet, config.APIWorkerOptions(telemetryOptions), observationContext)
+	worker := worker.NewWorker(nameSet, config.APIWorkerOptions(telemetryOptions), observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
 		worker,
-		canceler,
 	}
+
 	if config.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(
 			config.VMPrefix,

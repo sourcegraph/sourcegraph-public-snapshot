@@ -36,7 +36,7 @@ const mockUseQueryState = create<SearchQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
-    searchPatternType: SearchPatternType.literal,
+    searchPatternType: SearchPatternType.standard,
     searchQueryFromURL: '',
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
@@ -50,7 +50,7 @@ const mockUseQueryState = create<SearchQueryState>((set, get) => ({
 
 const defaultProps: SearchSidebarProps = {
     caseSensitive: false,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -142,12 +142,12 @@ const filters: Filter[] = [
         kind: 'file',
     },
 
-    ...['typescript', 'javascript', 'c++', 'c', 'c#', 'python', 'ruby', 'haskell', 'java'].map(lang => ({
-        label: `lang:${lang}`,
-        value: `lang:${lang}`,
+    ...['TypeScript', 'JavaScript', 'C++', 'C', 'C#', 'Python', 'Ruby', 'Haskell', 'Java'].map(lang => ({
+        label: lang,
+        value: `lang:${lang.toLowerCase()}`,
         count: 10,
         limitHit: true,
-        kind: 'lang',
+        kind: 'lang' as Filter['kind'],
     })),
 ]
 

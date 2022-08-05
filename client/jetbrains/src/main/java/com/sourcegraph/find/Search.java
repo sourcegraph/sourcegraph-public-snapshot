@@ -1,10 +1,10 @@
 package com.sourcegraph.find;
 
 public class Search {
-    String query;
-    boolean caseSensitive;
-    String patternType;
-    String selectedSearchContextSpec;
+    final String query;
+    final boolean caseSensitive;
+    final String patternType;
+    final String selectedSearchContextSpec;
 
     public Search(String query, boolean caseSensitive, String patternType, String selectedSearchContextSpec) {
         this.query = query;

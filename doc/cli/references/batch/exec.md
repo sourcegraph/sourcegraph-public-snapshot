@@ -5,10 +5,8 @@
 
 | Name | Description | Default Value |
 |------|-------------|---------------|
-| `-cache` | Directory to read cached results from. |  |
 | `-f` | The workspace execution input file to read. |  |
 | `-repo` | Path of the checked out repo on disk. |  |
-| `-sourcegraphVersion` | Sourcegraph backend version. |  |
 | `-timeout` | The maximum duration a single batch spec step can take. | `1h0m0s` |
 | `-tmp` | Directory for storing temporary data. |  |
 
@@ -17,14 +15,10 @@
 
 ```
 Usage of 'src batch exec':
-  -cache string
-    	Directory to read cached results from.
   -f string
     	The workspace execution input file to read.
   -repo string
     	Path of the checked out repo on disk.
-  -sourcegraphVersion string
-    	Sourcegraph backend version.
   -timeout duration
     	The maximum duration a single batch spec step can take. (default 1h0m0s)
   -tmp string

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -26,10 +27,7 @@ func InitBackgroundJobs(
 	db database.DB,
 	key encryption.Key,
 	cf *httpcli.Factory,
-) interface {
-	// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
-	EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
-} {
+) batches.ChangesetSyncRegistry {
 	// We use an internal actor so that we can freely load dependencies from
 	// the database without repository permissions being enforced.
 	// We do check for repository permissions consciously in the Rewirer when

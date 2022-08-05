@@ -111,7 +111,7 @@ export const FileDiffConnection: React.FunctionComponent<React.PropsWithChildren
 
     const diffsUpdates = useMemo(() => new ReplaySubject<Connection<FileDiffFields> | ErrorLike | undefined>(1), [])
     const nextDiffsUpdate: FileDiffConnectionProps['onUpdate'] = useCallback(
-        fileDiffsOrError => diffsUpdates.next(fileDiffsOrError),
+        (fileDiffsOrError: Connection<FileDiffFields> | ErrorLike | undefined) => diffsUpdates.next(fileDiffsOrError),
         [diffsUpdates]
     )
 
@@ -251,6 +251,7 @@ export const FileDiffConnection: React.FunctionComponent<React.PropsWithChildren
     return (
         <FilteredFileDiffConnection
             {...props}
+            withCenteredSummary={true}
             nodeComponentProps={
                 props.nodeComponentProps
                     ? {

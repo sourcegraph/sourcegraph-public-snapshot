@@ -4,6 +4,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
+import { SeriesSortDirection, SeriesSortMode } from '../../../../graphql-operations'
 import { SeriesChartContent, InsightExecutionType, InsightType, SearchBasedInsight } from '../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../core/backend/gql-backend'
 
@@ -22,6 +23,19 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
+const filters = {
+    excludeRepoRegexp: '',
+    includeRepoRegexp: '',
+    context: '',
+    seriesDisplayOptions: {
+        limit: '20',
+        sortOptions: {
+            direction: SeriesSortDirection.DESC,
+            mode: SeriesSortMode.RESULT_COUNT,
+        },
+    },
+}
+
 const insightsWithManyLines: SearchBasedInsight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
@@ -31,7 +45,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #1',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -45,7 +59,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #2',
         series: [],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -66,7 +80,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
             { id: '', query: '', stroke: '', name: '' },
         ],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -80,7 +94,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #4',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -115,7 +129,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
             { id: '', query: '', stroke: '', name: '' },
         ],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -129,7 +143,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #6',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -143,7 +157,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #7',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},

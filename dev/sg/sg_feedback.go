@@ -23,21 +23,21 @@ const newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions
 
 // addFeedbackFlags adds a '--feedback' flag to each command to generate feedback
 func addFeedbackFlags(commands []*cli.Command) {
-	giveFeedback := false
-	feedbackFlag := cli.BoolFlag{
-		Name:        "feedback",
-		Usage:       "provide feedback about this command by opening up a Github discussion",
-		Destination: &giveFeedback,
-	}
-
 	for _, command := range commands {
-		command.Flags = append(command.Flags, &feedbackFlag)
-		action := command.Action
-		command.Action = func(ctx *cli.Context) error {
-			if giveFeedback {
-				return feedbackExec(ctx)
+		if command.Action != nil {
+			feedbackFlag := cli.BoolFlag{
+				Name:  "feedback",
+				Usage: "provide feedback about this command by opening up a Github discussion",
 			}
-			return action(ctx)
+
+			command.Flags = append(command.Flags, &feedbackFlag)
+			action := command.Action
+			command.Action = func(ctx *cli.Context) error {
+				if feedbackFlag.Get(ctx) {
+					return feedbackAction(ctx)
+				}
+				return action(ctx)
+			}
 		}
 
 		addFeedbackFlags(command.Subcommands)
@@ -48,10 +48,10 @@ var feedbackCommand = &cli.Command{
 	Name:     "feedback",
 	Usage:    "opens up a Github discussion page to provide feedback about sg",
 	Category: CategoryCompany,
-	Action:   feedbackExec,
+	Action:   feedbackAction,
 }
 
-func feedbackExec(ctx *cli.Context) error {
+func feedbackAction(ctx *cli.Context) error {
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Gathering feedback for sg %s ...", ctx.Command.FullName()))
 	title, body, err := gatherFeedback(ctx, std.Out, os.Stdin)
 	if err != nil {

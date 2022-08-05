@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,9 +24,10 @@ import (
 )
 
 var schemeToExternalService = map[string]string{
-	dependencies.JVMPackagesScheme:  extsvc.KindJVMPackages,
-	dependencies.NpmPackagesScheme:  extsvc.KindNpmPackages,
-	dependencies.RustPackagesScheme: extsvc.KindRustPackages,
+	dependencies.JVMPackagesScheme:    extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme:    extsvc.KindNpmPackages,
+	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
+	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -41,7 +43,7 @@ func NewDependencySyncScheduler(
 	// into the autoindexing service
 	newOperations(observationContext)
 
-	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencySyncSchedulerHandler{
 		dbStore:     dbStore,
@@ -97,7 +99,19 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			break
 		}
 
-		pkg := newPackage(packageReference.Package)
+		pkgRef, err := newPackage(packageReference.Package)
+		if err != nil {
+			// Indexers can potentially create package references with bad names,
+			// which are no longer recognized by the package manager. In such a
+			// case, it doesn't make sense to add a bad package as a dependency repo.
+			logger.Warn("package referenced by upload was invalid",
+				log.Error(err),
+				log.String("name", packageReference.Name),
+				log.String("version", packageReference.Version),
+				log.Int("dumpId", packageReference.DumpID))
+			continue
+		}
+		pkg := *pkgRef
 
 		extsvcKind, ok := schemeToExternalService[pkg.Scheme]
 		// add entry for empty string/kind here so dependencies such as lsif-go ones still get
@@ -179,7 +193,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 // newPackage constructs a precise.Package from the given shared.Package,
 // applying any normalization or necessary transformations that lsif uploads
 // require for internal consistency.
-func newPackage(pkg shared.Package) precise.Package {
+func newPackage(pkg shared.Package) (*precise.Package, error) {
 	p := precise.Package{
 		Scheme:  pkg.Scheme,
 		Name:    pkg.Name,
@@ -190,9 +204,17 @@ func newPackage(pkg shared.Package) precise.Package {
 	case dependencies.JVMPackagesScheme:
 		p.Name = strings.TrimPrefix(p.Name, "maven/")
 		p.Name = strings.ReplaceAll(p.Name, "/", ":")
+	case dependencies.NpmPackagesScheme:
+		if _, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(p.Name)); err != nil {
+			return nil, err
+		}
+	case "scip-python":
+		// Override scip-python scheme so that we are able to autoindex
+		// index.scip created by scip-python
+		p.Scheme = dependencies.PythonPackagesScheme
 	}
 
-	return p
+	return &p, nil
 }
 
 func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {
@@ -225,6 +247,7 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 		upload.Indexer == "lsif-tsc" ||
 		upload.Indexer == "scip-typescript" ||
 		upload.Indexer == "lsif-typescript" ||
+		upload.Indexer == "scip-python" ||
 		upload.Indexer == "rust-analyzer", nil
 }
 

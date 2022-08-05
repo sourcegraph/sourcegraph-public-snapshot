@@ -161,14 +161,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		trace := Context(ctx)
 		var traceURL string
 		if trace != nil && trace.TraceID != "" {
-			var traceType string
-			if ob := siteConfig.SiteConfig().ObservabilityTracing; ob == nil {
-				traceType = ""
-			} else {
-				traceType = ob.Type
-			}
-
-			traceURL = URL(trace.TraceID, siteConfig.SiteConfig().ExternalURL, traceType)
+			traceURL = URL(trace.TraceID, siteConfig)
 			rw.Header().Set("X-Trace", traceURL)
 			logger = logger.WithTrace(*trace)
 		}
@@ -273,6 +266,8 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 				// https://github.com/sourcegraph/sourcegraph/pull/29312.
 				fields = append(fields, log.Error(requestErrorCause))
 				logger.Error(msg, fields...)
+			case m.Duration >= minDuration:
+				logger.Warn(msg, fields...)
 			default:
 				logger.Error(msg, fields...)
 			}

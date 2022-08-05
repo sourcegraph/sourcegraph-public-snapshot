@@ -3,7 +3,9 @@
 exports[`Panel renders correctly positioned at page bottom 1`] = `
 <DocumentFragment>
   <div
+    aria-label="Test panel"
     class="panel panelBottom panelRelative"
+    role="region"
     style="height: 200px;"
   >
     <div

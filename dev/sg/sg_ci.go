@@ -14,15 +14,16 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gen2brain/beeep"
 	"github.com/grafana/regexp"
-	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -184,7 +185,7 @@ sg ci build --help
 				return err
 			}
 
-			previewCmd := sgrun.Cmd(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+			previewCmd := usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
 				Env(map[string]string{
 					"BUILDKITE_BRANCH":  target.target, // this must be a branch
 					"BUILDKITE_MESSAGE": message,
@@ -211,7 +212,7 @@ sg ci build --help
 				Usage:   "Open build page in browser",
 			}),
 		Action: func(cmd *cli.Context) error {
-			client, err := bk.NewClient(cmd.Context, std.Out.Output)
+			client, err := bk.NewClient(cmd.Context, std.Out)
 			if err != nil {
 				return err
 			}
@@ -345,7 +346,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 		},
 		Action: func(cmd *cli.Context) error {
 			ctx := cmd.Context
-			client, err := bk.NewClient(ctx, std.Out.Output)
+			client, err := bk.NewClient(ctx, std.Out)
 			if err != nil {
 				return err
 			}
@@ -365,8 +366,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 			// 🚨 SECURITY: We do a simple check to see if commit is in origin, this is
 			// non blocking but we ask for confirmation to double check that the user
 			// is aware that potentially unknown code is going to get run on our infra.
-			remoteBranches, err := run.TrimResult(run.GitCmd("branch", "-r", "--contains", commit))
-			if err != nil || len(remoteBranches) == 0 || !allLinesPrefixed(strings.Split(remoteBranches, "\n"), "origin/") {
+			if !repo.HasCommit(ctx, commit) {
 				std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleReset,
 					"Commit %q not found in in local 'origin/' branches - you might be triggering a build for a fork. Make sure all code has been reviewed before continuing.",
 					commit))
@@ -483,7 +483,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 		),
 		Action: func(cmd *cli.Context) error {
 			ctx := cmd.Context
-			client, err := bk.NewClient(ctx, std.Out.Output)
+			client, err := bk.NewClient(ctx, std.Out)
 			if err != nil {
 				return err
 			}
@@ -656,15 +656,6 @@ func getAllowedBuildTypeArgs() []string {
 		}
 	}
 	return results
-}
-
-func allLinesPrefixed(lines []string, match string) bool {
-	for _, l := range lines {
-		if !strings.HasPrefix(strings.TrimSpace(l), match) {
-			return false
-		}
-	}
-	return true
 }
 
 func printBuildOverview(build *buildkite.Build) {

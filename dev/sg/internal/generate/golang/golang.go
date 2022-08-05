@@ -1,20 +1,20 @@
 package golang
 
 import (
-	"bytes"
+	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/run"
 	"golang.org/x/sync/semaphore"
 
@@ -72,7 +72,7 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 
 var goGeneratePattern = regexp.MustCompile(`^//go:generate (.+)$`)
 
-func findFilepathsWithGenerate(dir string) ([]string, error) {
+func findFilepathsWithGenerate(dir string) (map[string]struct{}, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -88,30 +88,44 @@ func findFilepathsWithGenerate(dir string) ([]string, error) {
 				return nil, err
 			}
 
-			for _, path := range paths {
+			for path := range paths {
 				pathMap[path] = struct{}{}
 			}
 		} else if filepath.Ext(entry.Name()) == ".go" {
-			contents, err := os.ReadFile(path)
+			file, err := os.Open(path)
 			if err != nil {
 				return nil, err
 			}
 
-			for _, line := range bytes.Split(contents, []byte{'\n'}) {
-				if goGeneratePattern.Match(line) {
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				if goGeneratePattern.Match(scanner.Bytes()) {
 					pathMap[path] = struct{}{}
 					break
 				}
 			}
+			file.Close()
+
+			if err := scanner.Err(); err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	paths := make([]string, 0, len(pathMap))
-	for path := range pathMap {
-		paths = append(paths, path)
+	return pathMap, nil
+}
+
+func FindFilesWithGenerate(dir string) ([]string, error) {
+	pathMap, err := findFilepathsWithGenerate(dir)
+	if err != nil {
+		return nil, err
 	}
 
-	return paths, nil
+	pkgPaths := make([]string, 0, len(pathMap))
+	for path := range pathMap {
+		pkgPaths = append(pkgPaths, path[len(dir)+1:])
+	}
+	return pkgPaths, nil
 }
 
 func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) (err error) {
@@ -135,14 +149,12 @@ func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosi
 	// If no packages are given, go for everything except doc/cli/references.
 	// We cut down on the number of files we have to generate by looking for a
 	// go:generate directive by hand first.
-	paths, err := findFilepathsWithGenerate(wd)
+	paths, err := FindFilesWithGenerate(wd)
 	if err != nil {
 		return err
 	}
 	filtered := make([]string, 0, len(paths))
 	for _, pkgPath := range paths {
-		pkgPath = pkgPath[len(wd)+1:]
-
 		if !strings.HasPrefix(pkgPath, "doc/cli/references") {
 			filtered = append(filtered, pkgPath)
 		}

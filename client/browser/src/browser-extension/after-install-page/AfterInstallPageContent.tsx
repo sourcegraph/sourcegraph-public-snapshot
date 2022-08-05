@@ -71,10 +71,10 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                     <H2 className="mb-4">How do I use the extension?</H2>
                     <div className="row">
                         <div className="col-md-6">
-                            <H3>Code intelligence on your code host</H3>
+                            <H3>Code navigation on your code host</H3>
                             <Text>
-                                Sourcegraph browser extension adds code intelligence to files and diffs on GitHub,
-                                GitHub Enterprise, GitLab, Phabricator, Bitbucket Server, and Gerrit.
+                                Sourcegraph browser extension adds code navigation to files and diffs on GitHub, GitHub
+                                Enterprise, GitLab, Phabricator, Bitbucket Server, and Gerrit.
                             </Text>
                             <Video {...props} name="CodeIntelligenceOnCodeHost" width={1760} height={1060} />
                         </div>

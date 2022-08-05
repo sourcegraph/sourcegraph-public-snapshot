@@ -1,17 +1,21 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { highlightNode } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
+
+const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
 export interface RepoSearchResultProps {
     result: RepositoryMatch
@@ -28,9 +32,18 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     as,
     index,
 }) => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const containerElement = useRef<HTMLDivElement>(null)
+
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <span className={classNames('test-search-result-label', styles.titleInner)}>
+            <span
+                className={classNames(
+                    'test-search-result-label',
+                    styles.titleInner,
+                    coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink
+                )}
+            >
                 <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
             </span>
         </div>
@@ -93,9 +106,13 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 {result.description && (
                     <>
                         <div className={styles.dividerVertical} />
-                        <div>
+                        <div ref={containerElement}>
                             <small>
-                                <em>{result.description}</em>
+                                <em>
+                                    {result.description.length > REPO_DESCRIPTION_CHAR_LIMIT
+                                        ? result.description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
+                                        : result.description}
+                                </em>
                             </small>
                         </div>
                     </>
@@ -103,6 +120,21 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             </div>
         </div>
     )
+
+    useEffect((): void => {
+        if (containerElement.current && result.descriptionMatches) {
+            const visibleDescription = containerElement.current.querySelector('small em')
+            if (visibleDescription) {
+                for (const range of result.descriptionMatches) {
+                    highlightNode(
+                        visibleDescription as HTMLElement,
+                        range.start.column,
+                        range.end.column - range.start.column
+                    )
+                }
+            }
+        }
+    }, [result.description, result.descriptionMatches, containerElement])
 
     return (
         <ResultContainer

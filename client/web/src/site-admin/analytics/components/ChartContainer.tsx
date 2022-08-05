@@ -4,7 +4,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import { ParentSize } from '../../../charts'
 
-import styles from '../index.module.scss'
+import styles from './index.module.scss'
 
 interface ChartContainerProps {
     className?: string

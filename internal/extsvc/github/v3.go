@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -161,6 +162,17 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	req.Header.Add("Content-Type", "application/json")
 
 	return c.request(ctx, req, result)
+}
+
+func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponseState, error) {
+	req, err := http.NewRequest("DELETE", requestURI, bytes.NewReader(make([]byte, 0)))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return c.request(ctx, req, struct{}{})
 }
 
 func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
@@ -754,4 +766,148 @@ func (c *V3Client) GetUserInstallations(ctx context.Context) ([]github.Installat
 	}
 
 	return resultStruct.Installations, nil
+}
+
+type WebhookPayload struct {
+	Name   string   `json:"name"`
+	ID     int      `json:"id,omitempty"`
+	Config Config   `json:"config"`
+	Events []string `json:"events"`
+	Active bool     `json:"active"`
+	URL    string   `json:"url"`
+}
+
+type Config struct {
+	URL         string `json:"url"`
+	ContentType string `json:"content_type"`
+	Secret      string `json:"secret"`
+	InsecureSSL string `json:"insecure_ssl"`
+	Token       string `json:"token"`
+	Digest      string `json:"digest,omitempty"`
+}
+
+// CreateSyncWebhooks returns the id of the newly created webhook, or 0 if there was an error
+//
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
+func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, secret string) (int, error) {
+	url, err := webhookURLBuilder(repoName)
+	if err != nil {
+		return 0, err
+	}
+
+	payload := WebhookPayload{
+		Name:   "web",
+		Active: true,
+		Config: Config{
+			URL:         fmt.Sprintf("%s/github-webhooks", targetURL),
+			ContentType: "json",
+			Secret:      secret,
+			InsecureSSL: "0",
+		},
+		Events: []string{
+			"push",
+		},
+	}
+
+	var result WebhookPayload
+	resp, err := c.post(ctx, url, payload, &result)
+	if err != nil {
+		return 0, err
+	}
+
+	if resp.statusCode != http.StatusCreated {
+		return 0, errors.Newf("expected status code 201, got %d", resp.statusCode)
+	}
+
+	return result.ID, nil
+}
+
+// ListSyncWebhooks returns an array of WebhookPayloads
+//
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#list-repository-webhooks
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
+func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
+	url, err := webhookURLBuilder(repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []WebhookPayload
+	resp, err := c.get(ctx, url, &results)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.statusCode != http.StatusOK {
+		return nil, errors.Newf("expected status code 200, got %d", resp.statusCode)
+	}
+
+	return results, nil
+}
+
+// FindSyncWebhook looks for any webhook with the targetURL ending in /github-webhooks
+func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, error) {
+	payloads, err := c.ListSyncWebhooks(ctx, repoName)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, payload := range payloads {
+		if strings.Contains(payload.Config.URL, "github-webhooks") {
+			return payload.ID, nil
+		}
+	}
+
+	return 0, errors.New("unable to find webhook")
+}
+
+// DeleteSyncWebhook returns a boolean answer as to whether the target repo was deleted or not
+//
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#delete-a-repository-webhook
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
+func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
+	url, err := webhookURLBuilderWithID(repoName, hookID)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := c.delete(ctx, url)
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+
+	if resp.statusCode != http.StatusNoContent {
+		return false, errors.Newf("expected status code 204, got %d", resp.statusCode)
+	}
+
+	return true, nil
+}
+
+// webhookURLBuilder builds the URL to interface with the GitHub Webhooks API
+func webhookURLBuilder(repoName string) (string, error) {
+	repoName = fmt.Sprintf("//%s", repoName)
+	u, err := url.Parse(repoName)
+	if err != nil {
+		return "", errors.Newf("error parsing URL:", err)
+	}
+
+	if u.Host == "github.com" {
+		return fmt.Sprintf("https://api.github.com/repos%s/hooks", u.Path), nil
+	}
+	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks", u.Host, u.Path), nil
+}
+
+// webhookURLBuilder builds the URL to interface with the GitHub Webhooks API but with a hook ID
+func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
+	repoName = fmt.Sprintf("//%s", repoName)
+	u, err := url.Parse(repoName)
+	if err != nil {
+		return "", errors.Newf("error parsing URL:", err)
+	}
+
+	if u.Host == "github.com" {
+		return fmt.Sprintf("https://api.github.com/repos%s/hooks/%d", u.Path, hookID), nil
+	}
+	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks/%d", u.Host, u.Path, hookID), nil
 }

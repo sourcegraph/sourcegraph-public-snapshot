@@ -1,4 +1,10 @@
-import { InsightViewNode, SeriesDisplayOptionsInput, SeriesSortOptionsInput } from '../../../../../graphql-operations'
+import {
+    InsightViewNode,
+    SeriesDisplayOptionsInput,
+    SeriesSortDirection,
+    SeriesSortMode,
+    SeriesSortOptionsInput,
+} from '../../../../../graphql-operations'
 
 export enum InsightExecutionType {
     /**
@@ -17,6 +23,7 @@ export enum InsightType {
     SearchBased = 'SearchBased',
     LangStats = 'LangStats',
     CaptureGroup = 'CaptureGroup',
+    Compute = 'Compute',
 }
 
 export enum InsightContentType {
@@ -29,6 +36,13 @@ export interface InsightFilters {
     excludeRepoRegexp: string
     context: string
     repositories?: string[]
+    seriesDisplayOptions: {
+        limit: string
+        sortOptions: {
+            mode: SeriesSortMode
+            direction: SeriesSortDirection
+        }
+    }
 }
 
 export type SeriesDisplayOptions = InsightViewNode['appliedSeriesDisplayOptions'] &
@@ -43,6 +57,8 @@ export interface BaseInsight {
     dashboards: InsightDashboardReference[]
     isFrozen: boolean
 
+    // TODO: move these fields out of base insight since they are
+    // specific to the search based and capture group insights only
     seriesDisplayOptions?: SeriesDisplayOptionsInput
     appliedSeriesDisplayOptions?: SeriesDisplayOptions
     defaultSeriesDisplayOptions?: SeriesDisplayOptions

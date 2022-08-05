@@ -19,7 +19,7 @@ scale may be responsible.
    1. Check for individual instances with spiked (to 100%) memory usage on `Container monitoring` - `Container memory by instance`
 2. Check the background `worker` dashboards for Code Insights (General / Worker) in Grafana
    1. Check for elevated error rates on `Codeinsights: dbstore stats` - `Aggregate store operation error rate over 5m`
-   2. Check for a queue size greater than zero on `Codeinsights: Query Runner Queue` - `Code insights search queue queue size`
+   2. Check for a queue size greater than zero on `Codeinsights: Query Runner Queue` - `Code insights query runner queue size`
 3. (admin-only) Check the queries currently in background processing using the GraphQL query
 
    ``` gql 

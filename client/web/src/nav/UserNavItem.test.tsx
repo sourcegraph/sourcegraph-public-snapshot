@@ -59,10 +59,10 @@ describe('UserNavItem', () => {
                             showRepositorySection={true}
                             isLightTheme={true}
                             onThemePreferenceChange={() => undefined}
+                            showKeyboardShortcutsHelp={() => undefined}
                             themePreference={ThemePreference.Light}
                             authenticatedUser={USER}
                             showDotComMarketing={true}
-                            isExtensionAlertAnimating={false}
                             codeHostIntegrationMessaging="browser-extension"
                         />
                     </CompatRouter>
@@ -77,10 +77,10 @@ describe('UserNavItem', () => {
                 showRepositorySection={true}
                 isLightTheme={true}
                 onThemePreferenceChange={() => undefined}
+                showKeyboardShortcutsHelp={() => undefined}
                 themePreference={ThemePreference.Light}
                 authenticatedUser={USER}
                 showDotComMarketing={true}
-                isExtensionAlertAnimating={false}
                 codeHostIntegrationMessaging="browser-extension"
             />,
             {

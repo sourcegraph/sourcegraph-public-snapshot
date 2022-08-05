@@ -25,23 +25,28 @@ type operations struct {
 	deleteSourcedCommits      *observation.Operation
 
 	// Repositories
-	getRepositoriesMaxStaleAge *observation.Operation
-	getDirtyRepositories       *observation.Operation
-	setRepositoryAsDirty       *observation.Operation
-	updateDirtyRepositories    *observation.Operation
+	getRepositoriesMaxStaleAge      *observation.Operation
+	getDirtyRepositories            *observation.Operation
+	setRepositoryAsDirty            *observation.Operation
+	updateDirtyRepositories         *observation.Operation
+	setRepositoriesForRetentionScan *observation.Operation
 
 	// Uploads
-	getUploads                     *observation.Operation
-	updateUploadsVisibleToCommits  *observation.Operation
-	updateUploadRetention          *observation.Operation
-	updateUploadsReferenceCounts   *observation.Operation
-	softDeleteExpiredUploads       *observation.Operation
-	deleteUploadsWithoutRepository *observation.Operation
-	deleteUploadsStuckUploading    *observation.Operation
-	hardDeleteUploads              *observation.Operation
+	getUploads                        *observation.Operation
+	getVisibleUploadsMatchingMonikers *observation.Operation
+	updateUploadsVisibleToCommits     *observation.Operation
+	updateUploadRetention             *observation.Operation
+	updateUploadsReferenceCounts      *observation.Operation
+	softDeleteExpiredUploads          *observation.Operation
+	deleteUploadsWithoutRepository    *observation.Operation
+	deleteUploadsStuckUploading       *observation.Operation
+	hardDeleteUploads                 *observation.Operation
 
 	// Dumps
-	findClosestDumps *observation.Operation
+	findClosestDumps                   *observation.Operation
+	findClosestDumpsFromGraphFragment  *observation.Operation
+	getDumpsWithDefinitionsForMonikers *observation.Operation
+	getDumpsByIDs                      *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
@@ -86,23 +91,28 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
 		// Repositories
-		getRepositoriesMaxStaleAge: op("GetRepositoriesMaxStaleAge"),
-		getDirtyRepositories:       op("GetDirtyRepositories"),
-		setRepositoryAsDirty:       op("SetRepositoryAsDirty"),
-		updateDirtyRepositories:    op("UpdateDirtyRepositories"),
+		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
+		getDirtyRepositories:            op("GetDirtyRepositories"),
+		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
+		updateDirtyRepositories:         op("UpdateDirtyRepositories"),
+		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
 
 		// Uploads
-		getUploads:                     op("GetUploads"),
-		updateUploadsVisibleToCommits:  op("UpdateUploadsVisibleToCommits"),
-		updateUploadRetention:          op("UpdateUploadRetention"),
-		updateUploadsReferenceCounts:   op("UpdateUploadsReferenceCounts"),
-		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
-		deleteUploadsStuckUploading:    op("DeleteUploadsStuckUploading"),
-		softDeleteExpiredUploads:       op("SoftDeleteExpiredUploads"),
-		hardDeleteUploads:              op("HardDeleteUploads"),
+		getUploads:                        op("GetUploads"),
+		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
+		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
+		updateUploadRetention:             op("UpdateUploadRetention"),
+		updateUploadsReferenceCounts:      op("UpdateUploadsReferenceCounts"),
+		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),
+		deleteUploadsStuckUploading:       op("DeleteUploadsStuckUploading"),
+		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
+		hardDeleteUploads:                 op("HardDeleteUploads"),
 
 		// Dumps
-		findClosestDumps: op("FindClosestDumps"),
+		findClosestDumps:                   op("FindClosestDumps"),
+		findClosestDumpsFromGraphFragment:  op("FindClosestDumpsFromGraphFragment"),
+		getDumpsWithDefinitionsForMonikers: op("GetDumpsWithDefinitionsForMonikers"),
+		getDumpsByIDs:                      op("GetDumpsByIDs"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),

@@ -1,7 +1,7 @@
 import React, { CSSProperties, useCallback, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
 // eslint-disable-next-line no-restricted-imports
@@ -62,7 +62,7 @@ export interface HoverOverlayProps
         TelemetryProps,
         ThemeProps,
         Pick<HoverOverlayAlertsProps, 'onAlertDismissed'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
+        PlatformContextProps<'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 
@@ -176,7 +176,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                             hoverOrError === LOADING && hoverOverlayStyle.closeButtonLoading
                         )}
                     >
-                        <CloseIcon className={iconClassName} />
+                        <Icon className={iconClassName} svgPath={mdiClose} inline={false} aria-label="Close" />
                     </button>
                 )}
                 <HoverOverlayContents

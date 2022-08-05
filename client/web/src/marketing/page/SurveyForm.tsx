@@ -7,7 +7,7 @@ import { useMutation, gql } from '@sourcegraph/http-client'
 import { Button, LoadingSpinner, Label, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../../graphql-operations'
+import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { SurveyRatingRadio } from '../components/SurveyRatingRadio'
 import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
@@ -42,7 +42,6 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
     const history = useHistory<SurveyFormLocationState>()
     const [email, setEmail] = useState('')
     const [validationError, setValidationError] = useState<Error | null>(null)
-    const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
     const [otherUseCase, setOtherUseCase] = useState<string>('')
     const [better, setBetter] = useState<string>('')
 
@@ -82,7 +81,6 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 input: {
                     email,
                     score,
-                    useCases,
                     otherUseCase,
                     better,
                 },
@@ -105,9 +103,6 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 className="my-2"
                 authenticatedUser={authenticatedUser}
                 formLabelClassName={styles.label}
-                title="You use Sourcegraph to..."
-                useCases={useCases}
-                onChangeUseCases={setUseCases}
                 otherUseCase={otherUseCase}
                 onChangeOtherUseCase={setOtherUseCase}
                 better={better}

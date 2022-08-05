@@ -27,7 +27,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
   >
     <div>
       <h6
-        class="dropdownHeader"
+        class="h6 dropdownHeader"
       >
          Signed in as @ralph
       </h6>
@@ -73,7 +73,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         class="dropdownDivider"
       />
       <h6
-        class="dropdownHeader"
+        class="h6 dropdownHeader"
       >
         Your organizations
       </h6>

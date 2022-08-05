@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"io"
 	"os/exec"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
@@ -66,9 +68,16 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 			cmd.Stdout = flowrateWriter(cmd.Stdout)
 		},
 
-		Trace: func(svc, repo, protocol string) func(error) {
+		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			metricServiceRunning.WithLabelValues(svc).Inc()
+
+			// Log which which actor is accessing the repo.
+			accesslog.Record(ctx, repo, map[string]string{
+				"svc":      svc,
+				"protocol": protocol,
+			})
+
 			return func(err error) {
 				errLabel := strconv.FormatBool(err != nil)
 				metricServiceRunning.WithLabelValues(svc).Dec()

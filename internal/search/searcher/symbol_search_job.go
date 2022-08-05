@@ -44,7 +44,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		if ctx.Err() != nil {
 			break
 		}
-		if len(repoRevs.RevSpecs()) == 0 {
+		if len(repoRevs.Revs) == 0 {
 			continue
 		}
 		run.Acquire()
@@ -106,7 +106,7 @@ func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.Reposito
 	}()
 	span.SetTag("repo", string(repoRevs.Repo.Name))
 
-	inputRev := repoRevs.RevSpecs()[0]
+	inputRev := repoRevs.Revs[0]
 	span.SetTag("rev", inputRev)
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation

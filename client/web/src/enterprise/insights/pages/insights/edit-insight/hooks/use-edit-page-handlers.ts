@@ -6,11 +6,9 @@ import { asError } from '@sourcegraph/common'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
-import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CreationInsightInput } from '../../../../core/backend/code-insights-backend-types'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../core/constants'
-import { useQueryParameters } from '../../../../hooks/use-query-parameters'
+import { FORM_ERROR, SubmissionErrors } from '../../../../components'
+import { CodeInsightsBackendContext, CreationInsightInput, ALL_INSIGHTS_DASHBOARD } from '../../../../core'
+import { useQueryParameters } from '../../../../hooks'
 import { getTrackingTypeByInsightType } from '../../../../pings'
 
 export interface useHandleSubmitOutput {

@@ -50,7 +50,7 @@ export const DiffStat: React.FunctionComponent<React.PropsWithChildren<DiffStatP
     return (
         <div className={className}>
             <Tooltip content={labels.join(', ')}>
-                <div className={styles.diffStat} aria-label={labels.join(', ')}>
+                <div className={styles.diffStat} role="note" aria-label={labels.join(', ')}>
                     {expandedCounts ? (
                         <>
                             {/*

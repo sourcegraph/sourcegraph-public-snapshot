@@ -10,8 +10,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/expiration"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -52,9 +56,18 @@ func (j *uploadExpirerJob) Routines(ctx context.Context, logger log.Logger) ([]g
 		return nil, err
 	}
 
-	policyMatcher := policies.NewMatcher(gitserverClient, policies.RetentionExtractor, true, false)
+	policyMatcher := policiesEnterprise.NewMatcher(gitserverClient, policiesEnterprise.RetentionExtractor, true, false)
+
+	lsifStore, err := codeintel.InitLSIFStore()
+	if err != nil {
+		return nil, err
+	}
+
+	db := database.NewDBWith(logger, dbStore)
+	uploadSvc := uploads.GetService(db, database.NewDBWith(logger, lsifStore), gitserverClient)
+	policySvc := policies.GetService(db)
 
 	return []goroutine.BackgroundRoutine{
-		expiration.NewExpirer(expiration.DBStoreShim{Store: dbStore}, policyMatcher, metrics),
+		expiration.NewExpirer(uploadSvc, policySvc, policyMatcher, metrics),
 	}, nil
 }

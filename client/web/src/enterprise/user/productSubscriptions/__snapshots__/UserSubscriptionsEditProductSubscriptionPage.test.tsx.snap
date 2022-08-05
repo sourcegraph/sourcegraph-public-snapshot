@@ -11,7 +11,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
     >
       <svg
         aria-hidden="true"
-        class="iconInline"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
         role="img"
@@ -80,7 +80,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
               <div
                 aria-label="Loading"
                 aria-live="polite"
-                class="iconInline loadingSpinner"
+                class="mdi-icon iconInline loadingSpinner"
                 role="img"
               />
             </div>
@@ -102,7 +102,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
                 <div
                   aria-label="Loading"
                   aria-live="polite"
-                  class="iconInline loadingSpinner"
+                  class="mdi-icon iconInline loadingSpinner"
                   role="img"
                 />
               </div>

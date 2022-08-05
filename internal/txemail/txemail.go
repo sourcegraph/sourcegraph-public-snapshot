@@ -40,7 +40,7 @@ var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 func render(message Message) (*email.Email, error) {
 	m := email.Email{
 		To:      message.To,
-		From:    "Sourcegraph",
+		From:    conf.Get().EmailAddress,
 		Headers: make(textproto.MIMEHeader),
 	}
 	if message.ReplyTo != nil {

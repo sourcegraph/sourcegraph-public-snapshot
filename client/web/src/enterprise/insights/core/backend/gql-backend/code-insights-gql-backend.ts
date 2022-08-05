@@ -18,7 +18,7 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
+import { Insight, InsightDashboard, InsightsDashboardOwner, isComputeInsight } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AccessibleInsightInfo,
@@ -37,6 +37,7 @@ import {
     UiFeaturesConfig,
     DashboardCreateResult,
     InsightPreviewSettings,
+    BackendInsightDatum,
 } from '../code-insights-backend-types'
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
@@ -63,8 +64,8 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     // Insights
-    public getInsights = (input: { dashboardId: string }): Observable<Insight[]> => {
-        const { dashboardId } = input
+    public getInsights = (input: { dashboardId: string; withCompute: boolean }): Observable<Insight[]> => {
+        const { dashboardId, withCompute } = input
 
         // Handle virtual dashboard that doesn't exist in BE gql API and cause of that
         // we need to use here insightViews query to fetch all available insights
@@ -75,8 +76,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     // Prevent unnecessary network request after mutation over dashboard or insights within
                     // current dashboard
                     nextFetchPolicy: 'cache-first',
+                    errorPolicy: 'all',
                 })
-            ).pipe(map(({ data }) => data.insightViews.nodes.map(createInsightView)))
+            ).pipe(
+                map(({ data }) => data.insightViews.nodes.map(createInsightView)),
+                map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
+            )
         }
 
         // Get all insights from the user-created dashboard
@@ -86,11 +91,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 // Prevent unnecessary network request after mutation over dashboard or insights within
                 // current dashboard
                 nextFetchPolicy: 'cache-first',
+                errorPolicy: 'all',
                 variables: { id: dashboardId },
             })
         ).pipe(
             map(({ data }) => data.insightsDashboards.nodes[0]),
-            map(dashboard => dashboard.views?.nodes.map(createInsightView) ?? [])
+            map(dashboard => dashboard.views?.nodes.map(createInsightView) ?? []),
+            map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
         )
     }
 
@@ -99,6 +106,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             this.apolloClient.watchQuery<GetInsightsResult>({
                 query: GET_INSIGHTS_GQL,
                 variables: { id },
+                errorPolicy: 'all',
             })
         ).pipe(
             map(({ data }) => {
@@ -253,8 +261,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         input: GetLangStatsInsightContentInput
     ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
 
-    public getInsightPreviewContent = (input: InsightPreviewSettings): Promise<SeriesChartContent<any>> =>
-        getInsightsPreview(this.apolloClient, input)
+    public getInsightPreviewContent = (
+        input: InsightPreviewSettings
+    ): Promise<SeriesChartContent<BackendInsightDatum>> => getInsightsPreview(this.apolloClient, input)
 
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions

@@ -33,16 +33,6 @@ const migrations: Migration[] = [
         type: 'boolean',
     },
     {
-        localStorageKey: 'hasDismissedBrowserExtensionAlert',
-        temporarySettingsKey: 'cta.browserExtensionAlertDismissed',
-        type: 'boolean',
-    },
-    {
-        localStorageKey: 'hasDismissedIdeExtensionAlert',
-        temporarySettingsKey: 'cta.ideExtensionAlertDismissed',
-        type: 'boolean',
-    },
-    {
         localStorageKey: 'quick-start-tour',
         temporarySettingsKey: 'onboarding.quickStartTour',
         type: 'json',

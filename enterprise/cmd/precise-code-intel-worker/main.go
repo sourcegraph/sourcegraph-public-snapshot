@@ -51,7 +51,6 @@ func main() {
 
 	env.Lock()
 	env.HandleHelpFlag()
-	conf.Init()
 	logging.Init()
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
@@ -59,6 +58,8 @@ func main() {
 		InstanceID: hostname.Get(),
 	})
 	defer liblog.Sync()
+
+	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()

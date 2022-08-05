@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -56,11 +57,11 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 		return nil, http.StatusInternalServerError, err
 	}
 
-	log15.Info(
+	h.logger.Info(
 		"codeintel.httpapi: enqueued upload",
-		"id", id,
-		"repository_id", uploadState.repositoryID,
-		"commit", uploadState.commit,
+		sglog.Int("id", id),
+		sglog.Int("repository_id", uploadState.repositoryID),
+		sglog.String("commit", uploadState.commit),
 	)
 
 	// older versions of src-cli expect a string

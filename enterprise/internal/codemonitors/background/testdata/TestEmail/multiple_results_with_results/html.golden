@@ -10,7 +10,7 @@
       <li>
         Diff match: <a href="https://www.sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=code-monitoring-email" >github.com/test/test@7815187</a>
         <pre style="background-color: #e6ebf2; padding: 8px; border-radius: 4px;">file1.go file2.go
-@ -97,5 &#43;97,5 @ func Test() {
+@@ -97,5 &#43;97,5 @@ func Test() {
  leading context
 &#43;matched added
 -matched removed
@@ -35,7 +35,7 @@ ten
       <li>
         Diff match: <a href="https://www.sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=code-monitoring-email" >github.com/test/test@7815187</a>
         <pre style="background-color: #e6ebf2; padding: 8px; border-radius: 4px;">file1.go file2.go
-@ -97,5 &#43;97,5 @ func Test() {
+@@ -97,5 &#43;97,5 @@ func Test() {
  leading context
 &#43;matched added
 -matched removed

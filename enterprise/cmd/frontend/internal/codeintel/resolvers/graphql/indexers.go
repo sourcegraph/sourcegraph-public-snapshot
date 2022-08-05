@@ -151,4 +151,5 @@ var imageToIndexer = map[string]gql.CodeIntelIndexerResolver{
 	"sourcegraph/lsif-clang":      &lsifClang,
 	"davidrjenni/lsif-php":        &lsifPHP,
 	"sourcegraph/lsif-rust":       &rustAnalyzer,
+	"sourcegraph/scip-python":     &scipPython,
 }

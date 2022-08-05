@@ -1,6 +1,6 @@
 # Principles of extensibility for Sourcegraph
 
-[Sourcegraph](https://sourcegraph.com) provides IDE-like code intelligence (definitions, references, hover tooltips, and search) anywhere you view and review code, such as in GitHub files and pull requests. To do this, we built a way to show information from [language servers](http://langserver.org) (for 20+ languages) in the places you view and review code.
+[Sourcegraph](https://sourcegraph.com) provides IDE-like code navigation (definitions, references, hover tooltips, and search) anywhere you view and review code, such as in GitHub files and pull requests. To do this, we built a way to show information from [language servers](http://langserver.org) (for 20+ languages) in the places you view and review code.
 
 Sometimes that info is enough. But sometimes you need to see other kinds of info: error logs, test coverage, performance, authorship, reachability, lint warnings, etc. For example, if you're reviewing a PR that changes code for which there is [OpenTracing](https://opentracing.io/) trace information or that adds calls to untested code, you should be aware of that while reviewing without having to check an external system.
 

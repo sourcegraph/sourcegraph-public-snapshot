@@ -1,6 +1,14 @@
 package com.sourcegraph.find;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.ide.CopyPasteManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.OnePixelSplitter;
@@ -8,15 +16,17 @@ import com.intellij.ui.PopupBorder;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
-import com.sourcegraph.browser.BrowserAndLoadingPanel;
-import com.sourcegraph.browser.JSToJavaBridgeRequestHandler;
-import com.sourcegraph.browser.SourcegraphJBCefBrowser;
+import com.sourcegraph.Icons;
+import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
+import com.sourcegraph.find.browser.JSToJavaBridgeRequestHandler;
+import com.sourcegraph.find.browser.SourcegraphJBCefBrowser;
 import org.jdesktop.swingx.util.OS;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.util.Date;
 
 /**
@@ -52,7 +62,11 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         browserAndLoadingPanel = new BrowserAndLoadingPanel(project);
         JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this, findService);
         browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
-        if (browser != null) {
+        if (browser == null) {
+            showNoBrowserErrorNotification();
+            Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
+            logger.warn("JCEF browser is not supported!");
+        } else {
             browserAndLoadingPanel.setBrowser(browser);
         }
         // The border is needed on macOS because without it, window and splitter resize don't work because the JCEF
@@ -75,11 +89,34 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         splitter.setSecondComponent(bottomPanel);
 
         lastPreviewUpdate = new Date();
+
+        UIManager.addPropertyChangeListener(propertyChangeEvent -> {
+            if (propertyChangeEvent.getPropertyName().equals("lookAndFeel")) {
+                SwingUtilities.updateComponentTreeUI(this);
+            }
+        });
     }
 
-    @Nullable
-    public SourcegraphJBCefBrowser getBrowser() {
-        return browser;
+    private void showNoBrowserErrorNotification() {
+        Notification notification = new Notification("Sourcegraph errors", "Sourcegraph",
+            "Your IDE doesn't support JCEF. You won't be able to use \"Find with Sourcegraph\". If you believe this is an error, please raise this at support@sourcegraph.com, specifying your OS and IDE version.", NotificationType.ERROR);
+        AnAction copyEmailAddressAction = new DumbAwareAction("Copy Support Email Address") {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+                CopyPasteManager.getInstance().setContents(new StringSelection("support@sourcegraph.com"));
+                notification.expire();
+            }
+        };
+        AnAction dismissAction = new DumbAwareAction("Dismiss") {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+                notification.expire();
+            }
+        };
+        notification.setIcon(Icons.SourcegraphLogo);
+        notification.addAction(copyEmailAddressAction);
+        notification.addAction(dismissAction);
+        Notifications.Bus.notify(notification);
     }
 
     @Nullable

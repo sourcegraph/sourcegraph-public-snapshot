@@ -105,7 +105,7 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 			out:  schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.org"},
 		},
 		{
-			kind: extsvc.KindGoModules,
+			kind: extsvc.KindGoPackages,
 			in: schema.GoModulesConnection{
 				Dependencies: []string{"github.com/tsenart/vegeta"},
 				Urls: []string{
@@ -288,7 +288,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			out:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.corp.org"},
 		},
 		{
-			kind: extsvc.KindGoModules,
+			kind: extsvc.KindGoPackages,
 			old: schema.GoModulesConnection{
 				Dependencies: []string{"github.com/tsenart/vegeta"},
 				Urls: []string{
@@ -337,7 +337,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		},
 		{
 			// Tests that swapping order of URLs doesn't affect correct unredaction.
-			kind: extsvc.KindGoModules,
+			kind: extsvc.KindGoPackages,
 			old: schema.GoModulesConnection{
 				Urls: []string{
 					"https://user:password@athens.golang.org",
@@ -358,7 +358,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			},
 		},
 		{
-			kind: extsvc.KindGoModules,
+			kind: extsvc.KindGoPackages,
 			old: schema.GoModulesConnection{
 				Urls: []string{
 					"https://user:password@athens.golang.org",
@@ -378,7 +378,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			},
 		},
 		{
-			kind: extsvc.KindGoModules,
+			kind: extsvc.KindGoPackages,
 			old: schema.GoModulesConnection{
 				Urls: []string{
 					"https://user:password@athens.golang.org",

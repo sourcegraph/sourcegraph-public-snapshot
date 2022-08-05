@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -22,62 +22,21 @@ var analyticsCommand = &cli.Command{
 	Subcommands: []*cli.Command{
 		{
 			Name:        "submit",
-			ArgsUsage:   "[github username]",
+			ArgsUsage:   " ",
 			Usage:       "Make sg better by submitting all analytics stored locally!",
-			Description: "Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.",
+			Description: "Requires HONEYCOMB_ENV_TOKEN or OTEL_EXPORTER_OTLP_ENDPOINT to be set.",
 			Action: func(cmd *cli.Context) error {
-				if cmd.Args().Len() != 1 {
-					return cli.ShowSubcommandHelp(cmd)
-				}
-
-				okayToken := os.Getenv("OKAYHQ_TOKEN")
-				if okayToken == "" {
-					store, err := secrets.FromContext(cmd.Context)
-					if err != nil {
-						return err
-					}
-
-					pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Fetching a secret"))
-
-					var errs error
-					for _, secret := range []secrets.ExternalSecret{
-						{
-							Provider: secrets.ExternalProvider1Pass,
-							Project:  "Shared",
-							Name:     "ttdgfcufz3jggx3d57g6rwodwi",
-							Field:    "credential",
-						},
-						{
-							Provider: secrets.ExternalProviderGCloud,
-							Project:  "sourcegraph-ci",
-							Name:     "CI_OKAYHQ_TOKEN",
-						},
-					} {
-						pending.Updatef("Trying to get the secret from %s", string(secret.Provider))
-						okayToken, err = store.GetExternal(cmd.Context, secret)
-						if err != nil {
-							pending.Writef("Didn't get the secret we wanted from %s", string(secret.Provider))
-							errs = errors.Append(errs, err)
-							continue // try the next provider
-						}
-						if okayToken != "" {
-							pending.Updatef("Got our secret from %s", string(secret.Provider))
-							break // done!
-						}
-					}
-
-					// If we've tried all providers and still don't have the token, we
-					// return the error.
-					if okayToken == "" {
-						pending.Destroy()
-						return errors.Wrap(errs, "failed to get OkayHQ token")
-					}
-					pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Secret retrieved"))
-
+				honeyToken := os.Getenv("HONEYCOMB_ENV_TOKEN")
+				if honeyToken == "" && os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" {
+					// we leave OTEL_EXPORTER_OTLP_ENDPOINT configuration a bit of a
+					// hidden thing, most users will want to just send to Honeycomb
+					//
+					// TODO: follow up with fetching secrets from somewhere
+					return errors.New("HONEYCOMB_ENV_TOKEN not set")
 				}
 
 				pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Hang tight! We're submitting your analytics"))
-				if err := analytics.Submit(okayToken, cmd.Args().First()); err != nil {
+				if err := analytics.Submit(cmd.Context, honeyToken); err != nil {
 					pending.Destroy()
 					return err
 				}
@@ -106,34 +65,49 @@ var analyticsCommand = &cli.Command{
 				},
 			},
 			Action: func(cmd *cli.Context) error {
-				events, err := analytics.Load()
+				spans, err := analytics.Load()
 				if err != nil {
-					std.Out.WriteSuccessf("No analytics found: %s", err.Error())
+					std.Out.Writef("No analytics found: %s", err.Error())
+					return nil
+				}
+				if len(spans) == 0 {
+					std.Out.WriteSuccessf("No analytics events found")
 					return nil
 				}
 
 				var out strings.Builder
-				out.WriteString(fmt.Sprintf("%d events found:\n", len(events)))
-
-				for _, ev := range events {
+				for _, span := range spans {
 					if cmd.Bool("raw") {
-						b, _ := json.MarshalIndent(ev, "", "  ")
+						b, _ := json.MarshalIndent(span, "", "  ")
 						out.WriteString(fmt.Sprintf("\n```json\n%s\n```", string(b)))
 						out.WriteString("\n")
 					} else {
-						ts := ev.Timestamp.Local().Format("2006-01-02 03:04:05PM")
-						var metrics []string
-						for k, v := range ev.Metrics {
-							metrics = append(metrics, fmt.Sprintf("%s: %s", k, v.ValueString()))
-						}
+						for _, ss := range span.GetScopeSpans() {
+							for _, s := range ss.GetSpans() {
+								var events []string
+								for _, event := range s.GetEvents() {
+									events = append(events, event.Name)
+								}
 
-						entry := fmt.Sprintf("- [%s] `%s`", ts, ev.Name)
-						if len(ev.Labels) > 0 {
-							entry += fmt.Sprintf(": %s", strings.Join(ev.Labels, ", "))
-						}
-						out.WriteString(entry + fmt.Sprintf(" _(%s)_", strings.Join(metrics, ", ")))
+								var attributes []string
+								for _, attribute := range s.GetAttributes() {
+									attributes = append(attributes, fmt.Sprintf("%s: %s",
+										attribute.GetKey(), attribute.GetValue().String()))
+								}
 
-						out.WriteString("\n")
+								ts := time.Unix(0, int64(s.GetEndTimeUnixNano())).Local().Format("2006-01-02 03:04:05PM")
+								entry := fmt.Sprintf("- [%s] `%s`", ts, s.GetName())
+								if len(events) > 0 {
+									entry += fmt.Sprintf(" %s", strings.Join(events, ", "))
+								}
+								if len(attributes) > 0 {
+									entry += fmt.Sprintf(" _(%s)_", strings.Join(attributes, ", "))
+								}
+
+								out.WriteString(entry)
+								out.WriteString("\n")
+							}
+						}
 					}
 				}
 

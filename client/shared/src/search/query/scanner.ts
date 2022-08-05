@@ -504,6 +504,20 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
     return scan(query, 0)
 }
 
+function detectPatternType(query: string): SearchPatternType | undefined {
+    const result = scanStandard(query)
+    const tokens =
+        result.type === 'success'
+            ? result.term.filter(
+                  token => !!(token.type === 'filter' && token.field.value.toLowerCase() === 'patterntype')
+              )
+            : undefined
+    if (tokens && tokens.length > 0) {
+        return (tokens[0] as Filter).value?.value as SearchPatternType
+    }
+    return undefined
+}
+
 /**
  * Scans a search query string.
  */
@@ -512,10 +526,12 @@ export const scanSearchQuery = (
     interpretComments?: boolean,
     searchPatternType = SearchPatternType.literal
 ): ScanResult<Token[]> => {
+    const patternType = detectPatternType(query) || searchPatternType
     let patternKind
-    switch (searchPatternType) {
+    switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
+        case SearchPatternType.keyword:
             return scanStandard(query)
         case SearchPatternType.literal:
             patternKind = PatternKind.Literal

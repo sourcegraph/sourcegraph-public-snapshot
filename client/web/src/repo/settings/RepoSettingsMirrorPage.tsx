@@ -66,9 +66,9 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
     }
 
     public render(): JSX.Element | null {
-        let title: React.ReactFragment
-        let description: React.ReactFragment
-        let buttonLabel: React.ReactFragment
+        let title: React.ReactNode
+        let description: React.ReactNode
+        let buttonLabel: React.ReactNode
         let buttonDisabled = false
         let info: React.ReactNode
         if (this.props.repo.mirrorInfo.cloneInProgress) {

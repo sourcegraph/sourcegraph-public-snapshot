@@ -90,6 +90,7 @@ type CreateBatchSpecFromRawArgs struct {
 	Execute          bool
 	NoCache          bool
 	Namespace        graphql.ID
+	BatchChange      graphql.ID
 }
 
 type ReplaceBatchSpecInputArgs struct {
@@ -229,9 +230,7 @@ type PublishChangesetsArgs struct {
 }
 
 type ResolveWorkspacesForBatchSpecArgs struct {
-	BatchSpec        string
-	AllowIgnored     bool
-	AllowUnsupported bool
+	BatchSpec string
 }
 
 type ListImportingChangesetsArgs struct {
@@ -292,7 +291,11 @@ type BatchChangesResolver interface {
 	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
 	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
 
+	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) ([]ResolvedBatchSpecWorkspaceResolver, error)
+
 	CheckBatchChangesCredential(ctx context.Context, args *CheckBatchChangesCredentialArgs) (*EmptyResponse, error)
+
+	MaxUnlicensedChangesets(ctx context.Context) int32
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -435,6 +438,7 @@ type ChangesetApplyPreviewConnectionStatsResolver interface {
 	Sleep() int32
 	Detach() int32
 	Archive() int32
+	Reattach() int32
 
 	Added() int32
 	Modified() int32
@@ -709,7 +713,7 @@ type ChangesetResolver interface {
 	// ExternalState returns a value of type *btypes.ChangesetExternalState.
 	ExternalState() *string
 	// State returns a value of type *btypes.ChangesetState.
-	State() (string, error)
+	State() string
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -844,6 +848,16 @@ type VisibleBatchSpecWorkspaceResolver interface {
 	SearchResultPaths() []string
 	ChangesetSpecs(ctx context.Context) (*[]VisibleChangesetSpecResolver, error)
 	Executor(ctx context.Context) (*gql.ExecutorResolver, error)
+}
+
+type ResolvedBatchSpecWorkspaceResolver interface {
+	OnlyFetchWorkspace() bool
+	Ignored() bool
+	Unsupported() bool
+	Repository(ctx context.Context) *RepositoryResolver
+	Branch(ctx context.Context) *GitRefResolver
+	Path() string
+	SearchResultPaths() []string
 }
 
 type BatchSpecWorkspaceStagesResolver interface {

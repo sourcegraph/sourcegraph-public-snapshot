@@ -13,13 +13,24 @@ interface Props {
     match: PathMatch
     selectedResult: null | string
     selectResult: (id: string) => void
+    openResult: (id: string) => void
 }
 
-export const PathSearchResult: React.FunctionComponent<Props> = ({ match, selectedResult, selectResult }: Props) => {
+export const PathSearchResult: React.FunctionComponent<Props> = ({
+    match,
+    selectedResult,
+    selectResult,
+    openResult,
+}: Props) => {
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
     return (
-        <SelectableSearchResult match={match} selectResult={selectResult} selectedResult={selectedResult}>
+        <SelectableSearchResult
+            match={match}
+            selectedResult={selectedResult}
+            selectResult={selectResult}
+            openResult={openResult}
+        >
             {isActive => (
                 <SearchResultLayout
                     isActive={isActive}

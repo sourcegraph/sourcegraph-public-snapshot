@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -34,6 +35,7 @@ const (
 	SearchTypeStructural
 	SearchTypeLucky
 	SearchTypeStandard
+	SearchTypeKeyword
 )
 
 func (s SearchType) String() string {
@@ -48,6 +50,8 @@ func (s SearchType) String() string {
 		return "structural"
 	case SearchTypeLucky:
 		return "lucky"
+	case SearchTypeKeyword:
+		return "keyword"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
@@ -320,7 +324,12 @@ type Parameters []Parameter
 // IncludeExcludeValues partitions multiple values of a field into positive
 // (include) and negated (exclude) values.
 func (p Parameters) IncludeExcludeValues(field string) (include, exclude []string) {
-	VisitField(toNodes(p), field, func(v string, negated bool, _ Annotation) {
+	VisitField(toNodes(p), field, func(v string, negated bool, ann Annotation) {
+		if ann.Labels.IsSet(IsPredicate) {
+			// Skip predicates
+			return
+		}
+
 		if negated {
 			exclude = append(exclude, v)
 		} else {
@@ -330,25 +339,61 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 	return include, exclude
 }
 
-func (p Parameters) RepoContainsFile() (include, exclude []string) {
+// RepoHasFileContentArgs represents the args of any of the following predicates:
+// - repo:contains.file(f)
+// - repo:contains.content(c)
+// - repo:contains(file:f content:c)
+// - repohasfile:f
+type RepoHasFileContentArgs struct {
+	// At least one of these strings should be non-empty
+	Path    string // optional
+	Content string // optional
+	Negated bool
+}
+
+func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 	nodes := toNodes(p)
 	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {
-		if negated {
-			exclude = append(exclude, v)
-		} else {
-			include = append(include, v)
-		}
+		res = append(res, RepoHasFileContentArgs{
+			Path:    v,
+			Negated: negated,
+		})
 	})
 
 	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
-		if negated {
-			exclude = append(exclude, pred.Pattern)
-		} else {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.Pattern,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsContentPredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Content: pred.Pattern,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.File,
+			Content: pred.Content,
+			Negated: negated,
+		})
+	})
+
+	return res
+}
+
+func (p Parameters) FileContainsContent() (include []string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
+		if field == FieldFile && (name == "contains" || name == "contains.content") {
+			var pred FileContainsContentPredicate
+			pred.ParseParams(value)
 			include = append(include, pred.Pattern)
 		}
 	})
-
-	return include, exclude
+	return include
 }
 
 func (p Parameters) RepoContainsCommitAfter() (value string) {
@@ -365,6 +410,18 @@ func (p Parameters) RepoContainsCommitAfter() (value string) {
 	return value
 }
 
+func (p Parameters) FileHasOwner() (include, exclude []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate, negated bool) {
+		if negated {
+			exclude = append(exclude, pred.Owner)
+		} else {
+			include = append(include, pred.Owner)
+		}
+	})
+
+	return include, exclude
+}
+
 // Exists returns whether a parameter exists in the query (whether negated or not).
 func (p Parameters) Exists(field string) bool {
 	found := false
@@ -374,22 +431,12 @@ func (p Parameters) Exists(field string) bool {
 	return found
 }
 
-func (p Parameters) Dependencies() (dependencies []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			dependencies = append(dependencies, value)
-		}
+func (p Parameters) RepoHasDescription() (descriptionPatterns []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasDescriptionPredicate, _ bool) {
+		split := strings.Split(pred.Pattern, " ")
+		descriptionPatterns = append(descriptionPatterns, "(?:"+strings.Join(split, ").*?(?:")+")")
 	})
-	return dependencies
-}
-
-func (p Parameters) Dependents() (dependents []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
-			dependents = append(dependents, value)
-		}
-	})
-	return dependents
+	return descriptionPatterns
 }
 
 func (p Parameters) MaxResults(defaultLimit int) int {

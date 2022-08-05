@@ -91,6 +91,7 @@ func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 
 		janitor.NewSpecExpirer(workCtx, bstore),
 		janitor.NewCacheEntryCleaner(workCtx, bstore),
+		janitor.NewChangesetDetachedCleaner(workCtx, bstore),
 	}
 
 	return routines, nil

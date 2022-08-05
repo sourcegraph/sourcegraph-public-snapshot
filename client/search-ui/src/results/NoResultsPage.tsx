@@ -34,7 +34,7 @@ interface SearchInputExampleProps {
 const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<SearchInputExampleProps>> = ({
     showSearchContext,
     query,
-    patternType = SearchPatternType.literal,
+    patternType = SearchPatternType.standard,
     runnable = false,
     onRun,
 }) => {
@@ -189,7 +189,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
     const onClose = useCallback(
-        sectionID => {
+        (sectionID: SectionID) => {
             telemetryService.log('NoResultsPanel', { panelID: sectionID, action: 'closed' })
             setHiddenSectionIds((hiddenSectionIDs = []) =>
                 !hiddenSectionIDs.includes(sectionID) ? [...hiddenSectionIDs, sectionID] : hiddenSectionIDs
@@ -207,37 +207,35 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
             <H2>Sourcegraph basics</H2>
             <div className={styles.panels}>
                 {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
-                    <div className="mr-3">
-                        <Container
-                            sectionID={SectionID.VIDEOS}
-                            title="Video explanations"
-                            className={styles.videoContainer}
-                            onClose={onClose}
-                        >
-                            {videos.map(video => (
-                                <ModalVideo
-                                    key={video.title}
-                                    className={styles.video}
-                                    id={`video-${video.title.toLowerCase().replace(/[^a-z]+/, '-')}`}
-                                    title={video.title}
-                                    src={video.src}
-                                    thumbnail={{
-                                        src: `${video.thumbnailPrefix}-${isLightTheme ? 'light' : 'dark'}.png`,
-                                        alt: `${video.title} video thumbnail`,
-                                    }}
-                                    showCaption={true}
-                                    onToggle={isOpen => {
-                                        if (isOpen) {
-                                            telemetryService.log('NoResultsVideoPlayed', { video: video.title })
-                                        }
-                                    }}
-                                    assetsRoot={assetsRoot}
-                                />
-                            ))}
-                        </Container>
-                    </div>
+                    <Container
+                        sectionID={SectionID.VIDEOS}
+                        title="Video explanations"
+                        className={styles.videoContainer}
+                        onClose={onClose}
+                    >
+                        {videos.map(video => (
+                            <ModalVideo
+                                key={video.title}
+                                className={styles.video}
+                                id={`video-${video.title.toLowerCase().replace(/[^a-z]+/, '-')}`}
+                                title={video.title}
+                                src={video.src}
+                                thumbnail={{
+                                    src: `${video.thumbnailPrefix}-${isLightTheme ? 'light' : 'dark'}.png`,
+                                    alt: `${video.title} video thumbnail`,
+                                }}
+                                showCaption={true}
+                                onToggle={isOpen => {
+                                    if (isOpen) {
+                                        telemetryService.log('NoResultsVideoPlayed', { video: video.title })
+                                    }
+                                }}
+                                assetsRoot={assetsRoot}
+                            />
+                        ))}
+                    </Container>
                 )}
-                <div className="mr-3 flex-1 flex-shrink-past-contents">
+                <div className="flex-1 flex-shrink-past-contents">
                     {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (
                         <Container sectionID={SectionID.SEARCH_BAR} title="The search bar" onClose={onClose}>
                             <div className={styles.annotatedSearchInput}>

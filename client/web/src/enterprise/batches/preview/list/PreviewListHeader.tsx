@@ -17,12 +17,14 @@ export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<
         <span className="p-2 d-none d-sm-block" />
         {toggleSelectAll && (
             <div className="d-flex p-2 align-items-center">
+                {/* eslint-disable-next-line no-restricted-syntax*/}
                 <InputTooltip
                     type="checkbox"
                     checked={allSelected}
                     onChange={toggleSelectAll}
                     tooltip="Click to select all changesets"
                     aria-label="Click to select all changesets"
+                    placement="right"
                 />
                 <span className="pl-2 d-block d-sm-none">Select all</span>
             </div>

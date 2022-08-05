@@ -49,7 +49,7 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
 })
 
 const MINUTE = 60000
-export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderProps> = ({
+export const FeatureFlagsProvider: React.FunctionComponent<React.PropsWithChildren<FeatureFlagsProviderProps>> = ({
     isLocalOverrideEnabled = true,
     children,
 }) => {
@@ -77,11 +77,9 @@ interface MockedFeatureFlagsProviderProps {
  *              <ComponentUsingFeatureFlag />
  *         </MockedFeatureFlagsProvider>)
  */
-export const MockedFeatureFlagsProvider: React.FunctionComponent<MockedFeatureFlagsProviderProps> = ({
-    overrides,
-    refetchInterval,
-    children,
-}) => {
+export const MockedFeatureFlagsProvider: React.FunctionComponent<
+    React.PropsWithChildren<MockedFeatureFlagsProviderProps>
+> = ({ overrides, refetchInterval, children }) => {
     const mockRequestGraphQL = useMemo(
         () => (
             query: string,

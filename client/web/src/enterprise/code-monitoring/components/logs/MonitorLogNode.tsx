@@ -1,9 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew } from '@mdi/js'
+import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew, mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
@@ -14,10 +13,6 @@ import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operatio
 import { TriggerEvent } from './TriggerEvent'
 
 import styles from './MonitorLogNode.module.scss'
-
-const clickCatcher = (event: React.MouseEvent<HTMLAnchorElement>): void => {
-    event.stopPropagation()
-}
 
 export const MonitorLogNode: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -55,12 +50,21 @@ export const MonitorLogNode: React.FunctionComponent<
                 <Button
                     onClick={toggleExpanded}
                     className="btn-icon text-left pl-0 border-0 d-flex align-items-center flex-1"
-                    aria-label="Expand code monitor"
                 >
                     {expanded ? (
-                        <ChevronDownIcon className="mr-2 flex-shrink-0" />
+                        <Icon
+                            className="mr-2 flex-shrink-0"
+                            svgPath={mdiChevronDown}
+                            inline={false}
+                            aria-label="Collapse code monitor"
+                        />
                     ) : (
-                        <ChevronRightIcon className="mr-2 flex-shrink-0" />
+                        <Icon
+                            className="mr-2 flex-shrink-0"
+                            svgPath={mdiChevronRight}
+                            inline={false}
+                            aria-label="Expand code monitor"
+                        />
                     )}
                     {hasError ? (
                         <Tooltip content="One or more runs of this code monitor have an error" placement="top">
@@ -79,19 +83,19 @@ export const MonitorLogNode: React.FunctionComponent<
                             />
                         </Tooltip>
                     )}
+                    <VisuallyHidden>Monitor name:</VisuallyHidden>
                     {monitor.description}
-                    {/* Use clickCatcher so clicking on link doesn't expand/collapse row */}
-                    <Link
-                        to={`/code-monitoring/${monitor.id}`}
-                        className="ml-2 font-weight-normal"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={clickCatcher}
-                    >
-                        Monitor details <Icon role="img" aria-hidden={true} svgPath={mdiOpenInNew} />
-                    </Link>
                 </Button>
+                <Link
+                    to={`/code-monitoring/${monitor.id}`}
+                    className="font-weight-normal flex-1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Monitor details <Icon role="img" aria-label=". Open in a new tab" svgPath={mdiOpenInNew} />
+                </Link>
                 <span className="text-nowrap mr-2">
+                    <VisuallyHidden>Last run</VisuallyHidden>
                     {lastRun ? <Timestamp date={lastRun} now={now} noAbout={true} /> : <>Never</>}
                 </span>
             </div>

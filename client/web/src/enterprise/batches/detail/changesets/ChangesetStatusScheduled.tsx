@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiTimerOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
-import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { getChangesetScheduleEstimate } from '../backend'
 
@@ -88,7 +88,7 @@ const DynamicChangesetStatusScheduled: React.FunctionComponent<React.PropsWithCh
     return (
         <Tooltip content={tooltip}>
             <div className={classNames(iconClassNames, className)} onMouseOver={onMouseOver} onFocus={onMouseOver}>
-                <TimerOutlineIcon />
+                <Icon svgPath={mdiTimerOutline} inline={false} aria-hidden={true} />
                 {label}
             </div>
         </Tooltip>
@@ -99,7 +99,7 @@ const StaticChangesetStatusScheduled: React.FunctionComponent<
     React.PropsWithChildren<Pick<Props, 'label' | 'className'>>
 > = ({ label, className }) => (
     <div className={classNames(iconClassNames, className)}>
-        <TimerOutlineIcon />
+        <Icon svgPath={mdiTimerOutline} inline={false} aria-hidden={true} />
         {label}
     </div>
 )

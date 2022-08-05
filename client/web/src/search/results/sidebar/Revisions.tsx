@@ -9,6 +9,7 @@ import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebarSect
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
@@ -17,6 +18,8 @@ import {
     SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
+
+import revisionStyles from './Revisions.module.scss'
 
 const DEFAULT_FIRST = 10
 export const GIT_REVS_QUERY = gql`
@@ -64,6 +67,8 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
     pluralNoun,
     query,
 }) => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
     const { connection, fetchMore, hasNextPage, loading, error } = useConnection<
         SearchSidebarGitRefsResult,
         SearchSidebarGitRefsVariables,
@@ -119,7 +124,7 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
                         key={node.name}
                         label={node.displayName}
                         value={node.name}
-                        labelConverter={revisionLabel}
+                        labelConverter={coreWorkflowImprovementsEnabled ? undefined : revisionLabel}
                         onFilterChosen={onFilterClick}
                     />
                 ))}
@@ -149,7 +154,11 @@ export const Revisions: React.FunctionComponent<React.PropsWithChildren<Revision
                 { type: 'appendFilter', field: FilterType.repo, value: `^${repoName}$`, unique: true },
             ])
         return (
-            <Tabs defaultIndex={_initialTab ?? persistedTabIndex ?? 0} onChange={setPersistedTabIndex}>
+            <Tabs
+                defaultIndex={_initialTab ?? persistedTabIndex ?? 0}
+                onChange={setPersistedTabIndex}
+                className={revisionStyles.tabs}
+            >
                 <TabList>
                     <Tab index={TabIndex.BRANCHES}>Branches</Tab>
                     <Tab index={TabIndex.TAGS}>Tags</Tab>
@@ -178,7 +187,10 @@ export const Revisions: React.FunctionComponent<React.PropsWithChildren<Revision
         )
     }
 )
+Revisions.displayName = 'Revisions'
 
-export const getRevisions = (props: Omit<RevisionsProps, 'query'>) => (query: string) => (
-    <Revisions {...props} query={query} />
-)
+export const getRevisions = (props: Omit<RevisionsProps, 'query'>) =>
+    function RevisionsSection(query: string) {
+        // eslint-disable-next-line no-restricted-syntax
+        return <Revisions {...props} query={query} />
+    }

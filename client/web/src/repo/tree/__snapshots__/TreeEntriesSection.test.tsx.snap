@@ -18,7 +18,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -39,7 +39,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-placement="bottom"
+                data-state="closed"
               >
                 src decoration
               </small>
@@ -61,7 +61,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -82,7 +82,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-placement="bottom"
+                data-state="closed"
               >
                 testdata decoration
               </small>
@@ -104,7 +104,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -133,7 +133,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -171,7 +171,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -192,7 +192,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-placement="bottom"
+                data-state="closed"
               >
                 testutils decoration
               </small>
@@ -214,7 +214,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -235,7 +235,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-placement="bottom"
+                data-state="closed"
               >
                 typings decoration
               </small>
@@ -257,7 +257,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -286,7 +286,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -324,7 +324,7 @@ exports[`TreeEntriesSection should render only direct children 1`] = `
           <span>
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -345,7 +345,7 @@ exports[`TreeEntriesSection should render only direct children 1`] = `
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-placement="bottom"
+                data-state="closed"
               >
                 ref decoration
               </small>

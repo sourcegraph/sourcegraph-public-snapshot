@@ -8,7 +8,6 @@ import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query
 
 import { createDefaultEditSeries } from '../../../../../../components'
 import { CodeInsightsBackendContext } from '../../../../../../core'
-import { INITIAL_INSIGHT_VALUES } from '../../components/search-insight-creation-content/initial-insight-values'
 import { CreateInsightFormFields } from '../../types'
 
 export interface InsightData {
@@ -61,9 +60,8 @@ export function getInsightDataFromQuery(searchQuery: string): InsightData {
     }
 }
 
-function createInsightFormFields(seriesQuery: string, repositories: string[] = []): CreateInsightFormFields {
+function createInsightFormFields(seriesQuery: string, repositories: string[] = []): Partial<CreateInsightFormFields> {
     return {
-        ...INITIAL_INSIGHT_VALUES,
         series: [
             createDefaultEditSeries({
                 edit: true,
@@ -81,7 +79,7 @@ export interface UseURLQueryInsightResult {
      * Insight data. undefined in case if we are in a loading state or
      * URL doesn't have query param.
      * */
-    data: CreateInsightFormFields | ErrorLike | undefined
+    data: Partial<CreateInsightFormFields> | ErrorLike | undefined
 
     /** Whether the search query  param is presented in URL. */
     hasQueryInsight: boolean
@@ -92,7 +90,9 @@ export interface UseURLQueryInsightResult {
  */
 export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightResult {
     const { getResolvedSearchRepositories } = useContext(CodeInsightsBackendContext)
-    const [insightFormFields, setInsightFormFields] = useState<CreateInsightFormFields | ErrorLike | undefined>()
+    const [insightFormFields, setInsightFormFields] = useState<
+        Partial<CreateInsightFormFields> | ErrorLike | undefined
+    >()
 
     const query = useMemo(() => new URLSearchParams(queryParameters).get('query'), [queryParameters])
 

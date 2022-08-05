@@ -13,10 +13,10 @@ export const CreationUiLayout = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'div', {}>
 
 export const CreationUIForm = forwardRef((props, reference) => {
-    const { as: Component = 'div', className, ...attributes } = props
+    const { as: Component = 'form', className, ...attributes } = props
 
     return <Component ref={reference} {...attributes} className={classNames(styles.rootForm, className)} />
-}) as ForwardReferenceComponent<'div', {}>
+}) as ForwardReferenceComponent<'form', {}>
 
 export const CreationUIPreview = forwardRef((props, reference) => {
     const { as: Component = 'aside', className, ...attributes } = props

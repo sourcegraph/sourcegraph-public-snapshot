@@ -46,7 +46,7 @@ describe('StreamingSearchResults', () => {
             subjects: null,
             final: null,
         },
-        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER, requestGraphQL: () => EMPTY },
+        platformContext: { settings: NEVER, requestGraphQL: () => EMPTY },
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
@@ -102,7 +102,7 @@ describe('StreamingSearchResults', () => {
 
         expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
         expect(receivedOptions).toEqual({
-            version: 'V2',
+            version: 'V3',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             trace: undefined,
@@ -124,7 +124,7 @@ describe('StreamingSearchResults', () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(COLLAPSABLE_SEARCH_RESULT)} />)
 
         expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
-            'data-tooltip',
+            'data-test-tooltip-content',
             'Show more matches on all results'
         )
 
@@ -135,7 +135,7 @@ describe('StreamingSearchResults', () => {
         userEvent.click(screen.getByTestId('search-result-expand-btn'))
 
         expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
-            'data-tooltip',
+            'data-test-tooltip-content',
             'Hide more matches on all results'
         )
 

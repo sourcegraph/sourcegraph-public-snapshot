@@ -3,26 +3,34 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Text } from '@sourcegraph/wildcard'
+import { Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { formatNumber } from '../lib'
+import { formatNumber } from '../utils'
 
-import styles from '../index.module.scss'
+import styles from './index.module.scss'
 
 interface ValueLegendItemProps {
     color: string
     description: string
     value: number
+    tooltip?: string
 }
 
-const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description }) => (
-    <div className="d-flex flex-column align-items-center mr-3 justify-content-center">
+const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description, tooltip }) => (
+    <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
         <span style={{ color }} className={styles.count}>
             {formatNumber(value)}
         </span>
-        <Text as="span" alignment="center" className={styles.textWrap}>
-            {description}
-        </Text>
+        <Tooltip content={tooltip}>
+            <Text
+                as="span"
+                alignment="center"
+                className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+            >
+                {description}
+                {tooltip && <span className={styles.linkColor}>*</span>}
+            </Text>
+        </Tooltip>
     </div>
 )
 

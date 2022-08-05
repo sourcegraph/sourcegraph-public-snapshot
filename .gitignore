@@ -167,6 +167,7 @@ sitemap_query.db
 .annotate
 .annotate.lock
 annotations/
+.buildevent_file
 
 # Buildkite analytics files
 test-reports/

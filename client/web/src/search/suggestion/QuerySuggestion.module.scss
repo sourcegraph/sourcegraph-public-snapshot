@@ -1,21 +1,12 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .root {
-    grid-column: 2;
-    grid-row: 2;
     padding: 0.5rem;
     background-color: var(--subtle-bg);
     border: 1px solid var(--border-color);
     border-radius: 3px;
-    margin-right: 1rem;
     margin-bottom: 0.25rem;
     margin-top: 0.25rem;
-
-    @media (--md-breakpoint-down) {
-        grid-column: 1;
-        grid-row: 2;
-        margin-left: 1rem;
-    }
 }
 
 .root > h3 {

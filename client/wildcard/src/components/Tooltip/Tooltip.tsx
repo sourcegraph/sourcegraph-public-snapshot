@@ -32,6 +32,11 @@ function onPointerDownOutside(event: Event): void {
  * Renders a Tooltip that will be positioned relative to the wrapped child element. Please reference the examples in Storybook
  * for more details on specific use cases.
  *
+ * **NOTE:** The Tooltip implementation currently breaks the behavior of triggers that use `ButtonLink` with no `to` prop. Specifically,
+ * the onClick handler of `<ButtonLink>` does not get composed correctly, and the default behavior will not be prevented when that component
+ * has an empty href (resulting in a page reload). If the trigger element you are using is not working as expected, please wrap that
+ * element with an additional element (such as a `<span>`). That should resolve the issue.
+ *
  * To support accessibility, our tooltips should:
  * - Be supplemental to the user journey, not essential.
  * - Use clear and concise text.
@@ -73,7 +78,9 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     // NOTE: We plan to consolidate this logic with our Popover component in the future, but chose Radix first to support short-term accessibility needs.
     // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/36080
     return (
-        <TooltipPrimitive.Root delayDuration={0} defaultOpen={defaultOpen}>
+        // The small delayDuration helps prevent the tooltip from immediately closing when it gets triggered in the
+        // exact spot the arrow is overlapping the content (allows time for the cursor to move more naturally)
+        <TooltipPrimitive.Root delayDuration={100} defaultOpen={defaultOpen}>
             <TooltipPrimitive.Trigger asChild={true}>{trigger}</TooltipPrimitive.Trigger>
             {
                 // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
@@ -83,6 +90,9 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
                         className={styles.tooltipContent}
                         side={placement}
                         role="tooltip"
+                        // This offset helps prevent the tooltip from immediately closing when it gets triggered in the
+                        // exact spot the arrow is overlapping the content
+                        alignOffset={1}
                     >
                         {content}
 

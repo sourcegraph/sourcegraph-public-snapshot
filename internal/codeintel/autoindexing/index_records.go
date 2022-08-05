@@ -3,14 +3,14 @@ package autoindexing
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error)
+type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]store.Index, bool, error)
 
 // getIndexRecords determines the set of index records that should be enqueued for the given commit.
 // For each repository, we look for index configuration in the following order:
@@ -19,7 +19,7 @@ type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit
 //  - in the database
 //  - committed to `sourcegraph.yaml` in the repository
 //  - inferred from the repository structure
-func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string) ([]store.Index, error) {
+func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]store.Index, error) {
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
 		s.getIndexRecordsFromConfigurationInDatabase,
@@ -28,7 +28,7 @@ func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, c
 	}
 
 	for _, fn := range fns {
-		if indexRecords, ok, err := fn(ctx, repositoryID, commit); err != nil {
+		if indexRecords, ok, err := fn(ctx, repositoryID, commit, bypassLimit); err != nil {
 			return nil, err
 		} else if ok {
 			return indexRecords, nil
@@ -42,7 +42,8 @@ func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, c
 // explicitly via a GraphQL query parameter. If no configuration was supplield then a false valued
 // flag is returned.
 func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
-	return func(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
+	logger := log.Scoped("explicitConfigurationFactory", "")
+	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]store.Index, bool, error) {
 		if configuration == "" {
 			return nil, false, nil
 		}
@@ -52,7 +53,7 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 			// We failed here, but do not try to fall back on another method as having
 			// an explicit config supplied via parameter should always take precedence,
 			// even if it's broken.
-			log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+			logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 			return nil, true, nil
 		}
 
@@ -62,7 +63,7 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 
 // getIndexRecordsFromConfigurationInDatabase returns a set of index jobs configured via the UI for
 // the given repository. If no jobs are configured via the UI then a false valued flag is returned.
-func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
+func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]store.Index, bool, error) {
 	indexConfigurationRecord, ok, err := s.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "dbstore.GetIndexConfigurationByRepositoryID")
@@ -76,7 +77,7 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInDatabase(ctx context.C
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the database should always take precedence, even
 		// if it's broken.
-		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+		s.logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 		return nil, true, nil
 	}
 
@@ -86,7 +87,7 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInDatabase(ctx context.C
 // getIndexRecordsFromConfigurationInRepository returns a set of index jobs configured via a committed
 // configuration file at the given commit. If no jobs are configured within the repository then a false
 // valued flag is returned.
-func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
+func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]store.Index, bool, error) {
 	isConfigured, err := s.gitserverClient.FileExists(ctx, repositoryID, commit, "sourcegraph.yaml")
 	if err != nil {
 		return nil, false, errors.Wrap(err, "gitserver.FileExists")
@@ -105,7 +106,7 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInRepository(ctx context
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the repository should always take precedence over
 		// an auto-inferred configuration, even if it's broken.
-		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+		s.logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 		return nil, true, nil
 	}
 
@@ -115,8 +116,8 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInRepository(ctx context
 // inferIndexRecordsFromRepositoryStructure looks at the repository contents at the given commit and
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
-func (s *IndexEnqueuer) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
-	indexJobs, err := s.inferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit)
+func (s *IndexEnqueuer) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]store.Index, bool, error) {
+	indexJobs, err := s.inferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 	if err != nil || len(indexJobs) == 0 {
 		return nil, false, err
 	}

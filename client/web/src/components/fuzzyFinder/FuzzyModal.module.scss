@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .modal {
     height: 80vh;
     width: 80vw;
@@ -23,7 +25,7 @@
 }
 
 .results {
-    overflow: hidden auto;
+    overflow: auto;
     flex: 1;
     text-align: left;
     list-style-type: none;
@@ -38,6 +40,11 @@
 .summary {
     display: flex;
     margin-bottom: 0.5rem;
+
+    @media (--xs-breakpoint-down) {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 }
 
 .result-count {

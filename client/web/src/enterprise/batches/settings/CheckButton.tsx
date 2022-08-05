@@ -1,9 +1,8 @@
 import React from 'react'
 
-import CheckIcon from 'mdi-react/CheckIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
+import { mdiCheck, mdiClose } from '@mdi/js'
 
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 export interface CheckButtonProps {
     label: string
@@ -37,14 +36,14 @@ export const CheckButton: React.FunctionComponent<React.PropsWithChildren<CheckB
     if (successMessage && !failedMessage) {
         return (
             <div className="text-success">
-                <CheckIcon /> {successMessage}
+                <Icon svgPath={mdiCheck} inline={false} aria-label="Success" /> {successMessage}
             </div>
         )
     }
     if (failedMessage) {
         return (
             <div className="text-danger">
-                <CloseIcon /> {failedMessage}
+                <Icon svgPath={mdiClose} inline={false} aria-label="Failed" /> {failedMessage}
             </div>
         )
     }

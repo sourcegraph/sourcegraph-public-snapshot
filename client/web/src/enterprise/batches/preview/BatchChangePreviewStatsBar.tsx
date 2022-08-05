@@ -15,6 +15,7 @@ import {
     PreviewActionClose,
     PreviewActionImport,
     PreviewActionPublish,
+    PreviewActionReattach,
     PreviewActionReopen,
     PreviewActionUndraft,
     PreviewActionUpdate,
@@ -72,6 +73,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                     'flex-grow-1 d-flex justify-content-end'
                 )}
                 aria-label="Preview Stats"
+                role="note"
             >
                 <PreviewStatsAdded count={stats.added} />
                 <PreviewStatsRemoved count={stats.removed} />
@@ -90,6 +92,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                 />
                 <PreviewActionImport className={actionClassNames} label={`${stats.import} Import`} />
                 <PreviewActionArchive className={actionClassNames} label={`${stats.archive} Archive`} />
+                <PreviewActionReattach className={actionClassNames} label={`${stats.reattach} Reattach`} />
             </div>
         </div>
     )

@@ -35,7 +35,7 @@ const (
 	squasherContainerPostgresName = "postgres"
 )
 
-func SquashAll(database db.Database, inContainer, skipTeardown bool, filepath string) error {
+func SquashAll(database db.Database, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool, filepath string) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func SquashAll(database db.Database, inContainer, skipTeardown bool, filepath st
 		leafIDs = append(leafIDs, leaf.ID)
 	}
 
-	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, skipTeardown)
+	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, runInTimescaleDBContainer, skipTeardown, skipData)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func SquashAll(database db.Database, inContainer, skipTeardown bool, filepath st
 	return os.WriteFile(filepath, []byte(squashedUpMigration), os.ModePerm)
 }
 
-func Squash(database db.Database, commit string, inContainer, skipTeardown bool) error {
+func Squash(database db.Database, commit string, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 	}
 
 	// Run migrations up to the new selected root and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, skipTeardown)
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, runInTimescaleDBContainer, skipTeardown, skipData)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 	// Add newline after progress related to container
 	std.Out.Write("")
 
-	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID, "squashed_migrations_privileged")
+	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID, "squashed_migrations_unprivileged")
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 	defer block.Close()
 
 	for _, filename := range filenames {
-		block.Writef("Deleted: %s", filename)
+		block.Writef("Deleted: %s", rootRelative(filename))
 	}
 
 	for _, files := range files {
@@ -183,8 +183,8 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
 // of a database up to a given migration index.
-func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, skipTeardown bool) (up, down string, err error) {
-	postgresDSN, teardown, err := setupDatabaseForSquash(database, inContainer)
+func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool) (up, down string, err error) {
+	postgresDSN, teardown, err := setupDatabaseForSquash(database, inContainer, runInTimescaleDBContainer)
 	if err != nil {
 		return "", "", err
 	}
@@ -198,7 +198,7 @@ func generateSquashedMigrations(database db.Database, targetVersions []int, inCo
 		return "", "", err
 	}
 
-	upMigration, err := generateSquashedUpMigration(database, postgresDSN)
+	upMigration, err := generateSquashedUpMigration(database, postgresDSN, skipData)
 	if err != nil {
 		return "", "", err
 	}
@@ -209,14 +209,22 @@ func generateSquashedMigrations(database db.Database, targetVersions []int, inCo
 // setupDatabaseForSquash prepares a database for use in running a schema up to a certain point so it
 // can be reliably dumped. If the provided inContainer flag is true, then this function will launch a
 // daemon Postgres container. Otherwise, a new database on the host Postgres instance will be created.
-func setupDatabaseForSquash(database db.Database, runInContainer bool) (string, func(error) error, error) {
+//
+// If `runIntimescaleDBContainer` is true, then a TimescaleDB-compatible image will be used. This is
+// necessary to squash migrations prior to the deprecation of TimescaleDB.
+func setupDatabaseForSquash(database db.Database, runInContainer, runInTimescaleDBContainer bool) (string, func(error) error, error) {
 	if runInContainer {
+		image := "postgres:12.7"
+		if runInTimescaleDBContainer {
+			image = "timescale/timescaledb-ha:pg14-latest"
+		}
+
 		postgresDSN := fmt.Sprintf(
 			"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
 			squasherContainerExposedPort,
 			database.Name,
 		)
-		teardown, err := runPostgresContainer(database.Name)
+		teardown, err := runPostgresContainer(image, database.Name)
 		return postgresDSN, teardown, err
 	}
 
@@ -233,8 +241,8 @@ func setupDatabaseForSquash(database db.Database, runInContainer bool) (string, 
 
 // runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
 func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
-
 	logger := log.Scoped("runTargetedUpMigrations", "")
+
 	pending := std.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -264,7 +272,8 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
-	r, err := connections.RunnerFromDSNs(logger, dsns, "sg", storeFactory)
+
+	r, err := connections.RunnerFromDSNs(logger.IncreaseLevel("runner", "", log.LevelNone), dsns, "sg", storeFactory)
 	if err != nil {
 		return err
 	}
@@ -322,10 +331,10 @@ func setupLocalDatabase(databaseName string) (_ func(error) error, err error) {
 	return teardown, nil
 }
 
-// runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.
-// This method returns a teardown function that filters the error value of the calling
-// function, as well as any immediate synchronous error.
-func runPostgresContainer(databaseName string) (_ func(err error) error, err error) {
+// runPostgresContainer runs the given Postgres-compatible image with an empty db with the
+// given name. This method returns a teardown function that filters the error value of the
+// calling function, as well as any immediate synchronous error.
+func runPostgresContainer(image, databaseName string) (_ func(err error) error, err error) {
 	pending := std.Out.Pending(output.Line("", output.StylePending, "Starting PostgreSQL 12 in a container..."))
 	defer func() {
 		if err == nil {
@@ -353,7 +362,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 		"--name", squasherContainerName,
 		"-p", fmt.Sprintf("%d:5432", squasherContainerExposedPort),
 		"-e", "POSTGRES_HOST_AUTH_METHOD=trust",
-		"postgres:12.7",
+		image,
 	}
 	if _, err := run.DockerCmd(runArgs...); err != nil {
 		return nil, err
@@ -379,7 +388,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 
 // generateSquashedUpMigration returns the contents of an up migration file containing the
 // current contents of the given database.
-func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ string, err error) {
+func generateSquashedUpMigration(database db.Database, postgresDSN string, skipData bool) (_ string, err error) {
 	pending := std.Out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
 	defer func() {
 		if err == nil {
@@ -413,17 +422,19 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ st
 		return "", err
 	}
 
-	for _, table := range database.DataTables {
-		dataOutput, err := pgDump("--data-only", "--inserts", "--table", table)
-		if err != nil {
-			return "", err
+	if !skipData {
+		for _, table := range database.DataTables {
+			dataOutput, err := pgDump("--data-only", "--inserts", "--table", table)
+			if err != nil {
+				return "", err
+			}
+
+			pgDumpOutput += dataOutput
 		}
 
-		pgDumpOutput += dataOutput
-	}
-
-	for _, table := range database.CountTables {
-		pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", table)
+		for _, table := range database.CountTables {
+			pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", table)
+		}
 	}
 
 	return sanitizePgDumpOutput(pgDumpOutput), nil
@@ -512,10 +523,10 @@ func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetV
 
 	// Gather the set of filtered that are NOT a proper descendant of the given target version.
 	// This will leave us with the ancestors of the target version (including itself).
-	filtered := make([]string, 0, len(allDefinitions))
+	filteredIDs := make([]int, 0, len(allDefinitions))
 	for _, definition := range allDefinitions {
 		if _, ok := keep[definition.ID]; !ok {
-			filtered = append(filtered, strconv.Itoa(definition.ID))
+			filteredIDs = append(filteredIDs, definition.ID)
 		}
 	}
 
@@ -524,11 +535,33 @@ func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetV
 		return nil, err
 	}
 
-	for _, name := range filtered {
-		if err := os.RemoveAll(filepath.Join(baseDir, name)); err != nil {
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	idsToFilenames := map[int]string{}
+	for _, e := range entries {
+		if id, err := strconv.Atoi(strings.Split(e.Name(), "_")[0]); err == nil {
+			idsToFilenames[id] = e.Name()
+		}
+	}
+
+	filenames := make([]string, 0, len(filteredIDs))
+	for _, id := range filteredIDs {
+		filename, ok := idsToFilenames[id]
+		if !ok {
+			return nil, errors.Newf("could not find file for migration %d", id)
+		}
+
+		filenames = append(filenames, filepath.Join(baseDir, filename))
+	}
+
+	for _, filename := range filenames {
+		if err := os.RemoveAll(filename); err != nil {
 			return nil, err
 		}
 	}
 
-	return filtered, nil
+	return filenames, nil
 }

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -79,6 +80,7 @@ type RepoStore interface {
 	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
 	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
@@ -285,6 +287,36 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 	}
 
 	return repoMap, nil
+}
+
+func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]string, err error) {
+	tr, ctx := trace.New(ctx, "repos.GetRepoDescriptionsByIDs", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	opts := ReposListOptions{
+		Select: []string{"repo.id", "repo.description"},
+		IDs:    ids,
+	}
+
+	res := make(map[api.RepoID]string, len(ids))
+	scanDescriptions := func(rows *sql.Rows) error {
+		var repoID api.RepoID
+		var repoDescription string
+		if err := rows.Scan(
+			&repoID,
+			&dbutil.NullString{S: &repoDescription},
+		); err != nil {
+			return err
+		}
+
+		res[repoID] = repoDescription
+		return nil
+	}
+
+	return res, errors.Wrap(s.list(ctx, tr, opts, scanDescriptions), "fetch repo descriptions")
 }
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
@@ -539,6 +571,10 @@ type ReposListOptions struct {
 	// returned in the list.
 	ExcludePattern string
 
+	// DescriptionPatterns is a list of regular expressions, all of which must match the `description` value of all
+	// repositories returned in the list.
+	DescriptionPatterns []string
+
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
 	// with case sensitivity or not.
 	CaseSensitivePatterns bool
@@ -778,6 +814,14 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 // ListMinimalRepos returns a list of repositories names and ids.
 func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
+	preallocSize := 128
+	if opt.LimitOffset != nil {
+		preallocSize = opt.Limit
+	}
+	if preallocSize > 4096 {
+		preallocSize = 4096
+	}
+	results = make([]types.MinimalRepo, 0, preallocSize)
 	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
 		results = append(results, *r)
 	})
@@ -871,6 +915,15 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		} else {
 			where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
 		}
+	}
+
+	for _, descriptionPattern := range opt.DescriptionPatterns {
+		// filtering by description is always case-insensitive
+		descriptionConds, err := parseDescriptionPattern(tr, descriptionPattern)
+		if err != nil {
+			return nil, err
+		}
+		where = append(where, descriptionConds...)
 	}
 
 	if len(opt.IDs) > 0 {
@@ -1094,11 +1147,10 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	if opts.OnlyUncloned {
 		joins = append(joins, sqlf.Sprintf(
-			"LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id",
+			"JOIN gitserver_repos gr ON gr.repo_id = repo.id",
 		))
 		where = append(where, sqlf.Sprintf(
-			"(gr.clone_status IS NULL OR gr.clone_status = %s)",
-			types.CloneStatusNotCloned,
+			"gr.clone_status = %s", types.CloneStatusNotCloned,
 		))
 	}
 
@@ -1544,6 +1596,42 @@ func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query,
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
+func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
+	exact, like, pattern, err := parseIncludePattern(p)
+	if err != nil {
+		return nil, err
+	}
+
+	tr.LogFields(
+		otlog.String("parseDescriptionPattern", p),
+		trace.Strings("exact", exact),
+		trace.Strings("like", like),
+		otlog.String("pattern", pattern))
+
+	var conds []*sqlf.Query
+	if len(exact) > 0 {
+		// NOTE: We add anchors to each element of `exact`, store the resulting contents in `exactWithAnchors`,
+		// then pass `exactWithAnchors` into the query condition, because using `~* ANY (%s)` is more efficient
+		// than `IN (%s)` as it uses the trigram index on `description`.
+		// Equality support for `gin_trgm_ops` was added in Postgres v14, we are currently on v12. If we upgrade our
+		//  min pg version, then this block should be able to be simplified to just pass `exact` directly into
+		// `lower(description) IN (%s)`.
+		// Discussion: https://github.com/sourcegraph/sourcegraph/pull/39117#discussion_r925131158
+		exactWithAnchors := make([]string, len(exact))
+		for i, v := range exact {
+			exactWithAnchors[i] = "^" + regexp.QuoteMeta(v) + "$"
+		}
+		conds = append(conds, sqlf.Sprintf("lower(description) ~* ANY (%s)", pq.Array(exactWithAnchors)))
+	}
+	for _, v := range like {
+		conds = append(conds, sqlf.Sprintf(`lower(description) LIKE %s`, strings.ToLower(v)))
+	}
+	if pattern != "" {
+		conds = append(conds, sqlf.Sprintf("lower(description) ~* %s", strings.ToLower(pattern)))
+	}
+	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
+}
+
 // parseCursorConds returns the WHERE conditions for the given cursor
 func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 	var (
@@ -1589,7 +1677,7 @@ func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 
 // parseIncludePattern either (1) parses the pattern into a list of exact possible
 // string values and LIKE patterns if such a list can be determined from the pattern,
-// and (2) returns the original regexp if those patterns are not equivalent to the
+// or (2) returns the original regexp if those patterns are not equivalent to the
 // regexp.
 //
 // It allows Repos.List to optimize for the common case where a pattern like

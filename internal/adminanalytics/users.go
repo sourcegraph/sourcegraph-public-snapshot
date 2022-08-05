@@ -12,45 +12,21 @@ import (
 
 type Users struct {
 	DateRange string
+	Grouping  string
 	DB        database.DB
 	Cache     bool
 }
 
-var (
-	activitySummaryQuery = `
-	SELECT
-		COUNT(event_logs.*) AS total_count,
-		COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
-		COUNT(DISTINCT users.id) AS registered_users
-	FROM users
-		RIGHT JOIN event_logs ON users.id = event_logs.user_id
-	WHERE event_logs.timestamp %s
-	`
-	activityNodesQuery = `
-	SELECT %s AS date,
-		COUNT(DISTINCT event_logs.*) AS total_count,
-		COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
-		COUNT(DISTINCT users.id) AS registered_users
-	FROM users
-		RIGHT JOIN event_logs ON users.id = event_logs.user_id
-	WHERE event_logs.timestamp %s
-	GROUP BY date
-	`
-)
-
 func (s *Users) Activity() (*AnalyticsFetcher, error) {
-	dateSelectParam, dateRangeCond, err := makeDateParameters(s.DateRange, "event_logs.timestamp")
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{})
 	if err != nil {
 		return nil, err
 	}
 
-	nodesQuery := sqlf.Sprintf(activityNodesQuery, dateSelectParam, dateRangeCond)
-
-	summaryQuery := sqlf.Sprintf(activitySummaryQuery, dateRangeCond)
-
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Users:Activity",
@@ -67,7 +43,7 @@ var (
 		GROUP BY 2, 1
 	),
 	t2 AS (
-		SELECT DISTINCT user_id AS user_id, COUNT(user_id) AS days_used
+		SELECT user_id AS user_id, COUNT(date) AS days_used
 		FROM t1
 		GROUP BY 1
 	),
@@ -87,12 +63,12 @@ var (
 )
 
 func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) {
-	_, dateRangeCond, err := makeDateParameters(f.DateRange, "event_logs.timestamp")
+	_, dateRangeCond, err := makeDateParameters(f.DateRange, f.Grouping, "event_logs.timestamp")
 	if err != nil {
 		return nil, err
 	}
 	query := sqlf.Sprintf(frequencyQuery, dateRangeCond)
-	cacheKey := fmt.Sprintf("Users:%s:%s", f.DateRange, "Frequencies")
+	cacheKey := fmt.Sprintf("Users:%s:%s", "Frequencies", f.DateRange)
 	if f.Cache == true {
 		if nodes, err := getArrayFromCache[UsersFrequencyNode](cacheKey); err == nil {
 			return nodes, nil
@@ -126,8 +102,8 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 }
 
 type UsersFrequencyNodeData struct {
-	DaysUsed   int32
-	Frequency  int32
+	DaysUsed   float64
+	Frequency  float64
 	Percentage float64
 }
 
@@ -135,9 +111,9 @@ type UsersFrequencyNode struct {
 	Data UsersFrequencyNodeData
 }
 
-func (n *UsersFrequencyNode) DaysUsed() int32 { return n.Data.DaysUsed }
+func (n *UsersFrequencyNode) DaysUsed() float64 { return n.Data.DaysUsed }
 
-func (n *UsersFrequencyNode) Frequency() int32 { return n.Data.Frequency }
+func (n *UsersFrequencyNode) Frequency() float64 { return n.Data.Frequency }
 
 func (n *UsersFrequencyNode) Percentage() float64 { return n.Data.Percentage }
 
@@ -145,66 +121,80 @@ var (
 	avgUsersByPeriodQuery = `
 	WITH daus AS (
 		SELECT
-			DATE_TRUNC('day', event_logs.timestamp) AS day,
-			COUNT(DISTINCT event_logs.*) AS total_count,
-			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
-			COUNT(DISTINCT users.id) AS registered_users
+		FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24) as day,
+		COUNT(DISTINCT anonymous_user_id) AS total_count
 		FROM
-			users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
-		WHERE
-			event_logs.timestamp >= DATE_TRUNC('day', NOW() - CAST(%[1]v || ' days' AS INTERVAL))
+			event_logs
+			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
 		GROUP BY
 			day
 	),
 	waus AS (
 		SELECT
-			DATE_TRUNC('week', event_logs.timestamp) AS week,
-			COUNT(DISTINCT event_logs.*) AS total_count,
-			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
-			COUNT(DISTINCT users.id) AS registered_users
+			FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24 / 7) as week,
+			COUNT(DISTINCT anonymous_user_id) AS total_count
 		FROM
-			users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
-		WHERE
-			event_logs.timestamp >= DATE_TRUNC('week', NOW() - CAST(%[1]v || ' days' AS INTERVAL))
+			event_logs
+			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
 		GROUP BY
 			week
 	),
 	maus AS (
 		SELECT
-			DATE_TRUNC('month', event_logs.timestamp) AS month,
-			COUNT(DISTINCT event_logs.*) AS total_count,
-			COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
-			COUNT(DISTINCT users.id) AS registered_users
+			FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24 / 30) as month,
+			COUNT(DISTINCT anonymous_user_id) AS total_count
 		FROM
-			users
-			RIGHT JOIN event_logs ON users.id = event_logs.user_id
-		WHERE
-			event_logs.timestamp >= DATE_TRUNC('month', NOW() - CAST(%[1]v || ' days' AS INTERVAL))
+			event_logs
+			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
 		GROUP BY
 			month
 	)
+
 	SELECT
-		ROUND(SUM(daus.total_count) / COUNT(day)) AS avg_total_count,
-		ROUND(SUM(daus.unique_users) / COUNT(day)) AS avg_unique_users,
-		ROUND(SUM(daus.registered_users) / COUNT(day)) AS avg_registered_users
+		'DAU' AS metric,
+		ROUND(sum_total_count / total_days)::int AS avg_total_count
 	FROM
-		daus
+		(
+			SELECT
+				EXTRACT(EPOCH FROM('%[2]v'::timestamp - '%[1]v' :: timestamp)) * 1.0 / 60 / 60 / 24 as total_days,
+				SUM(daus.total_count) AS sum_total_count
+			FROM
+				daus
+		) AS f
+
 	UNION ALL
+
 	SELECT
-		ROUND(SUM(waus.total_count) / COUNT(week)) AS avg_total_count,
-		ROUND(SUM(waus.unique_users) / COUNT(week)) AS av_unique_users,
-		ROUND(SUM(waus.registered_users) / COUNT(week)) AS av_registered_users
+		'WAU' AS metric,
+		CASE
+			WHEN total_weeks > 1 THEN ROUND(sum_total_count / total_weeks)::int
+			ELSE sum_total_count::int
+		END AS avg_total_count
 	FROM
-		waus
+		(
+			SELECT
+				EXTRACT(EPOCH FROM('%[2]v'::timestamp - '%[1]v' :: timestamp)) * 1.0 / 60 / 60 / 24 / 7 as total_weeks,
+				SUM(waus.total_count) AS sum_total_count
+			FROM
+				waus
+		) AS f
+
 	UNION ALL
+
 	SELECT
-		ROUND(SUM(maus.total_count) / COUNT(month)) AS avg_total_count,
-		ROUND(SUM(maus.unique_users) / COUNT(month)) AS av_unique_users,
-		ROUND(SUM(maus.registered_users) / COUNT(month)) AS av_registered_users
+		'MAU' AS metric,
+		CASE
+			WHEN total_months > 1 THEN ROUND(sum_total_count / total_months)::int
+			ELSE sum_total_count::int
+		END AS avg_total_count
 	FROM
-		maus
+		(
+			SELECT
+				EXTRACT(EPOCH FROM('%[2]v'::timestamp - '%[1]v' :: timestamp)) * 1.0 / 60 / 60 / 24 / 30 as total_months,
+				SUM(maus.total_count) AS sum_total_count
+			FROM
+				maus
+		) AS f
 	`
 )
 
@@ -215,15 +205,14 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 		return nil, err
 	}
 
-	cacheKey := fmt.Sprintf("Users:%s:%s", s.DateRange, "Summary")
+	cacheKey := fmt.Sprintf("Users:%s:%s", "Summary", s.DateRange)
 
 	if s.Cache == true {
 		if summary, err := getItemFromCache[UsersSummary](cacheKey); err == nil {
 			return summary, nil
 		}
 	}
-	days := int(now.Sub(from).Hours()/24) + 1
-	query := sqlf.Sprintf(fmt.Sprintf(avgUsersByPeriodQuery, days))
+	query := sqlf.Sprintf(fmt.Sprintf(avgUsersByPeriodQuery, from.Format("2006-01-02 15:04:05"), now.Format("2006-01-02 15:04:05")))
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
 	if err != nil {
@@ -235,16 +224,19 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 	var summaryData UsersSummaryData
 	for i := 0; i < 3; i++ {
 		rows.Next()
-		var data AnalyticsSummaryData
-		if err := rows.Scan(&data.TotalCount, &data.TotalUniqueUsers, &data.TotalRegisteredUsers); err != nil {
+
+		var totalCount float64
+		var metric string
+		if err := rows.Scan(&metric, &totalCount); err != nil {
 			return nil, err
 		}
-		if i == 0 {
-			summaryData.AvgDAU = AnalyticsSummary{data}
-		} else if i == 1 {
-			summaryData.AvgWAU = AnalyticsSummary{data}
-		} else {
-			summaryData.AvgMAU = AnalyticsSummary{data}
+
+		if metric == "DAU" {
+			summaryData.AvgDAU = totalCount
+		} else if metric == "WAU" {
+			summaryData.AvgWAU = totalCount
+		} else if metric == "MAU" {
+			summaryData.AvgMAU = totalCount
 		}
 	}
 
@@ -258,18 +250,18 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 }
 
 type UsersSummaryData struct {
-	AvgDAU AnalyticsSummary
-	AvgWAU AnalyticsSummary
-	AvgMAU AnalyticsSummary
+	AvgDAU float64
+	AvgWAU float64
+	AvgMAU float64
 }
 
 type UsersSummary struct {
 	Data UsersSummaryData
 }
 
-func (s *UsersSummary) AvgDAU() *AnalyticsSummary { return &s.Data.AvgDAU }
-func (s *UsersSummary) AvgWAU() *AnalyticsSummary { return &s.Data.AvgWAU }
-func (s *UsersSummary) AvgMAU() *AnalyticsSummary { return &s.Data.AvgMAU }
+func (s *UsersSummary) AvgDAU() float64 { return s.Data.AvgDAU }
+func (s *UsersSummary) AvgWAU() float64 { return s.Data.AvgWAU }
+func (s *UsersSummary) AvgMAU() float64 { return s.Data.AvgMAU }
 
 func (u *Users) CacheAll(ctx context.Context) error {
 	activityFetcher, err := u.Activity()

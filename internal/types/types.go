@@ -149,50 +149,121 @@ func (r *Repo) IsBlocked() error {
 	return nil
 }
 
-// Update updates Repo r with the fields from the given newer Repo n,
-// returning true if modified.
-func (r *Repo) Update(n *Repo) (modified bool) {
+// RepoModified is a bitfield that tracks which fields were modified while
+// syncing a repository.
+type RepoModified uint64
+
+const (
+	RepoUnmodified   RepoModified = 0
+	RepoModifiedName              = 1 << iota
+	RepoModifiedURI
+	RepoModifiedDescription
+	RepoModifiedExternalRepo
+	RepoModifiedArchived
+	RepoModifiedFork
+	RepoModifiedPrivate
+	RepoModifiedStars
+	RepoModifiedMetadata
+	RepoModifiedSources
+)
+
+func (m RepoModified) String() string {
+	if m == RepoUnmodified {
+		return "repo unmodified"
+	}
+
+	modifications := []string{}
+	if m&RepoModifiedName == RepoModifiedName {
+		modifications = append(modifications, "name")
+	}
+	if m&RepoModifiedURI == RepoModifiedURI {
+		modifications = append(modifications, "uri")
+	}
+	if m&RepoModifiedDescription == RepoModifiedDescription {
+		modifications = append(modifications, "description")
+	}
+	if m&RepoModifiedExternalRepo == RepoModifiedExternalRepo {
+		modifications = append(modifications, "external repo")
+	}
+	if m&RepoModifiedArchived == RepoModifiedArchived {
+		modifications = append(modifications, "archived")
+	}
+	if m&RepoModifiedFork == RepoModifiedFork {
+		modifications = append(modifications, "fork")
+	}
+	if m&RepoModifiedPrivate == RepoModifiedPrivate {
+		modifications = append(modifications, "private")
+	}
+	if m&RepoModifiedStars == RepoModifiedStars {
+		modifications = append(modifications, "stars")
+	}
+	if m&RepoModifiedMetadata == RepoModifiedMetadata {
+		modifications = append(modifications, "metadata")
+	}
+	if m&RepoModifiedSources == RepoModifiedSources {
+		modifications = append(modifications, "sources")
+	}
+	if m&RepoUnmodified == RepoUnmodified {
+		modifications = append(modifications, "unmodified")
+	}
+
+	return "repo modifications: " + strings.Join(modifications, ", ")
+}
+
+// Update updates Repo r with the fields from the given newer Repo n, returning
+// RepoUnmodified (0) if no fields were modified, and a non-zero value if one
+// or more fields were modified.
+func (r *Repo) Update(n *Repo) (modified RepoModified) {
 	if !r.Name.Equal(n.Name) {
-		r.Name, modified = n.Name, true
+		r.Name = n.Name
+		modified |= RepoModifiedName
 	}
 
 	if r.URI != n.URI {
-		r.URI, modified = n.URI, true
+		r.URI = n.URI
+		modified |= RepoModifiedURI
 	}
 
 	if r.Description != n.Description {
-		r.Description, modified = n.Description, true
+		r.Description = n.Description
+		modified |= RepoModifiedDescription
 	}
 
 	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
 		!r.ExternalRepo.Equal(&n.ExternalRepo) {
-		r.ExternalRepo, modified = n.ExternalRepo, true
+		r.ExternalRepo = n.ExternalRepo
+		modified |= RepoModifiedExternalRepo
 	}
 
 	if r.Archived != n.Archived {
-		r.Archived, modified = n.Archived, true
+		r.Archived = n.Archived
+		modified |= RepoModifiedArchived
 	}
 
 	if r.Fork != n.Fork {
-		r.Fork, modified = n.Fork, true
+		r.Fork = n.Fork
+		modified |= RepoModifiedFork
 	}
 
 	if r.Private != n.Private {
-		r.Private, modified = n.Private, true
+		r.Private = n.Private
+		modified |= RepoModifiedPrivate
 	}
 
 	if r.Stars != n.Stars {
-		r.Stars, modified = n.Stars, true
+		r.Stars = n.Stars
+		modified |= RepoModifiedStars
 	}
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata, modified = n.Metadata, true
+		r.Metadata = n.Metadata
+		modified |= RepoModifiedMetadata
 	}
 
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
 			r.Sources[urn] = info
-			modified = true
+			modified |= RepoModifiedSources
 		}
 	}
 
@@ -498,6 +569,7 @@ type ExternalServiceSyncJob struct {
 	ID                int64
 	State             string
 	FailureMessage    string
+	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
@@ -1137,7 +1209,6 @@ type SurveyResponse struct {
 	Score        int32
 	Reason       *string
 	Better       *string
-	UseCases     []string
 	OtherUseCase *string
 	CreatedAt    time.Time
 }
@@ -1146,7 +1217,7 @@ type Event struct {
 	ID              int32
 	Name            string
 	URL             string
-	UserID          *int32
+	UserID          int32
 	AnonymousUserID string
 	Argument        string
 	Source          string
@@ -1229,30 +1300,6 @@ type CodeHostIntegrationUsageType struct {
 type CodeHostIntegrationUsageInboundTrafficToWeb struct {
 	UniquesCount int32
 	TotalCount   int32
-}
-
-// UserAndEventCount represents the number of events triggered in a given
-// time frame per user and overall.
-type UserAndEventCount struct {
-	UserCount  int32
-	EventCount int32
-}
-
-// FileAndSearchPageUserAndEventCounts represents the number of events triggered
-// on the "search result" and "file" pages in a given time frame.
-type FileAndSearchPageUserAndEventCounts struct {
-	StartTime             time.Time
-	DisplayedOnFilePage   UserAndEventCount
-	DisplayedOnSearchPage UserAndEventCount
-	ClickedOnFilePage     UserAndEventCount
-	ClickedOnSearchPage   UserAndEventCount
-}
-
-// CTAUsage represents the total number of CTAs displayed and clicked
-// on the "search result" and "file" pages over the current month.
-type CTAUsage struct {
-	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
-	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
 }
 
 // SavedSearches represents the total number of saved searches, users

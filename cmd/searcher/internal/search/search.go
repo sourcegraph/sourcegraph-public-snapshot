@@ -19,6 +19,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/opentracing/opentracing-go/ext"
@@ -50,12 +51,11 @@ type Service struct {
 	Store *Store
 	Log   log.Logger
 
-	// GitOutput returns the stdout of running git with args against the repo.
+	// GitDiffSymbols returns the stdout of running "git diff -z --name-status
+	// --no-renames commitA commitB" against repo.
 	//
-	// TODO pick a design which doesn't directly depend on Command. Probably
-	// adding a relevant function to the gitserver client. This is only used
-	// by FeatHybrid.
-	GitOutput func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error)
+	// TODO Git client should be exposing a better API here.
+	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -103,13 +103,16 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return
 	}
 
+	var bufMux sync.Mutex
 	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
+		bufMux.Lock()
 		if err := matchesBuf.Append(match); err != nil && !isNetOpError(err) {
 			s.Log.Warn("failed appending match to buffer", log.Error(err))
 		}
+		bufMux.Unlock()
 	}
 
 	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)

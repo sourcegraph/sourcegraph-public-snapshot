@@ -168,6 +168,9 @@ func MatchContextComputeDecoder() (client.ComputeMatchContextStreamDecoder, *Com
 				for _, match := range result.Matches {
 					for _, data := range match.Environment {
 						value := data.Value
+						if value == "" {
+							continue // a bug in upstream compute processing means we need to check for empty replacements (https://github.com/sourcegraph/sourcegraph/issues/37972)
+						}
 						if len(value) > capturedValueMaxLength {
 							value = value[:capturedValueMaxLength]
 						}
@@ -226,6 +229,9 @@ func ComputeTextDecoder() (client.ComputeTextExtraStreamDecoder, *ComputeTabulat
 			for _, result := range results {
 				vals := strings.Split(result.Value, "\n")
 				for _, val := range vals {
+					if val == "" {
+						continue // a bug in upstream compute processing means we need to check for empty replacements (https://github.com/sourcegraph/sourcegraph/issues/37972)
+					}
 					current := getRepoCounts(result)
 					value := val
 					if len(value) > capturedValueMaxLength {

@@ -42,12 +42,12 @@ export function useObservableWithStatus<T>(observable: Observable<T>): [T | unde
     const [currentValue, setCurrentValue] = useState<T>()
     const [status, setStatus] = useState<ObservableStatus>('initial')
 
-    const handleNext = useCallback(value => {
+    const handleNext = useCallback((value: T) => {
         setCurrentValue(value)
         setStatus('next')
     }, [])
 
-    const handleError = useCallback(error => {
+    const handleError = useCallback((error: unknown) => {
         setError(error)
         setStatus('error')
     }, [])

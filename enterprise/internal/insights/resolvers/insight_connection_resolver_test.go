@@ -129,7 +129,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
-	now := time.Now().UTC().Truncate(time.Microsecond)
+	now := time.Now().UTC().Truncate(time.Second)
 	clock := func() time.Time { return now }
 	authz.SetProviders(false, []authz.Provider{}) // setting authz in this way will force user permissions to be enabled
 

@@ -17,7 +17,6 @@ import (
 	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -232,7 +231,7 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
-	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	config, _ := getConfig()
 	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 	}

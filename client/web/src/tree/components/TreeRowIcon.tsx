@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Link } from '@sourcegraph/wildcard'
 
-import styles from './TreeRowIcon.module.scss'
+import styles from '../Tree.module.scss'
 
 type TreeRowIconProps = HTMLAttributes<HTMLSpanElement>
 

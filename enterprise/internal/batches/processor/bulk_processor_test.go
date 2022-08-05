@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,18 +32,18 @@ func TestBulkProcessor(t *testing.T) {
 	tx := dbtest.NewTx(t, sqlDB)
 	db := database.NewDB(logger, sqlDB)
 	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
-	user := ct.CreateTestUser(t, db, true)
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
-	ct.CreateTestSiteCredential(t, bstore, repo)
-	batchSpec := ct.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID)
-	batchChange := ct.CreateBatchChange(t, ctx, bstore, "test-bulk", user.ID, batchSpec.ID)
-	changesetSpec := ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+	user := bt.CreateTestUser(t, db, true)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	bt.CreateTestSiteCredential(t, bstore, repo)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-bulk", user.ID, batchSpec.ID)
+	changesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: batchSpec.ID,
 		HeadRef:   "main",
 	})
-	changeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		BatchChanges:        []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 		Metadata:            &github.PullRequest{},
@@ -57,7 +57,7 @@ func TestBulkProcessor(t *testing.T) {
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
-		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN")}
+		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN"), UserID: user.ID}
 		err := bp.Process(ctx, job)
 		if err == nil || err.Error() != `invalid job type "UNKNOWN"` {
 			t.Fatalf("unexpected error returned %s", err)
@@ -65,7 +65,7 @@ func TestBulkProcessor(t *testing.T) {
 	})
 
 	t.Run("changeset is processing", func(t *testing.T) {
-		processingChangeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{
+		processingChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 			Repo:                repo.ID,
 			BatchChanges:        []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 			Metadata:            &github.PullRequest{},
@@ -228,42 +228,47 @@ func TestBulkProcessor(t *testing.T) {
 
 		t.Run("errors", func(t *testing.T) {
 			for name, tc := range map[string]struct {
-				spec          *ct.TestSpecOpts
-				changeset     ct.TestChangesetOpts
+				spec          *bt.TestSpecOpts
+				changeset     bt.TestChangesetOpts
 				wantRetryable bool
 			}{
 				"imported changeset": {
 					spec: nil,
-					changeset: ct.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						CurrentSpec:     0,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+					changeset: bt.TestChangesetOpts{
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						CurrentSpec:      0,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStatePublished,
+						ExternalState:    btypes.ChangesetExternalStateOpen,
 					},
 					wantRetryable: false,
 				},
 				"bogus changeset spec ID, dude": {
 					spec: nil,
-					changeset: ct.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						CurrentSpec:     -1,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+					changeset: bt.TestChangesetOpts{
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						CurrentSpec:      -1,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStatePublished,
+						ExternalState:    btypes.ChangesetExternalStateOpen,
 					},
 					wantRetryable: false,
 				},
 				"publication state set": {
-					spec: &ct.TestSpecOpts{
+					spec: &bt.TestSpecOpts{
 						User:      user.ID,
 						Repo:      repo.ID,
 						BatchSpec: batchSpec.ID,
 						HeadRef:   "main",
 						Published: false,
 					},
-					changeset: ct.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+					changeset: bt.TestChangesetOpts{
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStateUnpublished,
 					},
 					wantRetryable: false,
 				},
@@ -271,13 +276,13 @@ func TestBulkProcessor(t *testing.T) {
 				t.Run(name, func(t *testing.T) {
 					var changesetSpec *btypes.ChangesetSpec
 					if tc.spec != nil {
-						changesetSpec = ct.CreateChangesetSpec(t, ctx, bstore, *tc.spec)
+						changesetSpec = bt.CreateChangesetSpec(t, ctx, bstore, *tc.spec)
 					}
 
 					if changesetSpec != nil {
 						tc.changeset.CurrentSpec = changesetSpec.ID
 					}
-					changeset := ct.CreateChangeset(t, ctx, bstore, tc.changeset)
+					changeset := bt.CreateChangeset(t, ctx, bstore, tc.changeset)
 
 					job := &types.ChangesetJob{
 						JobType:       types.ChangesetJobTypePublish,
@@ -314,17 +319,18 @@ func TestBulkProcessor(t *testing.T) {
 						"published": false,
 					} {
 						t.Run(name, func(t *testing.T) {
-							changesetSpec := ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+							changesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 								User:      user.ID,
 								Repo:      repo.ID,
 								BatchSpec: batchSpec.ID,
 								HeadRef:   "main",
 							})
-							changeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{
-								Repo:            repo.ID,
-								BatchChange:     batchChange.ID,
-								CurrentSpec:     changesetSpec.ID,
-								ReconcilerState: reconcilerState,
+							changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+								Repo:             repo.ID,
+								BatchChange:      batchChange.ID,
+								CurrentSpec:      changesetSpec.ID,
+								ReconcilerState:  reconcilerState,
+								PublicationState: btypes.ChangesetPublicationStateUnpublished,
 							})
 
 							job := &types.ChangesetJob{

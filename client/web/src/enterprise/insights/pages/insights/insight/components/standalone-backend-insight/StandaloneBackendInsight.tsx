@@ -33,13 +33,13 @@ import {
     BackendInsightErrorAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
+    parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import {
     BackendInsightData,
     ALL_INSIGHTS_DASHBOARD,
     BackendInsight,
     CodeInsightsBackendContext,
-    DEFAULT_SERIES_DISPLAY_OPTIONS,
     InsightFilters,
 } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
@@ -79,22 +79,21 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const [filterVisualMode, setFilterVisualMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(insight.seriesDisplayOptions)
-
     const filterInput: InsightViewFiltersInput = {
         includeRepoRegex: debouncedFilters.includeRepoRegexp,
         excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
         searchContexts: [debouncedFilters.context],
     }
-    const displayInput: SeriesDisplayOptionsInput = {
-        limit: seriesDisplayOptions?.limit,
-        sortOptions: seriesDisplayOptions?.sortOptions,
+
+    const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+        limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+        sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
     const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
-            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
+            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
@@ -111,7 +110,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         }
     )
 
-    const { trackMouseLeave, trackMouseEnter, trackDatumClicks, trackFilterChanges } = useCodeInsightViewPings({
+    const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
@@ -148,7 +147,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             }).toPromise()
 
             setOriginalInsightFilters(filters)
-            history.push(`/insights/dashboard${ALL_INSIGHTS_DASHBOARD.id}`)
+            history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
@@ -167,11 +166,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         visualMode={filterVisualMode}
                         onVisualModeChange={setFilterVisualMode}
                         onFiltersChange={handleFilterChange}
-                        onFilterValuesChange={trackFilterChanges}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
-                        originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}
-                        onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
                     />
                 )}
 

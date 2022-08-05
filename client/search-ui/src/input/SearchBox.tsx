@@ -4,7 +4,6 @@ import classNames from 'classnames'
 
 import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -23,7 +22,7 @@ export interface SearchBoxProps
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'>,
-        Pick<LazyMonacoQueryInputProps, 'editorComponent'> {
+        Pick<LazyMonacoQueryInputProps, 'editorComponent' | 'applySuggestionsOnEnter'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
@@ -37,7 +36,6 @@ export interface SearchBoxProps
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     onCompletionItemSelected?: () => void
     autoFocus?: boolean
-    keyboardShortcutForFocus?: KeyboardShortcut
     className?: string
     containerClassName?: string
 
@@ -80,6 +78,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                 props.containerClassName,
                 props.hideHelpButton ? styles.searchBoxShadow : null
             )}
+            data-testid="searchbox"
         >
             <div
                 className={classNames(
@@ -118,7 +117,6 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         interpretComments={props.interpretComments}
                         isLightTheme={props.isLightTheme}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        keyboardShortcutForFocus={props.keyboardShortcutForFocus}
                         onChange={props.onChange}
                         onCompletionItemSelected={props.onCompletionItemSelected}
                         onFocus={props.onFocus}
@@ -127,6 +125,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         patternType={props.patternType}
                         queryState={props.queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
+                        applySuggestionsOnEnter={props.applySuggestionsOnEnter}
                     />
                     <Toggles
                         patternType={props.patternType}

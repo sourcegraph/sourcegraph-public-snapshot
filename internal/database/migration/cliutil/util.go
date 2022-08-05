@@ -4,10 +4,19 @@ import (
 	"context"
 	"flag"
 	"strconv"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -86,4 +95,47 @@ func parseTargets(targets []string) ([]int, error) {
 	}
 
 	return versions, nil
+}
+
+// getPivilegedModeFromFlags transforms the given flags into an equivalent PrivilegedMode value. A user error is
+// returned if the supplied flags form an invalid state.
+func getPivilegedModeFromFlags(cmd *cli.Context, out *output.Output, unprivilegedOnlyFlag, noopPrivilegedFlag *cli.BoolFlag) (runner.PrivilegedMode, error) {
+	unprivilegedOnly := unprivilegedOnlyFlag.Get(cmd)
+	noopPrivileged := noopPrivilegedFlag.Get(cmd)
+	if unprivilegedOnly && noopPrivileged {
+		return runner.InvalidPrivilegedMode, flagHelp(out, "-unprivileged-only and -noop-privileged are mutually exclusive")
+	}
+
+	if unprivilegedOnly {
+		return runner.RefusePrivilegedMigrations, nil
+	}
+	if noopPrivileged {
+		return runner.NoopPrivilegedMigrations, nil
+	}
+
+	return runner.ApplyPrivilegedMigrations, nil
+}
+
+func extractDatabase(ctx context.Context, r Runner) (database.DB, error) {
+	store, err := r.Store(ctx, "frontend")
+	if err != nil {
+		return nil, err
+	}
+
+	// NOTE: The migration runner package cannot import basestore without
+	// creating a cyclic import in db connection packages. Hence, we cannot
+	// embed basestore.ShareableStore here and must "backdoor" extract the
+	// database connection.
+	shareableStore, ok := basestore.Raw(store)
+	if !ok {
+		return nil, errors.New("store does not support direct database handle access")
+	}
+
+	return database.NewDB(log.Scoped("migrator", ""), shareableStore), nil
+}
+
+var migratorObservationContext = &observation.TestContext
+
+func outOfBandMigrationRunner(db database.DB) *oobmigration.Runner {
+	return oobmigration.NewRunnerWithDB(db, time.Second, migratorObservationContext)
 }

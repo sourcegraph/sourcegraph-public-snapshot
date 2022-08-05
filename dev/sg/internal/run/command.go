@@ -30,6 +30,7 @@ type Command struct {
 	Preamble string `yaml:"preamble"`
 
 	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
+	Description     string                            `yaml:"description"`
 
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
@@ -62,13 +63,22 @@ func (c Command) Merge(other Command) Command {
 	if other.Preamble != merged.Preamble && other.Preamble != "" {
 		merged.Preamble = other.Preamble
 	}
+	if other.Description != merged.Description && other.Description != "" {
+		merged.Description = other.Description
+	}
 	merged.ContinueWatchOnExit = other.ContinueWatchOnExit || merged.ContinueWatchOnExit
 
 	for k, v := range other.Env {
+		if merged.Env == nil {
+			merged.Env = make(map[string]string)
+		}
 		merged.Env[k] = v
 	}
 
 	for k, v := range other.ExternalSecrets {
+		if merged.ExternalSecrets == nil {
+			merged.ExternalSecrets = make(map[string]secrets.ExternalSecret)
+		}
 		merged.ExternalSecrets[k] = v
 	}
 

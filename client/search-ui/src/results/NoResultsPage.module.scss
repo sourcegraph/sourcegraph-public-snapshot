@@ -51,6 +51,12 @@
 }
 
 .video-container {
+    margin-left: 1rem;
+
+    @media (--lg-breakpoint-down) {
+        margin-left: 0;
+    }
+
     figure {
         width: 13rem;
         margin-bottom: 1rem;

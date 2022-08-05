@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 
+import { mdiHistory } from '@mdi/js'
 import classNames from 'classnames'
-import HistoryIcon from 'mdi-react/HistoryIcon'
 
-import { Badge, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangeState, BatchSpecState, Scalars } from '../../../graphql-operations'
 
@@ -111,7 +111,16 @@ const ExecutionStatePill: React.FunctionComponent<
                     }.`}
                 >
                     <Badge variant="warning" className={styles.executionPill}>
-                        <HistoryIcon className={styles.executionIcon} />
+                        <Icon
+                            className={styles.executionIcon}
+                            svgPath={mdiHistory}
+                            inline={false}
+                            aria-label={`This batch change has a new spec ${
+                                latestExecutionState === BatchSpecState.QUEUED
+                                    ? 'queued for execution'
+                                    : 'in the process of executing'
+                            }.`}
+                        />
                     </Badge>
                 </Tooltip>
             )
@@ -120,7 +129,7 @@ const ExecutionStatePill: React.FunctionComponent<
             return (
                 <Tooltip content="This batch change has a newer batch spec execution that is ready to be applied.">
                     <Badge variant="primary" className={styles.executionPill}>
-                        <HistoryIcon className={styles.executionIcon} />
+                        <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                     </Badge>
                 </Tooltip>
             )
@@ -129,7 +138,7 @@ const ExecutionStatePill: React.FunctionComponent<
             return (
                 <Tooltip content="The latest batch spec execution for this batch change failed.">
                     <Badge variant="danger" className={styles.executionPill}>
-                        <HistoryIcon className={styles.executionIcon} />
+                        <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                     </Badge>
                 </Tooltip>
             )

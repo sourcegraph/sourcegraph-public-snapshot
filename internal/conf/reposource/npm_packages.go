@@ -24,6 +24,9 @@ var (
 		`^(@` + NpmScopeRegexString + `/)?` +
 			npmPackageNameRegexString +
 			`@(?P<version>[\w\-]+(\.[\w\-]+)*)$`)
+	scopedPackageNameWithoutVersionRegex = lazyregexp.New(
+		`^(@` + NpmScopeRegexString + `/)?` +
+			npmPackageNameRegexString)
 	npmURLRegex = lazyregexp.New(
 		`^npm/(` + NpmScopeRegexString + `/)?` +
 			npmPackageNameRegexString + `$`)
@@ -55,12 +58,28 @@ func (pkg *NpmPackageName) Equal(other *NpmPackageName) bool {
 	return pkg == other || (pkg != nil && other != nil && *pkg == *other)
 }
 
+// ParseNpmPackageNameWithoutVersion parses a package name with optional scope
+// into NpmPackageName.
+func ParseNpmPackageNameWithoutVersion(input string) (NpmPackageName, error) {
+	match := scopedPackageNameWithoutVersionRegex.FindStringSubmatch(input)
+	if match == nil {
+		return NpmPackageName{}, errors.Errorf("expected dependency in (@scope/)?name format but found %s", input)
+	}
+	result := make(map[string]string)
+	for i, groupName := range scopedPackageNameWithoutVersionRegex.SubexpNames() {
+		if i != 0 && groupName != "" {
+			result[groupName] = match[i]
+		}
+	}
+	return NpmPackageName{result["scope"], result["name"]}, nil
+}
+
 // ParseNpmPackageFromRepoURL is a convenience function to parse a string in a
 // 'npm/(scope/)?name' format into an NpmPackageName.
-func ParseNpmPackageFromRepoURL(urlPath string) (*NpmPackageName, error) {
-	match := npmURLRegex.FindStringSubmatch(urlPath)
+func ParseNpmPackageFromRepoURL(repoName api.RepoName) (*NpmPackageName, error) {
+	match := npmURLRegex.FindStringSubmatch(string(repoName))
 	if match == nil {
-		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", urlPath)
+		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", repoName)
 	}
 	result := make(map[string]string)
 	for i, groupName := range npmURLRegex.SubexpNames() {
@@ -74,8 +93,8 @@ func ParseNpmPackageFromRepoURL(urlPath string) (*NpmPackageName, error) {
 
 // ParseNpmPackageFromPackageSyntax is a convenience function to parse a
 // string in a '(@scope/)?name' format into an NpmPackageName.
-func ParseNpmPackageFromPackageSyntax(pkg string) (*NpmPackageName, error) {
-	dep, err := ParseNpmPackageVersion(fmt.Sprintf("%s@0", pkg))
+func ParseNpmPackageFromPackageSyntax(pkg PackageName) (*NpmPackageName, error) {
+	dep, err := ParseNpmVersionedPackage(fmt.Sprintf("%s@0", pkg))
 	if err != nil {
 		return nil, err
 	}
@@ -127,19 +146,19 @@ func (pkg *NpmPackageName) CloneURL() string {
 //
 // This is largely for "lower-level" code interacting with the npm API.
 //
-// In most cases, you want to use NpmPackageVersion's PackageVersionSyntax() instead.
-func (pkg *NpmPackageName) PackageSyntax() string {
+// In most cases, you want to use NpmVersionedPackage's VersionedPackageSyntax() instead.
+func (pkg *NpmPackageName) PackageSyntax() PackageName {
 	if pkg.scope != "" {
-		return fmt.Sprintf("@%s/%s", pkg.scope, pkg.name)
+		return PackageName(fmt.Sprintf("@%s/%s", pkg.scope, pkg.name))
 	}
-	return pkg.name
+	return PackageName(pkg.name)
 }
 
-// NpmPackageVersion is a "versioned package" for use by npm commands, such as
+// NpmVersionedPackage is a "versioned package" for use by npm commands, such as
 // `npm install`.
 //
 // Reference:  https://docs.npmjs.com/cli/v8/commands/npm-install
-type NpmPackageVersion struct {
+type NpmVersionedPackage struct {
 	*NpmPackageName
 
 	// The version or tag (such as "latest") for a dependency.
@@ -155,11 +174,17 @@ type NpmPackageVersion struct {
 	PackageDescription string
 }
 
-// ParseNpmPackageVersion parses a string in a '(@scope/)?module@version' format into an NpmPackageVersion.
+// ParseNpmVersionedPackage parses a string in a '(@scope/)?module@version' format into an NpmVersionedPackage.
 //
 // npm supports many ways of specifying dependencies (https://docs.npmjs.com/cli/v8/commands/npm-install)
 // but we only support exact versions for now.
-func ParseNpmPackageVersion(dependency string) (*NpmPackageVersion, error) {
+//
+// Some packages have names containing multiple '/' characters.
+// (https://sourcegraph.com/search?q=context:global+file:package.json%24+%22name%22:+%22%40%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn%5D%2B%5C%22&patternType=regexp)
+// So it is possible for indexes to reference packages by that name,
+// but such names are not supported by recent npm versions, so we don't
+// allow those here.
+func ParseNpmVersionedPackage(dependency string) (*NpmVersionedPackage, error) {
 	// We use slightly more restrictive validation compared to the official
 	// rules (https://github.com/npm/validate-npm-package-name#naming-rules).
 	//
@@ -183,10 +208,10 @@ func ParseNpmPackageVersion(dependency string) (*NpmPackageVersion, error) {
 		}
 	}
 	scope, name, version := result["scope"], result["name"], result["version"]
-	return &NpmPackageVersion{NpmPackageName: &NpmPackageName{scope, name}, Version: version}, nil
+	return &NpmVersionedPackage{NpmPackageName: &NpmPackageName{scope, name}, Version: version}, nil
 }
 
-func (d *NpmPackageVersion) Description() string {
+func (d *NpmVersionedPackage) Description() string {
 	return d.PackageDescription
 }
 
@@ -196,23 +221,23 @@ type NpmMetadata struct {
 
 // PackageManagerSyntax returns the dependency in npm/Yarn syntax. The returned
 // string can (for example) be passed to `npm install`.
-func (d *NpmPackageVersion) PackageVersionSyntax() string {
+func (d *NpmVersionedPackage) VersionedPackageSyntax() string {
 	return fmt.Sprintf("%s@%s", d.PackageSyntax(), d.Version)
 }
 
-func (d *NpmPackageVersion) Scheme() string {
+func (d *NpmVersionedPackage) Scheme() string {
 	return "npm"
 }
 
-func (d *NpmPackageVersion) PackageVersion() string {
+func (d *NpmVersionedPackage) PackageVersion() string {
 	return d.Version
 }
 
-func (d *NpmPackageVersion) GitTagFromVersion() string {
+func (d *NpmVersionedPackage) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-func (d *NpmPackageVersion) Equal(o *NpmPackageVersion) bool {
+func (d *NpmVersionedPackage) Equal(o *NpmVersionedPackage) bool {
 	return d == o || (d != nil && o != nil &&
 		d.NpmPackageName.Equal(o.NpmPackageName) &&
 		d.Version == o.Version)
@@ -221,8 +246,8 @@ func (d *NpmPackageVersion) Equal(o *NpmPackageVersion) bool {
 // Less implements the Less method of the sort.Interface. It sorts
 // dependencies by the semantic version in descending order.
 // The latest version of a dependency becomes the first element of the slice.
-func (d *NpmPackageVersion) Less(other PackageVersion) bool {
-	o := other.(*NpmPackageVersion)
+func (d *NpmVersionedPackage) Less(other VersionedPackage) bool {
+	o := other.(*NpmVersionedPackage)
 
 	if d.NpmPackageName.Equal(o.NpmPackageName) {
 		return versionGreaterThan(d.Version, o.Version)

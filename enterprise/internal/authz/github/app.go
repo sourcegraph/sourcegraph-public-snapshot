@@ -47,7 +47,7 @@ func newAppProvider(
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
 		client: func() (client, error) {
-			token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServicesStore, svc, appClient, installationID)
+			token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(context.Background(), log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServicesStore, svc, appClient, installationID)
 			if err != nil {
 				return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 			}

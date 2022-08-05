@@ -3,7 +3,12 @@ import React from 'react'
 import { throwError } from 'rxjs'
 
 import { CodeInsightsBackend } from './code-insights-backend'
-import { SeriesChartContent, CategoricalChartContent, RepositorySuggestionData } from './code-insights-backend-types'
+import {
+    SeriesChartContent,
+    CategoricalChartContent,
+    RepositorySuggestionData,
+    BackendInsightDatum,
+} from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -43,7 +48,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getLangStatsInsightContent = (): Promise<CategoricalChartContent<unknown>> =>
         errorMockMethod('getLangStatsInsightContent')().toPromise()
 
-    public getInsightPreviewContent = (): Promise<SeriesChartContent<unknown>> =>
+    public getInsightPreviewContent = (): Promise<SeriesChartContent<BackendInsightDatum>> =>
         errorMockMethod('getInsightPreviewContent')().toPromise()
 
     // Repositories API

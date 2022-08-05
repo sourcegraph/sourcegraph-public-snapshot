@@ -1,6 +1,7 @@
 package search
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -8,12 +9,40 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// Inputs contains fields we set before kicking off search.
+type Inputs struct {
+	Plan                query.Plan // the comprehensive query plan
+	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
+	OriginalQuery       string     // the raw string of the original search query
+	PatternType         query.SearchType
+	UserSettings        *schema.Settings
+	OnSourcegraphDotCom bool
+	Features            *Features
+	Protocol            Protocol
+}
+
+// MaxResults computes the limit for the query.
+func (inputs Inputs) MaxResults() int {
+	return inputs.Query.MaxResults(inputs.DefaultLimit())
+}
+
+// DefaultLimit is the default limit to use if not specified in query.
+func (inputs Inputs) DefaultLimit() int {
+	if inputs.Protocol == Batch || inputs.PatternType == query.SearchTypeStructural {
+		return limits.DefaultMaxSearchResults
+	}
+	return limits.DefaultMaxSearchResultsStreaming
+}
 
 type Protocol int
 
@@ -168,9 +197,6 @@ type TextPatternInfo struct {
 	IncludePatterns []string
 	ExcludePattern  string
 
-	FilePatternsReposMustInclude []string
-	FilePatternsReposMustExclude []string
-
 	PathPatternsAreCaseSensitive bool
 
 	PatternMatchesContent bool
@@ -218,12 +244,6 @@ func (p *TextPatternInfo) Fields() []otlog.Field {
 	if p.ExcludePattern != "" {
 		add(otlog.String("excludePattern", p.ExcludePattern))
 	}
-	if len(p.FilePatternsReposMustInclude) > 0 {
-		add(trace.Strings("filePatternsReposMustInclude", p.FilePatternsReposMustInclude))
-	}
-	if len(p.FilePatternsReposMustExclude) > 0 {
-		add(trace.Strings("filePatternsReposMustExclude", p.FilePatternsReposMustExclude))
-	}
 	if p.PathPatternsAreCaseSensitive {
 		add(otlog.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive))
 	}
@@ -267,13 +287,6 @@ func (p *TextPatternInfo) String() string {
 		args = append(args, fmt.Sprintf("lang:%s", lang))
 	}
 
-	for _, inc := range p.FilePatternsReposMustInclude {
-		args = append(args, fmt.Sprintf("repositoryPathPattern:%s", inc))
-	}
-	for _, dec := range p.FilePatternsReposMustExclude {
-		args = append(args, fmt.Sprintf("-repositoryPathPattern:%s", dec))
-	}
-
 	path := "f"
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
@@ -303,19 +316,39 @@ type Features struct {
 	// ContentBasedLangFilters when true will use the language detected from
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
-	ContentBasedLangFilters bool
+	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
 
 	// HybridSearch when true will consult the Zoekt index when running
 	// unindexed searches. Searcher (unindexed search) will the only search
 	// what has changed since the indexed commit.
-	HybridSearch bool
+	HybridSearch bool `json:"search-hybrid"`
+
+	// CodeOwnershipFilters when true will add the code ownership post-search
+	// filter and allow users to search by code owners using the has.owner
+	// predicate.
+	CodeOwnershipFilters bool `json:"code-ownership"`
+
+	// When true lucky search runs by default. Adding for A/B testing in
+	// 08/2022. To be removed at latest by 12/2022.
+	AbLuckySearch bool `json:"ab-lucky-search"`
+}
+
+func (f *Features) String() string {
+	jsonObject, err := json.Marshal(f)
+	if err != nil {
+		return "error encoding features as string"
+	}
+	flagMap := featureflag.EvaluatedFlagSet{}
+	if err := json.Unmarshal(jsonObject, &flagMap); err != nil {
+		return "error decoding features"
+	}
+	return flagMap.String()
 }
 
 type RepoOptions struct {
-	RepoFilters      []string
-	MinusRepoFilters []string
-	Dependencies     []string
-	Dependents       []string
+	RepoFilters         []string
+	MinusRepoFilters    []string
+	DescriptionPatterns []string
 
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
@@ -324,6 +357,10 @@ type RepoOptions struct {
 	Visibility  query.RepoVisibility
 	Limit       int
 	Cursors     []*types.Cursor
+
+	// Whether we should depend on Zoekt for resolving repositories
+	UseIndex       query.YesNoOnly
+	HasFileContent []query.RepoHasFileContentArgs
 
 	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
@@ -352,11 +389,8 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	if len(op.MinusRepoFilters) > 0 {
 		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))
 	}
-	if len(op.Dependencies) > 0 {
-		add(trace.Strings("dependencies", op.Dependencies))
-	}
-	if len(op.Dependents) > 0 {
-		add(trace.Strings("dependents", op.Dependents))
+	if len(op.DescriptionPatterns) > 0 {
+		add(trace.Strings("descriptionPatterns", op.DescriptionPatterns))
 	}
 	if op.CaseSensitiveRepoFilters {
 		add(otlog.Bool("caseSensitiveRepoFilters", true))
@@ -375,6 +409,24 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	}
 	if len(op.Cursors) > 0 {
 		add(trace.Printf("cursors", "%+v", op.Cursors))
+	}
+	if op.UseIndex != query.Yes {
+		add(otlog.String("useIndex", string(op.UseIndex)))
+	}
+	if len(op.HasFileContent) > 0 {
+		for i, arg := range op.HasFileContent {
+			nondefault := []otlog.Field{}
+			if arg.Path != "" {
+				nondefault = append(nondefault, otlog.String("path", arg.Path))
+			}
+			if arg.Content != "" {
+				nondefault = append(nondefault, otlog.String("content", arg.Content))
+			}
+			if arg.Negated {
+				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+			}
+			add(trace.Scoped(fmt.Sprintf("hasFileContent[%d]", i), nondefault...))
+		}
 	}
 	if op.ForkSet {
 		add(otlog.Bool("forkSet", op.ForkSet))
@@ -414,8 +466,29 @@ func (op *RepoOptions) String() string {
 		b.WriteString("MinusRepoFilters: []\n")
 	}
 
+	if len(op.DescriptionPatterns) > 0 {
+		fmt.Fprintf(&b, "DescriptionPatterns: %q\n", op.DescriptionPatterns)
+	}
+
 	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
 	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
+
+	if op.UseIndex != query.Yes {
+		fmt.Fprintf(&b, "UseIndex: %s\n", string(op.UseIndex))
+	}
+	if len(op.HasFileContent) > 0 {
+		for i, arg := range op.HasFileContent {
+			if arg.Path != "" {
+				fmt.Fprintf(&b, "HasFileContent[%d].path: %s\n", i, arg.Path)
+			}
+			if arg.Content != "" {
+				fmt.Fprintf(&b, "HasFileContent[%d].content: %s\n", i, arg.Content)
+			}
+			if arg.Negated {
+				fmt.Fprintf(&b, "HasFileContent[%d].negate: %s\n", i, arg.Path)
+			}
+		}
+	}
 
 	if op.CaseSensitiveRepoFilters {
 		fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)

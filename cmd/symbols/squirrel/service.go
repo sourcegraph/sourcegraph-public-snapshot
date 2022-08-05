@@ -10,8 +10,6 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 
 	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -124,16 +122,6 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 	}, nil
 }
 
-// How to read a file from gitserver.
-func readFileFromGitserver(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	cmd := gitserver.NewClient(nil).GitCommand(api.RepoName(repoCommitPath.Repo), "cat-file", "blob", repoCommitPath.Commit+":"+repoCommitPath.Path)
-	stdout, stderr, err := cmd.DividedOutput(ctx)
-	if err != nil {
-		return nil, errors.Newf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
-	}
-	return stdout, nil
-}
-
 // DirOrNode is a union type that can either be a directory or a node. It's returned by getDef().
 //
 // - It's usually   a Node, e.g. when finding the definition of an identifier
@@ -156,6 +144,8 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 		return squirrel.getDefJava(ctx, node)
 	case "starlark":
 		return squirrel.getDefStarlark(ctx, node)
+	case "python":
+		return squirrel.getDefPython(ctx, node)
 	// case "go":
 	// case "csharp":
 	// case "python":

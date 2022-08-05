@@ -32,7 +32,7 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleDialog = useCallback(
-        isOpen => {
+        (isOpen: boolean) => {
             setIsOpen(isOpen)
             if (onToggle) {
                 onToggle(isOpen)
@@ -88,7 +88,7 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
                             <Button
                                 variant="icon"
                                 className="p-1"
-                                data-testId="modal-video-close"
+                                data-testid="modal-video-close"
                                 onClick={() => toggleDialog(false)}
                                 aria-label="Close"
                             >

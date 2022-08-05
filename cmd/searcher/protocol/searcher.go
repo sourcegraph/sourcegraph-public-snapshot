@@ -216,6 +216,26 @@ func (fm FileMatch) MatchCount() int {
 	return count
 }
 
+func (fm *FileMatch) Limit(limit int) {
+	for i := range fm.ChunkMatches {
+		l := len(fm.ChunkMatches[i].Ranges)
+		if l <= limit {
+			limit -= l
+			continue
+		}
+
+		// invariant: limit < l
+		fm.ChunkMatches[i].Ranges = fm.ChunkMatches[i].Ranges[:limit]
+		if limit > 0 {
+			fm.ChunkMatches = fm.ChunkMatches[:i+1]
+		} else {
+			fm.ChunkMatches = fm.ChunkMatches[:i]
+		}
+		fm.LimitHit = true
+		return
+	}
+}
+
 type ChunkMatch struct {
 	Content      string
 	ContentStart Location

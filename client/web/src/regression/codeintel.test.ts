@@ -13,7 +13,7 @@ import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helper
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'
 
-describe('Code intelligence regression test suite', () => {
+describe('Code graph regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
     const config = getConfig(
         'gitHubToken',
@@ -99,7 +99,7 @@ describe('Code intelligence regression test suite', () => {
         }
     })
 
-    describe('Basic code intelligence regression test suite', () => {
+    describe('Basic code graph regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
         before(async () => {
             innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, false))
@@ -110,7 +110,8 @@ describe('Code intelligence regression test suite', () => {
             }
         })
 
-        test('File sidebar, multiple levels of directories', async () => {
+        // Re-enabling tracked in https://github.com/sourcegraph/sourcegraph/issues/39000
+        test.skip('File sidebar, multiple levels of directories', async () => {
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
                     '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'

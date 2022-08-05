@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
-import ArrowCollapseRightIcon from 'mdi-react/ArrowCollapseRightIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -17,7 +14,6 @@ import {
     lprToRange,
     pluralize,
     toPositionOrRangeQueryParameter,
-    toViewStateHash,
 } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -74,7 +70,7 @@ type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisio
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -339,7 +335,7 @@ export const ReferencesList: React.FunctionComponent<
             }
         }
 
-        panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
+        panelHistory.push(appendJumpToFirstQueryParameter(url))
     }
 
     const navigateToUrl = (url: string): void => {
@@ -351,17 +347,24 @@ export const ReferencesList: React.FunctionComponent<
     const location = useLocation()
     const initialCollapseState = useMemo((): Record<string, boolean> => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
-        return {
+        const state = {
             references: viewState === 'references',
             definitions: viewState === 'definitions',
             implementations: viewState?.startsWith('implementations_') ?? false,
         }
+        // If the URL doesn't contain tab=<tab>, we open it (likely because the
+        // user clicked on a link in the preview code blob) to show definitions.
+        if (!state.references && !state.definitions && !state.implementations) {
+            state.definitions = true
+        }
+        return state
     }, [location])
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
 
     const isOpen = (id: string): boolean | undefined => collapsed[id]
+
     // But when the input changes, we reset the collapse state
     useEffect(() => {
         setCollapsed(initialCollapseState)
@@ -388,7 +391,8 @@ export const ReferencesList: React.FunctionComponent<
                     <small>
                         <Icon
                             aria-hidden={true}
-                            as={canShowSpinner ? LoadingSpinner : FilterOutlineIcon}
+                            as={canShowSpinner ? LoadingSpinner : undefined}
+                            svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
                             size="sm"
                             className={styles.filterIcon}
                         />
@@ -462,7 +466,7 @@ export const ReferencesList: React.FunctionComponent<
                                     <Icon
                                         aria-hidden={true}
                                         size="sm"
-                                        as={ArrowCollapseRightIcon}
+                                        svgPath={mdiArrowCollapseRight}
                                         className="border-0"
                                     />
                                 </Button>
@@ -532,9 +536,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                            <Icon aria-label="Close" svgPath={mdiChevronDown} />
                         ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                            <Icon aria-label="Expand" svgPath={mdiChevronRight} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -752,8 +756,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    <Icon aria-hidden="true" as={open ? ChevronDownIcon : ChevronRightIcon} />
-
+                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
                     <small>
                         <Link
                             to={repoUrl}
@@ -798,7 +801,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 navigateToUrl: (url: string) => void
             }
     >
-> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, searchToken, navigateToUrl }) => {
+> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, navigateToUrl }) => {
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
@@ -820,9 +823,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                        <Icon aria-label="Close" svgPath={mdiChevronDown} />
                     ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon aria-label="Expand" svgPath={mdiChevronRight} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>

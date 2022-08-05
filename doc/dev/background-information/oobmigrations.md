@@ -23,6 +23,7 @@ An out-of-band migration is defined with the following data:
 - the version when the migration was _introduced_ (e.g. `3.25.0`)
 - the version when the migration was _deprecated_ (if any)
 - a flag indicating whether or not the migration is _non-destructive_
+- a flag indicating whether or not the migration is enterprise-only
 
 Each out-of-band migration is associated with a _migrator_ instance, which periodically runs in the background of Sourcegraph instances between the version the migration was _introduced_ (inclusive) and the version the migration was marked as _deprecated_ (exclusive). Each migrator instance enables three behaviors:
 
@@ -36,7 +37,7 @@ For every registered migrator, the migration runner will periodically check for 
 
 Site-admins will be prevented from upgrading beyond the version where an incomplete migration has been deprecated. i.e., site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version. In these cases, the instance will shut down with an error message similar to what happens when an in-band migration fails to apply.
 
-The `Site Admin > Maintenance > Migrations` page shows the current progress of each out-of-band migration, as well as disclaimers warning when an immediate upgrade would fail due to an incomplete migration.
+The **Site Admin > Maintenance > Migrations** page shows the current progress of each out-of-band migration, as well as disclaimers warning when an immediate upgrade would fail due to an incomplete migration.
 
 #### Downgrades
 
@@ -67,33 +68,18 @@ CREATE TABLE skunk_payloads (
 
 #### Step 1: Add migration record
 
-The first step is to register the migration in the database. This should be done with a normal in-band migration. If the data you are migrating needs additional columns or constraints, they can also be added in the same migration.
+The first step is to declare metadata for a new migration. Add a new entry to the file `internal/oobmigration/oobmigrations.yaml`.
 
-```sql
-BEGIN;
-
-INSERT INTO out_of_band_migrations (id, team, component, description, created, introduced_version_major, introduced_version_minor, non_destructive)
-VALUES (
-    42,                           -- This must be consistent across all Sourcegraph instances
-    'skunkworks',                 -- Team owning migration
-    'db.skunk_payloads',          -- Component being migrated
-    'Re-encode our skunky data',  -- Description
-    '2022-05-23 19:35:01.249518', -- The approximate date this migration was added. Hard-code this date in this table in order to make our
-                                  -- squashed migrations deterministic. If we use NOW() then we can't compare old and new versions via textual
-                                  -- diff alone.
-    3,                            -- The current major release
-    34,                           -- The current minor release
-    true                          -- Can be read with previous version without down migration
-)
-ON CONFLICT DO NOTHING;
-
--- we'll migrate payload -> payload2
-ALTER TABLE skunk_payloads ADD COLUMN payload2 text;
-
-COMMIT;
+```yaml
+- id: 42                                  -- This must be consistent across all Sourcegraph instances
+  team: skunkworks                        -- Team owning migration
+  component: db.skunk_payloads            -- Component being migrated
+  description: Re-encode our skunky data  -- Human-readable description
+  non_destructive: true                   -- Can be read with previous version without down migration
+  is_enterprise: true                     -- Should not run in OSS versions or the migration code is only available in enterprise
+  introduced_major_version: 3             -- The current major release
+  introduced_minor_version: 34            -- The current minor release
 ```
-
-The migration record does not need to be _removed_ on database down migrations (hence the no-op `ON CONFLICT` clause in the up direction).
 
 #### Step 2: Modify reads
 
@@ -160,11 +146,11 @@ This migrator reports progress by counting the number of records with its new fi
 func (m *migrator) Progress(ctx context.Context) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
 		SELECT
-			CASE c2.count WHEN 0 THEN 1 ELSE 
+			CASE c2.count WHEN 0 THEN 1 ELSE
 				cast(c1.count as float) / cast(c2.count as float)
 			END
 		FROM
-			(SELECT count(*) as count FROM skunk_payloads WHERE payload2 IS NOT NULL) c1
+			(SELECT count(*) as count FROM skunk_payloads WHERE payload2 IS NOT NULL) c1,
 			(SELECT count(*) as count FROM skunk_payloads) c2
 	`)))
 	return progress, err
@@ -195,6 +181,10 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	// We don't have access to a connection pool and hence cannot write and read
+	// from a result set in parallel within in transaction. Therefore, we need to
+	// collect all results before executing update commands.
+	updates := make(map[int]string) // id -> payload
 	for rows.Next() {
 		var id int
 		var payload string
@@ -202,9 +192,13 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 			return err
 		}
 
+		updates[id] = oldToNew(payload)
+	}
+
+	for id, payload := range updates {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			"UPDATE skunk_payloads SET payload2 = %s WHERE id = %s", 
-			oldToNew(payload), 
+			"UPDATE skunk_payloads SET payload2 = %s WHERE id = %s",
+			payload,
 			id,
 		)); err != nil {
 			return err
@@ -245,6 +239,10 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	// We don't have access to a connection pool and hence cannot write and read
+	// from a result set in parallel within in transaction. Therefore, we need to
+	// collect all results before executing update commands.
+	updates := make(map[int]string) // id -> payload
 	for rows.Next() {
 		var id int
 		var payload string
@@ -252,11 +250,15 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 			return err
 		}
 
+		updates[id] = newToOld(payload)
+	}
+
+	for id, payload := range updates {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			"UPDATE skunk_payloads SET payload = %s WHERE id = %s",
-			newToOld(payload),
+			payload,
 			id,
-		)); err != nil{
+		)); err != nil {
 			return err
 		}
 	}
@@ -268,9 +270,10 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 Lastly, in order for this migration to run, we need to [register it to the out of band migrator runner instance](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:.*.go+%28outOfBandMigration%29%3Frunner%5C.Register%5C%28&patternType=regexp) in the OSS or enterprise `worker` service.
 
 ```go
-migrator := database.NewMigrator(db)
-if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-	log.Fatalf("failed to run skunk payloads job: %v", err)
+// `db` is the database.DB
+migrator := NewMigrator(basestore.NewWithHandle(db.Handle()))
+if err := outOfBandMigrationRunner.Register(42, migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+	return err
 }
 ```
 
@@ -280,17 +283,25 @@ Here, we're telling the migration runner to invoke the `Up` or `Down` method per
 
 Once the engineering team has decided on which versions require the new format, old migrations can be marked with a concrete deprecation version. The deprecation version denotes the first Sourcegraph version that no longer runs the migration, and is no longer guaranteed to successfully read un-migrated records.
 
-A new in-band migration can be created to update the deprecation field of the target record.
+New fields can be added to the existing migration metadata entry in the file `internal/oobmigration/oobmigrations.yaml`.
 
-```sql
-BEGIN;
-UPDATE out_of_band_migrations SET deprecated_version_major = 3, deprecated_version_minor = 39 WHERE id = 42;
-COMMIT;
+```yaml
+- id: 42
+  team: skunkworks
+  component: db.skunk_payloads
+  description: Re-encode our skunky data
+  non_destructive: true
+  is_enterprise: true 
+  introduced_version_major: 3
+  introduced_version_minor: 34
+  # NEW FIELDS:
+  deprecated_version_major: 3   -- The current major release
+  deprecated_version_minor: 39  -- The current minor release
 ```
 
 This date may be known at the time the migration is created, in which case it is fine to set both the introduced and the deprecated fields at the same time.
 
-Note that it is not advised to set the deprecated version to the _next_ minor release of Sourcegraph. This will not given site-admins enough warning on the previous version that updating with an unfinished migration may cause issues at startup or data loss.
+Note that it is not advised to set the deprecated version to the minor release of Sourcegraph directly following its introduction. This will not give site-admins enough warning on the previous version that updating with an unfinished migration may cause issues at startup or data loss.
 
 #### Step 6: Deprecation
 

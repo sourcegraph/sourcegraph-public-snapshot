@@ -1269,7 +1269,7 @@ func TestTriggerTestEmailAction(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	got := background.TemplateDataNewSearchResults{}
-	background.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *background.TemplateDataNewSearchResults) error {
+	background.MockSendEmailForNewSearchResult = func(ctx context.Context, db database.DB, userID int32, data *background.TemplateDataNewSearchResults) error {
 		got = *data
 		return nil
 	}

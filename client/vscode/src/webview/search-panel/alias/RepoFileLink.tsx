@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { parseRepoRevision } from '@sourcegraph/shared/src/util/url'
-import { useIsTruncated } from '@sourcegraph/wildcard'
+import { Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
@@ -87,20 +87,19 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     }
 
     return (
-        <div
-            ref={titleReference}
-            className={className}
-            onMouseEnter={checkTruncation}
-            data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
-        >
-            <button onClick={onRepoClick} type="button" className="btn btn-text-link">
-                {repoDisplayName || displayRepoName(repoName)}
-            </button>{' '}
-            ›{' '}
-            <button onClick={onFileClick} type="button" className="btn btn-text-link">
-                {fileBase ? `${fileBase}/` : null}
-                <strong>{fileName}</strong>
-            </button>
-        </div>
+        <Tooltip content={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}>
+            <span>
+                <div ref={titleReference} className={className} onMouseEnter={checkTruncation}>
+                    <button onClick={onRepoClick} type="button" className="btn btn-text-link">
+                        {repoDisplayName || displayRepoName(repoName)}
+                    </button>{' '}
+                    ›{' '}
+                    <button onClick={onFileClick} type="button" className="btn btn-text-link">
+                        {fileBase ? `${fileBase}/` : null}
+                        <strong>{fileName}</strong>
+                    </button>
+                </div>
+            </span>
+        </Tooltip>
     )
 }

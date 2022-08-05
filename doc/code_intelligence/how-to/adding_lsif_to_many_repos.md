@@ -56,7 +56,7 @@ Watch the video or follow the written directions below:
   Now, go back to the batch change page and verify the pull requests have been
   created.
   1. If there are errors creating any pull request, check to make sure the GitHub token in the
-     Sourcegraph code host configuration (Site admin > Manage repositories) has the
+     Sourcegraph code host configuration (Site admin > Manage code hosts) has the
      necessary scopes (`repo` and (`read:discussion` or `read:org`)).
   1. Verify that the GitHub action has run successfully in the repositories on GitHub.
   1. Verify that the index has been successfully uploaded to Sourcegraph by

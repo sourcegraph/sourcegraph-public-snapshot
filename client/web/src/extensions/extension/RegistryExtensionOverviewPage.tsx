@@ -1,15 +1,15 @@
 import React, { useMemo, useEffect } from 'react'
 
+import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
-import GithubIcon from 'mdi-react/GithubIcon'
 
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Icon, H2, H3 } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H2, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -109,11 +109,9 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                 {publisher && (
                     <div className="pt-2 pb-3">
                         <H3 as={H2}>Publisher</H3>
-                        <small
-                            data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
-                        >
-                            {publisher}
-                        </small>
+                        <Tooltip content={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}>
+                            <small>{publisher}</small>
+                        </Tooltip>
                         {isSourcegraphExtension && <SourcegraphExtensionIcon className={styles.sourcegraphIcon} />}
                     </div>
                 )}
@@ -157,7 +155,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                         {repositoryURL && (
                             <div className="d-flex">
                                 {repositoryURL.hostname === 'github.com' && (
-                                    <Icon className="mr-1" as={GithubIcon} aria-hidden={true} />
+                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiGithub} />
                                 )}
                                 <Link
                                     to={repositoryURL.href}

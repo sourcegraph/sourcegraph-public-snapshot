@@ -33,7 +33,7 @@ const defaultProps: SearchBoxProps = {
     globbing: false,
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     setPatternType: () => {},
     caseSensitive: false,
     setCaseSensitivity: () => {},
@@ -47,12 +47,10 @@ const defaultProps: SearchBoxProps = {
     onSubmit: () => {},
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
     authenticatedUser: null,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     platformContext: NOOP_PLATFORM_CONTEXT,
-    editorComponent: 'monaco',
+    editorComponent: 'codemirror6',
 }
 
 export const SearchBoxStory: Story = () => (

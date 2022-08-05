@@ -68,7 +68,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
     return (
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error]} />}
-            <ConnectionList className="list-group list-group-flush w-100">
+            <ConnectionList className="list-group list-group-flush w-100" aria-label="Workspace results found">
                 {connectionOrCached?.nodes?.map(node => (
                     <WorkspacesPreviewListItem
                         key={node.id}

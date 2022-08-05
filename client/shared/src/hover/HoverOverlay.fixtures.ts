@@ -14,8 +14,7 @@ import { HoverOverlayProps } from './HoverOverlay'
 
 const history = createMemoryHistory()
 const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
-const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'forceUpdateTooltip' | 'settings'> = {
-    forceUpdateTooltip: () => undefined,
+const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'settings'> = {
     settings: of({ final: {}, subjects: [] }),
 }
 

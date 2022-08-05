@@ -9,8 +9,8 @@ exports[`StatusMessagesNavItem no messages 1`] = `
   >
     <svg
       aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon iconInline iconInlineMd"
-      data-tooltip="Repositories up-to-date"
+      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
+      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -52,8 +52,8 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
   >
     <svg
       aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon iconInline iconInlineMd"
-      data-tooltip="Repositories up-to-date"
+      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
+      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -95,8 +95,8 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
   >
     <svg
       aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon iconInline iconInlineMd"
-      data-tooltip="Repositories up-to-date"
+      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
+      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -138,8 +138,8 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
   >
     <svg
       aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon iconInline iconInlineMd"
-      data-tooltip="Repositories up-to-date"
+      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
+      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -181,8 +181,8 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
   >
     <svg
       aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon iconInline iconInlineMd"
-      data-tooltip="Repositories up-to-date"
+      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
+      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -224,8 +224,8 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
   >
     <svg
       aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon iconInline iconInlineMd"
-      data-tooltip="Repositories up-to-date"
+      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
+      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -267,8 +267,8 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
   >
     <svg
       aria-label="Repositories up-to-date"
-      class="phabricator-icon mdi-icon iconInline iconInlineMd"
-      data-tooltip="Repositories up-to-date"
+      class="phabricator-icon mdi-icon mdi-icon iconInline iconInlineMd"
+      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"

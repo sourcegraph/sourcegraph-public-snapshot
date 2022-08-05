@@ -23,7 +23,7 @@ export const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<Co
         <Tooltip
             content={
                 state === LSIFUploadState.COMPLETED
-                    ? 'Deleting this upload will make it unavailable to answer code intelligence queries the next time the repository commit graph is refreshed.'
+                    ? 'Deleting this upload will make it unavailable to answer code navigation queries the next time the repository commit graph is refreshed.'
                     : 'Delete this upload immediately'
             }
         >

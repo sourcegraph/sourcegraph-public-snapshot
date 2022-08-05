@@ -10,8 +10,9 @@ import {
     QueryState,
     SearchPatternType,
 } from '@sourcegraph/search'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
     LATEST_VERSION,
@@ -24,7 +25,6 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/sha
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
-import { EventLogger } from '../telemetry/EventLogger'
 
 import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'
 import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
@@ -47,7 +47,7 @@ interface Props {
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     initialSearch: Search | null
     authenticatedUser: AuthenticatedUser | null
-    telemetryService: EventLogger
+    telemetryService: TelemetryService
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
@@ -98,7 +98,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         initialSearch ?? {
             query: '',
             caseSensitive: false,
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             selectedSearchContextSpec: 'global',
         }
     )
@@ -156,6 +156,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     trace: undefined,
                     sourcegraphURL: instanceURL + '.api',
                     decorationContextLines: 0,
+                    displayLimit: 200,
                 }
             ).subscribe(searchResults => {
                 setMatches(searchResults.results)
@@ -170,12 +171,13 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         [lastSearch, userQueryState.query, telemetryService, instanceURL]
     )
 
-    const [lastInitialSubmitUser, setLastInitialSubmitUser] = useState<AuthenticatedUser | null>(null)
+    const [didInitialSubmit, setDidInitialSubmit] = useState(false)
     useEffect(() => {
-        if (lastInitialSubmitUser === authenticatedUser) {
+        if (didInitialSubmit) {
             return
         }
-        setLastInitialSubmitUser(authenticatedUser)
+        setDidInitialSubmit(true)
+
         if (initialSearch !== null) {
             onSubmit({
                 caseSensitive: initialSearch.caseSensitive,
@@ -184,7 +186,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 forceNewSearch: true,
             })
         }
-    }, [initialSearch, onSubmit, lastInitialSubmitUser, authenticatedUser])
+    }, [initialSearch, onSubmit, didInitialSubmit])
 
     const statusBar = useMemo(
         () => <StatusBar progress={progress} progressState={progressState} authState={authState} />,
@@ -220,15 +222,11 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         }}
                     >
                         <JetBrainsSearchBox
-                            // Make sure we recreate the search box component when the instance URL changes
-                            key={instanceURL}
                             caseSensitive={lastSearch.caseSensitive}
                             setCaseSensitivity={caseSensitive => onSubmit({ caseSensitive })}
                             patternType={lastSearch.patternType}
                             setPatternType={patternType => onSubmit({ patternType })}
                             isSourcegraphDotCom={isSourcegraphDotCom}
-                            hasUserAddedExternalServices={false}
-                            hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                             structuralSearchDisabled={false}
                             queryState={userQueryState}
                             onChange={setUserQueryState}

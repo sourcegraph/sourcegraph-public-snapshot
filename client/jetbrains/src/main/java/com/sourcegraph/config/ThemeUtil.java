@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
-import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +25,7 @@ public class ThemeUtil {
         for (Object key : keysList) {
             try {
                 Object value = UIManager.get(key);
-                if (value instanceof ColorUIResource) {
+                if (value instanceof Color) {
                     intelliJTheme.addProperty(key.toString(), getHexString(UIManager.getColor(key)));
                 }
             } catch (Exception e) {
@@ -38,12 +37,6 @@ public class ThemeUtil {
         theme.addProperty("isDarkTheme", isDarkTheme());
         theme.add("intelliJTheme", intelliJTheme);
         return theme;
-    }
-
-    @NotNull
-    public static String getPanelBackgroundColorHexString() {
-        //noinspection ConstantConditions - UIUtil.getPanelBackground() can't be null, so our return value can't be null.
-        return getHexString(UIUtil.getPanelBackground());
     }
 
     public static boolean isDarkTheme() {

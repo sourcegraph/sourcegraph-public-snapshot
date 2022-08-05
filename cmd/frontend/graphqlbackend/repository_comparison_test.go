@@ -683,6 +683,102 @@ index 4d14577..9fe9a4f 100644
 	})
 }
 
+func TestDiffHunk4(t *testing.T) {
+	// This test exists to protect against an edge case bug illustrated in
+	// https://github.com/sourcegraph/sourcegraph/pull/39377
+
+	ctx := context.Background()
+	// Ran 'git diff --cached --no-prefix --binary' on a local repo to generate this diff (with the starting lines
+	// changes to 1)
+	filediff := `diff --git toggle.go toggle.go
+index d206c4c..bb06461 100644
+--- toggle.go
++++ toggle.go
+@@ -1,10 +1,3 @@ func AddFeatures(features map[string]bool) {
+ func AddFeature(key string, isEnabled bool) {
+        features[strings.ToLower(key)] = isEnabled
+ }
+-
+-// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is
+-// case insensitive.
+-// If a feature is not present, it defaults to false.
+-func IsEnabled(key string) bool {
+-       return features[strings.ToLower(key)]
+-}`
+
+	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	// We only read the first file diff from testDiff
+	fileDiff, err := dr.ReadFile()
+	if err != nil && err != io.EOF {
+		t.Fatalf("parsing diff failed: %s", err)
+	}
+
+	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
+
+	t.Run("Highlight", func(t *testing.T) {
+		hunk.highlighter = &dummyFileHighlighter{
+			// We don't care about the actual html formatting, just the number + order of
+			// the lines we get back after "applying" the diff to the highlighting.
+			highlightedBase: []template.HTML{
+				"func AddFeature(key string, isEnabled bool) {",
+				"features[strings.ToLower(key)] = isEnabled",
+				"}",
+				"",
+				"// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is",
+				"// case insensitive.",
+				"// If a feature is not present, it defaults to false.",
+				"func IsEnabled(key string) bool {",
+				"return features[strings.ToLower(key)]",
+				"}",
+			},
+			highlightedHead: []template.HTML{
+				"func AddFeature(key string, isEnabled bool) {",
+				"features[strings.ToLower(key)] = isEnabled",
+				"}",
+			},
+		}
+
+		body, err := hunk.Highlight(ctx, &HighlightArgs{
+			DisableTimeout:     false,
+			HighlightLongLines: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if body.Aborted() {
+			t.Fatal("highlighting is aborted")
+		}
+
+		wantLines := []struct {
+			kind, html string
+		}{
+			{kind: "UNCHANGED", html: "features[strings.ToLower(key)] = isEnabled"},
+			{kind: "UNCHANGED", html: "}"},
+			{kind: "UNCHANGED", html: ""},
+			{kind: "DELETED", html: "// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is"},
+			{kind: "DELETED", html: "// case insensitive."},
+			{kind: "DELETED", html: "// If a feature is not present, it defaults to false."},
+			{kind: "DELETED", html: "func IsEnabled(key string) bool {"},
+			{kind: "DELETED", html: "return features[strings.ToLower(key)]"},
+			{kind: "DELETED", html: "}"},
+		}
+
+		lines := body.Lines()
+		if have, want := len(lines), len(wantLines); have != want {
+			t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		}
+		for i, n := range lines {
+			wantedLine := wantLines[i]
+			if n.Kind() != wantedLine.kind {
+				t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+			}
+			if n.HTML() != wantedLine.html {
+				t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+			}
+		}
+	})
+}
+
 const testDiffFiles = 3
 const testDiff = `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644

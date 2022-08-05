@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,11 +47,12 @@ func TestUnpack(t *testing.T) {
 
 	type testCase struct {
 		packer
-		name string
-		opts Opts
-		in   []*fileInfo
-		out  []*fileInfo
-		err  string
+		name        string
+		opts        Opts
+		in          []*fileInfo
+		out         []*fileInfo
+		err         string
+		errContains string
 	}
 
 	var testCases []testCase
@@ -161,6 +163,30 @@ func TestUnpack(t *testing.T) {
 					{path: "dir/file4", contents: "x", mode: 0600, size: 1},
 				},
 			},
+			{
+				packer: p,
+				name:   "duplicates",
+				in: []*fileInfo{
+					{path: "bar", contents: "bar", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0655},
+				},
+				errContains: "/bar: file exists",
+				out: []*fileInfo{
+					{path: "bar", contents: "bar", mode: 0655, size: 3},
+				},
+			},
+			{
+				packer: p,
+				name:   "skip-duplicates",
+				opts:   Opts{SkipDuplicates: true},
+				in: []*fileInfo{
+					{path: "bar", contents: "bar", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0655},
+				},
+				out: []*fileInfo{
+					{path: "bar", contents: "bar", mode: 0655, size: 3},
+				},
+			},
 		}...)
 	}
 
@@ -174,7 +200,7 @@ func TestUnpack(t *testing.T) {
 				tc.opts,
 			)
 
-			assertError(t, err, tc.err)
+			assertError(t, err, tc.err, tc.errContains)
 			assertUnpack(t, dir, tc.out)
 		})
 	}
@@ -249,7 +275,15 @@ func makeTar(t testing.TB, files ...*fileInfo) []byte {
 	return buf.Bytes()
 }
 
-func assertError(t testing.TB, have error, want string) {
+func assertError(t testing.TB, have error, want string, wantContains string) {
+	if want == "" && wantContains != "" {
+		haveMessage := fmt.Sprint(have)
+		if !strings.Contains(haveMessage, wantContains) {
+			t.Fatalf("error should contain %q, but doesn't: %q", wantContains, haveMessage)
+		}
+		return
+	}
+
 	if want == "" {
 		want = "<nil>"
 	}

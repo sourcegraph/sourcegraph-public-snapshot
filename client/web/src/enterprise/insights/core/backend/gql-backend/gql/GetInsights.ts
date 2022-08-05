@@ -32,6 +32,7 @@ const INSIGHT_VIEW_SERIES_FRAGMENT = gql`
                 }
                 isCalculated
                 generatedFromCaptureGroups
+                groupBy
             }
         }
     }

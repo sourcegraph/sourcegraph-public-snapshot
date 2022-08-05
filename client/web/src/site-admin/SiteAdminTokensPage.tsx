@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -53,7 +53,7 @@ export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildre
                     className={classNames('ml-2', !accessTokensEnabled && 'disabled')}
                     to={accessTokensEnabled ? `${authenticatedUser.settingsURL!}/tokens/new` : null}
                 >
-                    <Icon as={AddIcon} aria-hidden={true} /> Generate access token
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate access token
                 </Button>
             </div>
             <Text>

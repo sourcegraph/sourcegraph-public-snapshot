@@ -32,11 +32,15 @@ type LimitJob struct {
 }
 
 func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, l)
+	tr, ctx, s, finish := job.StartSpan(ctx, s, l)
 	defer func() { finish(alert, err) }()
 
-	ctx, s, cancel := newLimitStream(ctx, s, l.limit)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	s = newLimitStream(l.limit, s, func() {
+		tr.LazyPrintf("limit hit, canceling child context")
+		cancel()
+	})
 
 	alert, err = l.child.Run(ctx, clients, s)
 	if errors.Is(err, context.Canceled) {
@@ -74,9 +78,9 @@ func (l *LimitJob) MapChildren(fn job.MapFunc) job.Job {
 }
 
 type limitStream struct {
-	s         streaming.Sender
-	cancel    context.CancelFunc
-	remaining atomic.Int64
+	s          streaming.Sender
+	onLimitHit context.CancelFunc
+	remaining  atomic.Int64
 }
 
 func (s *limitStream) Send(event streaming.SearchEvent) {
@@ -111,21 +115,16 @@ func (s *limitStream) Send(event streaming.SearchEvent) {
 	// the zero-remaining threshold.
 	if after <= 0 && before > 0 {
 		s.s.Send(streaming.SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
-		s.cancel()
+		s.onLimitHit()
 	}
 }
 
-// WithLimit returns a child Stream of parent as well as a child Context of
-// ctx. The child stream passes on all events to parent. Once more than limit
-// ResultCount are sent on the child stream the context is canceled and an
-// IsLimitHit event is sent.
-//
-// Canceling this context releases resources associated with it, so code
-// should call cancel as soon as the operations running in this Context and
-// Stream are complete.
-func newLimitStream(ctx context.Context, parent streaming.Sender, limit int) (context.Context, streaming.Sender, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(ctx)
-	stream := &limitStream{cancel: cancel, s: parent}
+// newLimitStream returns a child Stream of parent. The child stream passes on all events
+// to the parent until the limit has been hit. When the limit is hit, it will send a limit
+// hit event on the parent stream and call the onLimitHit callback, which can be used
+// to, e.g., cancel a context.
+func newLimitStream(limit int, parent streaming.Sender, onLimitHit func()) streaming.Sender {
+	stream := &limitStream{onLimitHit: onLimitHit, s: parent}
 	stream.remaining.Store(int64(limit))
-	return ctx, stream, cancel
+	return stream
 }

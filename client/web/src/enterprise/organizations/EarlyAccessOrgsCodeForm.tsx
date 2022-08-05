@@ -1,5 +1,7 @@
 import { FunctionComponent, useCallback, useState } from 'react'
 
+import { RouteComponentProps } from 'react-router'
+
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
 import { IFeatureFlagOverride } from '@sourcegraph/shared/src/schema'
@@ -41,6 +43,9 @@ export const CREATE_FEATURE_FLAG_OVERRIDE = gql`
         }
     }
 `
+
+export interface EarlyAccessOrgsCodeFormProps extends RouteComponentProps<{}> {}
+
 /**
  * Form that sets a feature flag override for org-code flag, based on organization name.
  * This enables 2 screens - organization code host connections and organization repositories.
@@ -51,7 +56,7 @@ export const CREATE_FEATURE_FLAG_OVERRIDE = gql`
  * This implementation is a quick hack for making our lives easier while in early access
  * stage. IMO it's not worth a lot of effort as it is throwaway work once we are in GA.
  */
-export const EarlyAccessOrgsCodeForm: FunctionComponent<any> = () => {
+export const EarlyAccessOrgsCodeForm: FunctionComponent<EarlyAccessOrgsCodeFormProps> = () => {
     const [name, setName] = useState<string>('')
 
     const [updateFeatureFlag, { data, loading: flagLoading, error: flagError }] = useMutation<

@@ -24,13 +24,13 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
 
     return (
         <>
-            <PageTitle title="Precise code intelligence repository index configuration" />
+            <PageTitle title="Precise code graph repository index configuration" />
             <CodeIntelConfigurationPageHeader>
                 <PageHeader
                     headingElement="h2"
                     path={[
                         {
-                            text: <>Precise code intelligence repository index configuration</>,
+                            text: <>Precise code graph repository index configuration</>,
                         },
                     ]}
                     description={

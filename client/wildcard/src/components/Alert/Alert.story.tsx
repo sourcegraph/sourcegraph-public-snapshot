@@ -65,13 +65,13 @@ export const Alerts: Story = () => (
             {ALERT_VARIANTS.map(variant => (
                 <Alert key={variant} variant={variant}>
                     <H4>Too many matching repositories</H4>
-                    Use a 'repo:' or 'repogroup:' filter to narrow your search.
+                    Use a 'repo:' filter to narrow your search.
                 </Alert>
             ))}
             <Alert variant="info" className="d-flex align-items-center">
                 <div className="flex-grow-1">
                     <H4>Too many matching repositories</H4>
-                    Use a 'repo:' or 'repogroup:' filter to narrow your search.
+                    Use a 'repo:' filter to narrow your search.
                 </div>
                 <AlertLink className="mr-2" to="/" onClick={flow(preventDefault, action(classNames('link clicked')))}>
                     Dismiss

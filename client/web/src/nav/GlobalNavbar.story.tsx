@@ -40,12 +40,10 @@ const defaultProps = (
     onThemePreferenceChange: () => undefined,
     globbing: false,
     platformContext: {} as any,
-    keyboardShortcuts: [],
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
-    isExtensionAlertAnimating: false,
     searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
@@ -54,9 +52,8 @@ const defaultProps = (
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    showKeyboardShortcutsHelp: () => undefined,
 })
 
 const decorator: DecoratorFn = Story => {

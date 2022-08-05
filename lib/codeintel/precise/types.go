@@ -1,6 +1,8 @@
 package precise
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+import (
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+)
 
 type ID string
 
@@ -35,6 +37,13 @@ type RangeData struct {
 	HoverResultID          ID   // possibly empty
 	MonikerIDs             []ID // possibly empty
 }
+
+const (
+	Local          = "local"
+	Import         = "import"
+	Export         = "export"
+	Implementation = "implementation"
+)
 
 // MonikerData represent a unique name (eventually) attached to a range.
 type MonikerData struct {

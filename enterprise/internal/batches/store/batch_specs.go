@@ -31,6 +31,7 @@ var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.allow_unsupported"),
 	sqlf.Sprintf("batch_specs.allow_ignored"),
 	sqlf.Sprintf("batch_specs.no_cache"),
+	sqlf.Sprintf("batch_specs.batch_change_id"),
 	sqlf.Sprintf("batch_specs.created_at"),
 	sqlf.Sprintf("batch_specs.updated_at"),
 }
@@ -48,11 +49,12 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("allow_unsupported"),
 	sqlf.Sprintf("allow_ignored"),
 	sqlf.Sprintf("no_cache"),
+	sqlf.Sprintf("batch_change_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
@@ -105,6 +107,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
+		nullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(batchSpecColumns, ", "),
@@ -156,6 +159,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
+		nullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -587,8 +591,8 @@ SELECT
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'completed') AS completed,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = FALSE) AS processing,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'queued') AS queued,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = FALSE) AS failed,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = TRUE) AS canceled,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed') AS failed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'canceled') AS canceled,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = TRUE) AS canceling
 FROM batch_specs
 LEFT JOIN batch_spec_resolution_jobs res_job ON res_job.batch_spec_id = batch_specs.id
@@ -664,6 +668,7 @@ func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 		&c.AllowUnsupported,
 		&c.AllowIgnored,
 		&c.NoCache,
+		&dbutil.NullInt64{N: &c.BatchChangeID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

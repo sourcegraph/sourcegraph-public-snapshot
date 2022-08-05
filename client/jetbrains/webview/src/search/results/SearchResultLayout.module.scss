@@ -5,7 +5,7 @@
     height: 1.5rem;
     align-items: center;
     white-space: nowrap;
-    padding: 0 0.5rem;
+    padding: 0 4px;
 
     // The below options are extracted from the native JetBrains find in files
     // model.
@@ -40,12 +40,11 @@
 }
 
 .info-column {
-    // @TODO: Make configurable, this is copied from the Figma file
-    color: #8c8c8c;
+    color: var(--jb-info-text-color);
     text-align: right;
     font-variant-numeric: tabular-nums;
     display: flex;
-    font-size: 0.625rem;
+    font-size: 13px;
     flex-shrink: 0;
     align-items: center;
     justify-content: flex-end;

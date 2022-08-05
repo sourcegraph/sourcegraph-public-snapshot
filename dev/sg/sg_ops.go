@@ -2,12 +2,16 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/docker/docker-credential-helpers/credentials"
@@ -19,7 +23,10 @@ var (
 		Usage:       "Commands used by operations teams to perform common tasks",
 		Description: "Supports internal deploy-sourcegraph repos (non-customer facing)",
 		Category:    CategoryCompany,
-		Subcommands: []*cli.Command{opsUpdateImagesCommand},
+		Subcommands: []*cli.Command{
+			opsUpdateImagesCommand,
+			opsTagDetailsCommand,
+		},
 	}
 
 	opsUpdateImagesDeploymentKindFlag            string
@@ -34,9 +41,16 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "kind",
-				Usage:       "the `kind` of deployment (one of 'k8s', 'helm')",
+				Aliases:     []string{"k"},
+				Usage:       "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
 				Value:       string(images.DeploymentTypeK8S),
 				Destination: &opsUpdateImagesDeploymentKindFlag,
+			},
+			&cli.StringFlag{
+				Name:        "pin-tag",
+				Aliases:     []string{"t"},
+				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)",
+				Destination: &opsUpdateImagesPinTagFlag,
 			},
 			&cli.StringFlag{
 				Name:        "cr-username",
@@ -48,13 +62,69 @@ var (
 				Usage:       "`password` or access token for the container registry",
 				Destination: &opsUpdateImagesContainerRegistryPasswordFlag,
 			},
-			&cli.StringFlag{
-				Name:        "pin-tag",
-				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)",
-				Destination: &opsUpdateImagesPinTagFlag,
-			},
 		},
 		Action: opsUpdateImage,
+	}
+
+	opsTagDetailsCommand = &cli.Command{
+		Name:      "inspect-tag",
+		ArgsUsage: "<image|tag>",
+		Usage:     "Inspect main branch tag details from a image or tag",
+		UsageText: `
+# Inspect a full image
+sg ops inspect-tag index.docker.io/sourcegraph/cadvisor:159625_2022-07-11_225c8ae162cc@sha256:foobar
+
+# Inspect just the tag
+sg ops inspect-tag 159625_2022-07-11_225c8ae162cc
+
+# Get the build number
+sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
+`,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "property",
+				Aliases: []string{"p"},
+				Usage:   "only output a specific `property` (one of: 'build', 'date', 'commit')",
+			},
+		},
+		Action: func(cmd *cli.Context) error {
+			input := cmd.Args().First()
+			// trim out leading image
+			parts := strings.SplitN(input, ":", 2)
+			if len(parts) > 1 {
+				input = parts[1]
+			}
+			// trim out shasum
+			parts = strings.SplitN(input, "@sha256", 2)
+			if len(parts) > 1 {
+				input = parts[0]
+			}
+
+			std.Out.Verbosef("inspecting %q", input)
+
+			tag, err := images.ParseMainBranchImageTag(input)
+			if err != nil {
+				return errors.Wrap(err, "unable to understand tag")
+			}
+
+			selectProperty := cmd.String("property")
+			if len(selectProperty) == 0 {
+				std.Out.WriteMarkdown(fmt.Sprintf("# %s\n- Build: `%d`\n- Date: %s\n- Commit: `%s`", input, tag.Build, tag.Date, tag.ShortCommit))
+				return nil
+			}
+
+			properties := map[string]string{
+				"build":  strconv.Itoa(tag.Build),
+				"date":   tag.Date,
+				"commit": tag.ShortCommit,
+			}
+			v, exists := properties[selectProperty]
+			if !exists {
+				return errors.Newf("unknown property %q", selectProperty)
+			}
+			std.Out.Write(v)
+			return nil
+		},
 	}
 )
 
@@ -81,15 +151,14 @@ func opsUpdateImage(ctx *cli.Context) error {
 			dockerCredentials.Username = ""
 			dockerCredentials.Secret = ""
 		} else {
-			std.Out.WriteNoticef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
+			std.Out.WriteSuccessf("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
 			dockerCredentials = creds
 		}
 	}
 
 	if opsUpdateImagesPinTagFlag == "" {
-		std.Out.WriteWarningf("No pin tag is provided.")
-		std.Out.WriteWarningf("Falling back to the latest deveopment build available.")
+		std.Out.WriteWarningf("No pin tag (-t) is provided - will fall back to latest main branch tag available.")
 	}
 
-	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
+	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
 }
