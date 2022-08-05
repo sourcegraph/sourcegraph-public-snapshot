@@ -221,34 +221,32 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS
       FROM moved
       WHERE moved.shard_id = grs.shard_id;
 
-      INSERT INTO
-        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned)
-      VALUES (
-        (SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL     AND blocked IS NULL),
-        (SELECT COUNT(*) FROM repo WHERE deleted_at IS NOT NULL AND blocked IS NULL),
+      WITH diffs (not_cloned_diff, cloning_diff, cloned_diff) AS (
+        VALUES
         (
-          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')
-          -
-          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')
-        ),
-        (
-          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')
-          -
-          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')
-        ),
-        (
-          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')
-          -
-          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')
+          )
         )
       )
-      ON CONFLICT(id) DO UPDATE
+      UPDATE repo_statistics
       SET
-        -- do not update total, soft_deleted on update
-        not_cloned   = repo_statistics.not_cloned   + excluded.not_cloned,
-        cloning      = repo_statistics.cloning      + excluded.cloning,
-        cloned       = repo_statistics.cloned       + excluded.cloned
-      ;
+        not_cloned   = repo_statistics.not_cloned   + (SELECT not_cloned_diff FROM diffs),
+        cloning      = repo_statistics.cloning      + (SELECT cloning_diff FROM diffs),
+        cloned       = repo_statistics.cloned       + (SELECT cloned_diff FROM diffs)
+      WHERE id = TRUE;
 
       RETURN NULL;
   END
