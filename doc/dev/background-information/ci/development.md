@@ -200,11 +200,16 @@ go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 
 #### Managing secrets
 
-The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. Our CI pipeline must never leak secrets:
+The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. To add a secret:
 
-- to add a secret, use the Secret Manager on Google Cloud and then inject it at deployment time as an environment variable in the CI agents, which will make it available to every step.
-- use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
-- while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
+1. Use Google Cloud Secret manager to add it to [the `sourcegraph-ci` project](https://console.cloud.google.com/security/secret-manager?project=sourcegraph-ci).
+2. Inject it at deployment time as an environment variable in the CI agents via adding it to [the Buildkite GSM configuration](https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/gsm-secrets.tf).
+3. Run `terraform apply` in [the `buildkite/kubernetes/` folder](https://github.com/sourcegraph/infrastructure/tree/main/buildkite/kubernetes). It will make it available to every CI step.
+
+Our CI pipeline must never leak secrets:
+
+1. Use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
+2. While environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
 #### Creating scheduled builds
 
