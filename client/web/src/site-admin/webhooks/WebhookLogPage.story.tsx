@@ -119,7 +119,7 @@ const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookL
 export const NoLogs: Story = args => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2, args)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs([])} />
             </MockedTestProvider>
         )}
@@ -131,7 +131,7 @@ NoLogs.storyName = 'no logs'
 export const OnePageOfLogs: Story = args => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2, args)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs(buildWebhookLogs(20, 2))} />
             </MockedTestProvider>
         )}
@@ -143,7 +143,7 @@ OnePageOfLogs.storyName = 'one page of logs'
 export const TwoPagesOfLogs: Story = args => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2, args)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs(buildWebhookLogs(40, 2))} />
             </MockedTestProvider>
         )}

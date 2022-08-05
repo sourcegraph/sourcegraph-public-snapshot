@@ -154,11 +154,6 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
                 </ButtonGroup>
                 {actions.length > 1 && (
                     <MenuList className={styles.menuList} position={Position.bottomEnd}>
-                        {/* {dropdownMenuPosition === 'left'
-                            ? 'dropdown-menu-left'
-                            : dropdownMenuPosition === 'right'
-                            ? 'dropdown-menu-right'
-                            : null,} */}
                         {actions.map((action, index) => (
                             <React.Fragment key={action.type}>
                                 <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />

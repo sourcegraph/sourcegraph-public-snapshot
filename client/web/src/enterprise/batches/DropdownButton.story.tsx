@@ -38,35 +38,37 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 const config: Meta = {
     title: 'web/batches/DropdownButton',
     decorators: [decorator],
+    argTypes: {
+        disabled: {
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+    },
 }
 
 export default config
 
-export const NoActions: Story = () => <WebStory>{() => <DropdownButton actions={[]} />}</WebStory>
+export const NoActions: Story = args => <WebStory>{() => <DropdownButton actions={[]} {...args} />}</WebStory>
+NoActions.argTypes = {
+    disabled: {
+        table: {
+            disable: true,
+        },
+    },
+}
 
 NoActions.storyName = 'No actions'
 
 export const SingleAction: Story = args => <WebStory>{() => <DropdownButton actions={[action]} {...args} />}</WebStory>
 
 SingleAction.storyName = 'Single action'
-SingleAction.argTypes = {
-    disabled: {
-        control: { type: 'boolean' },
-        defaultValue: false,
-    },
-}
 
 export const MultipleActionsWithoutDefault: Story = args => (
     <WebStory>{() => <DropdownButton actions={[action, disabledAction, experimentalAction]} {...args} />}</WebStory>
 )
 
 MultipleActionsWithoutDefault.storyName = 'Multiple actions without default'
-MultipleActionsWithoutDefault.argTypes = {
-    dropdownMenuPosition: {
-        control: { type: 'select', options: ['None', 'Left', 'Right'] },
-        defaultValue: 'None',
-    },
-}
+
 export const MultipleActionsWithDefault: Story = args => (
     <WebStory>
         {() => <DropdownButton actions={[action, disabledAction, experimentalAction]} defaultAction={0} {...args} />}
@@ -74,19 +76,3 @@ export const MultipleActionsWithDefault: Story = args => (
 )
 
 MultipleActionsWithDefault.storyName = 'Multiple actions with default'
-MultipleActionsWithDefault.argTypes = {
-    disabled: {
-        control: { type: 'boolean' },
-        defaultValue: false,
-    },
-    dropdownMenuPosition: {
-        control: { type: 'select' },
-        options: ['None', 'Left', 'Right'],
-        labels: {
-            None: undefined,
-            Left: 'left',
-            Right: 'right',
-        },
-        defaultValue: { None: undefined },
-    },
-}

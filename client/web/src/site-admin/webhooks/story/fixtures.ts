@@ -61,9 +61,8 @@ export const webhookLogNode = (ctrlProps: Args, overrides?: Partial<WebhookLogFi
     },
 })
 
-export const buildExternalServices = (count: number, ctrlProps: Args): WebhookLogPageHeaderExternalService[] => {
+export const buildExternalServices = (count: number): WebhookLogPageHeaderExternalService[] => {
     const services: WebhookLogPageHeaderExternalService[] = []
-    count = ctrlProps.externalServiceCount
 
     for (let index = 0; index < count; index++) {
         const name = `External service ${index}`
@@ -79,8 +78,7 @@ export const buildExternalServices = (count: number, ctrlProps: Args): WebhookLo
 
 export const buildHeaderMock = (
     externalServiceCount: number,
-    webhookLogCount: number,
-    ctrlProps: Args
+    webhookLogCount: number
 ): MockedResponse<WebhookLogPageHeaderResult>[] => [
     {
         request: { query: getDocumentNode(WEBHOOK_LOG_PAGE_HEADER) },
@@ -88,10 +86,10 @@ export const buildHeaderMock = (
             data: {
                 externalServices: {
                     totalCount: externalServiceCount,
-                    nodes: buildExternalServices(externalServiceCount, ctrlProps),
+                    nodes: buildExternalServices(externalServiceCount),
                 },
                 webhookLogs: {
-                    totalCount: ctrlProps.erroredWebhookCount,
+                    totalCount: webhookLogCount,
                 },
             },
         },

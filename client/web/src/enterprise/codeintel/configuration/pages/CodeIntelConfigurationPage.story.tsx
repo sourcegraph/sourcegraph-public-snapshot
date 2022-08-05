@@ -264,9 +264,7 @@ const Template: Story<CodeIntelConfigurationPageProps> = args => (
             inferredRepositoryConfigurationRequest, // For Infer index configuration from HEAD
         ]}
     >
-        {props => (
-            <CodeIntelConfigurationPage {...props} /* indexingEnabled={boolean('indexingEnabled', true)} */ {...args} />
-        )}
+        {props => <CodeIntelConfigurationPage {...props} {...args} />}
     </WebStory>
 )
 

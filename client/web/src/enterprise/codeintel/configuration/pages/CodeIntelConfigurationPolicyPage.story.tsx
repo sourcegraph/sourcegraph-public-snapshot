@@ -160,12 +160,7 @@ const Template: Story<CodeIntelConfigurationPolicyPageProps> = args => (
             previewRepositoryFilterRequest,
         ]}
     >
-        {props => (
-            <CodeIntelConfigurationPolicyPage
-                {...props}
-                /* indexingEnabled={boolean('indexingEnabled', true)}*/ {...args}
-            />
-        )}
+        {props => <CodeIntelConfigurationPolicyPage {...props} {...args} />}
     </WebStory>
 )
 

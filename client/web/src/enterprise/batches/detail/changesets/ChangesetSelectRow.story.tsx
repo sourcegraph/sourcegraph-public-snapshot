@@ -14,29 +14,24 @@ import {
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-let rangeMax = 100
+
 const config: Meta = {
     title: 'web/batches/ChangesetSelectRow',
     decorators: [decorator],
     argTypes: {
-        totalChangesets: {
-            name: 'Total changesets',
-            control: { type: 'number' },
-            defaultValue: 100,
-        },
         visibleChangesets: {
             name: 'Visible changesets',
-            control: { type: 'range', min: 0, max: rangeMax },
+            control: { type: 'range', min: 0, max: 100 },
             defaultValue: 10,
         },
         selectableChangesets: {
             name: 'Selectable changesets',
-            control: { type: 'range', min: 0, max: rangeMax },
+            control: { type: 'range', min: 0, max: 100 },
             defaultValue: 100,
         },
         selectedChangesets: {
             name: 'Selected changesets',
-            control: { type: 'range', min: 0, max: rangeMax },
+            control: { type: 'range', min: 0, max: 100 },
             defaultValue: 0,
         },
     },
@@ -54,8 +49,10 @@ const queryAll50ChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_
 const allBulkOperations = Object.keys(BulkOperationType) as BulkOperationType[]
 
 export const AllStates: Story = args => {
-    const totalChangesets = args.totalChangesets
-    rangeMax = totalChangesets
+    // totalChangesets should be used to set the max of the range for visibleChangesets and selectableChangesets
+    // selectableChangesets should be used to set the max of the range for selectedChangesets
+    // This is an edge case that can be done with Storybook knobs but cannot be done with Storybook controls at this time, however this is the intended use of the controls
+    const totalChangesets = 100
     const visibleChangesets = args.visibleChangesets
     const selectableChangesets = args.selectableChangesets
     const selectedChangesets = args.selectedChangesets
