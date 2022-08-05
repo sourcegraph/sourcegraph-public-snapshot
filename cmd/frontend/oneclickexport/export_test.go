@@ -502,7 +502,7 @@ func TestExport_DB_ExternalServices(t *testing.T) {
 	exporter := &DataExporter{
 		logger: logger,
 		dbProcessors: map[string]Processor[Limit]{
-			"externalServices": ExtSvcDBQueryProcessor{
+			"externalServices": ExtSvcQueryProcessor{
 				db:     db,
 				logger: logger,
 				Type:   "externalServices",
@@ -584,7 +584,7 @@ func TestExport_DB_ExternalServiceRepos(t *testing.T) {
 	exporter := &DataExporter{
 		logger: logger,
 		dbProcessors: map[string]Processor[Limit]{
-			"externalServiceRepos": ExtSvcReposDBQueryProcessor{
+			"externalServiceRepos": ExtSvcReposQueryProcessor{
 				db:     db,
 				logger: logger,
 				Type:   "externalServiceRepos",

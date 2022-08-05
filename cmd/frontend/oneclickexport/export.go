@@ -58,7 +58,7 @@ func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byt
 	// 1) creating a tmp dir
 	dir, err := os.MkdirTemp(os.TempDir(), "export-*")
 	if err != nil {
-		e.logger.Fatal("Error during code tmp dir creation", log.Error(err))
+		e.logger.Fatal("error during code tmp dir creation", log.Error(err))
 	}
 	defer os.RemoveAll(dir)
 
