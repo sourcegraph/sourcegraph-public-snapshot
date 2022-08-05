@@ -114,7 +114,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
 
     const { isLoading: computeLoading, results: computeResults } = useComputeResults(authenticatedUser, '$repo › $path')
 
-    const renderComputeResults = computeResults.length > 0
+    const renderComputeResults = computeResults.size > 0
 
     const contentDisplay = (
         <>
@@ -178,7 +178,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     // Wait for both the search event logs and the git history to be loaded
     const isLoading = computeLoading || !processedResults
     // If neither search event logs or git history have items, then display the empty display
-    const isEmpty = processedResults?.length === 0 && computeResults.length === 0
+    const isEmpty = processedResults?.length === 0 && computeResults.size === 0
 
     return (
         <PanelContainer

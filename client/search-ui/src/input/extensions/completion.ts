@@ -229,6 +229,8 @@ export function createDefaultSuggestionSources(options: {
     globbing: boolean
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
+    userRepos: Set<string>
+    userFiles: Set<string>
 }): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
     const sources: SuggestionSource<CompletionResult | null, SuggestionContext>[] = []
 
