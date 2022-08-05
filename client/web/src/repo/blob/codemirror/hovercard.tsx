@@ -470,6 +470,7 @@ class Hovercard implements TooltipView {
                         overlayPosition={dummyOverlayPosition}
                         hoveredToken={hoveredToken}
                         hoveredTokenElement={dummyHoveredElement}
+                        onAlertDismissed={() => repositionTooltips(this.view)}
                         pinOptions={{
                             showCloseButton: true,
                             onCloseButtonClick: () => {

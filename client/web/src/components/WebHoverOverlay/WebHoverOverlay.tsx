@@ -26,12 +26,7 @@ const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKi
 export interface WebHoverOverlayProps
     extends Omit<
             HoverOverlayProps,
-            | 'className'
-            | 'closeButtonClassName'
-            | 'actionItemClassName'
-            | 'onAlertDismissed'
-            | 'getAlertVariant'
-            | 'actionItemStyleProps'
+            'className' | 'closeButtonClassName' | 'actionItemClassName' | 'getAlertVariant' | 'actionItemStyleProps'
         >,
         HoverThresholdProps,
         SettingsCascadeProps {
@@ -45,6 +40,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
         (alertType: string) => {
             if (!dismissedAlerts.includes(alertType)) {
                 setDismissedAlerts([...dismissedAlerts, alertType])
+                props.onAlertDismissed?.(alertType)
             }
         },
         [dismissedAlerts, setDismissedAlerts]

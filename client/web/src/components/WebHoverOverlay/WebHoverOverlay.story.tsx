@@ -157,6 +157,7 @@ export const WithSmallTextAlert: Story = () => (
             alerts: [FIXTURE_SMALL_TEXT_MARKDOWN_ALERT],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        onAlertDismissed={action('onAlertDismissed')}
     />
 )
 
@@ -177,6 +178,7 @@ export const WithOneLineAlert: Story = () => (
             ],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        onAlertDismissed={action('onAlertDismissed')}
     />
 )
 
@@ -198,6 +200,7 @@ export const WithAlertWithWarningIcon: Story = () => (
             ],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        onAlertDismissed={action('onAlertDismissed')}
     />
 )
 
@@ -221,6 +224,7 @@ export const WithDismissibleAlertWithIcon: Story = () => (
             ],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        onAlertDismissed={action('onAlertDismissed')}
     />
 )
 
@@ -235,6 +239,7 @@ export const WithLongMarkdownTextAndDismissibleAlertWithIcon: Story = () => (
             aggregatedBadges: [FIXTURE_PARTIAL_BADGE, FIXTURE_SEMANTIC_BADGE],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        onAlertDismissed={action('onAlertDismissed')}
     />
 )
 
@@ -250,6 +255,7 @@ export const MultipleMarkupContentsWithBadgesAndAlerts: Story = () => (
                 alerts: [FIXTURE_SMALL_TEXT_MARKDOWN_ALERT, FIXTURE_WARNING_MARKDOWN_ALERT],
             }}
             actionsOrError={FIXTURE_ACTIONS}
+            onAlertDismissed={action('onAlertDismissed')}
         />
     </div>
 )
@@ -265,6 +271,7 @@ export const WithCloseButton: Story = () => (
             alerts: [FIXTURE_SMALL_TEXT_MARKDOWN_ALERT, FIXTURE_WARNING_MARKDOWN_ALERT],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        onAlertDismissed={action('onAlertDismissed')}
         pinOptions={{ showCloseButton: true }}
     />
 )
