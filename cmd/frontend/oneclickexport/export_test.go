@@ -329,7 +329,7 @@ func TestExport_CumulativeTest(t *testing.T) {
 			},
 		},
 		dbProcessors: map[string]Processor[Limit]{
-			"externalServices": ExtSvcDBQueryProcessor{
+			"externalServices": ExtSvcQueryProcessor{
 				db:     db,
 				logger: logger,
 				Type:   "externalServices",
