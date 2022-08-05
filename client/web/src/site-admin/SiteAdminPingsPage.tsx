@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { json } from '@codemirror/lang-json'
 import { foldGutter } from '@codemirror/language'
+import { search, searchKeymap } from '@codemirror/search'
+import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { isEmpty } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
@@ -19,8 +21,6 @@ import { LoadingSpinner, H2, H3, Text, useObservable } from '@sourcegraph/wildca
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { search, searchKeymap } from '@codemirror/search'
-import { EditorState } from '@codemirror/state'
 
 interface Props extends RouteComponentProps, ThemeProps {}
 
