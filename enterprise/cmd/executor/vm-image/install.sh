@@ -247,18 +247,13 @@ function setup_iptables() {
   # to prevent leaking any network details).
   iptables -A CNI-ADMIN -p udp --dport 53 -j ACCEPT
 
-  # Allow access to the gateway on the bridge network. TODO: Accept or return?
-  # TODO: This doesn't seem to be required. Why does it work though? Because
-  # it is a gateway and not the _destination_? Does that mean you can hit other
-  # internals too?
-  # iptables -A CNI-ADMIN -d 10.61.0.1 -j RETURN
-
   # Disallow any host-VM network traffic from the guests, except connections made
   # FROM the host (to ssh into the guest).
   iptables -A INPUT -d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
   iptables -A INPUT -s 10.61.0.0/16 -j DROP
 
   # Disallow any inter-VM traffic.
+  # But allow to reach the gateway for internet access.
   iptables -A CNI-ADMIN -s 10.61.0.1/32 -d 10.61.0.0/16 -j ACCEPT
   iptables -A CNI-ADMIN -d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.61.0.0/16 -j DROP
