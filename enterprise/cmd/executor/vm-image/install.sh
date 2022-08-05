@@ -80,8 +80,6 @@ function install_ignite() {
 
 function install_cni() {
   mkdir -p /opt/cni/bin
-  curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
-
   curl -sSL https://github.com/AkihiroSuda/cni-isolation/releases/download/v0.0.4/cni-isolation-amd64.tgz | tar -xz -C /opt/cni/bin
 }
 
@@ -242,28 +240,44 @@ EOF
 ## vector and talking to link-local services like the google metadata server.
 function setup_iptables() {
   # Ensure the chain exists.
-  iptables -N CNI-ADMIN
-  # Explicitly allow UDP link local traffic (required for google cloud).
-  iptables -A CNI-ADMIN -p udp --dport 53 -d 169.254.0.0/16 -j ACCEPT
-  # Allow access to the gateway on the bridge network.
-  iptables -A CNI-ADMIN -d 10.61.0.1 -j RETURN
-  # Disallow any host-VM network traffic
+  iptables --list | grep CNI-ADMIN 1>/dev/null || iptables -N CNI-ADMIN
+
+  # Explicitly allow DNS traffic (currently, the DNS server lives in the private
+  # networks for GCP and AWS. Ideally we'd want to use an internet-only DNS server
+  # to prevent leaking any network details).
+  iptables -A CNI-ADMIN -p udp --dport 53 -j ACCEPT
+
+  # Allow access to the gateway on the bridge network. TODO: Accept or return?
+  # TODO: This doesn't seem to be required. Why does it work though? Because
+  # it is a gateway and not the _destination_? Does that mean you can hit other
+  # internals too?
+  # iptables -A CNI-ADMIN -d 10.61.0.1 -j RETURN
+
+  # Disallow any host-VM network traffic from the guests, except connections made
+  # FROM the host (to ssh into the guest).
   iptables -A INPUT -d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  # TODO: Can those be combined?
   iptables -A INPUT -s 10.61.0.0/16 -p tcp -j DROP
   iptables -A INPUT -s 10.61.0.0/16 -p udp -j DROP
   iptables -A INPUT -s 10.61.0.0/16 -p icmp --icmp-type echo-request -j DROP
+
+  # Disallow any inter-VM traffic.
+  # TODO: This rule doesn't do what we want yet.
+  # iptables -A CNI-ADMIN -s 10.61.0.1 -j RETURN
+  # iptables -A CNI-ADMIN -d 10.61.0.0/16 -j DROP
+
+  # Disallow local networks access.
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.61.0.0/16 -j ACCEPT
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.0.0.0/8 -p tcp -j DROP
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 192.168.0.0/16 -p tcp -j DROP
   iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 172.16.0.0/12 -p tcp -j DROP
-  # Disallow any inter-VM traffic.
-  # TODO: This rule doesn't do what we want yet.
-  iptables -A CNI-ADMIN -s 10.61.0.1 -j RETURN
-  iptables -A CNI-ADMIN -d 10.61.0.0/16 -j DROP
-  # Disallow any other link local traffic.
-  iptables -A CNI-ADMIN -d 169.254.0.0/16 -j DROP
-  # TODO: Disallow _all_ local traffic.
+  # Disallow link-local traffic, too. This usually contains cloud provider
+  # resources that we don't want to expose.
+  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 169.254.0.0/16 -j DROP
+
+  # Store the iptables config.
   iptables-save >/etc/iptables-store.conf
+  # And make sure it gets loaded on boot.
   cat <<EOF >/etc/network/if-up.d/iptables
 #!/bin/sh
 iptables-restore < /etc/iptables-store.conf
