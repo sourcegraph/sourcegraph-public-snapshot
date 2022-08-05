@@ -190,6 +190,11 @@ type Event struct {
 	Timestamp        time.Time
 	EvaluatedFlagSet featureflag.EvaluatedFlagSet
 	CohortID         *string // date in YYYY-MM-DD format
+	FirstSourceURL   *string
+	LastSourceURL    *string
+	Referrer         *string
+	DeviceID         *string
+	InsertID         *string
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -227,6 +232,11 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.Timestamp.UTC(),
 			featureFlags,
 			event.CohortID,
+			event.FirstSourceURL,
+			event.LastSourceURL,
+			event.Referrer,
+			event.DeviceID,
+			event.InsertID,
 		}
 	}
 	close(rowValues)
@@ -248,13 +258,18 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			"timestamp",
 			"feature_flags",
 			"cohort_id",
+			"first_source_url",
+			"last_source_url",
+			"referrer",
+			"device_id",
+			"insert_id",
 		},
 		rowValues,
 	)
 }
 
 func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*Event, error) {
-	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id, first_source_url, last_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -263,9 +278,16 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 	events := []*Event{}
 	for rows.Next() {
 		r := Event{}
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
+		var rawFlags []byte
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp, &rawFlags, &r.CohortID, &r.FirstSourceURL, &r.LastSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
 		if err != nil {
 			return nil, err
+		}
+		if rawFlags != nil {
+			marshalErr := json.Unmarshal(rawFlags, &r.EvaluatedFlagSet)
+			if marshalErr != nil {
+				return nil, errors.Wrap(marshalErr, "json.Unmarshal")
+			}
 		}
 		events = append(events, &r)
 	}
