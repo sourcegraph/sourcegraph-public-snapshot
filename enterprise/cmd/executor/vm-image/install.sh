@@ -248,7 +248,14 @@ function setup_iptables() {
   # Allow access to the gateway on the bridge network.
   iptables -A CNI-ADMIN -d 10.61.0.1 -j RETURN
   # Disallow any host-VM network traffic
-  iptables -A CNI-ADMIN -d 10.0.1.0/24 -j DROP
+  iptables -A INPUT -d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  iptables -A INPUT -s 10.61.0.0/16 -p tcp -j DROP
+  iptables -A INPUT -s 10.61.0.0/16 -p udp -j DROP
+  iptables -A INPUT -s 10.61.0.0/16 -p icmp --icmp-type echo-request -j DROP
+  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.61.0.0/16 -j ACCEPT
+  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.0.0.0/8 -p tcp -j DROP
+  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 192.168.0.0/16 -p tcp -j DROP
+  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 172.16.0.0/16 -p tcp -j DROP
   # Disallow any inter-VM traffic.
   # TODO: This rule doesn't do what we want yet.
   iptables -A CNI-ADMIN -s 10.61.0.1 -j RETURN
