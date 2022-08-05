@@ -76,8 +76,8 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	// found webhook from GitHub API
 	// don't build a new one
 	if webhookPayload != nil {
-		if err := addSecretToExtSvc(svc, conn, job.Org, webhookPayload.Config.Secret); err != nil {
-			logger.Error("handleKindGitHub: Webhook found but addSecretToExtSvc failed")
+		if err := addWebhookToExtSvc(svc, conn, job.Org, webhookPayload.Config.Secret); err != nil {
+			return errors.Wrap(err, "handleKindGitHub: Webhook found but addWebhookToExtSvc failed")
 		}
 
 		logger.Info("webhook found", log.Int("ID", webhookPayload.ID))
@@ -94,15 +94,15 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errors.Wrap(err, "handleKindGitHub: CreateSyncWebhook failed")
 	}
 
-	if err := addSecretToExtSvc(svc, conn, job.Org, secret); err != nil {
-		logger.Error("handleKindGitHub: Webhook created but addSecretToExtSvc failed")
+	if err := addWebhookToExtSvc(svc, conn, job.Org, secret); err != nil {
+		return errors.Wrap(err, "handleKindGitHub: Webhook created but addWebhookToExtSvc failed")
 	}
 
 	logger.Info("webhook created", log.Int("ID", id))
 	return nil
 }
 
-func addSecretToExtSvc(svc *types.ExternalService, conn *schema.GitHubConnection, org, secret string) error {
+func addWebhookToExtSvc(svc *types.ExternalService, conn *schema.GitHubConnection, org, secret string) error {
 	if webhookExistsInConfig(conn.Webhooks, org) {
 		return nil
 	}
