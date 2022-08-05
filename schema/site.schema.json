@@ -455,7 +455,7 @@
           "description": "Enable webhooks for repo syncing",
           "type": "boolean",
           "default": false,
-          "!go":{ "pointer": false }
+          "!go": { "pointer": false }
         },
         "enablePermissionsWebhooks": {
           "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
