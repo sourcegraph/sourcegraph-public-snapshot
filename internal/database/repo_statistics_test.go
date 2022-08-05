@@ -43,8 +43,7 @@ func TestRepoStatistics(t *testing.T) {
 
 	assertRepoStatistics(t, ctx, s, repoStatistics{
 		Total: 6, NotCloned: 6, SoftDeleted: 0,
-	})
-	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+	}, []gitserverReposStatistics{
 		{ShardID: "", Total: 6, NotCloned: 6},
 	})
 
@@ -54,8 +53,7 @@ func TestRepoStatistics(t *testing.T) {
 
 	assertRepoStatistics(t, ctx, s, repoStatistics{
 		Total: 6, SoftDeleted: 0, NotCloned: 4, Cloning: 2,
-	})
-	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+	}, []gitserverReposStatistics{
 		{ShardID: "", Total: 4, NotCloned: 4},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 	})
@@ -69,8 +67,7 @@ func TestRepoStatistics(t *testing.T) {
 
 	assertRepoStatistics(t, ctx, s, repoStatistics{
 		Total: 6, SoftDeleted: 0, Cloning: 6,
-	})
-	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+	}, []gitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 2, Cloning: 2},
@@ -81,8 +78,7 @@ func TestRepoStatistics(t *testing.T) {
 	setCloneStatus(t, db, repos[2].Name, shards[2], types.CloneStatusCloned)
 	assertRepoStatistics(t, ctx, s, repoStatistics{
 		Total: 6, SoftDeleted: 0, Cloning: 5, Cloned: 1,
-	})
-	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+	}, []gitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 1, Cloning: 1},
@@ -98,26 +94,27 @@ func TestRepoStatistics(t *testing.T) {
 	// Deletion is reflected in repoStatistics
 	assertRepoStatistics(t, ctx, s, repoStatistics{
 		Total: 5, SoftDeleted: 1, Cloning: 5,
-	})
-	// But gitserverReposStatistics is unchanged
-	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+	}, []gitserverReposStatistics{
+		// But gitserverReposStatistics is unchanged
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 1, Cloning: 1},
 		{ShardID: shards[2], Total: 3, Cloning: 2, Cloned: 1},
 	})
+
 	// Until we remove it from disk in gitserver, which causes the clone status
 	// to be set to not_cloned:
 	setCloneStatus(t, db, deletedRepoName, shards[2], types.CloneStatusNotCloned)
-	assertGitserverReposStatistics(t, ctx, s, []gitserverReposStatistics{
+
+	assertRepoStatistics(t, ctx, s, repoStatistics{
+		// Global stats are unchanged
+		Total: 5, SoftDeleted: 1, Cloning: 5,
+	}, []gitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 1, Cloning: 1},
+		// But now it's reflected as NotCloned
 		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1},
-	})
-	// Global stats are unchanged
-	assertRepoStatistics(t, ctx, s, repoStatistics{
-		Total: 5, SoftDeleted: 1, Cloning: 5,
 	})
 }
 
@@ -138,31 +135,27 @@ func setCloneStatus(t *testing.T, db DB, repoName api.RepoName, shard string, st
 	}
 }
 
-func assertRepoStatistics(t *testing.T, ctx context.Context, s *repoStatisticsStore, want repoStatistics) {
+func assertRepoStatistics(t *testing.T, ctx context.Context, s *repoStatisticsStore, wantRepoStats repoStatistics, wantGitserverStats []gitserverReposStatistics) {
 	t.Helper()
 
-	have, err := s.GetRepoStatistics(ctx)
+	haveRepoStats, err := s.GetRepoStatistics(ctx)
 	if err != nil {
 		t.Fatalf("GetRepoStatistics failed: %s", err)
 	}
 
-	if diff := cmp.Diff(have, want); diff != "" {
+	if diff := cmp.Diff(haveRepoStats, wantRepoStats); diff != "" {
 		t.Fatalf("repoStatistics differ: %s", diff)
 	}
-}
 
-func assertGitserverReposStatistics(t *testing.T, ctx context.Context, s *repoStatisticsStore, want []gitserverReposStatistics) {
-	t.Helper()
-
-	have, err := s.GetGitserverReposStatistics(ctx)
+	haveGitserverStats, err := s.GetGitserverReposStatistics(ctx)
 	if err != nil {
 		t.Fatalf("GetRepoStatistics failed: %s", err)
 	}
 
-	sort.Slice(have, func(i, j int) bool { return have[i].ShardID < have[j].ShardID })
-	sort.Slice(want, func(i, j int) bool { return want[i].ShardID < want[j].ShardID })
+	sort.Slice(haveGitserverStats, func(i, j int) bool { return haveGitserverStats[i].ShardID < haveGitserverStats[j].ShardID })
+	sort.Slice(wantGitserverStats, func(i, j int) bool { return wantGitserverStats[i].ShardID < wantGitserverStats[j].ShardID })
 
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatalf("repoStatistics differ: %s", diff)
+	if diff := cmp.Diff(haveRepoStats, wantRepoStats); diff != "" {
+		t.Fatalf("gitserverReposStatistics differ: %s", diff)
 	}
 }
