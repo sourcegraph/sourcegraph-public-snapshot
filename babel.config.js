@@ -39,9 +39,6 @@ module.exports = api => {
             'web.immediate',
             // Always define Symbol.observable before libraries are loaded, ensuring interopability between different libraries.
             'esnext.symbol.observable',
-            // Webpack v4 chokes on optional chaining and nullish coalescing syntax, fix will be released with webpack v5.
-            '@babel/plugin-proposal-optional-chaining',
-            '@babel/plugin-proposal-nullish-coalescing-operator',
           ],
           // See https://github.com/zloirock/core-js#babelpreset-env
           corejs: semver.minVersion(require('./package.json').dependencies['core-js']),
