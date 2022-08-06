@@ -32,8 +32,8 @@ import {
     DrillDownFiltersPopover,
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
+    parseSeriesLimit,
 } from './components'
-import { parseSeriesLimit } from './components/drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './BackendInsight.module.scss'
 
@@ -185,19 +185,19 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
-            <InsightCardHeader
-                title={
-                    <Link
-                        to={`${window.location.origin}/insights/insight/${insight.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+            {isVisible && (
+                <>
+                    <InsightCardHeader
+                        title={
+                            <Link
+                                to={`${window.location.origin}/insights/insight/${insight.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {insight.title}
+                            </Link>
+                        }
                     >
-                        {insight.title}
-                    </Link>
-                }
-            >
-                {isVisible && (
-                    <>
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
                             anchor={insightCardReference}
@@ -215,30 +215,30 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                         />
-                    </>
-                )}
-            </InsightCardHeader>
+                    </InsightCardHeader>
 
-            {resizing ? (
-                <InsightCardBanner>Resizing</InsightCardBanner>
-            ) : error ? (
-                <BackendInsightErrorAlert error={error} />
-            ) : loading || !isVisible || !insightData ? (
-                <InsightCardLoading>Loading code insight</InsightCardLoading>
-            ) : (
-                <BackendInsightChart
-                    {...insightData}
-                    locked={insight.isFrozen}
-                    zeroYAxisMin={zeroYAxisMin}
-                    seriesToggleState={seriesToggleState}
-                    onDatumClick={trackDatumClicks}
-                />
+                    {resizing ? (
+                        <InsightCardBanner>Resizing</InsightCardBanner>
+                    ) : error ? (
+                        <BackendInsightErrorAlert error={error} />
+                    ) : loading || !insightData ? (
+                        <InsightCardLoading>Loading code insight</InsightCardLoading>
+                    ) : (
+                        <BackendInsightChart
+                            {...insightData}
+                            locked={insight.isFrozen}
+                            zeroYAxisMin={zeroYAxisMin}
+                            seriesToggleState={seriesToggleState}
+                            onDatumClick={trackDatumClicks}
+                        />
+                    )}
+                    {
+                        // Passing children props explicitly to render any top-level content like
+                        // resize-handler from the react-grid-layout library
+                        otherProps.children
+                    }
+                </>
             )}
-            {
-                // Passing children props explicitly to render any top-level content like
-                // resize-handler from the react-grid-layout library
-                isVisible && otherProps.children
-            }
         </InsightCard>
     )
 }

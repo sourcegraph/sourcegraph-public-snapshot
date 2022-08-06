@@ -4,8 +4,6 @@ import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { useDebounce } from '@sourcegraph/wildcard'
-
 import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
 import { BarChart } from '../../../../../../../../charts/components/bar-chart/BarChart'
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
@@ -51,7 +49,7 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
-    const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
+    const { ref, width = 0 } = useResizeObserver()
     const { setHoveredId } = seriesToggleState
 
     const isEmptyDataset = useMemo(() => hasNoData(data), [data])
@@ -69,38 +67,46 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                 [styles.rootWithLegend]: isSeriesLikeInsight,
             })}
         >
-            <ParentSize debounceTime={0} enableDebounceLeadingCall={true} className={styles.responsiveContainer}>
-                {parent => (
-                    <>
-                        <BackendAlertOverlay
-                            hasNoData={isEmptyDataset}
-                            isFetchingHistoricalData={isFetchingHistoricalData}
-                            className={styles.alertOverlay}
-                        />
+            {width && (
+                <>
+                    <ParentSize
+                        debounceTime={0}
+                        enableDebounceLeadingCall={true}
+                        className={styles.responsiveContainer}
+                    >
+                        {parent => (
+                            <>
+                                <BackendAlertOverlay
+                                    hasNoData={isEmptyDataset}
+                                    isFetchingHistoricalData={isFetchingHistoricalData}
+                                    className={styles.alertOverlay}
+                                />
 
-                        {data.type === InsightContentType.Series ? (
-                            <SeriesChart
-                                type={SeriesBasedChartTypes.Line}
-                                width={parent.width}
-                                height={parent.height}
-                                locked={locked}
-                                className={styles.chart}
-                                onDatumClick={onDatumClick}
-                                zeroYAxisMin={zeroYAxisMin}
-                                seriesToggleState={seriesToggleState}
-                                {...data.content}
-                            />
-                        ) : (
-                            <BarChart width={parent.width} height={parent.height} {...data.content} />
+                                {data.type === InsightContentType.Series ? (
+                                    <SeriesChart
+                                        type={SeriesBasedChartTypes.Line}
+                                        width={parent.width}
+                                        height={parent.height}
+                                        locked={locked}
+                                        className={styles.chart}
+                                        onDatumClick={onDatumClick}
+                                        zeroYAxisMin={zeroYAxisMin}
+                                        seriesToggleState={seriesToggleState}
+                                        {...data.content}
+                                    />
+                                ) : (
+                                    <BarChart width={parent.width} height={parent.height} {...data.content} />
+                                )}
+                            </>
                         )}
-                    </>
-                )}
-            </ParentSize>
+                    </ParentSize>
 
-            {isSeriesLikeInsight && (
-                <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
-                    <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
-                </ScrollBox>
+                    {isSeriesLikeInsight && (
+                        <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
+                            <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
+                        </ScrollBox>
+                    )}
+                </>
             )}
         </div>
     )
