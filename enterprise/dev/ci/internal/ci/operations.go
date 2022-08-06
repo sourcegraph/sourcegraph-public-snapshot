@@ -147,13 +147,6 @@ func addGraphQLLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
 
-// yarn ~41s + ~30s
-func addPrettier(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: Prettier",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh format:check"))
-}
-
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
