@@ -709,7 +709,7 @@ const FeatureFlagRolloutValueSettings: React.FunctionComponent<
             max="10000"
             className="mb-0"
             label={<H3>Value</H3>}
-            inputClassName="w-25 form-range"
+            inputClassName="p-0 w-25"
             value={value.rolloutBasisPoints}
             onChange={({ target }) => {
                 update({ rolloutBasisPoints: parseInt(target.value, 10) })
