@@ -9,7 +9,7 @@ export AWS_ACCESS_KEY_ID="${AWS_EXECUTOR_AMI_ACCESS_KEY}"
 export AWS_SECRET_ACCESS_KEY="${AWS_EXECUTOR_AMI_SECRET_KEY}"
 
 # Point to GCP boot disk image/AMI built by build.sh script
-NAME="executor-docker-mirror-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}"
+NAME="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
 GOOGLE_IMAGE_NAME="${NAME}"
 AWS_AMI_ID=$(aws ec2 describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
 
