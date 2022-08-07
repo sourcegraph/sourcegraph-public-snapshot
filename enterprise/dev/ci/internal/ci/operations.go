@@ -828,12 +828,17 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 	}
 }
 
-func publishExecutor(version string, skipHashCompare bool) operations.Operation {
+func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor.vm-image")
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+		}
+		// For tagged releases, we want to add an additional tag to the VM images for simple querying.
+		if c.RunType.Is(runtype.TaggedRelease) {
+			// The version must not contain `.`, so we replace them by `-`.
+			stepOpts = append(stepOpts, bk.Env("RELEASE_VERSION", "v"+strings.ReplaceAll(c.Version, ".", "-")))
 		}
 		if !skipHashCompare {
 			// Publish iff not soft-failed on previous step

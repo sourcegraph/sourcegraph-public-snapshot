@@ -13,8 +13,13 @@ NAME="executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}"
 GOOGLE_IMAGE_NAME="${NAME}"
 AWS_AMI_ID=$(aws ec2 describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
 
+RELEASE_VERSION="v3-42-0"
+
 # Mark GCP boot disk as released and make it usable outside of Sourcegraph
 gcloud compute images add-labels --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --labels='released=true'
+if [ "${RELEASE_VERSION}" != "" ]; then
+  gcloud compute images add-labels --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --labels="version=${RELEASE_VERSION}"
+fi
 gcloud compute images add-iam-policy-binding --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --member='allAuthenticatedUsers' --role='roles/compute.imageUser'
 
 # Make executor AMI usable outside of Sourcegraph
