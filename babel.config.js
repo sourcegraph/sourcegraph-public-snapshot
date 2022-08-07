@@ -73,7 +73,5 @@ module.exports = api => {
         },
       ],
     ],
-    // Required for d3-array v1.2 (dependency of recharts). See https://github.com/babel/babel/issues/11038
-    ignore: [new RegExp('d3-array/src/cumsum.js')],
   }
 }
