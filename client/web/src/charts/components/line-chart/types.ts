@@ -1,4 +1,3 @@
-
 export interface Point {
     id: string
     seriesId: string

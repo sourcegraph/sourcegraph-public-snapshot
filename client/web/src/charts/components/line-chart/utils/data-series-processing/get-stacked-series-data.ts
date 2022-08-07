@@ -3,7 +3,6 @@ import { scaleTime } from '@visx/scale'
 import { Series as ChartSeries } from '../../../../types'
 import { isValidNumber } from '../data-guards'
 
-import { getFilteredSeriesData } from './helpers'
 import { SeriesType, StackedSeries, StackedSeriesDatum } from './types'
 
 /**
@@ -23,20 +22,6 @@ import { SeriesType, StackedSeries, StackedSeriesDatum } from './types'
  * ```
  */
 export function getStackedSeriesData<Datum>(series: ChartSeries<Datum>[]): StackedSeries<Datum>[] {
-    const stackedSeriesData = generateStackedData(series)
-
-    return (
-        stackedSeriesData
-            // Separate datum object by series lines
-            .map<StackedSeries<Datum>>(line => ({
-                ...line,
-                // Filter select series data from the datum object and process this points array
-                data: getFilteredSeriesData(line.data) as StackedSeriesDatum<Datum>[],
-            }))
-    )
-}
-
-function generateStackedData<Datum>(series: ChartSeries<Datum>[]): StackedSeries<Datum>[] {
     const stack: StackedSeries<Datum>[] = []
 
     // eslint-disable-next-line ban/ban
