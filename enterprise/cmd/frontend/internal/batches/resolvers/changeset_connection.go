@@ -55,6 +55,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))
 	for _, c := range changesetsPage {
+		// TODO: Does scheduledSyncs[c.ID] return a zero time? will it fail if no entry found?
 		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, c, reposByID[c.RepoID], scheduledSyncs[c.ID]))
 	}
 

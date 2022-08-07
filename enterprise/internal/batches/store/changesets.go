@@ -475,6 +475,8 @@ func scanChangesetSyncData(h *btypes.ChangesetSyncData, s dbutil.Scanner) error 
 	)
 }
 
+// TODO: Don't consider changesets that are not in a batch change (i think this works already)
+// , also don't consider changesets that are in only deleted batch changes
 const listChangesetSyncDataQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:ListChangesetSyncData
 SELECT changesets.id,

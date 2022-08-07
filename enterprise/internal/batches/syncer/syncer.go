@@ -106,6 +106,7 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 	return nil
 }
 
+// TODO: Don't enqueue changesets that are unattached.
 func (s *SyncRegistry) EnqueueChangesetSyncsForRepos(ctx context.Context, repoIDs []api.RepoID) error {
 	cs, _, err := s.syncStore.ListChangesets(ctx, store.ListChangesetsOpts{
 		RepoIDs: repoIDs,
