@@ -873,12 +873,21 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 	}
 }
 
-func publishExecutorDockerMirror(version string) operations.Operation {
+func publishExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
+		imageFamily := "sourcegraph-executors-docker-mirror-nightly"
+		if c.RunType.Is(runtype.TaggedRelease) {
+			ver, err := semver.NewVersion(c.Version)
+			if err != nil {
+				panic("cannot parse version")
+			}
+			imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d", ver.Major(), ver.Minor())
+		}
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))

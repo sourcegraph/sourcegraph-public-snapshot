@@ -8,8 +8,6 @@ set -eu
 export AWS_ACCESS_KEY_ID="${AWS_EXECUTOR_AMI_ACCESS_KEY}"
 export AWS_SECRET_ACCESS_KEY="${AWS_EXECUTOR_AMI_SECRET_KEY}"
 
-IMAGE_FAMILY="sourcegraph-executors-3-42"
-
 # Point to GCP boot disk image/AMI built by build.sh script
 NAME="executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}"
 GOOGLE_IMAGE_NAME="${NAME}"

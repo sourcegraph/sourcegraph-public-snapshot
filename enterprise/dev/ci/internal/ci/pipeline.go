@@ -226,7 +226,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c, c.MessageFlags.SkipHashCompare),
 			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version),
+			publishExecutorDockerMirror(c),
 		)
 
 	default:
@@ -293,7 +293,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
 			publishOps.Append(publishExecutor(c, skipHashCompare))
 			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				publishOps.Append(publishExecutorDockerMirror(c.Version))
+				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(publishOps)
