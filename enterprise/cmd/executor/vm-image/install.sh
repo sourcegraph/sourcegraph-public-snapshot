@@ -3,7 +3,6 @@ set -ex -o nounset -o pipefail
 
 export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
-export RUNTIME_IMAGE="weaveworks/ignite:${IGNITE_VERSION}"
 export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135-amd64"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
@@ -198,8 +197,7 @@ function generate_ignite_base_image() {
 ## Loads the required kernel image so it doesn't have to happen on the first VM start.
 function preheat_kernel_image() {
   ignite kernel import --runtime docker "${KERNEL_IMAGE}"
-  # Also preload the runtime image.
-  docker pull "${RUNTIME_IMAGE}"
+  docker pull "weaveworks/ignite:${IGNITE_VERSION}"
 }
 
 ## Configures the CNI explicitly and adds the isolation plugin to the chain.
@@ -282,27 +280,6 @@ function setup_iptables() {
   iptables-save >/etc/iptables/rules.v4
 }
 
-function configure_ignite() {
-  mkdir -p /etc/ignite
-  cat <<EOF >/etc/ignite/config.yaml
-apiVersion: ignite.weave.works/v1alpha4
-kind: Configuration
-metadata:
-  name: sourcegraph-executors-default
-spec:
-  runtime: docker
-  networkPlugin: cni
-  vmDefaults:
-    image:
-      oci: "${EXECUTOR_FIRECRACKER_IMAGE}"
-    sandbox:
-      oci: "${RUNTIME_IMAGE}"
-    kernel:
-      oci: "${KERNEL_IMAGE}"
-      cmdLine: 'console=ttyS0 reboot=k panic=1 pci=off ip=dhcp i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd'
-EOF
-}
-
 function cleanup() {
   apt-get -y autoremove
   apt-get clean
@@ -332,5 +309,4 @@ install_node_exporter
 # Service prep and cleanup
 generate_ignite_base_image
 preheat_kernel_image
-configure_ignite
 cleanup
