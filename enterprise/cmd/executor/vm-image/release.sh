@@ -13,16 +13,11 @@ NAME="executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}"
 GOOGLE_IMAGE_NAME="${NAME}"
 AWS_AMI_ID=$(aws ec2 describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
 
-RELEASE_VERSION="v3-42-0"
-
-# Mark GCP boot disk as released and make it usable outside of Sourcegraph
-gcloud compute images add-labels --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --labels='released=true'
-if [ "${RELEASE_VERSION}" != "" ]; then
-  gcloud compute images add-labels --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --labels="version=${RELEASE_VERSION}"
-fi
+# Mark GCP boot disk as released and make it usable outside of Sourcegraph.
 gcloud compute images add-iam-policy-binding --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --member='allAuthenticatedUsers' --role='roles/compute.imageUser'
+gcloud compute images update --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --family="${IMAGE_FAMILY}"
 
-# Make executor AMI usable outside of Sourcegraph
+# Make executor AMI usable outside of Sourcegraph.
 aws ec2 modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
 
 # Copy uploaded binary to 'latest'
