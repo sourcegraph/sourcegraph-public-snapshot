@@ -282,10 +282,9 @@ function setup_iptables() {
   iptables-save >/etc/iptables/rules.v4
 }
 
-## Writes a config file with the default values we use for ignite, so that for
-# debugging those flags would always be respected right, and so that debugging
-# becomes easier. We can also use this in the future to make executors less
-# dependent on env vars to configure firecracker.
+## Writes a config file with the default values we use for ignite in the executor.
+## This makes it easier to stand up a debugging VM with the same parameters,
+## without having to find the three image versions involved here.
 function configure_ignite() {
   mkdir -p /etc/ignite
   cat <<EOF >/etc/ignite/config.yaml
