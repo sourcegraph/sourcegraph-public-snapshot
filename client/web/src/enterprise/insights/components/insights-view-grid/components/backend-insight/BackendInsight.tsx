@@ -63,6 +63,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
+    const [stacked, setStacked] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
     const { wasEverVisible, isVisible } = useVisibility(insightCardReference)
@@ -216,7 +217,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             currentDashboard={currentDashboard}
                             dashboards={dashboards}
                             zeroYAxisMin={zeroYAxisMin}
+                            stacked={stacked}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                            onToggleStacked={() => setStacked(!stacked)}
                         />
                     </>
                 )}
@@ -233,6 +236,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                     {...insightData}
                     locked={insight.isFrozen}
                     zeroYAxisMin={zeroYAxisMin}
+                    stacked={stacked}
                     seriesToggleState={seriesToggleState}
                     onDatumClick={trackDatumClicks}
                 />

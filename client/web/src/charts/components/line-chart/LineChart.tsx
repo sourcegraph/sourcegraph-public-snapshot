@@ -6,6 +6,7 @@ import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import { LinePath } from '@visx/shape'
 import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
+import { ScaleLinear, ScaleTime } from 'd3-scale';
 import { noop } from 'lodash'
 
 import { AxisLeft, AxisBottom } from '../../core'
@@ -26,6 +27,7 @@ import {
     getMinMaxBoundaries,
     SeriesWithData,
 } from './utils'
+import { GeneratedPoint } from './utils/generate-points-field';
 
 import styles from './LineChart.module.scss'
 
@@ -50,6 +52,8 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
     /** Whether to start Y axis at zero */
     zeroYAxisMin?: boolean
 
+    activeSeriesId?: string
+
     /** Function to style a given line group */
     getLineGroupStyle?: (options: GetLineGroupStyleOptions) => CSSProperties
 
@@ -61,9 +65,6 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
      */
     getActiveSeries?: <D>(dataSeries: SeriesWithData<D>[]) => SeriesWithData<D>[]
 }
-
-const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
-    dataKey === activeDataKey ? 1 : -1
 
 const identity = <T,>(argument: T): T => argument
 
@@ -94,6 +95,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         stacked = false,
         zeroYAxisMin = false,
         className,
+        activeSeriesId,
         getLineGroupStyle,
         getActiveSeries = identity,
         onDatumClick = noop,
@@ -101,7 +103,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     } = props
 
     const rootReference = useRef<SVGSVGElement>(null)
-    const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
+    const [activePoint, setActivePoint] = useState<Point>()
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
 
@@ -161,7 +163,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
 
     const voronoiLayout = useMemo(
         () =>
-            voronoi<Point<D>>({
+            voronoi<GeneratedPoint>({
                 // Taking into account content area shift in point distribution map
                 // see https://github.com/sourcegraph/sourcegraph/issues/38919
                 x: point => point.x + content.left,
@@ -190,17 +192,12 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         onFocusOut: () => setActivePoint(undefined),
     })
 
-    const activeSeriesId = activePoint?.seriesId ?? ''
-    const sortedSeries = useMemo(
-        () =>
-            [...activeSeries]
-                // resorts array based on hover state
-                // this is to make sure the hovered series is always rendered on top
-                // since SVGs do not support z-index, we have to render the hovered
-                // series last
-                .sort(series => sortByDataKey(series.id, activeSeriesId)),
-        [activeSeries, activeSeriesId]
+    const currentSeries = useMemo(
+        () => activeSeries.find(series => series.id === activeSeriesId || series.id === activePoint?.seriesId),
+        [activeSeries, activeSeriesId, activePoint?.seriesId]
     )
+
+    console.log({ activeSeriesId, activeSeries })
 
     return (
         <svg
@@ -233,61 +230,120 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             <Group top={content.top} left={content.left}>
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
-                {sortedSeries.map(line => (
-                    <LinePath
-                        key={line.id}
-                        data={line.data as SeriesDatum<D>[]}
-                        defined={isDatumWithValidNumber}
-                        x={data => xScale(data.x)}
-                        y={data => yScale(getDatumValue(data))}
-                        stroke={line.color}
-                        strokeLinecap="round"
-                        strokeWidth={2}
-                    />
-                ))}
-
                 {activeSeries.map(line => (
-                    <Group
+                    <DataSeries
                         key={line.id}
+                        id={line.id.toString()}
+                        xScale={xScale}
+                        yScale={yScale}
+                        dataset={line.data}
+                        color={line.color}
+                        getLinkURL={line.getLinkURL}
+
                         style={getLineGroupStyle?.({
                             id: `${line.id}`,
                             hasActivePoint: !!activePoint,
                             isActive: activePoint?.seriesId === line.id,
                         })}
-                    >
-                        {points[line.id].map(point => (
-                            <PointGlyph
-                                key={point.id}
-                                left={point.x}
-                                top={point.y}
-                                active={false}
-                                color={point.color}
-                                linkURL={point.linkUrl}
-                                onClick={onDatumClick}
-                                onFocus={event => setActivePoint({ ...point, element: event.target })}
-                            />
-                        ))}
-                    </Group>
+
+                        onDatumClick={onDatumClick}
+                        onDatumFocus={setActivePoint}/>
                 ))}
 
-                {activePoint && (
-                    <PointGlyph
-                        left={activePoint.x}
-                        top={activePoint.y}
-                        active={true}
-                        color={activePoint.color}
-                        linkURL={activePoint.linkUrl}
-                        onClick={onDatumClick}
+                {currentSeries &&
+                    <DataSeries
+                        id={currentSeries.id.toString()}
+                        xScale={xScale}
+                        yScale={yScale}
+                        dataset={currentSeries.data}
+                        color={currentSeries.color}
+                        activePointId={activePoint?.id}
+                        getLinkURL={currentSeries.getLinkURL}
+                        onDatumClick={onDatumClick}
+                        onDatumFocus={setActivePoint}
                         tabIndex={-1}
+                        pointerEvents='none'
+                        aria-hidden={true}
                     />
-                )}
+                }
             </Group>
 
             {activePoint && rootReference.current && (
-                <Tooltip containerElement={rootReference.current} activeElement={activePoint.element as HTMLElement}>
+                <Tooltip containerElement={rootReference.current} activeElement={activePoint.node as HTMLElement}>
                     <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}
         </svg>
+    )
+}
+
+interface DataSeriesProps<D> extends SVGProps<SVGGElement> {
+    id: string
+    xScale: ScaleTime<number, number>
+    yScale: ScaleLinear<number, number>
+    dataset: SeriesDatum<D>[]
+    color: string | undefined
+    activePointId?: string
+    getLinkURL?: (datum: D, index: number) => string | undefined
+    onDatumClick: () => void
+    onDatumFocus: (point: Point) => void
+}
+
+const NULL_LINK = (): undefined => undefined
+
+function DataSeries<D>(props: DataSeriesProps<D>): ReactElement {
+    const {
+        id,
+        xScale,
+        yScale,
+        dataset,
+        color = 'green',
+        activePointId,
+        tabIndex,
+        getLinkURL = NULL_LINK,
+        onDatumClick,
+        onDatumFocus,
+        ...attributes
+    } = props
+
+    return (
+        <Group tabIndex={tabIndex} {...attributes}>
+            <LinePath
+                data={dataset}
+                defined={isDatumWithValidNumber}
+                x={data => xScale(data.x)}
+                y={data => yScale(getDatumValue(data))}
+                stroke={color}
+                strokeLinecap="round"
+                strokeWidth={2}
+            />
+
+            { dataset.map((datum, index) => {
+                const datumValue = getDatumValue(datum)
+                const link = getLinkURL(datum.datum, index)
+                const pointId = `${id}-${index}`
+
+                return (
+                    <PointGlyph
+                        key={pointId}
+                        tabIndex={tabIndex}
+                        top={yScale(datumValue)}
+                        left={xScale(datum.x)}
+                        active={activePointId === pointId}
+                        color={color}
+                        linkURL={link}
+                        onClick={onDatumClick}
+                        onFocus={event => onDatumFocus({
+                            id: pointId,
+                            xValue: datum.x,
+                            yValue: datumValue,
+                            seriesId: id,
+                            linkUrl: link,
+                            node: event.target,
+                        })}
+                    />
+                )
+            })}
+        </Group>
     )
 }

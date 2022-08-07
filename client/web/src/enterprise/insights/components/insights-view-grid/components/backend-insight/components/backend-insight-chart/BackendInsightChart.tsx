@@ -44,13 +44,14 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     zeroYAxisMin: boolean
+    stacked: boolean
     className?: string
     onDatumClick: () => void
     seriesToggleState: UseSeriesToggleReturn
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
+    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, stacked, className, onDatumClick, seriesToggleState } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
     const { setHoveredId } = seriesToggleState
 
@@ -83,6 +84,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                         width={parent.width}
                                         height={parent.height}
                                         locked={locked}
+                                        stacked={stacked}
                                         className={styles.chart}
                                         onDatumClick={onDatumClick}
                                         zeroYAxisMin={zeroYAxisMin}

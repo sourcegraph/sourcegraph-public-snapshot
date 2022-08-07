@@ -33,14 +33,16 @@ export interface InsightCardMenuProps {
     currentDashboard: InsightDashboard | null
     dashboards: InsightDashboard[]
     zeroYAxisMin: boolean
+    stacked: boolean
     onToggleZeroYAxisMin?: () => void
+    onToggleStacked?: () => void
 }
 
 /**
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren<InsightCardMenuProps>> = props => {
-    const { insight, currentDashboard, dashboards, zeroYAxisMin, onToggleZeroYAxisMin = noop } = props
+    const { insight, currentDashboard, dashboards, zeroYAxisMin, stacked, onToggleZeroYAxisMin = noop, onToggleStacked = noop } = props
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
@@ -120,6 +122,23 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                     />
                                 </MenuItem>
                             )}
+
+                            <MenuItem
+                                role="menuitemcheckbox"
+                                data-testid="InsightContextMenuEditLink"
+                                className={classNames('d-flex align-items-center justify-content-end', styles.item)}
+                                onSelect={onToggleStacked}
+                                aria-checked={stacked}
+                            >
+                                <Checkbox
+                                    aria-hidden="true"
+                                    checked={stacked}
+                                    onChange={noop}
+                                    tabIndex={-1}
+                                    id="InsightContextMenuEditInput"
+                                    label={<span className="font-weight-normal">Stacked</span>}
+                                />
+                            </MenuItem>
 
                             {quickFixUrl && showQuickFix && (
                                 <MenuLink as={Link} className={styles.item} to={quickFixUrl}>

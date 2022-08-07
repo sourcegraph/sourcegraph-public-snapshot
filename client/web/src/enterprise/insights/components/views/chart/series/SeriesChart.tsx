@@ -14,6 +14,7 @@ export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<S
     type: SeriesBasedChartTypes
     width: number
     height: number
+    activeSeriesId?: string
     zeroYAxisMin?: boolean
     locked?: boolean
     seriesToggleState?: UseSeriesToggleReturn
@@ -80,6 +81,7 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
             series={series}
             getLineGroupStyle={getHoverStyle}
             getActiveSeries={getActiveSeries}
+            activeSeriesId={seriesToggleState?.hoveredId}
             {...otherProps}
         />
     )

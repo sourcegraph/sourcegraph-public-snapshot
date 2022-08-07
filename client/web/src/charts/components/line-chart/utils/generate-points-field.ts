@@ -1,7 +1,5 @@
 import { ScaleLinear, ScaleTime } from 'd3-scale'
 
-import { Point } from '../types'
-
 import { getDatumValue, isDatumWithValidNumber, SeriesWithData, SeriesDatum } from './data-series-processing'
 
 const NULL_LINK = (): undefined => undefined
@@ -12,9 +10,20 @@ interface PointsFieldInput<Datum> {
     yScale: ScaleLinear<number, number>
 }
 
-export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): { [seriesId: string]: Point<Datum>[] } {
+export interface GeneratedPoint {
+    id: string
+    seriesId: string
+    yValue: number
+    xValue: Date
+    y: number
+    x: number
+    color: string
+    linkUrl: string | undefined
+}
+
+export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): { [seriesId: string]: GeneratedPoint[] } {
     const { dataSeries, xScale, yScale } = input
-    const starter: { [key: string]: Point<Datum>[] } = {}
+    const starter: { [key: string]: GeneratedPoint[] } = {}
 
     return dataSeries.reduce((previous, series) => {
         const { id, data, getLinkURL = NULL_LINK } = series
@@ -25,8 +34,8 @@ export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): { [s
             return {
                 id: `${id}-${index}`,
                 seriesId: id.toString(),
-                value: datumValue,
-                time: datum.x,
+                yValue: datumValue,
+                xValue: datum.x,
                 y: yScale(datumValue),
                 x: xScale(datum.x),
                 color: series.color ?? 'green',

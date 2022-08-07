@@ -106,12 +106,12 @@ function findPreviousValueOnStack<Datum>(
 
         // Try to find stack value by datum index - if lines has the same points
         // in same x points it should match in just O(1)
-        const stackedExactDatum = stackedSeries.data[currentIndex]
-        const hasExactMatch = +stackedExactDatum.x === +wantedDate
-
-        if (hasExactMatch && stackedExactDatum.y1 !== null) {
-            return stackedExactDatum.y1
-        }
+        // const stackedExactDatum = stackedSeries.data[currentIndex]
+        // const hasExactMatch = +stackedExactDatum.x === +wantedDate
+        //
+        // if (hasExactMatch && stackedExactDatum.y1 !== null) {
+        //     return stackedExactDatum.y1
+        // }
 
         const stackedDatum = stackedSeries.data.find(
             stackedDatum => stackedDatum.x === wantedDate && stackedDatum.y1 !== null
