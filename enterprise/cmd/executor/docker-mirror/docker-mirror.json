@@ -18,6 +18,8 @@
       "zone": "us-central1-c",
       "disk_type": "pd-ssd",
       "image_name": "{{user `name`}}",
+      "image_description": "Convenience image to run a docker registry pull-through cache. See github.com/sourcegraph/terraform-google-executors for how to use it.",
+      "image_storage_locations": ["us"],
       "tags": ["packer"],
       "account_file": "builder-sa-key.json"
     },
@@ -25,6 +27,7 @@
       "name": "aws",
       "type": "amazon-ebs",
       "ami_name": "{{user `name`}}",
+      "ami_description": "Convenience image to run a docker registry pull-through cache. See github.com/sourcegraph/terraform-google-executors for how to use it.",
       "ssh_username": "ubuntu",
       "instance_type": "t3.micro",
       "source_ami_filter": {
@@ -48,6 +51,7 @@
       },
       "shutdown_behavior": "terminate",
       "tags": {
+        "Name": "{{user `name`}}",
         "OS_Version": "Ubuntu",
         "Release": "Latest",
         "Base_AMI_Name": "{{ .SourceAMIName }}",
