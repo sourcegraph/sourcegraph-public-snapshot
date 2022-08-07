@@ -808,16 +808,15 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 }
 
 func executorImageFamilyForConfig(c Config) string {
-	return "sourcegraph-executors-3-42"
-	// imageFamily := "sourcegraph-executors-nightly"
-	// if c.RunType.Is(runtype.TaggedRelease) {
-	// 	ver, err := semver.NewVersion(c.Version)
-	// 	if err != nil {
-	// 		panic("cannot parse version")
-	// 	}
-	// 	imageFamily = fmt.Sprintf("sourcegraph-executors-%d-%d", ver.Major(), ver.Minor())
-	// }
-	// return imageFamily
+	imageFamily := "sourcegraph-executors-nightly"
+	if c.RunType.Is(runtype.TaggedRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-%d-%d", ver.Major(), ver.Minor())
+	}
+	return imageFamily
 }
 
 // ~15m (building executor base VM)
@@ -868,16 +867,15 @@ func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 }
 
 func executorDockerMirrorImageFamilyForConfig(c Config) string {
-	return "sourcegraph-executors-docker-mirror-3-42"
-	// imageFamily := "sourcegraph-executors-docker-mirror-nightly"
-	// if c.RunType.Is(runtype.TaggedRelease) {
-	// 	ver, err := semver.NewVersion(c.Version)
-	// 	if err != nil {
-	// 		panic("cannot parse version")
-	// 	}
-	// 	imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d", ver.Major(), ver.Minor())
-	// }
-	// return imageFamily
+	imageFamily := "sourcegraph-executors-docker-mirror-nightly"
+	if c.RunType.Is(runtype.TaggedRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d", ver.Major(), ver.Minor())
+	}
+	return imageFamily
 }
 
 // ~15m (building executor docker mirror base VM)
