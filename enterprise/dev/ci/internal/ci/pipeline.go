@@ -224,7 +224,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.ExecutorPatchNoTest:
 		ops = operations.NewSet(
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+			publishExecutor(c, c.MessageFlags.SkipHashCompare),
 			buildExecutorDockerMirror(c.Version),
 			publishExecutorDockerMirror(c.Version),
 		)
@@ -291,7 +291,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch) {
-			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
+			publishOps.Append(publishExecutor(c, skipHashCompare))
 			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				publishOps.Append(publishExecutorDockerMirror(c.Version))
 			}
