@@ -123,7 +123,7 @@ func (m *userCredentialMigrator) Down(ctx context.Context) error {
 				return errors.Wrapf(err, "retrieving authenticator for ID %d", cred.ID)
 			}
 
-			raw, err := database.EncryptAuthenticator(ctx, nil, a)
+			raw, _, err := database.EncryptAuthenticator(ctx, nil, a)
 			if err != nil {
 				return errors.Wrapf(err, "marshalling authenticator without an encrypter")
 			}

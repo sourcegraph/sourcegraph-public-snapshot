@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -40,22 +41,12 @@ type UserCredential struct {
 // Authenticator decrypts and creates the authenticator associated with the user
 // credential.
 func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
-	// The record includes a field indicating the encryption key ID. We don't
-	// really have a way to look up a key by ID right now, so this is used as a
-	// marker of whether we should expect a key or not.
-	if uc.EncryptionKeyID == "" || uc.EncryptionKeyID == UserCredentialUnmigratedEncryptionKeyID {
-		return UnmarshalAuthenticator(string(uc.EncryptedCredential))
-	}
-	if uc.key == nil {
-		return nil, errors.New("user credential is encrypted, but no key is available to decrypt it")
-	}
-
-	secret, err := uc.key.Decrypt(ctx, uc.EncryptedCredential)
+	decrypted, err := encryption.MaybeDecrypt(ctx, uc.key, string(uc.EncryptedCredential), uc.EncryptionKeyID)
 	if err != nil {
-		return nil, errors.Wrap(err, "decrypting credential")
+		return nil, err
 	}
 
-	a, err := UnmarshalAuthenticator(secret.Secret())
+	a, err := UnmarshalAuthenticator(decrypted)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshalling authenticator")
 	}
@@ -66,22 +57,13 @@ func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator
 // SetAuthenticator encrypts and sets the authenticator within the user
 // credential.
 func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
-	// Set the key ID. This is cargo culted from external_accounts.go, and the
-	// key ID doesn't appear to be actually useful as anything other than a
-	// marker of whether the data is expected to be encrypted or not.
-	id, err := keyID(ctx, uc.key)
-	if err != nil {
-		return errors.Wrap(err, "getting key version")
-	}
-
-	secret, err := EncryptAuthenticator(ctx, uc.key, a)
+	secret, id, err := EncryptAuthenticator(ctx, uc.key, a)
 	if err != nil {
 		return errors.Wrap(err, "encrypting authenticator")
 	}
 
 	uc.EncryptedCredential = secret
 	uc.EncryptionKeyID = id
-
 	return nil
 }
 
@@ -90,8 +72,8 @@ const (
 	UserCredentialDomainBatches = "batches"
 
 	// Placeholder encryption key IDs.
-	UserCredentialPlaceholderEncryptionKeyID = "previously-migrated"
-	UserCredentialUnmigratedEncryptionKeyID  = "unmigrated"
+	UserCredentialPlaceholderEncryptionKeyID = encryption.PlaceholderEncryptionKeyID
+	UserCredentialUnmigratedEncryptionKeyID  = encryption.UnmigratedEncryptionKeyID
 )
 
 // UserCredentialNotFoundErr is returned when a credential cannot be found from
@@ -170,12 +152,7 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		return nil, err
 	}
 
-	id, err := keyID(ctx, s.key)
-	if err != nil {
-		return nil, err
-	}
-
-	enc, err := EncryptAuthenticator(ctx, s.key, credential)
+	enc, id, err := EncryptAuthenticator(ctx, s.key, credential)
 	if err != nil {
 		return nil, err
 	}
@@ -528,18 +505,6 @@ func scanUserCredential(cred *UserCredential, s interface {
 		&cred.UpdatedAt,
 		&cred.SSHMigrationApplied,
 	)
-}
-
-func keyID(ctx context.Context, key encryption.Key) (string, error) {
-	if key != nil {
-		version, err := key.Version(ctx)
-		if err != nil {
-			return "", errors.Wrap(err, "getting key version")
-		}
-		return version.JSON(), nil
-	}
-
-	return "", nil
 }
 
 var errUserCredentialCreateAuthz = errors.New("current user cannot create a user credential in this scope")

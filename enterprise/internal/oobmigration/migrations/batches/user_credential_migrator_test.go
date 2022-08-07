@@ -37,18 +37,9 @@ func TestUserCredentialMigrator(t *testing.T) {
 
 	// Now we'll set up enough users to validate that it takes multiple Up
 	// invocations.
-	for i := 0; i < userCredentialMigrationCountPerRun; i++ {
+	for i := 0; i < userCredentialMigrationCountPerRun*2; i++ {
 		user := bt.CreateTestUser(t, db, false)
 		createUnencryptedUserCredential(t, ctx, cstore, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainBatches,
-			UserID:              user.ID,
-			ExternalServiceType: extsvc.TypeGitLab,
-			ExternalServiceID:   "https://gitlab.com/",
-		}, a)
-	}
-	for i := 0; i < userCredentialMigrationCountPerRun; i++ {
-		user := bt.CreateTestUser(t, db, false)
-		createPreviouslyEncryptedUserCredential(t, ctx, cstore, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,
 			ExternalServiceType: extsvc.TypeGitLab,

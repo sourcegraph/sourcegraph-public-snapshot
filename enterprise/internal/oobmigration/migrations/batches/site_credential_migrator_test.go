@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -35,7 +34,7 @@ func TestSiteCredentialMigrator(t *testing.T) {
 
 	// Now we'll set up enough users to validate that it takes multiple Up
 	// invocations.
-	for i := 0; i < siteCredentialMigrationCountPerRun; i++ {
+	for i := 0; i < siteCredentialMigrationCountPerRun*2; i++ {
 		cred := &btypes.SiteCredential{
 			ExternalServiceType: extsvc.TypeGitLab,
 			ExternalServiceID:   fmt.Sprintf("https://%d.gitlab.com/", i),
@@ -46,29 +45,13 @@ func TestSiteCredentialMigrator(t *testing.T) {
 
 		// Override the saved credential to only include the unencrypted
 		// authenticator.
-		enc, err := database.EncryptAuthenticator(ctx, nil, a)
+		enc, _, err := database.EncryptAuthenticator(ctx, nil, a)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		cred.EncryptedCredential = enc
 		cred.EncryptionKeyID = btypes.SiteCredentialUnmigratedEncryptionKeyID
-		if err := cstore.UpdateSiteCredential(ctx, cred); err != nil {
-			t.Fatal(err)
-		}
-	}
-	for i := 0; i < siteCredentialMigrationCountPerRun; i++ {
-		cred := &btypes.SiteCredential{
-			ExternalServiceType: extsvc.TypeGitLab,
-			ExternalServiceID:   fmt.Sprintf("https://%d.gitlab.com/", i+siteCredentialMigrationCountPerRun),
-		}
-		if err := cstore.CreateSiteCredential(ctx, cred, a); err != nil {
-			t.Fatal(err)
-		}
-
-		// Override the saved credential to only include the placeholder
-		// encryption key ID.
-		cred.EncryptionKeyID = btypes.SiteCredentialPlaceholderEncryptionKeyID
 		if err := cstore.UpdateSiteCredential(ctx, cred); err != nil {
 			t.Fatal(err)
 		}

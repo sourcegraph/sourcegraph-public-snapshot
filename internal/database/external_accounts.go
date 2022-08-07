@@ -119,6 +119,14 @@ func (s *userExternalAccountsStore) Transact(ctx context.Context) (UserExternalA
 	return &userExternalAccountsStore{logger: s.logger, Store: txBase, key: s.key}, err
 }
 
+func (e *userExternalAccountsStore) maybeEncrypt(ctx context.Context, data string) (string, string, error) {
+	return encryption.MaybeEncrypt(ctx, e.getEncryptionKey(), data)
+}
+
+func (e *userExternalAccountsStore) maybeDecrypt(ctx context.Context, data, keyIdent string) (string, error) {
+	return encryption.MaybeDecrypt(ctx, e.getEncryptionKey(), data, keyIdent)
+}
+
 func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
 	if s.key != nil {
 		return s.key
@@ -131,19 +139,16 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 }
 
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	var (
-		encrypted, keyID string
-	)
-
+	var encrypted, keyID string
 	if data.AuthData != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encrypted, keyID, err = s.maybeEncrypt(ctx, string(*data.AuthData))
 		if err != nil {
 			return 0, err
 		}
 		data.AuthData = rawMessagePtr(encrypted)
 	}
 	if data.Data != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		encrypted, keyID, err = s.maybeEncrypt(ctx, string(*data.Data))
 		if err != nil {
 			return 0, err
 		}
@@ -216,14 +221,14 @@ AND deleted_at IS NULL
 	var encrypted, keyID string
 
 	if data.AuthData != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encrypted, keyID, err = s.maybeEncrypt(ctx, string(*data.AuthData))
 		if err != nil {
 			return err
 		}
 		data.AuthData = rawMessagePtr(encrypted)
 	}
 	if data.Data != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		encrypted, keyID, err = s.maybeEncrypt(ctx, string(*data.Data))
 		if err != nil {
 			return err
 		}
@@ -280,21 +285,17 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	return createdUser.ID, err
 }
 
-func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	var (
-		encrypted, keyID string
-		err              error
-	)
-
+func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
+	var encrypted, keyID string
 	if data.AuthData != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encrypted, keyID, err = s.maybeEncrypt(ctx, string(*data.AuthData))
 		if err != nil {
 			return err
 		}
 		data.AuthData = rawMessagePtr(encrypted)
 	}
 	if data.Data != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		encrypted, keyID, err = s.maybeEncrypt(ctx, string(*data.Data))
 		if err != nil {
 			return err
 		}
@@ -420,11 +421,10 @@ func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *
 		}
 
 		if authData.Valid {
-			decryptedAuthData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), authData.String, keyID)
+			decryptedAuthData, err := s.maybeDecrypt(ctx, authData.String, keyID)
 			if err != nil {
 				return nil, err
 			}
-
 			if decryptedAuthData != "" {
 				jAuthData := json.RawMessage(decryptedAuthData)
 				acct.AuthData = &jAuthData
@@ -432,11 +432,10 @@ func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *
 		}
 
 		if data.Valid {
-			decryptedData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), data.String, keyID)
+			decryptedData, err := s.maybeDecrypt(ctx, data.String, keyID)
 			if err != nil {
 				return nil, err
 			}
-
 			if decryptedData != "" {
 				jData := json.RawMessage(decryptedData)
 				acct.Data = &jData
@@ -476,45 +475,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	return conds
 }
 
-// MaybeEncrypt encrypts data with the given key returns the id of the key. If the key is nil, it returns the data unchanged.
-func MaybeEncrypt(ctx context.Context, key encryption.Key, data string) (maybeEncryptedData, keyID string, err error) {
-	var keyIdent string
-
-	if key != nil {
-		encrypted, err := key.Encrypt(ctx, []byte(data))
-		if err != nil {
-			return "", "", err
-		}
-		data = string(encrypted)
-		version, err := key.Version(ctx)
-		if err != nil {
-			return "", "", err
-		}
-		keyIdent = version.JSON()
-	}
-
-	return data, keyIdent, nil
-}
-
-// MaybeDecrypt decrypts data with the given key if keyIdent is not empty.
-func MaybeDecrypt(ctx context.Context, key encryption.Key, data, keyIdent string) (string, error) {
-	if keyIdent == "" {
-		// data is not encrypted, return plaintext
-		return data, nil
-	}
-	if data == "" {
-		return data, nil
-	}
-	if key == nil {
-		return data, errors.Errorf("couldn't decrypt encrypted data, key is nil")
-	}
-	decrypted, err := key.Decrypt(ctx, []byte(data))
-	if err != nil {
-		return data, err
-	}
-
-	return decrypted.Secret(), nil
-}
 func rawMessagePtr(s string) *json.RawMessage {
 	msg := json.RawMessage(s)
 	return &msg
