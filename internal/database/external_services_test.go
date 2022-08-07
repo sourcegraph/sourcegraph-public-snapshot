@@ -49,6 +49,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		wantQuery            string
 		onlyCloudDefault     bool
 		noCachedWebhooks     bool
+		includeDeleted       bool
 		wantArgs             []any
 	}{
 		{
@@ -113,6 +114,11 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			noCachedWebhooks: true,
 			wantQuery:        "deleted_at IS NULL AND has_webhooks IS NULL",
 		},
+		{
+			name:           "includeDeleted",
+			includeDeleted: true,
+			wantQuery:      "TRUE",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -126,6 +132,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				UpdatedAfter:         test.updatedAfter,
 				OnlyCloudDefault:     test.onlyCloudDefault,
 				NoCachedWebhooks:     test.noCachedWebhooks,
+				IncludeDeleted:       test.includeDeleted,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -1538,6 +1545,19 @@ func TestExternalServicesStore_List(t *testing.T) {
 	}
 	createdAt := time.Now()
 
+	deletedES := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #4",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+	}
+	err = db.ExternalServices().Create(ctx, confGet, deletedES)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ExternalServices().Delete(ctx, deletedES.ID); err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("list all external services", func(t *testing.T) {
 		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{})
 		if err != nil {
@@ -1697,6 +1717,19 @@ func TestExternalServicesStore_List(t *testing.T) {
 		// We should find all services were updated after a time in the past
 		if len(ess) != 1 {
 			t.Fatalf("Want 0 external services but got %d", len(ess))
+		}
+	})
+
+	t.Run("list including deleted", func(t *testing.T) {
+		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+			IncludeDeleted: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We should find all services were updated after a time in the past
+		if len(ess) != 4 {
+			t.Fatalf("Want 4 external services but got %d", len(ess))
 		}
 	})
 }
