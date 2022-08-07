@@ -374,8 +374,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
-			// The request to fetch user permissions should handle the case of a token being expired.
-			// If it fails to refresh the token or if the token is revoked, we still can have a "401 Unauthorized" here.
+			// FetchUserPerms makes API requests using a client that will deal with the token expiration and try to
+			// refresh it when necessary. If the client fails to update the token, or if the token is revoked,
+			// the "401 Unauthorized" error will be handled here.
 			unauthorized := errcode.IsUnauthorized(err)
 			forbidden := errcode.IsForbidden(err)
 			// Detect GitHub account suspension error

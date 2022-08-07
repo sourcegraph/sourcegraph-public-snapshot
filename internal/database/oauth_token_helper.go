@@ -24,6 +24,10 @@ type RefreshTokenHelperForExternalService struct {
 	OauthRefreshToken string
 }
 
+//type TokenRefresher interface {
+//	RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error)
+//}
+
 func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error) {
 	refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
 
@@ -43,7 +47,7 @@ func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context,
 		return "", errors.Wrap(err, "save refreshed token")
 	}
 
-	return "", nil
+	return refreshedToken.AccessToken, nil
 }
 
 func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (token string, err error) {
@@ -79,5 +83,5 @@ func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context,
 		return "", errors.Wrap(err, "upserting external service")
 	}
 
-	return "", nil
+	return refreshedToken.AccessToken, nil
 }
