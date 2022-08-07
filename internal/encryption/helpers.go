@@ -2,6 +2,7 @@ package encryption
 
 import (
 	"context"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -15,6 +16,10 @@ const (
 // MaybeEncrypt encrypts data with the given key. If the given key is nil, this function no-ops.
 func MaybeEncrypt(ctx context.Context, key Key, data string) (_, keyIdent string, err error) {
 	if key == nil {
+		return data, "", nil
+	}
+	if os.Getenv("ALLOW_DECRYPTION") == "true" {
+		// Do not encrypt new values while the worker is decrypting the database
 		return data, "", nil
 	}
 
