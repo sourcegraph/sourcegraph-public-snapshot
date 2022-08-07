@@ -53,6 +53,7 @@
       },
       "shutdown_behavior": "terminate",
       "tags": {
+        "Name": "sourcegraph-executors",
         "OS_Version": "Ubuntu",
         "Release": "Latest",
         "Base_AMI_Name": "{{ .SourceAMIName }}",
