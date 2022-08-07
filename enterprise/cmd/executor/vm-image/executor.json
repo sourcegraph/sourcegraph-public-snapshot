@@ -1,7 +1,7 @@
 {
   "variables": {
     "name": "{{env `NAME`}}",
-    "version": "{{env `VERSION`}}",
+    "version": "{{env `RELEASE_VERSION`}}",
     "srcCliVersion": "{{env `SRC_CLI_VERSION`}}",
     "awsAccessKey": "{{env `AWS_EXECUTOR_AMI_ACCESS_KEY`}}",
     "awsSecretKey": "{{env `AWS_EXECUTOR_AMI_SECRET_KEY`}}",
@@ -26,8 +26,7 @@
       "image_storage_locations": ["us"],
       "tags": ["packer"],
       "image_labels": {
-        "version": "{{user `name`}}",
-        "product": "sourcegraph-executors"
+        "version": "{{user `RELEASE_VERSION`}}"
       },
       "account_file": "builder-sa-key.json"
     },
