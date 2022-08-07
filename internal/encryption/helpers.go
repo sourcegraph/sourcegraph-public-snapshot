@@ -8,10 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	PlaceholderEncryptionKeyID = "previously-migrated"
-	UnmigratedEncryptionKeyID  = "unmigrated"
-)
+const UnmigratedEncryptionKeyID = "unmigrated"
 
 // MaybeEncrypt encrypts data with the given key. If the given key is nil, this function no-ops.
 func MaybeEncrypt(ctx context.Context, key Key, data string) (_, keyIdent string, err error) {
