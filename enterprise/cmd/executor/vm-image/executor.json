@@ -25,6 +25,10 @@
       "image_description": "Convenience image to run Sourcegraph executors. See github.com/sourcegraph/terraform-google-executors for how to use it.",
       "image_storage_locations": ["us"],
       "tags": ["packer"],
+      "image_labels": {
+        "version": "{{user `name`}}",
+        "product": "sourcegraph-executors"
+      },
       "account_file": "builder-sa-key.json"
     },
     {
