@@ -13,7 +13,7 @@
       "type": "googlecompute",
       "project_id": "sourcegraph-ci",
       "source_image_project_id": "ubuntu-os-cloud",
-      "source_image": "ubuntu-2004-focal-v20220606",
+      "source_image_family": "ubuntu-2004-lts",
       "disk_size": "10",
       "ssh_username": "packer",
       "zone": "us-central1-c",
@@ -29,7 +29,15 @@
       "ami_name": "{{user `name`}}",
       "ssh_username": "ubuntu",
       "instance_type": "t3.micro",
-      "source_ami": "ami-036d46416a34a611c",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*",
+          "root-device-type": "ebs"
+        },
+        "owners": ["099720109477"],
+        "most_recent": true
+      },
       "region": "us-west-2",
       "vpc_id": "vpc-0fae37a99a5156b91",
       "subnet_id": "subnet-0a71d7cd03fea6317",
@@ -40,6 +48,7 @@
         "delay_seconds": "{{user `awsPollDelaySeconds`}}",
         "max_attempts": "{{user `awsMaxAttempts`}}"
       },
+      "shutdown_behavior": "terminate",
       "tags": {
         "OS_Version": "Ubuntu",
         "Release": "Latest",
