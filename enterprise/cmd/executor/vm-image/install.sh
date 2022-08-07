@@ -282,7 +282,7 @@ function setup_iptables() {
   iptables-save >/etc/iptables/rules.v4
 }
 
-function configure_cni() {
+function configure_ignite() {
   mkdir -p /etc/ignite
   cat <<EOF >/etc/ignite/config.yaml
 apiVersion: ignite.weave.works/v1alpha4
