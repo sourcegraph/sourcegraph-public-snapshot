@@ -807,26 +807,12 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 	}
 }
 
-func executorImageFamilyForConfig(c Config) string {
-	imageFamily := "sourcegraph-executors-nightly"
-	if c.RunType.Is(runtype.TaggedRelease) {
-		ver, err := semver.NewVersion(c.Version)
-		if err != nil {
-			panic("cannot parse version")
-		}
-		imageFamily = fmt.Sprintf("sourcegraph-executors-%d-%d", ver.Major(), ver.Minor())
-	}
-	return imageFamily
-}
-
 // ~15m (building executor base VM)
-func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
+func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor.vm-image")),
-			bk.Env("VERSION", c.Version),
-			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("VERSION", version),
 		}
 		if !skipHashCompare {
 			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
@@ -842,14 +828,12 @@ func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
 	}
 }
 
-func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
+func publishExecutor(version string, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor.vm-image")
-		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", c.Version),
-			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("VERSION", version),
 		}
 		if !skipHashCompare {
 			// Publish iff not soft-failed on previous step
@@ -866,26 +850,12 @@ func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 	}
 }
 
-func executorDockerMirrorImageFamilyForConfig(c Config) string {
-	imageFamily := "sourcegraph-executors-docker-mirror-nightly"
-	if c.RunType.Is(runtype.TaggedRelease) {
-		ver, err := semver.NewVersion(c.Version)
-		if err != nil {
-			panic("cannot parse version")
-		}
-		imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d", ver.Major(), ver.Minor())
-	}
-	return imageFamily
-}
-
 // ~15m (building executor docker mirror base VM)
-func buildExecutorDockerMirror(c Config) operations.Operation {
+func buildExecutorDockerMirror(version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
-			bk.Env("VERSION", c.Version),
-			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("VERSION", version),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
@@ -894,14 +864,12 @@ func buildExecutorDockerMirror(c Config) operations.Operation {
 	}
 }
 
-func publishExecutorDockerMirror(c Config) operations.Operation {
+func publishExecutorDockerMirror(version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
-		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", c.Version),
-			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("VERSION", version),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
