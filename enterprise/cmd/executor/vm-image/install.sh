@@ -48,9 +48,9 @@ EOF
 function install_docker() {
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
   add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-  apt-get update -y
+  apt-get update
   apt-cache policy docker-ce
-  apt-get install -y binutils docker-ce docker-ce-cli containerd.io
+  apt-get install -y docker-ce docker-ce-cli containerd.io
 
   DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
 
@@ -63,7 +63,7 @@ function install_docker() {
   systemctl restart --now docker
 }
 
-## Install git >=2.18 (to enable -c protocol.version=2)
+## Install git >=2.26 (to enable -c protocol.version=2 and sparse checkouts)
 function install_git() {
   add-apt-repository ppa:git-core/ppa
   apt-get update -y
@@ -73,6 +73,13 @@ function install_git() {
 ## Install Weaveworks Ignite
 ## Reference: https://ignite.readthedocs.io/en/stable/installation/
 function install_ignite() {
+  # Install dependencies. Most of these are actually bundled by default, but
+  # listing them out here explicitly makes it so that upstream image changes never
+  # negatively impact us.
+  apt-get update
+  apt-get install -y mount tar binutils e2fsprogs openssh-client dmsetup
+
+  # Download and install ignite binary.
   curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
@@ -91,7 +98,9 @@ function install_executor() {
   # Move binary into PATH
   mv /tmp/executor /usr/local/bin
 
-  # Create configuration file and stub environment file
+  # Create configuration file and stub environment file.
+  # We also wait for docker to be ready, otherwise
+  # jobs can fail to start while docker is still starting.
   cat <<EOF >/etc/systemd/system/executor.service
 [Unit]
 Description=User code executor
@@ -99,6 +108,7 @@ Description=User code executor
 [Service]
 ExecStart=/usr/local/bin/executor
 ExecStopPost=/shutdown_executor.sh
+Requires=docker
 Restart=on-failure
 EnvironmentFile=/etc/systemd/system/executor.env
 Environment=HOME="%h"
