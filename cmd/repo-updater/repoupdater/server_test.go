@@ -793,12 +793,12 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 					return test.err
 				},
 			}
-			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalService": {"ID":1,"kind":"GITHUB"}}}`))
+			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalServiceID": 1}`))
 			w := httptest.NewRecorder()
 			s := repos.NewMockStore()
 			es := database.NewMockExternalServiceStore()
 			s.ExternalServiceStoreFunc.SetDefaultReturn(es)
-			es.GetByIDFunc.PushReturn(&types.ExternalService{ID: 1, Kind: extsvc.KindGitHub}, nil)
+			es.ListFunc.PushReturn([]*types.ExternalService{{ID: 1, Kind: extsvc.KindGitHub}}, nil)
 
 			srv := &Server{Logger: logtest.Scoped(t), Store: s, Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
 			srv.handleExternalServiceSync(w, r)
