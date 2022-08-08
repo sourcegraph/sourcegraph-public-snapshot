@@ -149,6 +149,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                         <RepoSearchResult
                             index={index}
                             result={result}
+                            platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
                             as="li"

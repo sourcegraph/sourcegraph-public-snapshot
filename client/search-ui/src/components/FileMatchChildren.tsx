@@ -15,7 +15,7 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { fetchBlob } from '@sourcegraph/shared/src/backend/blob'
+import { PrefetchableFile } from '@sourcegraph/shared/src/components/FileLink'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -310,27 +310,17 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
-    const prefetchFile = useCallback(() => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        fetchBlob({
-            // TOOD: Work out why commitID doesn't match
-            commitID: '587fa5e1b30b145f3b824ccd58c14d1056514a8a',
-            filePath: result.path,
-            repoName: result.repository,
-            formatOnly: true,
-            requestGraphQL: props.platformContext.requestGraphQL,
-        }).toPromise()
-    }, [props.platformContext.requestGraphQL, result.path, result.repository])
-
     return (
-        <div
+        <PrefetchableFile
             className={classNames(
                 styles.fileMatchChildren,
                 coreWorkflowImprovementsEnabled && result.type === 'symbol' && styles.symbols
             )}
             data-testid="file-match-children"
-            onMouseOver={prefetchFile}
-            onFocus={prefetchFile}
+            revision={result.commit}
+            filePath={result.path}
+            repoName={result.repository}
+            platformContext={props.platformContext}
         >
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
@@ -432,6 +422,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     ))}
                 </div>
             )}
-        </div>
+        </PrefetchableFile>
     )
 }

@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
+import { fetchRepository, resolveRevision } from '@sourcegraph/shared/src/backend/repo'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -14,7 +16,7 @@ import { SearchResultStar } from './SearchResultStar'
 
 import styles from './ResultContainer.module.scss'
 
-export interface ResultContainerProps {
+export interface ResultContainerProps extends PlatformContextProps<'requestGraphQL'> {
     /**
      * Whether the result container's children are visible by default.
      * The header is always visible even when the component is not expanded.
@@ -138,12 +140,27 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     resultType,
     as: Component = 'div',
     index,
+    platformContext,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
+
+    useEffect(() => {
+        const repoObservable = fetchRepository({ repoName, requestGraphQL: platformContext.requestGraphQL }).subscribe()
+        const revisionObservable = resolveRevision({
+            repoName,
+            revision: '',
+            requestGraphQL: platformContext.requestGraphQL,
+        }).subscribe()
+
+        return () => {
+            repoObservable.unsubscribe()
+            revisionObservable.unsubscribe()
+        }
+    }, [platformContext.requestGraphQL, repoName])
 
     const rootRef = useRef<HTMLElement>(null)
     const toggle = useCallback((): void => {

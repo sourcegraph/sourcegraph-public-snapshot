@@ -214,6 +214,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         className: props.containerClassName,
         resultsClassName: props.result.type === 'symbol' ? styles.symbols : undefined,
         resultType: result.type,
+        platformContext: props.platformContext,
     }
 
     let containerProps: ResultContainerProps
