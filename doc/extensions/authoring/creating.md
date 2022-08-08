@@ -1,6 +1,6 @@
 # Creating a Sourcegraph extension
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
 
 First, [set up your development environment](development_environment.md) so you're ready for creating and publishing.
 
@@ -66,7 +66,7 @@ These are configuration files for linting and TypeScript compilation and will be
 
 ## Debugging a Sourcegraph extension
 
-See [Debugging an extension](debugging.md). 
+See [Debugging an extension](debugging.md).
 
 ## Next steps
 

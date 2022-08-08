@@ -4,7 +4,7 @@ ignoreDisconnectedPageCheck: true
 
 # Publishing a local copy of an extension
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
 
 <!-- TODO(sqs): WIP -->
 

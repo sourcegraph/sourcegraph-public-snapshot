@@ -1,6 +1,6 @@
 # Sourcegraph extension authoring
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
 
 A [Sourcegraph extension](../index.md) is a single JavaScript file that runs in users' web browsers in a Web Worker and has an exported `activate` function. The JavaScript file is usually produced by compiling and bundling one or more TypeScript source files.
 

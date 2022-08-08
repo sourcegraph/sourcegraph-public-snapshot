@@ -1,6 +1,6 @@
 # Building a "Hello, world!" Sourcegraph extension
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../deprecation.md).
 
 [Sourcegraph extensions](https://docs.sourcegraph.com/extensions) lets you add features and show new kinds of information alongside your code on Sourcegraph.com, GitHub, and other code hosts.
 

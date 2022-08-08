@@ -1,6 +1,6 @@
 # Set up your development environment
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
 
 <!--
 Purpose: To provide a source of truth for setting up a development environment for extensions. This can then be linked to from reference documentation and tutorials.

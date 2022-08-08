@@ -1,6 +1,6 @@
 # Extension authoring tutorials
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../deprecation.md).
 
 - [Hello world](hello_world.md)
 - [Buttons and custom commands](button_custom_commands.md)

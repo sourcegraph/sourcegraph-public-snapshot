@@ -207,7 +207,7 @@ If you want to learn more about native integrations:
 
 ## Sourcegraph extension API
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../../../extensions/deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../../extensions/deprecation.md).
 
 The Sourcegraph extension API allows developers to write extensions that extend the functionality of Sourcegraph.
 

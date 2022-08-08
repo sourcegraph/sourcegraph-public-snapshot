@@ -1,6 +1,6 @@
 # Extension UX style guide
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
 
 In addition to what features your extension has, the way your extension behaves from the user's perspective has a big impact on whether or not they'll decide to keep your extension enabled.
 

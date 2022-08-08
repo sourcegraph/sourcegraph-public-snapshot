@@ -1,6 +1,6 @@
 # Sourcegraph extension buttons and custom commands
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../deprecation.md).
 
 This tutorial will teach you how to add a button to the **file header** and a menu item to the **command palette**.
 

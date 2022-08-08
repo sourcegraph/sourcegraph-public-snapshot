@@ -1,6 +1,6 @@
 # Principles of extensibility for Sourcegraph
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](./deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](./deprecation.md).
 
 [Sourcegraph](https://sourcegraph.com) provides IDE-like code navigation (definitions, references, hover tooltips, and search) anywhere you view and review code, such as in GitHub files and pull requests. To do this, we built a way to show information from [language servers](http://langserver.org) (for 20+ languages) in the places you view and review code.
 

@@ -1,6 +1,6 @@
 # Building a language-specific extension tutorial
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../deprecation.md).
 
 ![Sourcegraph extension button](img/python-button.png)
 

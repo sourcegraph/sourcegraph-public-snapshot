@@ -1,6 +1,6 @@
 # Testing extensions
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
 
 For any extension that uses the Sourcegraph API, you may want to write automated
 tests to make sure that your extension is using the API correctly.

@@ -1,6 +1,6 @@
 # Builtin Sourcegraph extension commands
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
 
 This document lists the predefined commands that extensions can execute to perform actions on Sourcegraph or the client application. In addition to these commands, extensions may also define their own commands.
 

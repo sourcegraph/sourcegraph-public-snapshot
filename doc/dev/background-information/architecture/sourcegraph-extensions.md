@@ -1,6 +1,6 @@
 # Sourcegraph extension architecture
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../../../extensions/deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../../extensions/deprecation.md).
 
 The Sourcegraph extension API allows extension of Sourcegraph functionality through [specific extension points](https://unpkg.com/sourcegraph@24.7.0/dist/docs/index.html). The Sourcegraph extension architecture refers to the system which allows Sourcegraph client applications, such as the web application or browser extension, to communicate with Sourcegraph extensions.
 

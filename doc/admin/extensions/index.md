@@ -1,6 +1,6 @@
 # Administration of Sourcegraph extensions and the extension registry
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../extensions/deprecation.md).
 
 [Sourcegraph extensions](../../extensions/index.md) add features to Sourcegraph. Sourcegraph Free and Enterprise instances allow users to view and enable extensions from the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions).
 
