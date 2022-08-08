@@ -13,11 +13,15 @@ interface PrefetchableFileProps extends PlatformContextProps<'requestGraphQL'> {
     revision?: string
     filePath: string
     repoName: string
-    prefetch?: boolean
+    prefetch: boolean
 }
 
+/**
+ * A wrapper component that supports pre-fetching file revisions on hover.
+ * Note: This is currently experimental, and should only be enabled through
+ */
 export const PrefetchableFile = React.forwardRef(function PrefetchableFile(
-    { revision, filePath, repoName, prefetch = true, platformContext, as: Component = 'div', ...rest },
+    { revision, filePath, repoName, platformContext, prefetch, as: Component = 'div', ...rest },
     reference
 ) {
     const observable = useRef<Subscription | null>(null)

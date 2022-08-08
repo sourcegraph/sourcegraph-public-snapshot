@@ -15,7 +15,7 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { PrefetchableFile } from '@sourcegraph/shared/src/components/FileLink'
+import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -312,6 +312,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <PrefetchableFile
+            // TODO: Get from experimental features
+            prefetch={true}
             className={classNames(
                 styles.fileMatchChildren,
                 coreWorkflowImprovementsEnabled && result.type === 'symbol' && styles.symbols

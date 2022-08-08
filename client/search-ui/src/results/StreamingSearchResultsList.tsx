@@ -117,6 +117,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
                             result={result}
+                            platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'fileMatch')}
                             expanded={false}
                             showAllMatches={false}
@@ -129,7 +130,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
                             as="li"
-                            platformContext={platformContext}
                         />
                     )
                 case 'commit':

@@ -154,7 +154,14 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
+    /**
+     * Repository + revision pre-fetching.
+     * Note that we don't actually do anything with this data.
+     * The primary aim is to kickstart the memoized observable so that when we try
+     * to render the repository or blob pages, the data is already resolved/resolving.
+     */
     useEffect(() => {
+        // TODO: Gate behind a flag
         const repoObservable = fetchRepository({ repoName, requestGraphQL: platformContext.requestGraphQL }).subscribe()
         const revisionObservable = resolveRevision({
             repoName,

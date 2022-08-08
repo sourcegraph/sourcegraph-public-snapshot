@@ -9,7 +9,9 @@ import { BlobFileFields, BlobResult, BlobVariables } from '../graphql-operations
 import { PlatformContext } from '../platform/context'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean; formatOnly?: boolean }): string {
-    return `${makeRepoURI(parsed)}?disableTimeout=${parsed.disableTimeout}&formatOnly=${parsed.formatOnly}`
+    return `${makeRepoURI(parsed)}?disableTimeout=${Boolean(parsed.disableTimeout)}&formatOnly=${Boolean(
+        parsed.formatOnly
+    )}`
 }
 
 interface FetchBlobArguments {
