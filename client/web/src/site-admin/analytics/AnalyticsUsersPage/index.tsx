@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
+import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -122,6 +123,8 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
         return <LoadingSpinner />
     }
 
+    const groupingLabel = startCase(grouping.value.toLowerCase())
+
     return (
         <>
             <AnalyticsPageTitle>Analytics / Users</AnalyticsPageTitle>
@@ -142,7 +145,11 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                 {activities && (
                     <div>
                         <ChartContainer
-                            title={aggregation.selected === 'count' ? 'Activity by day' : 'Unique users by day'}
+                            title={
+                                aggregation.selected === 'count'
+                                    ? `${groupingLabel} activity`
+                                    : `${groupingLabel} unique users`
+                            }
                             labelX="Time"
                             labelY={aggregation.selected === 'count' ? 'Activity' : 'Unique users'}
                         >

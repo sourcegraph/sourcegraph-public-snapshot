@@ -1,18 +1,14 @@
-import { ReactElement, SVGProps, useMemo, useRef, useState } from 'react'
+import { ReactElement, SVGProps, useMemo } from 'react'
 
 import { scaleBand, scaleLinear } from '@visx/scale'
-import classNames from 'classnames'
+import { ScaleBand } from 'd3-scale'
 import { noop } from 'lodash'
 
-import { AxisBottom, AxisLeft, getChartContentSizes, Tooltip } from '../../core'
+import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core/components/SvgRoot'
 import { CategoricalLikeChart } from '../../types'
 
-import { GroupedBars } from './components/GroupedBars'
-import { StackedBars } from './components/StackedBars'
-import { BarTooltipContent } from './components/TooltipContent'
-import { Category, getGroupedCategories } from './utils/get-grouped-categories'
-
-import styles from './BarChart.module.scss'
+import { BarChartContent } from './BarChartContent'
+import { getGroupedCategories } from './utils/get-grouped-categories'
 
 const DEFAULT_LINK_GETTER = (): null => null
 
@@ -23,18 +19,12 @@ interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVG
     getCategory?: (datum: Datum) => string | undefined
 }
 
-interface ActiveSegment<Datum> {
-    category: Category<Datum>
-    datum: Datum
-}
-
 export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
     const {
         width: outerWidth,
         height: outerHeight,
         data,
         stacked = false,
-        className,
         getDatumName,
         getDatumValue,
         getDatumColor,
@@ -43,26 +33,6 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         onDatumLinkClick = noop,
         ...attributes
     } = props
-
-    const rootRef = useRef(null)
-    const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
-    const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
-    const [activeSegment, setActiveSegment] = useState<ActiveSegment<Datum> | null>(null)
-
-    const content = useMemo(
-        () =>
-            getChartContentSizes({
-                width: outerWidth,
-                height: outerHeight,
-                margin: {
-                    top: 16,
-                    right: 16,
-                    left: yAxisElement?.getBBox().width,
-                    bottom: xAxisReference?.getBBox().height,
-                },
-            }),
-        [yAxisElement, xAxisReference, outerWidth, outerHeight]
-    )
 
     const categories = useMemo(
         () => getGroupedCategories({ data, stacked, getCategory, getDatumName, getDatumValue }),
@@ -73,19 +43,17 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         () =>
             scaleBand<string>({
                 domain: categories.map(category => category.id),
-                range: [0, content.width],
                 padding: 0.2,
             }),
-        [content, categories]
+        [categories]
     )
 
     const yScale = useMemo(
         () =>
             scaleLinear<number>({
                 domain: [0, Math.max(...categories.map(category => category.maxValue))],
-                range: [content.height, 0],
             }),
-        [content, categories]
+        [categories]
     )
 
     const handleBarClick = (datum: Datum): void => {
@@ -98,78 +66,32 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         onDatumLinkClick(datum)
     }
 
-    const withActiveLink = activeSegment?.datum ? getDatumLink(activeSegment?.datum) : null
-
     return (
-        <svg
-            ref={rootRef}
-            width={outerWidth}
-            height={outerHeight}
-            {...attributes}
-            className={classNames(className, styles.root, { [styles.rootWithHoveredLinkPoint]: withActiveLink })}
-        >
-            <AxisLeft
-                ref={setYAxisElement}
-                scale={yScale}
-                width={content.width}
-                height={content.height}
-                top={content.top}
-                left={content.left}
-            />
+        <SvgRoot {...attributes} width={outerWidth} height={outerHeight} xScale={xScale} yScale={yScale}>
+            <SvgAxisLeft />
+            <SvgAxisBottom />
 
-            <AxisBottom
-                ref={setXAxisElement}
-                scale={xScale}
-                width={content.width}
-                top={content.bottom}
-                left={content.left}
-            />
-
-            {stacked ? (
-                <StackedBars
-                    categories={categories}
-                    xScale={xScale}
-                    yScale={yScale}
-                    getDatumName={getDatumName}
-                    getDatumValue={getDatumValue}
-                    getDatumColor={getDatumColor}
-                    left={content.left}
-                    top={content.top}
-                    height={content.height}
-                    onBarHover={(datum, category) => setActiveSegment({ datum, category })}
-                    onBarLeave={() => setActiveSegment(null)}
-                    onBarClick={handleBarClick}
-                />
-            ) : (
-                <GroupedBars
-                    categories={categories}
-                    xScale={xScale}
-                    yScale={yScale}
-                    getDatumName={getDatumName}
-                    getDatumValue={getDatumValue}
-                    getDatumColor={getDatumColor}
-                    getDatumLink={getDatumLink}
-                    left={content.left}
-                    top={content.top}
-                    height={content.height}
-                    width={content.width}
-                    onBarHover={(datum, category) => setActiveSegment({ datum, category })}
-                    onBarLeave={() => setActiveSegment(null)}
-                    onBarClick={handleBarClick}
-                />
-            )}
-
-            {activeSegment && rootRef.current && (
-                <Tooltip containerElement={rootRef.current}>
-                    <BarTooltipContent
-                        category={activeSegment.category}
-                        activeBar={activeSegment.datum}
-                        getDatumColor={getDatumColor}
-                        getDatumValue={getDatumValue}
+            <SvgContent<ScaleBand<string>, any>>
+                {({ yScale, xScale, content }) => (
+                    <BarChartContent<Datum>
+                        // Visx axis interfaces doesn't support scaleLiner scale in
+                        // axisScale interface
+                        yScale={yScale}
+                        xScale={xScale}
+                        width={content.width}
+                        height={content.height}
+                        top={content.top}
+                        left={content.left}
+                        stacked={stacked}
+                        categories={categories}
                         getDatumName={getDatumName}
+                        getDatumValue={getDatumValue}
+                        getDatumColor={getDatumColor}
+                        getDatumLink={getDatumLink}
+                        onBarClick={handleBarClick}
                     />
-                </Tooltip>
-            )}
-        </svg>
+                )}
+            </SvgContent>
+        </SvgRoot>
     )
 }

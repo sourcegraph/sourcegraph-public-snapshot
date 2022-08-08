@@ -5715,6 +5715,11 @@ type Site implements SettingsSubject {
         Returns users that contain filter in the email field.
         """
         email: String
+        """
+        Returns users for the given lastActive enum period.
+        When omitted does NOT apply and returns for all period available.
+        """
+        lastActivePeriod: SiteUsersLastActivePeriod
     ): SiteUsers!
 
     """
@@ -6371,6 +6376,15 @@ enum SiteUserOrderBy {
     Whether the user is site admin or not.
     """
     SITE_ADMIN
+}
+
+"""
+SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
+"""
+enum SiteUsersLastActivePeriod {
+    TODAY
+    THIS_WEEK
+    THIS_MONTH
 }
 
 """

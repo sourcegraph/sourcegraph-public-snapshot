@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - **IMPORTANT: Search queries with patterns surrounded by** `/.../` **will now be interpreted as regular expressions.** Existing search links or code monitors are unaffected. In the rare event where older links rely on the literal meaning of `/.../`, the string will be automatically quoted it in a `content` filter, preserving the original meaning. If you happen to use an existing older link and want `/.../` to work as a regular expression, add `patterntype:standard` to the query. New queries and code monitors will interpret `/.../` as regular expressions. [#38141](https://github.com/sourcegraph/sourcegraph/pull/38141).
+- The password policy has been updated and is now part of the standard featureset configurable by site-admins. [#39213](https://github.com/sourcegraph/sourcegraph/pull/39213).
 
 ### Fixed
 
@@ -41,7 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fix issue in the streaming Compute API to return immediately when query parsing fails. [#39842](https://github.com/sourcegraph/sourcegraph/pull/39842)
+- Fix issue with capture group insights to fail immediately if they contain invalid queries. [#39842](https://github.com/sourcegraph/sourcegraph/pull/39842)
 - Fix issue during conversion of just in time code insights to start backfilling data from the current time instead of the date the insight was created. [#39923](https://github.com/sourcegraph/sourcegraph/pull/39923)
 
 ## 3.42.1

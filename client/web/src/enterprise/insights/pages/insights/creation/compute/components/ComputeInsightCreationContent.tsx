@@ -22,10 +22,10 @@ import {
     useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
-import { ComputeLivePreview } from '../../ComputeLivePreview'
 import { CreateComputeInsightFormFields } from '../types'
 
 import { ComputeInsightMapPicker } from './ComputeInsightMapPicker'
+import { ComputeLivePreview } from './ComputeLivePreview'
 
 const INITIAL_INSIGHT_VALUES: CreateComputeInsightFormFields = {
     series: [createDefaultEditSeries({ edit: true })],
