@@ -93,6 +93,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             className={containerClassName}
             as={as}
             platformContext={platformContext}
+            repoRevision={result.oid}
         />
     )
 }

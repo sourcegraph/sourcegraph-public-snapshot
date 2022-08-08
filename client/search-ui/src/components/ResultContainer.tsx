@@ -91,6 +91,11 @@ export interface ResultContainerProps extends PlatformContextProps<'requestGraph
     repoName: string
 
     /**
+     * The revision of the repository
+     */
+    repoRevision?: string
+
+    /**
      * The number of stars for the result's associated repo
      */
     repoStars?: number
@@ -133,6 +138,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     description,
     matchCountLabel,
     repoName,
+    repoRevision,
     repoStars,
     onResultClicked,
     className,
@@ -152,7 +158,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
         const repoObservable = fetchRepository({ repoName, requestGraphQL: platformContext.requestGraphQL }).subscribe()
         const revisionObservable = resolveRevision({
             repoName,
-            revision: '',
+            revision: repoRevision,
             requestGraphQL: platformContext.requestGraphQL,
         }).subscribe()
 
@@ -160,7 +166,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             repoObservable.unsubscribe()
             revisionObservable.unsubscribe()
         }
-    }, [platformContext.requestGraphQL, repoName])
+    }, [platformContext.requestGraphQL, repoName, repoRevision])
 
     const rootRef = useRef<HTMLElement>(null)
     const toggle = useCallback((): void => {
