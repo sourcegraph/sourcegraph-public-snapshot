@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"sort"
 	"strconv"
@@ -1163,15 +1162,10 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// create a store with a NoopKey to read the raw encrypted value
-	noopStore := db.ExternalServices().WithEncryptionKey(&encryption.NoopKey{})
-	encrypted, err := noopStore.GetByID(ctx, es.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// if the TestKey worked, the config should just be a base64 encoded version
-	if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(es.Config)) {
-		t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
+	// values encrypted should not be readable without the encrypting key
+	noopStore := store.WithEncryptionKey(&encryption.NoopKey{})
+	if _, err := noopStore.GetByID(ctx, es.ID); err == nil {
+		t.Fatalf("expected error decrypting with a different key")
 	}
 
 	// Should be able to get back by its ID
@@ -2002,26 +1996,21 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-
-		// create a store with a NoopKey to read the raw encrypted value
-		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{})
-
 		for _, e := range want {
 			if e.Kind != strings.ToUpper(e.Kind) {
 				t.Errorf("external service kind didn't get upper-cased: %q", e.Kind)
 				break
 			}
-			encrypted, err := noopStore.GetByID(ctx, e.ID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			// if the TestKey worked, the config should just be a base64 encoded version
-			if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(e.Config)) {
-				t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
-			}
 		}
 
-		sort.Sort(want)
+		// values encrypted should not be readable without the encrypting key
+		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{})
+
+		for _, e := range want {
+			if _, err := noopStore.GetByID(ctx, e.ID); err == nil {
+				t.Fatalf("expected error decrypting with a different key")
+			}
+		}
 
 		have, err := tx.List(ctx, ExternalServicesListOptions{
 			Kinds: svcs.Kinds(),
@@ -2031,6 +2020,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 
 		sort.Sort(types.ExternalServices(have))
+		sort.Sort(want)
 
 		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
 			t.Fatalf("List:\n%s", diff)

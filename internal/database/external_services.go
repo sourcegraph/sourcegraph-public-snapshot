@@ -645,7 +645,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	config, keyID, err := e.maybeEncryptConfig(ctx, es.Config)
+	config, keyID, err := e.maybeEncrypt(ctx, es.Config)
 	if err != nil {
 		return err
 	}
@@ -676,51 +676,20 @@ INSERT INTO external_services
 RETURNING id
 `
 
-// maybeEncryptConfig encrypts and returns externals service config if an encryption.Key is configured
-func (e *externalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
-	// encrypt the config before writing if we have a key configured
-	var keyVersion string
-	key := e.key
-	if key == nil {
-		key = keyring.Default().ExternalServiceKey
-	}
-	if key != nil {
-		encrypted, err := key.Encrypt(ctx, []byte(config))
-		if err != nil {
-			return "", "", err
-		}
-		config = string(encrypted)
-		version, err := key.Version(ctx)
-		if err != nil {
-			return "", "", err
-		}
-		keyVersion = version.JSON()
-	}
-	return config, keyVersion, nil
+func (e *externalServiceStore) maybeEncrypt(ctx context.Context, data string) (string, string, error) {
+	return encryption.MaybeEncrypt(ctx, e.getEncryptionKey(), data)
 }
 
-func (e *externalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyID string) (string, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "ExternalServiceStore.maybeDecryptConfig")
-	defer span.Finish()
+func (e *externalServiceStore) maybeDecrypt(ctx context.Context, data, keyIdent string) (string, error) {
+	return encryption.MaybeDecrypt(ctx, e.getEncryptionKey(), data, keyIdent)
+}
 
-	if keyID == "" {
-		// config is not encrypted, return plaintext
-		return config, nil
+func (e *externalServiceStore) getEncryptionKey() encryption.Key {
+	if e.key != nil {
+		return e.key
 	}
-	key := e.key
-	if key == nil {
-		key = keyring.Default().ExternalServiceKey
-	}
-	if key == nil {
-		return config, errors.Errorf("couldn't decrypt encrypted config, key is nil")
-	}
-	decryptSpan, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt")
-	decrypted, err := key.Decrypt(ctx, []byte(config))
-	decryptSpan.Finish()
-	if err != nil {
-		return config, err
-	}
-	return decrypted.Secret(), nil
+
+	return keyring.Default().ExternalServiceKey
 }
 
 func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
@@ -809,7 +778,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 
-		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, encryptionKeyID)
+		svcs[i].Config, err = e.maybeDecrypt(ctx, svcs[i].Config, encryptionKeyID)
 		if err != nil {
 			return err
 		}
@@ -823,7 +792,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
-		config, keyID, err := e.maybeEncryptConfig(ctx, s.Config)
+		config, keyID, err := e.maybeEncrypt(ctx, s.Config)
 		if err != nil {
 			return nil, err
 		}
@@ -975,7 +944,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		}
 
 		var config string
-		config, keyID, err = e.maybeEncryptConfig(ctx, *update.Config)
+		config, keyID, err = e.maybeEncrypt(ctx, *update.Config)
 		if err != nil {
 			return err
 		}
@@ -1422,7 +1391,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		var groupErr error
 		group.Go(func() error {
 			keyID := keyIDs[s.ID]
-			s.Config, groupErr = e.maybeDecryptConfig(ctx, s.Config, keyID)
+			s.Config, groupErr = e.maybeDecrypt(ctx, s.Config, keyID)
 			if groupErr != nil {
 				return groupErr
 			}
