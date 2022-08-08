@@ -108,24 +108,24 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 		parseWebhooks := func(kind, config string) (bool, error) {
 			switch strings.ToUpper(kind) {
 			case extsvc.KindBitbucketServer:
-				cfg := &schema.BitbucketServerConnection{}
-				if err := jsonc.Unmarshal(config, cfg); err != nil {
+				cfg := schema.BitbucketServerConnection{}
+				if err := jsonc.Unmarshal(config, &cfg); err != nil {
 					return false, err
 				}
 
 				return cfg.WebhookSecret() != "", nil
 
 			case extsvc.KindGitHub:
-				cfg := &schema.GitHubConnection{}
-				if err := jsonc.Unmarshal(config, cfg); err != nil {
+				cfg := schema.GitHubConnection{}
+				if err := jsonc.Unmarshal(config, &cfg); err != nil {
 					return false, err
 				}
 
 				return len(cfg.Webhooks) > 0, nil
 
 			case extsvc.KindGitLab:
-				cfg := &schema.GitLabConnection{}
-				if err := jsonc.Unmarshal(config, cfg); err != nil {
+				cfg := schema.GitLabConnection{}
+				if err := jsonc.Unmarshal(config, &cfg); err != nil {
 					return false, err
 				}
 
