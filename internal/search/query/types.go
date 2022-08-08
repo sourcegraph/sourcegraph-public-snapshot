@@ -410,6 +410,31 @@ func (p Parameters) RepoContainsCommitAfter() (value string) {
 	return value
 }
 
+type RepoMetadataFilter struct {
+	Key     string
+	Value   *string
+	Negated bool
+}
+
+func (p Parameters) RepoHasMetadata() (res []RepoMetadataFilter) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasMetadataPredicate, negated bool) {
+		res = append(res, RepoMetadataFilter{
+			Key:     pred.Key,
+			Value:   &pred.Value,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasTagPredicate, negated bool) {
+		res = append(res, RepoMetadataFilter{
+			Key:     pred.Key,
+			Negated: negated,
+		})
+	})
+
+	return res
+}
+
 func (p Parameters) FileHasOwner() (include, exclude []string) {
 	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate, negated bool) {
 		if negated {

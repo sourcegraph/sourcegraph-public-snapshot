@@ -397,11 +397,14 @@ type repoMetadataKVPs struct {
 }
 
 func (r *repoMetadataKVPs) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
+	switch b := value.(type) {
+	case []byte:
+		return json.Unmarshal(b, &r.kvps)
+	case nil:
+		return nil
+	default:
+		return errors.Newf("type assertion to []byte failed, got type %T", value)
 	}
-	return json.Unmarshal(b, &r.kvps)
 }
 
 const listReposQueryFmtstr = `
@@ -723,8 +726,9 @@ type ReposListOptions struct {
 }
 
 type RepoMetadataFilter struct {
-	Key   string
-	Value *string
+	Key     string
+	Value   *string
+	Negated bool
 }
 
 type RepoListOrderBy []RepoListSort
@@ -1085,7 +1089,11 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if len(opt.MetadataFilters) > 0 {
 		var ands []*sqlf.Query
 		for _, filter := range opt.MetadataFilters {
-			ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_metadata WHERE key = %s AND value = %s)", filter.Key, filter.Value))
+			if filter.Value != nil {
+				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_metadata WHERE repo_id = repo.id AND key = %s AND value = %s)", filter.Key, *filter.Value))
+			} else {
+				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_metadata WHERE repo_id = repo.id AND key = %s AND value IS NULL)", filter.Key))
+			}
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
