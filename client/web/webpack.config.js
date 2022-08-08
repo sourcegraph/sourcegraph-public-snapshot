@@ -37,14 +37,15 @@ const {
   INTEGRATION_TESTS,
   ENTERPRISE,
   EMBED_DEVELOPMENT,
-  ENABLE_MONITORING,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
   SOURCEGRAPH_API_URL,
   WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
   WEBPACK_USE_NAMED_CHUNKS,
   SENTRY_UPLOAD_SOURCE_MAPS,
   COMMIT_SHA,
-  RELEASE_CANDIDATE_VERSION,
+  VERSION,
   SENTRY_DOT_COM_AUTH_TOKEN,
   SENTRY_ORGANIZATION,
   SENTRY_PROJECT,
@@ -55,10 +56,10 @@ const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOP
 
 const RUNTIME_ENV_VARIABLES = {
   NODE_ENV,
-  ENABLE_MONITORING,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
   INTEGRATION_TESTS,
   COMMIT_SHA,
-  RELEASE_CANDIDATE_VERSION,
   ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
 
@@ -99,6 +100,11 @@ const config = {
         react: {
           test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
           name: 'react',
+          chunks: 'all',
+        },
+        opentelemetry: {
+          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          name: 'opentelemetry',
           chunks: 'all',
         },
       },
@@ -181,14 +187,15 @@ const config = {
          */
         threshold: 10240,
       }),
-    RELEASE_CANDIDATE_VERSION &&
+    VERSION &&
       SENTRY_UPLOAD_SOURCE_MAPS &&
       new SentryWebpackPlugin({
+        silent: true,
         org: SENTRY_ORGANIZATION,
         project: SENTRY_PROJECT,
         authToken: SENTRY_DOT_COM_AUTH_TOKEN,
-        release: `frontend@${RELEASE_CANDIDATE_VERSION}`,
-        include: path.join(STATIC_ASSETS_PATH, 'scripts'),
+        release: `frontend@${VERSION}`,
+        include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
       }),
   ].filter(Boolean),
   resolve: {

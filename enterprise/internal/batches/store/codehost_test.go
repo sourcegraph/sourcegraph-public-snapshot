@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,21 +20,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	rs := database.ReposWith(logger, s.Store)
 	es := database.ExternalServicesWith(s.observationContext.Logger, s.Store)
 
-	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
-	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
+	otherRepo := bt.TestRepo(t, es, extsvc.KindGitHub)
 
-	gh, ghExtSvc := ct.CreateGitHubSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
-	bbs, _ := ct.CreateBbsSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
+	gh, ghExtSvc := bt.CreateGitHubSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
+	bbs, _ := bt.CreateBbsSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
 	sshRepos := []*types.Repo{gh[0], bbs[0]}
 
-	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
-	bitbucketRepo := ct.TestRepo(t, es, extsvc.KindBitbucketServer)
-	awsRepo := ct.TestRepo(t, es, extsvc.KindAWSCodeCommit)
+	gitlabRepo := bt.TestRepo(t, es, extsvc.KindGitLab)
+	bitbucketRepo := bt.TestRepo(t, es, extsvc.KindBitbucketServer)
+	awsRepo := bt.TestRepo(t, es, extsvc.KindAWSCodeCommit)
 
 	// Enable webhooks on GitHub only.
 	rawConfig, err := ghExtSvc.Configuration()

@@ -498,6 +498,8 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 }
 
 func TestWorkerCancelJobs(t *testing.T) {
+	t.Skip("Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/39749")
+
 	recordID := 42
 	store := NewMockStore()
 	// Return one record from dequeue.

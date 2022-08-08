@@ -13,7 +13,7 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 ## Unreleased
 
-## 3.41 -> 3.42
+## 3.41 -> 3.42.1
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 

@@ -34,7 +34,7 @@ interface SearchInputExampleProps {
 const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<SearchInputExampleProps>> = ({
     showSearchContext,
     query,
-    patternType = SearchPatternType.literal,
+    patternType = SearchPatternType.standard,
     runnable = false,
     onRun,
 }) => {

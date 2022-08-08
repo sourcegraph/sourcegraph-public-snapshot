@@ -21,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -811,6 +813,159 @@ UPDATE lsif_uploads
 SET state = 'deleted'
 WHERE id IN (SELECT id FROM candidates)
 `
+
+// GetUploadIDsWithReferences returns uploads that probably contain an import
+// or implementation moniker whose identifier matches any of the given monikers' identifiers. This method
+// will not return uploads for commits which are unknown to gitserver, nor will it return uploads which
+// are listed in the given ignored identifier slice. This method also returns the number of records
+// scanned (but possibly filtered out from the return slice) from the database (the offset for the
+// subsequent request) and the total number of records in the database.
+func (s *store) GetUploadIDsWithReferences(
+	ctx context.Context,
+	orderedMonikers []precise.QualifiedMonikerData,
+	ignoreIDs []int,
+	repositoryID int,
+	commit string,
+	limit int,
+	offset int,
+	trace observation.TraceLogger,
+) (ids []int, recordsScanned int, totalCount int, err error) {
+	scanner, totalCount, err := s.GetVisibleUploadsMatchingMonikers(ctx, repositoryID, commit, orderedMonikers, limit, offset)
+	if err != nil {
+		return nil, 0, 0, errors.Wrap(err, "dbstore.ReferenceIDs")
+	}
+
+	defer func() {
+		if closeErr := scanner.Close(); closeErr != nil {
+			err = errors.Append(err, errors.Wrap(closeErr, "dbstore.ReferenceIDs.Close"))
+		}
+	}()
+
+	ignoreIDsMap := map[int]struct{}{}
+	for _, id := range ignoreIDs {
+		ignoreIDsMap[id] = struct{}{}
+	}
+
+	filtered := map[int]struct{}{}
+
+	for len(filtered) < limit {
+		packageReference, exists, err := scanner.Next()
+		if err != nil {
+			return nil, 0, 0, errors.Wrap(err, "dbstore.GetUploadIDsWithReferences.Next")
+		}
+		if !exists {
+			break
+		}
+		recordsScanned++
+
+		if _, ok := filtered[packageReference.DumpID]; ok {
+			// This index includes a definition so we can skip testing the filters here. The index
+			// will be included in the moniker search regardless if it contains additional references.
+			continue
+		}
+
+		if _, ok := ignoreIDsMap[packageReference.DumpID]; ok {
+			// Ignore this dump
+			continue
+		}
+
+		filtered[packageReference.DumpID] = struct{}{}
+	}
+
+	trace.Log(
+		log.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
+		log.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned),
+	)
+
+	flattened := make([]int, 0, len(filtered))
+	for k := range filtered {
+		flattened = append(flattened, k)
+	}
+	sort.Ints(flattened)
+
+	return flattened, recordsScanned, totalCount, nil
+}
+
+// GetVisibleUploadsMatchingMonikers returns visible uploads that refer (via package information) to any of the
+// given monikers' packages.
+//
+// Visibility is determined in two parts: if the index belongs to the given repository, it is visible if
+// it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
+// the default branch of its own repository.
+// ReferenceIDs
+func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ shared.PackageReferenceScanner, _ int, err error) {
+	ctx, trace, endObservation := s.operations.getVisibleUploadsMatchingMonikers.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+		log.Int("numMonikers", len(monikers)),
+		log.String("monikers", monikersToString(monikers)),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(monikers) == 0 {
+		return shared.PackageReferenceScannerFromSlice(), 0, nil
+	}
+
+	qs := make([]*sqlf.Query, 0, len(monikers))
+	for _, moniker := range monikers {
+		qs = append(qs, sqlf.Sprintf("(%s, %s, %s)", moniker.Scheme, moniker.Name, moniker.Version))
+	}
+
+	visibleUploadsQuery := makeVisibleUploadsQuery(repositoryID, commit)
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	countQuery := sqlf.Sprintf(referenceIDsCountQuery, visibleUploadsQuery, repositoryID, sqlf.Join(qs, ", "), authzConds)
+	totalCount, _, err := basestore.ScanFirstInt(s.db.Query(ctx, countQuery))
+	if err != nil {
+		return nil, 0, err
+	}
+	trace.Log(log.Int("totalCount", totalCount))
+
+	query := sqlf.Sprintf(referenceIDsQuery, visibleUploadsQuery, repositoryID, sqlf.Join(qs, ", "), authzConds, limit, offset)
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return shared.PackageReferenceScannerFromRows(rows), totalCount, nil
+}
+
+const referenceIDsCTEDefinitions = `
+-- source: internal/codeintel/stores/dbstore/xrepo.go:ReferenceIDs
+WITH
+visible_uploads AS (
+	(%s)
+	UNION
+	(SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id != %s AND uvt.is_default_branch)
+)
+`
+
+const referenceIDsBaseQuery = `
+FROM lsif_references r
+LEFT JOIN lsif_dumps u ON u.id = r.dump_id
+JOIN repo ON repo.id = u.repository_id
+WHERE
+	(r.scheme, r.name, r.version) IN (%s) AND
+	r.dump_id IN (SELECT * FROM visible_uploads) AND
+	%s -- authz conds
+`
+
+const referenceIDsQuery = referenceIDsCTEDefinitions + `
+SELECT r.dump_id, r.scheme, r.name, r.version
+` + referenceIDsBaseQuery + `
+ORDER BY dump_id
+LIMIT %s OFFSET %s
+`
+
+const referenceIDsCountQuery = referenceIDsCTEDefinitions + `
+SELECT COUNT(distinct r.dump_id)
+` + referenceIDsBaseQuery
 
 // refineRetentionConfiguration returns the maximum age for no-stale branches and tags, effectively, as configured
 // for the given repository. If there is no retention configuration for the given repository, the given default

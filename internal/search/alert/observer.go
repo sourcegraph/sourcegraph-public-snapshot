@@ -55,7 +55,6 @@ func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) b
 func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *search.Alert {
 	repoFilters, minusRepoFilters := q.Repositories()
 	contextFilters, _ := q.StringValues(query.FieldContext)
-	dependencies := q.Dependencies()
 	onlyForks, noForks, forksNotSet := false, false, true
 	if fork := q.Fork(); fork != nil {
 		onlyForks = *fork == query.Only
@@ -84,23 +83,6 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
 	if !envvar.SourcegraphDotComMode() {
-		if len(dependencies) > 0 {
-			needsPackageHostConfig, err := needsPackageHostConfiguration(ctx, o.Db)
-			if err == nil && needsPackageHostConfig {
-				if isSiteAdmin {
-					return &search.Alert{
-						Title:       "No package hosts configured",
-						Description: "To start searching your dependencies, first go to site admin to configure package hosts.",
-					}
-				} else {
-					return &search.Alert{
-						Title:       "No package hosts configured",
-						Description: "To start searching your dependencies, ask the site admin to configure package hosts.",
-					}
-				}
-			}
-		}
-
 		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, o.Db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
 				return &search.Alert{
@@ -113,13 +95,6 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 					Description: "To start searching code, ask the site admin to configure and enable repositories.",
 				}
 			}
-		}
-	}
-
-	if len(dependencies) > 0 {
-		return &search.Alert{
-			Title:       "No dependency repositories found",
-			Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nRead more about dependencies search [here](https://docs.sourcegraph.com/code_search/how-to/dependencies_search).",
 		}
 	}
 
@@ -279,22 +254,9 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 
 	if errors.As(err, &mErr) {
 		var a *search.Alert
-		dependencies := o.Query.Dependencies()
-		if len(dependencies) == 0 {
-			a = AlertForMissingRepoRevs(mErr.Missing)
-		} else {
-			a = AlertForMissingDependencyRepoRevs(mErr.Missing)
-		}
+		a = AlertForMissingRepoRevs(mErr.Missing)
 		a.Priority = 6
 		return a, nil
-	}
-
-	var unindexedLockfile *searchrepos.MissingLockfileIndexing
-	if errors.As(err, &unindexedLockfile) {
-		repo := unindexedLockfile.RepoName()
-		revs := unindexedLockfile.RevNames()
-
-		return search.AlertForUnindexedLockfile(repo, revs), nil
 	}
 
 	if errors.As(err, &lErr) {
@@ -441,39 +403,5 @@ func AlertForMissingRepoRevs(missingRepoRevs []searchrepos.RepoRevSpecs) *search
 		PrometheusType: "missing_repo_revs",
 		Title:          "Some repositories could not be searched",
 		Description:    description,
-	}
-}
-
-func AlertForMissingDependencyRepoRevs(missingRepoRevs []searchrepos.RepoRevSpecs) *search.Alert {
-	var description string
-	if len(missingRepoRevs) == 1 {
-		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The dependency %s matched by your repo:deps(...) predicate could not be searched because it does not yet contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
-		} else {
-			description = fmt.Sprintf("The dependency %s matched by your repo:deps(...) predicate could not be searched because it has multiple missing revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
-		}
-	} else {
-		sampleSize := 10
-		if sampleSize > len(missingRepoRevs) {
-			sampleSize = len(missingRepoRevs)
-		}
-		repoRevs := make([]string, 0, sampleSize)
-		for _, r := range missingRepoRevs[:sampleSize] {
-			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
-		}
-		b := strings.Builder{}
-		_, _ = fmt.Fprintf(&b, "%d dependencies matched by your repo:deps(...) predicate could not be searched because the following revisions either don't exist or aren't yet cloned:", len(missingRepoRevs))
-		for _, rr := range repoRevs {
-			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
-		}
-		if sampleSize < len(missingRepoRevs) {
-			b.WriteString("\n* ...")
-		}
-		description = b.String()
-	}
-	return &search.Alert{
-		PrometheusType: "missing_dependency_repo_revs",
-		Title:          "Some dependencies could not be searched",
-		Description:    description + "\n\nDependency repository revisions are cloned on demand. Try again in a few seconds.",
 	}
 }

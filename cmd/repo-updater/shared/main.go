@@ -136,7 +136,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		depsSvc := livedependencies.GetService(db, nil)
+		depsSvc := livedependencies.GetService(db)
 		obsLogger := logger.Scoped("ObservedSource", "")
 		src = repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
 	}

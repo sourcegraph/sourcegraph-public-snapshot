@@ -129,6 +129,7 @@ export function selectableLineNumbers(config: { onSelection: (range: SelectedLin
         EditorView.theme({
             '.cm-lineNumbers': {
                 cursor: 'pointer',
+                color: 'var(--line-number-color)',
             },
             '.cm-lineNumbers .cm-gutterElement:hover': {
                 textDecoration: 'underline',

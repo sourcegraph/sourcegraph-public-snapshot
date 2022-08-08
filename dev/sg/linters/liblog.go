@@ -30,6 +30,8 @@ func lintLoggingLibraries() *linter {
 			"dev/sg/linters/liblog.go",
 			// We allow one usage of a direct zap import here
 			"internal/observation/fields.go",
+			// Dependencies require direct usage of zap
+			"cmd/frontend/internal/app/otlpadapter",
 		}
 	)
 

@@ -55,10 +55,7 @@ export interface NotebookComponentProps
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
     extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
-    platformContext: Pick<
-        PlatformContext,
-        'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'
-    >
+    platformContext: Pick<PlatformContext, 'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>
     exportedFileName: string
     isEmbedded?: boolean
     outlineContainerElement?: HTMLElement | null

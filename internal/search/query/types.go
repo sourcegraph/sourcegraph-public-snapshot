@@ -35,6 +35,7 @@ const (
 	SearchTypeStructural
 	SearchTypeLucky
 	SearchTypeStandard
+	SearchTypeKeyword
 )
 
 func (s SearchType) String() string {
@@ -49,6 +50,8 @@ func (s SearchType) String() string {
 		return "structural"
 	case SearchTypeLucky:
 		return "lucky"
+	case SearchTypeKeyword:
+		return "keyword"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
@@ -426,26 +429,6 @@ func (p Parameters) Exists(field string) bool {
 		found = true
 	})
 	return found
-}
-
-func (p Parameters) Dependencies() (preds []RepoDependenciesPredicate) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			var pred RepoDependenciesPredicate
-			pred.ParseParams(value)
-			preds = append(preds, pred)
-		}
-	})
-	return preds
-}
-
-func (p Parameters) Dependents() (dependents []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
-			dependents = append(dependents, value)
-		}
-	})
-	return dependents
 }
 
 func (p Parameters) RepoHasDescription() (descriptionPatterns []string) {

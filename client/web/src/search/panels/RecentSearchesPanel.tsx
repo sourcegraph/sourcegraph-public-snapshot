@@ -124,7 +124,7 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                                 '/search?' +
                                 buildSearchURLQuery(
                                     'lang:java type:diff after:"1 week ago"',
-                                    SearchPatternType.literal,
+                                    SearchPatternType.standard,
                                     false
                                 )
                             }
@@ -137,7 +137,7 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                 <li className={styles.examplesListItem}>
                     <small>
                         <Link
-                            to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
+                            to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.standard, false)}
                             className="text-monospace"
                         >
                             <SyntaxHighlightedSearchQuery query="lang:java" />

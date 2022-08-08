@@ -80,7 +80,9 @@ For short trials, however, companies often choose to only set up our search shor
 
 ## 5. Measure success
 
-Like step 1, this looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure!
+This looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure! 
+
+Sourcegraph has built-in analytics that are provided to site-admins to help understand and measure the value developers are seeing. Admin analytics is a free-feature for all instances. [Learn more about our admin analytics](../../admin/admin_analytics.md).
 
 How did it go? Any feedback for us? [Tweet at us](https://twitter.com/@sourcegraph), and we'll send you some Sourcegraph swag!
 

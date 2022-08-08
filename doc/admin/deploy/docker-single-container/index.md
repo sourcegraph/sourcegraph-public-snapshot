@@ -1,6 +1,6 @@
 # Docker Single Container Deployment
 
-The Docker Single Container deployment type is a way to very quickly get an instance of Sourcegraph set up locally to experiment with many of its features. However, it is **not recommended** for a production instance, and **has limitations** depending on the OS you are deploying to, as well as the associated resources. See the [troubleshooting secton](#troubleshooting) for additional information.
+The Docker Single Container deployment type is a way to very quickly get an instance of Sourcegraph set up locally to experiment with many of its features. However, it is **not recommended** for a production instance, and **has limitations** depending on the OS you are deploying to, as well as the associated resources. See the [troubleshooting section](#troubleshooting) for additional information.
 
 [Code Insights](../../../code_insights/index.md) is not supported in Single Container deployments. To try Code Insights you must deploy using [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md). 
 
@@ -14,7 +14,7 @@ It takes less than a minute to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.42.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.42.1</code></pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -46,7 +46,7 @@ For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/git
 Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
 
 ```dockerfile
-FROM sourcegraph/server:3.42.0
+FROM sourcegraph/server:3.42.1
 
 COPY gitconfig /etc/gitconfig
 COPY ssh /root/.ssh
@@ -87,7 +87,7 @@ This is required to [collect debug data](../../pprof.md).
 The docker run command for single-container Sourcegraph needs an additional publish flag to expose the debug port:
 
 ```bash script
-docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.42.0
+docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.42.1
 ```
 
 If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
@@ -105,7 +105,7 @@ Add the following to your docker run command:
 ```
 docker run [...]
 -e (YOUR CODE)
-sourcegraph/server:3.42.0
+sourcegraph/server:3.42.1
 ```
 
 ## Operation
@@ -173,7 +173,7 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 1. [Install Docker for Windows](https://docs.docker.com/docker-for-windows/install/)
 2. Using a command prompt, follow the same [installation steps provided above](#install-sourcegraph-with-docker) but remove the `--volume` arguments. For example by pasting this:
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.42.0</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.42.1</code></pre>
 
 ### Low resource environments
 
@@ -198,7 +198,7 @@ If you run Docker on an OS such as RHEL, Fedora, or CentOS with SELinux enabled,
 
 To fix this, run:
 
-`mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chown -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
+`mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chcon -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 
 ## Reference
 

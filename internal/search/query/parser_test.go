@@ -762,4 +762,8 @@ func TestParseStandard(t *testing.T) {
 	t.Run("patterns are literal and slash-delimited patterns /.../ are regexp", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test("anjou /saumur/")))
 	})
+
+	t.Run("quoted patterns are still literal", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`"veneto"`)))
+	})
 }

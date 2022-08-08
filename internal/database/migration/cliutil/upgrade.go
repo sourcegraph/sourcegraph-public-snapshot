@@ -22,6 +22,11 @@ func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryW
 		Usage:    "The target instance version. Must be of the form `v{Major}.{Minor}`.",
 		Required: true,
 	}
+	skipVersionCheckFlag := &cli.BoolFlag{
+		Name:     "skip-version-check",
+		Usage:    "Skip validation of the instance's current version.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		from, ok := oobmigration.NewVersionFromString(fromFlag.Get(cmd))
@@ -47,7 +52,7 @@ func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryW
 		if err != nil {
 			return err
 		}
-		if err := runUpgrade(ctx, runnerFactory, plan); err != nil {
+		if err := runUpgrade(ctx, runnerFactory, plan, skipVersionCheckFlag.Get(cmd)); err != nil {
 			return err
 		}
 
@@ -62,6 +67,7 @@ func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryW
 		Flags: []cli.Flag{
 			fromFlag,
 			toFlag,
+			skipVersionCheckFlag,
 		},
 	}
 }

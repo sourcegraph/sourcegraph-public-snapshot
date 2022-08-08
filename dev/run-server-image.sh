@@ -15,16 +15,16 @@ fi
 
 # shellcheck disable=SC2153
 case "$CLEAN" in
-  "true")
-    clean=y
-    ;;
-  "false")
-    clean=n
-    ;;
-  *)
-    echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-    read -r clean
-    ;;
+"true")
+  clean=y
+  ;;
+"false")
+  clean=n
+  ;;
+*)
+  echo -n "Do you want to delete $DATA and start clean? [Y/n] "
+  read -r clean
+  ;;
 esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
@@ -37,6 +37,7 @@ docker run "$@" \
   --publish "$PORT":7080 \
   -e SRC_LOG_LEVEL=dbug \
   -e DEBUG=t \
+  -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"

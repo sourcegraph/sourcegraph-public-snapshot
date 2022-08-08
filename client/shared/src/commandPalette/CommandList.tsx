@@ -68,7 +68,7 @@ export interface CommandListClassProps {
 export interface CommandListProps
     extends CommandListClassProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps {
     /** The menu whose commands to display. */
     menu: ContributableMenu

@@ -93,15 +93,16 @@ type EventRepoMatch struct {
 	// Type is always RepoMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	RepositoryID    int32      `json:"repositoryID"`
-	Repository      string     `json:"repository"`
-	Branches        []string   `json:"branches,omitempty"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
-	Description     string     `json:"description,omitempty"`
-	Fork            bool       `json:"fork,omitempty"`
-	Archived        bool       `json:"archived,omitempty"`
-	Private         bool       `json:"private,omitempty"`
+	RepositoryID       int32      `json:"repositoryID"`
+	Repository         string     `json:"repository"`
+	Branches           []string   `json:"branches,omitempty"`
+	RepoStars          int        `json:"repoStars,omitempty"`
+	RepoLastFetched    *time.Time `json:"repoLastFetched,omitempty"`
+	Description        string     `json:"description,omitempty"`
+	DescriptionMatches []Range    `json:"descriptionMatches,omitempty"`
+	Fork               bool       `json:"fork,omitempty"`
+	Archived           bool       `json:"archived,omitempty"`
+	Private            bool       `json:"private,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}

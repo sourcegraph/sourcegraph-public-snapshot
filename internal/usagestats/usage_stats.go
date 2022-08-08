@@ -152,7 +152,7 @@ func GetByUserID(ctx context.Context, db database.DB, userID int32) (*types.User
 func GetUsersActiveTodayCount(ctx context.Context, db database.DB) (int, error) {
 	now := timeNow().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	return db.EventLogs().CountUniqueUsersAll(ctx, today, today.AddDate(0, 0, 1))
+	return db.EventLogs().CountUniqueUsersAll(ctx, today, today.AddDate(0, 0, 1), &database.CountUniqueUsersOptions{ExcludeSystemUsers: true})
 }
 
 // ListRegisteredUsersToday returns a list of the registered users that were active today.
@@ -229,18 +229,22 @@ func activeUsers(ctx context.Context, db database.DB, periodType database.Period
 		return []*types.SiteActivityPeriod{}, nil
 	}
 
-	uniqueUsers, err := db.EventLogs().CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, nil)
+	uniqueUsers, err := db.EventLogs().CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &database.CountUniqueUsersOptions{
+		ExcludeSystemUsers: true,
+	})
 	if err != nil {
 		return nil, err
 	}
 	registeredUniqueUsers, err := db.EventLogs().CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &database.CountUniqueUsersOptions{
-		RegisteredOnly: true,
+		RegisteredOnly:     true,
+		ExcludeSystemUsers: true,
 	})
 	if err != nil {
 		return nil, err
 	}
 	integrationUniqueUsers, err := db.EventLogs().CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &database.CountUniqueUsersOptions{
-		IntegrationOnly: true,
+		IntegrationOnly:    true,
+		ExcludeSystemUsers: true,
 	})
 	if err != nil {
 		return nil, err

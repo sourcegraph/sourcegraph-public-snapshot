@@ -1,7 +1,6 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import { EMPTY, NEVER, of } from 'rxjs'
-import sinon from 'sinon'
 
 import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
@@ -51,7 +50,7 @@ const defaultProps: StreamingSearchResultsProps = {
         subjects: null,
         final: null,
     },
-    platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER, requestGraphQL: () => EMPTY },
+    platformContext: { settings: NEVER, requestGraphQL: () => EMPTY },
 
     streamSearch: () => of(streamingSearchResult),
 

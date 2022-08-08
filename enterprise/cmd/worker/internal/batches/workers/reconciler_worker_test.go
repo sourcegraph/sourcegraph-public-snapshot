@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -34,10 +34,10 @@ func TestReconcilerWorkerView(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateBatchSpec(t, ctx, cstore, "test-batch-change", user.ID, 0)
-	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-batch-change", user.ID, spec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, cstore.DatabaseDB(), 2)
+	user := bt.CreateTestUser(t, db, true)
+	spec := bt.CreateBatchSpec(t, ctx, cstore, "test-batch-change", user.ID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test-batch-change", user.ID, spec.ID)
+	repos, _ := bt.CreateTestRepos(t, ctx, cstore.DatabaseDB(), 2)
 	repo := repos[0]
 	deletedRepo := repos[1]
 	if err := cstore.Repos().Delete(ctx, deletedRepo.ID); err != nil {
@@ -45,7 +45,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	}
 
 	t.Run("Queued changeset", func(t *testing.T) {
-		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     batchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
@@ -58,7 +58,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{int(c.ID)})
 	})
 	t.Run("Not in batch change", func(t *testing.T) {
-		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     0,
 			ReconcilerState: btypes.ReconcilerStateQueued,
@@ -71,12 +71,12 @@ func TestReconcilerWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
 	})
 	t.Run("In batch change with deleted user namespace", func(t *testing.T) {
-		deletedUser := ct.CreateTestUser(t, db, true)
+		deletedUser := bt.CreateTestUser(t, db, true)
 		if err := database.UsersWith(logger, cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
-		userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
-		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		userBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
+		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     userBatchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
@@ -89,16 +89,16 @@ func TestReconcilerWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
 	})
 	t.Run("In batch change with deleted org namespace", func(t *testing.T) {
-		orgID := ct.InsertTestOrg(t, db, "deleted-org")
+		orgID := bt.InsertTestOrg(t, db, "deleted-org")
 		if err := database.OrgsWith(cstore).Delete(ctx, orgID); err != nil {
 			t.Fatal(err)
 		}
-		orgBatchChange := ct.BuildBatchChange(cstore, "test-user-namespace", 0, spec.ID)
+		orgBatchChange := bt.BuildBatchChange(cstore, "test-user-namespace", 0, spec.ID)
 		orgBatchChange.NamespaceOrgID = orgID
 		if err := cstore.CreateBatchChange(ctx, orgBatchChange); err != nil {
 			t.Fatal(err)
 		}
-		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     orgBatchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
@@ -111,12 +111,12 @@ func TestReconcilerWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
 	})
 	t.Run("In batch change with deleted namespace but another batch change with an existing one", func(t *testing.T) {
-		deletedUser := ct.CreateTestUser(t, db, true)
+		deletedUser := bt.CreateTestUser(t, db, true)
 		if err := database.UsersWith(logger, cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
-		userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
-		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		userBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
+		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     userBatchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
@@ -134,7 +134,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{int(c.ID)})
 	})
 	t.Run("In deleted repo", func(t *testing.T) {
-		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 			Repo:            deletedRepo.ID,
 			BatchChange:     batchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,

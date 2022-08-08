@@ -58,7 +58,7 @@ Recommended Version: 3.26.1
 
 The following details should be supplied if the user administrates their own [extension registry](../../admin/extensions/index.md).
 
-- The manifest of relevant language extensions (e.g. _sourcegraph/go_, _sourcegraph/typescript_) viewable from the `/extensions/{extension name}/-/manifest` page on their instance. As an example, see the [Go language extension manifest](https://sourcegraph.com/extensions/sourcegraph/go/-/manifest) on Sourcegraph Cloud (generally, the value of `gitHead` is enough).
+- The manifest of relevant language extensions (e.g. _sourcegraph/go_, _sourcegraph/typescript_) viewable from the `/extensions/{extension name}/-/manifest` page on their instance. As an example, see the [Go language extension manifest](https://sourcegraph.com/extensions/sourcegraph/go/-/manifest) on Sourcegraph.com (generally, the value of `gitHead` is enough).
 
 #### Settings
 

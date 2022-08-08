@@ -31,7 +31,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         executorsEnabled: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
-        codeIntelLockfileIndexingEnabled: false,
         codeInsightsGqlApiEnabled: true,
         externalServicesUserMode: 'public',
         productResearchPageEnabled: true,
@@ -64,6 +63,9 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
             numberOfSpecialCharacters: 2,
             requireAtLeastOneNumber: true,
             requireUpperandLowerCase: true,
+        },
+        openTelemetry: {
+            endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
         // Site-config overrides default JS context
         ...siteConfig,

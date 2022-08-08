@@ -104,11 +104,11 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-const blameDecorationType = createDecorationType('git-extras')({ display: 'column' })
+export const blameDecorationType = createDecorationType('git-extras')({ display: 'column' })
 
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -252,7 +252,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             codeViewReference.current = codeView
             codeViewElements.next(codeView)
         },
-        [codeViewElements]
+        // We dangerousSetInnerHTML and modify the <code> element.
+        // We need to listen to blobInfo to ensure that we correctly
+        // respond whenever this element updates.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [codeViewElements, blobInfo.html]
     )
 
     // Emits on changes from URL search params
@@ -662,30 +666,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             !props.disableDecorations && blameDecorationsByLine ? [[blameDecorationType, blameDecorationsByLine]] : []
 
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            const { column, inline } = decorationsOrError.reduce(
-                (accumulator, [type, items]) => {
-                    if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
-                        const groupedByLine = groupDecorationsByLine(items)
-                        if (groupedByLine.size > 0) {
-                            accumulator.column.push([type, groupedByLine])
-                        }
-                    } else {
-                        accumulator.inline.push(...items)
-                    }
-
-                    return accumulator
-                },
-                {
-                    column: columnWithBlame,
-                    inline: [] as TextDocumentDecoration[],
-                }
-            )
-
-            return {
-                // if extension contributes with a few decoration types let them go one by one
-                column: sortBy(column, ([{ extensionID }]) => extensionID),
-                inline: groupDecorationsByLine(inline),
-            }
+            return groupDecorations(decorationsOrError, enableExtensionsDecorationsColumnView, {
+                column: columnWithBlame,
+                inline: [],
+            })
         }
 
         return { column: columnWithBlame, inline: new Map() }
@@ -944,5 +928,33 @@ export function getLSPTextDocumentPositionParameters(
         revision: position.revision,
         mode,
         position,
+    }
+}
+
+export function groupDecorations(
+    decorations: [TextDocumentDecorationType, TextDocumentDecoration[]][],
+    enableExtensionsDecorationsColumnView: boolean,
+    initialValue: { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: TextDocumentDecoration[] } = {
+        column: [],
+        inline: [],
+    }
+): { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: DecorationMapByLine } {
+    const { column, inline } = decorations.reduce((accumulator, [type, items]) => {
+        if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
+            const groupedByLine = groupDecorationsByLine(items)
+            if (groupedByLine.size > 0) {
+                accumulator.column.push([type, groupedByLine])
+            }
+        } else {
+            accumulator.inline.push(...items)
+        }
+
+        return accumulator
+    }, initialValue)
+
+    return {
+        // if extension contributes with a few decoration types let them go one by one
+        column: sortBy(column, ([{ extensionID }]) => extensionID),
+        inline: groupDecorationsByLine(inline),
     }
 }

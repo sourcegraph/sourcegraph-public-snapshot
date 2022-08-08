@@ -4,8 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
+	"strings"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -70,6 +74,7 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS finished_at timestamptz`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS success boolean`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS backfilled boolean NOT NULL DEFAULT FALSE`),
 	}
 
 	tx, err := s.Transact(ctx)
@@ -85,6 +90,157 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	}
 
 	return nil
+}
+
+// BackfillSchemaVersions adds "backfilled" rows into the migration_logs table to make instances
+// upgraded from older versions work uniformly with instances booted from a newer version.
+//
+// Backfilling mainly addresses issues during upgrades and interacting with migration graph defined
+// over multiple versions being stitched back together. The absence of a row in the migration_logs
+// table either represents a migration that needs to be applied, or a migration defined in a version
+// prior to the instance's first boot. Backfilling these records prevents the latter circumstance as
+// being interpreted as the former.
+func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
+	// Choose the lowest relevant version (most like the smallest squashed migration) that has
+	// been successfully applied on this instance. We will be backfilling all ancestors of this
+	// migration version given the stitched migration graph.
+	version, ok, err := s.inferBackfillTarget(ctx)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	// Determine ancestors of the chosen root
+	ancestorDefinitions, err := s.stitchedMigration().Definitions.Up(nil, []int{version})
+	if err != nil {
+		return err
+	}
+
+	// Write backfilled versions into migration_logs table
+	ids := make([]int64, 0, len(ancestorDefinitions))
+	for _, definition := range ancestorDefinitions {
+		ids = append(ids, int64(definition.ID))
+	}
+	if err := s.Exec(ctx, sqlf.Sprintf(backfillSchemaVersionsQuery, currentMigrationLogSchemaVersion, s.schemaName, pq.Int64Array(ids))); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const backfillSchemaVersionsQuery = `
+-- source: internal/database/migration/store/store.go:BackfillSchemaVersions
+WITH candidates AS (
+	SELECT
+		%s::integer AS migration_logs_schema_version,
+		%s AS schema,
+		version AS version,
+		true AS up,
+		NOW() AS started_at,
+		NOW() AS finished_at,
+		true AS success,
+		true AS backfilled
+	FROM (SELECT unnest(%s::integer[])) AS vs(version)
+)
+INSERT INTO migration_logs (
+	migration_logs_schema_version,
+	schema,
+	version,
+	up,
+	started_at,
+	finished_at,
+	success,
+	backfilled
+)
+SELECT c.* FROM candidates c
+WHERE NOT EXISTS (
+	SELECT 1 FROM migration_logs ml
+	WHERE ml.schema = c.schema AND ml.version = c.version
+)
+`
+
+func (s *Store) inferBackfillTarget(ctx context.Context) (int, bool, error) {
+	if version, ok, err := s.inferbackfillTargetViaMigrationLogs(ctx); err != nil || ok {
+		return version, ok, err
+	}
+
+	// Fallback to golang migrate, but only if there's no authoritative data
+	if version, ok, err := s.inferBackfillTargetViaGolangMigrate(ctx); err != nil || ok {
+		return version, ok, err
+	}
+
+	return 0, false, nil
+}
+
+// inferbackfillTargetViaMigrationLogs reads the migration_logs table and returns the smallest
+// identifier of a migration that has at one point been squashed. We use the fact that any existing
+// instance with data in this table will have applied _some_ squashed migration. Any migrations
+// defined prior to this version will be backfilled.
+func (s *Store) inferbackfillTargetViaMigrationLogs(ctx context.Context) (int, bool, error) {
+	applied, _, _, err := s.Versions(ctx)
+	if err != nil {
+		return 0, false, err
+	}
+	if len(applied) == 0 {
+		return 0, false, nil
+	}
+
+	boundsByRev := s.stitchedMigration().BoundsByRev
+
+	// make lookup map of applied migration identifiers
+	appliedMap := make(map[int]struct{}, len(applied))
+	for _, id := range applied {
+		appliedMap[id] = struct{}{}
+	}
+
+	// collect root identifiers that have been applied and sort them
+	appliedRootIDs := make([]int, 0, len(boundsByRev))
+	for _, bound := range boundsByRev {
+		rootID := bound.RootID
+		if rootID < 0 {
+			// If we have a "virtual" migration with a negative identifier, switch our references
+			// to the direct child (with the same identifier but positive). This migration should
+			// be an existant migration in the graph prior to a squash/stitch operation.
+			rootID = -rootID
+		}
+
+		if _, ok := appliedMap[rootID]; ok {
+			appliedRootIDs = append(appliedRootIDs, rootID)
+		}
+	}
+	sort.Ints(appliedRootIDs)
+
+	if len(appliedRootIDs) == 0 {
+		return 0, false, nil
+	}
+	return appliedRootIDs[0], true, nil
+}
+
+// inferBackfillTargetViaGolangMigrate reads the old .*schema_migrations table (if it exists) and
+// returns the version number. Any migration defined prior to this version will be backfilled.
+//
+// DO NOT call this method from inside a transaction, otherwise the absence of this relation will
+// cause a transaction rollback while this function returns a nil-valued error (hard to debug).
+func (s *Store) inferBackfillTargetViaGolangMigrate(ctx context.Context) (int, bool, error) {
+	version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, quote(tableizeSchemaName(s.schemaName)))))
+	if err != nil && !isMissingRelation(err) {
+		return 0, false, err
+	}
+
+	return version, ok, nil
+}
+
+const inferBackfillTargetViaGolangMigrateQuery = `
+-- source: internal/database/migration/store/store.go:inferBackfillTargetViaGolangMigrate
+SELECT version::integer FROM %s WHERE NOT dirty
+`
+
+// stitchedMigration returns the stitched migration graph (upgrade metadata) that is related
+// to this store's schema.
+func (s *Store) stitchedMigration() shared.StitchedMigration {
+	return shared.StitchedMigationsBySchemaName[humanizeSchemaName(s.schemaName)]
 }
 
 // Versions returns three sets of migration versions that, together, describe the current schema
@@ -124,7 +280,7 @@ const versionsQuery = `
 WITH ranked_migration_logs AS (
 	SELECT
 		migration_logs.*,
-		ROW_NUMBER() OVER (PARTITION BY version ORDER BY started_at DESC) AS row_number
+		ROW_NUMBER() OVER (PARTITION BY version ORDER BY backfilled, started_at DESC) AS row_number
 	FROM migration_logs
 	WHERE schema = %s
 )
@@ -354,4 +510,37 @@ func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status shared.IndexSt
 	}
 
 	return shared.IndexStatus{}, false, nil
+}
+
+// humanizeSchemaName converts the golang-migrate/migration_logs.schema name into the name
+// defined by the definitions in the migrations/ directory. Hopefully we cna get rid of this
+// difference in the future, but that requires a bit of migratory work.
+func humanizeSchemaName(schemaName string) string {
+	if schemaName == "schema_migrations" {
+		return "frontend"
+	}
+
+	return strings.TrimSuffix(schemaName, "_schema_migrations")
+}
+
+// tableizeSchemaName converts a migration name as defined in the migrations/ directory to
+// the name of the table used by golang-migrate.
+func tableizeSchemaName(schemaName string) string {
+	if schemaName == "frontend" {
+		return "schema_migrations"
+	}
+
+	return fmt.Sprintf("%s_schema_migrations", schemaName)
+}
+
+var quote = sqlf.Sprintf
+
+// isMissingRelation returns true if the given error occurs due to a missing relation in Postgres.
+func isMissingRelation(err error) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return false
+	}
+
+	return pgErr.Code == "42P01"
 }

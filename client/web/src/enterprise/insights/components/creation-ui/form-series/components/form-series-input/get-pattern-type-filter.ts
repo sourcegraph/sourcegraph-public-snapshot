@@ -17,8 +17,10 @@ export function getQueryPatternTypeFilter(query: string): SearchPatternType {
                 return SearchPatternType.structural
             case SearchPatternType.literal:
                 return SearchPatternType.literal
+            case SearchPatternType.standard:
+                return SearchPatternType.standard
             default:
-                return SearchPatternType.literal
+                return SearchPatternType.standard
         }
     }
 

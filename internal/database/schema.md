@@ -931,6 +931,11 @@ Referenced by:
  feature_flags     | jsonb                    |           |          | 
  cohort_id         | date                     |           |          | 
  public_argument   | jsonb                    |           | not null | '{}'::jsonb
+ first_source_url  | text                     |           |          | 
+ last_source_url   | text                     |           |          | 
+ referrer          | text                     |           |          | 
+ device_id         | text                     |           |          | 
+ insert_id         | text                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -1090,7 +1095,7 @@ Foreign-key constraints:
  finished_at         | timestamp with time zone |           |          | 
  process_after       | timestamp with time zone |           |          | 
  num_resets          | integer                  |           | not null | 0
- external_service_id | bigint                   |           |          | 
+ external_service_id | bigint                   |           | not null | 
  num_failures        | integer                  |           | not null | 0
  log_contents        | text                     |           |          | 
  execution_logs      | json[]                   |           |          | 
@@ -1914,6 +1919,7 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
  finished_at                   | timestamp with time zone |           |          | 
  success                       | boolean                  |           |          | 
  error_message                 | text                     |           |          | 
+ backfilled                    | boolean                  |           | not null | false
 Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
 
@@ -2847,6 +2853,8 @@ Triggers:
  execution_logs    | json[]                   |           |          | 
  last_heartbeat_at | timestamp with time zone |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
+ org               | text                     |           |          | 
+ extsvc_id         | integer                  |           |          | 
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
 

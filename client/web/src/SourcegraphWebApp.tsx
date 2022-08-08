@@ -48,15 +48,7 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/share
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
-import {
-    // This is the root Tooltip usage
-    DeprecatedTooltip,
-    FeedbackText,
-    setLinkComponent,
-    RouterLink,
-    WildcardThemeContext,
-    WildcardTheme,
-} from '@sourcegraph/wildcard'
+import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -425,7 +417,6 @@ export class SourcegraphWebApp extends React.Component<
                                                     </CompatRouter>
                                                 </Router>
                                             </ScrollManager>
-                                            <DeprecatedTooltip key={1} />
                                             <Notifications
                                                 key={2}
                                                 extensionsController={this.extensionsController}

@@ -64,7 +64,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
-	if c.RunType.Is(runtype.ReleaseBranch) {
+	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
 		// When we are building a release, we do not want to cache the client bundle.
 		//
@@ -120,7 +120,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			testBuilds := operations.NewNamedSet("Test builds")
 			scanBuilds := operations.NewNamedSet("Scan test builds")
 			for _, image := range images.SourcegraphDockerImages {
-				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag()))
+				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
 				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
 			}
 			ops.Merge(testBuilds)
@@ -132,7 +132,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage("server", c.Version, c.candidateImageTag(), false),
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// always include very backend-oriented changes in this set of tests
@@ -190,7 +190,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
@@ -211,22 +211,22 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
 			wait,
 			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
 
 	case runtype.ExecutorPatchNoTest:
 		ops = operations.NewSet(
-			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version),
+			buildExecutor(c, c.MessageFlags.SkipHashCompare),
+			publishExecutor(c, c.MessageFlags.SkipHashCompare),
+			buildExecutorDockerMirror(c),
+			publishExecutorDockerMirror(c),
 		)
 
 	default:
@@ -237,14 +237,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			// Only upload sourcemaps for the "frontend" image, on the Main branch build
+			uploadSourcemaps := false
+			if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
+				uploadSourcemaps = true
+			}
+			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
 		}
 		// Executor VM image
-		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch)
-		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch) {
-			imageBuildOps.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(buildExecutorDockerMirror(c.Version))
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease)
+		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
+			imageBuildOps.Append(buildExecutor(c, skipHashCompare))
+			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				imageBuildOps.Append(buildExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(imageBuildOps)
@@ -285,13 +290,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
-		if c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch) {
-			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				publishOps.Append(publishExecutorDockerMirror(c.Version))
-			}
-			if c.RunType.Is(runtype.ReleaseBranch) {
-				ops.Append(buildWebAppWithSentrySourcemaps(c.Version))
+		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
+			publishOps.Append(publishExecutor(c, skipHashCompare))
+			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(publishOps)
@@ -304,8 +306,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
-		Env: env,
-
+		Env:   env,
+		Steps: []any{},
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,

@@ -52,8 +52,15 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
+    const origContext = window.context
     beforeEach(() => {
         useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
+        window.context = {
+            enableLegacyExtensions: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
     })
 
     test('default', () => {

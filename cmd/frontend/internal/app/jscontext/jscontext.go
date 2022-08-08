@@ -64,12 +64,14 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN     *string `json:"sentryDSN"`
-	SiteID        string  `json:"siteID"`
-	SiteGQLID     string  `json:"siteGQLID"`
-	Debug         bool    `json:"debug"`
-	NeedsSiteInit bool    `json:"needsSiteInit"`
-	EmailEnabled  bool    `json:"emailEnabled"`
+	SentryDSN     *string               `json:"sentryDSN"`
+	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
+
+	SiteID        string `json:"siteID"`
+	SiteGQLID     string `json:"siteGQLID"`
+	Debug         bool   `json:"debug"`
+	NeedsSiteInit bool   `json:"needsSiteInit"`
+	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -104,7 +106,6 @@ type JSContext struct {
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
-	CodeIntelLockfileIndexingEnabled         bool `json:"codeIntelLockfileIndexingEnabled"`
 
 	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
@@ -171,6 +172,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
+	var openTelemetry *schema.OpenTelemetry
+	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
+		openTelemetry = clientObservability.OpenTelemetry
+	}
+
 	var githubAppCloudSlug string
 	var githubAppCloudClientID string
 	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
@@ -195,6 +201,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Version:                    version.Version(),
 		IsAuthenticatedUser:        actor.IsAuthenticated(),
 		SentryDSN:                  sentryDSN,
+		OpenTelemetry:              openTelemetry,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
 		Debug:                      env.InsecureDev,
 		SiteID:                     siteID,
@@ -238,7 +245,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
-		CodeIntelLockfileIndexingEnabled:         conf.CodeIntelLockfileIndexingEnabled(),
 
 		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 

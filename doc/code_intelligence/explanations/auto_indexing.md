@@ -23,7 +23,7 @@ With Sourcegraph deployments supporting [executors](../../admin/executors.md), y
 
 ## Language support
 
-Auto-indexing is currently available for Go, TypeScript, JavaScript and Python repositories. See also [dependency navigation](features.md#dependency-navigation) for instructions on to setup cross-dependency navigation depending on what language ecosystem you use.
+Auto-indexing is currently available for Go, TypeScript, JavaScript and Python repositories. See also [dependency navigation](features.md#dependency-navigation) for instructions on how to setup cross-dependency navigation depending on what language ecosystem you use.
 
 ## Lifecycle of an indexing job
 
