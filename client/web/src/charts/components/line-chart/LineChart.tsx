@@ -14,13 +14,7 @@ import { SeriesLikeChart } from '../../types'
 import { Tooltip, TooltipContent, LineDataSeries, StackedArea } from './components'
 import { useChartEventHandlers } from './hooks/event-listeners'
 import { Point } from './types'
-import {
-    getSeriesData,
-    generatePointsField,
-    getChartContentSizes,
-    getMinMaxBoundaries,
-    SeriesWithData,
-} from './utils'
+import { getSeriesData, generatePointsField, getChartContentSizes, getMinMaxBoundaries, SeriesWithData } from './utils'
 
 import styles from './LineChart.module.scss'
 
