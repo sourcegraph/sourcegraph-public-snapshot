@@ -69,6 +69,7 @@ signale.success('Downloaded and unzipped sourcegraph/sourcegraph repository')
 if (includeCodeIntelExtensions) {
   shelljs.pushd(rootDirectoryNameForZip)
   shelljs.exec('yarn install')
+  // TODO: update fetch-code-intel-extensions script according to the build-inline-extensions script
   shelljs.exec('yarn workspace @sourcegraph/browser run fetch-code-intel-extensions')
   shelljs.popd()
 }
