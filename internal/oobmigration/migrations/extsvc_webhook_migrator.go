@@ -12,9 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// ExternalServiceWebhookMigrator is a background job that calculates the
-// has_webhooks field on external services based on the external service
-// configuration.
 type ExternalServiceWebhookMigrator struct {
 	logger    log.Logger
 	store     *basestore.Store
@@ -23,40 +20,38 @@ type ExternalServiceWebhookMigrator struct {
 
 var _ oobmigration.Migrator = &ExternalServiceWebhookMigrator{}
 
-func NewExternalServiceWebhookMigrator(store *basestore.Store) *ExternalServiceWebhookMigrator {
-	// Batch size arbitrarily chosen to match ExternalServiceConfigMigrator.
-	return &ExternalServiceWebhookMigrator{logger: log.Scoped("ExternalServiceWebhookMigrator", ""), store: store, BatchSize: 50}
-}
-
 func NewExternalServiceWebhookMigratorWithDB(db database.DB) *ExternalServiceWebhookMigrator {
-	return NewExternalServiceWebhookMigrator(basestore.NewWithHandle(db.Handle()))
+	return &ExternalServiceWebhookMigrator{
+		logger:    log.Scoped("ExternalServiceWebhookMigrator", ""),
+		store:     basestore.NewWithHandle(db.Handle()),
+		BatchSize: 50,
+	}
 }
 
-// ID returns the migration row ID in the out_of_band_migrations table.
-//
-// This ID was defined in the migration:
-// migrations/frontend/1528395921_add_has_webhooks.up.sql
 func (m *ExternalServiceWebhookMigrator) ID() int {
 	return 13
 }
 
-// Progress returns a value from 0 to 1 representing the percentage of external
-// services that have had their has_webhooks field calculated.
+// Progress returns the percentage (ranged [0, 1]) of external services with a
+// populated has_webhooks column.
 func (m *ExternalServiceWebhookMigrator) Progress(ctx context.Context) (float64, error) {
-	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			CASE c2.count WHEN 0 THEN 1 ELSE
-				CAST(c1.count AS float) / CAST(c2.count AS float)
-			END
-		FROM
-			(SELECT COUNT(*) AS count FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NOT NULL) c1,
-			(SELECT COUNT(*) AS count FROM external_services WHERE deleted_at IS NULL) c2
-	`)))
+	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(externalServiceWebhookMigratorProgressQuery)))
 	return progress, err
 }
 
-// Up loads BatchSize external services, locks them, and upserts them back into
-// the database, which will calculate HasWebhooks along the way.
+const externalServiceWebhookMigratorProgressQuery = `
+-- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Progress
+SELECT
+	CASE c2.count WHEN 0 THEN 1 ELSE
+		CAST(c1.count AS float) / CAST(c2.count AS float)
+	END
+FROM
+	(SELECT COUNT(*) AS count FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NOT NULL) c1,
+	(SELECT COUNT(*) AS count FROM external_services WHERE deleted_at IS NULL) c2
+`
+
+// Up loads a set of external services without a populated has_webhooks column and
+// updates that value by looking at that external service's configuration values.
 func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
@@ -81,7 +76,6 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 }
 
 func (*ExternalServiceWebhookMigrator) Down(context.Context) error {
-	// There's no sensible down migration here: if the SQL down migration has
-	// been run, then the field no longer exists, and there's nothing to do.
+	// non-destructive
 	return nil
 }
