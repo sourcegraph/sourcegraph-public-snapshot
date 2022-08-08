@@ -28,8 +28,7 @@ import {
 
 import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { ThemePreference } from '../stores/themeState'
-import { ThemePreferenceProps } from '../theme'
+import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'

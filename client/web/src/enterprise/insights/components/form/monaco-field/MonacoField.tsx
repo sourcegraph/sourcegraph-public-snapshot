@@ -10,8 +10,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'
-import { ThemePreference } from '../../../../../stores/themeState'
-import { useTheme } from '../../../../../theme'
+import { useTheme, ThemePreference } from '../../../../../theme'
 
 import styles from './MonacoField.module.scss'
 

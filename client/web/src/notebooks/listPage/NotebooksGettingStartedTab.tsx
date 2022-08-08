@@ -8,8 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
-import { ThemePreference } from '../../stores/themeState'
-import { useTheme } from '../../theme'
+import { useTheme, ThemePreference } from '../../theme'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
