@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
 type RecordEncrypter struct {
@@ -27,10 +28,10 @@ func (s *RecordEncrypter) Count(ctx context.Context, config EncryptionConfig) (n
 		`,
 		quote(config.TableName),
 		quote(config.KeyIDFieldName),
-		UserCredentialUnmigratedEncryptionKeyID,
+		encryption.UnmigratedEncryptionKeyID,
 		quote(config.TableName),
 		quote(config.KeyIDFieldName),
-		UserCredentialUnmigratedEncryptionKeyID,
+		encryption.UnmigratedEncryptionKeyID,
 	)
 	if err := s.QueryRow(ctx, countQuery).Scan(&numEncrypted, &numUnencrypted); err != nil {
 		return 0, 0, err
@@ -56,7 +57,7 @@ func (s *RecordEncrypter) EncryptBatch(ctx context.Context, config EncryptionCon
 		fields(config),
 		quote(config.TableName),
 		quote(config.KeyIDFieldName),
-		UserCredentialUnmigratedEncryptionKeyID,
+		encryption.UnmigratedEncryptionKeyID,
 		quote(config.IDFieldName),
 		config.Limit,
 	)))
@@ -100,7 +101,7 @@ func (s *RecordEncrypter) DecryptBatch(ctx context.Context, config EncryptionCon
 		fields(config),
 		quote(config.TableName),
 		quote(config.KeyIDFieldName),
-		UserCredentialUnmigratedEncryptionKeyID,
+		encryption.UnmigratedEncryptionKeyID,
 		quote(config.IDFieldName),
 		config.Limit,
 	)))
@@ -136,7 +137,7 @@ func fields(c EncryptionConfig) *sqlf.Query {
 }
 
 func updatePairs(c EncryptionConfig, ev Encrypted) *sqlf.Query {
-	m := make(map[string]any, len(ev.Values)+1)
+	m := make(map[string]string, len(ev.Values)+1)
 	for i, value := range ev.Values {
 		m[c.EncryptedFieldNames[i]] = value
 	}
@@ -150,8 +151,13 @@ func updatePairs(c EncryptionConfig, ev Encrypted) *sqlf.Query {
 
 	updates := make([]*sqlf.Query, 0, len(m))
 	for _, k := range keys {
-		updates = append(updates, updatePair(k, m[k]))
+		if c.UpdateAsBytes {
+			updates = append(updates, updatePair(k, []byte(m[k])))
+		} else {
+			updates = append(updates, updatePair(k, m[k]))
+		}
 	}
+
 	return sqlf.Join(updates, ", ")
 }
 

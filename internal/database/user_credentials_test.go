@@ -70,7 +70,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		for _, keyID := range []string{"", UserCredentialUnmigratedEncryptionKeyID} {
+		for _, keyID := range []string{"", encryption.UnmigratedEncryptionKeyID} {
 			t.Run(keyID, func(t *testing.T) {
 				uc := &UserCredential{
 					EncryptionKeyID:     keyID,
