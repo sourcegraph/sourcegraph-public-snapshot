@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiPuzzleOutline } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader, Button, Link, Icon, Tooltip, Alert, H4 } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Link, Icon, Tooltip, Alert, H4, H2 } from '@sourcegraph/wildcard'
 
 import { ActionButtonDescriptor } from '../util/contributions'
 
@@ -43,8 +43,8 @@ export const ExtensionsAreaHeader: React.FunctionComponent<
             />
         )}
         <Alert variant="warning" className={props.isPrimaryHeader ? 'mt-4' : ''}>
-            <H4>Sourcegraph extensions are being deprecated</H4>
-            We're in the process of removing Sourcegraph extensions with the upcoming 4.0 release.{' '}
+            <H4 as={H2}>Sourcegraph extensions are being deprecated</H4>
+            We're in the process of removing Sourcegraph extensions with our September release.{' '}
             <Link to="/help/extensions/deprecation">Learn more.</Link>
         </Alert>
     </div>
