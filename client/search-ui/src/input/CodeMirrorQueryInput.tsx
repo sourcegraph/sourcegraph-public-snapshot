@@ -85,6 +85,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
+    // CodeMirror implementation specific options
+    applySuggestionsOnEnter = false,
+    suggestionSources,
+    defaultSuggestionsShowWhenEmpty = true,
+    showSuggestionsOnFocus = false,
     // Used by the VSCode extension (which doesn't use this component directly,
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
@@ -118,8 +123,19 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
                 globbing,
                 isSourcegraphDotCom,
+                applyOnEnter: applySuggestionsOnEnter,
+                additionalSources: suggestionSources,
+                showWhenEmpty: defaultSuggestionsShowWhenEmpty,
             }),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions]
+        [
+            selectedSearchContextSpec,
+            globbing,
+            isSourcegraphDotCom,
+            fetchStreamSuggestions,
+            applySuggestionsOnEnter,
+            suggestionSources,
+            defaultSuggestionsShowWhenEmpty,
+        ]
     )
 
     const extensions = useMemo(() => {
@@ -131,7 +147,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
         if (preventNewLine) {
             // NOTE: If a submit handler is assigned to the query input then the pressing
-            // enter won't insert a line break anyway. In that case, this exnteions ensures
+            // enter won't insert a line break anyway. In that case, this extensions ensures
             // that line breaks are stripped from pasted input.
             extensions.push(singleLine)
         } else {
@@ -146,8 +162,43 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         if (editorOptions?.readOnly) {
             extensions.push(EditorView.editable.of(false))
         }
+
+        if (showSuggestionsOnFocus) {
+            // This is currently used when search history suggestions are
+            // enabled. It looks like CodeMirror doesn't automatically trigger
+            // the autocompletion again when the cursor is at the start of the
+            // input after deleting some characters. This update listener makes
+            // sure that. Since `showSuggestionsOnFocus` is currently only
+            // enabled when we show search history suggestions, we use a single
+            // listener to handle that case too.
+            const TIMEOUT = 1000
+            let timer: number | null = null
+            const clear = (): void => {
+                if (timer !== null) {
+                    clearTimeout(timer)
+                }
+                timer = null
+            }
+
+            extensions.push(
+                EditorView.updateListener.of(update => {
+                    if (update.view.state.doc.length === 0) {
+                        if (update.focusChanged && update.view.hasFocus) {
+                            startCompletion(update.view)
+                        } else if (update.docChanged) {
+                            timer = window.setTimeout(() => {
+                                timer = null
+                                startCompletion(update.view)
+                            }, TIMEOUT)
+                        }
+                    } else {
+                        clear()
+                    }
+                })
+            )
+        }
         return extensions
-    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions])
+    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions, showSuggestionsOnFocus])
 
     // Update callback functions via effects. This avoids reconfiguring the
     // whole editor when a callback changes.

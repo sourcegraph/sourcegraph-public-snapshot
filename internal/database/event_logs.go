@@ -86,7 +86,7 @@ type EventLogStore interface {
 	CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error)
 
 	// CountUniqueUsersAll provides a count of unique active users in a given time span.
-	CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error)
+	CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error)
 
 	// CountUniqueUsersByEventName provides a count of unique active users in a given time span that logged a given event.
 	CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error)
@@ -190,6 +190,11 @@ type Event struct {
 	Timestamp        time.Time
 	EvaluatedFlagSet featureflag.EvaluatedFlagSet
 	CohortID         *string // date in YYYY-MM-DD format
+	FirstSourceURL   *string
+	LastSourceURL    *string
+	Referrer         *string
+	DeviceID         *string
+	InsertID         *string
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -227,6 +232,11 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.Timestamp.UTC(),
 			featureFlags,
 			event.CohortID,
+			event.FirstSourceURL,
+			event.LastSourceURL,
+			event.Referrer,
+			event.DeviceID,
+			event.InsertID,
 		}
 	}
 	close(rowValues)
@@ -248,13 +258,18 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			"timestamp",
 			"feature_flags",
 			"cohort_id",
+			"first_source_url",
+			"last_source_url",
+			"referrer",
+			"device_id",
+			"insert_id",
 		},
 		rowValues,
 	)
 }
 
 func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*Event, error) {
-	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id, first_source_url, last_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -263,9 +278,16 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 	events := []*Event{}
 	for rows.Next() {
 		r := Event{}
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
+		var rawFlags []byte
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp, &rawFlags, &r.CohortID, &r.FirstSourceURL, &r.LastSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
 		if err != nil {
 			return nil, err
+		}
+		if rawFlags != nil {
+			marshalErr := json.Unmarshal(rawFlags, &r.EvaluatedFlagSet)
+			if marshalErr != nil {
+				return nil, errors.Wrap(marshalErr, "json.Unmarshal")
+			}
 		}
 		events = append(events, &r)
 	}
@@ -437,6 +459,8 @@ type CountUniqueUsersOptions struct {
 	IntegrationOnly bool
 	// If set, adds additional restrictions on the event types.
 	EventFilters *EventFilterOptions
+	// If set, excludes backend system users
+	ExcludeSystemUsers bool
 }
 
 // EventFilterOptions provides options for filtering events.
@@ -479,17 +503,7 @@ func jsonSettingFragment(setting string, value any) string {
 	return string(raw)
 }
 
-func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
-	startDate, ok := calcStartDate(now, periodType, periods)
-	if !ok {
-		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	endDate, ok := calcEndDate(startDate, periodType, periods)
-	if !ok {
-		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
+func createCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.RegisteredOnly {
@@ -497,6 +511,9 @@ func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodTyp
 		}
 		if opt.IntegrationOnly {
 			conds = append(conds, sqlf.Sprintf("source = %s", integrationSource))
+		}
+		if opt.ExcludeSystemUsers {
+			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
 		}
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -517,6 +534,21 @@ func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodTyp
 			}
 		}
 	}
+	return conds
+}
+
+func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	endDate, ok := calcEndDate(startDate, periodType, periods)
+	if !ok {
+		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	conds := createCountUniqueUserConds(opt)
 
 	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
@@ -558,16 +590,18 @@ func (l *eventLogStore) countPerPeriodBySQL(ctx context.Context, countExpr, inte
 	return counts, nil
 }
 
-func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error) {
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, nil)
+func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
+	conds := createCountUniqueUserConds(opt)
+
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, conds)
 }
 
 func (l *eventLogStore) CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name LIKE %s ", namePrefix+"%"))
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name LIKE %s ", namePrefix+"%")})
 }
 
 func (l *eventLogStore) CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name = %s", name))
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name = %s", name)})
 }
 
 func (l *eventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
@@ -575,16 +609,17 @@ func (l *eventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startD
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name IN (%s)", sqlf.Join(items, ",")))
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ","))})
 }
 
-func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, querySuffix *sqlf.Query) (int, error) {
-	if querySuffix == nil {
-		querySuffix = sqlf.Sprintf("")
+func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, conds []*sqlf.Query) (int, error) {
+	if len(conds) == 0 {
+		conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	}
+	fmt.Println(sqlf.Join(conds, ") AND ("))
 	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
 		FROM event_logs
-		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) %s`, startDate, endDate, querySuffix)
+		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) AND (%s)`, startDate, endDate, sqlf.Join(conds, ") AND ("))
 	r := l.QueryRow(ctx, q)
 	var count int
 	err := r.Scan(&count)

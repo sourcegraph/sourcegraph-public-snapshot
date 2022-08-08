@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
+import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -97,8 +98,8 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 position: 'right',
                 tooltip:
                     aggregation.selected === 'count'
-                        ? 'The number of of blocks within each notebook that are run. Some blocks such as the search results block must be run for the user to see code.'
-                        : 'The number of users who ran blocks within each notebook in the timeframe.',
+                        ? 'The number of blocks within each notebook that have been run. Some blocks such as the search results block must be run for the user to see code.'
+                        : 'The number of users who ran notebook blocks in the timeframe.',
             },
         ]
 
@@ -124,6 +125,8 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
         return <LoadingSpinner />
     }
 
+    const groupingLabel = startCase(grouping.value.toLowerCase())
+
     return (
         <>
             <AnalyticsPageTitle>Analytics / Notebooks</AnalyticsPageTitle>
@@ -136,7 +139,11 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 {stats && (
                     <div>
                         <ChartContainer
-                            title={aggregation.selected === 'count' ? 'Activity by day' : 'Unique users by day'}
+                            title={
+                                aggregation.selected === 'count'
+                                    ? `${groupingLabel} activity`
+                                    : `${groupingLabel} unique users`
+                            }
                             labelX="Time"
                             labelY={aggregation.selected === 'count' ? 'Activity' : 'Unique users'}
                         >

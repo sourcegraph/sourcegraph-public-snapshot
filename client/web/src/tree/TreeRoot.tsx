@@ -214,6 +214,10 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                             <TreeRootContext.Provider
                                                 value={{
                                                     rootTreeUrl: treeOrError.url,
+                                                    repoID: this.props.repoID,
+                                                    repoName: this.props.repoName,
+                                                    revision: this.props.revision,
+                                                    commitID: this.props.commitID,
                                                 }}
                                             >
                                                 <ChildTreeLayer

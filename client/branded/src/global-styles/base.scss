@@ -1,17 +1,13 @@
-@import '../../../branded/src/global-styles/colors.scss';
-@import '../../../branded/src/global-styles/border-radius.scss';
+@import './colors.scss';
+@import './border-radius.scss';
+@import './variables.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
 $border-radius-sm: var(--border-radius);
 $border-radius-lg: var(--border-radius);
-$popover-border-radius: var(--popover-border-radius);
-$font-size-base: 0.875rem;
-$line-height-base: (20/14);
 
 $box-shadow: var(--box-shadow);
-
-$grid-gutter-width: 1.5rem;
 
 // No max width except for xl.
 $container-max-widths: (
@@ -61,38 +57,8 @@ $custom-select-indicator: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/
 // Hide feedback icon for custom-select
 $custom-select-feedback-icon-size: 0;
 
-// Dropdown
-$dropdown-bg: var(--dropdown-bg);
-$dropdown-border-color: var(--dropdown-border-color);
-$dropdown-divider-bg: var(--border-color);
-$dropdown-link-color: var(--body-color);
-$dropdown-link-hover-color: var(--body-color);
-$dropdown-link-hover-bg: var(--dropdown-link-hover-bg);
-$dropdown-link-active-color: #ffffff;
-$dropdown-link-active-bg: var(--primary);
-$dropdown-link-disabled-color: var(--text-muted);
-$dropdown-header-color: var(--dropdown-header-color);
-$dropdown-item-padding-y: 0.25rem;
-$dropdown-item-padding-x: 0.5rem;
-$dropdown-padding-y: $dropdown-item-padding-y;
-
-// Tables
-
-$table-cell-padding: 0.625rem;
-$table-border-color: var(--border-color);
-
-$hr-border-color: var(--border-color);
-$hr-margin-y: 0.25rem;
-
-// Disable transitions
-$input-transition: none;
-
-// Spacer
-$spacer: 1rem;
-
-:root {
-    --spacer: #{$spacer};
-}
+// Disable all Bootstrap transitions
+$enable-transitions: false;
 
 /* stylelint-disable @sourcegraph/no-restricted-imports */
 // Apply static variables before Bootstrap imports.
@@ -101,51 +67,34 @@ $spacer: 1rem;
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
-@import 'bootstrap/scss/grid';
-@import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
-
-// Modified in `./forms.scss`
-@import 'bootstrap/scss/forms';
-@import 'bootstrap/scss/custom-forms';
-@import 'bootstrap/scss/input-group';
 /* stylelint-enable @sourcegraph/no-restricted-imports */
-
-// Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/tabs/styles';
 
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
-@import '../../../branded/src/global-styles/background';
-@import '../../../branded/src/global-styles/dropdown';
-@import '../../../branded/src/global-styles/meter';
-@import '../../../branded/src/global-styles/popover';
-@import '../../../branded/src/global-styles/nav';
-@import '../../../branded/src/global-styles/list-group';
-@import '../../../branded/src/global-styles/typography';
-@import '../../../branded/src/global-styles/tables';
-@import '../../../branded/src/global-styles/code';
-@import '../../../branded/src/global-styles/buttons';
-@import '../../../branded/src/global-styles/button-group';
-@import '../../../branded/src/global-styles/forms';
-@import '../../../branded/src/global-styles/tabs';
-@import '../../../branded/src/global-styles/progress';
+@import './background';
+@import './dropdown';
+@import './meter';
+@import './popover';
+@import './nav';
+@import './list-group';
+@import './custom-forms';
+@import './typography';
+@import './tables';
+@import './code';
+@import './buttons';
+@import './button-group';
+@import './input-group';
+@import './forms';
+@import './tabs';
+@import './progress';
+@import './collapse';
+@import './grid';
 
 * {
     box-sizing: border-box;
-}
-
-// Our simple popovers only need these styles. We don't want the caret or special font sizes from
-// Bootstrap's popover CSS.
-.popover-inner {
-    background-color: var(--color-bg-1);
-    border: solid 1px var(--border-color);
-    box-shadow: var(--dropdown-shadow);
-    border-radius: var(--popover-border-radius);
-    // Ensure content is clipped by border
-    overflow: hidden;
 }
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at
