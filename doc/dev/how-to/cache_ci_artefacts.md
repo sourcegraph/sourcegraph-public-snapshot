@@ -66,4 +66,54 @@ gsutil rm gs://sourcegraph_buildkite_cache/sourcegraph/sourcegraph/[MY-KEY].tar.
 
 ## When is the cache purged?
 
-Cached artefacts *are automatically expired after 30 days* (by an object lifecycle policy on the bucket).
+Cached artefacts expire automatically after 30 days, as mandated by an object lifecycle policy on the bucket.
+
+## How to enable caching for a new Buildkite pipeline?
+
+> NOTE: These instructions assume that the new pipeline is defined in a `pipeline.yaml` file directly instead of being generated.
+ 
+While the [Cache Buildkite Plugin](https://github.com/sourcegraph/cache-buildkite-plugin) takes care of the caching itself, new pipelines require some bootstrapping to ensure required dependencies are installed and configured.
+
+1. Add `.buildkite/hooks/pre-command` to the root of your repository if it does not exist yet. This is a [Buildkite lifecycle hook](https://buildkite.com/docs/agent/v3/hooks#job-lifecycle-hooks) that runs before every build command. Then add the following snippet to this file:
+   ```bash
+   #!/usr/bin/env bash
+   
+   set -e
+  
+   # awscli is needed for Cache Buildkite Plugin
+   asdf install awscli
+  
+   # set the buildkite cache access keys
+   AWS_CONFIG_DIR_PATH="/buildkite/.aws"
+   mkdir -p "$AWS_CONFIG_DIR_PATH"
+   AWS_CONFIG_FILE="$AWS_CONFIG_DIR_PATH/config"
+   export AWS_CONFIG_FILE
+   AWS_SHARED_CREDENTIALS_FILE="$AWS_CONFIG_DIR_PATH/credentials"
+   export AWS_SHARED_CREDENTIALS_FILE
+   aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
+   aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
+   ```
+   > NOTE: the environment variables `$BUILDKITE_HMAC_KEY` and `$BUILDKITE_HMAC_SECRET` are set on the Buildkite agent already.
+
+1. Add the following snippet to the top of `pipeline.yaml`:
+   ```yaml
+   s3-settings: &s3-settings
+     backend: s3
+     s3:
+       bucket: sourcegraph_buildkite_cache
+       endpoint: https://storage.googleapis.com
+       profile: buildkite
+       region: us-central1
+   ```
+   
+1. For each build step where you would like to cache artifacts, add the following snippet. Decide what the key should be as described in [What and when to cache?](#what-and-when-to-cache):
+   ```yaml
+   plugins:
+   - https://github.com/sourcegraph/cache-buildkite-plugin.git#master:
+     id: <fitting ID>
+     key: "<id>-<cache-key>"
+     restore-keys:
+       - "<id>-<cache-key>"
+     compress: true
+     <<: *s3-settings
+   ```
