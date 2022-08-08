@@ -272,10 +272,15 @@ type ExternalServicesListOptions struct {
 	// When true, records will be locked. For use by
 	// ExternalServiceWebhookMigrator only.
 	ForUpdate bool
+	// When true, soft-deleted external services will also be included in the results.
+	IncludeDeleted bool
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds := []*sqlf.Query{}
+	if !o.IncludeDeleted {
+		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
 	if len(o.IDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(o.IDs)))
 	}
@@ -307,6 +312,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.NoCachedWebhooks {
 		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
+	}
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 	return conds
 }

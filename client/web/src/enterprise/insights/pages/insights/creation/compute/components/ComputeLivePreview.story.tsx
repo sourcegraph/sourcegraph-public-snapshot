@@ -2,14 +2,14 @@ import { Meta, Story } from '@storybook/react'
 
 import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
 
-import { WebStory } from '../../../../../components/WebStory'
-import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
-import { BackendInsightDatum, SeriesChartContent } from '../../../core'
+import { WebStory } from '../../../../../../../components/WebStory'
+import { CodeInsightsBackendStoryMock } from '../../../../../CodeInsightsBackendStoryMock'
+import { BackendInsightDatum, SeriesChartContent } from '../../../../../core'
 
 import { ComputeLivePreview as ComputeLivePreviewComponent } from './ComputeLivePreview'
 
 const defaultStory: Meta = {
-    title: 'web/insights/creation-ui/ComputeLivePreview',
+    title: 'web/insights/creation-ui/compute/ComputeLivePreview',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }
 

@@ -1,5 +1,7 @@
 # Extension UX style guide
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
+
 In addition to what features your extension has, the way your extension behaves from the user's perspective has a big impact on whether or not they'll decide to keep your extension enabled.
 
 Your extension has to compete against alternative methods of achieving the same goal. For example, users can find the definition of a function in the same file in 2 seconds by double-clicking the variable, pressing <kbd>Ctrl</kbd>-<kbd>C</kbd> <kbd>Ctrl</kbd>-<kbd>F</kbd> <kbd>Ctrl</kbd>-<kbd>V</kbd> and hitting <kbd>Enter</kbd> a few times, or in a different file in 10 seconds by running a Sourcegraph search. Users often times have finely-tuned development environments and can get there in 15 seconds by running `git stash && git checkout <branch> && code src/main.go`. If your extension does not respond in less than that time on every action, users will learn to avoid your extension and probably disable it.

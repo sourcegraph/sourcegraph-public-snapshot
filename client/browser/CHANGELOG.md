@@ -13,7 +13,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
-## Chrome & Firefox 22.7.29.851
+## Chrome & Firefox 22.7.29.851, Safari v1.14 (22.8.2.1319)
 
 - Fix extensions decorations issue when navigating project files on GitHub: [codecov/sourcegraph-codecov/issues/86](https://github.com/codecov/sourcegraph-codecov/issues/86), [pull/39557](https://github.com/sourcegraph/sourcegraph/pull/39557)
 - Fix command palette style regression on GitHub: [issues/39495](https://github.com/sourcegraph/sourcegraph/issues/39495), [issues/33433](https://github.com/sourcegraph/sourcegraph/issues/33433) [pull/39580](https://github.com/sourcegraph/sourcegraph/pull/39580)

@@ -10,14 +10,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (s *siteResolver) Users(ctx context.Context, args *struct {
-	Query     *string
-	SiteAdmin *bool
-	Username  *string
-	Email     *string
+	Query            *string
+	SiteAdmin        *bool
+	Username         *string
+	Email            *string
+	LastActivePeriod *string
 }) (*SiteUsersResolver, error) {
 	// 🚨 SECURITY: Only site admins can see users.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
@@ -25,6 +27,8 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 	}
 
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	tables := []*sqlf.Query{sqlf.Sprintf(`users`)}
+
 	if args.Query != nil && *args.Query != "" {
 		query := "%" + *args.Query + "%"
 		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
@@ -36,28 +40,45 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 		conds = append(conds, sqlf.Sprintf("username ILIKE %s", "%"+*args.Username+"%"))
 	}
 	if args.Email != nil {
+		tables = append(tables, sqlf.Sprintf("LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true"))
 		conds = append(conds, sqlf.Sprintf("email ILIKE %s", "%"+*args.Email+"%"))
 	}
-	return &SiteUsersResolver{s.db, conds}, nil
+	if args.LastActivePeriod != nil {
+		lastActiveStartTime, err := makeLastActiveStartTime(*args.LastActivePeriod)
+		if err != nil {
+			return nil, err
+		}
+		tables = append(tables, sqlf.Sprintf("LEFT JOIN event_logs events ON events.user_id = users.id"))
+		conds = append(conds, sqlf.Sprintf("events.timestamp >= %s", lastActiveStartTime))
+	}
+	totalsQuery := sqlf.Sprintf(`SELECT COUNT(DISTINCT users.id) FROM %s WHERE %s`, sqlf.Join(tables, " "), sqlf.Join(conds, "AND"))
+	return &SiteUsersResolver{s.db, conds, totalsQuery}, nil
+}
+
+func makeLastActiveStartTime(lastActivePeriod string) (time.Time, error) {
+	now := time.Now()
+	switch lastActivePeriod {
+	case "TODAY":
+		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC), nil
+	case "THIS_WEEK":
+		return timeutil.StartOfWeek(timeNow().UTC(), 0), nil
+	case "THIS_MONTH":
+		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC), nil
+	default:
+		return now, errors.Newf("invalid lastActivePeriod: %s", lastActivePeriod)
+	}
 }
 
 type SiteUsersResolver struct {
-	db    database.DB
-	conds []*sqlf.Query
+	db          database.DB
+	conds       []*sqlf.Query
+	totalsQuery *sqlf.Query
 }
 
 func (s *SiteUsersResolver) TotalCount(ctx context.Context) (float64, error) {
 	var totalCount float64
 
-	query := sqlf.Sprintf(`
-	SELECT
-		COUNT(*)
-	FROM
-		users
-		LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true
-	WHERE %s`, sqlf.Join(s.conds, "AND"))
-
-	if err := s.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&totalCount); err != nil {
+	if err := s.db.QueryRowContext(ctx, s.totalsQuery.Query(sqlf.PostgresBindVar), s.totalsQuery.Args()...).Scan(&totalCount); err != nil {
 		return 0, err
 	}
 

@@ -172,6 +172,11 @@ export const commonWebGraphQlResults: Partial<
             alwaysNil: null,
         },
     }),
+    LogUserEvent: () => ({
+        logUserEvent: {
+            alwaysNil: null,
+        },
+    }),
     AutoDefinedSearchContexts: () => ({
         autoDefinedSearchContexts: [
             {

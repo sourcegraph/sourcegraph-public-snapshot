@@ -20,7 +20,7 @@ export function formatYTick(number: number): string {
  *
  * Example: 01 Jan, 12 Feb, ...
  */
-export const formatXTick = timeFormat('%d %b')
+export const formatDateTick = timeFormat('%d %b')
 
 /**
  * Returns a formatted date text for points aria labels.
@@ -37,11 +37,19 @@ interface GetScaleTicksInput {
     pixelsPerTick?: number
 }
 
-export function getXScaleTicks(input: GetScaleTicksInput): number[] {
+export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
     const { scale, space, pixelsPerTick = 80 } = input
-    const maxTicks = Math.max(Math.floor(space / pixelsPerTick), MINIMUM_NUMBER_OF_TICKS)
 
-    return getTicks(scale, maxTicks) as number[]
+    // Calculate desirable number of ticks
+    const numberTicks = Math.max(MINIMUM_NUMBER_OF_TICKS, Math.floor(space / pixelsPerTick))
+
+    let filteredTicks = getTicks(scale)
+
+    while (filteredTicks.length > numberTicks) {
+        filteredTicks = getHalvedTicks(filteredTicks)
+    }
+
+    return filteredTicks
 }
 
 /**
@@ -83,7 +91,7 @@ export function getYScaleTicks(input: GetScaleTicksInput): number[] {
  * removes all even index ticks with even number removes all
  * odd index ticks.
  */
-function getHalvedTicks(ticks: number[]): number[] {
+function getHalvedTicks<T>(ticks: T[]): T[] {
     const isOriginTickLengthOdd = !(ticks.length % 2)
     const filteredTicks = []
 

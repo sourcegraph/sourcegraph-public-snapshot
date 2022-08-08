@@ -4,24 +4,11 @@ import { mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import {
-    Button,
-    Link,
-    Menu,
-    MenuButton,
-    MenuDivider,
-    MenuItem,
-    MenuList,
-    Icon,
-    H3,
-    H4,
-    Checkbox,
-} from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
-import { extensionBannerIconURL } from './icons'
 
 import styles from './ExtensionRegistrySidenav.module.scss'
 
@@ -106,30 +93,6 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                     </MenuItem>
                 </MenuList>
             </Menu>
-
-            <ExtensionSidenavBanner />
         </div>
     )
 }
-
-const ExtensionSidenavBanner: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <div className={classNames(styles.banner, 'mx-2')}>
-        <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
-        {/* Override h4 font-weight */}
-        <H4 as={H3} className="mt-2 font-weight-bold">
-            Create custom extensions!
-        </H4>
-        <small>
-            You can improve your workflow by creating custom extensions. See{' '}
-            <Link
-                to="https://docs.sourcegraph.com/extensions/authoring"
-                // eslint-disable-next-line react/jsx-no-target-blank
-                target="_blank"
-                rel="noreferrer"
-            >
-                Sourcegraph Docs
-            </Link>{' '}
-            for details about writing and publishing.
-        </small>
-    </div>
-)
