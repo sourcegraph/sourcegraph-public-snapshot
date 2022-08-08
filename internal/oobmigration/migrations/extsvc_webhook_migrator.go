@@ -10,11 +10,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type ExternalServiceWebhookMigrator struct {
@@ -104,44 +102,54 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 		return err
 	}
 
-	for _, svc := range svcs {
-		parseWebhooks := func(kind, config string) (bool, error) {
-			switch strings.ToUpper(kind) {
-			case extsvc.KindBitbucketServer:
-				cfg := schema.BitbucketServerConnection{}
-				if err := jsonc.Unmarshal(config, &cfg); err != nil {
-					return false, err
-				}
+	type jsonWebhook struct {
+		Secret string `json:"secret"`
+	}
+	type jsonGitHubGitLabConfig struct {
+		Webhooks []*jsonWebhook `json:"webhooks"`
+	}
+	type jsonPlugin struct {
+		Webhooks *jsonWebhook `json:"webhooks"`
+	}
+	type jsonBitBucketConfig struct {
+		Webhooks *jsonWebhook `json:"webhooks"`
+		Plugin   *jsonPlugin  `json:"plugin"`
+	}
 
-				return cfg.WebhookSecret() != "", nil
-
-			case extsvc.KindGitHub:
-				cfg := schema.GitHubConnection{}
-				if err := jsonc.Unmarshal(config, &cfg); err != nil {
-					return false, err
-				}
-
-				return len(cfg.Webhooks) > 0, nil
-
-			case extsvc.KindGitLab:
-				cfg := schema.GitLabConnection{}
-				if err := jsonc.Unmarshal(config, &cfg); err != nil {
-					return false, err
-				}
-
-				return len(cfg.Webhooks) > 0, nil
+	hasWebhooks := func(kind, rawConfig string) (bool, error) {
+		switch strings.ToUpper(kind) {
+		case "GITHUB":
+			fallthrough
+		case "GITLAB":
+			var config jsonGitHubGitLabConfig
+			if err := jsonc.Unmarshal(rawConfig, &config); err != nil {
+				return false, err
 			}
 
-			return false, nil
-		}
-		hasWebhooks, err := parseWebhooks(svc.Kind, svc.Config)
-		if err != nil {
-			parseErrs = errors.CombineErrors(parseErrs, err)
-			continue
+			return len(config.Webhooks) > 0, nil
+
+		case "BITBUCKETSERVER":
+			var config jsonBitBucketConfig
+			if err := jsonc.Unmarshal(rawConfig, &config); err != nil {
+				return false, err
+			}
+
+			hasWebhooks := config.Webhooks != nil && config.Webhooks.Secret != ""
+			hasPluginWebhooks := config.Plugin != nil && config.Plugin.Webhooks != nil && config.Plugin.Webhooks.Secret != ""
+			return hasWebhooks || hasPluginWebhooks, nil
 		}
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(externalServiceWebhookMigratorUpdateQuery, hasWebhooks, svc.ID)); err != nil {
-			return err
+		return false, nil
+	}
+
+	for _, svc := range svcs {
+		if ok, err := hasWebhooks(svc.Kind, svc.Config); err != nil {
+			// do not fail-fast on parse errors, make progress on the batch
+			parseErrs = errors.CombineErrors(parseErrs, err)
+		} else {
+			if err := tx.Exec(ctx, sqlf.Sprintf(externalServiceWebhookMigratorUpdateQuery, ok, svc.ID)); err != nil {
+				return err
+			}
 		}
 	}
 
