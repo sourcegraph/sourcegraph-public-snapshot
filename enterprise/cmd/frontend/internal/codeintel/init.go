@@ -58,6 +58,7 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		observationContext,
 		db,
 		codenavResolver,
+		services.CodeNavSvc,
 	)
 
 	obsCtx := &observation.Context{

@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -27,7 +26,7 @@ type RequestState struct {
 }
 
 func NewRequestState(
-	uploads []dbstore.Dump,
+	uploads []shared.Dump,
 	authChecker authz.SubRepoPermissionChecker,
 	client gitserver.Client, repo *types.Repo, commit, path string,
 	gitclient shared.GitserverClient,
@@ -60,7 +59,7 @@ func (r *RequestState) SetAuthChecker(authChecker authz.SubRepoPermissionChecker
 	r.authChecker = authChecker
 }
 
-func (r *RequestState) SetUploadsDataLoader(uploads []dbstore.Dump) {
+func (r *RequestState) SetUploadsDataLoader(uploads []shared.Dump) {
 	r.dataLoader = NewUploadsDataLoader()
 	for _, upload := range uploads {
 		r.dataLoader.AddUpload(upload)
@@ -85,7 +84,7 @@ func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *
 }
 
 func (r *RequestState) SetLocalCommitCache(client shared.GitserverClient) {
-	r.commitCache = newCommitCache(client)
+	r.commitCache = NewCommitCache(client)
 }
 
 func (r *RequestState) SetMaximumIndexesPerMonikerSearch(maxNumber int) {
@@ -121,29 +120,29 @@ func (l *UploadsDataLoader) SetUploadInCacheMap(uploads []shared.Dump) {
 	}
 }
 
-func (l *UploadsDataLoader) AddUpload(d dbstore.Dump) {
+func (l *UploadsDataLoader) AddUpload(dump shared.Dump) {
 	l.cacheMutex.Lock()
 	defer l.cacheMutex.Unlock()
 
-	dump := shared.Dump{
-		ID:                d.ID,
-		Commit:            d.Commit,
-		Root:              d.Root,
-		VisibleAtTip:      d.VisibleAtTip,
-		UploadedAt:        d.UploadedAt,
-		State:             d.State,
-		FailureMessage:    d.FailureMessage,
-		StartedAt:         d.StartedAt,
-		FinishedAt:        d.FinishedAt,
-		ProcessAfter:      d.ProcessAfter,
-		NumResets:         d.NumResets,
-		NumFailures:       d.NumFailures,
-		RepositoryID:      d.RepositoryID,
-		RepositoryName:    d.RepositoryName,
-		Indexer:           d.Indexer,
-		IndexerVersion:    d.IndexerVersion,
-		AssociatedIndexID: d.AssociatedIndexID,
-	}
+	// dump := shared.Dump{
+	// 	ID:                d.ID,
+	// 	Commit:            d.Commit,
+	// 	Root:              d.Root,
+	// 	VisibleAtTip:      d.VisibleAtTip,
+	// 	UploadedAt:        d.UploadedAt,
+	// 	State:             d.State,
+	// 	FailureMessage:    d.FailureMessage,
+	// 	StartedAt:         d.StartedAt,
+	// 	FinishedAt:        d.FinishedAt,
+	// 	ProcessAfter:      d.ProcessAfter,
+	// 	NumResets:         d.NumResets,
+	// 	NumFailures:       d.NumFailures,
+	// 	RepositoryID:      d.RepositoryID,
+	// 	RepositoryName:    d.RepositoryName,
+	// 	Indexer:           d.Indexer,
+	// 	IndexerVersion:    d.IndexerVersion,
+	// 	AssociatedIndexID: d.AssociatedIndexID,
+	// }
 	l.uploads = append(l.uploads, dump)
 	l.uploadsByID[dump.ID] = dump
 }

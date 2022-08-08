@@ -14,13 +14,14 @@ import (
 )
 
 type Resolver interface {
-	Definitions(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, err error)
-	Diagnostics(ctx context.Context, args shared.RequestArgs) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error)
-	Hover(ctx context.Context, args shared.RequestArgs) (_ string, _ shared.Range, _ bool, err error)
-	Implementations(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error)
-	Ranges(ctx context.Context, args shared.RequestArgs, startLine, endLine int) (adjustedRanges []shared.AdjustedCodeIntelligenceRange, err error)
-	References(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error)
-	Stencil(ctx context.Context, args shared.RequestArgs) (adjustedRanges []shared.Range, err error)
+	LSIFUploads(ctx context.Context, requestState codenav.RequestState) (uploads []shared.Dump, err error)
+	Ranges(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []shared.AdjustedCodeIntelligenceRange, err error)
+	Stencil(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (adjustedRanges []shared.Range, err error)
+	Diagnostics(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error)
+	Hover(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (_ string, _ shared.Range, _ bool, err error)
+	Definitions(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (_ []shared.UploadLocation, err error)
+	References(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (_ []shared.UploadLocation, _ string, err error)
+	Implementations(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (_ []shared.UploadLocation, _ string, err error)
 
 	GetHunkCacheSize() int
 }
@@ -35,7 +36,7 @@ type resolver struct {
 	operations *operations
 }
 
-func New(svc Service, hunkCacheSize int, observationContext *observation.Context) *resolver {
+func New(svc Service, hunkCacheSize int, observationContext *observation.Context) Resolver {
 	return &resolver{
 		svc:           svc,
 		operations:    newOperations(observationContext),

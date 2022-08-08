@@ -77,7 +77,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	// Initialize services
 	lsif := database.NewDBWith(observationContext.Logger, codeIntelDB)
 	uploadSvc := uploads.GetService(db, lsif, gitserverClient)
-	codenavSvc := codenav.GetService(db, lsif, uploadSvc)
+	codenavSvc := codenav.GetService(db, lsif, uploadSvc, gitserverClient)
 	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints

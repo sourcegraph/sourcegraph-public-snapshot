@@ -87,6 +87,10 @@ type CodeNavResolver interface {
 	GetHunkCacheSize() int
 }
 
+type CodeNavService interface {
+	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []codenavShared.Dump, err error)
+}
+
 type (
 	RepoUpdaterClient       = autoindexing.RepoUpdaterClient
 	EnqueuerDBStore         = autoindexing.DBStore

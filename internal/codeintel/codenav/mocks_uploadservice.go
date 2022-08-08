@@ -645,6 +645,9 @@ type MockUploadService struct {
 	// object controlling the behavior of the method
 	// GetUploadIDsWithReferences.
 	GetUploadIDsWithReferencesFunc *UploadServiceGetUploadIDsWithReferencesFunc
+	// InferClosestUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method InferClosestUploads.
+	InferClosestUploadsFunc *UploadServiceInferClosestUploadsFunc
 }
 
 // NewMockUploadService creates a new mock of the UploadService interface.
@@ -663,6 +666,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		GetUploadIDsWithReferencesFunc: &UploadServiceGetUploadIDsWithReferencesFunc{
 			defaultHook: func(context.Context, []precise.QualifiedMonikerData, []int, int, string, int, int) (r0 []int, r1 int, r2 int, r3 error) {
+				return
+			},
+		},
+		InferClosestUploadsFunc: &UploadServiceInferClosestUploadsFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []shared1.Dump, r1 error) {
 				return
 			},
 		},
@@ -688,6 +696,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.GetUploadIDsWithReferences")
 			},
 		},
+		InferClosestUploadsFunc: &UploadServiceInferClosestUploadsFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
+				panic("unexpected invocation of MockUploadService.InferClosestUploads")
+			},
+		},
 	}
 }
 
@@ -704,6 +717,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		GetUploadIDsWithReferencesFunc: &UploadServiceGetUploadIDsWithReferencesFunc{
 			defaultHook: i.GetUploadIDsWithReferences,
+		},
+		InferClosestUploadsFunc: &UploadServiceInferClosestUploadsFunc{
+			defaultHook: i.InferClosestUploads,
 		},
 	}
 }
@@ -1059,4 +1075,127 @@ func (c UploadServiceGetUploadIDsWithReferencesFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceGetUploadIDsWithReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// UploadServiceInferClosestUploadsFunc describes the behavior when the
+// InferClosestUploads method of the parent MockUploadService instance is
+// invoked.
+type UploadServiceInferClosestUploadsFunc struct {
+	defaultHook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)
+	history     []UploadServiceInferClosestUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// InferClosestUploads delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadService) InferClosestUploads(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]shared1.Dump, error) {
+	r0, r1 := m.InferClosestUploadsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.InferClosestUploadsFunc.appendCall(UploadServiceInferClosestUploadsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the InferClosestUploads
+// method of the parent MockUploadService instance is invoked and the hook
+// queue is empty.
+func (f *UploadServiceInferClosestUploadsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InferClosestUploads method of the parent MockUploadService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadServiceInferClosestUploadsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceInferClosestUploadsFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceInferClosestUploadsFunc) PushReturn(r0 []shared1.Dump, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceInferClosestUploadsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceInferClosestUploadsFunc) appendCall(r0 UploadServiceInferClosestUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadServiceInferClosestUploadsFuncCall
+// objects describing the invocations of this function.
+func (f *UploadServiceInferClosestUploadsFunc) History() []UploadServiceInferClosestUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceInferClosestUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceInferClosestUploadsFuncCall is an object that describes an
+// invocation of method InferClosestUploads on an instance of
+// MockUploadService.
+type UploadServiceInferClosestUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared1.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceInferClosestUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceInferClosestUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

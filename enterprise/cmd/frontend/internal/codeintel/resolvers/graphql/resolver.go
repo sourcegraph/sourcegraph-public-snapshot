@@ -310,6 +310,9 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
+	// TODO: Move QueryResolver to transport layer. This QueryResolver can
+	// be called from within the GraphQL server and return a fresh instance of
+	// GitBlobLSIFDataResolver.
 	resolver, err := r.resolver.QueryResolver(ctx, args)
 	if err != nil || resolver == nil {
 		return nil, err

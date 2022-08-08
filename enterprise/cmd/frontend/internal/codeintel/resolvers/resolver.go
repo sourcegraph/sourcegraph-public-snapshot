@@ -90,6 +90,7 @@ type resolver struct {
 	maximumIndexesPerMonikerSearch int
 
 	codenavResolver CodeNavResolver
+	codenavService  CodeNavService
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -104,8 +105,9 @@ func NewResolver(
 	observationContext *observation.Context,
 	dbConn database.DB,
 	codenavResolver CodeNavResolver,
+	codenavService CodeNavService,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn, codenavResolver)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn, codenavResolver, codenavService)
 }
 
 func newResolver(
@@ -119,6 +121,7 @@ func newResolver(
 	observationContext *observation.Context,
 	dbConn database.DB,
 	codenavResolver CodeNavResolver,
+	codenavService CodeNavService,
 ) *resolver {
 	return &resolver{
 		db:                             dbConn,
@@ -132,7 +135,49 @@ func newResolver(
 		operations:                     newOperations(observationContext),
 		executorResolver:               executor.New(dbConn),
 		codenavResolver:                codenavResolver,
+		codenavService:                 codenavService,
 	}
+}
+
+const slowQueryResolverRequestThreshold = time.Second
+
+// QueryResolver determines the set of dumps that can answer code intel queries for the
+// given repository, commit, and path, then constructs a new query resolver instance which
+// can be used to answer subsequent queries.
+func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ QueryResolver, err error) {
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", int(args.Repo.ID)),
+			log.String("commit", string(args.Commit)),
+			log.String("path", args.Path),
+			log.Bool("exactPath", args.ExactPath),
+			log.String("indexer", args.ToolName),
+		},
+	})
+	defer endObservation()
+
+	repoId := int(args.Repo.ID)
+	commit := string(args.Commit)
+
+	// Maintain a map from identifers to hydrated upload records from the database. We use
+	// this map as a quick lookup when constructing the resulting location set. Any additional
+	// upload records pulled back from the database while processing this page will be added
+	// to this map.
+	dumps, err := r.codenavService.GetClosestDumpsForBlob(ctx, repoId, commit, args.Path, args.ExactPath, args.ToolName)
+	if err != nil || len(dumps) == 0 {
+		return nil, err
+	}
+
+	reqState := codenav.NewRequestState(
+		dumps,
+		authz.DefaultSubRepoPermsChecker,
+		gitserver.NewClient(r.db), args.Repo, commit, args.Path,
+		r.gitserverClient,
+		r.maximumIndexesPerMonikerSearch,
+		r.codenavResolver.GetHunkCacheSize(),
+	)
+
+	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.codenavResolver, *reqState), nil
 }
 
 func (r *resolver) CodeNavResolver() CodeNavResolver {
@@ -192,49 +237,6 @@ func (r *resolver) GetUploadDocumentsForPath(ctx context.Context, uploadID int, 
 
 func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]dbstore.Index, error) {
 	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true, true)
-}
-
-const slowQueryResolverRequestThreshold = time.Second
-
-// QueryResolver determines the set of dumps that can answer code intel queries for the
-// given repository, commit, and path, then constructs a new query resolver instance which
-// can be used to answer subsequent queries.
-func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ QueryResolver, err error) {
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", int(args.Repo.ID)),
-			log.String("commit", string(args.Commit)),
-			log.String("path", args.Path),
-			log.Bool("exactPath", args.ExactPath),
-			log.String("indexer", args.ToolName),
-		},
-	})
-	defer endObservation()
-
-	repoId := int(args.Repo.ID)
-	commit := string(args.Commit)
-	cachedCommitChecker := newCachedCommitChecker(r.gitserverClient)
-	cachedCommitChecker.set(repoId, commit)
-
-	// Maintain a map from identifers to hydrated upload records from the database. We use
-	// this map as a quick lookup when constructing the resulting location set. Any additional
-	// upload records pulled back from the database while processing this page will be added
-	// to this map.
-	dumps, err := r.findClosestDumps(ctx, cachedCommitChecker, repoId, commit, args.Path, args.ExactPath, args.ToolName)
-	if err != nil || len(dumps) == 0 {
-		return nil, err
-	}
-
-	reqState := codenav.NewRequestState(
-		dumps,
-		authz.DefaultSubRepoPermsChecker,
-		gitserver.NewClient(r.db), args.Repo, commit, args.Path,
-		r.gitserverClient,
-		r.maximumIndexesPerMonikerSearch,
-		r.codenavResolver.GetHunkCacheSize(),
-	)
-
-	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.codenavResolver, *reqState), nil
 }
 
 func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
