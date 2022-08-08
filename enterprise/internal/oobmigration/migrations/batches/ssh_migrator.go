@@ -139,14 +139,14 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 			return err
 		}
 
+		var newCred auth.Authenticator
 		switch a := a.(type) {
 		case *auth.OAuthBearerTokenWithSSH:
-			newCred := &a.OAuthBearerToken
-			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
-				return err
-			}
+			newCred = &a.OAuthBearerToken
 		case *auth.BasicAuthWithSSH:
-			newCred := &a.BasicAuth
+			newCred = &a.BasicAuth
+		}
+		if newCred != nil {
 			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
