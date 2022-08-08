@@ -1,14 +1,15 @@
 import { ReactElement, useMemo, useState, SVGProps, CSSProperties, useRef } from 'react'
 
-import { AxisScale, TickFormatter } from '@visx/axis/lib/types'
 import { Group } from '@visx/group'
-import { scaleTime, scaleLinear } from '@visx/scale'
+import { scaleTime, scaleLinear, getTicks } from '@visx/scale'
+import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import { LinePath } from '@visx/shape'
 import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { AxisLeft, AxisBottom } from '../../core'
+import { formatDateTick } from '../../core/components/axis/tick-formatters'
 import { SeriesLikeChart } from '../../types'
 
 import { Tooltip, TooltipContent, PointGlyph } from './components'
@@ -24,7 +25,6 @@ import {
     getChartContentSizes,
     getMinMaxBoundaries,
     SeriesWithData,
-    formatXTick,
 } from './utils'
 
 import styles from './LineChart.module.scss'
@@ -66,6 +66,21 @@ const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string)
     dataKey === activeDataKey ? 1 : -1
 
 const identity = <T,>(argument: T): T => argument
+
+interface GetScaleTicksInput {
+    scale: AnyD3Scale
+    space: number
+    pixelsPerTick?: number
+}
+
+export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
+    const { scale, space, pixelsPerTick = 80 } = input
+
+    // Calculate desirable number of ticks
+    const numberTicks = Math.max(2, Math.floor(space / pixelsPerTick))
+
+    return getTicks(scale, numberTicks) as T[]
+}
 
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
@@ -211,7 +226,8 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 width={content.width}
                 top={content.bottom}
                 left={content.left}
-                tickFormat={(formatXTick as unknown) as TickFormatter<AxisScale>}
+                tickValues={getXScaleTicks({ scale: xScale, space: content.width })}
+                tickFormat={formatDateTick}
             />
 
             <Group top={content.top} left={content.left}>

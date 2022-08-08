@@ -147,7 +147,7 @@ describe('Search', () => {
 
     describe('Suggestions', () => {
         withSearchQueryInput(editorName => {
-            test(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
+            test.skip(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
                     ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
