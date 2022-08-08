@@ -1,11 +1,13 @@
 ---
 name: Request patch release
 about: Sourcegraph teams, use this issue to propose a patch release or include your changes in a patch release.
-title: ''
+title: '$MAJOR.$MINOR.$PATCH patch release request'
 labels: 'release-guild,patch-release-request'
 assignees: ''
 
 ---
+
+<!-- Update the title according to the relevant patch release -->
 
 @sourcegraph/release-guild I am requesting the following commits be included in a patch release. They are already merged into `main`:
 
