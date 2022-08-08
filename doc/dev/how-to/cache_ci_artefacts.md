@@ -42,7 +42,7 @@ pipeline.AddStep(":jest::chrome: Test browser extension",
 The important part here are:
 
 - The `Key` which defines how the cached version is named, so we can find it again on ulterior builds.
-  - It includes a `{{ checkusm 'yarn.lock' }}` segment in its name, which means that any changes in the `yarn.lock` will be reflected in the key name.
+  - It includes a `{{ checksum 'yarn.lock' }}` segment in its name, which means that any changes in the `yarn.lock` will be reflected in the key name.
   - It means that if the `yarn.lock` checksum would change because dependencies have changed, it should use a different version of the cached dependencies. If those were to not be present on the cache, it will simply rebuild them and upload the result to the cache.
 - The `RestoreKeys` lists the keys we can use to know if there is a cached version or not available. 99% of the time, that's the same exact thing as the `Key`.
 - The `Paths` lists the path to the files that needs to be cached. They **must be within the repository**, not outside.
