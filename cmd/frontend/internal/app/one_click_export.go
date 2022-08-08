@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func oneClickExportHandler(db database.DB) http.HandlerFunc {
+func oneClickExportHandler(db database.DB, logger log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 🚨SECURITY: Only site admins may get this archive.
 		ctx := r.Context()
@@ -30,7 +30,7 @@ func oneClickExportHandler(db database.DB) http.HandlerFunc {
 
 		archive, err := oce.GlobalExporter.Export(ctx, request)
 		if err != nil {
-			log15.Error("OneClickExport", "error", err)
+			logger.Error("OneClickExport", log.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -39,7 +39,7 @@ func oneClickExportHandler(db database.DB) http.HandlerFunc {
 		for len(archive) > 0 {
 			bytesWritten, err := w.Write(archive)
 			if err != nil {
-				log15.Error("OneClickExport output write", "error", err)
+				logger.Error("OneClickExport output write", log.Error(err))
 				return
 			}
 
