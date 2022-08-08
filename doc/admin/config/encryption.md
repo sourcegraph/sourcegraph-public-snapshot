@@ -41,7 +41,7 @@ When you first enable encryption, new records will be written to the database an
 
 ## Disabling
 
-If you decide to disable encryption, or want to switch to a new key, you must first decrypt the database. To do so, set the environment variable `ALLOW_DECRYPTION` to `true` on the `frontend` and `worker` services. New records will be written to the database as plaintext. Existing encrypted records will be decrypted inthe background over time. The status of this job can be checked the same way as enabling the initial encryption job, via the `Worker > Record encrypter` dashboard in Grafana. Once all existing records have been decrypted, the existing keys can be removed from the site configuration.
+If you decide to disable encryption, or want to switch to a new key, you must first decrypt the database. To do so, set the environment variable `ALLOW_DECRYPTION` to `true` on the `frontend` and `worker` services. New records will be written to the database as plaintext. Existing encrypted records will be decrypted in the background over time. The status of this job can be checked the same way as enabling the initial encryption job, via the `Worker > Record encrypter` dashboard in Grafana. Once all existing records have been decrypted, the existing keys can be removed from the site configuration.
 
 ## Key rotation
 
