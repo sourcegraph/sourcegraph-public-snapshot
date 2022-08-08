@@ -1,5 +1,7 @@
 # Security and privacy of Sourcegraph extensions
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](./deprecation.md).
+
 You can use Sourcegraph extensions without a Sourcegraph.com account or self-hosted Sourcegraph instance.<sup><a href="#note-1">1</a></sup> To do so, just install the [browser extension](../integration/browser_extension.md).
 
 We designed Sourcegraph extensions with security and privacy in mind:
