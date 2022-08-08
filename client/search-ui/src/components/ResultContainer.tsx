@@ -163,13 +163,6 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
-    // settings
-    // const optimizeHighlighting =
-    // props.settingsCascade.final &&
-    // !isErrorLike(props.settingsCascade.final) &&
-    // props.settingsCascade.final.experimentalFeatures &&
-    // props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
-
     useEffect(() => {
         let repoObservable: Subscription
         let revisionObservable: Subscription
