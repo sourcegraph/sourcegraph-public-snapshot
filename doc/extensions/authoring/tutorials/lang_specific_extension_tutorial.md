@@ -1,6 +1,6 @@
 # Building a language-specific extension tutorial
 
-> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../deprecation.md).
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. [Learn more](../../deprecation.md).
 
 ![Sourcegraph extension button](img/python-button.png)
 
@@ -80,7 +80,7 @@ Replace the contents of the [`contributes` object](../contributions.md) in `pack
 
 The when field is an expression. If an expression returns a true or a truthy, the properties of the `action` it references are used to display an element in the chosen menu location, e.g. `editor/title`.
 
-The code `"when": "resource"` means the button will be active on code view pages only. `"when": "resource.language == 'python'"` means the button will only be active on python code view pages, and show an inactive button on other code views. 
+The code `"when": "resource"` means the button will be active on code view pages only. `"when": "resource.language == 'python'"` means the button will only be active on python code view pages, and show an inactive button on other code views.
 
 <!-- TODO (ryan): Link to template expression recipes and docs -->
 
