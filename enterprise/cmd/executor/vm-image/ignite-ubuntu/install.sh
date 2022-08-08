@@ -28,7 +28,7 @@ if [[ -f "/docker-registry.txt" ]]; then
       cat /etc/docker/daemon.json | jq ".\"registry-mirrors\" |= [\"\${DOCKER_REGISTRY_MIRROR}\"]" > /etc/docker/daemon.json.tmp
       mv /etc/docker/daemon.json.tmp /etc/docker/daemon.json
   else
-      echo "{\"registry-mirrors\": [\"${DOCKER_REGISTRY_MIRROR}\"]}" > /etc/docker/daemon.json
+      echo "{\"registry-mirrors\": [\"\${DOCKER_REGISTRY_MIRROR}\"]}" > /etc/docker/daemon.json
   fi
 fi
 
