@@ -9,7 +9,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type ExternalServiceWebhookMigrator struct {
@@ -71,9 +73,37 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 		return err
 	}
 
-	err = store.Upsert(ctx, svcs...)
-	return err
+	for _, svc := range svcs {
+		// TODO
+		cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+		if err != nil {
+			// TODO
+		}
+		hasWebhooks := func(config any) bool {
+			switch v := config.(type) {
+			case *schema.GitHubConnection:
+				return len(v.Webhooks) > 0
+			case *schema.GitLabConnection:
+				return len(v.Webhooks) > 0
+			case *schema.BitbucketServerConnection:
+				return v.WebhookSecret() != ""
+			}
+
+			return false
+		}(cfg)
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(externalServiceWebhookMigratorUpdateQuery, hasWebhooks, svc.ID)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
+
+const externalServiceWebhookMigratorUpdateQuery = `
+-- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Up
+UPDATE external_services SET has_webhooks = %s WHERE id = %s
+`
 
 func (*ExternalServiceWebhookMigrator) Down(context.Context) error {
 	// non-destructive
