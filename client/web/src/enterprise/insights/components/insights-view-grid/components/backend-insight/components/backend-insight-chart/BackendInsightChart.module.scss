@@ -16,6 +16,7 @@
     // see https://css-tricks.com/using-sass-control-scope-bem-naming/
     $self: &;
 
+    // stylelint-disable-next-line selector-class-pattern
     &--withLegend {
         grid-template-areas:
             'chart chart'
