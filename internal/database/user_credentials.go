@@ -70,10 +70,6 @@ func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authentic
 const (
 	// Valid domain values for user credentials.
 	UserCredentialDomainBatches = "batches"
-
-	// Placeholder encryption key IDs.
-	UserCredentialPlaceholderEncryptionKeyID = encryption.PlaceholderEncryptionKeyID
-	UserCredentialUnmigratedEncryptionKeyID  = encryption.UnmigratedEncryptionKeyID
 )
 
 // UserCredentialNotFoundErr is returned when a credential cannot be found from
@@ -299,14 +295,6 @@ type UserCredentialsListOpts struct {
 	// TODO(batch-change-credential-encryption): this should be removed once the
 	// OOB SSH migration is removed.
 	SSHMigrationApplied *bool
-
-	// TODO(batch-change-credential-encryption): this should be removed once the
-	// OOB user credential migration is removed.
-	RequiresMigration bool
-
-	// TODO(batch-change-credential-encryption): this should be removed once the
-	// OOB user credential migration is removed.
-	OnlyEncrypted bool
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -343,19 +331,6 @@ func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	// once the OOB SSH migration is removed.
 	if opts.SSHMigrationApplied != nil {
 		preds = append(preds, sqlf.Sprintf("ssh_migration_applied = %s", *opts.SSHMigrationApplied))
-	}
-	if opts.RequiresMigration {
-		preds = append(preds, sqlf.Sprintf(
-			"encryption_key_id IN (%s, %s)",
-			UserCredentialPlaceholderEncryptionKeyID,
-			UserCredentialUnmigratedEncryptionKeyID,
-		))
-	}
-	if opts.OnlyEncrypted {
-		preds = append(preds, sqlf.Sprintf(
-			"encryption_key_id NOT IN ('', %s)",
-			UserCredentialUnmigratedEncryptionKeyID,
-		))
 	}
 
 	forUpdate := &sqlf.Query{}

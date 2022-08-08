@@ -80,6 +80,49 @@ func Worker() *monitoring.Dashboard {
 		),
 	}
 
+	recordEncrypterGroup := monitoring.Group{
+		Title:  "Database record encrypter",
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				func(containerName string, owner monitoring.ObservableOwner) shared.Observable {
+					return shared.Observable{
+						Name:        "records_encrypted_at_rest_percentage",
+						Description: "percentage of database records encrypted at rest",
+						Query:       `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName))) * 100`,
+						Panel:       monitoring.Panel().LegendFormat("{{tableName}}").Unit(monitoring.Percentage).Min(0).Max(100),
+						Owner:       owner,
+					}
+				}(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Percentage of encrypted database records
+				`).Observable(),
+
+				shared.Standard.Count("records encrypted")(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "records_encrypted",
+					MetricDescriptionRoot: "database",
+					By:                    []string{"tableName"},
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of encrypted database records every 5m
+				`).Observable(),
+
+				shared.Standard.Count("records decrypted")(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "records_decrypted",
+					MetricDescriptionRoot: "database",
+					By:                    []string{"tableName"},
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of encrypted database records every 5m
+				`).Observable(),
+
+				shared.Observation.Errors(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "record_encryption",
+					MetricDescriptionRoot: "encryption",
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of database record encryption/decryption errors every 5m
+				`).Observable(),
+			},
+		},
+	}
+
 	return &monitoring.Dashboard{
 		Name:        "worker",
 		Title:       "Worker",
@@ -87,6 +130,13 @@ func Worker() *monitoring.Dashboard {
 		Groups: []monitoring.Group{
 			// src_worker_jobs
 			activeJobsGroup,
+
+			// src_records_encrypted_at_rest_total
+			// src_records_unencrypted_at_rest_total
+			// src_records_encrypted_total
+			// src_records_decrypted_total
+			// src_record_encryption_errors_total
+			recordEncrypterGroup,
 
 			shared.CodeIntelligence.NewCommitGraphQueueGroup(containerName),
 			shared.CodeIntelligence.NewCommitGraphProcessorGroup(containerName),

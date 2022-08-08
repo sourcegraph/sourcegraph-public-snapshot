@@ -22,11 +22,6 @@ type SiteCredential struct {
 	Key encryption.Key
 }
 
-const (
-	SiteCredentialPlaceholderEncryptionKeyID = encryption.PlaceholderEncryptionKeyID
-	SiteCredentialUnmigratedEncryptionKeyID  = encryption.UnmigratedEncryptionKeyID
-)
-
 // Authenticator decrypts and creates the authenticator associated with the site
 // credential.
 func (sc *SiteCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
