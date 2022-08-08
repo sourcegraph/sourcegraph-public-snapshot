@@ -322,6 +322,15 @@ spec:
       oci: "${RUNTIME_IMAGE}"
     kernel:
       oci: "${KERNEL_IMAGE}"
+      # Explanation of arguments passed here:
+      # console: Default
+      # reboot: Default
+      # panic: Default
+      # pci: Default
+      # ip: Default
+      # random.trust_cpu: Found in https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/random-for-clones.md, this makes RNG initialization much faster (saves ~1s on startup).
+      # i8042.X: Makes boot faster, doesn't wait for device that doesn't exist.
+      cmdLine: "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd"
 EOF
 }
 
