@@ -51,7 +51,6 @@ func TestCustomGitFetch(t *testing.T) {
 
 	// write config file to disk
 	err = ioutil.WriteFile(customGitFetchCmdConf, c, 0644)
-
 	if err != nil {
 		t.Fatal(err)
 	}
