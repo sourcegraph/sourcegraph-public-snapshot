@@ -103,6 +103,11 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		})
 	}
 
+	installations, err := ghClient.GetUserInstallations(ctx)
+	if err != nil {
+		return nil, fmt.Sprintf("Error fetching list of accessible GitHub App installations."), err
+	}
+
 	for i, attempt := range attempts {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
@@ -122,6 +127,30 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
+			for _, installation := range installations {
+				accountID := strconv.FormatInt(*installation.AppID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)
+				_, _, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+					UserProps: database.NewUser{
+						Username:        login,
+						Email:           attempt.email,
+						EmailIsVerified: true,
+						DisplayName:     deref(ghUser.Name),
+						AvatarURL:       deref(ghUser.AvatarURL),
+					},
+					ExternalAccount: extsvc.AccountSpec{
+						ServiceType: s.ServiceType,
+						ServiceID:   s.ServiceID,
+						ClientID:    s.clientID,
+						AccountID:   accountID,
+					},
+					CreateIfNotExist: attempt.createIfNotExist,
+				})
+
+				if err != nil {
+					fmt.Println("ERROR: ", err)
+				}
+			}
+
 			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 				AnonymousUserID: anonymousUserID,
 				FirstSourceURL:  firstSourceURL,

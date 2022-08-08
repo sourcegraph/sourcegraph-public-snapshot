@@ -35,6 +35,8 @@ type Provider struct {
 	// soon as we have verified our approach works and is reliable, at which point the fix will
 	// become the default behaviour.
 	enableGithubInternalRepoVisibility bool
+
+    InstallationID *int64
 }
 
 type ProviderOptions struct {
@@ -47,6 +49,34 @@ type ProviderOptions struct {
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
+	if opts.GitHubClient == nil {
+		apiURL, _ := github.APIRoot(opts.GitHubURL)
+		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
+			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+	}
+
+	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
+
+	var cg *cachedGroups
+	if opts.GroupsCacheTTL >= 0 {
+		cg = &cachedGroups{
+			cache: rcache.NewWithTTL(
+				fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(opts.GroupsCacheTTL.Seconds()),
+			),
+		}
+	}
+
+	return &Provider{
+		urn:         urn,
+		codeHost:    codeHost,
+		groupsCache: cg,
+		client: func() (client, error) {
+			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
+		},
+	}
+}
+
+func NewAppProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
@@ -375,6 +405,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return nil, errors.Wrap(err, "split nameWithOwner")
 	}
 
+    p.ServiceType()
+
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	const userPageSize = 100
@@ -432,7 +464,12 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		}
 
 		for _, u := range users {
-			addUserToRepoPerms(extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10)))
+            userID := strconv.FormatInt(u.DatabaseID, 10)
+            if p.InstallationID != nil {
+                userID = strconv.FormatInt(*p.InstallationID, 10) + "/" + userID
+            }
+
+			addUserToRepoPerms(extsvc.AccountID(userID))
 		}
 	}
 

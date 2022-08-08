@@ -190,6 +190,7 @@ WHERE
 AND service_id = %s
 AND client_id = %s
 AND account_id = %s
+AND account_data IS NOT NULL
 AND deleted_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID)).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
@@ -336,6 +337,7 @@ type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
 	AccountID                        int64
+    AccountIDLike string
 
 	// Only one of these should be set
 	ExcludeExpired bool
@@ -441,6 +443,12 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	if opt.OnlyExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
 	}
+    if opt.AccountIDLike != "" {
+        conds = append(conds, sqlf.Sprintf("account_id LIKE %s", opt.AccountIDLike))
+        conds = append(conds, sqlf.Sprintf("account_data IS NULL"))
+    } else {
+        conds = append(conds, sqlf.Sprintf("account_data IS NOT NULL"))
+    }
 
 	return conds
 }
