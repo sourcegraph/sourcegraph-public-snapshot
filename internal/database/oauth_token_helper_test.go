@@ -70,27 +70,85 @@ func TestRefreshToken_externalServices(t *testing.T) {
 		return nil, nil
 	})
 
-	newToken := "new-token"
-	newRefreshToken := "new-refresh-token"
+	expectedNewToken := "new-token"
+	expectedRefreshToken := "new-refresh-token"
 
 	externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, extSvc ...*types.ExternalService) error {
 		var result map[string]interface{}
 		_ = json.Unmarshal([]byte(extSvc[0].Config), &result)
 
-		if result["token"] != newToken && result["refresh-token"] != newRefreshToken {
-			t.Fatalf("got %v, want %v", newToken, newRefreshToken)
+		if result["token.oauth.refresh"] != expectedRefreshToken {
+			t.Fatalf("got %v, want %v", result["token.oauth.refresh"], expectedRefreshToken)
 		}
 
 		return nil
 	})
 
 	h := &RefreshTokenHelperForExternalService{DB: db, ExternalServiceID: 2, OauthRefreshToken: "refresh_token"}
-	refreshedToken, err := h.RefreshToken(ctx, doer, ctxOauth)
+	newToken, err := h.RefreshToken(ctx, doer, ctxOauth)
 
-	if refreshedToken != newToken {
-		t.Fatalf("got %v, want %v", refreshedToken, newToken)
+	if newToken != expectedNewToken {
+		t.Fatalf("got %v, want %v", newToken, expectedNewToken)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRefreshToken_externalAccounts(t *testing.T) {
+	ctx := context.Background()
+	ctxOauth := oauthutil.OauthContext{}
+	db := NewMockDB()
+
+	externalAccounts := NewMockUserExternalAccountsStore()
+	extAccts := []*extsvc.Account{{
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlab.com/",
+			AccountID:   "accountId",
+		},
+	}}
+
+	externalAccounts.ListFunc.SetDefaultReturn(
+		extAccts,
+		nil,
+	)
+
+	externalAccounts.GetFunc.SetDefaultReturn(extAccts[0], nil)
+	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (int32, error) {
+		return 1, nil
+	})
+
+	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+
+	doer := &mockDoer{
+		do: func(r *http.Request) (*http.Response, error) {
+			if r.Header.Get("Authorization") == "Bearer bad token" {
+				return &http.Response{
+					Status:     http.StatusText(http.StatusUnauthorized),
+					StatusCode: http.StatusUnauthorized,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}`))),
+				}, nil
+			}
+
+			body := `{"access_token": "new-token", "token_type": "Bearer", "expires_in":3600, "refresh_token":"new-refresh-token", "scope":"create"}`
+			return &http.Response{
+				Status:     http.StatusText(http.StatusOK),
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+			}, nil
+
+		},
 	}
 
+	expectedNewToken := "new-token"
+
+	h := &RefreshTokenHelperForExternalAccount{DB: db, ExternalAccountID: 1, OauthRefreshToken: "refresh_token"}
+	newToken, err := h.RefreshToken(ctx, doer, ctxOauth)
+
+	if newToken != expectedNewToken {
+		t.Fatalf("got %v, want %v", newToken, expectedNewToken)
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
