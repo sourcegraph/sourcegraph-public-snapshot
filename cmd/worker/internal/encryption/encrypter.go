@@ -2,6 +2,7 @@ package encryption
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/log"
 
@@ -63,6 +64,11 @@ func (e *recordEncrypter) handleDecryptBatch(ctx context.Context, config databas
 }
 
 func (m *recordEncrypter) HandleError(err error) {
+	verb := "encrypt"
+	if m.decrypt {
+		verb = "decrypt"
+	}
+
 	m.metrics.numErrors.Add(1)
-	m.logger.Error("failed to encrypt batch of records", log.Error(err))
+	m.logger.Error(fmt.Sprintf("failed to %s batch of records", verb), log.Error(err))
 }
