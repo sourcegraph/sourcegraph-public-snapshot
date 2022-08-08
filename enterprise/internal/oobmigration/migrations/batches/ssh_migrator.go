@@ -46,7 +46,7 @@ SELECT
 		CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float)
 	END
 FROM
-	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND ssh_migration_applied IS FALSE) c1,
+	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND NOT ssh_migration_applied) c1,
 	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s) c2
 `
 
