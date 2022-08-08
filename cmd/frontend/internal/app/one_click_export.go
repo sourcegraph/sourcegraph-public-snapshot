@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func oneClickExportHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func oneClickExportHandler(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 🚨SECURITY: Only site admins may get this archive.
 		ctx := r.Context()
@@ -35,6 +35,21 @@ func oneClickExportHandler(db database.DB) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		_, _ = w.Write(archive)
+		// TODO: change when Exporter.Export is refactored to return io.Reader
+		for len(archive) > 0 {
+			bytesWritten, err := w.Write(archive)
+			if err != nil {
+				log15.Error("OneClickExport output write", "error", err)
+				return
+			}
+
+			// all bytes written, exiting the function
+			if bytesWritten == len(archive) {
+				break
+			}
+
+			// writing remaining bytes
+			archive = archive[bytesWritten:]
+		}
 	}
 }
