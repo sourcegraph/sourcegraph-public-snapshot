@@ -12,6 +12,7 @@ import { SvgRoot, SvgAxisLeft, SvgAxisBottom, SvgContent } from './SvgRoot'
 const StoryConfig: Meta = {
     title: 'web/charts/core/axis',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: { chromatic: { disableSnapshots: false } }
 }
 
 export default StoryConfig
