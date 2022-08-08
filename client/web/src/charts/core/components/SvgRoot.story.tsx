@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-
+import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import { AxisScale } from '@visx/axis/lib/types'
 import { ParentSize } from '@visx/responsive'
@@ -17,81 +16,58 @@ const StoryConfig: Meta = {
 
 export default StoryConfig
 
-const X_SCALE: AxisScale = scaleTime<number>({
-    domain: [new Date(2022, 8, 22), new Date(2022, 10, 22)],
-    nice: true,
-    clamp: true,
-})
+interface TemplateProps {
+    xScale: AxisScale
+    pixelsPerXTick?: number
+    formatXLabel?: (value: any) => string
+    yScale: AxisScale
+    color?: string
+}
 
-const X_SCALE2: AxisScale = scaleBand<string>({
-    domain: ['hello', 'worlddddddddddd', 'this', 'is', 'rotation', 'speaking'],
-    padding: 0.2,
-})
+const SimpleChartTemplate: Story<TemplateProps> = args => (
+    <ParentSize style={{ width: 400, height: 400 }} debounceTime={0} className="flex-shrink-0">
+        {parent => (
+            <SvgRoot width={parent.width} height={parent.height} xScale={args.xScale} yScale={args.yScale}>
+                <SvgAxisLeft />
+                <SvgAxisBottom tickFormat={args.formatXLabel} pixelsPerTick={args.pixelsPerXTick} />
 
-export const Demo: Story = props => {
-    const [withBigYScale, switchYScale] = useState(true)
+                <SvgContent>
+                    {({ content }) => <rect fill={args.color} width={content.width} height={content.height} />}
+                </SvgContent>
+            </SvgRoot>
+        )}
+    </ParentSize>
+)
 
-    const Y_SCALE: AxisScale = useMemo(
-        () =>
-            scaleLinear({
-                domain: [0, withBigYScale ? 10000 : 1000000000000000000000000000000000000],
+export const MainAxisDemo: Story = () => (
+    <section style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
+        <SimpleChartTemplate
+            xScale={scaleTime<number>({
+                domain: [new Date(2022, 8, 22), new Date(2022, 10, 22)],
                 nice: true,
                 clamp: true,
-            }),
-        [withBigYScale]
-    )
-    return (
-        <main>
-            <button onClick={() => switchYScale(withBigYScale => !withBigYScale)}>Change dataset</button>
-            <section style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                <ParentSize style={{ width: 400, height: 400 }} debounceTime={0} className="flex-shrink-0">
-                    {parent => (
-                        <SvgRoot width={parent.width} height={parent.height} xScale={X_SCALE} yScale={Y_SCALE}>
-                            <SvgAxisLeft />
-                            <SvgAxisBottom<Date> tickFormat={formatDateTick} pixelsPerTick={20} />
+            })}
+            yScale={scaleLinear({
+                domain: [0, boolean('useMaxValuesForYScale', false) ? 1000000000000000000000000000000000000 : 10000],
+                nice: true,
+                clamp: true,
+            })}
+            formatXLabel={formatDateTick}
+            pixelsPerXTick={20}
+            color="darkslateblue"
+        />
 
-                            <SvgContent>
-                                {({ content }) => (
-                                    <rect
-                                        fill="darkslateblue"
-                                        opacity={1}
-                                        width={content.width}
-                                        height={content.height}
-                                    />
-                                )}
-                            </SvgContent>
-                        </SvgRoot>
-                    )}
-                </ParentSize>
-
-                <ParentSize style={{ width: 400, height: 400 }} debounceTime={0} className="flex-shrink-0">
-                    {parent => (
-                        <SvgRoot width={parent.width} height={parent.height} xScale={X_SCALE2} yScale={Y_SCALE}>
-                            <SvgAxisLeft />
-                            <SvgAxisBottom />
-
-                            <SvgContent>
-                                {({ content }) => <rect fill="pink" width={content.width} height={content.height} />}
-                            </SvgContent>
-                        </SvgRoot>
-                    )}
-                </ParentSize>
-
-                <ParentSize style={{ width: 400, height: 400 }} debounceTime={0} className="flex-shrink-0">
-                    {parent => (
-                        <SvgRoot width={parent.width} height={parent.height} xScale={X_SCALE2} yScale={Y_SCALE}>
-                            <SvgAxisLeft />
-                            <SvgAxisBottom />
-
-                            <SvgContent>
-                                {({ content }) => (
-                                    <rect fill="dodgerblue" width={content.width} height={content.height} />
-                                )}
-                            </SvgContent>
-                        </SvgRoot>
-                    )}
-                </ParentSize>
-            </section>
-        </main>
-    )
-}
+        <SimpleChartTemplate
+            xScale={scaleBand<string>({
+                domain: ['hello', 'worlddddddddddd', 'this', 'is', 'rotation', 'speaking'],
+                padding: 0.2,
+            })}
+            yScale={scaleLinear({
+                domain: [0, boolean('useMaxValuesForYScale', false) ? 1000000000000000000000000000000000000 : 10000],
+                nice: true,
+                clamp: true,
+            })}
+            color="pink"
+        />
+    </section>
+)

@@ -43,8 +43,6 @@ export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
     // Calculate desirable number of ticks
     const numberTicks = Math.max(MINIMUM_NUMBER_OF_TICKS, Math.floor(space / pixelsPerTick))
 
-    // return getTicks(scale, numberTicks) as T[]
-
     let filteredTicks = getTicks(scale)
 
     while (filteredTicks.length > numberTicks) {
