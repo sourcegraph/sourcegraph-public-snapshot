@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"context"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -10,7 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -92,8 +95,48 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 	}
 
 	for _, svc := range svcs {
+		ParseConfig := func(kind, config string) (cfg any, _ error) {
+			switch strings.ToUpper(kind) {
+			case extsvc.KindAWSCodeCommit:
+				cfg = &schema.AWSCodeCommitConnection{}
+			case extsvc.KindBitbucketServer:
+				cfg = &schema.BitbucketServerConnection{}
+			case extsvc.KindBitbucketCloud:
+				cfg = &schema.BitbucketCloudConnection{}
+			case extsvc.KindGerrit:
+				cfg = &schema.GerritConnection{}
+			case extsvc.KindGitHub:
+				cfg = &schema.GitHubConnection{}
+			case extsvc.KindGitLab:
+				cfg = &schema.GitLabConnection{}
+			case extsvc.KindGitolite:
+				cfg = &schema.GitoliteConnection{}
+			case extsvc.KindPerforce:
+				cfg = &schema.PerforceConnection{}
+			case extsvc.KindPhabricator:
+				cfg = &schema.PhabricatorConnection{}
+			case extsvc.KindGoPackages:
+				cfg = &schema.GoModulesConnection{}
+			case extsvc.KindJVMPackages:
+				cfg = &schema.JVMPackagesConnection{}
+			case extsvc.KindPagure:
+				cfg = &schema.PagureConnection{}
+			case extsvc.KindNpmPackages:
+				cfg = &schema.NpmPackagesConnection{}
+			case extsvc.KindPythonPackages:
+				cfg = &schema.PythonPackagesConnection{}
+			case extsvc.KindRustPackages:
+				cfg = &schema.RustPackagesConnection{}
+			case extsvc.KindOther:
+				cfg = &schema.OtherExternalServiceConnection{}
+			default:
+				return nil, errors.Errorf("unknown external service kind %q", kind)
+			}
+			return cfg, jsonc.Unmarshal(config, cfg)
+		}
+
 		// TODO
-		cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+		cfg, err := ParseConfig(svc.Kind, svc.Config)
 		if err != nil {
 			// TODO
 		}
