@@ -58,7 +58,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
         {node.mirrorInfo.lastError && (
             <div className={styles.alertWrapper}>
                 <Alert variant="warning">
-                    <Text className="font-weight-bold">Error updating repo:</Text>
+                    <Text className="font-weight-bold">Error syncing repository:</Text>
                     <TerminalLine className={styles.alertContent}>
                         {node.mirrorInfo.lastError.replaceAll('\r', '\n')}
                     </TerminalLine>
