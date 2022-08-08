@@ -37,6 +37,8 @@ EOF
 
   # Ensure systemd can execute the script.
   chmod +x /usr/local/bin/registry_overwrite.sh
+
+  systemctl enable registry_overwrite
 }
 
 setup_registry_overwrite
