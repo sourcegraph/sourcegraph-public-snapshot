@@ -73,7 +73,6 @@ const pathToDistributionRevisionFile = path.join(pathToExtensionBundles, 'revisi
       continue
     }
 
-    // fs.mkdirSync(path.join(pathToExtensionBundles, extensionName))
     shelljs.mkdir('-p', path.join(pathToExtensionBundles, extensionName))
     shelljs.exec(
       `cp ${path.join(bundlePath, 'package.json')} ${path.join(pathToExtensionBundles, extensionName, 'package.json')}`

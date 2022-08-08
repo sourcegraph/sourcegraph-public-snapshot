@@ -61,13 +61,19 @@ const pathToDistributionRevisionFile = path.join(pathToExtensionBundles, 'revisi
       continue
     }
 
-    const package = JSON.parse(fs.readFileSync(`${bundlePath}/package.json`))
-    if (!(package.categories || []).includes('Programming languages')) {
-      // is not a code intel extension
+    let isProgrammingLanguageExtension = false
+    try {
+      const packageJsonContent = JSON.parse(fs.readFileSync(path.join(bundlePath, 'package.json')).toString())
+      isProgrammingLanguageExtension = packageJsonContent.categories?.includes('Programming languages')
+    } catch {
+      // couldn't parse package.json
       continue
     }
 
-    // fs.mkdirSync(path.join(pathToExtensionBundles, extensionName))
+    if (!isProgrammingLanguageExtension) {
+      continue
+    }
+
     shelljs.mkdir('-p', `${pathToExtensionBundles}/${extensionName}`)
     shelljs.exec(
       `cp ${path.join(bundlePath, 'package.json')} ${path.join(pathToExtensionBundles, extensionName, 'package.json')}`
