@@ -46,7 +46,6 @@ export interface Props {
     actions: Action[]
     defaultAction?: number
     disabled?: boolean
-    dropdownMenuPosition?: 'left' | 'right'
     onLabel?: (label: string | undefined) => void
     placeholder?: string
     tooltip?: string
@@ -59,7 +58,6 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
     onLabel,
     placeholder = 'Select action',
     tooltip,
-    dropdownMenuPosition,
 }) => {
     const [isDisabled, setIsDisabled] = useState(!!disabled)
 

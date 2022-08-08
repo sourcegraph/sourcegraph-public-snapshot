@@ -1,5 +1,4 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { Args } from '@storybook/addons'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -43,10 +42,13 @@ export const HEADERS_PLAIN = [
     },
 ]
 
-export const webhookLogNode = (ctrlProps: Args, overrides?: Partial<WebhookLogFields>): WebhookLogFields => ({
+export const webhookLogNode = (
+    defaultArguments: Pick<WebhookLogFields, 'receivedAt' | 'statusCode'>,
+    overrides?: Partial<WebhookLogFields>
+): WebhookLogFields => ({
     id: overrides?.id ?? 'ID',
-    receivedAt: overrides?.receivedAt ?? ctrlProps.receivedAt,
-    statusCode: overrides?.statusCode ?? ctrlProps.statusCode,
+    receivedAt: overrides?.receivedAt ?? defaultArguments.receivedAt,
+    statusCode: overrides?.statusCode ?? defaultArguments.statusCode,
     externalService: overrides?.externalService ?? null,
     request: overrides?.request ?? {
         headers: HEADERS_JSON,

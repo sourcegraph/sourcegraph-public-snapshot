@@ -36,6 +36,9 @@ const config: Meta = {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
+        controls: {
+            exclude: ['url', 'supersededBatchSpec'],
+        },
     },
     argTypes: {
         supersedingBatchSpec: {
@@ -48,16 +51,6 @@ const config: Meta = {
         isClosed: {
             control: { type: 'boolean' },
             defaultValue: false,
-        },
-        url: {
-            table: {
-                disable: true,
-            },
-        },
-        supersededBatchSpec: {
-            table: {
-                disable: true,
-            },
         },
     },
 }
@@ -317,22 +310,8 @@ export const EmptyChangesets: Story = args => {
         </WebStory>
     )
 }
-EmptyChangesets.argTypes = {
-    supersedingBatchSpec: {
-        table: {
-            disable: true,
-        },
-    },
-    viewerCanAdminister: {
-        table: {
-            disable: true,
-        },
-    },
-    isClosed: {
-        table: {
-            disable: true,
-        },
-    },
+EmptyChangesets.parameters = {
+    controls: { hideNoControlsWarning: true, exclude: ['supersedingBatchSpec', 'viewerCanAdminister', 'isClosed'] },
 }
 
 EmptyChangesets.storyName = 'Empty changesets'
