@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,7 +32,7 @@ func TestImplementations(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -54,7 +53,7 @@ func TestImplementations(t *testing.T) {
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[1:4], 3, nil)
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[4:], 1, nil)
 
-	uploads := []dbstore.Dump{
+	uploads := []shared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -74,13 +73,13 @@ func TestImplementations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying implementations: %s", err)
 	}
-	u := storeDumpToSymbolDump(uploads)
+
 	expectedLocations := []shared.UploadLocation{
-		{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-		{Dump: u[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-		{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-		{Dump: u[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-		{Dump: u[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
+		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
+		{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -98,7 +97,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -119,7 +118,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[1:4], 3, nil)
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[4:], 1, nil)
 
-	uploads := []dbstore.Dump{
+	uploads := []shared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -154,10 +153,10 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying implementations: %s", err)
 	}
-	u := storeDumpToSymbolDump(uploads)
+
 	expectedLocations := []shared.UploadLocation{
-		{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-		{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -175,13 +174,13 @@ func TestImplementationsRemote(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{ID: 42}, mockCommit, mockPath, 50)
-	uploads := []dbstore.Dump{
+	uploads := []shared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -269,18 +268,17 @@ func TestImplementationsRemote(t *testing.T) {
 		t.Fatalf("unexpected error querying references: %s", err)
 	}
 
-	u := storeDumpToSymbolDump(uploads)
 	expectedLocations := []shared.UploadLocation{
-		{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-		{Dump: u[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-		{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-		{Dump: u[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-		{Dump: u[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
-		{Dump: u[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-		{Dump: u[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-		{Dump: u[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-		{Dump: u[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-		{Dump: u[3], Path: "sub4/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
+		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
+		{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+		{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+		{Dump: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
+		{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+		{Dump: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
+		{Dump: uploads[3], Path: "sub4/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -335,13 +333,13 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
-	uploads := []dbstore.Dump{
+	uploads := []shared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -443,12 +441,12 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying references: %s", err)
 	}
-	u := storeDumpToSymbolDump(uploads)
+
 	expectedLocations := []shared.UploadLocation{
-		{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-		{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-		{Dump: u[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-		{Dump: u[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
+		{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
+		{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)

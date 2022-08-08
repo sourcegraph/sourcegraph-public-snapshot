@@ -19,8 +19,9 @@ func TestRetentionPolicyOverview(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockCodeNavResolver := NewMockCodeNavResolver()
+	mockCodeNavService := NewMockCodeNavService()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB(), mockCodeNavResolver)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB(), mockCodeNavResolver, mockCodeNavService)
 
 	mockClock := glock.NewMockClock()
 
@@ -219,8 +220,9 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockCodeNavResolver := NewMockCodeNavResolver()
+	mockCodeNavService := NewMockCodeNavService()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB(), mockCodeNavResolver)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB(), mockCodeNavResolver, mockCodeNavService)
 
 	mockClock := glock.NewMockClock()
 

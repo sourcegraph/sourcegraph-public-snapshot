@@ -1209,6 +1209,175 @@ func (c CodeNavResolverStencilFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// MockCodeNavService is a mock implementation of the CodeNavService
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockCodeNavService struct {
+	// GetClosestDumpsForBlobFunc is an instance of a mock function object
+	// controlling the behavior of the method GetClosestDumpsForBlob.
+	GetClosestDumpsForBlobFunc *CodeNavServiceGetClosestDumpsForBlobFunc
+}
+
+// NewMockCodeNavService creates a new mock of the CodeNavService interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockCodeNavService() *MockCodeNavService {
+	return &MockCodeNavService{
+		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []shared.Dump, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCodeNavService creates a new mock of the CodeNavService
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCodeNavService() *MockCodeNavService {
+	return &MockCodeNavService{
+		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]shared.Dump, error) {
+				panic("unexpected invocation of MockCodeNavService.GetClosestDumpsForBlob")
+			},
+		},
+	}
+}
+
+// NewMockCodeNavServiceFrom creates a new mock of the MockCodeNavService
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
+	return &MockCodeNavService{
+		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
+			defaultHook: i.GetClosestDumpsForBlob,
+		},
+	}
+}
+
+// CodeNavServiceGetClosestDumpsForBlobFunc describes the behavior when the
+// GetClosestDumpsForBlob method of the parent MockCodeNavService instance
+// is invoked.
+type CodeNavServiceGetClosestDumpsForBlobFunc struct {
+	defaultHook func(context.Context, int, string, string, bool, string) ([]shared.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string) ([]shared.Dump, error)
+	history     []CodeNavServiceGetClosestDumpsForBlobFuncCall
+	mutex       sync.Mutex
+}
+
+// GetClosestDumpsForBlob delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeNavService) GetClosestDumpsForBlob(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]shared.Dump, error) {
+	r0, r1 := m.GetClosestDumpsForBlobFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.GetClosestDumpsForBlobFunc.appendCall(CodeNavServiceGetClosestDumpsForBlobFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetClosestDumpsForBlob method of the parent MockCodeNavService instance
+// is invoked and the hook queue is empty.
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]shared.Dump, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetClosestDumpsForBlob method of the parent MockCodeNavService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]shared.Dump, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushReturn(r0 []shared.Dump, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]shared.Dump, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) appendCall(r0 CodeNavServiceGetClosestDumpsForBlobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeNavServiceGetClosestDumpsForBlobFuncCall objects describing the
+// invocations of this function.
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) History() []CodeNavServiceGetClosestDumpsForBlobFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceGetClosestDumpsForBlobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceGetClosestDumpsForBlobFuncCall is an object that describes
+// an invocation of method GetClosestDumpsForBlob on an instance of
+// MockCodeNavService.
+type CodeNavServiceGetClosestDumpsForBlobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceGetClosestDumpsForBlobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceGetClosestDumpsForBlobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)

@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -31,13 +30,13 @@ func TestDiagnostics(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
-	uploads := []dbstore.Dump{
+	uploads := []shared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -72,13 +71,13 @@ func TestDiagnostics(t *testing.T) {
 	if totalCount != 30 {
 		t.Errorf("unexpected count. want=%d have=%d", 30, totalCount)
 	}
-	u := storeDumpToSymbolDump(uploads)
+
 	expectedDiagnostics := []shared.DiagnosticAtUpload{
-		{Dump: u[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub1/", DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
-		{Dump: u[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Dump: u[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Dump: u[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
-		{Dump: u[2], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub3/", DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
+		{Dump: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub1/", DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+		{Dump: uploads[2], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub3/", DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
 		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)
@@ -104,13 +103,13 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
-	uploads := []dbstore.Dump{
+	uploads := []shared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -159,11 +158,11 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	if totalCount != 30 {
 		t.Errorf("unexpected count. want=%d have=%d", 30, totalCount)
 	}
-	u := storeDumpToSymbolDump(uploads)
+
 	expectedDiagnostics := []shared.DiagnosticAtUpload{
-		{Dump: u[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Dump: u[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Dump: u[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
 		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)

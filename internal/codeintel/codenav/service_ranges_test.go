@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -28,13 +27,13 @@ func TestRanges(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
-	uploads := []dbstore.Dump{
+	uploads := []shared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -75,15 +74,15 @@ func TestRanges(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying ranges: %s", err)
 	}
-	u := storeDumpToSymbolDump(uploads)
-	adjustedLocation1 := shared.UploadLocation{Dump: u[0], Path: "sub1/a.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation2 := shared.UploadLocation{Dump: u[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation3 := shared.UploadLocation{Dump: u[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation4 := shared.UploadLocation{Dump: u[1], Path: "sub2/d.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation5 := shared.UploadLocation{Dump: u[1], Path: "sub2/e.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation6 := shared.UploadLocation{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation7 := shared.UploadLocation{Dump: u[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3}
-	adjustedLocation8 := shared.UploadLocation{Dump: u[2], Path: "sub3/a.go", TargetCommit: "deadbeef", TargetRange: testRange4}
+
+	adjustedLocation1 := shared.UploadLocation{Dump: uploads[0], Path: "sub1/a.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation2 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation3 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation4 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/d.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation5 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/e.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation6 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation7 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3}
+	adjustedLocation8 := shared.UploadLocation{Dump: uploads[2], Path: "sub3/a.go", TargetCommit: "deadbeef", TargetRange: testRange4}
 
 	expectedRanges := []shared.AdjustedCodeIntelligenceRange{
 		{Range: testRange1, HoverText: "text1", Definitions: []shared.UploadLocation{}, References: []shared.UploadLocation{adjustedLocation1}, Implementations: []shared.UploadLocation{}},

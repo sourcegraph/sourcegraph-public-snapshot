@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -28,13 +27,13 @@ func TestStencil(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
-	uploads := []dbstore.Dump{
+	uploads := []shared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},

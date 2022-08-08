@@ -12,8 +12,7 @@ import (
 )
 
 type operations struct {
-	queryResolver    *observation.Operation
-	findClosestDumps *observation.Operation
+	queryResolver *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -35,18 +34,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
-	// suboperations do not have their own metrics but do have their
-	// own opentracing spans. This allows us to more granularly track
-	// the latency for parts of a request without noising up Prometheus.
-	subOp := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
-			Name: fmt.Sprintf("codeintel.resolvers.%s", name),
-		})
-	}
-
 	return &operations{
-		queryResolver:    op("QueryResolver"),
-		findClosestDumps: subOp("findClosestDumps"),
+		queryResolver: op("QueryResolver"),
 	}
 }
 

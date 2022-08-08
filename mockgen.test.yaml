@@ -41,6 +41,7 @@
     - LSIFStore
     - RepoUpdaterClient
     - CodeNavResolver
+    - CodeNavService
 - filename: enterprise/cmd/frontend/internal/executorqueue/handler/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/services/executors/store
   interfaces:

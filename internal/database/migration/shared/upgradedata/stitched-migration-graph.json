@@ -4207,21 +4207,6 @@
 				"IndexMetadata": null
 			},
 			{
-				"ID": 1654770608,
-				"Name": "workspace_user_id_non_nullable",
-				"UpQuery": "UPDATE batch_spec_workspace_execution_jobs exec SET user_id = (\n    SELECT spec.user_id\n    FROM batch_spec_workspaces AS workspace\n    JOIN batch_specs spec ON spec.id = workspace.batch_spec_id\n    WHERE workspace.id = exec.batch_spec_workspace_id\n);\n\nALTER TABLE batch_spec_workspace_execution_jobs ALTER COLUMN user_id SET NOT NULL;",
-				"DownQuery": "ALTER TABLE batch_spec_workspace_execution_jobs ALTER COLUMN user_id DROP NOT NULL;",
-				"Privileged": false,
-				"NonIdempotent": false,
-				"Parents": [
-					1653524883,
-					1654116265,
-					1654168174
-				],
-				"IsCreateIndexConcurrently": false,
-				"IndexMetadata": null
-			},
-			{
 				"ID": 1654848945,
 				"Name": "add_explicit_permissions_bitbucket_projects_jobs_index",
 				"UpQuery": "CREATE INDEX IF NOT EXISTS explicit_permissions_bitbucket_projects_jobs_project_key_external_service_id_state_idx ON explicit_permissions_bitbucket_projects_jobs (project_key, external_service_id, state);",
@@ -4568,48 +4553,6 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
-			},
-			{
-				"ID": 1658174103,
-				"Name": "workspace_execution_user_queues",
-				"UpQuery": "CREATE TABLE IF NOT EXISTS batch_spec_workspace_execution_last_dequeues (\n    user_id integer PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,\n    latest_dequeue timestamp with time zone\n);\n\nCREATE OR REPLACE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n    INSERT INTO\n        batch_spec_workspace_execution_last_dequeues\n    SELECT\n        user_id,\n        MAX(started_at) as latest_dequeue\n    FROM\n        newtab\n    GROUP BY\n        user_id\n    ON CONFLICT (user_id) DO UPDATE SET\n        latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);\n\n    RETURN NULL;\nEND $$;\n\nDROP TRIGGER IF EXISTS batch_spec_workspace_execution_last_dequeues_insert ON batch_spec_workspace_execution_jobs;\nCREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();\n\nDROP TRIGGER IF EXISTS batch_spec_workspace_execution_last_dequeues_update ON batch_spec_workspace_execution_jobs;\nCREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();\n\nDROP VIEW IF EXISTS batch_spec_workspace_execution_jobs_with_rank;\nDROP VIEW IF EXISTS batch_spec_workspace_execution_queue;\n\nCREATE VIEW batch_spec_workspace_execution_queue AS\nWITH queue_candidates AS (\n    SELECT\n        exec.id,\n        RANK() OVER (\n            PARTITION BY queue.user_id\n            -- Make sure the jobs are still fulfilled in timely order, and that the ordering is stable.\n            ORDER BY exec.created_at ASC, exec.id ASC\n        ) AS place_in_user_queue\n    FROM batch_spec_workspace_execution_jobs exec\n    JOIN batch_spec_workspace_execution_last_dequeues queue ON queue.user_id = exec.user_id\n    WHERE\n    \t-- Only queued records should get a rank.\n        exec.state = 'queued'\n    ORDER BY\n        -- Round-robin let users dequeue jobs.\n        place_in_user_queue,\n        -- And ensure the user who dequeued the longest ago is next.\n        queue.latest_dequeue ASC NULLS FIRST\n)\nSELECT\n    queue_candidates.id, ROW_NUMBER() OVER () AS place_in_global_queue, queue_candidates.place_in_user_queue\nFROM queue_candidates;\n\nCREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS (\n    SELECT\n        j.*,\n        q.place_in_global_queue,\n        q.place_in_user_queue\n    FROM\n        batch_spec_workspace_execution_jobs j\n    LEFT JOIN batch_spec_workspace_execution_queue q ON j.id = q.id\n);\n\nINSERT INTO batch_spec_workspace_execution_last_dequeues\nSELECT\n    exec.user_id as user_id,\n    MAX(exec.started_at) AS latest_dequeue\nFROM batch_spec_workspace_execution_jobs exec\nGROUP BY exec.user_id\nON CONFLICT (user_id) DO UPDATE\n    SET latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);",
-				"DownQuery": "DROP TRIGGER IF EXISTS batch_spec_workspace_execution_last_dequeues_insert ON batch_spec_workspace_execution_jobs;\nDROP TRIGGER IF EXISTS batch_spec_workspace_execution_last_dequeues_update ON batch_spec_workspace_execution_jobs;\nDROP FUNCTION IF EXISTS batch_spec_workspace_execution_last_dequeues_upsert();\n\nDROP VIEW IF EXISTS batch_spec_workspace_execution_jobs_with_rank;\nDROP VIEW IF EXISTS batch_spec_workspace_execution_queue;\n\nCREATE VIEW batch_spec_workspace_execution_queue AS\nWITH user_queues AS (\n    SELECT\n        exec.user_id,\n        MAX(exec.started_at) AS latest_dequeue\n    FROM batch_spec_workspace_execution_jobs AS exec\n    GROUP BY exec.user_id\n),\nqueue_candidates AS (\n    SELECT\n        exec.id,\n        RANK() OVER (\n            PARTITION BY queue.user_id\n            -- Make sure the jobs are still fulfilled in timely order, and that the ordering is stable.\n            ORDER BY exec.created_at ASC, exec.id ASC\n        ) AS place_in_user_queue\n    FROM batch_spec_workspace_execution_jobs exec\n    JOIN user_queues queue ON queue.user_id = exec.user_id\n    WHERE\n    \t-- Only queued records should get a rank.\n        exec.state = 'queued'\n    ORDER BY\n        -- Round-robin let users dequeue jobs.\n        place_in_user_queue,\n        -- And ensure the user who dequeued the longest ago is next.\n        queue.latest_dequeue ASC NULLS FIRST\n)\nSELECT\n    queue_candidates.id, ROW_NUMBER() OVER () AS place_in_global_queue, queue_candidates.place_in_user_queue\nFROM queue_candidates;\n\nCREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS (\n    SELECT\n        j.*,\n        q.place_in_global_queue,\n        q.place_in_user_queue\n    FROM\n        batch_spec_workspace_execution_jobs j\n    LEFT JOIN batch_spec_workspace_execution_queue q ON j.id = q.id\n);\n\nDROP TABLE IF EXISTS batch_spec_workspace_execution_last_dequeues;",
-				"Privileged": false,
-				"NonIdempotent": false,
-				"Parents": [
-					1657635365
-				],
-				"IsCreateIndexConcurrently": false,
-				"IndexMetadata": null
-			},
-			{
-				"ID": 1658225452,
-				"Name": "fast_cm_trigger_jobs_delete",
-				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS cm_trigger_jobs_finished_at ON cm_trigger_jobs (finished_at ASC);",
-				"DownQuery": "DROP INDEX IF EXISTS cm_trigger_jobs_finished_at;",
-				"Privileged": false,
-				"NonIdempotent": false,
-				"Parents": [
-					1657635365
-				],
-				"IsCreateIndexConcurrently": true,
-				"IndexMetadata": {
-					"TableName": "cm_trigger_jobs",
-					"IndexName": "cm_trigger_jobs_finished_at"
-				}
-			},
-			{
-				"ID": 1657663493,
-				"Name": "cancel_worker_feature",
-				"UpQuery": "ALTER TABLE explicit_permissions_bitbucket_projects_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE external_service_sync_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE gitserver_relocator_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE insights_query_runner_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE lsif_dependency_indexing_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE lsif_dependency_syncing_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE lsif_indexes ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE lsif_uploads ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE batch_spec_resolution_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE changeset_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE changesets ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE cm_action_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;\nALTER TABLE cm_trigger_jobs ADD COLUMN IF NOT EXISTS cancel BOOLEAN NOT NULL DEFAULT FALSE;",
-				"DownQuery": "ALTER TABLE explicit_permissions_bitbucket_projects_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE external_service_sync_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE gitserver_relocator_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE insights_query_runner_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE lsif_dependency_indexing_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE lsif_dependency_syncing_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE lsif_indexes DROP COLUMN IF EXISTS cancel;\nALTER TABLE lsif_uploads DROP COLUMN IF EXISTS cancel;\nALTER TABLE batch_spec_resolution_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE changeset_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE changesets DROP COLUMN IF EXISTS cancel;\nALTER TABLE cm_action_jobs DROP COLUMN IF EXISTS cancel;\nALTER TABLE cm_trigger_jobs DROP COLUMN IF EXISTS cancel;",
-				"Privileged": false,
-				"NonIdempotent": false,
-				"Parents": [
-					1657279170
-				],
-				"IsCreateIndexConcurrently": false,
-				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -4698,10 +4641,7 @@
 			"v3.42.0": {
 				"RootID": 1646027072,
 				"LeafIDs": [
-					1654770608,
-					1658174103,
-					1658225452,
-					1657663493
+					1657635365
 				]
 			}
 		}
