@@ -9,9 +9,9 @@ function setup_registry_overwrite() {
   cat <<EOF >/etc/systemd/system/registry_overwrite.service
 [Unit]
 Description=Configure registry mirror on startup, if defined.
+Before=docker.service
 
 [Service]
-Before=docker.service
 ExecStart=/usr/local/bin/registry_overwrite.sh
 
 [Install]
