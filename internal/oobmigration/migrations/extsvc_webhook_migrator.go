@@ -107,11 +107,9 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 			}
 			return cfg, jsonc.Unmarshal(config, cfg)
 		}
-
-		// TODO
 		cfg, err := ParseConfig(svc.Kind, svc.Config)
 		if err != nil {
-			// TODO
+			return err
 		}
 		hasWebhooks := func(config any) bool {
 			switch v := config.(type) {
