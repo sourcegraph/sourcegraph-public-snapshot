@@ -12,16 +12,16 @@ import { SvgRoot, SvgAxisLeft, SvgAxisBottom, SvgContent } from './SvgRoot'
 const StoryConfig: Meta = {
     title: 'web/charts/core/axis',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: { chromatic: { disableSnapshots: false } }
+    parameters: { chromatic: { disableSnapshots: false } },
 }
 
 export default StoryConfig
 
 interface TemplateProps {
     xScale: AxisScale
+    yScale: AxisScale
     pixelsPerXTick?: number
     formatXLabel?: (value: any) => string
-    yScale: AxisScale
     color?: string
 }
 
