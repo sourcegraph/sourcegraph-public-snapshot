@@ -4,8 +4,9 @@ import { isDefined } from '@sourcegraph/common'
 import { H3 } from '@sourcegraph/wildcard'
 
 import { TooltipList, TooltipListBlankItem, TooltipListItem } from '../../../../core'
+import { formatDateTick } from '../../../../core/components/axis/tick-formatters'
 import { Point } from '../../types'
-import { isValidNumber, formatYTick, SeriesWithData, SeriesDatum, getDatumValue, getLineColor } from '../../utils'
+import { isValidNumber, SeriesWithData, SeriesDatum, getDatumValue, getLineColor } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
 
@@ -66,9 +67,10 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
                     <TooltipListBlankItem>... and {lines.leftRemaining} more</TooltipListBlankItem>
                 )}
                 {lines.window.map(line => {
-                    const value = formatYTick(line.value)
+                    const value = formatDateTick((line.value as unknown) as Date)
                     const isActiveLine = activePoint.seriesId === line.id
-                    const stackedValue = isActiveLine && stacked ? formatYTick(activePoint.value) : null
+                    const stackedValue =
+                        isActiveLine && stacked ? formatDateTick((activePoint.value as unknown) as Date) : null
 
                     return (
                         <TooltipListItem
