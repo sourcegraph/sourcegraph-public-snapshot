@@ -37,11 +37,11 @@ To enable encryption you must specify key config for each of the keys defined in
 }
 ```
 
-When you first enable encryption, only new records will be written to the database as encrypted. New and old records will remain readable. Existing, unencrypted records will be encrypted in the background over time. The status of this job can be checked via the `Worker > Record encrypter` dashboard in Grafana.
+When you first enable encryption, new records will be written to the database an encrypted, but existing data will remain initially unencrypted. Existing unencrypted records will be encrypted in the background over time. The status of this job can be checked via the `Worker > Record encrypter` dashboard in Grafana. We distinguish encrypted and unencrypted records in the database, so partially encrypted/decrypted databases are readable by the application, so enabling or disabling encryption should not impact performance or data integrity of your instance.
 
 ## Disabling
 
-If you decide to disable encryption, or want to switch to a new key, you must first decrypt the database. To do so, set the environment variable `ALLOW_DECRYPTION` to `true` on the `frontend` and `worker` services. New records will be written without encryption, and existing encrypted records will be decrypted in the background over time. The status of this job can be checked the same way as enabling the initial encryption job, via the `Worker > Record encrypter` dashboard in Grafana. Once all existing records have been decrypted, the existing keys can be removed from the site configuration.
+If you decide to disable encryption, or want to switch to a new key, you must first decrypt the database. To do so, set the environment variable `ALLOW_DECRYPTION` to `true` on the `frontend` and `worker` services. New records will be written to the database as plaintext. Existing encrypted records will be decrypted inthe background over time. The status of this job can be checked the same way as enabling the initial encryption job, via the `Worker > Record encrypter` dashboard in Grafana. Once all existing records have been decrypted, the existing keys can be removed from the site configuration.
 
 ## Key rotation
 
