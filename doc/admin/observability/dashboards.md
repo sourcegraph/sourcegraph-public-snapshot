@@ -8191,7 +8191,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100100` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName)))`
+Query: `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName))) * 100`
 
 </details>
 
@@ -8199,7 +8199,7 @@ Query: `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_re
 
 #### worker: records_encrypted_total
 
-<p class="subtitle"> database records encrypted every 5m</p>
+<p class="subtitle">Database records encrypted every 5m</p>
 
 Number of encrypted database records every 5m
 
@@ -8212,7 +8212,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100101` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_records_encrypted_total{job=~"^worker.*"}[5m]))`
+Query: `sum by (tableName)(increase(src_records_encrypted_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8220,7 +8220,7 @@ Query: `sum(increase(src_records_encrypted_total{job=~"^worker.*"}[5m]))`
 
 #### worker: records_decrypted_total
 
-<p class="subtitle"> database records decrypted every 5m</p>
+<p class="subtitle">Database records decrypted every 5m</p>
 
 Number of encrypted database records every 5m
 
@@ -8233,7 +8233,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100102` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_records_decrypted_total{job=~"^worker.*"}[5m]))`
+Query: `sum by (tableName)(increase(src_records_decrypted_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -8241,7 +8241,7 @@ Query: `sum(increase(src_records_decrypted_total{job=~"^worker.*"}[5m]))`
 
 #### worker: record_encryption_errors_total
 
-<p class="subtitle"> operation errors every 5m</p>
+<p class="subtitle">Encryption operation errors every 5m</p>
 
 Number of database record encryption/decryption errors every 5m
 

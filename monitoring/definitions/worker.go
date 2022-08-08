@@ -89,28 +89,33 @@ func Worker() *monitoring.Dashboard {
 					return shared.Observable{
 						Name:        "records_encrypted_at_rest_percentage",
 						Description: "percentage of database records encrypted at rest",
-						Query:       `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName)))`,
-						Panel:       monitoring.Panel().LegendFormat("{{tableName}}"),
+						Query:       `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName))) * 100`,
+						Panel:       monitoring.Panel().LegendFormat("{{tableName}}").Unit(monitoring.Percentage).Min(0).Max(100),
 						Owner:       owner,
 					}
 				}(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
 					Percentage of encrypted database records
 				`).Observable(),
 
-				shared.Standard.Count("database records encrypted")(shared.ObservableConstructorOptions{
-					MetricNameRoot: "records_encrypted",
+				shared.Standard.Count("records encrypted")(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "records_encrypted",
+					MetricDescriptionRoot: "database",
+					By:                    []string{"tableName"},
 				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
 					Number of encrypted database records every 5m
 				`).Observable(),
 
-				shared.Standard.Count("database records decrypted")(shared.ObservableConstructorOptions{
-					MetricNameRoot: "records_decrypted",
+				shared.Standard.Count("records decrypted")(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "records_decrypted",
+					MetricDescriptionRoot: "database",
+					By:                    []string{"tableName"},
 				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
 					Number of encrypted database records every 5m
 				`).Observable(),
 
 				shared.Observation.Errors(shared.ObservableConstructorOptions{
-					MetricNameRoot: "record_encryption",
+					MetricNameRoot:        "record_encryption",
+					MetricDescriptionRoot: "encryption",
 				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
 					Number of database record encryption/decryption errors every 5m
 				`).Observable(),
