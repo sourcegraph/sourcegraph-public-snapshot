@@ -334,6 +334,17 @@ spec:
 EOF
 }
 
+## Configures the serial TTY to auto login. This makes it easier to use ignite attach.
+## The password is well-known anyways so this doesn't pose a security threat.
+function configure_autologin() {
+  mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
+  cat <<EOF >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin root -o '-p -- \\u' --keep-baud 115200,38400,9600 %I $TERM
+EOF
+}
+
 function cleanup() {
   apt-get -y autoremove
   apt-get clean
@@ -364,4 +375,5 @@ install_node_exporter
 generate_ignite_base_image
 preheat_kernel_image
 configure_ignite
+configure_autologin
 cleanup
