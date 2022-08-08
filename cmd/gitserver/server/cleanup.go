@@ -112,6 +112,9 @@ var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum n
 // The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
 var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
 
+// Controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB. Defaults to false.
+var removeNonExistingRepos, _ = strconv.ParseBool(env.Get("SRC_REMOVE_NON_EXISTING_REPOS", "false", "controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB"))
+
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -268,6 +271,24 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 			return true, err
 		}
 		reposRemoved.WithLabelValues(reason).Inc()
+		return true, nil
+	}
+
+	var ctx = context.Background()
+	maybeRemoveNonexisting := func(dir GitDir) (bool, error) {
+		if !removeNonExistingRepos {
+			return false, nil
+		}
+
+		repo, err := s.DB.Repos().GetByName(ctx, s.name(dir))
+		if repo == nil {
+			s.Logger.Debug("removing repo that is not in DB", log.String("repo", string(dir)))
+			err = s.removeRepoDirectory(dir, false)
+			if err != nil {
+				s.Logger.Warn("failed removing repo that is not in DB", log.String("repo", string(dir)))
+			}
+			return true, err
+		}
 		return true, nil
 	}
 
@@ -432,6 +453,8 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		{"compute stats and delete wrong shard repos", collectSizeAndMaybeDeleteWrongShardRepos},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
+		// Remove repo if DB does not contain it anymore
+		{"maybe remove non existing", maybeRemoveNonexisting},
 		// If git is interrupted it can leave lock files lying around. It does not clean
 		// these up, and instead fails commands.
 		{"remove stale locks", removeStaleLocks},
