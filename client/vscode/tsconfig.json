@@ -23,5 +23,5 @@
     { "path": "../search-ui" },
   ],
   "include": ["./package.json", "**/*", ".*", "**/*.d.ts", "./code-intel-extensions.json"],
-  "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist", "code-intel-extensions"],
+  "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],
 }
