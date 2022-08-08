@@ -94,6 +94,14 @@ function install_cni() {
   curl -sSL https://github.com/AkihiroSuda/cni-isolation/releases/download/v0.0.4/cni-isolation-amd64.tgz | tar -xz -C /opt/cni/bin
 }
 
+## Install yq, this is used to patch the ignite config in scripts.
+function install_yq() {
+  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CC86BB64
+  add-apt-repository ppa:rmescandon/yq
+  apt-get update
+  apt-get install -y --no-install-recommends yq
+}
+
 ## Install and configure executor service
 function install_executor() {
   # Move binary into PATH
@@ -334,6 +342,7 @@ install_git
 install_src_cli
 install_ignite
 install_cni
+install_yq
 configure_cni
 setup_iptables
 

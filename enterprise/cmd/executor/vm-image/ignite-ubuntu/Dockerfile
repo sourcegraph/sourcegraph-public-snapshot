@@ -71,12 +71,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# hadolint ignore=DL3008,DL3009
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CC86BB64 && \
-    add-apt-repository ppa:rmescandon/yq && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends yq
-
 ARG SRC_CLI_VERSION
 RUN set -ex && \
     curl -f -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz" && \
