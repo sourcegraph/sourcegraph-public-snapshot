@@ -7,7 +7,7 @@ const signale = require('signale')
 
 const bundlesRepoName = 'sourcegraph-extensions-bundles'
 const pathToExtensionBundles = path.join(process.cwd(), 'build', 'extensions')
-const pathToRevisionFile = path.join(path.join(process.cwd(), 'sourcegraph-extension-bundles-revision.txt'))
+const pathToRevisionFile = path.join(process.cwd(), 'sourcegraph-extension-bundles-revision.txt')
 const pathToDistributionRevisionFile = path.join(pathToExtensionBundles, 'revision.txt')
 
 ;(() => {
@@ -28,7 +28,6 @@ const pathToDistributionRevisionFile = path.join(pathToExtensionBundles, 'revisi
   signale.info(`Did not find an existing code-intel-extensions bundles matching revision ${revision}.`)
 
   signale.watch('Fetching code intel extensions bundles...')
-  console.log(`https://github.com/sourcegraph/${bundlesRepoName}/archive/${revision}.zip`)
   shelljs.exec(`curl -OLs https://github.com/sourcegraph/${bundlesRepoName}/archive/${revision}.zip`)
 
   // when repo archive is unpacked the leading 'v' from tag is trimmed: v1.0.0.zip => sourcegraph-extensions-bundles-1.0.0
@@ -61,14 +60,21 @@ const pathToDistributionRevisionFile = path.join(pathToExtensionBundles, 'revisi
       continue
     }
 
-    const package = JSON.parse(fs.readFileSync(`${bundlePath}/package.json`))
-    if (!(package.categories || []).includes('Programming languages')) {
-      // is not a code intel extension
+    let isProgrammingLanguageExtension = false
+    try {
+      const packageJsonContent = JSON.parse(fs.readFileSync(path.join(bundlePath, 'package.json')).toString())
+      isProgrammingLanguageExtension = packageJsonContent.categories?.includes('Programming languages')
+    } catch {
+      // couldn't parse package.json
+      continue
+    }
+
+    if (!isProgrammingLanguageExtension) {
       continue
     }
 
     // fs.mkdirSync(path.join(pathToExtensionBundles, extensionName))
-    shelljs.mkdir('-p', `${pathToExtensionBundles}/${extensionName}`)
+    shelljs.mkdir('-p', path.join(pathToExtensionBundles, extensionName))
     shelljs.exec(
       `cp ${path.join(bundlePath, 'package.json')} ${path.join(pathToExtensionBundles, extensionName, 'package.json')}`
     )
@@ -92,5 +98,5 @@ const pathToDistributionRevisionFile = path.join(pathToExtensionBundles, 'revisi
   // Save extension IDs of the copied bundles
   fs.writeFileSync(path.join(process.cwd(), 'code-intel-extensions.json'), JSON.stringify(codeIntelExtensionIds))
 
-  signale.success('Code intel extensions bundles were successfully copied.')
+  signale.success('Code intel extensions bundles successfully copied.')
 })()
