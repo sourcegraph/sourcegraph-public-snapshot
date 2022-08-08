@@ -73,7 +73,7 @@ var webhooklogsEncryptionConfig = EncryptionConfig{
 	KeyIDFieldName:      "encryption_key_id",
 	EncryptedFieldNames: []string{"request", "response"},
 	Scan:                basestore.NewMapScanner(scanEncryptedStringPair),
-	Key:                 func() encryption.Key { return keyring.Default().BatchChangesCredentialKey },
+	Key:                 func() encryption.Key { return keyring.Default().WebhookLogKey },
 	Limit:               5,
 }
 
