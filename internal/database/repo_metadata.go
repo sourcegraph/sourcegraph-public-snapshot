@@ -39,7 +39,7 @@ type KeyValuePair struct {
 func (s *repoMetadataStore) Get(ctx context.Context, repoID api.RepoID, key string) (KeyValuePair, error) {
 	q := `
 	SELECT key, value
-	FROM repo_metadata
+	FROM repo_kvps
 	WHERE repo_id = %s
 		AND key = %s
 	`
@@ -53,7 +53,7 @@ func (s *repoMetadataStore) Get(ctx context.Context, repoID api.RepoID, key stri
 func (s *repoMetadataStore) List(ctx context.Context, repoID api.RepoID) ([]KeyValuePair, error) {
 	q := `
 	SELECT key, value
-	FROM repo_metadata
+	FROM repo_kvps
 	WHERE repo_id = %s
 	`
 
@@ -67,7 +67,7 @@ func (s *repoMetadataStore) List(ctx context.Context, repoID api.RepoID) ([]KeyV
 
 func (s *repoMetadataStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) error {
 	q := `
-	INSERT INTO repo_metadata (repo_id, key, value)
+	INSERT INTO repo_kvps (repo_id, key, value)
 	VALUES (%s, %s, %s)
 	`
 
@@ -76,7 +76,7 @@ func (s *repoMetadataStore) Create(ctx context.Context, repoID api.RepoID, kvp K
 
 func (s *repoMetadataStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) (KeyValuePair, error) {
 	q := `
-	UPDATE repo_metadata
+	UPDATE repo_kvps
 	SET value = %s
 	WHERE repo_id = %s
 		AND key = %s
@@ -91,7 +91,7 @@ func (s *repoMetadataStore) Update(ctx context.Context, repoID api.RepoID, kvp K
 
 func (s *repoMetadataStore) Delete(ctx context.Context, repoID api.RepoID, key string) error {
 	q := `
-	DELETE FROM  repo_metadata
+	DELETE FROM  repo_kvps
 	WHERE repo_id = %s
 		AND key = %s
 	`

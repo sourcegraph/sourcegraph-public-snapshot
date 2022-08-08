@@ -360,7 +360,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			"repo.private",
 			"repo.stars",
 			"gr.last_fetched",
-			"(SELECT json_object_agg(key, value) FROM repo_metadata WHERE repo_metadata.repo_id = repo.id)",
+			"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_metadata.repo_id = repo.id)",
 		},
 		// Required so gr.last_fetched is select-able
 		joinGitserverRepos: true,
@@ -1090,9 +1090,9 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		var ands []*sqlf.Query
 		for _, filter := range opt.MetadataFilters {
 			if filter.Value != nil {
-				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_metadata WHERE repo_id = repo.id AND key = %s AND value = %s)", filter.Key, *filter.Value))
+				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM kvps WHERE repo_id = repo.id AND key = %s AND value = %s)", filter.Key, *filter.Value))
 			} else {
-				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_metadata WHERE repo_id = repo.id AND key = %s AND value IS NULL)", filter.Key))
+				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)", filter.Key))
 			}
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
