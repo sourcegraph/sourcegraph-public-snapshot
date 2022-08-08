@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
