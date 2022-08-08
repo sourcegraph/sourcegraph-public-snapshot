@@ -74,6 +74,8 @@ type Repo struct {
 	Metadata any
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
 	Blocked *RepoBlock `json:",omitempty"`
+	// KeyValuePairs is the set of key-value pairs associated with the repo
+	KeyValuePairs map[string]*string
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
@@ -97,7 +99,7 @@ type SearchedRepo struct {
 	// LastFetched is the time of the last fetch of new commits from the code host.
 	LastFetched *time.Time
 	// TODO
-	Metadata map[string]*string
+	KeyValuePairs map[string]*string
 }
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.

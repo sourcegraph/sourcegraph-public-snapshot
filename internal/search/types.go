@@ -361,7 +361,7 @@ type RepoOptions struct {
 	// Whether we should depend on Zoekt for resolving repositories
 	UseIndex       query.YesNoOnly
 	HasFileContent []query.RepoHasFileContentArgs
-	HasMetadata    []query.RepoMetadataFilter
+	HasKVPs        []query.RepoKVPFilter
 
 	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.

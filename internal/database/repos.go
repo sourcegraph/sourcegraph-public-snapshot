@@ -360,7 +360,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			"repo.private",
 			"repo.stars",
 			"gr.last_fetched",
-			"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_metadata.repo_id = repo.id)",
+			"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 		},
 		// Required so gr.last_fetched is select-able
 		joinGitserverRepos: true,
@@ -384,7 +384,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			return err
 		}
 
-		r.Metadata = kvps.kvps
+		r.KeyValuePairs = kvps.kvps
 		res = append(res, &r)
 		return nil
 	}
@@ -463,12 +463,14 @@ var repoColumns = []string{
 	"repo.deleted_at",
 	"repo.metadata",
 	"repo.blocked",
+	"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 }
 
 func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
+	var kvps repoMetadataKVPs
 
 	err = rows.Scan(
 		&r.ID,
@@ -487,6 +489,7 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullTime{Time: &r.DeletedAt},
 		&metadata,
 		&blocked,
+		&kvps,
 		&sources,
 	)
 	if err != nil {
@@ -499,6 +502,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 			return err
 		}
 	}
+
+	r.KeyValuePairs = kvps.kvps
 
 	type sourceInfo struct {
 		ID       int64
@@ -595,7 +600,7 @@ type ReposListOptions struct {
 	DescriptionPatterns []string
 
 	// TODO
-	MetadataFilters []RepoMetadataFilter
+	KVPFilters []RepoKVPFilter
 
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
 	// with case sensitivity or not.
@@ -725,7 +730,7 @@ type ReposListOptions struct {
 	*LimitOffset
 }
 
-type RepoMetadataFilter struct {
+type RepoKVPFilter struct {
 	Key     string
 	Value   *string
 	Negated bool
@@ -1086,13 +1091,13 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
-	if len(opt.MetadataFilters) > 0 {
+	if len(opt.KVPFilters) > 0 {
 		var ands []*sqlf.Query
-		for _, filter := range opt.MetadataFilters {
+		for _, filter := range opt.KVPFilters {
 			if filter.Value != nil {
-				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM kvps WHERE repo_id = repo.id AND key = %s AND value = %s)", filter.Key, *filter.Value))
+				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)", filter.Key, *filter.Value))
 			} else {
-				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)", filter.Key))
+				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)", filter.Key))
 			}
 		}
 		where = append(where, sqlf.Join(ands, "AND"))

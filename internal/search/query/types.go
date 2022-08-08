@@ -410,15 +410,15 @@ func (p Parameters) RepoContainsCommitAfter() (value string) {
 	return value
 }
 
-type RepoMetadataFilter struct {
+type RepoKVPFilter struct {
 	Key     string
 	Value   *string
 	Negated bool
 }
 
-func (p Parameters) RepoHasMetadata() (res []RepoMetadataFilter) {
+func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
 	VisitTypedPredicate(toNodes(p), func(pred *RepoHasMetadataPredicate, negated bool) {
-		res = append(res, RepoMetadataFilter{
+		res = append(res, RepoKVPFilter{
 			Key:     pred.Key,
 			Value:   &pred.Value,
 			Negated: negated,
@@ -426,7 +426,7 @@ func (p Parameters) RepoHasMetadata() (res []RepoMetadataFilter) {
 	})
 
 	VisitTypedPredicate(toNodes(p), func(pred *RepoHasTagPredicate, negated bool) {
-		res = append(res, RepoMetadataFilter{
+		res = append(res, RepoKVPFilter{
 			Key:     pred.Key,
 			Negated: negated,
 		})

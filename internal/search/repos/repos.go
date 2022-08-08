@@ -133,9 +133,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		return Resolved{}, errs
 	}
 
-	metadataFilters := make([]database.RepoMetadataFilter, 0, len(op.HasMetadata))
-	for _, filter := range op.HasMetadata {
-		metadataFilters = append(metadataFilters, database.RepoMetadataFilter{
+	kvpFilters := make([]database.RepoKVPFilter, 0, len(op.HasKVPs))
+	for _, filter := range op.HasKVPs {
+		kvpFilters = append(kvpFilters, database.RepoKVPFilter{
 			Key:     filter.Key,
 			Value:   filter.Value,
 			Negated: filter.Negated,
@@ -147,7 +147,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		DescriptionPatterns:   op.DescriptionPatterns,
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
-		MetadataFilters:       metadataFilters,
+		KVPFilters:            kvpFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:  &database.LimitOffset{Limit: limit + 1},
