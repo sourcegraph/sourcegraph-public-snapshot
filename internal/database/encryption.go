@@ -137,7 +137,7 @@ func fields(c EncryptionConfig) *sqlf.Query {
 }
 
 func updatePairs(c EncryptionConfig, ev Encrypted) *sqlf.Query {
-	m := make(map[string]any, len(ev.Values)+1)
+	m := make(map[string]string, len(ev.Values)+1)
 	for i, value := range ev.Values {
 		m[c.EncryptedFieldNames[i]] = value
 	}
@@ -151,8 +151,13 @@ func updatePairs(c EncryptionConfig, ev Encrypted) *sqlf.Query {
 
 	updates := make([]*sqlf.Query, 0, len(m))
 	for _, k := range keys {
-		updates = append(updates, updatePair(k, m[k]))
+		if c.UpdateAsBytes {
+			updates = append(updates, updatePair(k, []byte(m[k])))
+		} else {
+			updates = append(updates, updatePair(k, m[k]))
+		}
 	}
+
 	return sqlf.Join(updates, ", ")
 }
 

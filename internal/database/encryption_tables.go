@@ -14,6 +14,7 @@ type EncryptionConfig struct {
 	IDFieldName         string
 	KeyIDFieldName      string
 	EncryptedFieldNames []string
+	UpdateAsBytes       bool
 	Scan                func(*sql.Rows, error) (map[int]Encrypted, error)
 	Key                 func() encryption.Key
 	Limit               int
@@ -52,6 +53,7 @@ var userCredentialsEncryptionConfig = EncryptionConfig{
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
 	EncryptedFieldNames: []string{"credential"},
+	UpdateAsBytes:       true,
 	Scan:                basestore.NewMapScanner(scanEncryptedBytea),
 	Key:                 func() encryption.Key { return keyring.Default().BatchChangesCredentialKey },
 	Limit:               5,
@@ -62,6 +64,7 @@ var batchChangesSiteCredentialsEncryptionConfig = EncryptionConfig{
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
 	EncryptedFieldNames: []string{"credential"},
+	UpdateAsBytes:       true,
 	Scan:                basestore.NewMapScanner(scanEncryptedBytea),
 	Key:                 func() encryption.Key { return keyring.Default().BatchChangesCredentialKey },
 	Limit:               5,
