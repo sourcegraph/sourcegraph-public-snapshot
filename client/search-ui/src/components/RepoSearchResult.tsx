@@ -8,6 +8,7 @@ import { highlightNode } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
@@ -18,7 +19,7 @@ import styles from './SearchResult.module.scss'
 
 const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
-export interface RepoSearchResultProps extends PlatformContextProps<'requestGraphQL'> {
+export interface RepoSearchResultProps extends PlatformContextProps<'requestGraphQL'>, SettingsCascadeProps {
     result: RepositoryMatch
     onSelect: () => void
     containerClassName?: string
@@ -32,6 +33,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     containerClassName,
     as,
     index,
+    settingsCascade,
     platformContext,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
@@ -151,6 +153,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
+            settingsCascade={settingsCascade}
             platformContext={platformContext}
             as={as}
         />

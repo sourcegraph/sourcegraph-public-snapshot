@@ -9,24 +9,24 @@ import { fetchBlob } from '../backend/blob'
 import { resolveRevision } from '../backend/repo'
 import { PlatformContextProps } from '../platform/context'
 
-interface PrefetchableFileProps extends PlatformContextProps<'requestGraphQL'> {
+interface PreloadableFileProps extends PlatformContextProps<'requestGraphQL'> {
     revision?: string
     filePath: string
     repoName: string
-    prefetch: boolean
+    preload: boolean
 }
 
 /**
- * A wrapper component that supports pre-fetching file revisions on hover.
+ * A wrapper component that supports pre-loading file revisions on hover.
  * Note: This is currently experimental, and should only be enabled through
  */
-export const PrefetchableFile = React.forwardRef(function PrefetchableFile(
-    { revision, filePath, repoName, platformContext, prefetch, as: Component = 'div', ...rest },
+export const PreloadableFile = React.forwardRef(function PreloadableFile(
+    { revision, filePath, repoName, platformContext, preload, as: Component = 'div', ...rest },
     reference
 ) {
     const observable = useRef<Subscription | null>(null)
 
-    const startPrefetch = useCallback(() => {
+    const startPreload = useCallback(() => {
         if (observable.current) {
             // Already fetching or already fetched
             return
@@ -54,7 +54,7 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(
             .subscribe()
     }, [filePath, platformContext.requestGraphQL, repoName, revision])
 
-    const stopPrefetch = useCallback(() => {
+    const stopPreload = useCallback(() => {
         if (observable.current && !observable.current.closed) {
             // Cancel ongoing request and reset
             observable.current.unsubscribe()
@@ -64,10 +64,10 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(
 
     return (
         <Component
-            onMouseOver={prefetch ? startPrefetch : undefined}
-            onMouseLeave={prefetch ? stopPrefetch : undefined}
+            onMouseOver={preload ? startPreload : undefined}
+            onMouseLeave={preload ? stopPreload : undefined}
             ref={reference}
             {...rest}
         />
     )
-}) as ForwardReferenceComponent<'div', PrefetchableFileProps>
+}) as ForwardReferenceComponent<'div', PreloadableFileProps>

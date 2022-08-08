@@ -216,6 +216,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         resultType: result.type,
         repoRevision: getRevision(result.branches, result.commit),
         platformContext: props.platformContext,
+        settingsCascade: props.settingsCascade,
     }
 
     let containerProps: ResultContainerProps

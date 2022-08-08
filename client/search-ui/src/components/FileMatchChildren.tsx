@@ -15,14 +15,14 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import { PreloadableFile } from '@sourcegraph/shared/src/components/PreloadableFile'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
@@ -45,6 +45,7 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps, PlatformC
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    preloadFile?: boolean
 }
 
 /**
@@ -151,6 +152,13 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const prefetchFileEnabled = useMemo(
+        () =>
+            isSettingsValid(props.settingsCascade) &&
+            props.settingsCascade.final.experimentalFeatures?.enableLazyBlobSyntaxHighlighting,
+        [props.settingsCascade]
+    )
+
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
     const optimizeHighlighting =
@@ -311,9 +319,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
-        <PrefetchableFile
-            // TODO: Get from experimental features
-            prefetch={true}
+        <PreloadableFile
+            preload={Boolean(prefetchFileEnabled)}
             className={classNames(
                 styles.fileMatchChildren,
                 coreWorkflowImprovementsEnabled && result.type === 'symbol' && styles.symbols
@@ -424,6 +431,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     ))}
                 </div>
             )}
-        </PrefetchableFile>
+        </PreloadableFile>
     )
 }

@@ -1,11 +1,13 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
+import { Subscription } from 'rxjs'
 
 import { fetchRepository, resolveRevision } from '@sourcegraph/shared/src/backend/repo'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -16,7 +18,7 @@ import { SearchResultStar } from './SearchResultStar'
 
 import styles from './ResultContainer.module.scss'
 
-export interface ResultContainerProps extends PlatformContextProps<'requestGraphQL'> {
+export interface ResultContainerProps extends PlatformContextProps<'requestGraphQL'>, SettingsCascadeProps {
     /**
      * Whether the result container's children are visible by default.
      * The header is always visible even when the component is not expanded.
@@ -147,33 +149,54 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     as: Component = 'div',
     index,
     platformContext,
+    settingsCascade,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
+    const preloadRepoRevisionEnabled = useMemo(
+        () =>
+            isSettingsValid(settingsCascade) &&
+            settingsCascade.final.experimentalFeatures?.enableLazyBlobSyntaxHighlighting,
+        [settingsCascade]
+    )
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
-    /**
-     * Repository + revision pre-fetching.
-     * Note that we don't actually do anything with this data.
-     * The primary aim is to kickstart the memoized observable so that when we try
-     * to render the repository or blob pages, the data is already resolved/resolving.
-     */
+    // settings
+    // const optimizeHighlighting =
+    // props.settingsCascade.final &&
+    // !isErrorLike(props.settingsCascade.final) &&
+    // props.settingsCascade.final.experimentalFeatures &&
+    // props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
+
     useEffect(() => {
-        // TODO: Gate behind a flag
-        const repoObservable = fetchRepository({ repoName, requestGraphQL: platformContext.requestGraphQL }).subscribe()
-        const revisionObservable = resolveRevision({
-            repoName,
-            revision: repoRevision,
-            requestGraphQL: platformContext.requestGraphQL,
-        }).subscribe()
+        let repoObservable: Subscription
+        let revisionObservable: Subscription
+
+        /**
+         * Repository + revision pre-fetching.
+         * Note that we don't actually do anything with this data.
+         * The primary aim is to kickstart the memoized observable so that when we try
+         * to render the repository or blob pages, the data is already resolved/resolving.
+         */
+        if (preloadRepoRevisionEnabled) {
+            repoObservable = fetchRepository({
+                repoName,
+                requestGraphQL: platformContext.requestGraphQL,
+            }).subscribe()
+            revisionObservable = resolveRevision({
+                repoName,
+                revision: repoRevision,
+                requestGraphQL: platformContext.requestGraphQL,
+            }).subscribe()
+        }
 
         return () => {
-            repoObservable.unsubscribe()
-            revisionObservable.unsubscribe()
+            repoObservable?.unsubscribe()
+            revisionObservable?.unsubscribe()
         }
-    }, [platformContext.requestGraphQL, repoName, repoRevision])
+    }, [platformContext.requestGraphQL, preloadRepoRevisionEnabled, repoName, repoRevision])
 
     const rootRef = useRef<HTMLElement>(null)
     const toggle = useCallback((): void => {

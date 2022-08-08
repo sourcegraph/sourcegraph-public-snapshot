@@ -137,6 +137,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                         <CommitSearchResult
                             index={index}
                             result={result}
+                            settingsCascade={settingsCascade}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
@@ -149,6 +150,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                         <RepoSearchResult
                             index={index}
                             result={result}
+                            settingsCascade={settingsCascade}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
