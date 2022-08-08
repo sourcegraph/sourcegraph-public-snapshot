@@ -116,6 +116,8 @@ While the [Cache Buildkite Plugin](https://github.com/sourcegraph/cache-buildkit
      key: "<id>-<cache-key>"
      restore-keys:
        - "<id>-<cache-key>"
+       - "<id>-"
      compress: true
      <<: *s3-settings
    ```
+   Read the plugin doc section about [cache key templates](https://github.com/sourcegraph/cache-buildkite-plugin#cache-key-templates) and [hashing directories for keys](https://github.com/sourcegraph/cache-buildkite-plugin#hashing-checksum-against-directory) for pointers on effective caching. 
