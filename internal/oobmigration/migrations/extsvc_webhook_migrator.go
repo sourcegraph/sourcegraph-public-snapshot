@@ -61,14 +61,32 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	store := database.ExternalServicesWith(m.logger, tx)
+	type svc struct {
+		ID           int
+		Kind, Config string
+	}
+	svcs, err := func() (svcs []svc, err error) {
+		rows, err := tx.Query(ctx, sqlf.Sprintf(externalServiceWebhookMigratorSelectQuery, m.BatchSize))
+		if err != nil {
+			return nil, err
+		}
+		defer func() { err = basestore.CloseRows(rows, err) }()
 
-	svcs, err := store.List(ctx, database.ExternalServicesListOptions{
-		OrderByDirection: "ASC",
-		LimitOffset:      &database.LimitOffset{Limit: m.BatchSize},
-		NoCachedWebhooks: true,
-		ForUpdate:        true,
-	})
+		for rows.Next() {
+			var id int
+			var kind, config, keyID string
+			if err := rows.Scan(&id, &kind, &config, &keyID); err != nil {
+				return nil, err
+			}
+			if keyID != "" {
+				panic("UNSUPPORTED") // TODO
+			}
+
+			svcs = append(svcs, svc{ID: id, Kind: kind, Config: config})
+		}
+
+		return svcs, nil
+	}()
 	if err != nil {
 		return err
 	}
@@ -99,6 +117,11 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 
 	return nil
 }
+
+const externalServiceWebhookMigratorSelectQuery = `
+-- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Up
+SELECT id, kind, config, encryption_key_id FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NULL ORDER BY id LIMIT %s FOR UPDATE
+`
 
 const externalServiceWebhookMigratorUpdateQuery = `
 -- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Up
