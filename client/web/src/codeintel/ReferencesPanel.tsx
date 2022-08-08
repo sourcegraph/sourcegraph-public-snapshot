@@ -50,6 +50,7 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
+import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
@@ -65,6 +66,7 @@ import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
+import { useExperimentalFeatures } from '../stores'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
@@ -602,6 +604,10 @@ const SideBlob: React.FunctionComponent<
         }
     >
 > = props => {
+    const BlobComponent = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+        ? CodeMirrorBlob
+        : Blob
+
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -660,7 +666,7 @@ const SideBlob: React.FunctionComponent<
     }
 
     return (
-        <Blob
+        <BlobComponent
             {...props}
             nav={props.blobNav}
             history={props.history}
