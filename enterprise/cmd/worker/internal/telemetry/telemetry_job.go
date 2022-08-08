@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/pubsub"
+
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -16,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 
-	"cloud.google.com/go/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -273,6 +274,13 @@ func getTopicConfig() (topicConfig, error) {
 	return config, nil
 }
 
+func emptyIfNil(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *bigQueryEvent {
 	return &bigQueryEvent{
 		EventName:         event.Name,
@@ -287,6 +295,13 @@ func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *big
 		LicenseKey:        metadata.LicenseKey,
 		DeployType:        metadata.DeployType,
 		InitialAdminEmail: metadata.InitialAdminEmail,
+		FeatureFlags:      string(event.EvaluatedFlagSet.Json()),
+		CohortID:          event.CohortID,
+		FirstSourceURL:    emptyIfNil(event.FirstSourceURL),
+		LastSourceURL:     emptyIfNil(event.LastSourceURL),
+		Referrer:          emptyIfNil(event.Referrer),
+		DeviceID:          event.DeviceID,
+		InsertID:          event.InsertID,
 	}
 }
 

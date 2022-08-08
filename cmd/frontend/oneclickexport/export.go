@@ -25,6 +25,23 @@ type DataExporter struct {
 	dbProcessors     map[string]Processor[Limit]
 }
 
+type ConfigRequest struct {
+}
+
+type DBQueryRequest struct {
+	TableName string `json:"tableName"`
+	Count     Limit  `json:"count"`
+}
+
+type Limit int
+
+func (l Limit) getOrDefault(defaultValue int) int {
+	if l == 0 {
+		return defaultValue
+	}
+	return int(l)
+}
+
 type ExportRequest struct {
 	IncludeSiteConfig     bool              `json:"includeSiteConfig"`
 	IncludeCodeHostConfig bool              `json:"includeCodeHostConfig"`
@@ -41,7 +58,7 @@ func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byt
 	// 1) creating a tmp dir
 	dir, err := os.MkdirTemp(os.TempDir(), "export-*")
 	if err != nil {
-		e.logger.Fatal("Error during code tmp dir creation", log.Error(err))
+		e.logger.Fatal("error during code tmp dir creation", log.Error(err))
 	}
 	defer os.RemoveAll(dir)
 

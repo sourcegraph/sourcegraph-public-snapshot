@@ -7936,7 +7936,7 @@ func NewMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		CountUniqueUsersAllFunc: &EventLogStoreCountUniqueUsersAllFunc{
-			defaultHook: func(context.Context, time.Time, time.Time) (r0 int, r1 error) {
+			defaultHook: func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -8128,7 +8128,7 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		CountUniqueUsersAllFunc: &EventLogStoreCountUniqueUsersAllFunc{
-			defaultHook: func(context.Context, time.Time, time.Time) (int, error) {
+			defaultHook: func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersAll")
 			},
 		},
@@ -10231,24 +10231,24 @@ func (c EventLogStoreCountByUserIDAndEventNamesFuncCall) Results() []interface{}
 // CountUniqueUsersAll method of the parent MockEventLogStore instance is
 // invoked.
 type EventLogStoreCountUniqueUsersAllFunc struct {
-	defaultHook func(context.Context, time.Time, time.Time) (int, error)
-	hooks       []func(context.Context, time.Time, time.Time) (int, error)
+	defaultHook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)
+	hooks       []func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)
 	history     []EventLogStoreCountUniqueUsersAllFuncCall
 	mutex       sync.Mutex
 }
 
 // CountUniqueUsersAll delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) CountUniqueUsersAll(v0 context.Context, v1 time.Time, v2 time.Time) (int, error) {
-	r0, r1 := m.CountUniqueUsersAllFunc.nextHook()(v0, v1, v2)
-	m.CountUniqueUsersAllFunc.appendCall(EventLogStoreCountUniqueUsersAllFuncCall{v0, v1, v2, r0, r1})
+func (m *MockEventLogStore) CountUniqueUsersAll(v0 context.Context, v1 time.Time, v2 time.Time, v3 *CountUniqueUsersOptions) (int, error) {
+	r0, r1 := m.CountUniqueUsersAllFunc.nextHook()(v0, v1, v2, v3)
+	m.CountUniqueUsersAllFunc.appendCall(EventLogStoreCountUniqueUsersAllFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CountUniqueUsersAll
 // method of the parent MockEventLogStore instance is invoked and the hook
 // queue is empty.
-func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.Context, time.Time, time.Time) (int, error)) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -10257,7 +10257,7 @@ func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Context, time.Time, time.Time) (int, error)) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -10266,19 +10266,19 @@ func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time, time.Time) (int, error) {
+	f.SetDefaultHook(func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *EventLogStoreCountUniqueUsersAllFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Time, time.Time) (int, error) {
+	f.PushHook(func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreCountUniqueUsersAllFunc) nextHook() func(context.Context, time.Time, time.Time) (int, error) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) nextHook() func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -10321,6 +10321,9 @@ type EventLogStoreCountUniqueUsersAllFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 time.Time
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *CountUniqueUsersOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -10332,7 +10335,7 @@ type EventLogStoreCountUniqueUsersAllFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c EventLogStoreCountUniqueUsersAllFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -12470,6 +12473,9 @@ type MockExternalServiceStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *ExternalServiceStoreListFunc
+	// ListReposFunc is an instance of a mock function object controlling
+	// the behavior of the method ListRepos.
+	ListReposFunc *ExternalServiceStoreListReposFunc
 	// RepoCountFunc is an instance of a mock function object controlling
 	// the behavior of the method RepoCount.
 	RepoCountFunc *ExternalServiceStoreRepoCountFunc
@@ -12560,6 +12566,11 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 		},
 		ListFunc: &ExternalServiceStoreListFunc{
 			defaultHook: func(context.Context, ExternalServicesListOptions) (r0 []*types.ExternalService, r1 error) {
+				return
+			},
+		},
+		ListReposFunc: &ExternalServiceStoreListReposFunc{
+			defaultHook: func(context.Context, ExternalServiceReposListOptions) (r0 []*types.ExternalServiceRepo, r1 error) {
 				return
 			},
 		},
@@ -12671,6 +12682,11 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 				panic("unexpected invocation of MockExternalServiceStore.List")
 			},
 		},
+		ListReposFunc: &ExternalServiceStoreListReposFunc{
+			defaultHook: func(context.Context, ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
+				panic("unexpected invocation of MockExternalServiceStore.ListRepos")
+			},
+		},
 		RepoCountFunc: &ExternalServiceStoreRepoCountFunc{
 			defaultHook: func(context.Context, int64) (int32, error) {
 				panic("unexpected invocation of MockExternalServiceStore.RepoCount")
@@ -12752,6 +12768,9 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 		},
 		ListFunc: &ExternalServiceStoreListFunc{
 			defaultHook: i.List,
+		},
+		ListReposFunc: &ExternalServiceStoreListReposFunc{
+			defaultHook: i.ListRepos,
 		},
 		RepoCountFunc: &ExternalServiceStoreRepoCountFunc{
 			defaultHook: i.RepoCount,
@@ -14177,6 +14196,116 @@ func (c ExternalServiceStoreListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ExternalServiceStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExternalServiceStoreListReposFunc describes the behavior when the
+// ListRepos method of the parent MockExternalServiceStore instance is
+// invoked.
+type ExternalServiceStoreListReposFunc struct {
+	defaultHook func(context.Context, ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error)
+	hooks       []func(context.Context, ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error)
+	history     []ExternalServiceStoreListReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRepos delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExternalServiceStore) ListRepos(v0 context.Context, v1 ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
+	r0, r1 := m.ListReposFunc.nextHook()(v0, v1)
+	m.ListReposFunc.appendCall(ExternalServiceStoreListReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListRepos method of
+// the parent MockExternalServiceStore instance is invoked and the hook
+// queue is empty.
+func (f *ExternalServiceStoreListReposFunc) SetDefaultHook(hook func(context.Context, ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRepos method of the parent MockExternalServiceStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ExternalServiceStoreListReposFunc) PushHook(hook func(context.Context, ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServiceStoreListReposFunc) SetDefaultReturn(r0 []*types.ExternalServiceRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServiceStoreListReposFunc) PushReturn(r0 []*types.ExternalServiceRepo, r1 error) {
+	f.PushHook(func(context.Context, ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExternalServiceStoreListReposFunc) nextHook() func(context.Context, ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreListReposFunc) appendCall(r0 ExternalServiceStoreListReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExternalServiceStoreListReposFuncCall
+// objects describing the invocations of this function.
+func (f *ExternalServiceStoreListReposFunc) History() []ExternalServiceStoreListReposFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreListReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreListReposFuncCall is an object that describes an
+// invocation of method ListRepos on an instance of
+// MockExternalServiceStore.
+type ExternalServiceStoreListReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExternalServiceReposListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.ExternalServiceRepo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreListReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreListReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

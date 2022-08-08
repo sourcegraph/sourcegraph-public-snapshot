@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect } from 'react'
 
+import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -105,6 +106,8 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
         return <LoadingSpinner />
     }
 
+    const groupingLabel = startCase(grouping.value.toLowerCase())
+
     return (
         <>
             <AnalyticsPageTitle>Analytics / Batch Changes</AnalyticsPageTitle>
@@ -116,7 +119,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {stats && (
                     <div>
-                        <ChartContainer title="Activity by day" labelX="Time" labelY="Activity">
+                        <ChartContainer title={`${groupingLabel} activity`} labelX="Time" labelY="Activity">
                             {width => <LineChart width={width} height={300} series={stats} />}
                         </ChartContainer>
                     </div>

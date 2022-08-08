@@ -1,4 +1,7 @@
-@import './forkedBranded.scss';
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/tabs/styles';
+
+@import '../../../branded/src/global-styles/base.scss';
 @import './theming/highlight.scss';
 @import './theming/monaco.scss';
 @import '../../../../node_modules/@vscode/codicons/dist/codicon.css';
