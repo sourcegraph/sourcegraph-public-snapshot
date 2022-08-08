@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -57,11 +58,21 @@ FROM
 // Up loads a set of external services without a populated has_webhooks column and
 // updates that value by looking at that external service's configuration values.
 func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
+	var parseErrs error
+
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		// Commit transaction with non-parse errors. If we include parse errors in
+		// this set prior to the tx.Done call, then we will always rollback the tx
+		// and lose progress on the batch
+		err = tx.Done(err)
+
+		// Add non-"fatal" errors for callers
+		err = errors.CombineErrors(err, parseErrs)
+	}()
 
 	type svc struct {
 		ID           int
@@ -94,7 +105,8 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 	}
 
 	for _, svc := range svcs {
-		ParseConfig := func(kind, config string) (cfg any, _ error) {
+		parseWebhooks := func(kind, config string) (bool, error) {
+			var cfg any
 			switch strings.ToUpper(kind) {
 			case extsvc.KindBitbucketServer:
 				cfg = &schema.BitbucketServerConnection{}
@@ -103,26 +115,29 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 			case extsvc.KindGitLab:
 				cfg = &schema.GitLabConnection{}
 			default:
-				return nil, nil
-			}
-			return cfg, jsonc.Unmarshal(config, cfg)
-		}
-		cfg, err := ParseConfig(svc.Kind, svc.Config)
-		if err != nil {
-			return err
-		}
-		hasWebhooks := func(config any) bool {
-			switch v := config.(type) {
-			case *schema.GitHubConnection:
-				return len(v.Webhooks) > 0
-			case *schema.GitLabConnection:
-				return len(v.Webhooks) > 0
-			case *schema.BitbucketServerConnection:
-				return v.WebhookSecret() != ""
+				return false, nil
 			}
 
-			return false
-		}(cfg)
+			if err := jsonc.Unmarshal(config, cfg); err != nil {
+				return false, err
+			}
+
+			switch v := cfg.(type) {
+			case *schema.GitHubConnection:
+				return len(v.Webhooks) > 0, nil
+			case *schema.GitLabConnection:
+				return len(v.Webhooks) > 0, nil
+			case *schema.BitbucketServerConnection:
+				return v.WebhookSecret() != "", nil
+			}
+
+			return false, nil
+		}
+		hasWebhooks, err := parseWebhooks(svc.Kind, svc.Config)
+		if err != nil {
+			parseErrs = errors.CombineErrors(parseErrs, err)
+			continue
+		}
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(externalServiceWebhookMigratorUpdateQuery, hasWebhooks, svc.ID)); err != nil {
 			return err
