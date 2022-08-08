@@ -45,7 +45,7 @@ export const ExtensionsAreaHeader: React.FunctionComponent<
         <Alert variant="warning" className={props.isPrimaryHeader ? 'mt-4' : ''}>
             <H4>Sourcegraph extensions are being deprecated</H4>
             We're in the process of removing Sourcegraph extensions with the upcoming 4.0 release.{' '}
-            <Link to="https://docs.sourcegraph.com/extensions/deprecation">Learn more.</Link>
+            <Link to="/help/extensions/deprecation">Learn more.</Link>
         </Alert>
     </div>
 )
