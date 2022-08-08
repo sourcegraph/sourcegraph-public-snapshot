@@ -32,7 +32,9 @@ RUN apt-get update && \
         systemd \
         udev \
         vim-tiny \
-        wget && \
+        wget \
+        software-properties-common \
+        jq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -49,6 +51,11 @@ RUN echo "root:root" | chpasswd
 
 ### END UPSTREAM SECTION
 
+# hadolint ignore=DL3008,DL3009
+RUN add-apt-repository ppa:git-core/ppa && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends git
+
 # hadolint ignore=DL4006
 RUN mkdir -p /etc/apt/keyrings && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 # hadolint ignore=DL4006
@@ -64,6 +71,12 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# hadolint ignore=DL3008,DL3009
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CC86BB64 && \
+    add-apt-repository ppa:rmescandon/yq && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends yq
+
 ARG SRC_CLI_VERSION
 RUN set -ex && \
     curl -f -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz" && \
@@ -71,6 +84,9 @@ RUN set -ex && \
     mv src /usr/local/bin/src && \
     chmod +x /usr/local/bin/src && \
     rm -rf src-cli.tar.gz
+
+COPY install.sh /tmp/install.sh
+RUN chmod +x /tmp/install.sh && /tmp/install.sh && rm /tmp/install.sh
 
 RUN set -ex && \
   apt-get -y autoremove && \
