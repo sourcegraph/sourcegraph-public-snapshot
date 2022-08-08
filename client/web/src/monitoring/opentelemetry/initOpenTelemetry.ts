@@ -1,6 +1,6 @@
 import { ZoneContextManager } from '@opentelemetry/context-zone'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { InstrumentationOption, registerInstrumentations } from '@opentelemetry/instrumentation'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 import { Resource } from '@opentelemetry/resources'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
@@ -34,7 +34,8 @@ export function initOpenTelemetry(): void {
         })
 
         registerInstrumentations({
-            instrumentations: [new FetchInstrumentation()],
+            // Type-casting is required since the `FetchInstrumentation` is wrongly typed internally as `node.js` instrumentation.
+            instrumentations: [(new FetchInstrumentation() as unknown) as InstrumentationOption],
         })
     }
 }
