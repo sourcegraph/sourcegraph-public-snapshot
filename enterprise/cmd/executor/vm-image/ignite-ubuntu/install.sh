@@ -22,6 +22,7 @@ EOF
 #!/usr/bin/env bash
 
 if [[ -f "/docker-registry.txt" ]]; then
+  mkdir -p /etc/docker
   echo 'Found /docker-registry.txt file, configuring docker daemon..'
   DOCKER_REGISTRY_MIRROR="\$(cat /docker-registry.txt)"
   if [[ -f "/etc/docker/daemon.json" ]]; then
