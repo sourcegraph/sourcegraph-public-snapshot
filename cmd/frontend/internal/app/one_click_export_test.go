@@ -46,6 +46,10 @@ func TestOneClickExportHandler(t *testing.T) {
 			}},
 		}
 		data, err := json.Marshal(request)
+		if err != nil {
+			t.Errorf("Failed to marshal ExportRequest: %s", err)
+		}
+
 		req, _ := http.NewRequest("POST", "", bytes.NewBuffer(data))
 		rec := httptest.NewRecorder()
 		oneClickExportHandler(db)(rec, req.WithContext(actor.WithInternalActor(context.Background())))
