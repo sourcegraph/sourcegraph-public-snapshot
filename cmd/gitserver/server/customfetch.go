@@ -24,10 +24,9 @@ func customGitFetch() map[string][]string {
 	if err != nil {
 		return map[string][]string{}
 	}
+
 	var cc []*schema.CustomGitFetchMapping
-
 	err = json.Unmarshal(r, &cc)
-
 	if err != nil {
 		return map[string][]string{}
 	}
