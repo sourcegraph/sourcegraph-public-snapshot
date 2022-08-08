@@ -11,14 +11,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SSHMigrator struct {
 	logger    log.Logger
 	store     *store.Store
 	BatchSize int
+	key       encryption.Key
 }
 
 var _ oobmigration.Migrator = &SSHMigrator{}
@@ -28,6 +31,7 @@ func NewSSHMigratorWithDB(store *store.Store /* db database.DB */) *SSHMigrator 
 		logger:    log.Scoped("SSHMigrator", ""),
 		store:     store, /* basestore.NewWithHandle(db.Handle()) */
 		BatchSize: 5,
+		key:       keyring.Default().BatchChangesCredentialKey, // TODO
 	}
 }
 
@@ -147,9 +151,13 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 			newCred = &a.BasicAuth
 		}
 		if newCred != nil {
-			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
-				return err
+			secret, id, err := database.EncryptAuthenticator(ctx, m.key, newCred)
+			if err != nil {
+				return errors.Wrap(err, "encrypting authenticator")
 			}
+
+			cred.EncryptedCredential = secret
+			cred.EncryptionKeyID = id
 		}
 
 		cred.SSHMigrationApplied = false
