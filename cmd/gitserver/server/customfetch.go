@@ -21,7 +21,6 @@ func customGitFetch() map[string][]string {
 	}
 
 	r, err := ioutil.ReadFile(customGitFetchCmdConf)
-
 	if err != nil {
 		return map[string][]string{}
 	}
