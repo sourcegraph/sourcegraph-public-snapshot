@@ -67,6 +67,7 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
                     <TooltipListBlankItem>... and {lines.leftRemaining} more</TooltipListBlankItem>
                 )}
                 {lines.window.map(line => {
+                    // TODO: Support stacked formatted value
                     const value = formatYTick(line.value)
                     const isActiveLine = activePoint.seriesId === line.id
 
