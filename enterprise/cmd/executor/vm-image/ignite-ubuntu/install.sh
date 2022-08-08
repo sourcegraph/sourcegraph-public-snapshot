@@ -25,7 +25,7 @@ if [[ -f "/docker-registry.txt" ]]; then
   echo 'Found /docker-registry.txt file, configuring docker daemon..'
   DOCKER_REGISTRY_MIRROR="\$(cat /docker-registry.txt)"
   if [[ -f "/etc/docker/daemon.json" ]]; then
-      cat /etc/docker/daemon.json | jq '."registry-mirrors" |= ["\${DOCKER_REGISTRY_MIRROR}"]' > /etc/docker/daemon.json.tmp
+      cat /etc/docker/daemon.json | jq ".\"registry-mirrors\" |= [\"\${DOCKER_REGISTRY_MIRROR}\"]" > /etc/docker/daemon.json.tmp
       mv /etc/docker/daemon.json.tmp /etc/docker/daemon.json
   else
       echo "{\"registry-mirrors\": [\"${DOCKER_REGISTRY_MIRROR}\"]}" > /etc/docker/daemon.json
