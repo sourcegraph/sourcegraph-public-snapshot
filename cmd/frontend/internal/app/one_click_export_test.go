@@ -24,7 +24,7 @@ func TestOneClickExportHandler(t *testing.T) {
 	t.Run("non-admins cannot download the archive", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "", nil)
 		rec := httptest.NewRecorder()
-		oneClickExportHandler(db)(rec, req)
+		oneClickExportHandler(db, logger)(rec, req)
 
 		if have, want := rec.Code, http.StatusUnauthorized; have != want {
 			t.Errorf("status code: have %d, want %d", have, want)
@@ -52,7 +52,7 @@ func TestOneClickExportHandler(t *testing.T) {
 
 		req, _ := http.NewRequest("POST", "", bytes.NewBuffer(data))
 		rec := httptest.NewRecorder()
-		oneClickExportHandler(db)(rec, req.WithContext(actor.WithInternalActor(context.Background())))
+		oneClickExportHandler(db, logger)(rec, req.WithContext(actor.WithInternalActor(context.Background())))
 
 		contentType := rec.Header().Get("Content-Type")
 		if have, want := contentType, "application/zip"; have != want {
