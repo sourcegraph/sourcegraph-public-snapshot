@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"cloud.google.com/go/pubsub"
 
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -239,12 +241,7 @@ func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore dat
 var confClient = conf.DefaultClient()
 
 func isEnabled() bool {
-	ptr := confClient.Get().ExportUsageTelemetry
-	if ptr != nil {
-		return ptr.Enabled
-	}
-
-	return false
+	return envvar.ExportUsageData()
 }
 
 func getBatchSize() int {

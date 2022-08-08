@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/lib/pq"
@@ -45,38 +47,25 @@ func TestInitializeJob(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name         string
-		mockedConfig schema.SiteConfiguration
-		shouldInit   bool
+		name       string
+		setting    bool
+		shouldInit bool
 	}{
 		{
-			name:         "missing setting",
-			mockedConfig: schema.SiteConfiguration{},
-			shouldInit:   false,
-		},
-		{
-			name: "setting exists but enabled field missing",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{},
-			},
+			name:       "job set disabled",
+			setting:    false,
 			shouldInit: false,
 		},
 		{
-			name: "setting exists but enabled field set false",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: false},
-			},
-			shouldInit: false,
-		},
-		{
-			name:         "setting exists and is enabled",
-			mockedConfig: validEnabledConfiguration(),
-			shouldInit:   true,
+			name:       "setting exists and is enabled",
+			setting:    true,
+			shouldInit: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
+			reset := envvar.MockExportUsageData(test.setting)
+			defer reset()
 
 			if have, want := isEnabled(), test.shouldInit; have != want {
 				t.Errorf("unexpected isEnabled return value have=%t want=%t", have, want)
@@ -89,39 +78,26 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name         string
-		mockedConfig schema.SiteConfiguration
-		expectErr    error
+		name      string
+		setting   bool
+		expectErr error
 	}{
 		{
-			name:         "missing setting",
-			mockedConfig: schema.SiteConfiguration{},
-			expectErr:    disabledErr,
-		},
-		{
-			name: "setting exists but enabled field missing",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{},
-			},
+			name:      "job set disabled",
+			setting:   false,
 			expectErr: disabledErr,
 		},
 		{
-			name: "setting exists but enabled field set false",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: false},
-			},
-			expectErr: disabledErr,
-		},
-		{
-			name:         "setting exists and is enabled",
-			mockedConfig: validEnabledConfiguration(),
-			expectErr:    nil,
+			name:      "setting exists and is enabled",
+			setting:   true,
+			expectErr: nil,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
-
+			reset := envvar.MockExportUsageData(test.setting)
+			defer reset()
+			confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
 			handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 				return nil
 			})
@@ -145,7 +121,9 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
-	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
+	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
+	reset := envvar.MockExportUsageData(true)
+	defer reset()
 
 	initAllowedEvents(t, db, []string{"event1", "event2"})
 
@@ -216,7 +194,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	})
 
 	t.Run("loads using specified batch size from settings", func(t *testing.T) {
-		config := validEnabledConfiguration()
+		config := validConfiguration()
 		config.ExportUsageTelemetry.BatchSize = 1
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
@@ -249,6 +227,8 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	dbHandle := dbtest.NewDB(logger, t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
+	reset := envvar.MockExportUsageData(true)
+	defer reset()
 
 	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
@@ -272,7 +252,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 		t.Error(err)
 	}
 
-	config := validEnabledConfiguration()
+	config := validConfiguration()
 	config.ExportUsageTelemetry.BatchSize = 1
 	confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
@@ -336,6 +316,8 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	dbHandle := dbtest.NewDB(logger, t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
+	reset := envvar.MockExportUsageData(true)
+	defer reset()
 
 	initAllowedEvents(t, db, []string{"allowed"})
 	testData := []*database.Event{
@@ -364,7 +346,7 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 		t.Error(err)
 	}
 
-	config := validEnabledConfiguration()
+	config := validConfiguration()
 	confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
 	handler := mockTelemetryHandler(t, noopHandler())
@@ -401,9 +383,8 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	})
 }
 
-func validEnabledConfiguration() schema.SiteConfiguration {
+func validConfiguration() schema.SiteConfiguration {
 	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{
-		Enabled:          true,
 		TopicName:        "test-topic",
 		TopicProjectName: "test-project",
 	}}
@@ -416,7 +397,9 @@ func TestHandleInvalidConfig(t *testing.T) {
 	db := database.NewDB(logger, dbHandle)
 	bookmarkStore := newBookmarkStore(db)
 
-	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
+	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
+	reset := envvar.MockExportUsageData(true)
+	defer reset()
 
 	obsContext := &observation.Context{
 		Logger:       logger,
@@ -426,7 +409,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 	}
 
 	t.Run("handle fails when missing project name", func(t *testing.T) {
-		config := validEnabledConfiguration()
+		config := validConfiguration()
 		config.ExportUsageTelemetry.TopicProjectName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
@@ -436,7 +419,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
 	})
 	t.Run("handle fails when missing topic name", func(t *testing.T) {
-		config := validEnabledConfiguration()
+		config := validConfiguration()
 		config.ExportUsageTelemetry.TopicName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
