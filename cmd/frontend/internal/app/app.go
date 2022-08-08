@@ -73,6 +73,9 @@ func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Ha
 	// Usage statistics ZIP download
 	r.Get(router.UsageStatsDownload).Handler(trace.Route(http.HandlerFunc(usageStatsArchiveHandler(db))))
 
+	// One-click export ZIP download
+	r.Get(router.OneClickExportArchive).Handler(trace.Route(http.HandlerFunc(oneClickExportHandler(db))))
+
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))
 
