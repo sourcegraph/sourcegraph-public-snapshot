@@ -10,25 +10,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-type RepoMetadataStore interface {
+type RepoKVPStore interface {
 	basestore.ShareableStore
-	Transact(context.Context) (RepoMetadataStore, error)
-	With(basestore.ShareableStore) RepoMetadataStore
+	Transact(context.Context) (RepoKVPStore, error)
+	With(basestore.ShareableStore) RepoKVPStore
+	Get(context.Context, api.RepoID, string) (KeyValuePair, error)
+	List(context.Context, api.RepoID) ([]KeyValuePair, error)
+	Create(context.Context, api.RepoID, KeyValuePair) error
+	Update(context.Context, api.RepoID, KeyValuePair) (KeyValuePair, error)
+	Delete(context.Context, api.RepoID, string) error
 }
 
-type repoMetadataStore struct {
+type repoKVPStore struct {
 	*basestore.Store
 }
 
-var _ RepoMetadataStore = (*repoMetadataStore)(nil)
+var _ RepoKVPStore = (*repoKVPStore)(nil)
 
-func (s *repoMetadataStore) Transact(ctx context.Context) (RepoMetadataStore, error) {
+func (s *repoKVPStore) Transact(ctx context.Context) (RepoKVPStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &repoMetadataStore{Store: txBase}, err
+	return &repoKVPStore{Store: txBase}, err
 }
 
-func (s *repoMetadataStore) With(other basestore.ShareableStore) RepoMetadataStore {
-	return &repoMetadataStore{Store: s.Store.With(other)}
+func (s *repoKVPStore) With(other basestore.ShareableStore) RepoKVPStore {
+	return &repoKVPStore{Store: s.Store.With(other)}
 }
 
 type KeyValuePair struct {
@@ -36,7 +41,7 @@ type KeyValuePair struct {
 	Value *string
 }
 
-func (s *repoMetadataStore) Get(ctx context.Context, repoID api.RepoID, key string) (KeyValuePair, error) {
+func (s *repoKVPStore) Get(ctx context.Context, repoID api.RepoID, key string) (KeyValuePair, error) {
 	q := `
 	SELECT key, value
 	FROM repo_kvps
@@ -50,7 +55,7 @@ func (s *repoMetadataStore) Get(ctx context.Context, repoID api.RepoID, key stri
 	return kvp, row.Scan(&kvp.Key, &kvp.Value)
 }
 
-func (s *repoMetadataStore) List(ctx context.Context, repoID api.RepoID) ([]KeyValuePair, error) {
+func (s *repoKVPStore) List(ctx context.Context, repoID api.RepoID) ([]KeyValuePair, error) {
 	q := `
 	SELECT key, value
 	FROM repo_kvps
@@ -65,7 +70,7 @@ func (s *repoMetadataStore) List(ctx context.Context, repoID api.RepoID) ([]KeyV
 	return scanKVPs(s.Query(ctx, sqlf.Sprintf(q, repoID)))
 }
 
-func (s *repoMetadataStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) error {
+func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) error {
 	q := `
 	INSERT INTO repo_kvps (repo_id, key, value)
 	VALUES (%s, %s, %s)
@@ -74,7 +79,7 @@ func (s *repoMetadataStore) Create(ctx context.Context, repoID api.RepoID, kvp K
 	return s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value))
 }
 
-func (s *repoMetadataStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) (KeyValuePair, error) {
+func (s *repoKVPStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) (KeyValuePair, error) {
 	q := `
 	UPDATE repo_kvps
 	SET value = %s
@@ -89,7 +94,7 @@ func (s *repoMetadataStore) Update(ctx context.Context, repoID api.RepoID, kvp K
 	return updated, row.Scan(&updated.Key, &updated.Value)
 }
 
-func (s *repoMetadataStore) Delete(ctx context.Context, repoID api.RepoID, key string) error {
+func (s *repoKVPStore) Delete(ctx context.Context, repoID api.RepoID, key string) error {
 	q := `
 	DELETE FROM  repo_kvps
 	WHERE repo_id = %s
