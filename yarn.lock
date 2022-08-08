@@ -12133,6 +12133,14 @@ esbuild-openbsd-64@0.14.2:
   resolved "https://registry.npmjs.org/esbuild-openbsd-64/-/esbuild-openbsd-64-0.14.2.tgz#3c5f199eed459b2f88865548394c0b77383d9ca4"
   integrity sha512-120HgMe9elidWUvM2E6mMf0csrGwx8sYDqUIJugyMy1oHm+/nT08bTAVXuwYG/rkMIqsEO9AlMxuYnwR6En/3Q==
 
+esbuild-plugin-elm@^0.0.11-1:
+  version "0.0.11-1"
+  resolved "https://registry.npmjs.org/esbuild-plugin-elm/-/esbuild-plugin-elm-0.0.11-1.tgz#c4367bfd2dd1a3bc7cb60b7802f95021cf48bc5e"
+  integrity sha512-9YfcSMtfgrYvj53o4rM4Y7n8D5M0kzf3hC+TjbJurr+hnPqql53KE5F0A3EPBGZNl5QY6EAvfZFblbnHIP0CSQ==
+  dependencies:
+    command-exists "^1.2.9"
+    node-elm-compiler "^5.0.6"
+
 esbuild-sunos-64@0.14.2:
   version "0.14.2"
   resolved "https://registry.npmjs.org/esbuild-sunos-64/-/esbuild-sunos-64-0.14.2.tgz#900a681db6b76c6a7f60fc28d2bfe5b11698641c"
@@ -18648,7 +18656,7 @@ node-domexception@1.0.0:
   resolved "https://registry.npmjs.org/node-domexception/-/node-domexception-1.0.0.tgz#6888db46a1f71c0b76b3f7555016b63fe64766e5"
   integrity sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==
 
-node-elm-compiler@^5.0.0:
+node-elm-compiler@^5.0.0, node-elm-compiler@^5.0.6:
   version "5.0.6"
   resolved "https://registry.npmjs.org/node-elm-compiler/-/node-elm-compiler-5.0.6.tgz#d4a6e6c9d9a26dba4211ccd2aeae7d5e34057f0c"
   integrity sha512-DWTRQR8b54rvschcZRREdsz7K84lnS8A6YJu8du3QLQ8f204SJbyTaA6NzYYbfUG97OTRKRv/0KZl82cTfpLhA==
