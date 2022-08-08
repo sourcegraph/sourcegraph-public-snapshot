@@ -1,0 +1,351 @@
+import React, { useMemo, useEffect, useState } from 'react'
+
+import classNames from 'classnames'
+import { format as formatDate } from 'date-fns'
+import { startCase, isEqual } from 'lodash'
+import { RouteComponentProps } from 'react-router'
+
+import { useQuery } from '@sourcegraph/http-client'
+import {
+    mdiAccount,
+    mdiPlus,
+    mdiLogoutVariant,
+    mdiArchive,
+    mdiDelete,
+    mdiDotsHorizontal,
+    mdiLockReset,
+    mdiClipboardMinus,
+} from '@mdi/js'
+import {
+    H1,
+    H2,
+    Card,
+    LoadingSpinner,
+    useMatchMedia,
+    Text,
+    Icon,
+    Position,
+    PopoverTrigger,
+    PopoverContent,
+    Popover,
+    Input,
+    Button,
+} from '@sourcegraph/wildcard'
+
+import { LineChart, Series } from '../../../charts'
+import {
+    UsersManagementResult,
+    UsersManagementVariables,
+    SiteUsersLastActivePeriod,
+    SiteUserOrderBy,
+    AnalyticsDateRange,
+    AnalyticsGrouping,
+} from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { ChartContainer } from '../../analytics/components/ChartContainer'
+import { HorizontalSelect } from '../../analytics/components/HorizontalSelect'
+import { ToggleSelect } from '../../analytics/components/ToggleSelect'
+import { ValueLegendList, ValueLegendListProps } from '../../analytics/components/ValueLegendList'
+import { useChartFilters } from '../../analytics/useChartFilters'
+import { StandardDatum } from '../../analytics/utils'
+
+import { USERS_MANAGEMENT } from './queries'
+import Table from './components/Table'
+import styles from './index.module.scss'
+
+export const UsersManagement: React.FunctionComponent = () => {
+    const { data, previousData, error, loading, variables: initialVariables, refetch, called } = useQuery<
+        UsersManagementResult,
+        UsersManagementVariables
+    >(USERS_MANAGEMENT, {
+        variables: {
+            dateRange: AnalyticsDateRange.LAST_THREE_MONTHS,
+            grouping: AnalyticsGrouping.WEEKLY,
+            usersQuery: null,
+            usersLastActivePeriod: SiteUsersLastActivePeriod.ALL,
+            usersOrderBy: SiteUserOrderBy.EVENTS_COUNT,
+            usersOrderDescending: false,
+        },
+    })
+
+    const [variables, setVariables] = useState(initialVariables)
+
+    if (error) {
+        throw error
+    }
+
+    if ((loading && !called) || !(data || previousData)) {
+        return <LoadingSpinner />
+    }
+
+    return (
+        <Content
+            data={data || previousData}
+            variables={variables}
+            refetch={(newVariables: UsersManagementVariables) => {
+                refetch(newVariables)
+                setVariables(newVariables)
+            }}
+        />
+    )
+}
+
+interface IProps {
+    data: UsersManagementResult
+    variables: UsersManagementVariables
+    refetch: (variables: UsersManagementVariables) => any
+}
+
+export const Content: React.FunctionComponent = ({ data, variables, refetch }: IProps) => {
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
+    const [usersQuery, setUsersQuery] = useState<null | string>(null)
+    const [usersLastActivePeriod, setUsersLastActivePeriod] = useState<SiteUsersLastActivePeriod>(
+        SiteUsersLastActivePeriod.ALL
+    )
+
+    useEffect(() => {
+        eventLogger.logPageView('UsersManagement')
+    }, [])
+
+    useEffect(() => {
+        const newVariables = {
+            ...variables,
+            dateRange: dateRange.value,
+            grouping: grouping.value,
+            usersQuery,
+            usersLastActivePeriod,
+        }
+        if (!isEqual(variables, newVariables)) {
+            refetch(newVariables)
+        }
+    }, [dateRange.value, aggregation.selected, grouping.value, usersQuery, usersLastActivePeriod])
+
+    const [activities, legends] = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const { users } = data.site.analytics
+        const activities: Series<StandardDatum>[] = [
+            {
+                id: 'activity',
+                name: aggregation.selected === 'count' ? 'Activities' : 'Active users',
+                color: aggregation.selected === 'count' ? 'var(--cyan)' : 'var(--purple)',
+                data: users.activity.nodes.map(
+                    node => ({
+                        date: new Date(node.date),
+                        value: node[aggregation.selected],
+                    }),
+                    dateRange.value
+                ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
+            },
+        ]
+
+        const legends: ValueLegendListProps['items'] = [
+            {
+                value: users.activity.summary.totalUniqueUsers,
+                description: 'Active users',
+                color: 'var(--purple)',
+                tooltip: 'Users using the application in the selected timeframe.',
+            },
+            {
+                value: data.users.totalCount,
+                description: 'Registered Users',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of users who have created an account.',
+            },
+            {
+                value: data.site.productSubscription.license?.userCount ?? 0,
+                description: 'User licenses',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of user licenses your current account is provisioned for.',
+            },
+        ]
+
+        return [activities, legends]
+    }, [data, aggregation.selected, dateRange.value])
+
+    const groupingLabel = startCase(grouping.value.toLowerCase())
+
+    return (
+        <>
+            <div className="d-flex justify-content-between align-items-center mb-4 mt-2">
+                <H1 className="d-flex align-items-center mb-0">
+                    <Icon svgPath={mdiAccount} size="md" className={styles.linkColor} /> User administration
+                </H1>
+                <Button variant="primary">
+                    <Icon svgPath={mdiPlus} className="mr-1" />
+                    Create User
+                </Button>
+            </div>
+            <Card className="p-3">
+                <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
+                    <HorizontalSelect<typeof dateRange.value> {...dateRange} />
+                </div>
+                {legends && <ValueLegendList className="mb-3" items={legends} />}
+                {activities && (
+                    <div>
+                        <ChartContainer
+                            title={
+                                aggregation.selected === 'count'
+                                    ? `${groupingLabel} activity`
+                                    : `${groupingLabel} unique users`
+                            }
+                            labelX="Time"
+                            labelY={aggregation.selected === 'count' ? 'Activity' : 'Unique users'}
+                        >
+                            {width => <LineChart width={width} height={300} series={activities} />}
+                        </ChartContainer>
+                        <div className="d-flex justify-content-end align-items-stretch mb-4 text-nowrap">
+                            <HorizontalSelect<typeof grouping.value> {...grouping} className="mr-4" />
+                            <ToggleSelect<typeof aggregation.selected> {...aggregation} />
+                        </div>
+                    </div>
+                )}
+                <div className="mb-2 mt-4 pt-4 d-flex justify-content-between align-items-center text-nowrap">
+                    <H2>Users</H2>
+                    <div className="d-flex">
+                        <HorizontalSelect<SiteUsersLastActivePeriod>
+                            className="mr-4"
+                            value={usersLastActivePeriod}
+                            label="Last active"
+                            onChange={value => {
+                                setUsersLastActivePeriod(value)
+                                eventLogger.log(`UserManagementLastActive${value}`)
+                            }}
+                            items={[
+                                { value: SiteUsersLastActivePeriod.ALL, label: 'All' },
+                                { value: SiteUsersLastActivePeriod.TODAY, label: 'Today' },
+                                { value: SiteUsersLastActivePeriod.THIS_WEEK, label: 'This week' },
+                                { value: SiteUsersLastActivePeriod.THIS_MONTH, label: 'This month' },
+                            ]}
+                        />
+                        <Input
+                            placeholder="Search username or name"
+                            value={usersQuery}
+                            onChange={e => setUsersQuery(e.target.value || null)}
+                        />
+                    </div>
+                </div>
+                <Table
+                    title="Users"
+                    selectable={true}
+                    initialSortColumn={SiteUserOrderBy.EVENTS_COUNT}
+                    initialSortDirection="asc"
+                    onSortChange={(usersOrderBy, usersOrderDirection) =>
+                        refetch({ ...variables, usersOrderBy, usersOrderDescending: usersOrderDirection === 'desc' })
+                    }
+                    getRowId={({ username }) => username}
+                    actions={[
+                        {
+                            key: 'force-sign-out',
+                            label: 'Force sign-out',
+                            icon: mdiLogoutVariant,
+                        },
+                        {
+                            key: 'archive',
+                            label: 'Archive',
+                            icon: mdiArchive,
+                            iconColor: 'danger',
+                        },
+                        {
+                            key: 'delete',
+                            label: 'Delete forever',
+                            icon: mdiDelete,
+                            iconColor: 'danger',
+                            labelColor: 'danger',
+                        },
+                    ]}
+                    columns={[
+                        {
+                            key: SiteUserOrderBy.USERNAME,
+                            accessor: 'username',
+                            header: 'User',
+                            sortable: true,
+                            render: ({ username, email }) => (
+                                <div className="d-flex flex-column p-2">
+                                    <Text className={classNames(styles.linkColor, 'mb-0')}>{username}</Text>
+                                    <Text className="mb-0">{email}</Text>
+                                </div>
+                            ),
+                        },
+                        {
+                            key: SiteUserOrderBy.EVENTS_COUNT,
+                            accessor: 'eventsCount',
+                            header: { label: 'Events', align: 'right' },
+                            sortable: true,
+                            align: 'right',
+                        },
+                        {
+                            key: SiteUserOrderBy.LAST_ACTIVE_AT,
+                            accessor: d => formatDate(new Date(d.lastActiveAt), 'dd/mm/yyyy'),
+                            header: { label: 'Last Active', align: 'right' },
+                            sortable: true,
+                            align: 'right',
+                        },
+                        {
+                            key: SiteUserOrderBy.CREATED_AT,
+                            accessor: d => formatDate(new Date(d.createdAt), 'dd/mm/yyyy'),
+                            header: { label: 'Created', align: 'right' },
+                            sortable: true,
+                            align: 'right',
+                        },
+                        {
+                            key: SiteUserOrderBy.DELETED_AT,
+                            accessor: d => (d.deletedAt ? formatDate(new Date(d.deletedAt), 'dd/mm/yyyy') : ''),
+                            header: { label: 'Archived', align: 'right' },
+                            sortable: true,
+                            align: 'right',
+                        },
+                        {
+                            key: 'actions',
+                            accessor: () => (
+                                <Popover>
+                                    <PopoverTrigger as={Icon} svgPath={mdiDotsHorizontal} />
+                                    <PopoverContent position={Position.bottom}>
+                                        <ul className="list-unstyled mb-0">
+                                            <li className="d-flex p-2">
+                                                <Icon svgPath={mdiLogoutVariant} size="md" className="text-muted" />
+                                                <span className="ml-2">Force sign-out</span>
+                                            </li>
+                                            <li className="d-flex p-2">
+                                                <Icon svgPath={mdiLockReset} size="md" className="text-muted" />
+                                                <span className="ml-2">Reset password</span>
+                                            </li>
+                                            <li className="d-flex p-2">
+                                                <Icon svgPath={mdiClipboardMinus} size="md" className="text-muted" />
+                                                <span className="ml-2">Revoke site admin</span>
+                                            </li>
+                                            <li className="d-flex p-2">
+                                                <Icon svgPath={mdiArchive} size="md" className="text-danger" />
+                                                <span className="ml-2">Archive</span>
+                                            </li>
+                                            <li className="d-flex p-2">
+                                                <Icon svgPath={mdiDelete} size="md" className="text-danger" />
+                                                <span className="ml-2 text-danger">Delete forever</span>
+                                            </li>
+                                        </ul>
+                                    </PopoverContent>
+                                </Popover>
+                            ),
+                            header: { label: 'Actions', align: 'right' },
+                            align: 'center',
+                        },
+                    ]}
+                    data={data.site.users.nodes}
+                    note={
+                        <Text as="span">
+                            Note: Events is the count of all billable events which equate to billable usage.{' '}
+                        </Text>
+                    }
+                />
+            </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table and are updated every 24 hours..
+            </Text>
+        </>
+    )
+}

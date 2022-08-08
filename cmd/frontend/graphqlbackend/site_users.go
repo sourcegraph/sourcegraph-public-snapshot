@@ -43,7 +43,7 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 		tables = append(tables, sqlf.Sprintf("LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true"))
 		conds = append(conds, sqlf.Sprintf("email ILIKE %s", "%"+*args.Email+"%"))
 	}
-	if args.LastActivePeriod != nil {
+	if args.LastActivePeriod != nil && *args.LastActivePeriod != "ALL" {
 		lastActiveStartTime, err := makeLastActiveStartTime(*args.LastActivePeriod)
 		if err != nil {
 			return nil, err
