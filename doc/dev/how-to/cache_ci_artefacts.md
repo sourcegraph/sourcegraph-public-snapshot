@@ -93,6 +93,8 @@ While the [Cache Buildkite Plugin](https://github.com/sourcegraph/cache-buildkit
    aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
    aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
    ```
+   > NOTE: for `asdf install awscli` to succeed, a `.tool-versions` file containing the dependency and the desired version number must be present. You may replace `asdf` with any other installation method.
+
    > NOTE: the environment variables `$BUILDKITE_HMAC_KEY` and `$BUILDKITE_HMAC_SECRET` are set on the Buildkite agent already.
 
 1. Add the following snippet to the top of `pipeline.yaml`:
