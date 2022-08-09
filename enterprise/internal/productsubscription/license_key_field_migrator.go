@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type licenseKeyFieldsMigrator struct {
@@ -57,7 +56,7 @@ FROM
 func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
-		return errors.Wrap(err, "start transaction")
+		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -67,7 +66,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 		// without them all trying to convert the same record.
 		rows, err := tx.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorSelectQuery, 500))
 		if err != nil {
-			return nil, errors.Wrap(err, "query rows")
+			return nil, err
 		}
 		defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -76,7 +75,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 			var id string
 			var licenseKey string
 			if err = rows.Scan(&id, &licenseKey); err != nil {
-				return nil, errors.Wrap(err, "scan")
+				return nil, err
 			}
 
 			licenseKeys[id] = licenseKey
@@ -100,19 +99,19 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 
 		decodedText, err := base64.RawURLEncoding.DecodeString(licenseKey)
 		if err != nil {
-			return errors.Wrap(err, "decode license key")
+			return err
 		}
 
 		var decodedKey struct {
 			Info []byte `json:"info"`
 		}
 		if err = json.Unmarshal(decodedText, &decodedKey); err != nil {
-			return errors.Wrap(err, "unmarshal decoded text")
+			return err
 		}
 
 		var info license.Info
 		if err = json.Unmarshal(decodedKey.Info, &info); err != nil {
-			return errors.Wrap(err, "unmarshal info")
+			return err
 		}
 
 		var expiresAt *time.Time
@@ -133,7 +132,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 	if err = tx.Exec(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorUpdateQuery,
 		sqlf.Join(updates, ", "),
 	)); err != nil {
-		return errors.Wrap(err, "update")
+		return err
 	}
 
 	return nil
