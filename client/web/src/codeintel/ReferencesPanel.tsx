@@ -52,6 +52,7 @@ import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVar
 import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
+import { useExperimentalFeatures } from '../stores'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -66,7 +67,6 @@ import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
-import { useExperimentalFeatures } from '../stores'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 

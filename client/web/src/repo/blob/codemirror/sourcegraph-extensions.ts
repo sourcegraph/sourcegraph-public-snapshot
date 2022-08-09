@@ -36,12 +36,12 @@ import { BlobInfo, BlobProps } from '../Blob'
 import { showTextDocumentDecorations } from './decorations'
 import { documentHighlightsSource } from './document-highlights'
 import { hovercardSource } from './hovercard'
+import { SelectedLineRange, selectedLines } from './linenumbers'
 import { Container } from './react-interop'
 
 import { blobPropsFacet } from '.'
 
 import blobStyles from '../Blob.module.scss'
-import { SelectedLineRange, selectedLines } from './linenumbers'
 
 /**
  * Context holds all the information needed for CodeMirror extensions to

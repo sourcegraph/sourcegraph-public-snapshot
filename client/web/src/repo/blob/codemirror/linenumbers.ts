@@ -79,7 +79,7 @@ const scrollIntoView = ViewPlugin.fromClass(
         private lastSelectedLines: SelectedLineRange | null = null
         constructor(private readonly view: EditorView) {}
 
-        update(update: ViewUpdate): void {
+        public update(update: ViewUpdate): void {
             const currentSelectedLines = update.state.field(selectedLines)
             if (
                 this.lastSelectedLines !== currentSelectedLines &&
@@ -94,7 +94,7 @@ const scrollIntoView = ViewPlugin.fromClass(
             }
         }
 
-        scrollIntoView(selection: SelectedLineRange) {
+        public scrollIntoView(selection: SelectedLineRange): void {
             if (selection && shouldScrollIntoView(this.view, selection)) {
                 window.requestAnimationFrame(() => {
                     this.view.dispatch({

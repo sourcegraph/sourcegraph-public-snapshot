@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { search, searchKeymap } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
+import { isEqual } from 'lodash'
 
 import { addLineRangeQueryParameter, LineOrPositionOrRange, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -22,10 +23,9 @@ import {
 } from './codemirror/decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
-import { selectLines, selectableLineNumbers, SelectedLineRange, scrollIntoViewConfig } from './codemirror/linenumbers'
+import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
-import { isEqual } from 'lodash'
 
 const staticExtensions: Extension = [
     // Using EditorState.readOnly instead of EditorView.editable allows us to
