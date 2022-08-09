@@ -30,6 +30,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { luckySearchClickedEvent } from '../util/events'
+
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
@@ -66,6 +68,11 @@ export interface StreamingSearchResultsListProps
      * Classname to be applied to the container of a search result.
      */
     resultClassName?: string
+
+    /**
+     * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
+     */
+    luckySearchEnabled?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -89,6 +96,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
+    luckySearchEnabled,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -100,8 +108,27 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
             // This data ends up in Prometheus and is not part of the ping payload.
             telemetryService.log('search.ranking.result-clicked', { index, type })
+
+            // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
+            if (luckySearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
+                telemetryService.log('SearchResultClickedAutoNone')
+            }
+
+            if (
+                luckySearchEnabled &&
+                results?.alert?.kind === 'lucky-search-queries' &&
+                results?.alert?.title &&
+                results.alert.proposedQueries
+            ) {
+                const event = luckySearchClickedEvent(
+                    results.alert.title,
+                    results.alert.proposedQueries.map(entry => entry.description || '')
+                )
+
+                telemetryService.log(event)
+            }
         },
-        [telemetryService]
+        [telemetryService, results, luckySearchEnabled]
     )
 
     const renderResult = useCallback(
@@ -117,13 +144,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
                             result={result}
-                            platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'fileMatch')}
                             expanded={false}
                             showAllMatches={false}
                             allExpanded={allExpanded}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
+                            platformContext={platformContext}
                             settingsCascade={settingsCascade}
                             extensionsController={extensionsController}
                             hoverifier={hoverifier}
@@ -137,8 +164,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                         <CommitSearchResult
                             index={index}
                             result={result}
-                            settingsCascade={settingsCascade}
                             platformContext={platformContext}
+                            settingsCascade={settingsCascade}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
@@ -150,8 +177,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                         <RepoSearchResult
                             index={index}
                             result={result}
-                            settingsCascade={settingsCascade}
                             platformContext={platformContext}
+                            settingsCascade={settingsCascade}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
                             as="li"
