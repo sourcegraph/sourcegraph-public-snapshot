@@ -71,6 +71,8 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
+    preloadRepoRevision?: (args: { repoName: string; revision?: string }) => Observable<unknown>
+
     /**
      * CSS class name to be applied to the ResultContainer Component
      */
@@ -213,6 +215,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         className: props.containerClassName,
         resultsClassName: props.result.type === 'symbol' ? styles.symbols : undefined,
         resultType: result.type,
+        preloadRepoRevision: props.preloadRepoRevision,
     }
 
     let containerProps: ResultContainerProps

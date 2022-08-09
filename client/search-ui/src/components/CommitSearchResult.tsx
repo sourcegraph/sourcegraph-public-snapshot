@@ -3,6 +3,7 @@ import React from 'react'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import { Observable } from 'rxjs'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -24,6 +25,7 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     containerClassName?: string
     as?: React.ElementType
     index: number
+    preloadRepoRevision?: (args: { repoName: string; revision?: string }) => Observable<unknown>
 }
 
 // This is a search result for types diff or commit.
@@ -35,6 +37,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     containerClassName,
     as,
     index,
+    preloadRepoRevision,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
@@ -91,6 +94,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
+            preloadRepoRevision={preloadRepoRevision}
             as={as}
         />
     )

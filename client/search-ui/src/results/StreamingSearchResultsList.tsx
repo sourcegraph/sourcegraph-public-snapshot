@@ -73,6 +73,11 @@ export interface StreamingSearchResultsListProps
      * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
      */
     luckySearchEnabled?: boolean
+
+    /**
+     * TODO:
+     */
+    preloadRepoRevision?: (args: { repoName: string; revision?: string }) => Observable<unknown>
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -97,6 +102,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     executedQuery,
     resultClassName,
     luckySearchEnabled,
+    preloadRepoRevision,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -155,6 +161,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             hoverifier={hoverifier}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            preloadRepoRevision={preloadRepoRevision}
                             as="li"
                         />
                     )
@@ -167,6 +174,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            preloadRepoRevision={preloadRepoRevision}
                             as="li"
                         />
                     )
@@ -177,6 +185,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             result={result}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
+                            preloadRepoRevision={preloadRepoRevision}
                             as="li"
                         />
                     )

@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react'
 import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { Observable } from 'rxjs'
 
 import { highlightNode } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -23,6 +24,7 @@ export interface RepoSearchResultProps {
     containerClassName?: string
     as?: React.ElementType
     index: number
+    preloadRepoRevision?: (args: { repoName: string; revision?: string }) => Observable<unknown>
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
@@ -31,6 +33,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     containerClassName,
     as,
     index,
+    preloadRepoRevision,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const containerElement = useRef<HTMLDivElement>(null)
@@ -149,6 +152,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
+            preloadRepoRevision={preloadRepoRevision}
             as={as}
         />
     )

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
+import { Observable, Subscription } from 'rxjs'
 
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Icon } from '@sourcegraph/wildcard'
@@ -99,6 +100,11 @@ export interface ResultContainerProps {
     repoLastFetched?: string
 
     /**
+     * The revision of the repository
+     */
+    repoRevision?: string
+
+    /**
      * Click event for when the result is clicked
      */
     onResultClicked?: () => void
@@ -112,6 +118,11 @@ export interface ResultContainerProps {
 
     as?: React.ElementType
     index: number
+
+    /**
+     * TODO:
+     */
+    preloadRepoRevision?: (args: { repoName: string; revision?: string }) => Observable<unknown>
 }
 
 /**
@@ -137,6 +148,8 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     resultsClassName,
     resultType,
     as: Component = 'div',
+    repoRevision,
+    preloadRepoRevision,
     index,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
@@ -165,6 +178,19 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             onResultClicked()
         }
     }
+
+    useEffect(() => {
+        let observable: Subscription
+
+        if (preloadRepoRevision) {
+            observable = preloadRepoRevision({ repoName, revision: repoRevision }).subscribe()
+        }
+
+        return () => {
+            observable?.unsubscribe()
+        }
+    }, [preloadRepoRevision, repoName, repoRevision])
+
     return (
         <Component
             className={classNames('test-search-result', styles.resultContainer, className)}

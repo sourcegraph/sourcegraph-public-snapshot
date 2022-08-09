@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { Observable } from 'rxjs'
+import { merge, Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
@@ -31,6 +31,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
+import { fetchRepository, resolveRevision } from '../../repo/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
@@ -84,6 +85,9 @@ export const StreamingSearchResults: React.FunctionComponent<
 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const enablePreloadingRepoRevisions = useExperimentalFeatures(
+        features => features.enableLazyBlobSyntaxHighlighting ?? false
+    )
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
@@ -248,6 +252,15 @@ export const StreamingSearchResults: React.FunctionComponent<
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
+    const preloadRepoRevision = useCallback(
+        (args: { repoName: string; revision?: string }) =>
+            merge(
+                fetchRepository({ repoName: args.repoName }),
+                resolveRevision({ repoName: args.repoName, revision: args.revision })
+            ),
+        []
+    )
+
     return (
         <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={query} />
@@ -337,6 +350,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                     )}
                     executedQuery={location.search}
                     luckySearchEnabled={luckySearchEnabled}
+                    preloadRepoRevision={enablePreloadingRepoRevisions ? preloadRepoRevision : undefined}
                 />
             </div>
         </div>
