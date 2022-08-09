@@ -16,6 +16,9 @@ type Job struct {
 	// unset, defaults to the workspace root.
 	RepositoryDirectory string `json:"repositoryDirectory"`
 
+	Mounts         []Mount `json:"mounts"`
+	MountDirectory string  `json:"mountDirectory"`
+
 	// Commit is the revhash that should be checked out prior to job execution.
 	Commit string `json:"commit"`
 
@@ -79,6 +82,12 @@ type CliStep struct {
 
 	// Env specifies a set of NAME=value pairs to supply to the src command.
 	Env []string `json:"env"`
+}
+
+type Mount struct {
+	FileName string `json:"fileName"`
+	Path     string `json:"path"`
+	URL      string `json:"url"`
 }
 
 type DequeueRequest struct {
