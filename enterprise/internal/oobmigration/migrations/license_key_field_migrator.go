@@ -1,4 +1,4 @@
-package productsubscription
+package migrations
 
 import (
 	"context"
