@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"sort"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -60,7 +61,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	updates, err := func() (updates []*sqlf.Query, err error) {
+	licenseKeys, err := func() (_ map[string]string, err error) {
 		// Select and lock a single record within this transaction. This ensures
 		// that many worker instances can run the same migration concurrently
 		// without them all trying to convert the same record.
@@ -70,6 +71,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 		}
 		defer func() { err = basestore.CloseRows(rows, err) }()
 
+		licenseKeys := map[string]string{}
 		for rows.Next() {
 			var id string
 			var licenseKey string
@@ -77,41 +79,55 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 				return nil, errors.Wrap(err, "scan")
 			}
 
-			decodedText, err := base64.RawURLEncoding.DecodeString(licenseKey)
-			if err != nil {
-				return nil, errors.Wrap(err, "decode license key")
-			}
-
-			var decodedKey struct {
-				Info []byte `json:"info"`
-			}
-			if err = json.Unmarshal(decodedText, &decodedKey); err != nil {
-				return nil, errors.Wrap(err, "unmarshal decoded text")
-			}
-
-			var info license.Info
-			if err = json.Unmarshal(decodedKey.Info, &info); err != nil {
-				return nil, errors.Wrap(err, "unmarshal info")
-			}
-
-			var expiresAt *time.Time
-			if !info.ExpiresAt.IsZero() {
-				expiresAt = &info.ExpiresAt
-			}
-			updates = append(updates,
-				sqlf.Sprintf("(%s, %s::integer, %s::text[], %s::integer, %s::timestamptz)",
-					id,
-					dbutil.NewNullInt64(int64(1)), // license_version
-					pq.Array(info.Tags),           // license_tags
-					dbutil.NewNullInt64(int64(info.UserCount)), // license_user_count
-					dbutil.NullTime{Time: expiresAt}),          // license_expires_at
-			)
+			licenseKeys[id] = licenseKey
 		}
 
-		return updates, nil
+		return licenseKeys, nil
 	}()
 	if err != nil {
 		return err
+	}
+
+	ids := make([]string, 0, len(licenseKeys))
+	for id := range licenseKeys {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+
+	updates := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		licenseKey := licenseKeys[id]
+
+		decodedText, err := base64.RawURLEncoding.DecodeString(licenseKey)
+		if err != nil {
+			return errors.Wrap(err, "decode license key")
+		}
+
+		var decodedKey struct {
+			Info []byte `json:"info"`
+		}
+		if err = json.Unmarshal(decodedText, &decodedKey); err != nil {
+			return errors.Wrap(err, "unmarshal decoded text")
+		}
+
+		var info license.Info
+		if err = json.Unmarshal(decodedKey.Info, &info); err != nil {
+			return errors.Wrap(err, "unmarshal info")
+		}
+
+		var expiresAt *time.Time
+		if !info.ExpiresAt.IsZero() {
+			expiresAt = &info.ExpiresAt
+		}
+
+		updates = append(updates, sqlf.Sprintf(
+			`(%s, %s::integer, %s::text[], %s::integer, %s::timestamptz)`,
+			id,
+			dbutil.NewNullInt64(int64(1)), // license_version
+			pq.Array(info.Tags),           // license_tags
+			dbutil.NewNullInt64(int64(info.UserCount)), // license_user_count
+			dbutil.NullTime{Time: expiresAt}),          // license_expires_at
+		)
 	}
 
 	if err = tx.Exec(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorUpdateQuery,
