@@ -481,16 +481,6 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	})
 }
 
-// TODO: still need this?
-func hasMount(spec *btypes.BatchSpec) bool {
-	for _, step := range spec.Spec.Steps {
-		if len(step.Mount) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
 type ErrBatchSpecResolutionErrored struct {
 	failureMessage *string
 }
