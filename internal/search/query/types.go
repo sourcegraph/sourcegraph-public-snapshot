@@ -417,7 +417,7 @@ type RepoKVPFilter struct {
 }
 
 func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
-	VisitTypedPredicate(toNodes(p), func(pred *RepoHasMetadataPredicate, negated bool) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKVPPredicate, negated bool) {
 		res = append(res, RepoKVPFilter{
 			Key:     pred.Key,
 			Value:   &pred.Value,

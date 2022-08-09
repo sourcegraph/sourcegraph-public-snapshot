@@ -30,7 +30,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
 		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
-		"has":                   func() Predicate { return &RepoHasMetadataPredicate{} },
+		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -248,12 +248,12 @@ func (f *RepoHasTagPredicate) ParseParams(params string) (err error) {
 func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
 func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
 
-type RepoHasMetadataPredicate struct {
+type RepoHasKVPPredicate struct {
 	Key   string
 	Value string
 }
 
-func (p *RepoHasMetadataPredicate) ParseParams(params string) (err error) {
+func (p *RepoHasKVPPredicate) ParseParams(params string) (err error) {
 	split := strings.Split(params, ":")
 	if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
 		return errors.New("expected params in the form of key:value")
@@ -263,8 +263,8 @@ func (p *RepoHasMetadataPredicate) ParseParams(params string) (err error) {
 	return nil
 }
 
-func (p *RepoHasMetadataPredicate) Field() string { return FieldRepo }
-func (p *RepoHasMetadataPredicate) Name() string  { return "has" }
+func (p *RepoHasKVPPredicate) Field() string { return FieldRepo }
+func (p *RepoHasKVPPredicate) Name() string  { return "has" }
 
 /* file:contains.content(pattern) */
 

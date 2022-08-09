@@ -103,7 +103,7 @@ type EventRepoMatch struct {
 	Fork               bool               `json:"fork,omitempty"`
 	Archived           bool               `json:"archived,omitempty"`
 	Private            bool               `json:"private,omitempty"`
-	KeyValuePairs      map[string]*string `json:"metadata,omitempty"`
+	KeyValuePairs      map[string]*string `json:"keyValuePairs,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}
