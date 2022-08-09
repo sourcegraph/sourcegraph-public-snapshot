@@ -30,12 +30,12 @@ func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer func() {
+	t.Cleanup(func() {
 		err := client.DeleteExternalService(esID, false)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}()
+	})
 
 	// Triggering the sync job
 	unrestricted := true
@@ -78,12 +78,12 @@ func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *t
 		t.Fatal(err)
 	}
 
-	defer func() {
+	t.Cleanup(func() {
 		err := client.DeleteExternalService(esID, false)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}()
+	})
 
 	// Triggering the sync job to set permissions for existing user
 	unrestricted := false
@@ -145,12 +145,12 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_NonExistentUsersOnly(t
 		t.Fatal(err)
 	}
 
-	defer func() {
+	t.Cleanup(func() {
 		err := client.DeleteExternalService(esID, false)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}()
+	})
 
 	// Triggering the sync job
 	unrestricted := false
@@ -215,12 +215,12 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_ExistentAndNonExistent
 		t.Fatal(err)
 	}
 
-	defer func() {
+	t.Cleanup(func() {
 		err := client.DeleteExternalService(esID, false)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}()
+	})
 
 	// Triggering the sync job
 	unrestricted := false

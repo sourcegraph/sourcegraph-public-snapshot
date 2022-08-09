@@ -40,12 +40,12 @@ func TestExternalService(t *testing.T) {
 		if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 			t.Fatal(err)
 		}
-		defer func() {
+		t.Cleanup(func() {
 			err := client.DeleteExternalService(esID, false)
 			if err != nil {
 				t.Fatal(err)
 			}
-		}()
+		})
 
 		err = client.WaitForReposToBeCloned(slug)
 		if err != nil {
@@ -99,12 +99,12 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	defer func() {
+	t.Cleanup(func() {
 		err := client.DeleteExternalService(esID, false)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}()
+	})
 
 	const repoName = "aws/test"
 	err = client.WaitForReposToBeCloned(repoName)
@@ -151,12 +151,12 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	defer func() {
+	t.Cleanup(func() {
 		err := client.DeleteExternalService(esID, false)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}()
+	})
 
 	const repoName = "bbs/SOURCEGRAPH/jsonrpc2"
 	err = client.WaitForReposToBeCloned(repoName)
@@ -198,11 +198,6 @@ func TestExternalService_Perforce(t *testing.T) {
 }
 
 func checkPerforceEnvironment(t *testing.T) {
-	// context: https://sourcegraph.slack.com/archives/C07KZF47K/p1658178309055259
-	// But it seems that there is still an issue with P4 and they're currently timing out.
-	// cc @mollylogue
-	t.Skip("Currently broken")
-
 	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePassword) == 0 {
 		t.Skip("Environment variables PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD are not set")
 	}
