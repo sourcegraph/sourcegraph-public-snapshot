@@ -13,9 +13,9 @@
     # Turn the string of exit codes "1 2 3 4" into an array of strings
     IFS=' ' read -ra codes <<<"$SOFT_FAIL_EXIT_CODES 0" # append exit code 0 for the test below.
     for code in "${codes[@]}"; do
-        if [ "$code" == "$exit_code" ]; then
+        if [ "$code" == "*" ] || [ "$code" == "$exit_code" ]; then
             # If the Buildkite exit code is a soft fail, do nothing either.
-            exit "$code"
+            exit "$exit_code"
         fi
     done
 

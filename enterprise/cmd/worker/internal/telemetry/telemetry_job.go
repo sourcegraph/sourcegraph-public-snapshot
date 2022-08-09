@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
+	"cloud.google.com/go/pubsub"
+
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -16,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 
-	"cloud.google.com/go/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -238,12 +241,7 @@ func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore dat
 var confClient = conf.DefaultClient()
 
 func isEnabled() bool {
-	ptr := confClient.Get().ExportUsageTelemetry
-	if ptr != nil {
-		return ptr.Enabled
-	}
-
-	return false
+	return envvar.ExportUsageData()
 }
 
 func getBatchSize() int {
@@ -273,6 +271,13 @@ func getTopicConfig() (topicConfig, error) {
 	return config, nil
 }
 
+func emptyIfNil(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *bigQueryEvent {
 	return &bigQueryEvent{
 		EventName:         event.Name,
@@ -287,6 +292,13 @@ func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *big
 		LicenseKey:        metadata.LicenseKey,
 		DeployType:        metadata.DeployType,
 		InitialAdminEmail: metadata.InitialAdminEmail,
+		FeatureFlags:      string(event.EvaluatedFlagSet.Json()),
+		CohortID:          event.CohortID,
+		FirstSourceURL:    emptyIfNil(event.FirstSourceURL),
+		LastSourceURL:     emptyIfNil(event.LastSourceURL),
+		Referrer:          emptyIfNil(event.Referrer),
+		DeviceID:          event.DeviceID,
+		InsertID:          event.InsertID,
 	}
 }
 

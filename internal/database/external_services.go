@@ -92,10 +92,10 @@ type ExternalServiceStore interface {
 	GetSyncJobByID(ctx context.Context, id int64) (job *types.ExternalServiceSyncJob, err error)
 
 	// GetSyncJobs gets all sync jobs.
-	GetSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
+	GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
 
 	// CountSyncJobs counts all sync jobs.
-	CountSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (int64, error)
+	CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error)
 
 	// List returns external services under given namespace.
 	// If no namespace is given, it returns all external services.
@@ -104,6 +104,11 @@ type ExternalServiceStore interface {
 	// 	- The actor is a site admin
 	// 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
 	List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+
+	// ListRepos returns external service repos for given externalServiceID.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
+	ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error)
 
 	// RepoCount returns the number of repos synced by the external service with the
 	// given id.
@@ -222,6 +227,8 @@ type ExternalServiceKind struct {
 	JSONSchema string // JSON Schema for the external service's configuration
 }
 
+type ExternalServiceReposListOptions ExternalServicesGetSyncJobsOptions
+
 type ExternalServicesGetSyncJobsOptions struct {
 	ExternalServiceID int64
 
@@ -265,10 +272,18 @@ type ExternalServicesListOptions struct {
 	// When true, records will be locked. For use by
 	// ExternalServiceWebhookMigrator only.
 	ForUpdate bool
+	// When true, soft-deleted external services will also be included in the results.
+	IncludeDeleted bool
+
+	// When true, do not attempt to fetch and decrypt the row's configuration.
+	ExcludeConfigField bool
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds := []*sqlf.Query{}
+	if !o.IncludeDeleted {
+		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
 	if len(o.IDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(o.IDs)))
 	}
@@ -300,6 +315,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.NoCachedWebhooks {
 		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
+	}
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 	return conds
 }
@@ -630,7 +648,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	config, keyID, err := e.maybeEncryptConfig(ctx, es.Config)
+	config, keyID, err := e.maybeEncrypt(ctx, es.Config)
 	if err != nil {
 		return err
 	}
@@ -661,51 +679,20 @@ INSERT INTO external_services
 RETURNING id
 `
 
-// maybeEncryptConfig encrypts and returns externals service config if an encryption.Key is configured
-func (e *externalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
-	// encrypt the config before writing if we have a key configured
-	var keyVersion string
-	key := e.key
-	if key == nil {
-		key = keyring.Default().ExternalServiceKey
-	}
-	if key != nil {
-		encrypted, err := key.Encrypt(ctx, []byte(config))
-		if err != nil {
-			return "", "", err
-		}
-		config = string(encrypted)
-		version, err := key.Version(ctx)
-		if err != nil {
-			return "", "", err
-		}
-		keyVersion = version.JSON()
-	}
-	return config, keyVersion, nil
+func (e *externalServiceStore) maybeEncrypt(ctx context.Context, data string) (string, string, error) {
+	return encryption.MaybeEncrypt(ctx, e.getEncryptionKey(), data)
 }
 
-func (e *externalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyID string) (string, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "ExternalServiceStore.maybeDecryptConfig")
-	defer span.Finish()
+func (e *externalServiceStore) maybeDecrypt(ctx context.Context, data, keyIdent string) (string, error) {
+	return encryption.MaybeDecrypt(ctx, e.getEncryptionKey(), data, keyIdent)
+}
 
-	if keyID == "" {
-		// config is not encrypted, return plaintext
-		return config, nil
+func (e *externalServiceStore) getEncryptionKey() encryption.Key {
+	if e.key != nil {
+		return e.key
 	}
-	key := e.key
-	if key == nil {
-		key = keyring.Default().ExternalServiceKey
-	}
-	if key == nil {
-		return config, errors.Errorf("couldn't decrypt encrypted config, key is nil")
-	}
-	decryptSpan, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt")
-	decrypted, err := key.Decrypt(ctx, []byte(config))
-	decryptSpan.Finish()
-	if err != nil {
-		return config, err
-	}
-	return decrypted.Secret(), nil
+
+	return keyring.Default().ExternalServiceKey
 }
 
 func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
@@ -794,7 +781,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 
-		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, encryptionKeyID)
+		svcs[i].Config, err = e.maybeDecrypt(ctx, svcs[i].Config, encryptionKeyID)
 		if err != nil {
 			return err
 		}
@@ -808,7 +795,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
-		config, keyID, err := e.maybeEncryptConfig(ctx, s.Config)
+		config, keyID, err := e.maybeEncrypt(ctx, s.Config)
 		if err != nil {
 			return nil, err
 		}
@@ -960,7 +947,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		}
 
 		var config string
-		config, keyID, err = e.maybeEncryptConfig(ctx, *update.Config)
+		config, keyID, err = e.maybeEncrypt(ctx, *update.Config)
 		if err != nil {
 			return err
 		}
@@ -1131,18 +1118,18 @@ ORDER BY
 %s
 `
 
-func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
+func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
 	var preds []*sqlf.Query
 
-	if opts.ExternalServiceID != 0 {
-		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	if opt.ExternalServiceID != 0 {
+		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
 	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"), opts.LimitOffset.SQL())
+	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"), opt.LimitOffset.SQL())
 
 	rows, err := e.Query(ctx, q)
 	if err != nil {
@@ -1172,11 +1159,11 @@ FROM
 WHERE %s
 `
 
-func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (int64, error) {
+func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error) {
 	var preds []*sqlf.Query
 
-	if opts.ExternalServiceID != 0 {
-		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	if opt.ExternalServiceID != 0 {
+		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
 	}
 
 	if len(preds) == 0 {
@@ -1399,6 +1386,14 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		return nil, err
 	}
 
+	if opt.ExcludeConfigField {
+		for _, result := range results {
+			result.Config = ""
+		}
+
+		return results, nil
+	}
+
 	// Now we may need to decrypt config. Since each decrypt operation could make an
 	// API call we should run them in parallel
 	group, ctx := errgroup.WithContext(ctx)
@@ -1407,7 +1402,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		var groupErr error
 		group.Go(func() error {
 			keyID := keyIDs[s.ID]
-			s.Config, groupErr = e.maybeDecryptConfig(ctx, s.Config, keyID)
+			s.Config, groupErr = e.maybeDecrypt(ctx, s.Config, keyID)
 			if groupErr != nil {
 				return groupErr
 			}
@@ -1421,6 +1416,72 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 
 	return results, nil
+}
+
+func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
+	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.listRepos")
+	defer span.Finish()
+
+	predicate := sqlf.Sprintf("TRUE")
+
+	if opt.ExternalServiceID != 0 {
+		predicate = sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID)
+	}
+
+	q := sqlf.Sprintf(`
+SELECT
+	external_service_id,
+	repo_id,
+	clone_url,
+	user_id,
+	org_id,
+	created_at
+FROM external_service_repos
+WHERE %s
+%s`,
+		predicate,
+		opt.LimitOffset.SQL(),
+	)
+
+	rows, err := e.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var repos []*types.ExternalServiceRepo
+	for rows.Next() {
+		var (
+			repo   types.ExternalServiceRepo
+			userID sql.NullInt32
+			orgID  sql.NullInt32
+		)
+
+		if err := rows.Scan(
+			&repo.ExternalServiceID,
+			&repo.RepoID,
+			&repo.CloneURL,
+			&userID,
+			&orgID,
+			&repo.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		if userID.Valid {
+			repo.UserID = userID.Int32
+		}
+		if orgID.Valid {
+			repo.OrgID = orgID.Int32
+		}
+
+		repos = append(repos, &repo)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return repos, nil
 }
 
 func (e *externalServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {

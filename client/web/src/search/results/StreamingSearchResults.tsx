@@ -28,6 +28,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
@@ -146,6 +147,7 @@ export const StreamingSearchResults: React.FunctionComponent<
     )
 
     const results = useCachedSearchResults(streamSearch, query, options, extensionHostAPI, telemetryService)
+    const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
     // Log events when search completes or fails
     useEffect(() => {
@@ -165,11 +167,27 @@ export const StreamingSearchResults: React.FunctionComponent<
                 code_search: { error_message: asError(results.error).message },
             })
         }
-    }, [results, telemetryService])
 
-    // Log lucky search events
+        if (resultsFound) {
+            telemetryService.log('SearchResultsNonEmpty')
+        }
+    }, [results, resultsFound, telemetryService])
+
+    // Log lucky search events. To be removed at latest by 12/2022.
+    const [luckySearchEnabled] = useFeatureFlag('ab-lucky-search')
     useEffect(() => {
-        if (results?.alert?.kind === 'lucky-search-queries' && results?.alert?.title && results.alert.proposedQueries) {
+        if (luckySearchEnabled && results?.state === 'complete') {
+            telemetryService.log('SearchResultsFetchedAuto')
+        }
+        if (luckySearchEnabled && resultsFound) {
+            telemetryService.log('SearchResultsNonEmptyAuto')
+        }
+        if (
+            luckySearchEnabled &&
+            results?.alert?.kind === 'lucky-search-queries' &&
+            results?.alert?.title &&
+            results.alert.proposedQueries
+        ) {
             const events = luckySearchEvent(
                 results.alert.title,
                 results.alert.proposedQueries.map(entry => entry.description || '')
@@ -178,7 +196,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                 telemetryService.log(event)
             }
         }
-    }, [results, telemetryService])
+    }, [results, resultsFound, luckySearchEnabled, telemetryService])
 
     useNotepad(
         useMemo(
@@ -229,8 +247,6 @@ export const StreamingSearchResults: React.FunctionComponent<
     )
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
-
-    const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
     return (
         <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
@@ -320,6 +336,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                         <SearchUserNeedsCodeHost user={user} orgSearchContext={props.selectedSearchContextSpec} />
                     )}
                     executedQuery={location.search}
+                    luckySearchEnabled={luckySearchEnabled}
                 />
             </div>
         </div>

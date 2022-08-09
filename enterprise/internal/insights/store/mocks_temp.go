@@ -18,17 +18,17 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store)
 // used for unit testing.
 type MockDataSeriesStore struct {
-	// ConvertJustInTimeSearchSeriesToBackfillFunc is an instance of a mock
+	// CompleteJustInTimeConversionAttemptFunc is an instance of a mock
 	// function object controlling the behavior of the method
-	// ConvertJustInTimeSearchSeriesToBackfill.
-	ConvertJustInTimeSearchSeriesToBackfillFunc *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc
+	// CompleteJustInTimeConversionAttempt.
+	CompleteJustInTimeConversionAttemptFunc *DataSeriesStoreCompleteJustInTimeConversionAttemptFunc
 	// GetDataSeriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDataSeries.
 	GetDataSeriesFunc *DataSeriesStoreGetDataSeriesFunc
-	// GetJustInTimeSearchSeriesToBackfillFunc is an instance of a mock
+	// GetScopedSearchSeriesNeedBackfillFunc is an instance of a mock
 	// function object controlling the behavior of the method
-	// GetJustInTimeSearchSeriesToBackfill.
-	GetJustInTimeSearchSeriesToBackfillFunc *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc
+	// GetScopedSearchSeriesNeedBackfill.
+	GetScopedSearchSeriesNeedBackfillFunc *DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc
 	// IncrementBackfillAttemptsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// IncrementBackfillAttempts.
@@ -45,6 +45,10 @@ type MockDataSeriesStore struct {
 	// StampSnapshotFunc is an instance of a mock function object
 	// controlling the behavior of the method StampSnapshot.
 	StampSnapshotFunc *DataSeriesStoreStampSnapshotFunc
+	// StartJustInTimeConversionAttemptFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// StartJustInTimeConversionAttempt.
+	StartJustInTimeConversionAttemptFunc *DataSeriesStoreStartJustInTimeConversionAttemptFunc
 }
 
 // NewMockDataSeriesStore creates a new mock of the DataSeriesStore
@@ -52,7 +56,7 @@ type MockDataSeriesStore struct {
 // overwritten.
 func NewMockDataSeriesStore() *MockDataSeriesStore {
 	return &MockDataSeriesStore{
-		ConvertJustInTimeSearchSeriesToBackfillFunc: &DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc{
+		CompleteJustInTimeConversionAttemptFunc: &DataSeriesStoreCompleteJustInTimeConversionAttemptFunc{
 			defaultHook: func(context.Context, types.InsightSeries) (r0 error) {
 				return
 			},
@@ -62,7 +66,7 @@ func NewMockDataSeriesStore() *MockDataSeriesStore {
 				return
 			},
 		},
-		GetJustInTimeSearchSeriesToBackfillFunc: &DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc{
+		GetScopedSearchSeriesNeedBackfillFunc: &DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc{
 			defaultHook: func(context.Context) (r0 []types.InsightSeries, r1 error) {
 				return
 			},
@@ -92,6 +96,11 @@ func NewMockDataSeriesStore() *MockDataSeriesStore {
 				return
 			},
 		},
+		StartJustInTimeConversionAttemptFunc: &DataSeriesStoreStartJustInTimeConversionAttemptFunc{
+			defaultHook: func(context.Context, types.InsightSeries) (r0 error) {
+				return
+			},
+		},
 	}
 }
 
@@ -99,9 +108,9 @@ func NewMockDataSeriesStore() *MockDataSeriesStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockDataSeriesStore() *MockDataSeriesStore {
 	return &MockDataSeriesStore{
-		ConvertJustInTimeSearchSeriesToBackfillFunc: &DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc{
+		CompleteJustInTimeConversionAttemptFunc: &DataSeriesStoreCompleteJustInTimeConversionAttemptFunc{
 			defaultHook: func(context.Context, types.InsightSeries) error {
-				panic("unexpected invocation of MockDataSeriesStore.ConvertJustInTimeSearchSeriesToBackfill")
+				panic("unexpected invocation of MockDataSeriesStore.CompleteJustInTimeConversionAttempt")
 			},
 		},
 		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
@@ -109,9 +118,9 @@ func NewStrictMockDataSeriesStore() *MockDataSeriesStore {
 				panic("unexpected invocation of MockDataSeriesStore.GetDataSeries")
 			},
 		},
-		GetJustInTimeSearchSeriesToBackfillFunc: &DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc{
+		GetScopedSearchSeriesNeedBackfillFunc: &DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc{
 			defaultHook: func(context.Context) ([]types.InsightSeries, error) {
-				panic("unexpected invocation of MockDataSeriesStore.GetJustInTimeSearchSeriesToBackfill")
+				panic("unexpected invocation of MockDataSeriesStore.GetScopedSearchSeriesNeedBackfill")
 			},
 		},
 		IncrementBackfillAttemptsFunc: &DataSeriesStoreIncrementBackfillAttemptsFunc{
@@ -139,6 +148,11 @@ func NewStrictMockDataSeriesStore() *MockDataSeriesStore {
 				panic("unexpected invocation of MockDataSeriesStore.StampSnapshot")
 			},
 		},
+		StartJustInTimeConversionAttemptFunc: &DataSeriesStoreStartJustInTimeConversionAttemptFunc{
+			defaultHook: func(context.Context, types.InsightSeries) error {
+				panic("unexpected invocation of MockDataSeriesStore.StartJustInTimeConversionAttempt")
+			},
+		},
 	}
 }
 
@@ -147,14 +161,14 @@ func NewStrictMockDataSeriesStore() *MockDataSeriesStore {
 // overwritten.
 func NewMockDataSeriesStoreFrom(i DataSeriesStore) *MockDataSeriesStore {
 	return &MockDataSeriesStore{
-		ConvertJustInTimeSearchSeriesToBackfillFunc: &DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc{
-			defaultHook: i.ConvertJustInTimeSearchSeriesToBackfill,
+		CompleteJustInTimeConversionAttemptFunc: &DataSeriesStoreCompleteJustInTimeConversionAttemptFunc{
+			defaultHook: i.CompleteJustInTimeConversionAttempt,
 		},
 		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
 			defaultHook: i.GetDataSeries,
 		},
-		GetJustInTimeSearchSeriesToBackfillFunc: &DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc{
-			defaultHook: i.GetJustInTimeSearchSeriesToBackfill,
+		GetScopedSearchSeriesNeedBackfillFunc: &DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc{
+			defaultHook: i.GetScopedSearchSeriesNeedBackfill,
 		},
 		IncrementBackfillAttemptsFunc: &DataSeriesStoreIncrementBackfillAttemptsFunc{
 			defaultHook: i.IncrementBackfillAttempts,
@@ -171,41 +185,44 @@ func NewMockDataSeriesStoreFrom(i DataSeriesStore) *MockDataSeriesStore {
 		StampSnapshotFunc: &DataSeriesStoreStampSnapshotFunc{
 			defaultHook: i.StampSnapshot,
 		},
+		StartJustInTimeConversionAttemptFunc: &DataSeriesStoreStartJustInTimeConversionAttemptFunc{
+			defaultHook: i.StartJustInTimeConversionAttempt,
+		},
 	}
 }
 
-// DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc describes the
-// behavior when the ConvertJustInTimeSearchSeriesToBackfill method of the
+// DataSeriesStoreCompleteJustInTimeConversionAttemptFunc describes the
+// behavior when the CompleteJustInTimeConversionAttempt method of the
 // parent MockDataSeriesStore instance is invoked.
-type DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc struct {
+type DataSeriesStoreCompleteJustInTimeConversionAttemptFunc struct {
 	defaultHook func(context.Context, types.InsightSeries) error
 	hooks       []func(context.Context, types.InsightSeries) error
-	history     []DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall
+	history     []DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall
 	mutex       sync.Mutex
 }
 
-// ConvertJustInTimeSearchSeriesToBackfill delegates to the next hook
-// function in the queue and stores the parameter and result values of this
+// CompleteJustInTimeConversionAttempt delegates to the next hook function
+// in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockDataSeriesStore) ConvertJustInTimeSearchSeriesToBackfill(v0 context.Context, v1 types.InsightSeries) error {
-	r0 := m.ConvertJustInTimeSearchSeriesToBackfillFunc.nextHook()(v0, v1)
-	m.ConvertJustInTimeSearchSeriesToBackfillFunc.appendCall(DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall{v0, v1, r0})
+func (m *MockDataSeriesStore) CompleteJustInTimeConversionAttempt(v0 context.Context, v1 types.InsightSeries) error {
+	r0 := m.CompleteJustInTimeConversionAttemptFunc.nextHook()(v0, v1)
+	m.CompleteJustInTimeConversionAttemptFunc.appendCall(DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
-// ConvertJustInTimeSearchSeriesToBackfill method of the parent
+// CompleteJustInTimeConversionAttempt method of the parent
 // MockDataSeriesStore instance is invoked and the hook queue is empty.
-func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) SetDefaultHook(hook func(context.Context, types.InsightSeries) error) {
+func (f *DataSeriesStoreCompleteJustInTimeConversionAttemptFunc) SetDefaultHook(hook func(context.Context, types.InsightSeries) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ConvertJustInTimeSearchSeriesToBackfill method of the parent
+// CompleteJustInTimeConversionAttempt method of the parent
 // MockDataSeriesStore instance invokes the hook at the front of the queue
 // and discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) PushHook(hook func(context.Context, types.InsightSeries) error) {
+func (f *DataSeriesStoreCompleteJustInTimeConversionAttemptFunc) PushHook(hook func(context.Context, types.InsightSeries) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -213,20 +230,20 @@ func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) PushHook(ho
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) SetDefaultReturn(r0 error) {
+func (f *DataSeriesStoreCompleteJustInTimeConversionAttemptFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, types.InsightSeries) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) PushReturn(r0 error) {
+func (f *DataSeriesStoreCompleteJustInTimeConversionAttemptFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, types.InsightSeries) error {
 		return r0
 	})
 }
 
-func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) nextHook() func(context.Context, types.InsightSeries) error {
+func (f *DataSeriesStoreCompleteJustInTimeConversionAttemptFunc) nextHook() func(context.Context, types.InsightSeries) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -239,29 +256,29 @@ func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) nextHook() 
 	return hook
 }
 
-func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) appendCall(r0 DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall) {
+func (f *DataSeriesStoreCompleteJustInTimeConversionAttemptFunc) appendCall(r0 DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall objects
+// DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall objects
 // describing the invocations of this function.
-func (f *DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFunc) History() []DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall {
+func (f *DataSeriesStoreCompleteJustInTimeConversionAttemptFunc) History() []DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall {
 	f.mutex.Lock()
-	history := make([]DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall, len(f.history))
+	history := make([]DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall is an
-// object that describes an invocation of method
-// ConvertJustInTimeSearchSeriesToBackfill on an instance of
+// DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall is an object
+// that describes an invocation of method
+// CompleteJustInTimeConversionAttempt on an instance of
 // MockDataSeriesStore.
-type DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall struct {
+type DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -275,13 +292,13 @@ type DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall) Args() []interface{} {
+func (c DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DataSeriesStoreConvertJustInTimeSearchSeriesToBackfillFuncCall) Results() []interface{} {
+func (c DataSeriesStoreCompleteJustInTimeConversionAttemptFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -394,38 +411,37 @@ func (c DataSeriesStoreGetDataSeriesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc describes the
-// behavior when the GetJustInTimeSearchSeriesToBackfill method of the
-// parent MockDataSeriesStore instance is invoked.
-type DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc struct {
+// DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc describes the
+// behavior when the GetScopedSearchSeriesNeedBackfill method of the parent
+// MockDataSeriesStore instance is invoked.
+type DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc struct {
 	defaultHook func(context.Context) ([]types.InsightSeries, error)
 	hooks       []func(context.Context) ([]types.InsightSeries, error)
-	history     []DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall
+	history     []DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall
 	mutex       sync.Mutex
 }
 
-// GetJustInTimeSearchSeriesToBackfill delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockDataSeriesStore) GetJustInTimeSearchSeriesToBackfill(v0 context.Context) ([]types.InsightSeries, error) {
-	r0, r1 := m.GetJustInTimeSearchSeriesToBackfillFunc.nextHook()(v0)
-	m.GetJustInTimeSearchSeriesToBackfillFunc.appendCall(DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall{v0, r0, r1})
+// GetScopedSearchSeriesNeedBackfill delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockDataSeriesStore) GetScopedSearchSeriesNeedBackfill(v0 context.Context) ([]types.InsightSeries, error) {
+	r0, r1 := m.GetScopedSearchSeriesNeedBackfillFunc.nextHook()(v0)
+	m.GetScopedSearchSeriesNeedBackfillFunc.appendCall(DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// GetJustInTimeSearchSeriesToBackfill method of the parent
+// GetScopedSearchSeriesNeedBackfill method of the parent
 // MockDataSeriesStore instance is invoked and the hook queue is empty.
-func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) SetDefaultHook(hook func(context.Context) ([]types.InsightSeries, error)) {
+func (f *DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc) SetDefaultHook(hook func(context.Context) ([]types.InsightSeries, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetJustInTimeSearchSeriesToBackfill method of the parent
+// GetScopedSearchSeriesNeedBackfill method of the parent
 // MockDataSeriesStore instance invokes the hook at the front of the queue
 // and discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) PushHook(hook func(context.Context) ([]types.InsightSeries, error)) {
+func (f *DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc) PushHook(hook func(context.Context) ([]types.InsightSeries, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -433,20 +449,20 @@ func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) PushHook(hook f
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) SetDefaultReturn(r0 []types.InsightSeries, r1 error) {
+func (f *DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc) SetDefaultReturn(r0 []types.InsightSeries, r1 error) {
 	f.SetDefaultHook(func(context.Context) ([]types.InsightSeries, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) PushReturn(r0 []types.InsightSeries, r1 error) {
+func (f *DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc) PushReturn(r0 []types.InsightSeries, r1 error) {
 	f.PushHook(func(context.Context) ([]types.InsightSeries, error) {
 		return r0, r1
 	})
 }
 
-func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) nextHook() func(context.Context) ([]types.InsightSeries, error) {
+func (f *DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc) nextHook() func(context.Context) ([]types.InsightSeries, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -459,29 +475,28 @@ func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) nextHook() func
 	return hook
 }
 
-func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) appendCall(r0 DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall) {
+func (f *DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc) appendCall(r0 DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall objects
+// DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall objects
 // describing the invocations of this function.
-func (f *DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFunc) History() []DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall {
+func (f *DataSeriesStoreGetScopedSearchSeriesNeedBackfillFunc) History() []DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall {
 	f.mutex.Lock()
-	history := make([]DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall, len(f.history))
+	history := make([]DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall is an object
-// that describes an invocation of method
-// GetJustInTimeSearchSeriesToBackfill on an instance of
-// MockDataSeriesStore.
-type DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall struct {
+// DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall is an object
+// that describes an invocation of method GetScopedSearchSeriesNeedBackfill
+// on an instance of MockDataSeriesStore.
+type DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -495,13 +510,13 @@ type DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall) Args() []interface{} {
+func (c DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DataSeriesStoreGetJustInTimeSearchSeriesToBackfillFuncCall) Results() []interface{} {
+func (c DataSeriesStoreGetScopedSearchSeriesNeedBackfillFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1051,6 +1066,115 @@ func (c DataSeriesStoreStampSnapshotFuncCall) Args() []interface{} {
 // invocation.
 func (c DataSeriesStoreStampSnapshotFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DataSeriesStoreStartJustInTimeConversionAttemptFunc describes the
+// behavior when the StartJustInTimeConversionAttempt method of the parent
+// MockDataSeriesStore instance is invoked.
+type DataSeriesStoreStartJustInTimeConversionAttemptFunc struct {
+	defaultHook func(context.Context, types.InsightSeries) error
+	hooks       []func(context.Context, types.InsightSeries) error
+	history     []DataSeriesStoreStartJustInTimeConversionAttemptFuncCall
+	mutex       sync.Mutex
+}
+
+// StartJustInTimeConversionAttempt delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockDataSeriesStore) StartJustInTimeConversionAttempt(v0 context.Context, v1 types.InsightSeries) error {
+	r0 := m.StartJustInTimeConversionAttemptFunc.nextHook()(v0, v1)
+	m.StartJustInTimeConversionAttemptFunc.appendCall(DataSeriesStoreStartJustInTimeConversionAttemptFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// StartJustInTimeConversionAttempt method of the parent MockDataSeriesStore
+// instance is invoked and the hook queue is empty.
+func (f *DataSeriesStoreStartJustInTimeConversionAttemptFunc) SetDefaultHook(hook func(context.Context, types.InsightSeries) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// StartJustInTimeConversionAttempt method of the parent MockDataSeriesStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *DataSeriesStoreStartJustInTimeConversionAttemptFunc) PushHook(hook func(context.Context, types.InsightSeries) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DataSeriesStoreStartJustInTimeConversionAttemptFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.InsightSeries) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DataSeriesStoreStartJustInTimeConversionAttemptFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.InsightSeries) error {
+		return r0
+	})
+}
+
+func (f *DataSeriesStoreStartJustInTimeConversionAttemptFunc) nextHook() func(context.Context, types.InsightSeries) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DataSeriesStoreStartJustInTimeConversionAttemptFunc) appendCall(r0 DataSeriesStoreStartJustInTimeConversionAttemptFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DataSeriesStoreStartJustInTimeConversionAttemptFuncCall objects
+// describing the invocations of this function.
+func (f *DataSeriesStoreStartJustInTimeConversionAttemptFunc) History() []DataSeriesStoreStartJustInTimeConversionAttemptFuncCall {
+	f.mutex.Lock()
+	history := make([]DataSeriesStoreStartJustInTimeConversionAttemptFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DataSeriesStoreStartJustInTimeConversionAttemptFuncCall is an object that
+// describes an invocation of method StartJustInTimeConversionAttempt on an
+// instance of MockDataSeriesStore.
+type DataSeriesStoreStartJustInTimeConversionAttemptFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.InsightSeries
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DataSeriesStoreStartJustInTimeConversionAttemptFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DataSeriesStoreStartJustInTimeConversionAttemptFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockInsightMetadataStore is a mock implementation of the

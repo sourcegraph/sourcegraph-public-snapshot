@@ -12,10 +12,10 @@
     // Captain information
     // To get your slack username, navigate to Profile -> More -> Account settings -> Username (at the bottom) -> Expand
     "captainSlackUsername": "coury",
-    "captainGitHubUsername": "coury-clark   ",
+    "captainGitHubUsername": "coury-clark",
     // Release versions
-    "previousRelease": "3.42.1",
-    "upcomingRelease": "3.43.0",
+    "previousRelease": "3.42.2",
+    "upcomingRelease": "3.43",
     "oneWorkingWeekBeforeRelease": "15 August 2022 10:00 PST",
     "threeWorkingDaysBeforeRelease": "17 August 2022 10:00 PST",
     "releaseDate": "22 August 2022 10:00 PST",

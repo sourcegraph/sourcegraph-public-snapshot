@@ -499,7 +499,9 @@ func compareNamedLists[T schemas.Namer](
 		bv := bm[k]
 
 		if _, ok := am[k]; !ok {
-			primaryCallback(nil, bv)
+			if primaryCallback(nil, bv) {
+				outOfSync = true
+			}
 		}
 	}
 

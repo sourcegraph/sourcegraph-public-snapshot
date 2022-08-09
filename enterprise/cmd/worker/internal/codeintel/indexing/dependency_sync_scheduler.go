@@ -137,7 +137,8 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	if len(kindsArray) > 0 {
 		nextSync = time.Now()
 		externalServices, err := h.extsvcStore.List(ctx, database.ExternalServicesListOptions{
-			Kinds: kindsArray,
+			Kinds:              kindsArray,
+			ExcludeConfigField: true,
 		})
 		if err != nil {
 			if len(errs) == 0 {
