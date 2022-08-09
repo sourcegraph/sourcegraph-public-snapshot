@@ -72,8 +72,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 
 		licenseKeys := map[string]string{}
 		for rows.Next() {
-			var id string
-			var licenseKey string
+			var id, licenseKey string
 			if err = rows.Scan(&id, &licenseKey); err != nil {
 				return nil, err
 			}
@@ -95,9 +94,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 
 	updates := make([]*sqlf.Query, 0, len(ids))
 	for _, id := range ids {
-		licenseKey := licenseKeys[id]
-
-		decodedText, err := base64.RawURLEncoding.DecodeString(licenseKey)
+		decodedText, err := base64.RawURLEncoding.DecodeString(licenseKeys[id])
 		if err != nil {
 			return err
 		}
