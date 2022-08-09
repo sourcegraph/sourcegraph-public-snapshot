@@ -269,8 +269,4 @@ mutation AddRepoKVP($repo: ID!, $key: String!, $value: String) {
 	}
 	var resp map[string]interface{}
 	return c.GraphQL("", query, variables, &resp)
-	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
-	}
-
 }
