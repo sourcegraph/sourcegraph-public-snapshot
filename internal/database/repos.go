@@ -599,7 +599,7 @@ type ReposListOptions struct {
 	// repositories returned in the list.
 	DescriptionPatterns []string
 
-	// TODO
+	// A set of filters to select only repos with a given set of key-value pairs.
 	KVPFilters []RepoKVPFilter
 
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
@@ -731,8 +731,10 @@ type ReposListOptions struct {
 }
 
 type RepoKVPFilter struct {
-	Key     string
-	Value   *string
+	Key   string
+	Value *string
+	// If negated is true, this filter will select only repos
+	// that do _not_ have the associated key and value
 	Negated bool
 }
 
@@ -1095,9 +1097,17 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		var ands []*sqlf.Query
 		for _, filter := range opt.KVPFilters {
 			if filter.Value != nil {
-				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)", filter.Key, *filter.Value))
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)"
+				if filter.Negated {
+					q = "NOT " + q
+				}
+				ands = append(ands, sqlf.Sprintf(q, filter.Key, *filter.Value))
 			} else {
-				ands = append(ands, sqlf.Sprintf("EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)", filter.Key))
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)"
+				if filter.Negated {
+					q = "NOT " + q
+				}
+				ands = append(ands, sqlf.Sprintf(q, filter.Key))
 			}
 		}
 		where = append(where, sqlf.Join(ands, "AND"))

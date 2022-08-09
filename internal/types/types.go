@@ -98,7 +98,7 @@ type SearchedRepo struct {
 	Stars int
 	// LastFetched is the time of the last fetch of new commits from the code host.
 	LastFetched *time.Time
-	// TODO
+	// A set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string
 }
 
