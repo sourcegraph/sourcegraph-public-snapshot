@@ -369,7 +369,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	res := make([]*types.SearchedRepo, 0, len(ids))
 	scanMetadata := func(rows *sql.Rows) error {
 		var r types.SearchedRepo
-		var kvps repoMetadataKVPs
+		var kvps repoKVPs
 		if err := rows.Scan(
 			&r.ID,
 			&r.Name,
@@ -392,11 +392,11 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
 }
 
-type repoMetadataKVPs struct {
+type repoKVPs struct {
 	kvps map[string]*string
 }
 
-func (r *repoMetadataKVPs) Scan(value any) error {
+func (r *repoKVPs) Scan(value any) error {
 	switch b := value.(type) {
 	case []byte:
 		return json.Unmarshal(b, &r.kvps)
@@ -470,7 +470,7 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
-	var kvps repoMetadataKVPs
+	var kvps repoKVPs
 
 	err = rows.Scan(
 		&r.ID,
