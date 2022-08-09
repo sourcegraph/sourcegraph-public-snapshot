@@ -110,7 +110,7 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 			return errors.Wrap(err, "encrypting authenticator")
 		}
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpUpdateQuery, secret, id, cred.ID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, id, true, cred.ID)); err != nil {
 			return err
 		}
 	}
@@ -118,14 +118,14 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 	return nil
 }
 
-const sshMigratorUpUpdateQuery = `
+const sshMigratorUpdateQuery = `
 -- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:Up
 UPDATE user_credentials
 SET
 	credential = %s,
 	encryption_key_id = %s,
 	updated_at = NOW(),
-	ssh_migration_applied = true
+	ssh_migration_applied = %s
 WHERE id = %s
 `
 
@@ -166,21 +166,10 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 			return errors.Wrap(err, "encrypting authenticator")
 		}
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorDownUpdateQuery, secret, id, cred.ID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, id, false, cred.ID)); err != nil {
 			return err
 		}
 	}
 
 	return nil
 }
-
-const sshMigratorDownUpdateQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:Down
-UPDATE user_credentials
-SET
-	credential = %s,
-	encryption_key_id = %s,
-	updated_at = NOW(),
-	ssh_migration_applied = false
-WHERE id = %s
-`
