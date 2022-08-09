@@ -61,27 +61,43 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	f := false
-	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
-		Scope: database.UserCredentialScope{
-			Domain: database.UserCredentialDomainBatches,
-		},
-		LimitOffset: &database.LimitOffset{
-			Limit: m.BatchSize,
-		},
-		ForUpdate:           true,
-		SSHMigrationApplied: &f,
-	})
+	type credential struct {
+		ID          int
+		Credentials string
+	}
+	credentials, err := func() (credentials []credential, err error) {
+		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorUpSelectQuery, database.UserCredentialDomainBatches, m.BatchSize))
+		if err != nil {
+			return nil, err
+		}
+		defer func() { err = basestore.CloseRows(rows, err) }()
+
+		for rows.Next() {
+			var id int
+			var rawCredential, keyID string
+			if err := rows.Scan(&id, &rawCredential, &keyID); err != nil {
+				return nil, err
+			}
+			if keyID != "" {
+				decrypted, err := encryption.MaybeDecrypt(ctx, m.key, rawCredential, keyID)
+				if err != nil {
+					return nil, err
+				}
+
+				rawCredential = decrypted
+			}
+
+			credentials = append(credentials, credential{ID: id, Credentials: rawCredential})
+		}
+
+		return credentials, nil
+	}()
 	if err != nil {
 		return err
 	}
-	for _, cred := range credentials {
-		decrypted, err := encryption.MaybeDecrypt(ctx, m.key, string(cred.EncryptedCredential), cred.EncryptionKeyID)
-		if err != nil {
-			return err
-		}
 
-		a, err := database.UnmarshalAuthenticator(decrypted)
+	for _, cred := range credentials {
+		a, err := database.UnmarshalAuthenticator(cred.Credentials)
 		if err != nil {
 			return errors.Wrap(err, "unmarshalling authenticator")
 		}
@@ -122,8 +138,18 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 	return nil
 }
 
-const sshMigratorUpdateQuery = `
+const sshMigratorUpSelectQuery = `
 -- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:Up
+SELECT id, credential, encryption_key_id FROM user_credentials WHERE domain = %s AND NOT ssh_migration_applied ORDER BY ID LIMIT %s FOR UPDATE
+`
+
+const sshMigratorDownSelectQuery = `
+-- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:Up
+SELECT id, credential, encryption_key_id FROM user_credentials WHERE domain = %s AND ssh_migration_applied IS TRUE ORDER BY ID LIMIT %s FOR UPDATE
+`
+
+const sshMigratorUpdateQuery = `
+-- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:{Up,Down}
 UPDATE user_credentials
 SET
 	credential = %s,
@@ -141,23 +167,43 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	t := true
-	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
-		Scope: database.UserCredentialScope{
-			Domain: database.UserCredentialDomainBatches,
-		},
-		LimitOffset: &database.LimitOffset{
-			Limit: m.BatchSize,
-		},
-		ForUpdate:           true,
-		SSHMigrationApplied: &t,
-	})
-	for _, cred := range credentials {
-		decrypted, err := encryption.MaybeDecrypt(ctx, m.key, string(cred.EncryptedCredential), cred.EncryptionKeyID)
+	type credential struct {
+		ID          int
+		Credentials string
+	}
+	credentials, err := func() (credentials []credential, err error) {
+		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorDownSelectQuery, database.UserCredentialDomainBatches, m.BatchSize))
 		if err != nil {
-			return err
+			return nil, err
 		}
-		a, err := database.UnmarshalAuthenticator(decrypted)
+		defer func() { err = basestore.CloseRows(rows, err) }()
+
+		for rows.Next() {
+			var id int
+			var rawCredential, keyID string
+			if err := rows.Scan(&id, &rawCredential, &keyID); err != nil {
+				return nil, err
+			}
+			if keyID != "" {
+				decrypted, err := encryption.MaybeDecrypt(ctx, m.key, rawCredential, keyID)
+				if err != nil {
+					return nil, err
+				}
+
+				rawCredential = decrypted
+			}
+
+			credentials = append(credentials, credential{ID: id, Credentials: rawCredential})
+		}
+
+		return credentials, nil
+	}()
+	if err != nil {
+		return err
+	}
+
+	for _, cred := range credentials {
+		a, err := database.UnmarshalAuthenticator(cred.Credentials)
 		if err != nil {
 			return errors.Wrap(err, "unmarshalling authenticator")
 		}
