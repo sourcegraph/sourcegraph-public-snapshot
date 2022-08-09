@@ -76,9 +76,14 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 		return err
 	}
 	for _, cred := range credentials {
-		a, err := cred.Authenticator(ctx)
+		decrypted, err := encryption.MaybeDecrypt(ctx, m.key, string(cred.EncryptedCredential), cred.EncryptionKeyID)
 		if err != nil {
 			return err
+		}
+
+		a, err := database.UnmarshalAuthenticator(decrypted)
+		if err != nil {
+			return errors.Wrap(err, "unmarshalling authenticator")
 		}
 
 		keypair, err := encryption.GenerateRSAKey()
@@ -148,9 +153,13 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 		SSHMigrationApplied: &t,
 	})
 	for _, cred := range credentials {
-		a, err := cred.Authenticator(ctx)
+		decrypted, err := encryption.MaybeDecrypt(ctx, m.key, string(cred.EncryptedCredential), cred.EncryptionKeyID)
 		if err != nil {
 			return err
+		}
+		a, err := database.UnmarshalAuthenticator(decrypted)
+		if err != nil {
+			return errors.Wrap(err, "unmarshalling authenticator")
 		}
 
 		var newCred auth.Authenticator
