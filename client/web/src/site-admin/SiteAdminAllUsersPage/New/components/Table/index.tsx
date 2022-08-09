@@ -1,17 +1,9 @@
 import { useState, useMemo } from 'react'
-import classNames from 'classnames'
+
 import { mdiMenuUp, mdiMenuDown, mdiArrowRightTop, mdiArrowRightBottom, mdiChevronDown } from '@mdi/js'
-import {
-    Icon,
-    H2,
-    Text,
-    Checkbox,
-    PopoverTrigger,
-    PopoverContent,
-    Popover,
-    Position,
-    Button,
-} from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+
+import { Icon, Text, Checkbox, PopoverTrigger, PopoverContent, Popover, Position, Button } from '@sourcegraph/wildcard'
 
 import styles from './index.module.scss'
 
@@ -29,7 +21,7 @@ interface IColumn<TData> {
     render?: (data: TData, index: number) => JSX.Element
 }
 
-interface IAction<TData> {
+interface IAction {
     key: string
     label: string
     icon: string
@@ -38,22 +30,18 @@ interface IAction<TData> {
     onClick: (ids: (string | number)[]) => void
 }
 
-type GetRowId = <TData>(data: TData) => string | number
-
-interface IProps<TData extends object> {
+interface TableProps<TData> {
     columns: IColumn<TData>[]
     data: TData[]
-    actions?: IAction<TData>[]
+    actions?: IAction[]
     selectable?: boolean
     note?: string | JSX.Element
-    getRowId?: GetRowId<TData>
+    getRowId?: (data: TData) => string | number
     initialSortColumn?: string
     initialSortDirection?: 'asc' | 'desc'
-    onSortChange?: (column: string | null, direction: 'asc' | 'desc' | null) => void
+    onSortChange?: (column: string | undefined, direction: 'asc' | 'desc' | undefined) => void
     onSelectionChange?: (rows: TData[]) => void
 }
-
-type ISelectionState = { [key: string | number]: boolean }
 
 export default function Table<TData>({
     data,
@@ -63,14 +51,15 @@ export default function Table<TData>({
     note,
     getRowId = (data: any) => data.id,
     onSortChange,
-    initialSortColumn = null,
+    initialSortColumn,
     initialSortDirection = 'asc',
-}: IProps<TData>) {
-    const [sortedColumn, setSortedColumn] = useState<string | null>(initialSortColumn)
+    onSelectionChange,
+}: TableProps<TData>): JSX.Element {
+    const [sortedColumn, setSortedColumn] = useState(initialSortColumn)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(initialSortDirection)
     const [selection, setSelection] = useState<TData[]>([])
 
-    const onRowSelectionChange = (row, selected) => {
+    const onRowSelectionChange = (row: TData, selected: boolean): void => {
         const newSelection = selection.filter(selectedRow => getRowId(selectedRow) !== getRowId(row))
         if (selected) {
             newSelection.push(row)
@@ -100,31 +89,26 @@ export default function Table<TData>({
                             const label = typeof column.header === 'string' ? column.header : column.header.label
                             const align = typeof column.header !== 'string' ? column.header.align || 'left' : 'left'
 
+                            const sort = (): void => {
+                                let newColumn = sortedColumn
+                                let newDirection = sortDirection
+
+                                if (sortedColumn !== key) {
+                                    newColumn = key
+                                    newDirection = 'asc'
+                                } else if (sortDirection === 'desc') {
+                                    newColumn = undefined
+                                    newDirection = undefined
+                                } else {
+                                    newDirection = 'desc'
+                                }
+                                setSortedColumn(newColumn)
+                                setSortDirection(newDirection)
+
+                                onSortChange?.(newColumn, newDirection)
+                            }
                             return (
-                                <th
-                                    key={key}
-                                    onClick={
-                                        column.sortable &&
-                                        (() => {
-                                            let newColumn = sortedColumn
-                                            let newDirection = sortDirection
-
-                                            if (sortedColumn !== key) {
-                                                newColumn = key
-                                                newDirection = 'asc'
-                                            } else if (sortDirection === 'desc') {
-                                                newColumn = null
-                                                newDirection = null
-                                            } else {
-                                                newDirection = 'desc'
-                                            }
-                                            setSortedColumn(newColumn)
-                                            setSortDirection(newDirection)
-
-                                            onSortChange?.(newColumn, newDirection)
-                                        })
-                                    }
-                                >
+                                <th key={key} onClick={column.sortable ? sort : undefined}>
                                     <div
                                         className={classNames(styles.header, styles.sortable, {
                                             [styles.alignRight]: align === 'right',
@@ -171,6 +155,15 @@ export default function Table<TData>({
     )
 }
 
+interface RowProps<TData> {
+    data: TData
+    columns: IColumn<TData>[]
+    selectable: boolean
+    selection: TData[]
+    getRowId: (data: TData) => string | number
+    onSelectionChange: (data: TData, selected: boolean) => void
+}
+
 function Row<TData>({
     data,
     columns,
@@ -178,18 +171,9 @@ function Row<TData>({
     selection,
     getRowId,
     onSelectionChange,
-}: {
-    data: TData
-    columns: IColumn<TData>[]
-    selectable: boolean
-    selection: TData[]
-    getRowId: GetRowId<TData>
-    onSelectionChange: (data: TData, selected: boolean) => void
-}) {
+}: RowProps<TData>): JSX.Element {
     const key = getRowId(data)
-    const selected = useMemo(() => {
-        !!selection.find(row => getRowId(row) === key)
-    }, selection)
+    const selected = useMemo(() => !!selection.find(row => getRowId(row) === key), [getRowId, key, selection])
 
     return (
         <tr key={key}>
@@ -199,15 +183,15 @@ function Row<TData>({
                         <Checkbox
                             className="m-0"
                             checked={selected}
-                            onChange={e => onSelectionChange(data, e.target.checked)}
+                            onChange={event => onSelectionChange(data, event.target.checked)}
                         />
                     </div>
                 </td>
             )}
-            {columns.map(column => (
-                <td key={columns.key}>
-                    {!!column.render ? (
-                        column.render(data)
+            {columns.map((column, index) => (
+                <td key={column.key}>
+                    {column.render ? (
+                        column.render(data, index)
                     ) : (
                         <div className={styles.cell}>
                             <Text alignment={column.align || 'left'} className="mb-0">
@@ -225,27 +209,26 @@ function Row<TData>({
     )
 }
 
-function SelectionActions<TData>({
-    actions,
-    position,
-    selection,
-}: {
-    actions: IAction<TData>[]
+interface SelectionActionsProps<TData> {
+    actions: IAction[]
     position: 'top' | 'bottom'
     selection: TData[]
-}) {
+}
+
+function SelectionActions<TData>({ actions, position, selection }: SelectionActionsProps<TData>): JSX.Element {
     return (
         <div className="d-flex align-items-center">
             <Icon
                 svgPath={position === 'top' ? mdiArrowRightTop : mdiArrowRightBottom}
                 size="md"
+                aria-label={position === 'top' ? 'Sort descending' : 'Sort ascending'}
                 className={styles.actionsArrowIcon}
             />
             <Text className="mx-2 my-0">
-                {!!selection.length ? `With ${selection.length} selected` : 'With selected'}
+                {selection.length ? `With ${selection.length} selected` : 'With selected'}
             </Text>
             <Popover>
-                <PopoverTrigger as={Button} variant="secondary" disabled={!selection.length}>
+                <PopoverTrigger as={Button} disabled={!selection.length} variant="secondary" outline={true}>
                     Actions
                     <Icon svgPath={mdiChevronDown} className="ml-1" />
                 </PopoverTrigger>

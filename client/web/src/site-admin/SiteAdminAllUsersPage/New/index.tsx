@@ -1,14 +1,23 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
-import classNames from 'classnames'
-import { format as formatDate } from 'date-fns'
-import { startCase, isEqual } from 'lodash'
-import { RouteComponentProps } from 'react-router'
+/* TODO:
++ Add count of admin users
++ Add Download report button
 
-import { useQuery } from '@sourcegraph/http-client'
+- Add link to billable events in bottom note
++ Link Create Users button
++ Fix color of Actions Dropdown Trigger
+
+- Integrate actions with APIs
+- Pagination
+- Fix typos, linting, types, self-refactoring
+- Figure out feature flagging
+*/
+
 import {
     mdiAccount,
     mdiPlus,
+    mdiDownload,
     mdiLogoutVariant,
     mdiArchive,
     mdiDelete,
@@ -16,12 +25,16 @@ import {
     mdiLockReset,
     mdiClipboardMinus,
 } from '@mdi/js'
+import classNames from 'classnames'
+import { format as formatDate } from 'date-fns'
+import { startCase, isEqual } from 'lodash'
+
+import { useQuery } from '@sourcegraph/http-client'
 import {
     H1,
     H2,
     Card,
     LoadingSpinner,
-    useMatchMedia,
     Text,
     Icon,
     Position,
@@ -30,6 +43,7 @@ import {
     Popover,
     Input,
     Button,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
@@ -49,12 +63,13 @@ import { ValueLegendList, ValueLegendListProps } from '../../analytics/component
 import { useChartFilters } from '../../analytics/useChartFilters'
 import { StandardDatum } from '../../analytics/utils'
 
-import { USERS_MANAGEMENT } from './queries'
 import Table from './components/Table'
+import { USERS_MANAGEMENT } from './queries'
+
 import styles from './index.module.scss'
 
 export const UsersManagement: React.FunctionComponent = () => {
-    const { data, previousData, error, loading, variables: initialVariables, refetch, called } = useQuery<
+    const { data, previousData, error, loading, variables, refetch, called } = useQuery<
         UsersManagementResult,
         UsersManagementVariables
     >(USERS_MANAGEMENT, {
@@ -68,8 +83,6 @@ export const UsersManagement: React.FunctionComponent = () => {
         },
     })
 
-    const [variables, setVariables] = useState(initialVariables)
-
     if (error) {
         throw error
     }
@@ -78,27 +91,18 @@ export const UsersManagement: React.FunctionComponent = () => {
         return <LoadingSpinner />
     }
 
-    return (
-        <Content
-            data={data || previousData}
-            variables={variables}
-            refetch={(newVariables: UsersManagementVariables) => {
-                refetch(newVariables)
-                setVariables(newVariables)
-            }}
-        />
-    )
+    return <Content data={data || previousData} variables={variables} refetch={refetch} />
 }
 
-interface IProps {
+interface ContentProps {
     data: UsersManagementResult
     variables: UsersManagementVariables
     refetch: (variables: UsersManagementVariables) => any
 }
 
-export const Content: React.FunctionComponent = ({ data, variables, refetch }: IProps) => {
+export const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refetch }) => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
-    const [usersQuery, setUsersQuery] = useState<null | string>(null)
+    const [usersQuery, setUsersQuery] = useState<string>('')
     const [usersLastActivePeriod, setUsersLastActivePeriod] = useState<SiteUsersLastActivePeriod>(
         SiteUsersLastActivePeriod.ALL
     )
@@ -118,7 +122,7 @@ export const Content: React.FunctionComponent = ({ data, variables, refetch }: I
         if (!isEqual(variables, newVariables)) {
             refetch(newVariables)
         }
-    }, [dateRange.value, aggregation.selected, grouping.value, usersQuery, usersLastActivePeriod])
+    }, [dateRange.value, aggregation.selected, grouping.value, usersQuery, usersLastActivePeriod, variables, refetch])
 
     const [activities, legends] = useMemo(() => {
         if (!data) {
@@ -163,6 +167,13 @@ export const Content: React.FunctionComponent = ({ data, variables, refetch }: I
                 position: 'right',
                 tooltip: 'The number of user licenses your current account is provisioned for.',
             },
+            {
+                value: data.site.adminUsers?.totalCount ?? 0,
+                description: 'Administrators',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of users with site admin permissions.',
+            },
         ]
 
         return [activities, legends]
@@ -174,12 +185,31 @@ export const Content: React.FunctionComponent = ({ data, variables, refetch }: I
         <>
             <div className="d-flex justify-content-between align-items-center mb-4 mt-2">
                 <H1 className="d-flex align-items-center mb-0">
-                    <Icon svgPath={mdiAccount} size="md" className={styles.linkColor} /> User administration
+                    <Icon
+                        svgPath={mdiAccount}
+                        aria-label="user administration avatar icon"
+                        size="md"
+                        className={styles.linkColor}
+                    />{' '}
+                    User administration
                 </H1>
-                <Button variant="primary">
-                    <Icon svgPath={mdiPlus} className="mr-1" />
-                    Create User
-                </Button>
+                <div>
+                    <Button
+                        to="/site-admin/users-statistics/archive"
+                        download="true"
+                        className="mr-4"
+                        variant="secondary"
+                        outline={true}
+                        as={Link}
+                    >
+                        <Icon svgPath={mdiDownload} aria-label="Export CSV" className="mr-1" />
+                        Export CSV
+                    </Button>
+                    <Button to="/site-admin/users/new" variant="primary" as={Link}>
+                        <Icon svgPath={mdiPlus} aria-label="create user" className="mr-1" />
+                        Create User
+                    </Button>
+                </div>
             </div>
             <Card className="p-3">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
@@ -226,12 +256,11 @@ export const Content: React.FunctionComponent = ({ data, variables, refetch }: I
                         <Input
                             placeholder="Search username or name"
                             value={usersQuery}
-                            onChange={e => setUsersQuery(e.target.value || null)}
+                            onChange={event => setUsersQuery(event.target.value)}
                         />
                     </div>
                 </div>
                 <Table
-                    title="Users"
                     selectable={true}
                     initialSortColumn={SiteUserOrderBy.EVENTS_COUNT}
                     initialSortDirection="asc"
@@ -244,12 +273,14 @@ export const Content: React.FunctionComponent = ({ data, variables, refetch }: I
                             key: 'force-sign-out',
                             label: 'Force sign-out',
                             icon: mdiLogoutVariant,
+                            onClick: () => '',
                         },
                         {
                             key: 'archive',
                             label: 'Archive',
                             icon: mdiArchive,
                             iconColor: 'danger',
+                            onClick: () => '',
                         },
                         {
                             key: 'delete',
@@ -257,6 +288,7 @@ export const Content: React.FunctionComponent = ({ data, variables, refetch }: I
                             icon: mdiDelete,
                             iconColor: 'danger',
                             labelColor: 'danger',
+                            onClick: () => '',
                         },
                     ]}
                     columns={[
@@ -281,21 +313,23 @@ export const Content: React.FunctionComponent = ({ data, variables, refetch }: I
                         },
                         {
                             key: SiteUserOrderBy.LAST_ACTIVE_AT,
-                            accessor: d => formatDate(new Date(d.lastActiveAt), 'dd/mm/yyyy'),
+                            accessor: item =>
+                                item.lastActiveAt ? formatDate(new Date(item.lastActiveAt), 'dd/mm/yyyy') : '',
                             header: { label: 'Last Active', align: 'right' },
                             sortable: true,
                             align: 'right',
                         },
                         {
                             key: SiteUserOrderBy.CREATED_AT,
-                            accessor: d => formatDate(new Date(d.createdAt), 'dd/mm/yyyy'),
+                            accessor: item => formatDate(new Date(item.createdAt), 'dd/mm/yyyy'),
                             header: { label: 'Created', align: 'right' },
                             sortable: true,
                             align: 'right',
                         },
                         {
                             key: SiteUserOrderBy.DELETED_AT,
-                            accessor: d => (d.deletedAt ? formatDate(new Date(d.deletedAt), 'dd/mm/yyyy') : ''),
+                            accessor: item =>
+                                item.deletedAt ? formatDate(new Date(item.deletedAt), 'dd/mm/yyyy') : '',
                             header: { label: 'Archived', align: 'right' },
                             sortable: true,
                             align: 'right',
@@ -304,27 +338,52 @@ export const Content: React.FunctionComponent = ({ data, variables, refetch }: I
                             key: 'actions',
                             accessor: () => (
                                 <Popover>
-                                    <PopoverTrigger as={Icon} svgPath={mdiDotsHorizontal} />
+                                    <PopoverTrigger as={Icon} svgPath={mdiDotsHorizontal} className="cursor-pointer" />
                                     <PopoverContent position={Position.bottom}>
                                         <ul className="list-unstyled mb-0">
-                                            <li className="d-flex p-2">
-                                                <Icon svgPath={mdiLogoutVariant} size="md" className="text-muted" />
+                                            <li className="d-flex p-2 cursor-pointer">
+                                                <Icon
+                                                    svgPath={mdiLogoutVariant}
+                                                    aria-label="Force sign-out"
+                                                    size="md"
+                                                    className="text-muted"
+                                                />
                                                 <span className="ml-2">Force sign-out</span>
                                             </li>
-                                            <li className="d-flex p-2">
-                                                <Icon svgPath={mdiLockReset} size="md" className="text-muted" />
+                                            <li className="d-flex p-2 cursor-pointer">
+                                                <Icon
+                                                    svgPath={mdiLockReset}
+                                                    aria-label="Reset password"
+                                                    size="md"
+                                                    className="text-muted"
+                                                />
                                                 <span className="ml-2">Reset password</span>
                                             </li>
-                                            <li className="d-flex p-2">
-                                                <Icon svgPath={mdiClipboardMinus} size="md" className="text-muted" />
+                                            <li className="d-flex p-2 cursor-pointer">
+                                                <Icon
+                                                    svgPath={mdiClipboardMinus}
+                                                    aria-label="Revoke site admin"
+                                                    size="md"
+                                                    className="text-muted"
+                                                />
                                                 <span className="ml-2">Revoke site admin</span>
                                             </li>
-                                            <li className="d-flex p-2">
-                                                <Icon svgPath={mdiArchive} size="md" className="text-danger" />
+                                            <li className="d-flex p-2 cursor-pointer">
+                                                <Icon
+                                                    svgPath={mdiArchive}
+                                                    aria-label="Archive user"
+                                                    size="md"
+                                                    className="text-danger"
+                                                />
                                                 <span className="ml-2">Archive</span>
                                             </li>
-                                            <li className="d-flex p-2">
-                                                <Icon svgPath={mdiDelete} size="md" className="text-danger" />
+                                            <li className="d-flex p-2 cursor-pointer">
+                                                <Icon
+                                                    svgPath={mdiDelete}
+                                                    aria-label="Delete user forever"
+                                                    size="md"
+                                                    className="text-danger"
+                                                />
                                                 <span className="ml-2 text-danger">Delete forever</span>
                                             </li>
                                         </ul>

@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import classNames from 'classnames'
 import { mdiCog, mdiPlus } from '@mdi/js'
 import * as H from 'history'
 import { isEqual } from 'lodash'

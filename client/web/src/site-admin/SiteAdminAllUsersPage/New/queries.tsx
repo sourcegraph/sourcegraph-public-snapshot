@@ -41,6 +41,9 @@ export const USERS_MANAGEMENT = gql`
                     deletedAt
                 }
             }
+            adminUsers: users(siteAdmin: true) {
+                totalCount
+            }
         }
         users {
             totalCount
