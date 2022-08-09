@@ -89,22 +89,31 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 	}
 	sort.Strings(ids)
 
-	updates := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		decodedText, err := base64.RawURLEncoding.DecodeString(licenseKeys[id])
+	decode := func(licenseKey string) (license.Info, error) {
+		decodedText, err := base64.RawURLEncoding.DecodeString(licenseKey)
 		if err != nil {
-			return err
+			return license.Info{}, err
 		}
 
 		var decodedKey struct {
 			Info []byte `json:"info"`
 		}
 		if err := json.Unmarshal(decodedText, &decodedKey); err != nil {
-			return err
+			return license.Info{}, err
 		}
 
 		var info license.Info
 		if err := json.Unmarshal(decodedKey.Info, &info); err != nil {
+			return license.Info{}, err
+		}
+
+		return info, nil
+	}
+
+	updates := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		info, err := decode(licenseKeys[id])
+		if err != nil {
 			return err
 		}
 
