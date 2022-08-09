@@ -75,7 +75,7 @@ type Repo struct {
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
 	Blocked *RepoBlock `json:",omitempty"`
 	// KeyValuePairs is the set of key-value pairs associated with the repo
-	KeyValuePairs map[string]*string
+	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
