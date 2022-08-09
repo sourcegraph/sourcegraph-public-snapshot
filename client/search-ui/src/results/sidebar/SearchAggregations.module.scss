@@ -1,0 +1,21 @@
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.chart-container {
+    min-height: 18.75rem;
+    width: 100%;
+}
+
+.actions {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.details-action {
+    margin-right: auto;
+}
