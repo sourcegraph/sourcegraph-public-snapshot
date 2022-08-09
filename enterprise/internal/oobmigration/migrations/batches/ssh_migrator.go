@@ -33,6 +33,10 @@ func NewSSHMigratorWithDB(db database.DB, key encryption.Key) *SSHMigrator {
 	}
 }
 
+func (m *SSHMigrator) ID() int {
+	return 2
+}
+
 // Progress returns the percentage (ranged [0, 1]) of external services without a marker
 // indicating that this migration has been applied to that row.
 func (m *SSHMigrator) Progress(ctx context.Context) (float64, error) {

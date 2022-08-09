@@ -8,15 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-const (
-	// BatchChangesSSHMigrationID is the ID of row holding the ssh migration. It
-	// is defined in `1528395788_campaigns_ssh_key_migration.up`.
-	BatchChangesSSHMigrationID = 2
-)
-
 func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	sshMigrator := NewSSHMigratorWithDB(db, keyring.Default().BatchChangesCredentialKey)
 	migrations := map[int]oobmigration.Migrator{
-		BatchChangesSSHMigrationID: NewSSHMigratorWithDB(db, keyring.Default().BatchChangesCredentialKey),
+		sshMigrator.ID(): sshMigrator,
 	}
 
 	for id, migrator := range migrations {
