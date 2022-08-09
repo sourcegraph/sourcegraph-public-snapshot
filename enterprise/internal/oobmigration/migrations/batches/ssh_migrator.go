@@ -58,7 +58,12 @@ FROM
 
 // Up generates a keypair for authenticators missing SSH credentials.
 func (m *SSHMigrator) Up(ctx context.Context) (err error) {
-	transformer := func(a auth.Authenticator) (auth.Authenticator, bool, error) {
+	transformer := func(credential string) (auth.Authenticator, bool, error) {
+		a, err := database.UnmarshalAuthenticator(credential)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "unmarshalling authenticator")
+		}
+
 		keypair, err := encryption.GenerateRSAKey()
 		if err != nil {
 			return nil, false, err
@@ -91,7 +96,12 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 
 // Down converts all credentials with an SSH key back to a historically supported version.
 func (m *SSHMigrator) Down(ctx context.Context) (err error) {
-	transformer := func(a auth.Authenticator) (auth.Authenticator, bool, error) {
+	transformer := func(credential string) (auth.Authenticator, bool, error) {
+		a, err := database.UnmarshalAuthenticator(credential)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "unmarshalling authenticator")
+		}
+
 		switch a := a.(type) {
 		case *auth.OAuthBearerTokenWithSSH:
 			return &a.OAuthBearerToken, true, nil
@@ -105,7 +115,7 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 	return m.run(ctx, true, transformer)
 }
 
-func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func(auth.Authenticator) (auth.Authenticator, bool, error)) (err error) {
+func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func(string) (auth.Authenticator, bool, error)) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -176,13 +186,8 @@ SET
 WHERE id = %s
 `
 
-func (m *SSHMigrator) transform(ctx context.Context, credential string, f func(auth.Authenticator) (auth.Authenticator, bool, error)) ([]byte, string, bool, error) {
-	a, err := database.UnmarshalAuthenticator(credential)
-	if err != nil {
-		return nil, "", false, errors.Wrap(err, "unmarshalling authenticator")
-	}
-
-	newCred, ok, err := f(a)
+func (m *SSHMigrator) transform(ctx context.Context, credential string, f func(string) (auth.Authenticator, bool, error)) ([]byte, string, bool, error) {
+	newCred, ok, err := f(credential)
 	if err != nil {
 		return nil, "", false, err
 	}
