@@ -3,15 +3,14 @@ package batches
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -40,8 +39,7 @@ func (m *SSHMigrator) ID() int {
 // Progress returns the percentage (ranged [0, 1]) of external services without a marker
 // indicating that this migration has been applied to that row.
 func (m *SSHMigrator) Progress(ctx context.Context) (float64, error) {
-	domain := database.UserCredentialDomainBatches
-	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(sshMigratorProgressQuery, domain, domain)))
+	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(sshMigratorProgressQuery, "batches", "batches")))
 	return progress, err
 }
 
@@ -56,26 +54,35 @@ FROM
 	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s) c2
 `
 
+type jsonSSHMigratorAuth struct {
+	Username string `json:"Username,omitempty"`
+	Password string `json:"Password,omitempty"`
+	Token    string `json:"Token,omitempty"`
+}
+
+type jsonSSHMigratorSSHFragment struct {
+	PrivateKey string `json:"PrivateKey"`
+	PublicKey  string `json:"PublicKey"`
+	Passphrase string `json:"Passphrase"`
+}
+
 // Up generates a keypair for authenticators missing SSH credentials.
 func (m *SSHMigrator) Up(ctx context.Context) (err error) {
-	transformer := func(credential string) (string, bool, error) {
-		var partial struct {
-			Type string
-			Auth json.RawMessage
+	return m.run(ctx, false, func(credential string) (string, bool, error) {
+		var envelope struct {
+			Type    string          `json:"Type"`
+			Payload json.RawMessage `json:"Auth"`
 		}
-		if err := json.Unmarshal([]byte(credential), &partial); err != nil {
+		if err := json.Unmarshal([]byte(credential), &envelope); err != nil {
 			return "", false, err
 		}
-		var a any
-		switch partial.Type {
-		case "BasicAuth":
-			a = &auth.BasicAuth{}
-		case "OAuthBearerToken":
-			a = &auth.OAuthBearerToken{}
-		default:
+		if envelope.Type != "BasicAuth" && envelope.Type != "OAuthBearerToken" {
+			// Not a key type that supports SSH additions, leave credentials as-is
 			return "", false, nil
 		}
-		if err := json.Unmarshal(partial.Auth, &a); err != nil {
+
+		auth := jsonSSHMigratorAuth{}
+		if err := json.Unmarshal(envelope.Payload, &auth); err != nil {
 			return "", false, err
 		}
 
@@ -84,111 +91,64 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 			return "", false, err
 		}
 
-		switch a := a.(type) {
-		case *auth.OAuthBearerToken:
-			rawx, err := json.Marshal(struct {
-				Type string
-				Auth auth.Authenticator
+		encoded, err := json.Marshal(struct {
+			Type string
+			Auth any
+		}{
+			Type: envelope.Type + "WithSSH",
+			Auth: struct {
+				jsonSSHMigratorAuth
+				jsonSSHMigratorSSHFragment
 			}{
-				Type: "OAuthBearerTokenWithSSH",
-				Auth: &auth.OAuthBearerTokenWithSSH{
-					OAuthBearerToken: *a,
-					PrivateKey:       keypair.PrivateKey,
-					PublicKey:        keypair.PublicKey,
-					Passphrase:       keypair.Passphrase,
-				},
-			})
-			if err != nil {
-				return "", false, err
-			}
-
-			return string(rawx), true, nil
-
-		case *auth.BasicAuth:
-			rawx, err := json.Marshal(struct {
-				Type string
-				Auth auth.Authenticator
-			}{
-				Type: "BasicAuthWithSSH",
-				Auth: &auth.BasicAuthWithSSH{
-					BasicAuth:  *a,
+				auth,
+				jsonSSHMigratorSSHFragment{
 					PrivateKey: keypair.PrivateKey,
 					PublicKey:  keypair.PublicKey,
 					Passphrase: keypair.Passphrase,
 				},
-			})
-			if err != nil {
-				return "", false, err
-			}
-
-			return string(rawx), true, nil
-
-		default:
-			return "", false, nil
+			},
+		})
+		if err != nil {
+			return "", false, err
 		}
-	}
 
-	return m.run(ctx, false, transformer)
+		return string(encoded), true, nil
+	})
 }
 
 // Down converts all credentials with an SSH key back to a historically supported version.
 func (m *SSHMigrator) Down(ctx context.Context) (err error) {
-	transformer := func(credential string) (string, bool, error) {
-		var partial struct {
-			Type string
-			Auth json.RawMessage
+	return m.run(ctx, true, func(credential string) (string, bool, error) {
+		var envelope struct {
+			Type    string          `json:"Type"`
+			Payload json.RawMessage `json:"Auth"`
 		}
-		if err := json.Unmarshal([]byte(credential), &partial); err != nil {
+		if err := json.Unmarshal([]byte(credential), &envelope); err != nil {
 			return "", false, err
 		}
-		var a any
-		switch partial.Type {
-		case "BasicAuthWithSSH":
-			a = &auth.BasicAuthWithSSH{}
-		case "OAuthBearerTokenWithSSH":
-			a = &auth.OAuthBearerTokenWithSSH{}
-		default:
+		if envelope.Type != "BasicAuthWithSSH" && envelope.Type != "OAuthBearerTokenWithSSH" {
+			// Not a key type that that has SSH additions (nothing to remove)
 			return "", false, nil
 		}
-		if err := json.Unmarshal(partial.Auth, &a); err != nil {
+
+		auth := jsonSSHMigratorAuth{}
+		if err := json.Unmarshal(envelope.Payload, &auth); err != nil {
 			return "", false, err
 		}
 
-		switch a := a.(type) {
-		case *auth.OAuthBearerTokenWithSSH:
-			rawx, err := json.Marshal(struct {
-				Type string
-				Auth any
-			}{
-				Type: "OAuthBearerToken",
-				Auth: a.OAuthBearerToken,
-			})
-			if err != nil {
-				return "", false, err
-			}
-
-			return string(rawx), true, nil
-
-		case *auth.BasicAuthWithSSH:
-			rawx, err := json.Marshal(struct {
-				Type string
-				Auth any
-			}{
-				Type: "BasicAuth",
-				Auth: a.BasicAuth,
-			})
-			if err != nil {
-				return "", false, err
-			}
-
-			return string(rawx), true, nil
-
-		default:
+		encoded, err := json.Marshal(struct {
+			Type string
+			Auth jsonSSHMigratorAuth
+		}{
+			Type: strings.TrimSuffix(envelope.Type, "WithSSH"),
+			Auth: auth,
+		})
+		if err != nil {
 			return "", false, err
 		}
-	}
 
-	return m.run(ctx, true, transformer)
+		return string(encoded), true, nil
+	})
 }
 
 func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func(string) (string, bool, error)) (err error) {
@@ -203,7 +163,7 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 		Credential string
 	}
 	credentials, err := func() (credentials []credential, err error) {
-		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorSelectQuery, database.UserCredentialDomainBatches, sshMigrationsApplied, m.BatchSize))
+		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorSelectQuery, "batches", sshMigrationsApplied, m.BatchSize))
 		if err != nil {
 			return nil, err
 		}
@@ -235,6 +195,10 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 			return err
 		}
 		if !ok {
+			if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateFlagonlyQuery, !sshMigrationsApplied, credential.ID)); err != nil {
+				return err
+			}
+
 			continue
 		}
 
@@ -242,7 +206,7 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 		if err != nil {
 			return err
 		}
-		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, keyID, !sshMigrationsApplied, credential.ID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, !sshMigrationsApplied, secret, keyID, credential.ID)); err != nil {
 			return err
 		}
 	}
@@ -259,9 +223,16 @@ const sshMigratorUpdateQuery = `
 -- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
 UPDATE user_credentials
 SET
-	credential = %s,
-	encryption_key_id = %s,
 	updated_at = NOW(),
-	ssh_migration_applied = %s
+	ssh_migration_applied = %s,
+	credential = %s,
+	encryption_key_id = %s
+WHERE id = %s
+`
+
+const sshMigratorUpdateFlagonlyQuery = `
+-- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
+UPDATE user_credentials
+SET ssh_migration_applied = %s
 WHERE id = %s
 `
