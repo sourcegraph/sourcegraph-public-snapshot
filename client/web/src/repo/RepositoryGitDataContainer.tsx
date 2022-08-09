@@ -12,13 +12,14 @@ import {
     isCloneInProgressErrorLike,
     isRevisionNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
+import { resolveRevision } from '@sourcegraph/shared/src/backend/repo'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Code } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
 
-import { resolveRevision } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 
 export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName: string; progress?: string }> = ({
@@ -39,7 +40,7 @@ export const EmptyRepositoryPage: React.FunctionComponent<React.PropsWithChildre
     <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
 )
 
-interface Props {
+interface Props extends PlatformContextProps<'requestGraphQL'> {
     /** The repository. */
     repoName: string
 
@@ -75,7 +76,9 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                     distinctUntilChanged(),
                     tap(() => this.setState({ gitDataPresentOrError: undefined })),
                     switchMap(repoName =>
-                        defer(() => resolveRevision({ repoName })).pipe(
+                        defer(() =>
+                            resolveRevision({ repoName, requestGraphQL: this.props.platformContext.requestGraphQL })
+                        ).pipe(
                             // On a CloneInProgress error, retry after 1s
                             retryWhen(errors =>
                                 errors.pipe(

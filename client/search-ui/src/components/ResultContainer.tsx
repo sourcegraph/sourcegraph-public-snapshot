@@ -1,9 +1,13 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
+import { Subscription } from 'rxjs'
 
+import { fetchRepository, resolveRevision } from '@sourcegraph/shared/src/backend/repo'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -14,7 +18,7 @@ import { SearchResultStar } from './SearchResultStar'
 
 import styles from './ResultContainer.module.scss'
 
-export interface ResultContainerProps {
+export interface ResultContainerProps extends PlatformContextProps<'requestGraphQL'>, SettingsCascadeProps {
     /**
      * Whether the result container's children are visible by default.
      * The header is always visible even when the component is not expanded.
@@ -89,6 +93,11 @@ export interface ResultContainerProps {
     repoName: string
 
     /**
+     * The revision of the repository
+     */
+    repoRevision?: string
+
+    /**
      * The number of stars for the result's associated repo
      */
     repoStars?: number
@@ -131,6 +140,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     description,
     matchCountLabel,
     repoName,
+    repoRevision,
     repoStars,
     onResultClicked,
     className,
@@ -138,12 +148,48 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     resultType,
     as: Component = 'div',
     index,
+    platformContext,
+    settingsCascade,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
+    const preloadRepoRevisionEnabled = useMemo(
+        () =>
+            isSettingsValid(settingsCascade) &&
+            settingsCascade.final.experimentalFeatures?.enableLazyBlobSyntaxHighlighting,
+        [settingsCascade]
+    )
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
+
+    useEffect(() => {
+        let repoObservable: Subscription
+        let revisionObservable: Subscription
+
+        /**
+         * Repository + revision pre-fetching.
+         * Note that we don't actually do anything with this data.
+         * The primary aim is to kickstart the memoized observable so that when we try
+         * to render the repository or blob pages, the data is already resolved/resolving.
+         */
+        if (preloadRepoRevisionEnabled) {
+            repoObservable = fetchRepository({
+                repoName,
+                requestGraphQL: platformContext.requestGraphQL,
+            }).subscribe()
+            revisionObservable = resolveRevision({
+                repoName,
+                revision: repoRevision,
+                requestGraphQL: platformContext.requestGraphQL,
+            }).subscribe()
+        }
+
+        return () => {
+            repoObservable?.unsubscribe()
+            revisionObservable?.unsubscribe()
+        }
+    }, [platformContext.requestGraphQL, preloadRepoRevisionEnabled, repoName, repoRevision])
 
     const rootRef = useRef<HTMLElement>(null)
     const toggle = useCallback((): void => {
@@ -165,6 +211,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             onResultClicked()
         }
     }
+
     return (
         <Component
             className={classNames('test-search-result', styles.resultContainer, className)}

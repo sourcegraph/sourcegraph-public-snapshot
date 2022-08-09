@@ -19,9 +19,11 @@ import {
     isRepoNotFoundErrorLike,
     isRepoSeeOtherErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
+import { fetchRepository, resolveRevision } from '@sourcegraph/shared/src/backend/repo'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { RepositoryFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
@@ -49,7 +51,7 @@ import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
-import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
+import { ExternalLinkFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
@@ -57,7 +59,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
+import { fetchFileExternalLinks } from './backend'
 import { BlameContextProvider } from './blame/useBlameVisibility'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -164,7 +166,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     const repoOrError = useObservable(
         useMemo(
             () =>
-                fetchRepository({ repoName }).pipe(
+                fetchRepository({ repoName, requestGraphQL: props.platformContext.requestGraphQL }).pipe(
                     catchError(
                         (error): ObservableInput<ErrorLike> => {
                             const redirect = isRepoSeeOtherErrorLike(error)
@@ -176,7 +178,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                         }
                     )
                 ),
-            [repoName]
+            [props.platformContext.requestGraphQL, repoName]
         )
     )
 
@@ -189,7 +191,11 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                         // catchError returns a new observable, so repeatUntil will
                         // properly resubscribe to the outer observable and re-fetch.
                         switchMap(() =>
-                            resolveRevision({ repoName, revision }).pipe(
+                            resolveRevision({
+                                repoName,
+                                revision,
+                                requestGraphQL: props.platformContext.requestGraphQL,
+                            }).pipe(
                                 catchError(error => {
                                     if (isCloneInProgressErrorLike(error)) {
                                         return of<ErrorLike>(asError(error))
@@ -203,7 +209,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                         repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
                         catchError(error => of<ErrorLike>(asError(error)))
                     ),
-            [repoName, revision]
+            [props.platformContext.requestGraphQL, repoName, revision]
         )
     )
 
