@@ -7,6 +7,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
@@ -17,7 +18,7 @@ import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
 
-interface Props extends PlatformContextProps<'requestGraphQL'> {
+interface Props extends PlatformContextProps<'requestGraphQL'>, SettingsCascadeProps {
     result: CommitMatch
     onSelect: () => void
     openInNewTab?: boolean
@@ -29,6 +30,7 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
 // This is a search result for types diff or commit.
 export const CommitSearchResult: React.FunctionComponent<Props> = ({
     result,
+    settingsCascade,
     platformContext,
     onSelect,
     openInNewTab,
@@ -91,6 +93,9 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
+            platformContext={platformContext}
+            settingsCascade={settingsCascade}
+            repoRevision={result.oid}
             as={as}
         />
     )
