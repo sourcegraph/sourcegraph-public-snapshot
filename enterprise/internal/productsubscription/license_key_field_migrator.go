@@ -73,7 +73,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 		licenseKeys := map[string]string{}
 		for rows.Next() {
 			var id, licenseKey string
-			if err = rows.Scan(&id, &licenseKey); err != nil {
+			if err := rows.Scan(&id, &licenseKey); err != nil {
 				return nil, err
 			}
 
@@ -102,12 +102,12 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 		var decodedKey struct {
 			Info []byte `json:"info"`
 		}
-		if err = json.Unmarshal(decodedText, &decodedKey); err != nil {
+		if err := json.Unmarshal(decodedText, &decodedKey); err != nil {
 			return err
 		}
 
 		var info license.Info
-		if err = json.Unmarshal(decodedKey.Info, &info); err != nil {
+		if err := json.Unmarshal(decodedKey.Info, &info); err != nil {
 			return err
 		}
 
@@ -126,7 +126,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 		)
 	}
 
-	if err = tx.Exec(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorUpdateQuery,
+	if err := tx.Exec(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorUpdateQuery,
 		sqlf.Join(updates, ", "),
 	)); err != nil {
 		return err
