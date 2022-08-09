@@ -60,9 +60,10 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
 
         return {
             opacity,
-            transitionProperty: 'opacity',
-            transitionDuration: '200ms',
-            transitionTimingFunction: 'ease-out',
+            // TODO: Bring this animation back when https://github.com/sourcegraph/sourcegraph/issues/40162 is resolved
+            // transitionProperty: 'opacity',
+            // transitionDuration: '200ms',
+            // transitionTimingFunction: 'ease-out',
         }
     }
 
