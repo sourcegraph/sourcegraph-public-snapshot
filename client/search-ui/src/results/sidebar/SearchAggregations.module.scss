@@ -1,5 +1,11 @@
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
 .chart-container {
-    min-height: 12rem;
+    min-height: 18.75rem;
     width: 100%;
 }
 
@@ -8,11 +14,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
-}
-
-.aggregation-type-control {
-    padding-left: 0.375rem;
-    padding-right: 0.375rem;
 }
 
 .details-action {
