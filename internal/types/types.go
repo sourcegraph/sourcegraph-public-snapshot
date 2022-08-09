@@ -74,6 +74,8 @@ type Repo struct {
 	Metadata any
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
 	Blocked *RepoBlock `json:",omitempty"`
+	// IsBare used only for 'other' code host type, signifies if a repo is a bare repo.
+	Bare bool
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results

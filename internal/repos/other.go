@@ -193,7 +193,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 
 		cloneURL := clonePrefix + strings.TrimPrefix(r.URI, "/")
 		// If the repo is not a bare repo, add a .git
-		if !strings.HasSuffix(cloneURL, ".git") {
+		if !r.Bare {
 			cloneURL += "/.git"
 		}
 		r.Sources = map[string]*types.SourceInfo{
