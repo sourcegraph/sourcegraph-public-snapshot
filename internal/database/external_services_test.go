@@ -13,10 +13,11 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -1163,7 +1164,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	}
 
 	// values encrypted should not be readable without the encrypting key
-	noopStore := store.WithEncryptionKey(&encryption.NoopKey{})
+	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
 	if _, err := noopStore.GetByID(ctx, es.ID); err == nil {
 		t.Fatalf("expected error decrypting with a different key")
 	}
@@ -2004,7 +2005,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 
 		// values encrypted should not be readable without the encrypting key
-		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{})
+		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
 
 		for _, e := range want {
 			if _, err := noopStore.GetByID(ctx, e.ID); err == nil {

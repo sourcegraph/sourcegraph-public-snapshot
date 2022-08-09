@@ -2,11 +2,14 @@ package encryption
 
 import (
 	"context"
+	"fmt"
 )
 
 var _ Key = &NoopKey{}
 
-type NoopKey struct{}
+type NoopKey struct {
+	FailDecrypt bool
+}
 
 func (k *NoopKey) Version(ctx context.Context) (KeyVersion, error) {
 	return KeyVersion{
@@ -21,6 +24,10 @@ func (k *NoopKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error)
 }
 
 func (k *NoopKey) Decrypt(ctx context.Context, ciphertext []byte) (*Secret, error) {
+	if k.FailDecrypt {
+		return nil, fmt.Errorf("unsupported decrypt")
+	}
+
 	s := NewSecret(string(ciphertext))
 	return &s, nil
 }
