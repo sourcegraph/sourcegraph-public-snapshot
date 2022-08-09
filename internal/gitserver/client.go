@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -850,17 +851,27 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+
+	switch resp.StatusCode {
+	case httpserver.StatusWarningError:
+		return nil, errors.NewWarning(err)
+
+	case http.StatusOK:
+		var info *protocol.RepoUpdateResponse
+		err := json.NewDecoder(resp.Body).Decode(&info)
+		return info, err
+
+	// This is a non 200 status.
+	default:
 		return nil, &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "RepoInfo",
-			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+			Err: errors.Errorf(
+				"RepoInfo: http status %d: %s",
+				resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)),
+			),
 		}
 	}
-
-	var info *protocol.RepoUpdateResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
 }
 
 func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error) {
