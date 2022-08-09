@@ -3,6 +3,7 @@ package migrations
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -35,6 +36,10 @@ func NewExternalServiceWebhookMigratorWithDB(db database.DB, key encryption.Key)
 
 func (m *ExternalServiceWebhookMigrator) ID() int {
 	return 13
+}
+
+func (m *ExternalServiceWebhookMigrator) Interval() time.Duration {
+	return time.Second * 3
 }
 
 // Progress returns the percentage (ranged [0, 1]) of external services with a
