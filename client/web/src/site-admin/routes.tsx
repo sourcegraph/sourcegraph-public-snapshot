@@ -132,4 +132,9 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             'SiteAdminFeatureFlagConfigurationPage'
         ),
     },
+    {
+        path: '/debug-data-export',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminDebugDataExportPage'), 'SiteAdminDebugDataExportPage'),
+    },
 ]

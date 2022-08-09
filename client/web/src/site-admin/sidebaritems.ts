@@ -133,6 +133,10 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/-/debug/jaeger',
             source: 'server',
         },
+        {
+            label: 'Debug data export',
+            to: '/site-admin/debug-data-export',
+        },
     ],
 }
 
