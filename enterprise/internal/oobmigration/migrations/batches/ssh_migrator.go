@@ -12,10 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SSHMigrator struct {
@@ -63,7 +60,7 @@ FROM
 func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 	transformer := func(credential string) (string, bool, error) {
 		var partial struct {
-			Type database.AuthenticatorType
+			Type string
 			Auth json.RawMessage
 		}
 		if err := json.Unmarshal([]byte(credential), &partial); err != nil {
@@ -71,22 +68,12 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 		}
 		var a auth.Authenticator
 		switch partial.Type {
-		case database.AuthenticatorTypeOAuthClient:
-			a = &auth.OAuthClient{}
-		case database.AuthenticatorTypeBasicAuth:
+		case "BasicAuth":
 			a = &auth.BasicAuth{}
-		case database.AuthenticatorTypeBasicAuthWithSSH:
-			a = &auth.BasicAuthWithSSH{}
-		case database.AuthenticatorTypeOAuthBearerToken:
+		case "OAuthBearerToken":
 			a = &auth.OAuthBearerToken{}
-		case database.AuthenticatorTypeOAuthBearerTokenWithSSH:
-			a = &auth.OAuthBearerTokenWithSSH{}
-		case database.AuthenticatorTypeBitbucketServerSudoableOAuthClient:
-			a = &bitbucketserver.SudoableOAuthClient{}
-		case database.AuthenticatorTypeGitLabSudoableToken:
-			a = &gitlab.SudoableToken{}
 		default:
-			return "", false, errors.Errorf("unknown credential type: %s", partial.Type)
+			return "", false, nil
 		}
 		if err := json.Unmarshal(partial.Auth, &a); err != nil {
 			return "", false, err
@@ -148,7 +135,7 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 	transformer := func(credential string) (string, bool, error) {
 		var partial struct {
-			Type database.AuthenticatorType
+			Type string
 			Auth json.RawMessage
 		}
 		if err := json.Unmarshal([]byte(credential), &partial); err != nil {
@@ -156,22 +143,12 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 		}
 		var a auth.Authenticator
 		switch partial.Type {
-		case database.AuthenticatorTypeOAuthClient:
-			a = &auth.OAuthClient{}
-		case database.AuthenticatorTypeBasicAuth:
-			a = &auth.BasicAuth{}
-		case database.AuthenticatorTypeBasicAuthWithSSH:
+		case "BasicAuthWithSSH":
 			a = &auth.BasicAuthWithSSH{}
-		case database.AuthenticatorTypeOAuthBearerToken:
-			a = &auth.OAuthBearerToken{}
-		case database.AuthenticatorTypeOAuthBearerTokenWithSSH:
+		case "OAuthBearerTokenWithSSH":
 			a = &auth.OAuthBearerTokenWithSSH{}
-		case database.AuthenticatorTypeBitbucketServerSudoableOAuthClient:
-			a = &bitbucketserver.SudoableOAuthClient{}
-		case database.AuthenticatorTypeGitLabSudoableToken:
-			a = &gitlab.SudoableToken{}
 		default:
-			return "", false, errors.Errorf("unknown credential type: %s", partial.Type)
+			return "", false, nil
 		}
 		if err := json.Unmarshal(partial.Auth, &a); err != nil {
 			return "", false, err
