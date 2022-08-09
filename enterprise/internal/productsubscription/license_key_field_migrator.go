@@ -10,13 +10,31 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type licenseKeyFieldsMigrator struct {
 	store *basestore.Store
+}
+
+var _ oobmigration.Migrator = &licenseKeyFieldsMigrator{}
+
+func NewLicenseKeyFieldsMigrator(db database.DB) *licenseKeyFieldsMigrator {
+	return &licenseKeyFieldsMigrator{
+		store: basestore.NewWithHandle(db.Handle()),
+	}
+}
+
+func (m *licenseKeyFieldsMigrator) ID() int {
+	return 16
+}
+
+func (m *licenseKeyFieldsMigrator) Interval() time.Duration {
+	return time.Second * 5
 }
 
 func (m *licenseKeyFieldsMigrator) Progress(ctx context.Context) (float64, error) {

@@ -2,14 +2,33 @@ package productsubscription
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 type subscriptionAccountNumberMigrator struct {
 	store *basestore.Store
+}
+
+var _ oobmigration.Migrator = &subscriptionAccountNumberMigrator{}
+
+func NewSubscriptionAccountNumberMigrator(db database.DB) *subscriptionAccountNumberMigrator {
+	return &subscriptionAccountNumberMigrator{
+		store: basestore.NewWithHandle(db.Handle()),
+	}
+}
+
+func (m *subscriptionAccountNumberMigrator) ID() int {
+	return 15
+}
+
+func (m *subscriptionAccountNumberMigrator) Interval() time.Duration {
+	return time.Second * 5
 }
 
 func (m *subscriptionAccountNumberMigrator) Progress(ctx context.Context) (float64, error) {
