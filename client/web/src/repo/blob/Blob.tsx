@@ -127,7 +127,7 @@ export interface BlobProps
     /**
      * Only used by CodeMirror implementation.
      */
-    disableHovercards: boolean
+    disableHovercards?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
