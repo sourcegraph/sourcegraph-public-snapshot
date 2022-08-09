@@ -7,6 +7,11 @@ const signale = require('signale')
 
 const bundlesRepoName = 'sourcegraph-extensions-bundles'
 
+/**
+ * Clones https://github.com/sourcegraph/sourcegraph-extensions-bundles repo and copies programming languages
+ * extensions bundles to the specified path. These bundles may be included into IDE/browser extensions bundles
+ * in order not to require access to the extensions registry for the code intel features to work.
+ */
 function buildCodeIntelExtensions({ pathToExtensionBundles, pathToRevisionFile, pathToDistributionRevisionFile }) {
   const revisionFileContent = fs.existsSync(pathToRevisionFile) && fs.readFileSync(pathToRevisionFile).toString()
   const revision = revisionFileContent ? revisionFileContent.trim() : ''
