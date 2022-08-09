@@ -501,7 +501,7 @@ func (op *RepoOptions) String() string {
 				fmt.Fprintf(&b, "HasFileContent[%d].content: %s\n", i, arg.Content)
 			}
 			if arg.Negated {
-				fmt.Fprintf(&b, "HasFileContent[%d].negated: %s\n", i, arg.Negated)
+				fmt.Fprintf(&b, "HasFileContent[%d].negated: %q\n", i, arg.Negated)
 			}
 		}
 	}
@@ -514,7 +514,7 @@ func (op *RepoOptions) String() string {
 				fmt.Fprintf(&b, "HasKVPs[%d].value: %s\n", i, *arg.Value)
 			}
 			if arg.Negated {
-				fmt.Fprintf(&b, "HasKVPs[%d].negated: %s\n", i, arg.Negated)
+				fmt.Fprintf(&b, "HasKVPs[%d].negated: %q\n", i, arg.Negated)
 			}
 		}
 	}
