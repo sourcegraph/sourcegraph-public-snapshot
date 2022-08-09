@@ -53,16 +53,24 @@ func (n NullAuthenticator) Value() (driver.Value, error) {
 	return marshalAuthenticator(*n.A)
 }
 
-// EncryptAuthenticator encodes an authenticator into a byte slice. If the given
-// key is non-nil, it will also be encrypted.
-func EncryptAuthenticator(ctx context.Context, key encryption.Key, a auth.Authenticator) ([]byte, string, error) {
+// EncryptAuthenticator encodes _and_ encrypts an Authenticator into a byte
+// slice.
+func EncryptAuthenticator(ctx context.Context, enc encryption.Encrypter, a auth.Authenticator) ([]byte, error) {
 	raw, err := marshalAuthenticator(a)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "marshalling authenticator")
+		return nil, errors.Wrap(err, "marshalling authenticator")
 	}
 
-	data, keyID, err := encryption.MaybeEncrypt(ctx, key, raw)
-	return []byte(data), keyID, err
+	if enc == nil {
+		return []byte(raw), nil
+	}
+
+	secret, err := enc.Encrypt(ctx, []byte(raw))
+	if err != nil {
+		return nil, errors.Wrap(err, "encrypting credential")
+	}
+
+	return secret, nil
 }
 
 // marshalAuthenticator encodes an Authenticator into a JSON string.

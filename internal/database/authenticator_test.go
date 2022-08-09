@@ -19,20 +19,20 @@ func TestEncryptAuthenticator(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		for name, tc := range map[string]struct {
-			key encryption.Key
+			enc encryption.Encrypter
 			a   auth.Authenticator
 		}{
 			"bad authenticator": {
-				key: et.TestKey{},
+				enc: et.TestKey{},
 				a:   &badAuthenticator{},
 			},
 			"bad encrypter": {
-				key: &et.BadKey{Err: errors.New("encryption is bad")},
+				enc: &et.BadKey{Err: errors.New("encryption is bad")},
 				a:   &auth.BasicAuth{},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				if _, _, err := EncryptAuthenticator(ctx, tc.key, tc.a); err == nil {
+				if _, err := EncryptAuthenticator(ctx, tc.enc, tc.a); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -40,7 +40,7 @@ func TestEncryptAuthenticator(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		enc := &mockKey{}
+		enc := &mockEncrypter{}
 		a := &auth.BasicAuth{
 			Username: "foo",
 			Password: "bar",
@@ -57,7 +57,7 @@ func TestEncryptAuthenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if have, _, err := EncryptAuthenticator(ctx, enc, a); err != nil {
+		if have, err := EncryptAuthenticator(ctx, enc, a); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if diff := cmp.Diff(string(have), string(want)); diff != "" {
 			t.Errorf("unexpected byte slice (-have +want):\n%s", diff)
@@ -69,23 +69,15 @@ func TestEncryptAuthenticator(t *testing.T) {
 	})
 }
 
-type mockKey struct {
+type mockEncrypter struct {
 	called int
 }
 
-var _ encryption.Key = &mockKey{}
+var _ encryption.Encrypter = &mockEncrypter{}
 
-func (me *mockKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
-	return encryption.KeyVersion{}, nil
-}
-
-func (me *mockKey) Encrypt(ctx context.Context, value []byte) ([]byte, error) {
+func (me *mockEncrypter) Encrypt(ctx context.Context, value []byte) ([]byte, error) {
 	me.called++
 	return value, nil
-}
-
-func (me *mockKey) Decrypt(ctx context.Context, value []byte) (*encryption.Secret, error) {
-	return nil, nil
 }
 
 type badAuthenticator struct{}

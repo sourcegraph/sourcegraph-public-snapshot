@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -383,14 +384,18 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 		return account
 	}
 
-	// values encrypted should not be readable without the encrypting key
+	// create a store with a NoopKey to read the raw encrypted value
 	noopStore := store.WithEncryptionKey(&encryption.NoopKey{})
-	if _, err := noopStore.List(ctx, ExternalAccountsListOptions{}); err == nil {
-		t.Fatalf("expected error decrypting with a different key")
+
+	account := listFirstAccount(noopStore)
+
+	// if the testKey worked, the data should just be a base64 encoded version
+	if string(*account.AuthData) != base64.StdEncoding.EncodeToString([]byte(*accountData.AuthData)) {
+		t.Fatalf("expected base64 encoded auth data, got %s", string(*account.AuthData))
 	}
 
 	// List should return decrypted data
-	account := listFirstAccount(store)
+	account = listFirstAccount(store)
 	want := extsvc.Account{
 		UserID:      userID,
 		AccountSpec: spec,
