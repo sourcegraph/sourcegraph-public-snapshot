@@ -132,9 +132,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 		)
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorUpdateQuery,
-		sqlf.Join(updates, ", "),
-	)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorUpdateQuery, sqlf.Join(updates, ", "))); err != nil {
 		return err
 	}
 
