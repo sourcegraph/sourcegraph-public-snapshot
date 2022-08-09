@@ -20,7 +20,7 @@ func (c *InsightsCount) ToSearchPattern() string {
 }
 
 func (c *InsightsCount) String() string {
-	return fmt.Sprintf("insightsCount search pattern: %s", c.SearchPattern)
+	return fmt.Sprintf("insights.count search pattern: %s", c.SearchPattern)
 }
 
 func (c *InsightsCount) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
@@ -30,7 +30,7 @@ func (c *InsightsCount) Run(ctx context.Context, db database.DB, r result.Match)
 func insightsCount(ctx context.Context, outputPattern string, r result.Match) (Result, error) {
 	countFunc, ok := insightCommandOutputRegistry[strings.ToUpper(outputPattern)]
 	if !ok {
-		return nil, errors.New("unknown ouput pattern for insightsCount command")
+		return nil, errors.New("unknown ouput pattern for insights.count command")
 	}
 
 	return countFunc(r)

@@ -2,7 +2,6 @@ package compute
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/grafana/regexp"
 
@@ -105,7 +104,7 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 		"output.regexp":      func() query.Predicate { return query.EmptyPredicate{} },
 		"output.structural":  func() query.Predicate { return query.EmptyPredicate{} },
 		"output.extra":       func() query.Predicate { return query.EmptyPredicate{} },
-		"insights":           func() query.Predicate { return query.EmptyPredicate{} },
+		"insights.count":     func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
@@ -256,7 +255,7 @@ func parseInsightsCount(q *query.Basic) (Command, bool, error) {
 		return nil, false, err
 	}
 
-	if strings.EqualFold(name, "insightsCount") {
+	if name != "insights.count" {
 		// unrecognized name
 		return nil, false, nil
 	}

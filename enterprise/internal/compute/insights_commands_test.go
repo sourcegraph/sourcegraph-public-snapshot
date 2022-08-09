@@ -47,7 +47,7 @@ func Test_insightsCount(t *testing.T) {
 		},
 		{
 			"$NOT_AN_OUTPUT", fileMatch("abc123"),
-			autogold.Want("errors on bad output", `{"Result":null,"Error":"unknown ouput pattern for insights command"}`),
+			autogold.Want("errors on bad output", `{"Result":null,"Error":"unknown ouput pattern for insights.count command"}`),
 		},
 		{
 			"$AUTHOR", fileMatch("abc123"),
