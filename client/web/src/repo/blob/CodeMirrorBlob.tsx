@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { search, searchKeymap } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
+import { isEqual } from 'lodash'
 
 import { addLineRangeQueryParameter, LineOrPositionOrRange, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -41,7 +42,7 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-selection-bg)',
         },
         '.cm-gutters': {
-            backgroundColor: 'initial',
+            backgroundColor: 'var(--code-bg)',
             borderRight: 'initial',
         },
     }),
@@ -64,7 +65,6 @@ const blobPropsCompartment = new Compartment()
 export const Blob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
-        blobInfo,
         wrapCode,
         isLightTheme,
         ariaLabel,
@@ -75,15 +75,18 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         history,
         blameDecorations: blameTextDocumentDecorations,
 
-        // These props don't have to be supported yet because the CodeMirror blob
-        // view is only used on the blob page where these are always true
-        // disableStatusBar
-        // disableDecorations
+        // Reference panel specific props
+        disableStatusBar,
+        disableDecorations,
+        disableHovercards,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
-    const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
+    // This is used to avoid reinitializing the editor when new locations in the
+    // same file are opened inside the reference panel.
+    const blobInfo = useDistinctBlob(props.blobInfo)
     const blobIsLoading = useBlobIsLoading(blobInfo, location.pathname)
+    const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
@@ -144,10 +147,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const extensions = useMemo(
         () => [
             staticExtensions,
-            selectableLineNumbers({ onSelection }),
+            selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
-            sourcegraphExtensions({ blobInfo, extensionsController }),
+            sourcegraphExtensions({
+                blobInfo,
+                initialSelection: position,
+                extensionsController,
+                disableStatusBar,
+                disableDecorations,
+                disableHovercards,
+            }),
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
             settingsCompartment.of(settings),
@@ -157,7 +167,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // further below. However they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController]
+        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
     )
 
     const editor = useCodeMirror(container, blobInfo.content, extensions, {
@@ -218,7 +228,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         if (editor && !blobIsLoading) {
             selectLines(editor, position.line ? position : null)
         }
-    }, [editor, position, blobIsLoading])
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [position, blobIsLoading])
 
     // Update pinned hovercard range
     useEffect(() => {
@@ -251,6 +264,20 @@ function useBlobIsLoading(blobInfo: BlobInfo, pathname: string): boolean {
     // pathname is intentionally ignored to make this functionality work
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return pathname !== useMemo(() => pathname, [blobInfo])
+}
+
+/**
+ * Helper hook to prevent resetting the editor view if the blob contents hasn't
+ * changed.
+ */
+function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
+    const blobRef = useRef(blobInfo)
+    return useMemo(() => {
+        if (!isEqual(blobRef.current, blobInfo)) {
+            blobRef.current = blobInfo
+        }
+        return blobRef.current
+    }, [blobInfo])
 }
 
 /**
