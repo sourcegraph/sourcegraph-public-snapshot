@@ -3,6 +3,10 @@ package codenav
 import (
 	"context"
 
+	"github.com/sourcegraph/go-diff/diff"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -17,4 +21,10 @@ type UploadService interface {
 
 type GitserverClient interface {
 	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
+	DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
+}
+
+type DBStore interface {
+	RepoName(ctx context.Context, repositoryID int) (string, error)
+	RepoNames(ctx context.Context, repositoryIDs ...int) (map[int]string, error)
 }

@@ -6,14 +6,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -24,10 +20,9 @@ func TestHover(t *testing.T) {
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockLogger := logtest.Scoped(t)
-	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
-	mockGitServer := gitserver.NewClient(mockDB)
+	mockDBStore := NewMockDBStore()
 	mockGitserverClient := NewMockGitserverClient()
+	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -80,10 +75,9 @@ func TestHoverRemote(t *testing.T) {
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockLogger := logtest.Scoped(t)
-	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
-	mockGitServer := gitserver.NewClient(mockDB)
+	mockDBStore := NewMockDBStore()
 	mockGitserverClient := NewMockGitserverClient()
+	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)

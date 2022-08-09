@@ -45,7 +45,7 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	codenavResolver := codenavgraphql.New(services.CodeNavSvc, config.HunkCacheSize, codenavCtx)
+	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, codenavCtx)
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
@@ -54,11 +54,9 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		policyMatcher,
 		services.indexEnqueuer,
 		symbols.DefaultClient,
-		config.MaximumIndexesPerMonikerSearch,
 		observationContext,
 		db,
 		codenavResolver,
-		services.CodeNavSvc,
 	)
 
 	obsCtx := &observation.Context{

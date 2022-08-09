@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -28,26 +27,25 @@ type RequestState struct {
 func NewRequestState(
 	uploads []shared.Dump,
 	authChecker authz.SubRepoPermissionChecker,
-	client gitserver.Client, repo *types.Repo, commit, path string,
-	gitclient shared.GitserverClient,
+	gitclient shared.GitserverClient, repo *types.Repo, commit, path string,
 	maxIndexes int,
 	hunkCacheSize int,
-) *RequestState {
+) RequestState {
 	r := &RequestState{}
 	r.SetUploadsDataLoader(uploads)
 	r.SetAuthChecker(authChecker)
-	r.SetLocalGitTreeTranslator(client, repo, commit, path, hunkCacheSize)
+	r.SetLocalGitTreeTranslator(gitclient, repo, commit, path, hunkCacheSize)
 	r.SetLocalCommitCache(gitclient)
 	r.SetMaximumIndexesPerMonikerSearch(maxIndexes)
 
-	return r
+	return *r
 }
 
-func (r *RequestState) GetCacheUploads() []shared.Dump {
+func (r RequestState) GetCacheUploads() []shared.Dump {
 	return r.dataLoader.uploads
 }
 
-func (r *RequestState) GetCacheUploadsAtIndex(index int) shared.Dump {
+func (r RequestState) GetCacheUploadsAtIndex(index int) shared.Dump {
 	if index < 0 || index >= len(r.dataLoader.uploads) {
 		return shared.Dump{}
 	}
@@ -66,7 +64,7 @@ func (r *RequestState) SetUploadsDataLoader(uploads []shared.Dump) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *types.Repo, commit, path string, hunkCacheSize int) error {
+func (r *RequestState) SetLocalGitTreeTranslator(client shared.GitserverClient, repo *types.Repo, commit, path string, hunkCacheSize int) error {
 	hunkCache, err := NewHunkCache(hunkCacheSize)
 	if err != nil {
 		return err
