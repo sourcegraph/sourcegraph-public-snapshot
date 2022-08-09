@@ -772,29 +772,17 @@ type Mutation {
     """
     Associate a new key-value pair with a repo.
     """
-    addRepoKeyValuePair(
-            repo: ID! 
-            key: String!
-            value: String
-    ): EmptyResponse!
+    addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
 
     """
     Update a key-value pair associated with a repo.
     """
-    updateRepoKeyValuePair(
-            repo: ID! 
-            key: String!
-            value: String
-    ): EmptyResponse!
+    updateRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
 
     """
     Delete a key-value pair associated with a repo.
     """
-    deleteRepoKeyValuePair(
-            repo: ID! 
-            key: String!
-    ): EmptyResponse!
-
+    deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
 }
 
 """
@@ -2870,7 +2858,6 @@ type Repository implements Node & GenericSearchResultInterface {
 A key-value pair
 """
 type KeyValuePair {
-
     """
     The non-nullable key.
     """
