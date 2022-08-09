@@ -78,6 +78,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // Reference panel specific props
         disableStatusBar,
         disableDecorations,
+        disableHovercards,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -155,6 +156,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 extensionsController,
                 disableStatusBar,
                 disableDecorations,
+                disableHovercards,
             }),
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),

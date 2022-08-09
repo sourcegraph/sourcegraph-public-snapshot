@@ -672,6 +672,11 @@ const SideBlob: React.FunctionComponent<
             history={props.history}
             location={props.location}
             disableStatusBar={true}
+            // The CodeMirror-React integration uses its own <Router />
+            // component and therefore doesn't work with MemoryRouter as used by
+            // the reference panel (clicking on the buttons in the hovercard
+            // doesn't have any effect).
+            disableHovercards={true}
             disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
             wrapCode={true}
             className={styles.sideBlobCode}
