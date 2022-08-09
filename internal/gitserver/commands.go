@@ -142,14 +142,14 @@ func (i *DiffFileIterator) Next() (*diff.FileDiff, error) {
 	return fd, err
 }
 
-// ShortLogOptions contains options for (Repository).ShortLog.
-type ShortLogOptions struct {
+// ContributorOptions contains options for filtering contributor commit counts
+type ContributorOptions struct {
 	Range string // the range for which stats will be fetched
 	After string // the date after which to collect commits
 	Path  string // compute stats for commits that touch this path
 }
 
-func (c *clientImplementor) ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error) {
+func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -203,13 +203,13 @@ func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 // -sne` command.
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
-func parseShortLog(out []byte) ([]*gitdomain.PersonCount, error) {
+func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
 	out = bytes.TrimSpace(out)
 	if len(out) == 0 {
 		return nil, nil
 	}
 	lines := bytes.Split(out, []byte{'\n'})
-	results := make([]*gitdomain.PersonCount, len(lines))
+	results := make([]*gitdomain.ContributorCount, len(lines))
 	for i, line := range lines {
 		// example line: "1125\tJane Doe <jane@sourcegraph.com>"
 		match := logEntryPattern.FindSubmatch(line)
@@ -225,7 +225,7 @@ func parseShortLog(out []byte) ([]*gitdomain.PersonCount, error) {
 		if err != nil || addr == nil {
 			addr = &mail.Address{Name: string(match[2])}
 		}
-		results[i] = &gitdomain.PersonCount{
+		results[i] = &gitdomain.ContributorCount{
 			Count: int32(count),
 			Name:  addr.Name,
 			Email: addr.Address,
