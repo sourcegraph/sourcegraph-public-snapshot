@@ -253,7 +253,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 		}
 		return nil, errors.Wrap(err, c.syntectServer)
 	}
-	var response = &Response{
+	response := &Response{
 		Data:      r.Data,
 		Plaintext: r.Plaintext,
 	}
