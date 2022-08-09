@@ -10,7 +10,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -89,22 +88,27 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 	}
 	sort.Strings(ids)
 
-	decode := func(licenseKey string) (license.Info, error) {
+	type Info struct {
+		Tags      []string  `json:"t"`
+		UserCount uint      `json:"u"`
+		ExpiresAt time.Time `json:"e"`
+	}
+	decode := func(licenseKey string) (Info, error) {
 		decodedText, err := base64.RawURLEncoding.DecodeString(licenseKey)
 		if err != nil {
-			return license.Info{}, err
+			return Info{}, err
 		}
 
 		var decodedKey struct {
 			Info []byte `json:"info"`
 		}
 		if err := json.Unmarshal(decodedText, &decodedKey); err != nil {
-			return license.Info{}, err
+			return Info{}, err
 		}
 
-		var info license.Info
+		var info Info
 		if err := json.Unmarshal(decodedKey.Info, &info); err != nil {
-			return license.Info{}, err
+			return Info{}, err
 		}
 
 		return info, nil
