@@ -2,7 +2,8 @@ package encryption
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ Key = &NoopKey{}
@@ -25,7 +26,7 @@ func (k *NoopKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error)
 
 func (k *NoopKey) Decrypt(ctx context.Context, ciphertext []byte) (*Secret, error) {
 	if k.FailDecrypt {
-		return nil, fmt.Errorf("unsupported decrypt")
+		return nil, errors.New("unsupported decrypt")
 	}
 
 	s := NewSecret(string(ciphertext))
