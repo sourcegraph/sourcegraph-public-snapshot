@@ -113,8 +113,8 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 	defer func() { err = tx.Done(err) }()
 
 	type credential struct {
-		ID          int
-		Credentials string
+		ID         int
+		Credential string
 	}
 	credentials, err := func() (credentials []credential, err error) {
 		rows, err := tx.Query(ctx, sqlf.Sprintf(
@@ -143,7 +143,7 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 				rawCredential = decrypted
 			}
 
-			credentials = append(credentials, credential{ID: id, Credentials: rawCredential})
+			credentials = append(credentials, credential{ID: id, Credential: rawCredential})
 		}
 
 		return credentials, nil
@@ -152,8 +152,8 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 		return err
 	}
 
-	for _, cred := range credentials {
-		secret, id, ok, err := m.transform(ctx, cred.Credentials, f)
+	for _, credential := range credentials {
+		secret, id, ok, err := m.transform(ctx, credential.Credential, f)
 		if err != nil {
 			return err
 		}
@@ -161,7 +161,7 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 			continue
 		}
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, id, !sshMigrationsApplied, cred.ID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, id, !sshMigrationsApplied, credential.ID)); err != nil {
 			return err
 		}
 	}
