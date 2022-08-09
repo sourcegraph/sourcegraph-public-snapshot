@@ -15,4 +15,4 @@ When deleting a user with either option, the following information is removed:
 - User, Organization, or Global settings authored or modified by the user.
 - Bulk operations on changesets and batch changes created by the user.
 
-> WARNING: If deleted and recreated a user will no longer have access to the configurations and customizations they may have made for their old account. The database will store information about their previous configuration, but a user associated with a new `id` in the `users` table of `pgsql` will be created. For example site admin privileges will have to be re assigned if a once site admin user is deleted and recreated. 
+> WARNING: If deleted and recreated a user will no longer have access to the configurations and customizations they may have made for their old account. The database will store information about their previous configuration, but a user associated with a new `id` in the `users` table in PostgreSQL will be created. For example, site admin privileges will have to be re-assigned if a once site admin user is deleted and recreated. 
