@@ -72,6 +72,8 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	addKVPs(t, client)
+
 	t.Run("search contexts", func(t *testing.T) {
 		testSearchContextsCRUD(t, client)
 		testListingSearchContexts(t, client)
@@ -121,7 +123,7 @@ func addKVPs(t *testing.T, client *gqltestutil.Client) {
 		t.Fatal(err)
 	}
 
-	repo2, err := client.Repository("github.com/sgtest/mux")
+	repo2, err := client.Repository("github.com/sgtest/appdash")
 	if err != nil {
 		t.Fatal(err)
 	}
