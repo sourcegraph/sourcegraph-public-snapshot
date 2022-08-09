@@ -60,25 +60,25 @@ func NewHandler(db database.DB, logger log.Logger, githubAppCloudSetupHandler ht
 	)
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))
 	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(db)))
-	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn(db, lockoutStore))))
-	r.Get(router.SignOut).Handler(trace.Route(http.HandlerFunc(serveSignOutHandler(db))))
-	r.Get(router.UnlockAccount).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleUnlockAccount(db, lockoutStore))))
-	r.Get(router.ResetPasswordInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordInit(db))))
-	r.Get(router.ResetPasswordCode).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordCode(db))))
-	r.Get(router.VerifyEmail).Handler(trace.Route(http.HandlerFunc(serveVerifyEmail(db))))
+	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(db, lockoutStore)))
+	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(db)))
+	r.Get(router.UnlockAccount).Handler(trace.Route(userpasswd.HandleUnlockAccount(db, lockoutStore)))
+	r.Get(router.ResetPasswordInit).Handler(trace.Route(userpasswd.HandleResetPasswordInit(db)))
+	r.Get(router.ResetPasswordCode).Handler(trace.Route(userpasswd.HandleResetPasswordCode(db)))
+	r.Get(router.VerifyEmail).Handler(trace.Route(serveVerifyEmail(db)))
 
-	r.Get(router.CheckUsernameTaken).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleCheckUsernameTaken(db))))
+	r.Get(router.CheckUsernameTaken).Handler(trace.Route(userpasswd.HandleCheckUsernameTaken(db)))
 
 	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(registry.HandleRegistryExtensionBundle(db))))
 
 	// Usage statistics ZIP download
-	r.Get(router.UsageStatsDownload).Handler(trace.Route(http.HandlerFunc(usageStatsArchiveHandler(db))))
+	r.Get(router.UsageStatsDownload).Handler(trace.Route(usageStatsArchiveHandler(db)))
 
 	// One-click export ZIP download
 	r.Get(router.OneClickExportArchive).Handler(trace.Route(oneClickExportHandler(db, logger)))
 
 	// Ping retrieval
-	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))
+	r.Get(router.LatestPing).Handler(trace.Route(latestPingHandler(db)))
 
 	// Sourcegraph Cloud GitHub App setup
 	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppCloudSetupHandler))
