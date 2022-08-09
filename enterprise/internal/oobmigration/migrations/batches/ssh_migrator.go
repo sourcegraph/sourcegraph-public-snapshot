@@ -61,36 +61,95 @@ FROM
 
 // Up generates a keypair for authenticators missing SSH credentials.
 func (m *SSHMigrator) Up(ctx context.Context) (err error) {
-	transformer := func(credential string) (auth.Authenticator, bool, error) {
-		a, err := database.UnmarshalAuthenticator(credential)
+	transformer := func(credential string) (string, bool, error) {
+		UnmarshalAuthenticator := func(raw string) (auth.Authenticator, error) {
+			// We do two unmarshals: the first just to get the type, and then the second
+			// to actually unmarshal the authenticator itself.
+			var partial struct {
+				Type database.AuthenticatorType
+				Auth json.RawMessage
+			}
+			if err := json.Unmarshal([]byte(raw), &partial); err != nil {
+				return nil, err
+			}
+
+			var a any
+			switch partial.Type {
+			case database.AuthenticatorTypeOAuthClient:
+				a = &auth.OAuthClient{}
+			case database.AuthenticatorTypeBasicAuth:
+				a = &auth.BasicAuth{}
+			case database.AuthenticatorTypeBasicAuthWithSSH:
+				a = &auth.BasicAuthWithSSH{}
+			case database.AuthenticatorTypeOAuthBearerToken:
+				a = &auth.OAuthBearerToken{}
+			case database.AuthenticatorTypeOAuthBearerTokenWithSSH:
+				a = &auth.OAuthBearerTokenWithSSH{}
+			case database.AuthenticatorTypeBitbucketServerSudoableOAuthClient:
+				a = &bitbucketserver.SudoableOAuthClient{}
+			case database.AuthenticatorTypeGitLabSudoableToken:
+				a = &gitlab.SudoableToken{}
+			default:
+				return nil, errors.Errorf("unknown credential type: %s", partial.Type)
+			}
+
+			if err := json.Unmarshal(partial.Auth, &a); err != nil {
+				return nil, err
+			}
+
+			return a.(auth.Authenticator), nil
+		}
+		a, err := UnmarshalAuthenticator(credential)
 		if err != nil {
-			return nil, false, errors.Wrap(err, "unmarshalling authenticator")
+			return "", false, errors.Wrap(err, "unmarshalling authenticator")
 		}
 
 		keypair, err := encryption.GenerateRSAKey()
 		if err != nil {
-			return nil, false, err
+			return "", false, err
 		}
 
 		switch a := a.(type) {
 		case *auth.OAuthBearerToken:
-			return &auth.OAuthBearerTokenWithSSH{
-				OAuthBearerToken: *a,
-				PrivateKey:       keypair.PrivateKey,
-				PublicKey:        keypair.PublicKey,
-				Passphrase:       keypair.Passphrase,
-			}, true, nil
+			rawx, err := json.Marshal(struct {
+				Type string
+				Auth auth.Authenticator
+			}{
+				Type: "OAuthBearerTokenWithSSH",
+				Auth: &auth.OAuthBearerTokenWithSSH{
+					OAuthBearerToken: *a,
+					PrivateKey:       keypair.PrivateKey,
+					PublicKey:        keypair.PublicKey,
+					Passphrase:       keypair.Passphrase,
+				},
+			})
+			if err != nil {
+				return "", false, err
+			}
+
+			return string(rawx), true, nil
 
 		case *auth.BasicAuth:
-			return &auth.BasicAuthWithSSH{
-				BasicAuth:  *a,
-				PrivateKey: keypair.PrivateKey,
-				PublicKey:  keypair.PublicKey,
-				Passphrase: keypair.Passphrase,
-			}, true, nil
+			rawx, err := json.Marshal(struct {
+				Type string
+				Auth auth.Authenticator
+			}{
+				Type: "BasicAuthWithSSH",
+				Auth: &auth.BasicAuthWithSSH{
+					BasicAuth:  *a,
+					PrivateKey: keypair.PrivateKey,
+					PublicKey:  keypair.PublicKey,
+					Passphrase: keypair.Passphrase,
+				},
+			})
+			if err != nil {
+				return "", false, err
+			}
+
+			return string(rawx), true, nil
 
 		default:
-			return nil, false, nil
+			return "", false, nil
 		}
 	}
 
@@ -99,26 +158,87 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 
 // Down converts all credentials with an SSH key back to a historically supported version.
 func (m *SSHMigrator) Down(ctx context.Context) (err error) {
-	transformer := func(credential string) (auth.Authenticator, bool, error) {
-		a, err := database.UnmarshalAuthenticator(credential)
+	transformer := func(credential string) (string, bool, error) {
+		UnmarshalAuthenticator := func(raw string) (auth.Authenticator, error) {
+			// We do two unmarshals: the first just to get the type, and then the second
+			// to actually unmarshal the authenticator itself.
+			var partial struct {
+				Type database.AuthenticatorType
+				Auth json.RawMessage
+			}
+			if err := json.Unmarshal([]byte(raw), &partial); err != nil {
+				return nil, err
+			}
+
+			var a any
+			switch partial.Type {
+			case database.AuthenticatorTypeOAuthClient:
+				a = &auth.OAuthClient{}
+			case database.AuthenticatorTypeBasicAuth:
+				a = &auth.BasicAuth{}
+			case database.AuthenticatorTypeBasicAuthWithSSH:
+				a = &auth.BasicAuthWithSSH{}
+			case database.AuthenticatorTypeOAuthBearerToken:
+				a = &auth.OAuthBearerToken{}
+			case database.AuthenticatorTypeOAuthBearerTokenWithSSH:
+				a = &auth.OAuthBearerTokenWithSSH{}
+			case database.AuthenticatorTypeBitbucketServerSudoableOAuthClient:
+				a = &bitbucketserver.SudoableOAuthClient{}
+			case database.AuthenticatorTypeGitLabSudoableToken:
+				a = &gitlab.SudoableToken{}
+			default:
+				return nil, errors.Errorf("unknown credential type: %s", partial.Type)
+			}
+
+			if err := json.Unmarshal(partial.Auth, &a); err != nil {
+				return nil, err
+			}
+
+			return a.(auth.Authenticator), nil
+		}
+		a, err := UnmarshalAuthenticator(credential)
 		if err != nil {
-			return nil, false, errors.Wrap(err, "unmarshalling authenticator")
+			return "", false, errors.Wrap(err, "unmarshalling authenticator")
 		}
 
 		switch a := a.(type) {
 		case *auth.OAuthBearerTokenWithSSH:
-			return &a.OAuthBearerToken, true, nil
+			rawx, err := json.Marshal(struct {
+				Type string
+				Auth any
+			}{
+				Type: "OAuthBearerToken",
+				Auth: a.OAuthBearerToken,
+			})
+			if err != nil {
+				return "", false, err
+			}
+
+			return string(rawx), true, nil
+
 		case *auth.BasicAuthWithSSH:
-			return &a.BasicAuth, true, nil
+			rawx, err := json.Marshal(struct {
+				Type string
+				Auth any
+			}{
+				Type: "BasicAuth",
+				Auth: a.BasicAuth,
+			})
+			if err != nil {
+				return "", false, err
+			}
+
+			return string(rawx), true, nil
+
 		default:
-			return nil, false, err
+			return "", false, err
 		}
 	}
 
 	return m.run(ctx, true, transformer)
 }
 
-func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func(string) (auth.Authenticator, bool, error)) (err error) {
+func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func(string) (string, bool, error)) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -142,13 +262,9 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 			if err := rows.Scan(&id, &rawCredential, &keyID); err != nil {
 				return nil, err
 			}
-			if keyID != "" {
-				decrypted, err := encryption.MaybeDecrypt(ctx, m.key, rawCredential, keyID)
-				if err != nil {
-					return nil, err
-				}
-
-				rawCredential = decrypted
+			rawCredential, err = encryption.MaybeDecrypt(ctx, m.key, rawCredential, keyID)
+			if err != nil {
+				return nil, err
 			}
 
 			credentials = append(credentials, credential{ID: id, Credential: rawCredential})
@@ -161,12 +277,20 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 	}
 
 	for _, credential := range credentials {
-		if secret, id, ok, err := m.transform(ctx, credential.Credential, f); err != nil {
+		newCred, ok, err := f(credential.Credential)
+		if err != nil {
 			return err
-		} else if ok {
-			if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, id, !sshMigrationsApplied, credential.ID)); err != nil {
-				return err
-			}
+		}
+		if !ok {
+			continue
+		}
+
+		secret, keyID, err := encryption.MaybeEncrypt(ctx, m.key, newCred)
+		if err != nil {
+			return err
+		}
+		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, keyID, !sshMigrationsApplied, credential.ID)); err != nil {
+			return err
 		}
 	}
 
@@ -188,65 +312,3 @@ SET
 	ssh_migration_applied = %s
 WHERE id = %s
 `
-
-func (m *SSHMigrator) transform(ctx context.Context, credential string, f func(string) (auth.Authenticator, bool, error)) ([]byte, string, bool, error) {
-	newCred, ok, err := f(credential)
-	if err != nil {
-		return nil, "", false, err
-	}
-	if !ok {
-		return nil, "", false, nil
-	}
-
-	marshalAuthenticator := func(a auth.Authenticator) (string, error) {
-		var t database.AuthenticatorType
-		switch a.(type) {
-		case *auth.OAuthClient:
-			t = database.AuthenticatorTypeOAuthClient
-		case *auth.BasicAuth:
-			t = database.AuthenticatorTypeBasicAuth
-		case *auth.BasicAuthWithSSH:
-			t = database.AuthenticatorTypeBasicAuthWithSSH
-		case *auth.OAuthBearerToken:
-			t = database.AuthenticatorTypeOAuthBearerToken
-		case *auth.OAuthBearerTokenWithSSH:
-			t = database.AuthenticatorTypeOAuthBearerTokenWithSSH
-		case *bitbucketserver.SudoableOAuthClient:
-			t = database.AuthenticatorTypeBitbucketServerSudoableOAuthClient
-		case *gitlab.SudoableToken:
-			t = database.AuthenticatorTypeGitLabSudoableToken
-		default:
-			return "", errors.Errorf("unknown Authenticator implementation type: %T", a)
-		}
-
-		raw, err := json.Marshal(struct {
-			Type database.AuthenticatorType
-			Auth auth.Authenticator
-		}{
-			Type: t,
-			Auth: a,
-		})
-		if err != nil {
-			return "", err
-		}
-
-		return string(raw), nil
-	}
-
-	EncryptAuthenticator := func(ctx context.Context, key encryption.Key, a auth.Authenticator) ([]byte, string, error) {
-		raw, err := marshalAuthenticator(a)
-		if err != nil {
-			return nil, "", errors.Wrap(err, "marshalling authenticator")
-		}
-
-		data, keyID, err := encryption.MaybeEncrypt(ctx, key, raw)
-		return []byte(data), keyID, err
-	}
-
-	secret, id, err := EncryptAuthenticator(ctx, m.key, newCred)
-	if err != nil {
-		return nil, "", false, errors.Wrap(err, "encrypting authenticator")
-	}
-
-	return secret, id, true, nil
-}
