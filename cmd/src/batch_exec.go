@@ -98,7 +98,7 @@ Examples:
 
 		err := executeBatchSpecInWorkspaces(ctx, flags)
 		if err != nil {
-			return cmderrors.ExitCode(1, nil)
+			return cmderrors.ExitCode(1, err)
 		}
 
 		return nil
