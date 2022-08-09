@@ -1,15 +1,9 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
 /* TODO:
-+ Add count of admin users
-+ Add Download report button
-
 - Add link to billable events in bottom note
-+ Link Create Users button
-+ Fix color of Actions Dropdown Trigger
 
 - Integrate actions with APIs
-- Pagination
 - Fix typos, linting, types, self-refactoring
 - Figure out feature flagging
 */
@@ -74,6 +68,7 @@ export const UsersManagement: React.FunctionComponent = () => {
         UsersManagementVariables
     >(USERS_MANAGEMENT, {
         variables: {
+            first: 3,
             dateRange: AnalyticsDateRange.LAST_THREE_MONTHS,
             grouping: AnalyticsGrouping.WEEKLY,
             usersQuery: null,
@@ -106,6 +101,9 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
     const [usersLastActivePeriod, setUsersLastActivePeriod] = useState<SiteUsersLastActivePeriod>(
         SiteUsersLastActivePeriod.ALL
     )
+    const [first, setFirst] = useState(3)
+
+    const showMore = () => setFirst(count => count * 2)
 
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
@@ -114,6 +112,7 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
     useEffect(() => {
         const newVariables = {
             ...variables,
+            first,
             dateRange: dateRange.value,
             grouping: grouping.value,
             usersQuery,
@@ -122,7 +121,16 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
         if (!isEqual(variables, newVariables)) {
             refetch(newVariables)
         }
-    }, [dateRange.value, aggregation.selected, grouping.value, usersQuery, usersLastActivePeriod, variables, refetch])
+    }, [
+        first,
+        dateRange.value,
+        aggregation.selected,
+        grouping.value,
+        usersQuery,
+        usersLastActivePeriod,
+        variables,
+        refetch,
+    ])
 
     const [activities, legends] = useMemo(() => {
         if (!data) {
@@ -397,10 +405,20 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                     data={data.site.users.nodes}
                     note={
                         <Text as="span">
-                            Note: Events is the count of all billable events which equate to billable usage.{' '}
+                            Note: Events is the count of all billable events which equate to billable usage.
                         </Text>
                     }
                 />
+                <div className="d-flex justify-content-between text-muted mb-4">
+                    <Text>
+                        Showing {data.site.users.nodes.length} of {data.site.users.totalCount} users
+                    </Text>
+                    {data.site.users.nodes.length !== data.site.users.totalCount ? (
+                        <Button variant="link" onClick={showMore}>
+                            Show More
+                        </Button>
+                    ) : null}
+                </div>
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours..

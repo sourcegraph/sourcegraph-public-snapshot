@@ -3,6 +3,7 @@ import { gql } from '@sourcegraph/http-client'
 export const USERS_MANAGEMENT = gql`
     query UsersManagement(
         $dateRange: AnalyticsDateRange!
+        $first: Int!
         $grouping: AnalyticsGrouping!
         $usersLastActivePeriod: SiteUsersLastActivePeriod
         $usersQuery: String
@@ -31,7 +32,8 @@ export const USERS_MANAGEMENT = gql`
                 }
             }
             users(query: $usersQuery, lastActivePeriod: $usersLastActivePeriod) {
-                nodes(first: 100, orderBy: $usersOrderBy, descending: $usersOrderDescending) {
+                totalCount
+                nodes(first: $first, orderBy: $usersOrderBy, descending: $usersOrderDescending) {
                     id
                     username
                     email
@@ -47,6 +49,14 @@ export const USERS_MANAGEMENT = gql`
         }
         users {
             totalCount
+        }
+    }
+`
+
+export const FORCE_SIGN_OUT_USER = gql`
+    mutation InvalidateSessionsByIDs {
+        invalidateSessionsByIDs(userIDs: ["userID1", "userID2"]) {
+            alwaysNil
         }
     }
 `
