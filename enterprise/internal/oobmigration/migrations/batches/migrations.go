@@ -40,7 +40,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 // by batch changes with the migration runner.
 func Register(cstore *store.Store, outOfBandMigrationRunner *oobmigration.Runner) error {
 	migrations := map[int]oobmigration.Migrator{
-		BatchChangesSSHMigrationID: NewSSHMigratorWithDB(cstore),
+		BatchChangesSSHMigrationID: NewSSHMigratorWithDB(cstore, keyring.Default().BatchChangesCredentialKey),
 	}
 
 	for id, migrator := range migrations {

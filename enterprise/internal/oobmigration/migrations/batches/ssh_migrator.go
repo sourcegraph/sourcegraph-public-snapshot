@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,12 +25,12 @@ type SSHMigrator struct {
 
 var _ oobmigration.Migrator = &SSHMigrator{}
 
-func NewSSHMigratorWithDB(store *store.Store /* db database.DB */) *SSHMigrator {
+func NewSSHMigratorWithDB(store *store.Store /* db database.DB */, key encryption.Key) *SSHMigrator {
 	return &SSHMigrator{
 		logger:    log.Scoped("SSHMigrator", ""),
 		store:     store, /* basestore.NewWithHandle(db.Handle()) */
 		BatchSize: 5,
-		key:       keyring.Default().BatchChangesCredentialKey, // TODO
+		key:       key,
 	}
 }
 
