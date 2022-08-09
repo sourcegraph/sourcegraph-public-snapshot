@@ -4,7 +4,7 @@ As a site administrator, you have the ability to delete users and their associat
 
 On this page, you are presented two options:
 
-- "Delete": the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
+- "Delete": the user and ALL associated data is marked as deleted in the DB and never served again (you CANNOT undo this). 
 - "Delete forever": the user and ALL associated data is permanently removed from the DB (you CANNOT undo this).
 
 When deleting a user with either option, the following information is removed:
