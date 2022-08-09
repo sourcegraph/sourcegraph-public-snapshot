@@ -117,12 +117,7 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 		Credential string
 	}
 	credentials, err := func() (credentials []credential, err error) {
-		rows, err := tx.Query(ctx, sqlf.Sprintf(
-			sshMigratorSelectQuery,
-			database.UserCredentialDomainBatches,
-			sshMigrationsApplied,
-			m.BatchSize,
-		))
+		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorSelectQuery, database.UserCredentialDomainBatches, sshMigrationsApplied, m.BatchSize))
 		if err != nil {
 			return nil, err
 		}
@@ -153,16 +148,12 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 	}
 
 	for _, credential := range credentials {
-		secret, id, ok, err := m.transform(ctx, credential.Credential, f)
-		if err != nil {
+		if secret, id, ok, err := m.transform(ctx, credential.Credential, f); err != nil {
 			return err
-		}
-		if !ok {
-			continue
-		}
-
-		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, id, !sshMigrationsApplied, credential.ID)); err != nil {
-			return err
+		} else if ok {
+			if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, secret, id, !sshMigrationsApplied, credential.ID)); err != nil {
+				return err
+			}
 		}
 	}
 
