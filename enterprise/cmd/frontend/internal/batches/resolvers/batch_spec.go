@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -509,6 +511,10 @@ func (r *batchSpecResolver) Source() string {
 	return btypes.BatchSpecSourceLocal.ToGraphQL()
 }
 
+func (r *batchSpecResolver) UploadToken() string {
+	return "randell-token"
+}
+
 func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
 		if r.preloadedNamespace != nil {
@@ -613,4 +619,37 @@ func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, err
 		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchSpec.UserID)
 	})
 	return r.canAdminister, r.canAdministerErr
+}
+
+func (r *batchSpecResolver) Mounts(ctx context.Context, args *graphqlbackend.ListBatchSpecMountArgs) (_ graphqlbackend.BatchSpecMountConnectionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.BatchSpecs", fmt.Sprintf("First: %d, After: %v", args.First, args.After))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+
+	opts := store.ListBatchSpecMountsOpts{
+		LimitOpts: store.LimitOpts{
+			Limit: int(args.First),
+		},
+		BatchSpecRandID: r.batchSpec.RandID,
+	}
+
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
+
+	return &batchSpecMountConnectionResolver{store: r.store, opts: opts}, nil
 }
