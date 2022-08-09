@@ -274,9 +274,6 @@ type ExternalServicesListOptions struct {
 	ForUpdate bool
 	// When true, soft-deleted external services will also be included in the results.
 	IncludeDeleted bool
-
-	// When true, do not attempt to fetch and decrypt the row's configuration.
-	ExcludeConfigField bool
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
@@ -1384,14 +1381,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
-	}
-
-	if opt.ExcludeConfigField {
-		for _, result := range results {
-			result.Config = ""
-		}
-
-		return results, nil
 	}
 
 	// Now we may need to decrypt config. Since each decrypt operation could make an
