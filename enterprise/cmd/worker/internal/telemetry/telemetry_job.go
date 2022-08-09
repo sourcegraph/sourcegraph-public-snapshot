@@ -178,10 +178,7 @@ func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	if !isEnabled() {
 		return disabledErr
 	}
-	topicConfig, err := getTopicConfig()
-	if err != nil {
-		return errors.Wrap(err, "getTopicConfig")
-	}
+	topicConfig := getTopicConfig()
 
 	instanceMetadata, err := getInstanceMetadata(ctx, t.globalStateStore, t.userEmailsStore)
 	if err != nil {
@@ -257,18 +254,21 @@ type topicConfig struct {
 	topicName   string
 }
 
-func getTopicConfig() (topicConfig, error) {
+const DefaultTopicName = "dotcom-events"
+const DefaultProjectName = "TelligentSourcegraph"
+
+func getTopicConfig() topicConfig {
 	var config topicConfig
 
 	config.topicName = confClient.Get().ExportUsageTelemetry.TopicName
 	if config.topicName == "" {
-		return config, errors.New("missing topic name to export usage data")
+		config.topicName = DefaultTopicName
 	}
 	config.projectName = confClient.Get().ExportUsageTelemetry.TopicProjectName
 	if config.projectName == "" {
-		return config, errors.New("missing project name to export usage data")
+		config.projectName = DefaultProjectName
 	}
-	return config, nil
+	return config
 }
 
 func emptyIfNil(s *string) string {

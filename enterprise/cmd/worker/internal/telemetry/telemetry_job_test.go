@@ -390,46 +390,6 @@ func validConfiguration() schema.SiteConfiguration {
 	}}
 }
 
-func TestHandleInvalidConfig(t *testing.T) {
-	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbHandle)
-	bookmarkStore := newBookmarkStore(db)
-
-	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
-	reset := envvar.MockExportUsageData(true)
-	defer reset()
-
-	obsContext := &observation.Context{
-		Logger:       logger,
-		Tracer:       nil,
-		Registerer:   metrics.TestRegisterer,
-		HoneyDataset: nil,
-	}
-
-	t.Run("handle fails when missing project name", func(t *testing.T) {
-		config := validConfiguration()
-		config.ExportUsageTelemetry.TopicProjectName = ""
-		confClient.Mock(&conf.Unified{SiteConfiguration: config})
-
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
-		err := handler.Handle(ctx)
-
-		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
-	})
-	t.Run("handle fails when missing topic name", func(t *testing.T) {
-		config := validConfiguration()
-		config.ExportUsageTelemetry.TopicName = ""
-		confClient.Mock(&conf.Unified{SiteConfiguration: config})
-
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
-		err := handler.Handle(ctx)
-
-		autogold.Want("handle fails when missing topic name", "getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
-	})
-}
-
 func TestBuildBigQueryObject(t *testing.T) {
 	atTime := time.Date(2022, 7, 22, 0, 0, 0, 0, time.UTC)
 	flags := make(featureflag.EvaluatedFlagSet)
