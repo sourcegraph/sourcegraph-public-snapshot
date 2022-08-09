@@ -32,6 +32,7 @@ RUN apt-get update && \
         systemd \
         udev \
         vim-tiny \
+        software-properties-common \
         wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -48,6 +49,11 @@ RUN sed -i -e 's/^AcceptEnv LANG LC_\*$/#AcceptEnv LANG LC_*/' /etc/ssh/sshd_con
 RUN echo "root:root" | chpasswd
 
 ### END UPSTREAM SECTION
+
+# hadolint ignore=DL3008,DL3009
+RUN add-apt-repository ppa:git-core/ppa && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends git
 
 # hadolint ignore=DL4006
 RUN mkdir -p /etc/apt/keyrings && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
