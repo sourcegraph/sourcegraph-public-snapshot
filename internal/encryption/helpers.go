@@ -27,7 +27,9 @@ func MaybeEncrypt(ctx context.Context, key Key, data string) (_, keyIdent string
 		return "", "", err
 	}
 
+	span, ctx = ot.StartSpanFromContext(ctx, "key.Version")
 	version, err := key.Version(ctx)
+	span.Finish()
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to get encryption key version")
 	}
@@ -47,18 +49,18 @@ func MaybeDecrypt(ctx context.Context, key Key, data, keyIdent string) (string, 
 	if key == nil {
 		return data, errors.Errorf("key mismatch: value is encrypted but no encryption key available in site-config")
 	}
-	version, err := key.Version(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get encryption key version")
-	}
-	if keyIdent != version.JSON() {
-		return "", errors.New("key mismatch: value is encrypted with an encryption key distinct from the one available in site-config")
-	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt")
 	decrypted, err := key.Decrypt(ctx, []byte(data))
 	span.Finish()
 	if err != nil {
+		span, ctx = ot.StartSpanFromContext(ctx, "key.Version")
+		version, versionErr := key.Version(ctx)
+		span.Finish()
+		if versionErr == nil && keyIdent != version.JSON() {
+			return "", errors.New("key mismatch: value is encrypted with an encryption key distinct from the one available in site-config")
+		}
+
 		return data, err
 	}
 

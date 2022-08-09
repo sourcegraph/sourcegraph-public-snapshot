@@ -8,21 +8,15 @@
 import React from 'react'
 
 import { Extension, Facet, StateEffect, StateEffectType, StateField } from '@codemirror/state'
-import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
 import { combineLatest, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
 import { filter, map, catchError, switchMap, distinctUntilChanged, startWith } from 'rxjs/operators'
 import { TextDocumentDecorationType } from 'sourcegraph'
 
-import {
-    DocumentHighlight,
-    LineOrPositionOrRange,
-    LOADER_DELAY,
-    MaybeLoadingResult,
-    emitLoading,
-} from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
+import { DocumentHighlight, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
+import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
 import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -42,6 +36,7 @@ import { BlobInfo, BlobProps } from '../Blob'
 import { showTextDocumentDecorations } from './decorations'
 import { documentHighlightsSource } from './document-highlights'
 import { hovercardSource } from './hovercard'
+import { SelectedLineRange, selectedLines } from './linenumbers'
 import { Container } from './react-interop'
 
 import { blobPropsFacet } from '.'
@@ -70,10 +65,18 @@ interface Context {
  */
 export function sourcegraphExtensions({
     blobInfo,
+    initialSelection,
     extensionsController,
+    disableStatusBar,
+    disableDecorations,
+    disableHovercards,
 }: {
     blobInfo: BlobInfo
+    initialSelection: LineOrPositionOrRange
     extensionsController: ExtensionsControllerProps['extensionsController']
+    disableStatusBar?: boolean
+    disableDecorations?: boolean
+    disableHovercards?: boolean
 }): Extension {
     const context = extensionsController.extHostAPI.then(async extensionHostAPI => {
         const uri = toURIWithPath(blobInfo)
@@ -89,8 +92,7 @@ export function sourcegraphExtensions({
             extensionHostAPI.addViewerIfNotExists({
                 type: 'CodeEditor' as const,
                 resource: uri,
-                // TODO: set initial selection from selected lines
-                selections: [], // lprToSelectionsZeroIndexed(initialPosition),
+                selections: lprToSelectionsZeroIndexed(initialSelection),
                 isActive: true,
             }),
         ])
@@ -135,11 +137,11 @@ export function sourcegraphExtensions({
         sgExtensionsContextField,
         // This needs to come before document highlights so that the hovered
         // token is highlighted differently
-        hovercardDataSource(),
+        disableHovercards ? [] : hovercardDataSource(),
         documentHighlightsDataSource(),
-        textDocumentDecorations(),
-        updateSelection(),
-        statusBar,
+        disableDecorations ? [] : textDocumentDecorations(),
+        updateSelection,
+        disableStatusBar ? [] : statusBar,
         warmupReferences,
     ]
 }
@@ -289,53 +291,35 @@ function textDocumentDecorations(): Extension {
 
 /**
  * The selection manager listens to CodeMirror selection changes and sends them
- * to the extensions host. This extension listens directly to selection changes
- * because it's a simple task and introducing an integration point with a
- * separate CodeMirror extension would just make things more complicated.
+ * to the extensions host.
  */
-class SelectionManager {
-    private context: Context | null = null
-    private selectionSet = false
+const updateSelection = ViewPlugin.fromClass(
+    class SelectionManager implements PluginValue {
+        private nextSelection: Subject<SelectedLineRange> = new Subject()
+        private subscription = new Subscription()
 
-    constructor(private readonly view: EditorView) {}
-
-    public update(viewUpdate: ViewUpdate): void {
-        if (viewUpdate.selectionSet) {
-            this.selectionSet = true
-            this.updatePosition()
+        constructor(view: EditorView) {
+            this.subscription = combineLatest([
+                view.state.field(sgExtensionsContextField).contextObservable,
+                this.nextSelection,
+            ]).subscribe(([context, selection]) => {
+                context.extensionHostAPI
+                    .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(selection ?? {}))
+                    .catch(error => console.error('Error updating editor selections on extension host', error))
+            })
         }
-    }
 
-    public setContext(context: Context | null): void {
-        this.context = context
-        if (this.selectionSet) {
-            this.updatePosition()
+        public destroy(): void {
+            this.subscription.unsubscribe()
         }
-    }
 
-    private updatePosition(): void {
-        if (this.context) {
-            const selection = this.view.state.selection.main
-            const fromLine = this.view.state.doc.lineAt(selection.from)
-            const toLine = selection.from === selection.to ? fromLine : this.view.state.doc.lineAt(selection.to)
-
-            const position: LineOrPositionOrRange = {
-                line: fromLine.number,
-                endLine: toLine.number,
+        public update(update: ViewUpdate): void {
+            if (update.state.field(selectedLines) !== update.startState.field(selectedLines)) {
+                this.nextSelection.next(update.state.field(selectedLines))
             }
-
-            this.context.extensionHostAPI
-                .setEditorSelections(this.context.viewerId, lprToSelectionsZeroIndexed(position))
-                .catch(error => console.error('Error updating editor selections on extension host', error))
         }
     }
-}
-
-function updateSelection(): Extension {
-    return ViewPlugin.fromClass(SelectionManager, {
-        provide: plugin => updateOnContextChange.of(plugin),
-    })
-}
+)
 
 //
 // Hovercards

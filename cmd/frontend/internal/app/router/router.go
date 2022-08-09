@@ -36,6 +36,8 @@ const (
 
 	UsageStatsDownload = "usage-stats.download"
 
+	OneClickExportArchive = "one-click-export.archive"
+
 	LatestPing = "pings.latest"
 
 	SetupGitHubAppCloud = "setup.github.app.cloud"
@@ -95,6 +97,8 @@ func newRouter() *mux.Router {
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 
 	base.Path("/site-admin/usage-statistics/archive").Methods("GET").Name(UsageStatsDownload)
+
+	base.Path("/site-admin/data-export/archive").Methods("POST").Name(OneClickExportArchive)
 
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
 

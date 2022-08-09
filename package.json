@@ -249,7 +249,7 @@
     "babel-plugin-lodash": "^3.3.4",
     "babel-plugin-webpack-chunkname": "^1.2.0",
     "babel-preset-react-app": "^10.0.0",
-    "browserslist": "^4.17.4",
+    "browserslist": "^4.21.3",
     "buffer": "^6.0.3",
     "bundlesize2": "^0.0.31",
     "chai": "^4.2.0",

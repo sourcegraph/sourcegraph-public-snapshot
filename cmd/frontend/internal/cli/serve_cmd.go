@@ -18,6 +18,7 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
 	sglog "github.com/sourcegraph/log"
@@ -313,6 +314,8 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
 	}
+
+	oce.GlobalExporter = oce.NewDataExporter(db, logger)
 
 	if printLogo {
 		// This is not a log entry and is usually disabled

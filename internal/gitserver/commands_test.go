@@ -33,7 +33,7 @@ func TestParseShortLog(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string // in the format of `git shortlog -sne`
-		want    []*gitdomain.PersonCount
+		want    []*gitdomain.ContributorCount
 		wantErr error
 	}{
 		{
@@ -42,7 +42,7 @@ func TestParseShortLog(t *testing.T) {
   1125	Jane Doe <jane@sourcegraph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*gitdomain.PersonCount{
+			want: []*gitdomain.ContributorCount{
 				{
 					Name:  "Jane Doe",
 					Email: "jane@sourcegraph.com",
@@ -60,7 +60,7 @@ func TestParseShortLog(t *testing.T) {
 			input: `  1125	jane@sourcegraph.com <jane@sourcegraph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*gitdomain.PersonCount{
+			want: []*gitdomain.ContributorCount{
 				{
 					Name:  "jane@sourcegraph.com",
 					Email: "jane@sourcegraph.com",
