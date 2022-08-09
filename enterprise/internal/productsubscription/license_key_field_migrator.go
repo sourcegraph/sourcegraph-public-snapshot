@@ -61,9 +61,6 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	licenseKeys, err := func() (_ map[string]string, err error) {
-		// Select and lock a single record within this transaction. This ensures
-		// that many worker instances can run the same migration concurrently
-		// without them all trying to convert the same record.
 		rows, err := tx.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorSelectQuery, 500))
 		if err != nil {
 			return nil, err
