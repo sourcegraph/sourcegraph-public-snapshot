@@ -11,6 +11,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.7
 	github.com/grafana/regexp v0.0.0-20220202152701-6a046c4caf32
+	github.com/hexops/autogold v1.3.0
 	github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05
 	github.com/json-iterator/go v1.1.12
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
@@ -54,7 +55,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/hexops/autogold v1.3.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/hexops/valast v1.4.1 // indirect
 	github.com/huandu/xstrings v1.0.0 // indirect
