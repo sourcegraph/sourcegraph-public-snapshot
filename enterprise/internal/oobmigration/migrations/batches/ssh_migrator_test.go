@@ -27,8 +27,7 @@ func TestSSHMigrator(t *testing.T) {
 
 	key := et.TestKey{}
 	cstore := store.New(db, &observation.TestContext, key)
-
-	migrator := NewSSHMigratorWithDB(cstore, key)
+	migrator := NewSSHMigratorWithDB(db, key)
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
 		t.Fatal(err)

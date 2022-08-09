@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -18,17 +17,17 @@ import (
 
 type SSHMigrator struct {
 	logger    log.Logger
-	store     *store.Store
+	store     *basestore.Store
 	BatchSize int
 	key       encryption.Key
 }
 
 var _ oobmigration.Migrator = &SSHMigrator{}
 
-func NewSSHMigratorWithDB(store *store.Store /* db database.DB */, key encryption.Key) *SSHMigrator {
+func NewSSHMigratorWithDB(db database.DB, key encryption.Key) *SSHMigrator {
 	return &SSHMigrator{
 		logger:    log.Scoped("SSHMigrator", ""),
-		store:     store, /* basestore.NewWithHandle(db.Handle()) */
+		store:     basestore.NewWithHandle(db.Handle()),
 		BatchSize: 5,
 		key:       key,
 	}
