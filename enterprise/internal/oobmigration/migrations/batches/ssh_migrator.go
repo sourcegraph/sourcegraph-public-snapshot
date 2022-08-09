@@ -82,29 +82,28 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 			return err
 		}
 
+		keypair, err := encryption.GenerateRSAKey()
+		if err != nil {
+			return err
+		}
+
 		var newCred auth.Authenticator
 		switch a := a.(type) {
 		case *auth.OAuthBearerToken:
-			cred := &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: *a}
-			keypair, err := encryption.GenerateRSAKey()
-			if err != nil {
-				return err
+			newCred = &auth.OAuthBearerTokenWithSSH{
+				OAuthBearerToken: *a,
+				PrivateKey:       keypair.PrivateKey,
+				PublicKey:        keypair.PublicKey,
+				Passphrase:       keypair.Passphrase,
 			}
-			cred.PrivateKey = keypair.PrivateKey
-			cred.PublicKey = keypair.PublicKey
-			cred.Passphrase = keypair.Passphrase
-			newCred = cred
 
 		case *auth.BasicAuth:
-			cred := &auth.BasicAuthWithSSH{BasicAuth: *a}
-			keypair, err := encryption.GenerateRSAKey()
-			if err != nil {
-				return err
+			newCred = &auth.BasicAuthWithSSH{
+				BasicAuth:  *a,
+				PrivateKey: keypair.PrivateKey,
+				PublicKey:  keypair.PublicKey,
+				Passphrase: keypair.Passphrase,
 			}
-			cred.PrivateKey = keypair.PrivateKey
-			cred.PublicKey = keypair.PublicKey
-			cred.Passphrase = keypair.Passphrase
-			newCred = cred
 		}
 		if newCred != nil {
 			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
