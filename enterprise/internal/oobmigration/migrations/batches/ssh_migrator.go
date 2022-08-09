@@ -2,6 +2,7 @@ package batches
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -195,7 +198,52 @@ func (m *SSHMigrator) transform(ctx context.Context, credential string, f func(s
 		return nil, "", false, nil
 	}
 
-	secret, id, err := database.EncryptAuthenticator(ctx, m.key, newCred)
+	marshalAuthenticator := func(a auth.Authenticator) (string, error) {
+		var t database.AuthenticatorType
+		switch a.(type) {
+		case *auth.OAuthClient:
+			t = database.AuthenticatorTypeOAuthClient
+		case *auth.BasicAuth:
+			t = database.AuthenticatorTypeBasicAuth
+		case *auth.BasicAuthWithSSH:
+			t = database.AuthenticatorTypeBasicAuthWithSSH
+		case *auth.OAuthBearerToken:
+			t = database.AuthenticatorTypeOAuthBearerToken
+		case *auth.OAuthBearerTokenWithSSH:
+			t = database.AuthenticatorTypeOAuthBearerTokenWithSSH
+		case *bitbucketserver.SudoableOAuthClient:
+			t = database.AuthenticatorTypeBitbucketServerSudoableOAuthClient
+		case *gitlab.SudoableToken:
+			t = database.AuthenticatorTypeGitLabSudoableToken
+		default:
+			return "", errors.Errorf("unknown Authenticator implementation type: %T", a)
+		}
+
+		raw, err := json.Marshal(struct {
+			Type database.AuthenticatorType
+			Auth auth.Authenticator
+		}{
+			Type: t,
+			Auth: a,
+		})
+		if err != nil {
+			return "", err
+		}
+
+		return string(raw), nil
+	}
+
+	EncryptAuthenticator := func(ctx context.Context, key encryption.Key, a auth.Authenticator) ([]byte, string, error) {
+		raw, err := marshalAuthenticator(a)
+		if err != nil {
+			return nil, "", errors.Wrap(err, "marshalling authenticator")
+		}
+
+		data, keyID, err := encryption.MaybeEncrypt(ctx, key, raw)
+		return []byte(data), keyID, err
+	}
+
+	secret, id, err := EncryptAuthenticator(ctx, m.key, newCred)
 	if err != nil {
 		return nil, "", false, errors.Wrap(err, "encrypting authenticator")
 	}
