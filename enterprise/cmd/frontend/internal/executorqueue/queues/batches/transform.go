@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"path/filepath"
 
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -21,6 +23,7 @@ import (
 
 const (
 	srcInputPath = "input.json"
+	srcMountDir  = "mounts"
 	srcTempDir   = ".src-tmp"
 	srcRepoDir   = "repository"
 )
@@ -28,6 +31,7 @@ const (
 type BatchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
+	ListBatchSpecMounts(ctx context.Context, opts store.ListBatchSpecMountsOpts) (mounts []*btypes.BatchSpecMount, next int64, err error)
 
 	DatabaseDB() database.DB
 }
@@ -57,6 +61,23 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
+	}
+
+	batchSpecMounts, _, err := s.ListBatchSpecMounts(ctx, store.ListBatchSpecMountsOpts{BatchSpecRandID: batchSpec.RandID})
+	if err != nil {
+		return apiclient.Job{}, errors.Wrap(err, "fetching mounts")
+	}
+	mounts := make([]apiclient.Mount, len(batchSpecMounts))
+	for i, mount := range batchSpecMounts {
+		mounts[i] = apiclient.Mount{
+			FileName: mount.FileName,
+			Path:     mount.Path,
+			URL: filepath.Join(
+				".executors/batches/mount",
+				string(relay.MarshalID("BatchSpecMount", batchSpec.RandID)),
+				string(relay.MarshalID("BatchSpecMount", mount.RandID)),
+			),
+		}
 	}
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
@@ -123,6 +144,8 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		VirtualMachineFiles: files,
 		RepositoryName:      string(repo.Name),
 		RepositoryDirectory: srcRepoDir,
+		Mounts:              mounts,
+		MountDirectory:      srcMountDir,
 		Commit:              workspace.Commit,
 		// We only care about the current repos content, so a shallow clone is good enough.
 		// Later we might allow to tweak more git parameters, like submodules and LFS.
@@ -138,6 +161,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 					// Tell src to store tmp files inside the workspace. Src currently
 					// runs on the host and we don't want pollution outside of the workspace.
 					"-tmp", srcTempDir,
+					"-mount", srcMountDir,
 				},
 				Dir: ".",
 				Env: []string{},
