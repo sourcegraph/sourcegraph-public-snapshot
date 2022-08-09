@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func serveVerifyEmail(db database.DB) http.HandlerFunc {
+func serveVerifyEmail(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		email := r.URL.Query().Get("email")

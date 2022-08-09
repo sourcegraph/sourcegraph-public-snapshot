@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
-func usageStatsArchiveHandler(db database.DB) http.HandlerFunc {
+func usageStatsArchiveHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 🚨SECURITY: Only site admins may get this archive.
 		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
