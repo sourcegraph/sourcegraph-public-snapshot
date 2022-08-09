@@ -66,7 +66,7 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 		if err := json.Unmarshal([]byte(credential), &partial); err != nil {
 			return "", false, err
 		}
-		var a auth.Authenticator
+		var a any
 		switch partial.Type {
 		case "BasicAuth":
 			a = &auth.BasicAuth{}
@@ -141,7 +141,7 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 		if err := json.Unmarshal([]byte(credential), &partial); err != nil {
 			return "", false, err
 		}
-		var a auth.Authenticator
+		var a any
 		switch partial.Type {
 		case "BasicAuthWithSSH":
 			a = &auth.BasicAuthWithSSH{}
