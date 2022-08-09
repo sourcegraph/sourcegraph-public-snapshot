@@ -11,6 +11,7 @@ function buildCodeIntelExtensions({ pathToExtensionBundles, pathToRevisionFile, 
   const revisionFileContent = fs.existsSync(pathToRevisionFile) && fs.readFileSync(pathToRevisionFile).toString()
   const revision = revisionFileContent ? revisionFileContent.trim() : ''
   if (!revision) {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     signale.fatal(`Couldn't find "${bundlesRepoName}" revision to fetch at ${pathToRevisionFile}`)
     return
   }
