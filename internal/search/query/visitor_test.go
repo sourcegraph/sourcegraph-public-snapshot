@@ -11,16 +11,16 @@ func TestSubstitute(t *testing.T) {
 		q, _ := ParseLiteral(input)
 		var result string
 		VisitPredicate(q, func(field, name, value string) {
-			if field == FieldRepo && name == "contains" {
-				result = "contains value is " + value
+			if field == FieldRepo && name == "contains.file" {
+				result = "contains.file value is " + value
 			}
 		})
 		return result
 	}
 
 	autogold.Want("VisitPredicate visits predicates",
-		"contains value is file:foo").
-		Equal(t, test("repo:contains(file:foo)"))
+		"contains.file value is path:foo").
+		Equal(t, test("repo:contains.file(path:foo)"))
 }
 
 func TestVisitTypedPredicate(t *testing.T) {
@@ -31,8 +31,8 @@ func TestVisitTypedPredicate(t *testing.T) {
 		"repo:test",
 		autogold.Want("no predicates", []*RepoContainsFilePredicate{}),
 	}, {
-		"repo:test repo:contains.file(test)",
-		autogold.Want("one predicate", []*RepoContainsFilePredicate{{Pattern: "test"}}),
+		"repo:test repo:contains.file(path:test)",
+		autogold.Want("one predicate", []*RepoContainsFilePredicate{{Path: "test"}}),
 	}}
 
 	for _, tc := range cases {
