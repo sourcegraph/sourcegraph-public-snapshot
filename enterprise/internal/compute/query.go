@@ -2,6 +2,7 @@ package compute
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/grafana/regexp"
 
@@ -104,6 +105,7 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 		"output.regexp":      func() query.Predicate { return query.EmptyPredicate{} },
 		"output.structural":  func() query.Predicate { return query.EmptyPredicate{} },
 		"output.extra":       func() query.Predicate { return query.EmptyPredicate{} },
+		"insights":           func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
@@ -239,6 +241,32 @@ func parseMatchOnly(q *query.Basic) (Command, bool, error) {
 	return &MatchOnly{SearchPattern: sp, ComputePattern: cp}, true, nil
 }
 
+func parseInsightsCount(q *query.Basic) (Command, bool, error) {
+	pattern, err := extractPattern(q)
+	if err != nil {
+		return nil, false, err
+	}
+	name, args, ok := parseContentPredicate(pattern)
+	if !ok {
+		return nil, false, nil
+	}
+
+	left, right, err := parseArrowSyntax(args)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if strings.EqualFold(name, "insightsCount") {
+		// unrecognized name
+		return nil, false, nil
+	}
+
+	return &InsightsCount{
+		SearchPattern: left,
+		OutputPattern: right,
+	}, true, nil
+}
+
 type commandParser func(pattern *query.Basic) (Command, bool, error)
 
 // first returns the first parser that succeeds at parsing a command from a pattern.
@@ -260,6 +288,7 @@ func first(parsers ...commandParser) commandParser {
 var parseCommand = first(
 	parseReplace,
 	parseOutput,
+	parseInsightsCount,
 	parseMatchOnly,
 )
 

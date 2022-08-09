@@ -18,8 +18,10 @@ var (
 	_ Command = (*MatchOnly)(nil)
 	_ Command = (*Replace)(nil)
 	_ Command = (*Output)(nil)
+	_ Command = (*InsightsCount)(nil)
 )
 
-func (MatchOnly) command() {}
-func (Replace) command()   {}
-func (Output) command()    {}
+func (MatchOnly) command()     {}
+func (Replace) command()       {}
+func (Output) command()        {}
+func (InsightsCount) command() {}
