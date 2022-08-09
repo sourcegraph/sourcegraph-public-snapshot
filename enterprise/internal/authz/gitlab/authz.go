@@ -126,17 +126,18 @@ func newAuthzProvider(c *ExternalConnection, tokenType gitlab.TokenType, ps []sc
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
 	var refreshToken string
-	if op.TokenType == gitlab.TokenTypeOAuth {
+
+	if op.TokenType == gitlab.TokenTypeOAuth && op.ExternalService != nil {
 		refreshToken = op.Token
+		helper := &database.RefreshTokenHelperForExternalService{
+			DB:                op.db,
+			ExternalServiceID: op.ExternalService.ID,
+			OauthRefreshToken: refreshToken,
+		}
+		return newOAuthProvider(op, nil, helper.RefreshToken)
 	}
 
-	helper := &database.RefreshTokenHelperForExternalService{
-		DB:                op.db,
-		ExternalServiceID: op.ExternalService.ID,
-		OauthRefreshToken: refreshToken,
-	}
-
-	return newOAuthProvider(op, nil, helper.RefreshToken)
+	return newOAuthProvider(op, nil, nil)
 }
 
 // NewSudoProvider is a mockable constructor for new SudoProvider instances.
