@@ -17,7 +17,7 @@ const SchemeExecutorToken = "token-executor"
 // These env vars should be set for git commands. We want to make sure it never hangs on interactive input.
 var gitStdEnv = []string{"GIT_TERMINAL_PROMPT=0"}
 
-// prepareWorkspace creates and returns a temporary director in which acts the workspace
+// prepareWorkspace creates and returns a temporary directory in which acts the workspace
 // while processing a single job. It is up to the caller to ensure that this directory is
 // removed after the job has finished processing. If a repository name is supplied, then
 // that repository will be cloned (through the frontend API) into the workspace.
