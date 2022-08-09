@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
@@ -22,7 +23,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Handler {
+func NewHandler(db database.DB, logger log.Logger, githubAppCloudSetupHandler http.Handler) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}))
@@ -72,6 +73,9 @@ func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Ha
 
 	// Usage statistics ZIP download
 	r.Get(router.UsageStatsDownload).Handler(trace.Route(http.HandlerFunc(usageStatsArchiveHandler(db))))
+
+	// One-click export ZIP download
+	r.Get(router.OneClickExportArchive).Handler(trace.Route(oneClickExportHandler(db, logger)))
 
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type Exporter interface {
@@ -18,6 +19,8 @@ type Exporter interface {
 }
 
 var _ Exporter = &DataExporter{}
+
+var GlobalExporter Exporter
 
 type DataExporter struct {
 	logger           log.Logger
@@ -40,6 +43,35 @@ func (l Limit) getOrDefault(defaultValue int) int {
 		return defaultValue
 	}
 	return int(l)
+}
+
+func NewDataExporter(db database.DB, logger log.Logger) Exporter {
+	return &DataExporter{
+		logger: logger,
+		configProcessors: map[string]Processor[ConfigRequest]{
+			"siteConfig": &SiteConfigProcessor{
+				logger: logger,
+				Type:   "siteConfig",
+			},
+			"codeHostConfig": &CodeHostConfigProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "codeHostConfig",
+			},
+		},
+		dbProcessors: map[string]Processor[Limit]{
+			"external_services": ExtSvcQueryProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "external_services",
+			},
+			"external_service_repos": ExtSvcQueryProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "external_services",
+			},
+		},
+	}
 }
 
 type ExportRequest struct {
