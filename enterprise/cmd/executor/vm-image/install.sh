@@ -215,6 +215,8 @@ function preheat_kernel_image() {
 ## Configures the CNI explicitly and adds the isolation plugin to the chain.
 ## This is to prevent cross-network communication (which currently doesn't happen
 ## as we only have 1 bridge).
+## We also set the maximum bandwidth usable per VM to 500 MBit to avoid abuse and
+## to make sure multiple VMs on the same host won't starve others.
 function configure_cni() {
   mkdir -p /etc/cni/net.d
   cat <<EOF >/etc/cni/net.d/10-ignite.conflist
@@ -245,6 +247,14 @@ function configure_cni() {
     },
     {
       "type": "isolation"
+    },
+    {
+      "name": "slowdown",
+      "type": "bandwidth",
+      "ingressRate": 524288000,
+      "ingressBurst": 1048576000,
+      "egressRate": 524288000,
+      "egressBurst": 1048576000
     }
   ]
 }
