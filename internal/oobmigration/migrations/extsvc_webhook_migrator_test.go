@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -166,7 +167,8 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		createExternalServices(t, ctx, db)
 
-		m := NewExternalServiceWebhookMigratorWithDB(db)
+		key := et.TestKey{}
+		m := NewExternalServiceWebhookMigratorWithDB(db, key)
 
 		// By default, all the external services should have non-NULL
 		// has_webhooks.
@@ -186,7 +188,8 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		initSvcs := createExternalServices(t, ctx, db)
 		es := db.ExternalServices()
 
-		m := NewExternalServiceWebhookMigratorWithDB(db)
+		key := et.TestKey{}
+		m := NewExternalServiceWebhookMigratorWithDB(db, key)
 		// Ensure that we have to run two Ups.
 		m.BatchSize = len(initSvcs) - 1
 

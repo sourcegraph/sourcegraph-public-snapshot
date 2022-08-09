@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,15 +19,17 @@ type ExternalServiceWebhookMigrator struct {
 	logger    log.Logger
 	store     *basestore.Store
 	BatchSize int
+	key       encryption.Key
 }
 
 var _ oobmigration.Migrator = &ExternalServiceWebhookMigrator{}
 
-func NewExternalServiceWebhookMigratorWithDB(db database.DB) *ExternalServiceWebhookMigrator {
+func NewExternalServiceWebhookMigratorWithDB(db database.DB, key encryption.Key) *ExternalServiceWebhookMigrator {
 	return &ExternalServiceWebhookMigrator{
 		logger:    log.Scoped("ExternalServiceWebhookMigrator", ""),
 		store:     basestore.NewWithHandle(db.Handle()),
 		BatchSize: 50,
+		key:       key,
 	}
 }
 
@@ -88,8 +91,9 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 			if err := rows.Scan(&id, &kind, &config, &keyID); err != nil {
 				return nil, err
 			}
-			if keyID != "" {
-				panic("UNSUPPORTED") // TODO
+			config, err = encryption.MaybeDecrypt(ctx, m.key, config, keyID)
+			if err != nil {
+				return nil, err
 			}
 
 			svcs = append(svcs, svc{ID: id, Kind: kind, Config: config})
