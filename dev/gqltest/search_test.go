@@ -115,6 +115,34 @@ type searchClient interface {
 	DeleteSearchContext(id string) error
 }
 
+func addKVPs(t *testing.T, client *gqltestutil.Client) {
+	repo1, err := client.Repository("github.com/sgtest/go-diff")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo2, err := client.Repository("github.com/sgtest/mux")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testVal := "testval"
+	err = client.AddRepoKVP(repo1.ID, "testkey", &testVal)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.AddRepoKVP(repo2.ID, "testkey", &testVal)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.AddRepoKVP(repo2.ID, "testtag", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testSearchClient(t *testing.T, client searchClient) {
 	// Temporary test until we have equivalence.
 	_, isStreaming := client.(*gqltestutil.SearchStreamClient)
@@ -1164,6 +1192,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `unscoped repo has commit after no results`,
 				query:  `repo:contains.commit.after(1 second ago)`,
 				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo has tag that does not exist`,
+				query:  `repo:has.tag(noexist)`,
+				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo has tag`,
+				query:  `repo:has.tag(testtag)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `repo has kvp that does not exist`,
+				query:  `repo:has(noexist:false)`,
+				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo has kvp`,
+				query:  `repo:has(testkey:testval)`,
+				counts: counts{Repo: 2},
 			},
 		}
 
