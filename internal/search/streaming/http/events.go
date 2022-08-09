@@ -26,7 +26,6 @@ type EventContentMatch struct {
 	RepoLastFetched *time.Time       `json:"repoLastFetched,omitempty"`
 	Branches        []string         `json:"branches,omitempty"`
 	Commit          string           `json:"commit,omitempty"`
-	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
 	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
 }
@@ -76,9 +75,10 @@ type DecoratedContent struct {
 }
 
 type ChunkMatch struct {
-	Content      string   `json:"content"`
-	ContentStart Location `json:"contentStart"`
-	Ranges       []Range  `json:"ranges"`
+	Content              string   `json:"content"`
+	HTMLDecoratedContent string   `json:"htmlDecoratedContent,omitempty"`
+	ContentStart         Location `json:"contentStart"`
+	Ranges               []Range  `json:"ranges"`
 }
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.

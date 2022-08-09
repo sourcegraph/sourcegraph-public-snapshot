@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // StreamHandler is an http handler which streams back search results.
@@ -153,11 +154,15 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		h.flushTickerInternal,
 		h.pingTickerInterval,
 		displayLimit,
+		args.DecorationLimit,
+		args.DecorationContextLines,
 		args.EnableChunkMatches,
 		logLatency,
 	)
 	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
+
 	alert, err := h.searchClient.Execute(ctx, batchedStream, inputs)
+
 	// Clean up streams before writing to eventWriter again.
 	batchedStream.Done()
 	eventHandler.Done()
@@ -265,27 +270,6 @@ func strPtr(s string) *string {
 	return &s
 }
 
-// withDecoration hydrates event match with decorated hunks for a corresponding file match.
-func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
-	// FIXME: Use contextLines to constrain hunks.
-	_ = contextLines
-	if _, ok := internalResult.(*result.FileMatch); !ok {
-		return eventMatch
-	}
-
-	event, ok := eventMatch.(*streamhttp.EventContentMatch)
-	if !ok {
-		return eventMatch
-	}
-
-	if kind == "html" {
-		event.Hunks = DecorateFileHunksHTML(ctx, db, internalResult.(*result.FileMatch))
-	}
-
-	// TODO(team/search-product): support additional decoration for terminal clients #24617.
-	return eventMatch
-}
-
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
@@ -365,7 +349,6 @@ func fromRanges(rs result.Ranges) []streamhttp.Range {
 }
 
 func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) *streamhttp.EventContentMatch {
-
 	var (
 		eventLineMatches  []streamhttp.EventLineMatch
 		eventChunkMatches []streamhttp.ChunkMatch
@@ -584,6 +567,8 @@ func newEventHandler(
 	flushInterval time.Duration,
 	progressInterval time.Duration,
 	displayLimit int,
+	decorationLimit int,
+	decorationContextLines int,
 	enableChunkMatches bool,
 	logLatency func(),
 ) *eventHandler {
@@ -595,19 +580,22 @@ func newEventHandler(
 	})
 
 	eh := &eventHandler{
-		ctx:                ctx,
-		logger:             logger,
-		db:                 db,
-		eventWriter:        eventWriter,
-		matchesBuf:         matchesBuf,
-		filters:            &streaming.SearchFilters{},
-		flushInterval:      flushInterval,
-		progress:           progress,
-		progressInterval:   progressInterval,
-		displayRemaining:   displayLimit,
-		enableChunkMatches: enableChunkMatches,
-		first:              true,
-		logLatency:         logLatency,
+		ctx:                    ctx,
+		logger:                 logger,
+		db:                     db,
+		group:                  group.NewWithStreaming[[]streamhttp.EventMatch](),
+		eventWriter:            eventWriter,
+		matchesBuf:             matchesBuf,
+		filters:                &streaming.SearchFilters{},
+		flushInterval:          flushInterval,
+		progress:               progress,
+		progressInterval:       progressInterval,
+		displayRemaining:       displayLimit,
+		decoratedRemaining:     decorationLimit,
+		decorationContextLines: decorationContextLines,
+		enableChunkMatches:     enableChunkMatches,
+		first:                  true,
+		logLatency:             logLatency,
 	}
 
 	// Schedule the first flushes.
@@ -633,6 +621,8 @@ type eventHandler struct {
 
 	logLatency func()
 
+	group group.StreamGroup[[]streamhttp.EventMatch]
+
 	// Everything below this line is protected by the mutex
 	mu sync.Mutex
 
@@ -646,25 +636,56 @@ type eventHandler struct {
 	flushTimer    *time.Timer
 	progressTimer *time.Timer
 
-	displayRemaining int
-	first            bool
+	displayRemaining       int
+	decoratedRemaining     int
+	decorationContextLines int
+	first                  bool
 }
 
 func (h *eventHandler) Send(event streaming.SearchEvent) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 
 	h.progress.Update(event)
 	h.filters.Update(event)
 
 	h.displayRemaining = event.Results.Limit(h.displayRemaining)
+	reservedDecorations := h.reserveDecorationLimit(event)
 
+	h.mu.Unlock()
+
+	h.group.Go(
+		func() []streamhttp.EventMatch {
+			return h.convertEvent(event, reservedDecorations)
+		},
+		h.handleConvertedEvents,
+	)
+}
+
+// mutex must be held when calling this
+func (h *eventHandler) reserveDecorationLimit(event streaming.SearchEvent) int {
+	reserved := 0
+	for _, match := range event.Results {
+		switch match.(type) {
+		case *result.FileMatch:
+			reserved++
+		}
+	}
+
+	if reserved > h.decoratedRemaining {
+		reserved = h.decoratedRemaining
+	}
+	h.decoratedRemaining -= reserved
+	return reserved
+}
+
+func (h *eventHandler) convertEvent(event streaming.SearchEvent, reservedDecorations int) []streamhttp.EventMatch {
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
 		h.logger.Error("failed to get repo metadata", log.Error(err))
-		return
+		return nil
 	}
 
+	eventMatches := make([]streamhttp.EventMatch, 0, len(event.Results))
 	for _, match := range event.Results {
 		repo := match.RepoName()
 
@@ -676,11 +697,41 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 		}
 
 		eventMatch := fromMatch(match, repoMetadata, h.enableChunkMatches)
-		h.matchesBuf.Append(eventMatch)
+
+		if reservedDecorations > 0 {
+			switch cm := eventMatch.(type) {
+			case *streamhttp.EventContentMatch:
+				if err := decorateFileChunksHTML(h.ctx, h.db, h.decorationContextLines, cm); err != nil {
+					h.logger.Error("failed to decorate match", log.Error(err))
+				}
+				reservedDecorations--
+			}
+		}
+
+		eventMatches = append(eventMatches, eventMatch)
+	}
+
+	return eventMatches
+}
+
+func (h *eventHandler) handleConvertedEvents(events []streamhttp.EventMatch) {
+	foundResults := false
+	for _, event := range events {
+		h.matchesBuf.Append(event)
+		switch event.(type) {
+		case *streamhttp.EventContentMatch:
+			foundResults = true
+		case *streamhttp.EventPathMatch:
+			foundResults = true
+		case *streamhttp.EventSymbolMatch:
+			foundResults = true
+		case *streamhttp.EventRepoMatch:
+			foundResults = true
+		}
 	}
 
 	// Instantly send results if we have not sent any yet.
-	if h.first && len(event.Results) > 0 {
+	if h.first && foundResults {
 		h.first = false
 		h.eventWriter.Filters(h.filters.Compute())
 		h.matchesBuf.Flush()
@@ -692,6 +743,9 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 func (h *eventHandler) Done() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
+	// Wait for any in-progress events to be processed
+	h.group.Wait()
 
 	// Cancel any in-flight timers
 	h.flushTimer.Stop()

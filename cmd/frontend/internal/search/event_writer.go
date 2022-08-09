@@ -12,7 +12,7 @@ func newEventWriter(inner *streamhttp.Writer) *eventWriter {
 }
 
 // eventWriter is a type that wraps a streamhttp.Writer with typed
-// methods for each of the supported evens in a frontend stream.
+// methods for each of the supported events in a frontend stream.
 type eventWriter struct {
 	inner *streamhttp.Writer
 }
