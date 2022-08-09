@@ -35,6 +35,7 @@ const (
 	RegistryExtensionBundle = "registry.extension.bundle"
 
 	UsageStatsDownload = "usage-stats.download"
+	UsersStatsDownload = "users-stats.download"
 
 	LatestPing = "pings.latest"
 
@@ -95,6 +96,7 @@ func newRouter() *mux.Router {
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 
 	base.Path("/site-admin/usage-statistics/archive").Methods("GET").Name(UsageStatsDownload)
+	base.Path("/site-admin/users-statistics/archive").Methods("GET").Name(UsersStatsDownload)
 
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
 
