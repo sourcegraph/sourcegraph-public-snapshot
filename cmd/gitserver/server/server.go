@@ -48,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -954,6 +955,9 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := s.dir(req.Repo)
 
+	var warningErr errors.Warning
+	httpStatus := http.StatusOK
+
 	// despite the existence of a context on the request, we don't want to
 	// cancel the git commands partway through if the request terminates.
 	ctx, cancel1 := s.serverContext()
@@ -971,46 +975,67 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 			resp.Error = err.Error()
+			// return 5xx.
+
+			if err := json.NewEncoder(w).Encode(resp); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			// We have already embedded the error into the response body as JSON. We need to set the
+			// appropriate header if the error is a warning error.
+			if errors.As(err, &warningErr) {
+				w.WriteHeader(httpserver.StatusWarningError)
+				return
+			}
 		}
+
+		// No need to encode a body since we return an empty struct anyway. Body can be empty
+		// instead.
+		return
+	}
+	var statusErr, updateErr error
+
+	if debounce(req.Repo, req.Since) {
+		updateErr = s.doRepoUpdate(ctx, req.Repo, "")
+	}
+
+	// attempts to acquire these values are not contingent on the success of
+	// the update.
+	lastFetched, err := repoLastFetched(dir)
+	if err != nil {
+		statusErr = err
 	} else {
-		var statusErr, updateErr error
-
-		if debounce(req.Repo, req.Since) {
-			updateErr = s.doRepoUpdate(ctx, req.Repo, "")
+		resp.LastFetched = &lastFetched
+	}
+	lastChanged, err := repoLastChanged(dir)
+	if err != nil {
+		statusErr = err
+	} else {
+		resp.LastChanged = &lastChanged
+	}
+	if statusErr != nil {
+		logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+		// report this error in-band, but still produce a valid response with the
+		// other information.
+		resp.Error = statusErr.Error()
+	}
+	// If an error occurred during update, report it but don't actually make
+	// it into an http error; we want the client to get the information cleanly.
+	// An update error "wins" over a status error.
+	if updateErr != nil {
+		if errors.Is(updateErr, warningErr) {
+			httpStatus = httpserver.StatusWarningError
 		}
-
-		// attempts to acquire these values are not contingent on the success of
-		// the update.
-		lastFetched, err := repoLastFetched(dir)
-		if err != nil {
-			statusErr = err
-		} else {
-			resp.LastFetched = &lastFetched
-		}
-		lastChanged, err := repoLastChanged(dir)
-		if err != nil {
-			statusErr = err
-		} else {
-			resp.LastChanged = &lastChanged
-		}
-		if statusErr != nil {
-			logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
-			// report this error in-band, but still produce a valid response with the
-			// other information.
-			resp.Error = statusErr.Error()
-		}
-		// If an error occurred during update, report it but don't actually make
-		// it into an http error; we want the client to get the information cleanly.
-		// An update error "wins" over a status error.
-		if updateErr != nil {
-			resp.Error = updateErr.Error()
-		}
+		resp.Error = updateErr.Error()
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(httpStatus)
 }
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
