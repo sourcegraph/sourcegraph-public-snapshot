@@ -105,12 +105,13 @@ func (m *SSHMigrator) Up(ctx context.Context) (err error) {
 				Passphrase: keypair.Passphrase,
 			}
 		}
-		if newCred != nil {
-			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
-				return err
-			}
+		secret, id, err := database.EncryptAuthenticator(ctx, m.key, newCred)
+		if err != nil {
+			return errors.Wrap(err, "encrypting authenticator")
 		}
 
+		cred.EncryptedCredential = secret
+		cred.EncryptionKeyID = id
 		cred.SSHMigrationApplied = true
 		if err := tx.UserCredentials().Update(ctx, cred); err != nil {
 			return err
@@ -152,16 +153,13 @@ func (m *SSHMigrator) Down(ctx context.Context) (err error) {
 		case *auth.BasicAuthWithSSH:
 			newCred = &a.BasicAuth
 		}
-		if newCred != nil {
-			secret, id, err := database.EncryptAuthenticator(ctx, m.key, newCred)
-			if err != nil {
-				return errors.Wrap(err, "encrypting authenticator")
-			}
-
-			cred.EncryptedCredential = secret
-			cred.EncryptionKeyID = id
+		secret, id, err := database.EncryptAuthenticator(ctx, m.key, newCred)
+		if err != nil {
+			return errors.Wrap(err, "encrypting authenticator")
 		}
 
+		cred.EncryptedCredential = secret
+		cred.EncryptionKeyID = id
 		cred.SSHMigrationApplied = false
 		if err := tx.UserCredentials().Update(ctx, cred); err != nil {
 			return err
