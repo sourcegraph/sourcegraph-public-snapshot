@@ -19,8 +19,8 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 		NewSubscriptionAccountNumberMigrator(db),
 		NewLicenseKeyFieldsMigrator(db),
 	}
-	for id, migrator := range migrations {
-		if err := outOfBandMigrationRunner.Register(id, migrator, oobmigration.MigratorOptions{Interval: migrator.Interval()}); err != nil {
+	for _, migrator := range migrations {
+		if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: migrator.Interval()}); err != nil {
 			return err
 		}
 	}
