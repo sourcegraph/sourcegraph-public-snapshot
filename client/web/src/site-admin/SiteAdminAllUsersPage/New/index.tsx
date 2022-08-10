@@ -284,8 +284,8 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                             onClick: () => '',
                         },
                         {
-                            key: 'archive',
-                            label: 'Archive',
+                            key: 'delete',
+                            label: 'Delete',
                             icon: mdiArchive,
                             iconColor: 'danger',
                             onClick: () => '',
@@ -338,7 +338,7 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                             key: SiteUserOrderBy.DELETED_AT,
                             accessor: item =>
                                 item.deletedAt ? formatDate(new Date(item.deletedAt), 'dd/mm/yyyy') : '',
-                            header: { label: 'Archived', align: 'right' },
+                            header: { label: 'Deleted', align: 'right' },
                             sortable: true,
                             align: 'right',
                         },
@@ -379,11 +379,11 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                                             <li className="d-flex p-2 cursor-pointer">
                                                 <Icon
                                                     svgPath={mdiArchive}
-                                                    aria-label="Archive user"
+                                                    aria-label="Delete user"
                                                     size="md"
                                                     className="text-danger"
                                                 />
-                                                <span className="ml-2">Archive</span>
+                                                <span className="ml-2">Delete</span>
                                             </li>
                                             <li className="d-flex p-2 cursor-pointer">
                                                 <Icon
