@@ -1,10 +1,10 @@
 import { gql } from '@sourcegraph/http-client'
 
 export const BATCHCHANGES_STATISTICS = gql`
-    query BatchChangesStatistics($dateRange: AnalyticsDateRange!) {
+    query BatchChangesStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
         site {
             analytics {
-                batchChanges(dateRange: $dateRange) {
+                batchChanges(dateRange: $dateRange, grouping: $grouping) {
                     changesetsCreated {
                         nodes {
                             date

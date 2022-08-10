@@ -22,7 +22,11 @@ const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value,
             {formatNumber(value)}
         </span>
         <Tooltip content={tooltip}>
-            <Text as="span" alignment="center" className={classNames(styles.textWrap, tooltip && 'cursor-pointer')}>
+            <Text
+                as="span"
+                alignment="center"
+                className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+            >
                 {description}
                 {tooltip && <span className={styles.linkColor}>*</span>}
             </Text>

@@ -1,5 +1,7 @@
 # Sourcegraph extension contribution points
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
+
 Sourcegraph extensions contribute actions and menu items to the user interface of Sourcegraph (and other applications, such as code hosts, using the [browser extension](../../integration/browser_extension.md)). An extension's contributions are defined in its [`package.json` extension manifest](./manifest.md).
 
 The [`extension.schema.json` JSON Schema](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/schema/extension.schema.json) contains the full reference for all extension contribution points.

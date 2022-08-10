@@ -190,7 +190,12 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   s.conn.Url,
 		}
-		cloneURL := clonePrefix + strings.TrimPrefix(r.URI, "/") + "/.git"
+
+		cloneURL := clonePrefix + strings.TrimPrefix(r.URI, "/")
+		// If the repo is not a bare repo, add a .git
+		if !strings.HasSuffix(cloneURL, ".git") {
+			cloneURL += "/.git"
+		}
 		r.Sources = map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
@@ -201,9 +206,13 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 			RelativePath: strings.TrimPrefix(cloneURL, s.conn.Url),
 		}
 		// The only required field left is Name
-		if r.Name == "" {
-			r.Name = api.RepoName(r.URI)
+		name := string(r.Name)
+		if name == "" {
+			name = r.URI
 		}
+		// Remove any trailing .git in the name if exists (bare repos)
+		r.Name = api.RepoName(strings.TrimSuffix(name, ".git"))
+
 	}
 
 	return data.Items, nil

@@ -1157,6 +1157,81 @@ export const toCSSClassName = (token: DecoratedToken): string => {
     }
 }
 
+interface Decoration {
+    value: string
+    key: number
+    className: string
+}
+
+export function toDecoration(query: string, token: DecoratedToken): Decoration {
+    const className = toCSSClassName(token)
+
+    switch (token.type) {
+        case 'keyword':
+        case 'field':
+        case 'metaPath':
+        case 'metaRevision':
+        case 'metaRegexp':
+        case 'metaStructural':
+            return {
+                value: token.value,
+                key: token.range.start,
+                className,
+            }
+        case 'openingParen':
+            return {
+                value: '(',
+                key: token.range.start,
+                className,
+            }
+        case 'closingParen':
+            return {
+                value: ')',
+                key: token.range.start,
+                className,
+            }
+
+        case 'metaFilterSeparator':
+            return {
+                value: ':',
+                key: token.range.start,
+                className,
+            }
+        case 'metaRepoRevisionSeparator':
+        case 'metaContextPrefix':
+            return {
+                value: '@',
+                key: token.range.start,
+                className,
+            }
+
+        case 'metaPredicate': {
+            let value = ''
+            switch (token.kind) {
+                case 'NameAccess':
+                    value = query.slice(token.range.start, token.range.end)
+                    break
+                case 'Dot':
+                    value = '.'
+                    break
+                case 'Parenthesis':
+                    value = query.slice(token.range.start, token.range.end)
+                    break
+            }
+            return {
+                value,
+                key: token.range.start,
+                className,
+            }
+        }
+    }
+    return {
+        value: query.slice(token.range.start, token.range.end),
+        key: token.range.start,
+        className,
+    }
+}
+
 const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
     switch (token.type) {
         case 'field':

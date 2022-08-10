@@ -9,23 +9,18 @@
  */
 import { Extension, Facet, RangeSetBuilder, StateEffectType, StateField } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, ViewPlugin } from '@codemirror/view'
-import { from, Observable, Subject, Subscription } from 'rxjs'
-import { switchMap, throttleTime, filter, mergeAll, map } from 'rxjs/operators'
+import { from, fromEvent, Observable, Subscription } from 'rxjs'
+import { switchMap, filter, mergeAll, map, tap } from 'rxjs/operators'
 
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { positionToOffset, sortRangeValuesByStart } from './utils'
-
-interface HoverPosition {
-    position: Position
-    offset: number
-}
+import { offsetToUIPosition, positionToOffset, distinctWordAtCoords, sortRangeValuesByStart } from './utils'
 
 type DocumentHighlightsSource = (position: Position) => Observable<DocumentHighlight[]>
 
-const HOVER_TIMEOUT = 50
 const highlightDecoration = Decoration.mark({ class: 'sourcegraph-document-highlight' })
 
 /**
@@ -95,28 +90,7 @@ function documentHighlights(sources: Facet<DocumentHighlightsSource>, sink: Face
     return [
         documentHighlightsField,
         ViewPlugin.define(
-            view => new DocumentHighlightsManager(view, sources, documentHighlightsField, setDocumentHighlights),
-            {
-                eventHandlers: {
-                    mousemove(event, view) {
-                        const offset = view.posAtCoords(event)
-                        let position: HoverPosition | null = null
-
-                        if (offset !== null) {
-                            const line = view.state.doc.lineAt(offset)
-                            position = {
-                                position: {
-                                    line: line.number,
-                                    character: Math.max(offset - line.from, 1),
-                                },
-                                offset,
-                            }
-                        }
-
-                        this.setHoverPosition(position)
-                    },
-                },
-            }
+            view => new DocumentHighlightsManager(view, sources, documentHighlightsField, setDocumentHighlights)
         ),
     ]
 }
@@ -127,7 +101,6 @@ function documentHighlights(sources: Facet<DocumentHighlightsSource>, sink: Face
  * {@link showDocumentHighlights} facet with their responses.
  */
 class DocumentHighlightsManager {
-    private nextPosition: Subject<Position | null> = new Subject()
     private querySubscription: Subscription
 
     constructor(
@@ -136,9 +109,17 @@ class DocumentHighlightsManager {
         private readonly documentHighlightsField: StateField<DocumentHighlight[]>,
         private readonly setDocumentHighlights: StateEffectType<DocumentHighlight[]>
     ) {
-        this.querySubscription = this.nextPosition
+        this.querySubscription = fromEvent<MouseEvent>(this.view.contentDOM, 'mousemove')
             .pipe(
-                throttleTime(HOVER_TIMEOUT),
+                distinctWordAtCoords(this.view),
+                tap(word => {
+                    if (!word) {
+                        this.clearHighlights()
+                    }
+                }),
+                // Convert from offsets to UIPosition. We only need the start
+                // position
+                map(word => (word ? offsetToUIPosition(this.view.state.doc, word.from) : null)),
                 // Ignore position changes if we already have a document highlight
                 // within that range
                 filter(
@@ -170,18 +151,7 @@ class DocumentHighlightsManager {
         this.querySubscription.unsubscribe()
     }
 
-    public setHoverPosition(position: HoverPosition | null): void {
-        if (position === null || !this.view.state.wordAt(position.offset)) {
-            // User is hovering over something that is not a word. Cancel
-            // current query and clear highlights.
-            this.nextPosition.next(null)
-            this.clearHighlights()
-        } else {
-            this.nextPosition.next(position.position)
-        }
-    }
-
-    public clearHighlights(): void {
+    private clearHighlights(): void {
         if (this.view.state.field(this.documentHighlightsField).length > 0) {
             this.view.dispatch({ effects: this.setDocumentHighlights.of([]) })
         }
@@ -192,15 +162,18 @@ class DocumentHighlightsManager {
  * Helper function for determining whether the given position is with any of the
  * document highlight ranges.
  */
-function hasDocumentHighlightAtPosition(highlights: DocumentHighlight[], position: Position): boolean {
+function hasDocumentHighlightAtPosition(
+    highlights: DocumentHighlight[],
+    position: UIPositionSpec['position']
+): boolean {
     for (const {
         range: { start, end },
     } of highlights) {
         if (
             position.line >= start.line + 1 &&
             position.line <= end.line + 1 &&
-            position.character >= start.character &&
-            position.character <= end.character
+            position.character >= start.character + 1 &&
+            position.character <= end.character + 1
         ) {
             return true
         }

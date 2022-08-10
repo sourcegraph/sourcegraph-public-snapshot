@@ -8,34 +8,38 @@
 import React from 'react'
 
 import { Extension, Facet, StateEffect, StateEffectType, StateField } from '@codemirror/state'
-import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
-import { BehaviorSubject, combineLatest, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { filter, map, switchMap, first } from 'rxjs/operators'
+import { combineLatest, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
+import { filter, map, catchError, switchMap, distinctUntilChanged, startWith } from 'rxjs/operators'
 import { TextDocumentDecorationType } from 'sourcegraph'
 
-import { DocumentHighlight, LineOrPositionOrRange } from '@sourcegraph/codeintellify'
-import { lprToSelectionsZeroIndexed } from '@sourcegraph/common'
+import { DocumentHighlight, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
+import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
 import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { WildcardThemeContext } from '@sourcegraph/wildcard'
+import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
+import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import { toURIWithPath, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
+import { getHover } from '../../../backend/features'
 import { StatusBar } from '../../../extensions/components/StatusBar'
-import { BlobInfo } from '../Blob'
+import { BlobInfo, BlobProps } from '../Blob'
 
 import { showTextDocumentDecorations } from './decorations'
 import { documentHighlightsSource } from './document-highlights'
-import { hovercard } from './hovercard'
-import { positionToOffset } from './utils'
+import { hovercardSource } from './hovercard'
+import { SelectedLineRange, selectedLines } from './linenumbers'
+import { Container } from './react-interop'
 
-import { locationField } from '.'
+import { blobPropsFacet } from '.'
 
 import blobStyles from '../Blob.module.scss'
 
@@ -61,10 +65,18 @@ interface Context {
  */
 export function sourcegraphExtensions({
     blobInfo,
+    initialSelection,
     extensionsController,
+    disableStatusBar,
+    disableDecorations,
+    disableHovercards,
 }: {
     blobInfo: BlobInfo
+    initialSelection: LineOrPositionOrRange
     extensionsController: ExtensionsControllerProps['extensionsController']
+    disableStatusBar?: boolean
+    disableDecorations?: boolean
+    disableHovercards?: boolean
 }): Extension {
     const context = extensionsController.extHostAPI.then(async extensionHostAPI => {
         const uri = toURIWithPath(blobInfo)
@@ -80,8 +92,7 @@ export function sourcegraphExtensions({
             extensionHostAPI.addViewerIfNotExists({
                 type: 'CodeEditor' as const,
                 resource: uri,
-                // TODO: set initial selection from selected lines
-                selections: [], // lprToSelectionsZeroIndexed(initialPosition),
+                selections: lprToSelectionsZeroIndexed(initialSelection),
                 isActive: true,
             }),
         ])
@@ -124,11 +135,14 @@ export function sourcegraphExtensions({
             }
         }),
         sgExtensionsContextField,
+        // This needs to come before document highlights so that the hovered
+        // token is highlighted differently
+        disableHovercards ? [] : hovercardDataSource(),
         documentHighlightsDataSource(),
-        textDocumentDecorations(),
-        updateSelection(),
-        showHovercard,
-        statusBar,
+        disableDecorations ? [] : textDocumentDecorations(),
+        updateSelection,
+        disableStatusBar ? [] : statusBar,
+        warmupReferences,
     ]
 }
 
@@ -277,115 +291,86 @@ function textDocumentDecorations(): Extension {
 
 /**
  * The selection manager listens to CodeMirror selection changes and sends them
- * to the extensions host. This extension listens directly to selection changes
- * because it's a simple task and introducing an integration point with a
- * separate CodeMirror extension would just make things more complicated.
+ * to the extensions host.
  */
-class SelectionManager {
-    private context: Context | null = null
-    private selectionSet = false
+const updateSelection = ViewPlugin.fromClass(
+    class SelectionManager implements PluginValue {
+        private nextSelection: Subject<SelectedLineRange> = new Subject()
+        private subscription = new Subscription()
 
-    constructor(private readonly view: EditorView) {}
-
-    public update(viewUpdate: ViewUpdate): void {
-        if (viewUpdate.selectionSet) {
-            this.selectionSet = true
-            this.updatePosition()
+        constructor(view: EditorView) {
+            this.subscription = combineLatest([
+                view.state.field(sgExtensionsContextField).contextObservable,
+                this.nextSelection,
+            ]).subscribe(([context, selection]) => {
+                context.extensionHostAPI
+                    .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(selection ?? {}))
+                    .catch(error => console.error('Error updating editor selections on extension host', error))
+            })
         }
-    }
 
-    public setContext(context: Context | null): void {
-        this.context = context
-        if (this.selectionSet) {
-            this.updatePosition()
+        public destroy(): void {
+            this.subscription.unsubscribe()
         }
-    }
 
-    private updatePosition(): void {
-        if (this.context) {
-            const selection = this.view.state.selection.main
-            const fromLine = this.view.state.doc.lineAt(selection.from)
-            const toLine = selection.from === selection.to ? fromLine : this.view.state.doc.lineAt(selection.to)
-
-            const position: LineOrPositionOrRange = {
-                line: fromLine.number,
-                endLine: toLine.number,
+        public update(update: ViewUpdate): void {
+            if (update.state.field(selectedLines) !== update.startState.field(selectedLines)) {
+                this.nextSelection.next(update.state.field(selectedLines))
             }
-
-            this.context.extensionHostAPI
-                .setEditorSelections(this.context.viewerId, lprToSelectionsZeroIndexed(position))
-                .catch(error => console.error('Error updating editor selections on extension host', error))
         }
     }
-}
-
-function updateSelection(): Extension {
-    return ViewPlugin.fromClass(SelectionManager, {
-        provide: plugin => updateOnContextChange.of(plugin),
-    })
-}
+)
 
 //
 // Hovercards
 //
 
 /**
- * showHovercard uses the {@link hovercard} extension and simply provides a
- * callback function that queries the extension host and generates tooltip data.
+ * hovercardDataSource uses the {@link hovercardSource} facet to provide a
+ * callback function for querying the extension API for hover data.
  */
-const showHovercard = hovercard((view, position) => {
-    const line = view.state.doc.lineAt(position)
-    const character = Math.max(position - line.from, 0)
+function hovercardDataSource(): Extension {
+    const nextContext: Subject<Context | null> = new ReplaySubject(1)
 
-    const { contextObservable } = view.state.field(sgExtensionsContextField)
-
-    return contextObservable
-        .pipe(
-            switchMap(context =>
-                wrapRemoteObservable(
-                    context.extensionHostAPI.getHover({
-                        textDocument: {
-                            uri: toURIWithPath(context.blobInfo),
-                        },
-                        position: { character, line: line.number - 1 },
-                    })
-                )
-            ),
-            filter(({ isLoading }) => !isLoading),
-            map(({ result }) => {
-                if (!result) {
-                    return null
+    const createObservable = (
+        view: EditorView,
+        position: UIPositionSpec['position']
+    ): Observable<Pick<HoverOverlayBaseProps, 'hoverOrError' | 'actionsOrError'>> =>
+        nextContext.pipe(
+            filter((context): context is Context => context !== null),
+            switchMap(context => {
+                const hoverContext = {
+                    commitID: context.blobInfo.commitID,
+                    revision: context.blobInfo.revision,
+                    filePath: context.blobInfo.filePath,
+                    repoName: context.blobInfo.repoName,
                 }
+                const { extensionsController, platformContext } = view.state.facet(blobPropsFacet)
 
-                // Try to align the tooltip with the token start,
-                // falling back to CodeMirror's logic to find a word
-                // boundary or the cursor position.
-                let start = position
-                let end = position
-
-                if (result.range) {
-                    start = positionToOffset(view.state.doc, result.range.start)
-                    end = positionToOffset(view.state.doc, result.range.end)
-                } else {
-                    const word = view.state.wordAt(position)
-                    if (word) {
-                        start = word.from
-                        end = word.from
-                    }
-                }
-                return {
-                    pos: start,
-                    end,
-                    above: true,
-                    props: {
-                        hoverOrError: result,
-                    },
-                }
+                return combineLatest([
+                    getHover({ ...hoverContext, position }, { extensionsController }).pipe(
+                        catchError((error): [MaybeLoadingResult<ErrorLike>] => [
+                            { isLoading: false, result: asError(error) },
+                        ]),
+                        emitLoading<HoverOverlayBaseProps['hoverOrError'] | ErrorLike, null>(LOADER_DELAY, null)
+                    ),
+                    getHoverActions(
+                        { extensionsController, platformContext },
+                        {
+                            ...hoverContext,
+                            ...position,
+                        }
+                    ),
+                ])
             }),
-            first()
+            map(([hoverResult, actionsResult]) => ({
+                hoverOrError: hoverResult,
+                actionsOrError: actionsResult,
+            }))
         )
-        .toPromise()
-})
+
+    return [updateOnContextChange.of(context => nextContext.next(context)), hovercardSource.of(createObservable)]
+}
 
 //
 // Status bar
@@ -396,40 +381,47 @@ const showHovercard = hovercard((view, position) => {
  * capabilities of CodeMirror. It only attaches a container DOM element to the
  * editor's DOM and renders itself it that container.
  */
-class StatusBarPlugin {
-    private container: HTMLDivElement
-    private reactRoot: Root
-    private subscription: Subscription
-    private triggerRender = new BehaviorSubject<void>(undefined)
+const statusBar = ViewPlugin.fromClass(
+    class {
+        private container: HTMLDivElement
+        private reactRoot: Root
+        private subscription: Subscription
+        private nextProps = new Subject<BlobProps>()
 
-    constructor(private readonly view: EditorView) {
-        this.container = document.createElement('div')
-        this.reactRoot = createRoot(this.container)
-        const contextUpdates = this.view.state.field(sgExtensionsContextField).contextObservable
+        constructor(private readonly view: EditorView) {
+            this.container = document.createElement('div')
+            this.reactRoot = createRoot(this.container)
+            const contextUpdates = this.view.state.field(sgExtensionsContextField).contextObservable
 
-        const getStatusBarItems = (): Observable<'loading' | StatusBarItemWithKey[]> =>
-            contextUpdates.pipe(
-                switchMap(context => {
-                    if (!context) {
-                        return of('loading' as const)
-                    }
+            const getStatusBarItems = (): Observable<'loading' | StatusBarItemWithKey[]> =>
+                contextUpdates.pipe(
+                    switchMap(context => {
+                        if (!context) {
+                            return of('loading' as const)
+                        }
 
-                    return wrapRemoteObservable(context.extensionHostAPI.getStatusBarItems(context.viewerId))
-                })
-            )
+                        return wrapRemoteObservable(context.extensionHostAPI.getStatusBarItems(context.viewerId))
+                    })
+                )
 
-        this.subscription = combineLatest([contextUpdates, this.triggerRender]).subscribe(([context]) => {
-            const location = view.state.field(locationField)
-            if (location) {
+            this.subscription = combineLatest([
+                contextUpdates,
+                this.nextProps.pipe(
+                    distinctUntilChanged(
+                        (previous, next) => previous.location === next.location && previous.history === next.history
+                    ),
+                    startWith(view.state.facet(blobPropsFacet))
+                ),
+            ]).subscribe(([context, props]) => {
                 this.reactRoot.render(
                     React.createElement(
-                        WildcardThemeContext.Provider,
-                        { value: { isBranded: true } },
+                        Container,
+                        { history: props.history },
                         React.createElement(StatusBar, {
                             getStatusBarItems,
                             extensionsController: context.extensionsController,
                             uri: toURIWithPath(context.blobInfo),
-                            location,
+                            location: props.location,
                             className: blobStyles.blobStatusBarBody,
                             statusBarRef: () => {},
                             hideWhileInitializing: true,
@@ -437,26 +429,48 @@ class StatusBarPlugin {
                         })
                     )
                 )
-            }
-        })
+            })
 
-        this.view.dom.append(this.container)
-    }
+            this.view.dom.append(this.container)
+        }
 
-    public update(update: ViewUpdate): void {
-        if (update.startState.field(locationField) !== update.state.field(locationField)) {
-            this.triggerRender.next()
+        public update(update: ViewUpdate): void {
+            this.nextProps.next(update.state.facet(blobPropsFacet))
+        }
+
+        public destroy(): void {
+            this.subscription.unsubscribe()
+            this.container.remove()
+
+            // setTimeout seems necessary to prevent React from complaining that the
+            // root is synchronously unmounted while rendering is in progress
+            setTimeout(() => this.reactRoot.unmount(), 0)
         }
     }
+)
 
-    public destroy(): void {
-        this.subscription.unsubscribe()
-        this.container.remove()
+const warmupReferences = ViewPlugin.fromClass(
+    class {
+        private nextContext: Subject<Context> = new Subject()
+        private subscription: Subscription = new Subscription()
 
-        // setTimeout seems necessary to prevent React from complaining that the
-        // root is synchronously unmounted while rendering is in progress
-        setTimeout(() => this.reactRoot.unmount(), 0)
+        constructor() {
+            this.subscription.add(
+                this.nextContext
+                    .pipe(switchMap(context => haveInitialExtensionsLoaded(context.extensionsController.extHostAPI)))
+                    .subscribe()
+            )
+        }
+
+        public setContext(context: Context): void {
+            this.nextContext.next(context)
+        }
+
+        public destroy(): void {
+            this.subscription.unsubscribe()
+        }
+    },
+    {
+        provide: plugin => updateOnContextChange.of(plugin),
     }
-}
-
-const statusBar = ViewPlugin.fromClass(StatusBarPlugin)
+)

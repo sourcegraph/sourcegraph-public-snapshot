@@ -13,11 +13,13 @@ import (
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	webhookworker "github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // webhookBuildJob implements the Job interface
@@ -56,8 +58,15 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	baseStore := basestore.NewWithHandle(store.Handle())
 	workerStore := webhookworker.CreateWorkerStore(store.Handle())
 
+	cf := httpcli.ExternalClientFactory
+	opts := []httpcli.Opt{}
+	doer, err := cf.Doer(opts...)
+	if err != nil {
+		return nil, errors.Wrap(err, "create client")
+	}
+
 	return []goroutine.BackgroundRoutine{
-		webhookworker.NewWorker(ctx, newWebhookBuildHandler(store), workerStore, webhookBuildWorkerMetrics),
+		webhookworker.NewWorker(ctx, newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
 		webhookworker.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
 		webhookworker.NewCleaner(ctx, baseStore, observationContext),
 	}, nil

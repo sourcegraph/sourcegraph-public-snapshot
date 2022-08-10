@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -51,9 +52,11 @@ func main() {
 		"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
 		"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
 		"executors-janitor":             executors.NewJanitorJob(),
+		"executors-metricsserver":       executors.NewMetricsServerJob(),
 		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
+		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
 		// fresh
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),

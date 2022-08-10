@@ -147,7 +147,7 @@ describe('Search', () => {
 
     describe('Suggestions', () => {
         withSearchQueryInput(editorName => {
-            test(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
+            test.skip(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
                     ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
@@ -325,7 +325,7 @@ describe('Search', () => {
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
                 })
             })
         })
@@ -535,7 +535,7 @@ describe('Search', () => {
                     })
                 })
 
-                test('updates the query input and triggers suggestions', async () => {
+                test.skip('updates the query input and triggers suggestions', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
                     await driver.page.waitForSelector('[data-testid="search-type-suggest"]')
                     await driver.page.click('[data-testid="search-type-suggest"]')

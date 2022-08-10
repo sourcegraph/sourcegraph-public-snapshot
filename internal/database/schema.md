@@ -931,6 +931,11 @@ Referenced by:
  feature_flags     | jsonb                    |           |          | 
  cohort_id         | date                     |           |          | 
  public_argument   | jsonb                    |           | not null | '{}'::jsonb
+ first_source_url  | text                     |           |          | 
+ last_source_url   | text                     |           |          | 
+ referrer          | text                     |           |          | 
+ device_id         | text                     |           |          | 
+ insert_id         | text                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -1090,7 +1095,7 @@ Foreign-key constraints:
  finished_at         | timestamp with time zone |           |          | 
  process_after       | timestamp with time zone |           |          | 
  num_resets          | integer                  |           | not null | 0
- external_service_id | bigint                   |           |          | 
+ external_service_id | bigint                   |           | not null | 
  num_failures        | integer                  |           | not null | 0
  log_contents        | text                     |           |          | 
  execution_logs      | json[]                   |           |          | 

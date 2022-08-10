@@ -1,22 +1,24 @@
 # Status bar item tutorial
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../deprecation.md).
+
 ![Status bar](img/status-bar.png)
 
 Extensions can display information in the status bar adjacent to code editors. The status bar UI elements contributed by extensions are called status bar items.
 
-> Note: This feature was introduced in Sourcegraph version 3.26. 
+> Note: This feature was introduced in Sourcegraph version 3.26.
 > Extensions should check if:
 
 >   - `sourcegraph.app.createStatusBarItemType`
 
 >   - `setStatusBarItem` method on CodeEditors
 
-> are defined to prevent errors on older versions of Sourcegraph. 
+> are defined to prevent errors on older versions of Sourcegraph.
 
 
 ## `StatusBarItemType`
 
-You'll need to create a `StatusBarItemType` to identify your status bar item: 
+You'll need to create a `StatusBarItemType` to identify your status bar item:
 
 ```ts
 const statusBarItemType = sourcegraph.app.createStatusBarItemType()
@@ -26,7 +28,7 @@ Each editor can display one status bar item per type. If your extension needs to
 
 ## Getting a reference to an editor
 
-Status bar items are properties of a code editor, so you'll need a reference to a code editor: 
+Status bar items are properties of a code editor, so you'll need a reference to a code editor:
 
 ```ts
 import * as sourcegraph from 'sourcegraph'

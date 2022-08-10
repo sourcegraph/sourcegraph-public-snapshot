@@ -4,6 +4,7 @@ export {
     DrillDownInsightFilters,
     FilterSectionVisualMode,
     DrillDownInsightCreationForm,
+    parseSeriesLimit,
 } from './drill-down-filters-panel'
 
 export { DrillDownFiltersPopover, DrillDownFiltersStep } from './drill-down-filters-popover/DrillDownFiltersPopover'

@@ -188,7 +188,6 @@ func Zoekt() *monitoring.Dashboard {
 				Title: "Git fetch durations",
 				Rows: []monitoring.Row{
 					{
-
 						{
 							Name:        "90th_percentile_successful_git_fetch_durations_5m",
 							Description: "90th percentile successful git fetch durations over 5m",
