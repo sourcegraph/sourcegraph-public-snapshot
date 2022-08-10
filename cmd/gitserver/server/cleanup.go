@@ -112,6 +112,9 @@ var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum n
 // The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
 var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
 
+// Controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB. Defaults to false.
+var removeNonExistingRepos, _ = strconv.ParseBool(env.Get("SRC_REMOVE_NON_EXISTING_REPOS", "false", "controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB"))
+
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -145,6 +148,10 @@ var (
 		Name:    "src_gitserver_janitor_duration_seconds",
 		Help:    "Duration of gitserver janitor background job",
 		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
+	})
+	nonExistingReposRemoved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_non_existing_repos_removed",
+		Help: "number of non existing repos removed during cleanup",
 	})
 )
 
@@ -269,6 +276,24 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		}
 		reposRemoved.WithLabelValues(reason).Inc()
 		return true, nil
+	}
+
+	maybeRemoveNonExisting := func(dir GitDir) (bool, error) {
+		if !removeNonExistingRepos {
+			return false, nil
+		}
+
+		repo, _ := s.DB.GitserverRepos().GetByName(bCtx, s.name(dir))
+		if repo == nil {
+			err := s.removeRepoDirectory(dir, false)
+			if err == nil {
+				nonExistingReposRemoved.Inc()
+			} else {
+				s.Logger.Warn("failed removing repo that is not in DB", log.String("repo", string(dir)))
+			}
+			return true, err
+		}
+		return false, nil
 	}
 
 	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
@@ -432,6 +457,8 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		{"compute stats and delete wrong shard repos", collectSizeAndMaybeDeleteWrongShardRepos},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
+		// Remove repo if DB does not contain it anymore
+		{"maybe remove non existing", maybeRemoveNonExisting},
 		// If git is interrupted it can leave lock files lying around. It does not clean
 		// these up, and instead fails commands.
 		{"remove stale locks", removeStaleLocks},
@@ -1447,4 +1474,8 @@ func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
 		return true, err
 	}
 	return true, nil
+}
+
+func mockRemoveNonExistingReposConfig(value bool) {
+	removeNonExistingRepos = value
 }
