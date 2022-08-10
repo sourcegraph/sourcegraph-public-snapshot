@@ -14,5 +14,6 @@ last 1 versions AND not dead AND not <0.25%
 ### Additional configuration ###
 # Any browser-specific configuration that we need.
 # Note: We include additional Safari versions due to the slower upgrade cycle on MacOS.
+last 1 Chrome versions
 last 2 Safari major versions
 not IE > 0
