@@ -47,7 +47,7 @@ type OAuthProviderOp struct {
 
 	db database.DB
 
-	ExternalService *types.ExternalService
+	//ExternalService *types.ExternalService
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *OAuthProvider {
@@ -86,6 +86,8 @@ func (p *OAuthProvider) FetchAccount(context.Context, *types.User, []*extsvc.Acc
 // FetchUserPerms returns a list of private project IDs (on code host) that the given account
 // has read access to. The project ID has the same value as it would be
 // used as api.ExternalRepoSpec.ID. The returned list only includes private project IDs.
+//
+// The client used by this method will be in charge of updating the oauth token if it is expired and retry the request.
 //
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.
