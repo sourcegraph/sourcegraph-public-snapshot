@@ -86,7 +86,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		resultTypes := computeResultTypes(types, b, inputs.PatternType)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
-		repoOptions := ToRepoOptions(b, inputs.UserSettings)
+		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
 
 		builder := &jobBuilder{
@@ -294,7 +294,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	fileMatchLimit := int32(computeFileMatchLimit(f.ToBasic(), searchInputs.Protocol))
 	selector, _ := filter.SelectPathFromString(f.FindValue(query.FieldSelect)) // Invariant: select is validated
 
-	repoOptions := ToRepoOptions(f.ToBasic(), searchInputs.UserSettings)
+	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
 	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), repoOptions, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
@@ -597,7 +597,7 @@ func computeResultTypes(types []string, b query.Basic, searchType query.SearchTy
 	return rts
 }
 
-func ToRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
+func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
 	repoFilters, minusRepoFilters := b.Repositories()
 
 	var settingForks, settingArchived bool
