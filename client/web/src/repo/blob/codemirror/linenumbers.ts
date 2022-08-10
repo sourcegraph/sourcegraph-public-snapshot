@@ -193,7 +193,7 @@ export function selectableLineNumbers(config: {
                         config.onSelection(range)
                     }
 
-                    function onmousemove(event: MouseEvent) {
+                    function onmousemove(event: MouseEvent): void {
                         if (dragging) {
                             const newEndline = view.state.doc.lineAt(view.posAtCoords(event, false)).number
                             if (view.state.field(selectedLines)?.endLine !== newEndline) {
