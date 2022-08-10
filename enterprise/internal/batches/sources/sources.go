@@ -177,7 +177,7 @@ func GitserverPushConfig(ctx context.Context, store database.ExternalServiceStor
 	return &protocol.PushConfig{RemoteURL: u.String()}, nil
 }
 
-// DraftChangesetSource returns a DraftChangesetSource, if the underlying
+// ToDraftChangesetSource returns a DraftChangesetSource, if the underlying
 // source supports it. Returns an error if not.
 func ToDraftChangesetSource(css ChangesetSource) (DraftChangesetSource, error) {
 	draftCss, ok := css.(DraftChangesetSource)
