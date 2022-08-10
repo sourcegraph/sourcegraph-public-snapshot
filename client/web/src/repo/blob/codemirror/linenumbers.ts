@@ -1,5 +1,5 @@
-import { Annotation, Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, Decoration, lineNumbers, ViewPlugin, PluginValue, ViewUpdate } from '@codemirror/view'
+import { Annotation, Extension, RangeSet, Range, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
+import { EditorView, Decoration, lineNumbers, ViewPlugin, PluginValue, ViewUpdate, GutterMarker, gutterLineClass } from '@codemirror/view'
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -8,7 +8,10 @@ import { EditorView, Decoration, lineNumbers, ViewPlugin, PluginValue, ViewUpdat
  */
 export type SelectedLineRange = { line: number; endLine?: number } | null
 
-const highlighedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineGutterMarker = new (class extends GutterMarker {
+    elementClass = 'selected-line'
+})()
 const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
 
@@ -53,12 +56,28 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
             const builder = new RangeSetBuilder<Decoration>()
 
-            for (let line = from; line <= to; line++) {
-                const from = state.doc.line(line).from
-                builder.add(from, from, highlighedLineDecoration)
+            for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                const from = state.doc.line(lineNumber).from
+                builder.add(from, from, selectedLineDecoration)
             }
 
             return builder.finish()
+        }),
+        gutterLineClass.compute([field], state => {
+            const range = state.field(field)
+            const marks: Range<GutterMarker>[] = []
+
+            if (range) {
+                const endLine = range.endLine ?? range.line
+                const from = Math.min(range.line, endLine)
+                const to = from === endLine ? range.line : endLine
+
+                for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                    marks.push(selectedLineGutterMarker.range(state.doc.line(lineNumber).from))
+                }
+            }
+
+            return RangeSet.of(marks)
         }),
     ],
 })
