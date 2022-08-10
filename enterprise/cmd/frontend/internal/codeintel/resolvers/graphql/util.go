@@ -153,26 +153,7 @@ func sharedRangeToAdjustedRange(rng []shared.AdjustedCodeIntelligenceRange) []Ad
 func uploadLocationToAdjustedLocations(location []shared.UploadLocation) []AdjustedLocation {
 	uploadLocation := make([]AdjustedLocation, 0, len(location))
 	for _, loc := range location {
-		dump := store.Dump{
-			ID:                loc.Dump.ID,
-			Commit:            loc.Dump.Commit,
-			Root:              loc.Dump.Root,
-			VisibleAtTip:      loc.Dump.VisibleAtTip,
-			UploadedAt:        loc.Dump.UploadedAt,
-			State:             loc.Dump.State,
-			FailureMessage:    loc.Dump.FailureMessage,
-			StartedAt:         loc.Dump.StartedAt,
-			FinishedAt:        loc.Dump.FinishedAt,
-			ProcessAfter:      loc.Dump.ProcessAfter,
-			NumResets:         loc.Dump.NumResets,
-			NumFailures:       loc.Dump.NumFailures,
-			RepositoryID:      loc.Dump.RepositoryID,
-			RepositoryName:    loc.Dump.RepositoryName,
-			Indexer:           loc.Dump.Indexer,
-			IndexerVersion:    loc.Dump.IndexerVersion,
-			AssociatedIndexID: loc.Dump.AssociatedIndexID,
-		}
-
+		dump := store.Dump(loc.Dump)
 		adjustedRange := lsifstore.Range{
 			Start: lsifstore.Position{
 				Line:      loc.TargetRange.Start.Line,

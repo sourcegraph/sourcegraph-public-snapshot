@@ -122,25 +122,6 @@ func (l *UploadsDataLoader) AddUpload(dump shared.Dump) {
 	l.cacheMutex.Lock()
 	defer l.cacheMutex.Unlock()
 
-	// dump := shared.Dump{
-	// 	ID:                d.ID,
-	// 	Commit:            d.Commit,
-	// 	Root:              d.Root,
-	// 	VisibleAtTip:      d.VisibleAtTip,
-	// 	UploadedAt:        d.UploadedAt,
-	// 	State:             d.State,
-	// 	FailureMessage:    d.FailureMessage,
-	// 	StartedAt:         d.StartedAt,
-	// 	FinishedAt:        d.FinishedAt,
-	// 	ProcessAfter:      d.ProcessAfter,
-	// 	NumResets:         d.NumResets,
-	// 	NumFailures:       d.NumFailures,
-	// 	RepositoryID:      d.RepositoryID,
-	// 	RepositoryName:    d.RepositoryName,
-	// 	Indexer:           d.Indexer,
-	// 	IndexerVersion:    d.IndexerVersion,
-	// 	AssociatedIndexID: d.AssociatedIndexID,
-	// }
 	l.uploads = append(l.uploads, dump)
 	l.uploadsByID[dump.ID] = dump
 }
