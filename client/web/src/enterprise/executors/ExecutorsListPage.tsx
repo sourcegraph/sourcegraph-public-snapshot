@@ -1,28 +1,33 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 
-import { useApolloClient } from '@apollo/client'
 import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
 import { RouteComponentProps, useHistory } from 'react-router'
-import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
+import { createAggregateError } from '@sourcegraph/common'
+import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip, useDebounce } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
+import { FilteredConnectionFilter } from '../../components/FilteredConnection'
+import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
 import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-} from '../../components/FilteredConnection'
+    ConnectionError,
+    ConnectionForm,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { ExecutorFields } from '../../graphql-operations'
+import { ExecutorFields, ExecutorsResult, ExecutorsVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { queryExecutors as defaultQueryExecutors } from './useExecutors'
+import { EXECUTORS } from './backend'
 
 const filters: FilteredConnectionFilter[] = [
     {
-        id: 'filters',
+        id: 'state',
         label: 'State',
         type: 'select',
         values: [
@@ -42,25 +47,89 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export interface ExecutorsListPageProps extends RouteComponentProps<{}> {
-    queryExecutors?: typeof defaultQueryExecutors
-}
+export interface ExecutorsListPageProps extends RouteComponentProps<{}> {}
 
-export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<ExecutorsListPageProps>> = ({
-    queryExecutors = defaultQueryExecutors,
-    ...props
-}) => {
-    useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
+export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<ExecutorsListPageProps>> = () => {
+    useEffect(() => eventLogger.logPageView('ExecutorsList'))
 
     const history = useHistory()
 
-    const apolloClient = useApolloClient()
-    const queryExecutorsCallback = useCallback(
-        (args: FilteredConnectionQueryArguments) => queryExecutors(args, apolloClient),
-        [queryExecutors, apolloClient]
+    const getSearchParameter = useCallback((name: string) => new URLSearchParams(history.location.search).get(name), [
+        history,
+    ])
+
+    const setSearchParameter = useCallback(
+        (name: string, value: string) => {
+            const parameters = new URLSearchParams(history.location.search)
+            if (value !== '') {
+                parameters.set(name, value)
+            } else {
+                parameters.delete(name)
+            }
+
+            const parameterString = parameters.toString()
+            if (history.location.search !== parameterString) {
+                history.replace({ ...history.location, search: parameterString })
+            }
+        },
+        [history]
     )
 
-    const querySubject = useMemo(() => new Subject<string>(), [])
+    const [searchValue, setSearchValue] = useState(getSearchParameter('query') ?? '')
+    const query = useDebounce(searchValue, 200)
+
+    const [state, setState] = useState<'all' | 'active'>(() =>
+        getSearchParameter('state') === 'active' ? 'active' : 'all'
+    )
+
+    const DEFAULT_VISIBLE = 20
+
+    const { connection, loading, error, hasNextPage, fetchMore } = useConnection<
+        ExecutorsResult,
+        ExecutorsVariables,
+        ExecutorFields
+    >({
+        query: EXECUTORS,
+        variables: { first: DEFAULT_VISIBLE, after: null, query, active: state === 'active' },
+        getConnection: ({ data, errors }) => {
+            if (!data || !data.executors) {
+                throw createAggregateError(errors)
+            }
+            return data.executors
+        },
+        options: {
+            fetchPolicy: 'network-only',
+            nextFetchPolicy: 'cache-first',
+            useURL: true,
+        },
+    })
+
+    const onInputChange = useCallback(
+        (value: string) => {
+            setSearchValue(value)
+            setSearchParameter('query', value)
+        },
+        [setSearchParameter]
+    )
+
+    const onValueSelect = useCallback(
+        (value: string) => {
+            setState(value === 'active' ? 'active' : 'all')
+            setSearchParameter('state', value)
+        },
+        [setSearchParameter]
+    )
+
+    const summary = connection && connection.nodes.length > 0 && (
+        <ConnectionSummary
+            connection={connection}
+            first={DEFAULT_VISIBLE}
+            noun="executor"
+            pluralNoun="executors"
+            hasNextPage={hasNextPage}
+            noSummaryIfAllNodesVisible={true}
+        />
+    )
 
     return (
         <>
@@ -95,22 +164,31 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                 </Text>
             </Container>
             <Container>
-                <FilteredConnection<ExecutorFields, {}>
-                    listComponent="ul"
-                    listClassName="list-group mb-2"
-                    showMoreClassName="mb-0"
-                    noun="executor"
-                    pluralNoun="executors"
-                    querySubject={querySubject}
-                    nodeComponent={ExecutorNode}
-                    nodeComponentProps={{}}
-                    queryConnection={queryExecutorsCallback}
-                    history={history}
-                    location={props.location}
-                    cursorPaging={true}
+                <ConnectionForm
                     filters={filters}
-                    emptyElement={<NoExecutors />}
+                    inputPlaceholder="Search executors..."
+                    inputValue={searchValue}
+                    onInputChange={event => onInputChange(event.target.value)}
+                    onValueSelect={(_filter, value) => onValueSelect(value.value)}
+                    values={new Map([['state', { value: state, label: 'ignored', args: {} }]])}
                 />
+                <SummaryContainer>{summary}</SummaryContainer>
+                {error && <ConnectionError errors={[error.message]} />}
+                {loading && !connection && <ConnectionLoading />}
+                {connection &&
+                    (connection.nodes.length > 0 ? (
+                        <ConnectionList>
+                            {connection.nodes.map(node => (
+                                <ExecutorNode key={node.id} node={node} />
+                            ))}
+                        </ConnectionList>
+                    ) : (
+                        <NoExecutors />
+                    ))}
+                <SummaryContainer>
+                    {summary}
+                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                </SummaryContainer>
             </Container>
         </>
     )
