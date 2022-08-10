@@ -40,6 +40,7 @@ import {
     Input,
     Button,
     Link,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
@@ -63,6 +64,8 @@ import { Table } from './components/Table'
 import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS, USERS_MANAGEMENT } from './queries'
 
 import styles from './index.module.scss'
+import { randomizeUserPassword, setUserIsSiteAdmin } from '../../backend'
+import { CopyableText } from '../../../components/CopyableText'
 
 export const UsersManagement: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const { data, previousData, error, loading, variables, refetch, called } = useQuery<
@@ -113,28 +116,20 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
         eventLogger.logPageView('UsersManagement')
     }, [])
 
+    const [newVariables, setNewVariables] = useState<UsersManagementVariables>({
+        ...variables,
+        first,
+        dateRange: dateRange.value,
+        grouping: grouping.value,
+        usersQuery,
+        usersLastActivePeriod,
+    })
+
     useEffect(() => {
-        const newVariables = {
-            ...variables,
-            first,
-            dateRange: dateRange.value,
-            grouping: grouping.value,
-            usersQuery,
-            usersLastActivePeriod,
-        }
         if (!isEqual(variables, newVariables)) {
             refetch(newVariables)
         }
-    }, [
-        first,
-        dateRange.value,
-        aggregation.selected,
-        grouping.value,
-        usersQuery,
-        usersLastActivePeriod,
-        variables,
-        refetch,
-    ])
+    }, [newVariables])
 
     const [activities, legends] = useMemo(() => {
         if (!data) {
@@ -190,13 +185,16 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
 
         return [activities, legends]
     }, [data, aggregation.selected, dateRange.value])
-    const refresh = useCallback(() => {}, [])
+
+    const refresh = useCallback(() => {
+        setNewVariables(variables => ({ ...variables }))
+    }, [])
     const { handleDeleteUsers } = useDeleteUsers(refresh)
     const { handleDeleteUsersForever } = useDeleteUsersForever(refresh)
     const { handleForceSignOutUsers } = useForceSignOutUsers(refresh)
     const { handleRevokeSiteAdmin } = useRevokeSiteAdmin(refresh)
     const { handlePromoteToSiteAdmin } = usePromoteToSiteAdmin(refresh)
-    const { handleResetUserPassword } = useResetUserPassword(refresh)
+    const { handleResetUserPassword, data: resetPasswordData } = useResetUserPassword()
 
     const groupingLabel = startCase(grouping.value.toLowerCase())
 
@@ -279,6 +277,25 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                         />
                     </div>
                 </div>
+                {resetPasswordData && (
+                    <>
+                        {resetPasswordData.resetPasswordURL && (
+                            <Alert className="mt-2" variant="success">
+                                <Text>
+                                    Password was reset. You must manually send <strong>{data?.users.username}</strong>{' '}
+                                    this reset link:
+                                </Text>
+                                <CopyableText text={resetPasswordData.resetPasswordURL} size={40} />
+                            </Alert>
+                        )}
+                        {resetPasswordData.resetPasswordURL === null && (
+                            <Alert className="mt-2" variant="success">
+                                Password was reset. The reset link was sent to the primary email of the user:
+                            </Alert>
+                        )}
+                    </>
+                )}
+
                 <Table
                     selectable={true}
                     initialSortColumn={SiteUserOrderBy.EVENTS_COUNT}
@@ -374,7 +391,7 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                         },
                         {
                             key: 'actions',
-                            render: function RenderActions(item: SiteUser): JSX.Element {
+                            render: function RenderActions(user: SiteUser): JSX.Element {
                                 return (
                                     <Popover>
                                         <div className="d-flex justify-content-center">
@@ -385,93 +402,96 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                                             />
                                             <PopoverContent position={Position.bottom}>
                                                 <ul className="list-unstyled mb-0">
-                                                    <Button
-                                                        className="d-flex cursor-pointer"
-                                                        variant="link"
-                                                        as="li"
-                                                        outline={true}
-                                                        onClick={() => handleForceSignOutUsers([item])}
-                                                    >
-                                                        <Icon
-                                                            svgPath={mdiLogoutVariant}
-                                                            aria-label="Force sign-out"
-                                                            size="md"
-                                                            className="text-muted"
-                                                        />
-                                                        <span className="ml-2">Force sign-out</span>
-                                                    </Button>
-                                                    {window.context.resetPasswordEnabled && (
-                                                        <Button
-                                                            className="d-flex cursor-pointer"
-                                                            variant="link"
-                                                            as="li"
-                                                            outline={true}
-                                                            onClick={() => handleResetUserPassword(item)}
-                                                        >
-                                                            <Icon
-                                                                svgPath={mdiLockReset}
-                                                                aria-label="Reset password"
-                                                                size="md"
-                                                                className="text-muted"
-                                                            />
-                                                            <span className="ml-2">Reset password</span>
-                                                        </Button>
+                                                    {!user.deletedAt && (
+                                                        <>
+                                                            <Button
+                                                                className="d-flex cursor-pointer"
+                                                                variant="link"
+                                                                as="li"
+                                                                outline={true}
+                                                                onClick={() => handleForceSignOutUsers([user])}
+                                                            >
+                                                                <Icon
+                                                                    svgPath={mdiLogoutVariant}
+                                                                    aria-label="Force sign-out"
+                                                                    size="md"
+                                                                    className="text-muted"
+                                                                />
+                                                                <span className="ml-2">Force sign-out</span>
+                                                            </Button>
+                                                            {window.context.resetPasswordEnabled && (
+                                                                <Button
+                                                                    className="d-flex cursor-pointer"
+                                                                    variant="link"
+                                                                    as="li"
+                                                                    outline={true}
+                                                                    onClick={() => handleResetUserPassword(user)}
+                                                                >
+                                                                    <Icon
+                                                                        svgPath={mdiLockReset}
+                                                                        aria-label="Reset password"
+                                                                        size="md"
+                                                                        className="text-muted"
+                                                                    />
+                                                                    <span className="ml-2">Reset password</span>
+                                                                </Button>
+                                                            )}
+                                                            {user.siteAdmin ? (
+                                                                <Button
+                                                                    className="d-flex cursor-pointer"
+                                                                    variant="link"
+                                                                    as="li"
+                                                                    outline={true}
+                                                                    onClick={() => handleRevokeSiteAdmin(user)}
+                                                                >
+                                                                    <Icon
+                                                                        svgPath={mdiClipboardMinus}
+                                                                        aria-label="Revoke site admin"
+                                                                        size="md"
+                                                                        className="text-muted"
+                                                                    />
+                                                                    <span className="ml-2">Revoke site admin</span>
+                                                                </Button>
+                                                            ) : (
+                                                                <Button
+                                                                    className="d-flex cursor-pointer"
+                                                                    variant="link"
+                                                                    as="li"
+                                                                    outline={true}
+                                                                    onClick={() => handlePromoteToSiteAdmin(user)}
+                                                                >
+                                                                    <Icon
+                                                                        svgPath={mdiClipboardPlus}
+                                                                        aria-label="Promote to site admin"
+                                                                        size="md"
+                                                                        className="text-muted"
+                                                                    />
+                                                                    <span className="ml-2">Promote to site admin</span>
+                                                                </Button>
+                                                            )}
+                                                            <Button
+                                                                className="d-flex cursor-pointer"
+                                                                variant="link"
+                                                                as="li"
+                                                                outline={true}
+                                                                onClick={() => handleDeleteUsers([user])}
+                                                            >
+                                                                <Icon
+                                                                    svgPath={mdiArchive}
+                                                                    aria-label="Delete user"
+                                                                    size="md"
+                                                                    className="text-danger"
+                                                                />
+                                                                <span className="ml-2">Delete</span>
+                                                            </Button>
+                                                        </>
                                                     )}
-
-                                                    {item.siteAdmin ? (
-                                                        <Button
-                                                            className="d-flex cursor-pointer"
-                                                            variant="link"
-                                                            as="li"
-                                                            outline={true}
-                                                            onClick={() => handleRevokeSiteAdmin(item)}
-                                                        >
-                                                            <Icon
-                                                                svgPath={mdiClipboardMinus}
-                                                                aria-label="Revoke site admin"
-                                                                size="md"
-                                                                className="text-muted"
-                                                            />
-                                                            <span className="ml-2">Revoke site admin</span>
-                                                        </Button>
-                                                    ) : (
-                                                        <Button
-                                                            className="d-flex cursor-pointer"
-                                                            variant="link"
-                                                            as="li"
-                                                            outline={true}
-                                                            onClick={() => handlePromoteToSiteAdmin(item)}
-                                                        >
-                                                            <Icon
-                                                                svgPath={mdiClipboardPlus}
-                                                                aria-label="Promote to site admin"
-                                                                size="md"
-                                                                className="text-muted"
-                                                            />
-                                                            <span className="ml-2">Promote to site admin</span>
-                                                        </Button>
-                                                    )}
                                                     <Button
                                                         className="d-flex cursor-pointer"
                                                         variant="link"
                                                         as="li"
                                                         outline={true}
-                                                        onClick={() => handleDeleteUsers([item])}
-                                                    >
-                                                        <Icon
-                                                            svgPath={mdiArchive}
-                                                            aria-label="Delete user"
-                                                            size="md"
-                                                            className="text-danger"
-                                                        />
-                                                        <span className="ml-2">Delete</span>
-                                                    </Button>
-                                                    <Button
-                                                        className="d-flex cursor-pointer"
-                                                        variant="link"
-                                                        as="li"
-                                                        outline={true}
-                                                        onClick={() => handleDeleteUsersForever([item])}
+                                                        onClick={() => handleDeleteUsersForever([user])}
                                                     >
                                                         <Icon
                                                             svgPath={mdiDelete}
@@ -569,7 +589,7 @@ function useDeleteUsersForever(refetch: () => void) {
 function usePromoteToSiteAdmin(refetch: () => void) {
     const handlePromoteToSiteAdmin = useCallback((user: SiteUser) => {
         if (confirm('Are you sure you want to promote the selected user to site admin?')) {
-            console.log('Promote to site admin', user)
+            setUserIsSiteAdmin(user.id, true).toPromise().then(refetch).catch(console.error)
         }
     }, [])
 
@@ -581,7 +601,7 @@ function usePromoteToSiteAdmin(refetch: () => void) {
 function useRevokeSiteAdmin(refetch: () => void) {
     const handleRevokeSiteAdmin = useCallback((user: SiteUser) => {
         if (confirm('Are you sure you want to revoke the selected user from site admin?')) {
-            console.log('Revoke site admin', user)
+            setUserIsSiteAdmin(user.id, false).toPromise().then(refetch).catch(console.error)
         }
     }, [])
 
@@ -590,13 +610,23 @@ function useRevokeSiteAdmin(refetch: () => void) {
     }
 }
 
-function useResetUserPassword(refetch: () => void) {
+function useResetUserPassword() {
+    const [data, setData] = useState<{ user: SiteUser; resetPasswordURL: string | null }>()
+    const [loading, setLoading] = useState(false)
     const handleResetUserPassword = useCallback((user: SiteUser) => {
         if (confirm('Are you sure you want to reset the selected user password?')) {
             console.log('Reset user password', user)
+            setLoading(true)
+            randomizeUserPassword(user.id)
+                .toPromise()
+                .then(({ resetPasswordURL }) => setData({ resetPasswordURL, user }))
+                .catch(console.error)
+                .finally(() => setLoading(false))
         }
     }, [])
     return {
         handleResetUserPassword,
+        data,
+        loading,
     }
 }

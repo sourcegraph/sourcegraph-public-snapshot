@@ -77,6 +77,3 @@ export const DELETE_USERS_FOREVER = gql`
         }
     }
 `
-
-// TODO: reset password
-// TODO: revoke/promote to site admin
