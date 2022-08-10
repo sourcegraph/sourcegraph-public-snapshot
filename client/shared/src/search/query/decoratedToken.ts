@@ -1014,7 +1014,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             return [
                 {
                     type: 'literal',
-                    range: { start: offset, end: body.length },
+                    range: { start: offset, end: offset + body.length },
                     value: body,
                     quoted: false,
                 },
