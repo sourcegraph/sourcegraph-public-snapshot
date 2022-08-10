@@ -84,10 +84,10 @@ const LONG_NAMED_SERIES_WITH_DATA: SeriesWithData<Datum>[] = getSeriesData({
     stacked: false,
 })
 
-const ACTIVE_POINT: MinimumPointInfo<Datum> = {
+const ACTIVE_POINT: MinimumPointInfo = {
     seriesId: 'a',
-    value: 200,
-    time: new Date('2020-05-07T19:21:40.286Z'),
+    yValue: 200,
+    xValue: new Date('2020-05-07T19:21:40.286Z'),
 }
 
 export const TooltipLayouts: Story = () => (

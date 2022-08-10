@@ -12,11 +12,11 @@ import { getListWindow } from './utils/get-list-window'
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
-export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'seriesId' | 'value' | 'time'>
+export type MinimumPointInfo = Pick<Point, 'seriesId' | 'yValue' | 'xValue'>
 
 export interface TooltipContentProps<Datum> {
     series: SeriesWithData<Datum>[]
-    activePoint: MinimumPointInfo<Datum>
+    activePoint: MinimumPointInfo
     stacked: boolean
 }
 
@@ -36,7 +36,7 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
         const sortedSeries = series
             .map(line => {
                 const seriesDatum = (line.data as SeriesDatum<Datum>[]).find(
-                    datum => datum.x.getTime() === activePoint.time.getTime()
+                    datum => datum.x.getTime() === activePoint.xValue.getTime()
                 )
                 const value = seriesDatum ? getDatumValue(seriesDatum) : null
 
@@ -60,7 +60,7 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
 
     return (
         <>
-            <H3>{activePoint.time.toDateString()}</H3>
+            <H3>{activePoint.xValue.toDateString()}</H3>
 
             <TooltipList>
                 {lines.leftRemaining > 0 && (
