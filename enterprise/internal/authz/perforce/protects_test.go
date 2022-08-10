@@ -298,57 +298,6 @@ func TestScanFullRepoPermissions(t *testing.T) {
 	}
 }
 
-func TestScanIntTestPerms(t *testing.T) {
-	f, err := os.Open("testdata/int-test-protects.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	data, err := io.ReadAll(f)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := f.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	rc := io.NopCloser(bytes.NewReader(data))
-
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
-	p.depots = []extsvc.RepoID{
-		"//test-perms/",
-	}
-	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
-	}
-	if err := scanProtects(rc, fullRepoPermsScanner(perms, p.depots)); err != nil {
-		t.Fatal(err)
-	}
-
-	// See sample-protects-u.txt for notes
-	want := &authz.ExternalUserPermissions{
-		Exacts: []extsvc.RepoID{
-			"//test-perms/",
-		},
-		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
-			"//test-perms/": {
-				PathIncludes: []string{
-					"**",
-				},
-				PathExcludes: []string{
-					"Security/**",
-				},
-			},
-		},
-	}
-	if diff := cmp.Diff(want, perms); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
 func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 	f, err := os.Open("testdata/sample-protects-m.txt")
 	if err != nil {

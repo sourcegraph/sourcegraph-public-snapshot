@@ -12,6 +12,7 @@ import (
 )
 
 func TestExternalService(t *testing.T) {
+	t.Skip()
 	if len(*githubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
@@ -68,6 +69,7 @@ func TestExternalService(t *testing.T) {
 }
 
 func TestExternalService_AWSCodeCommit(t *testing.T) {
+	t.Skip()
 	if len(*awsAccessKeyID) == 0 || len(*awsSecretAccessKey) == 0 ||
 		len(*awsCodeCommitUsername) == 0 || len(*awsCodeCommitPassword) == 0 {
 		t.Skip("Environment variable AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_CODE_COMMIT_USERNAME or AWS_CODE_COMMIT_PASSWORD is not set")
@@ -124,6 +126,7 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 }
 
 func TestExternalService_BitbucketServer(t *testing.T) {
+	t.Skip()
 	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
@@ -198,11 +201,6 @@ func TestExternalService_Perforce(t *testing.T) {
 }
 
 func checkPerforceEnvironment(t *testing.T) {
-	// context: https://sourcegraph.slack.com/archives/C07KZF47K/p1658178309055259
-	// But it seems that there is still an issue with P4 and they're currently timing out.
-	// cc @mollylogue
-	t.Skip("Currently broken")
-
 	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePassword) == 0 {
 		t.Skip("Environment variables PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD are not set")
 	}

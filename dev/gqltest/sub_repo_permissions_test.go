@@ -279,7 +279,7 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
 	// Alice doesn't have access to Security directory. (there is a .sh file)
 	alicePassword := "alicessupersecurepassword"
 	t.Log("Creating Alice")
-	userClient, err := gqltestutil.SignUp(*baseURL, aliceEmail, "alice", alicePassword)
+	userClient, err := gqltestutil.SignUpOrSignIn(*baseURL, aliceEmail, "alice", alicePassword)
 	if err != nil {
 		t.Fatal(err)
 	}
