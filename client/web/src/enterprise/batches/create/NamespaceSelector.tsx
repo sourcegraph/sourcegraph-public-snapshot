@@ -23,8 +23,7 @@ const NAMESPACE_SELECTOR_ID = 'batch-spec-execution-namespace-selector'
 type NamespaceSelectorProps = {
     namespaces: PartialNamespace[]
     selectedNamespace: string
-} & // Either the selector is disabled and there's on onSelect, or the selector is enabled and there is one.
-({ disabled: true; onSelect?: undefined } | { disabled?: false; onSelect: (namespace: PartialNamespace) => void })
+} & ({ disabled: true; onSelect?: undefined } | { disabled?: false; onSelect: (namespace: PartialNamespace) => void }) // Either the selector is disabled and there's on onSelect, or the selector is enabled and there is one.
 
 export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<NamespaceSelectorProps>> = ({
     namespaces,
