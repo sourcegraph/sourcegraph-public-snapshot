@@ -5,20 +5,17 @@ import { SeriesType } from './types'
 
 interface Datum {
     x: Date
-    value: number | null
+    value: number
 }
 
 const getXValue = (datum: Datum): Date => datum.x
-const getYValue = (datum: Datum): number | null => datum.value
+const getYValue = (datum: Datum): number => datum.value
 
 const testSeries: Series<Datum>[] = [
     {
         id: 'series_001',
         data: [
-            { x: new Date(2022, 2, 2), value: null },
-            { x: new Date(2022, 2, 3), value: null },
             { x: new Date(2022, 2, 4), value: 1 },
-            { x: new Date(2022, 2, 5), value: null },
             { x: new Date(2022, 2, 6), value: 2 },
         ],
         name: 'Series a',
@@ -28,10 +25,8 @@ const testSeries: Series<Datum>[] = [
     {
         id: 'series_002',
         data: [
-            { x: new Date(2022, 2, 2), value: null },
             { x: new Date(2022, 2, 3), value: 2 },
             { x: new Date(2022, 2, 4), value: 2 },
-            { x: new Date(2022, 2, 5), value: null },
             { x: new Date(2022, 2, 6), value: 2 },
         ],
         name: 'Series b',
@@ -41,11 +36,9 @@ const testSeries: Series<Datum>[] = [
     {
         id: 'series_003',
         data: [
-            { x: new Date(2022, 2, 2), value: null },
             { x: new Date(2022, 2, 3), value: 3 },
             { x: new Date(2022, 2, 4), value: 3 },
             { x: new Date(2022, 2, 5), value: 3 },
-            { x: new Date(2022, 2, 6), value: null },
         ],
         name: 'Series c',
         getXValue,

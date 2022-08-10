@@ -3,11 +3,11 @@ import { getMinMaxBoundaries } from './get-min-max-boundary'
 
 interface Datum {
     x: Date
-    value: number | null
+    value: number
 }
 
 const getXValue = (datum: Datum): Date => datum.x
-const getYValue = (datum: Datum): number | null => datum.value
+const getYValue = (datum: Datum): number => datum.value
 
 const testSeriesWithData: SeriesWithData<Datum>[] = [
     {
@@ -17,16 +17,6 @@ const testSeriesWithData: SeriesWithData<Datum>[] = [
         getXValue,
         getYValue,
         data: [
-            {
-                y: null,
-                x: new Date(2022, 2, 2),
-                datum: { x: new Date(2022, 2, 2), value: null },
-            },
-            {
-                y: null,
-                x: new Date(2022, 2, 3),
-                datum: { x: new Date(2022, 2, 3), value: null },
-            },
             {
                 y: 1,
                 x: new Date(2022, 2, 4),
@@ -46,11 +36,6 @@ const testSeriesWithData: SeriesWithData<Datum>[] = [
         getXValue,
         getYValue,
         data: [
-            {
-                y: null,
-                x: new Date(2022, 2, 2),
-                datum: { x: new Date(2022, 2, 2), value: null },
-            },
             {
                 y: 3,
                 x: new Date(2022, 2, 3),
