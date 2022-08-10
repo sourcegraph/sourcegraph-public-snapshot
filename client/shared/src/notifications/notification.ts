@@ -22,11 +22,3 @@ export interface Notification {
      */
     progress?: Observable<Progress>
 }
-
-export interface NotificationWithId extends Notification {
-    id: string
-}
-
-export interface WebAppNotification extends NotificationWithId {
-    onDismiss?: () => void
-}

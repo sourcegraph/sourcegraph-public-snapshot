@@ -1,16 +1,14 @@
-import { useContext } from 'react'
+import { useCallback } from 'react'
 
-import { QueryTuple } from '@apollo/client'
+import { LazyQueryResult } from '@apollo/client'
 
-import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
-import { NotificationContext } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { IQuery, SearchResult } from '@sourcegraph/shared/src/schema'
 
 interface ExportSearchResultsConfig extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
-    query?: string
+    query: string
 }
 
 type ExportSearchResultsQueryResult = Pick<IQuery, 'search'>
@@ -18,6 +16,10 @@ type ExportSearchResultsQueryResult = Pick<IQuery, 'search'>
 interface ExportSearchResultsQueryVariables extends SearchPatternTypeProps {
     query: string
 }
+
+type UseExportSearchResultsQuery = (
+    config: ExportSearchResultsConfig
+) => [() => void, LazyQueryResult<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables>]
 
 const SEARCH_RESULTS_QUERY = gql`
     query SearchResults($query: String!, $patternType: SearchPatternType) {
@@ -129,29 +131,37 @@ const searchResultsToFileContent = (searchResults: SearchResult[], sourcegraphUR
     return content
 }
 
-export const useExportSearchResultsQuery = ({
+export const useExportSearchResultsQuery: UseExportSearchResultsQuery = ({
     query = '',
     patternType,
     sourcegraphURL,
-}: ExportSearchResultsConfig): QueryTuple<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables> => {
-    const { addNotification } = useContext(NotificationContext)
+}) => {
+    const [getSearchResults, data] = useLazyQuery<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables>(
+        SEARCH_RESULTS_QUERY,
+        {
+            onCompleted: data => {
+                const results = data.search?.results.results
+                if (!results?.length || !results[0]) {
+                    throw new Error('No results to be exported.')
+                }
+                const content = searchResultsToFileContent(results, sourcegraphURL)
+                const downloadFilename = `sourcegraph-search-export-${query.replace(/\W/g, '-')}.csv`
+                const blob = new Blob([content], { type: 'text/csv' })
+                const url = URL.createObjectURL(blob)
 
-    return useLazyQuery<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables>(SEARCH_RESULTS_QUERY, {
-        variables: { query, patternType },
-        onCompleted: data => {
-            const results = data.search?.results.results
-            if (!results?.length || !results[0]) {
-                throw new Error('No results to be exported.')
-            }
-            const content = searchResultsToFileContent(results, sourcegraphURL)
-            const downloadFilename = `sourcegraph-search-export-${query.replace(/\W/g, '-')}.csv`
-            const blob = new Blob([content], { type: 'text/csv' })
-            const url = URL.createObjectURL(blob)
-            addNotification({
-                type: NotificationType.Success,
-                message: `Search results export is complete.\n\n<a href="${url}" download="${downloadFilename}"><strong>Download CSV</strong></a>`,
-                onDismiss: () => URL.revokeObjectURL(url),
-            })
-        },
-    })
+                const a = document.createElement('a')
+                a.href = url
+                a.style.display = 'none'
+                a.download = downloadFilename
+                a.click()
+            },
+        }
+    )
+
+    const requestSearchResultsExport = useCallback(() => {
+        // eslint-disable-next-line no-void
+        void getSearchResults({ variables: { query, patternType } })
+    }, [query, patternType, getSearchResults])
+
+    return [requestSearchResultsExport, data]
 }

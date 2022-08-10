@@ -41,7 +41,7 @@ export const WithoutProgress: Story = () => {
     const source = text('Source', 'some source')
     return (
         <NotificationItem
-            notification={{ message, type, source, id: 'notification' }}
+            notification={{ message, type, source }}
             notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
             onDismiss={onDismiss}
         />
@@ -68,7 +68,6 @@ export const WithProgress: Story = () => {
                     message: progressMessage,
                     percentage: progressPercentage,
                 }),
-                id: 'notification',
             }}
             notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
             onDismiss={onDismiss}

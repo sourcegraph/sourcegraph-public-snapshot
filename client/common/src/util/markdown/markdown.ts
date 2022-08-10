@@ -167,7 +167,7 @@ export const renderMarkdown = (
             sanitizeOptions.allowedAttributes.a = [...sanitizeOptions.allowedAttributes.a, 'download']
             sanitizeOptions.allowedSchemesByTag = {
                 ...sanitizeOptions.allowedSchemesByTag,
-                a: [...(sanitizeOptions.allowedSchemesByTag.a || sanitizeOptions.allowedSchemes), 'data', 'blob'],
+                a: [...(sanitizeOptions.allowedSchemesByTag.a || sanitizeOptions.allowedSchemes), 'data'],
             }
         }
     }

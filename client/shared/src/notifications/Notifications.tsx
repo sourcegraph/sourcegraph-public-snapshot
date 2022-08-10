@@ -12,7 +12,7 @@ import { NotificationType } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { ExtensionsControllerProps } from '../extensions/controller'
 
-import { Notification, NotificationWithId, WebAppNotification } from './notification'
+import { Notification } from './notification'
 import { NotificationItem, NotificationItemProps } from './NotificationItem'
 
 import styles from './Notifications.module.scss'
@@ -23,49 +23,15 @@ export interface NotificationsProps
 
 interface NotificationsState {
     // TODO(tj): use remote progress observable type
-    notifications: NotificationWithId[]
+    notifications: (Notification & { id: string })[]
 }
 
 const HAS_NOTIFICATIONS_CONTEXT_KEY = 'hasNotifications'
 
-// Context to manage notifications contributed by Sourcegraph web app parts.
-export const NotificationContext = React.createContext<{
-    notifications: WebAppNotification[]
-    addNotification: (notification: Omit<WebAppNotification, 'id'>) => void
-    removeNotification: (notification: WebAppNotification) => void
-}>({
-    notifications: [],
-    addNotification: () => {},
-    removeNotification: () => {},
-})
-
-export const NotificationContextProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
-    const [notifications, setNotifications] = React.useState<(Notification & { id: string })[]>([])
-    const addNotification = React.useCallback(
-        (notification: Omit<WebAppNotification, 'id'>) =>
-            setNotifications(current => [...current, { ...notification, id: uniqueId('n') }]),
-        [setNotifications]
-    )
-    const removeNotification = React.useCallback(
-        (notification: WebAppNotification) =>
-            setNotifications(current => current.filter(item => item.id !== notification.id)),
-        [setNotifications]
-    )
-
-    return (
-        <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
-            {children}
-        </NotificationContext.Provider>
-    )
-}
-
 /**
- * A notifications center that displays global, non-modal messages from Sourcegraph web app and extensions.
+ * A notifications center that displays global, non-modal messages.
  */
 export class Notifications extends React.PureComponent<NotificationsProps, NotificationsState> {
-    public static contextType = NotificationContext
-    public context!: React.ContextType<typeof NotificationContext> // web app notifications
-
     /**
      * The maximum number of notifications at a time. Older notifications are truncated when the length exceeds
      * this number.
@@ -73,7 +39,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     private static MAX_RETAIN = 7
 
     public state: NotificationsState = {
-        notifications: [], // extensions notifications
+        notifications: [],
     }
 
     private subscriptions = new Subscription()
@@ -222,14 +188,9 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     }
 
     public render(): JSX.Element | null {
-        const notifications = [
-            ...this.context.notifications, // from Sourcegraph web app
-            ...this.state.notifications, // from extension host state
-        ]
-
         return (
             <div className={styles.sourcegraphNotifications} ref={this.notificationsReference}>
-                {notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
+                {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
                     <NotificationItem
                         key={notification.id}
                         notification={notification}
@@ -242,20 +203,9 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
         )
     }
 
-    private isWebAppNotification = (
-        notification: NotificationWithId | WebAppNotification
-    ): notification is WebAppNotification => this.context.notifications.some(item => item.id === notification.id)
-
-    private onDismiss = (dismissedNotification: NotificationWithId | WebAppNotification): void => {
-        if (this.isWebAppNotification(dismissedNotification)) {
-            this.context.removeNotification(dismissedNotification)
-            dismissedNotification.onDismiss?.()
-        } else {
-            this.setState(previousState => ({
-                notifications: previousState.notifications.filter(
-                    notification => notification !== dismissedNotification
-                ),
-            }))
-        }
+    private onDismiss = (dismissedNotification: Notification): void => {
+        this.setState(previousState => ({
+            notifications: previousState.notifications.filter(notification => notification !== dismissedNotification),
+        }))
     }
 }

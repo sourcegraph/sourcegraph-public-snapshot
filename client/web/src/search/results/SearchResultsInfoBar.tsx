@@ -1,14 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
-import {
-    mdiBookmarkOutline,
-    mdiMenu,
-    mdiMenuDown,
-    mdiMenuUp,
-    mdiArrowExpandDown,
-    mdiArrowCollapseUp,
-    mdiDownload,
-} from '@mdi/js'
+import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -25,7 +17,6 @@ import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
-import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
@@ -38,7 +29,6 @@ import {
 } from './createActions'
 import { CreateActionsMenu } from './CreateActionsMenu'
 import { SearchActionsMenu } from './SearchActionsMenu'
-import { useExportSearchResultsQuery } from './useExportSearchResultsQuery'
 
 import createActionsStyles from './CreateActions.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
@@ -258,36 +248,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.location, showActionButtonExperimentalVersion, props.onSaveQueryClick, props.telemetryService]
     )
 
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
-    const [requestSearchResultsExport] = useExportSearchResultsQuery({
-        query: props.query,
-        patternType: props.patternType,
-        sourcegraphURL: props.platformContext.sourcegraphURL,
-    })
-    const onExportSearchResultsClick = useCallback(() => {
-        // eslint-disable-next-line no-void
-        void requestSearchResultsExport()
-    }, [requestSearchResultsExport])
-    const exportSearchResultsButton = useMemo(
-        () =>
-            extensionsAsCoreFeatures ? (
-                <Tooltip content="Export search results as CVS file">
-                    <li className={classNames('mr-2', styles.navItem)}>
-                        <Button
-                            className="btn btn-sm btn-outline-secondary text-decoration-none"
-                            variant="secondary"
-                            outline={true}
-                            onClick={onExportSearchResultsClick}
-                        >
-                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
-                            Export Results
-                        </Button>
-                    </li>
-                </Tooltip>
-            ) : null,
-        [extensionsAsCoreFeatures, onExportSearchResultsClick]
-    )
-
     const extraContext = useMemo(
         () => ({
             searchQuery: props.query || null,
@@ -363,21 +323,20 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                     {coreWorkflowImprovementsEnabled ? (
                         <SearchActionsMenu
+                            query={props.query}
+                            patternType={props.patternType}
+                            sourcegraphURL={props.platformContext.sourcegraphURL}
                             authenticatedUser={props.authenticatedUser}
                             createActions={createActions}
                             createCodeMonitorAction={createCodeMonitorAction}
                             canCreateMonitor={canCreateMonitorFromQuery}
                             resultsFound={props.resultsFound}
                             allExpanded={props.allExpanded}
-                            extensionsAsCoreFeatures={extensionsAsCoreFeatures}
                             onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                             onSaveQueryClick={props.onSaveQueryClick}
-                            onExportSearchResultsClick={onExportSearchResultsClick}
                         />
                     ) : (
                         <>
-                            {exportSearchResultsButton}
-
                             {createActions.map(createActionButton => (
                                 <Tooltip
                                     key={createActionButton.label}
