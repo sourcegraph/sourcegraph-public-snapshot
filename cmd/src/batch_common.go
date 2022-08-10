@@ -296,6 +296,28 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		return err
 	}
 
+	// On Linux only, we also need to figure out if we need to override the
+	// temporary directory — Docker Desktop restricts file mounts to /home only
+	// by default.
+	//
+	// We could interrogate ~/.docker/desktop/settings.json for extra bonus
+	// points here, but that feels like overkill. Basically, if it's
+	// desktop-linux, we'll just assume the user has the default /home mount
+	// available and go from there.
+	if runtime.GOOS == "linux" && opts.flags.tempDir == batchDefaultTempDirPrefix() {
+		context, err := docker.CurrentContext(ctx)
+		if err != nil {
+			return err
+		}
+
+		if context == "desktop-linux" {
+			opts.flags.tempDir = path.Join(path.Dir(opts.flags.cacheDir), "batch-tmp")
+
+			// Ensure the directory exists and is writable.
+			os.MkdirAll(opts.flags.tempDir, os.ModePerm)
+		}
+	}
+
 	// Parse flags and build up our service and executor options.
 	ui.ParsingBatchSpec()
 	batchSpec, rawSpec, err := parseBatchSpec(ctx, opts.file, svc, false)
