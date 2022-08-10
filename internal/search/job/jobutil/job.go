@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -749,7 +748,7 @@ func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.T
 	noLang := !b.Exists(query.FieldLang)
 	isEmpty := noPattern && noFile && noLang
 
-	repoUniverseSearch = isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty
+	repoUniverseSearch = isGlobalSearch && isIndexedSearch && hasGlobalSearchResultType && !isEmpty
 	// skipRepoSubsetSearch is a value that controls whether to
 	// run unindexed search in a specific scenario of queries that
 	// contain no repo-affecting filters (global mode). When on
