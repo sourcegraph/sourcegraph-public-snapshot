@@ -28,6 +28,11 @@ FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069
 RUN wget -O git-2.35.2.tar.gz https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.35.2.tar.gz
 RUN apk add --no-cache make build-base autoconf curl zlib-dev openssl libressl-dev expat gnu-libiconv gettext asciidoc xmlto
 
+# [NOTE: git-version-min-requirement]
+# We require git 2.34.1 because we use git-repack with flag --write-midx.
+# We require git 2.35.2 to fix this vulnerability:
+# https://github.blog/2022-04-12-git-security-vulnerability-announced/
+
 RUN tar -xvf git-2.35.2.tar.gz
 WORKDIR git-2.35.2
 RUN make configure && \
