@@ -1,6 +1,3 @@
-ALTER TABLE lsif_uploads
-DROP COLUMN IF EXISTS uncompressed_size;
-
 DROP VIEW IF EXISTS lsif_uploads_with_repository_name;
 
 CREATE VIEW lsif_uploads_with_repository_name AS
@@ -29,3 +26,6 @@ SELECT u.id,
 FROM lsif_uploads u
 JOIN repo r ON r.id = u.repository_id
 WHERE r.deleted_at IS NULL;
+
+ALTER TABLE lsif_uploads
+DROP COLUMN IF EXISTS uncompressed_size;
