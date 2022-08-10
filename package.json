@@ -56,15 +56,6 @@
     "build-vsce": "yarn --cwd client/vscode run build",
     "watch-vsce": "yarn --cwd client/vscode run watch"
   },
-  "browserslist": [
-    "last 1 version",
-    ">1%",
-    "not dead",
-    "not <0.25%",
-    "last 1 Chrome versions",
-    "last 3 Safari major versions",
-    "not IE > 0"
-  ],
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
     "all": true,

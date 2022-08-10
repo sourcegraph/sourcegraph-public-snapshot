@@ -31,9 +31,5 @@
     "test-integration": "node scripts/test-integration",
     "record-integration": "node scripts/record-integration",
     "create-source-zip": "node scripts/create-source-zip"
-  },
-  "browserslist": [
-    "last 3 Chrome versions",
-    "last 3 Firefox versions"
-  ]
+  }
 }
