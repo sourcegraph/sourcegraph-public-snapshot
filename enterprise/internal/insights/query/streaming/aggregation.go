@@ -30,7 +30,7 @@ func (a aggregated) Add(value string, count int32) {
 	}
 }
 
-// Aggregate returns an ordered slice of elements to present to the user.
+// SortAggregate returns an ordered slice of elements to present to the user.
 func (a aggregated) SortAggregate(max int) []*Aggregate {
 	heap := aggregateHeap{max: max}
 	for _, elt := range a {
