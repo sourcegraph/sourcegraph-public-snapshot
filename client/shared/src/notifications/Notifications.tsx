@@ -42,7 +42,7 @@ export const NotificationContext = React.createContext<{
 export const NotificationContextProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     const [notifications, setNotifications] = React.useState<(Notification & { id: string })[]>([])
     const addNotification = React.useCallback(
-        (notification: WebAppNotification) =>
+        (notification: Omit<WebAppNotification, 'id'>) =>
             setNotifications(current => [...current, { ...notification, id: uniqueId('n') }]),
         [setNotifications]
     )
