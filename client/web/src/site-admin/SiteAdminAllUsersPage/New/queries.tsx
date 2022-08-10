@@ -37,6 +37,7 @@ export const USERS_MANAGEMENT = gql`
                     id
                     username
                     email
+                    siteAdmin
                     eventsCount
                     createdAt
                     lastActiveAt

@@ -18,10 +18,12 @@ import {
     mdiDotsHorizontal,
     mdiLockReset,
     mdiClipboardMinus,
+    mdiClipboardPlus,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { format as formatDate } from 'date-fns'
 import { startCase, isEqual } from 'lodash'
+import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import {
@@ -62,7 +64,7 @@ import { USERS_MANAGEMENT } from './queries'
 
 import styles from './index.module.scss'
 
-export const UsersManagement: React.FunctionComponent = () => {
+export const UsersManagement: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const { data, previousData, error, loading, variables, refetch, called } = useQuery<
         UsersManagementResult,
         UsersManagementVariables
@@ -95,7 +97,7 @@ interface ContentProps {
     refetch: (variables: UsersManagementVariables) => any
 }
 
-export const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refetch }) => {
+const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refetch }) => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
     const [usersQuery, setUsersQuery] = useState<string>('')
     const [usersLastActivePeriod, setUsersLastActivePeriod] = useState<SiteUsersLastActivePeriod>(
@@ -275,7 +277,7 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                     onSortChange={(usersOrderBy, usersOrderDirection) =>
                         refetch({ ...variables, usersOrderBy, usersOrderDescending: usersOrderDirection === 'desc' })
                     }
-                    getRowId={({ username }) => username}
+                    getRowId={({ id }) => id}
                     actions={[
                         {
                             key: 'force-sign-out',
@@ -316,6 +318,13 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                                     </div>
                                 )
                             },
+                        },
+                        {
+                            key: SiteUserOrderBy.SITE_ADMIN,
+                            accessor: item => (item.siteAdmin ? 'Yes' : 'No'),
+                            header: { label: 'Site Admin', align: 'right' },
+                            sortable: true,
+                            align: 'center',
                         },
                         {
                             key: SiteUserOrderBy.EVENTS_COUNT,
@@ -359,7 +368,9 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                         },
                         {
                             key: 'actions',
-                            render: function RenderActions(): JSX.Element {
+                            render: function RenderActions({
+                                siteAdmin,
+                            }: typeof data.site.users.nodes[0]): JSX.Element {
                                 return (
                                     <Popover>
                                         <div className="d-flex justify-content-center">
@@ -379,24 +390,38 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                                                         />
                                                         <span className="ml-2">Force sign-out</span>
                                                     </li>
-                                                    <li className="d-flex p-2 cursor-pointer">
-                                                        <Icon
-                                                            svgPath={mdiLockReset}
-                                                            aria-label="Reset password"
-                                                            size="md"
-                                                            className="text-muted"
-                                                        />
-                                                        <span className="ml-2">Reset password</span>
-                                                    </li>
-                                                    <li className="d-flex p-2 cursor-pointer">
-                                                        <Icon
-                                                            svgPath={mdiClipboardMinus}
-                                                            aria-label="Revoke site admin"
-                                                            size="md"
-                                                            className="text-muted"
-                                                        />
-                                                        <span className="ml-2">Revoke site admin</span>
-                                                    </li>
+                                                    {window.context.resetPasswordEnabled && (
+                                                        <li className="d-flex p-2 cursor-pointer">
+                                                            <Icon
+                                                                svgPath={mdiLockReset}
+                                                                aria-label="Reset password"
+                                                                size="md"
+                                                                className="text-muted"
+                                                            />
+                                                            <span className="ml-2">Reset password</span>
+                                                        </li>
+                                                    )}
+                                                    {siteAdmin ? (
+                                                        <li className="d-flex p-2 cursor-pointer">
+                                                            <Icon
+                                                                svgPath={mdiClipboardMinus}
+                                                                aria-label="Revoke site admin"
+                                                                size="md"
+                                                                className="text-muted"
+                                                            />
+                                                            <span className="ml-2">Revoke site admin</span>
+                                                        </li>
+                                                    ) : (
+                                                        <li className="d-flex p-2 cursor-pointer">
+                                                            <Icon
+                                                                svgPath={mdiClipboardPlus}
+                                                                aria-label="Promote to site admin"
+                                                                size="md"
+                                                                className="text-muted"
+                                                            />
+                                                            <span className="ml-2">Promote to site admin</span>
+                                                        </li>
+                                                    )}
                                                     <li className="d-flex p-2 cursor-pointer">
                                                         <Icon
                                                             svgPath={mdiArchive}

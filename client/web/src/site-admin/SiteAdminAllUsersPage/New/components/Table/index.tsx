@@ -19,7 +19,7 @@ import styles from './index.module.scss'
 
 interface IColumn<TData> {
     key: string
-    accessor?: string | ((data: TData) => any)
+    accessor?: keyof TData | ((data: TData) => any)
     header:
         | string
         | {
@@ -214,18 +214,18 @@ function Row<TData>({
                     </div>
                 </td>
             )}
-            {columns.map((column, index) => (
-                <td key={column.key}>
-                    {column.render ? (
-                        column.render(data, index)
+            {columns.map(({ align, accessor, render }, index) => (
+                <td key={key}>
+                    {render ? (
+                        render(data, index)
                     ) : (
                         <div className={styles.cell}>
-                            <Text alignment={column.align || 'left'} className="mb-0">
-                                {typeof column.accessor === 'function'
-                                    ? column.accessor(data)
-                                    : typeof column.accessor !== 'undefined'
-                                    ? data[column.accessor]
-                                    : ''}
+                            <Text alignment={align || 'left'} className="mb-0">
+                                {typeof accessor === 'function'
+                                    ? accessor(data)
+                                    : typeof accessor !== 'undefined'
+                                    ? data[accessor]
+                                    : 'n/a'}
                             </Text>
                         </div>
                     )}
