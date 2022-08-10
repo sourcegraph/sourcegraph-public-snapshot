@@ -315,7 +315,12 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                         {
                             key: SiteUserOrderBy.EVENTS_COUNT,
                             accessor: 'eventsCount',
-                            header: { label: 'Events', align: 'right' },
+                            header: {
+                                label: 'Events',
+                                align: 'right',
+                                tooltip:
+                                    '"Events" count is based on event_logs table which stores only last 93 days of logs.',
+                            },
                             sortable: true,
                             align: 'right',
                         },
@@ -323,7 +328,12 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                             key: SiteUserOrderBy.LAST_ACTIVE_AT,
                             accessor: item =>
                                 item.lastActiveAt ? formatDate(new Date(item.lastActiveAt), 'dd/mm/yyyy') : '',
-                            header: { label: 'Last Active', align: 'right' },
+                            header: {
+                                label: 'Last Active',
+                                align: 'right',
+                                tooltip:
+                                    '"Last Active" is based on event_logs table which stores only last 93 days of logs.',
+                            },
                             sortable: true,
                             align: 'right',
                         },

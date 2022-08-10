@@ -3,7 +3,17 @@ import { useState, useMemo } from 'react'
 import { mdiMenuUp, mdiMenuDown, mdiArrowRightTop, mdiArrowRightBottom, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon, Text, Checkbox, PopoverTrigger, PopoverContent, Popover, Position, Button } from '@sourcegraph/wildcard'
+import {
+    Icon,
+    Text,
+    Checkbox,
+    PopoverTrigger,
+    PopoverContent,
+    Popover,
+    Position,
+    Button,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import styles from './index.module.scss'
 
@@ -15,6 +25,7 @@ interface IColumn<TData> {
         | {
               label: string
               align: 'left' | 'right'
+              tooltip?: string
           }
     sortable?: boolean
     align?: 'left' | 'right' | 'center'
@@ -88,6 +99,7 @@ export default function Table<TData>({
                             const key = column.key
                             const label = typeof column.header === 'string' ? column.header : column.header.label
                             const align = typeof column.header !== 'string' ? column.header.align || 'left' : 'left'
+                            const tooltip = typeof column.header !== 'string' ? column.header.tooltip : undefined
 
                             const sort = (): void => {
                                 let newColumn = sortedColumn
@@ -116,9 +128,12 @@ export default function Table<TData>({
                                             [styles.sortedDesc]: sortedColumn === key && sortDirection === 'desc',
                                         })}
                                     >
-                                        <Text as="span" weight="bold">
-                                            {label}
-                                        </Text>
+                                        <Tooltip content={tooltip}>
+                                            <Text as="span" weight="bold">
+                                                {label}
+                                                {tooltip && <span className={styles.linkColor}>*</span>}
+                                            </Text>
+                                        </Tooltip>
                                         {column.sortable && (
                                             <div className={classNames('d-flex flex-column', styles.sortableIcons)}>
                                                 <Icon svgPath={mdiMenuUp} size="md" className={styles.sortAscIcon} />
