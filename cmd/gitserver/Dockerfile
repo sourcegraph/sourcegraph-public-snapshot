@@ -24,6 +24,17 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
+FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS git
+RUN wget -O git-2.35.2.tar.gz https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.35.2.tar.gz
+RUN apk add --no-cache make build-base autoconf curl zlib-dev openssl libressl-dev expat gnu-libiconv gettext asciidoc xmlto
+
+RUN tar -xvf git-2.35.2.tar.gz
+WORKDIR git-2.35.2
+RUN make configure && \
+   ./configure --prefix=/usr && \
+    make all && \
+    make install
+
 FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7
 
 ARG COMMIT_SHA="unknown"
@@ -35,21 +46,6 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-RUN apk add --no-cache make build-base autoconf curl zlib-dev openssl libressl-dev expat gnu-libiconv gettext asciidoc xmlto
-
-RUN wget -O git-2.35.2.tar.gz https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.35.2.tar.gz
-RUN tar -xvf git-2.35.2.tar.gz
-WORKDIR git-2.35.2
-RUN ls
-RUN make configure
-RUN ./configure --prefix=/usr
-RUN make all doc info
-RUN make install install-doc install-html install-info
-
-RUN git version
-
-RUN exit 1
-
 RUN apk add --no-cache git-p4
 
 RUN apk add --no-cache  \
@@ -59,6 +55,8 @@ RUN apk add --no-cache  \
     python2 \
     python3 \
     bash
+
+COPY --from=git /usr/bin/git /usr/bin/git
 
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
