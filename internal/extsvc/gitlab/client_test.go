@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -97,14 +98,26 @@ func TestClient_doWithBaseURLWithOAuthContext(t *testing.T) {
 
 	ctx := context.Background()
 
-	client := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OauthContext) (string, error) {
-		return "refreshed-token", nil
-	}).getClient(&auth.OAuthBearerToken{Token: "bad token"})
+	mockOauthContext := &oauthutil.OauthContext{
+		ClientID:     "client_id",
+		ClientSecret: "client_secret",
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "url/oauth/authorize",
+			TokenURL: "url/oauth/token",
+		},
+		Scopes: []string{"read_user"},
+	}
 
-	req, err := http.NewRequest(http.MethodGet, "todo", nil)
+	provider := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OauthContext) (string, error) {
+		return "refreshed-token", nil
+	})
+
+	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token"})
+
+	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)
 
 	var result map[string]any
-	_, _, err = client.doWithBaseURL(ctx, req, &result)
+	_, _, err = client.doWithBaseURL(ctx, mockOauthContext, req, &result)
 	require.NoError(t, err)
 }

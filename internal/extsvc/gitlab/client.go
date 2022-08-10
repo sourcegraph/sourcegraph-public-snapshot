@@ -111,7 +111,6 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefr
 		gitlabClients:  make(map[string]*Client),
 		tokenRefresher: tokenRefresher,
 	}
-
 }
 
 // GetAuthenticatorClient returns a client authenticated by the given
@@ -239,12 +238,14 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, req, result)
+
+	oauthContext := getOauthContext()
+	return c.doWithBaseURL(ctx, oauthContext, req, result)
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is used for authentication,
 // it  will make a retry and refresh in case the token has expired.
-func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OauthContext, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var responseStatus string
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
@@ -272,8 +273,6 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	var header http.Header
 	var body []byte
 
-	oauthContext := getOauthContext()
-
 	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
 	if ok {
 		if oauthContext != nil {
@@ -283,7 +282,6 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 				return nil, 0, errors.Wrap(err, "do request with retry and refresh")
 			}
 		}
-
 	} else {
 		if c.Auth != nil {
 			if err := c.Auth.Authenticate(req); err != nil {
@@ -322,26 +320,6 @@ type oauthError struct {
 
 func (e oauthError) Error() string {
 	return fmt.Sprintf("OAuth response error %q description %q", e.Err, e.ErrorDescription)
-}
-
-// getOAuthErrorDetails only returns error if it's an OAuth error. For other
-// errors like 404 we don't return error. We do this because this method is only
-// intended to be used by oauth to refresh access token on expiration.
-//
-// When it's error like 404, GitLab API doesn't return it as error so we keep
-// the similar behavior and let caller check the response status code.
-func getOAuthErrorDetails(body []byte) error {
-	var oe oauthError
-	if err := json.Unmarshal(body, &oe); err != nil {
-		// If we failed to unmarshal body with oauth error, it's not oauthError and we should return nil.
-		return nil
-	}
-	// https://www.oauth.com/oauth2-servers/access-tokens/access-token-response/
-	// {"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}
-	if oe.Err == "invalid_token" && strings.Contains(oe.ErrorDescription, "expired") {
-		return &oe
-	}
-	return nil
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -383,7 +361,9 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 	v := struct {
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
-	_, _, err = c.doWithBaseURL(ctx, req, &v)
+
+	oauthContext := getOauthContext()
+	_, _, err = c.doWithBaseURL(ctx, oauthContext, req, &v)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting oauth scopes")
 	}
@@ -487,7 +467,6 @@ func getOauthContext() *oauthutil.OauthContext {
 			}
 		}
 	}
-
 	return nil
 }
 
