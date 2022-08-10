@@ -101,15 +101,6 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 				t.Errorf("unexpected error from Handle function, expected error: %v, received: %s", test.expectErr, err.Error())
 
 			}
-			// if err != nil {
-			// 	if !errors.Is(err, disabledErr) {
-			// 		t.Errorf("unexpected error from Handle function, expected disabled error: %s", err.Error())
-			// 	}
-			// } else {
-			// 	if test.expectErr != nil {
-			// 		t.Error("expected error but did not receive one")
-			// 	}
-			// }
 		})
 	}
 }
