@@ -32,13 +32,13 @@ func (a aggregated) Add(value string, count int32) {
 
 // SortAggregate returns an ordered slice of elements to present to the user.
 func (a aggregated) SortAggregate(max int) []*Aggregate {
-	heap := aggregateHeap{max: max}
+	h := aggregateHeap{max: max}
 	for _, elt := range a {
-		heap.Add(elt)
+		h.Add(elt)
 	}
-	sort.Sort(heap.aggregateSlice)
+	sort.Sort(h.aggregateSlice)
 
-	return heap.aggregateSlice
+	return h.aggregateSlice
 }
 
 type aggregateSlice []*Aggregate
