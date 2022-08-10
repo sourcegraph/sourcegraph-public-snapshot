@@ -150,5 +150,5 @@ func (e *DataExporter) Export(ctx context.Context, request ExportRequest) (io.Re
 		return nil, err
 	}
 
-	return bytes.NewReader(buf.Bytes()), nil
+	return &buf, nil
 }
