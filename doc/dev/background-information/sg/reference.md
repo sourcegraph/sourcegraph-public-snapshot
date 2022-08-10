@@ -725,7 +725,7 @@ Flags:
 
 ### sg migration leaves
 
-Identiy the migration leaves for the given commit.
+Identify the migration leaves for the given commit.
 
 Available schemas:
 
