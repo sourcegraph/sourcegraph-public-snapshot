@@ -76,8 +76,8 @@ type ClientProvider struct {
 	// baseURL is the base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
 	baseURL *url.URL
 
-	// httpClient is the underlying the HTTP client to use
-	httpClient httpcli.Doer
+	// HTTPClient is the underlying the HTTP client to use
+	HTTPClient httpcli.Doer
 
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
@@ -107,7 +107,7 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefr
 	return &ClientProvider{
 		urn:            urn,
 		baseURL:        baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		httpClient:     cli,
+		HTTPClient:     cli,
 		gitlabClients:  make(map[string]*Client),
 		tokenRefresher: tokenRefresher,
 	}
@@ -133,6 +133,7 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	if oauthToken == "" {
 		return p.getClient(nil)
 	}
+
 	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 }
 
@@ -153,7 +154,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, a, p.httpClient)
+	c := p.newClient(p.baseURL, a, p.HTTPClient)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -220,6 +221,13 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 		rateLimitMonitor: rlm,
 		tokenRefresher:   p.tokenRefresher,
 	}
+}
+
+func (p *ClientProvider) NewClientWithTokenRefresher(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer, refresher oauthutil.TokenRefresher) *Client {
+	client := p.newClient(baseURL, a, httpClient)
+	client.tokenRefresher = refresher
+
+	return client
 }
 
 func isGitLabDotComURL(baseURL *url.URL) bool {

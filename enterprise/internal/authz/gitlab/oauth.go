@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
@@ -26,6 +27,7 @@ type OAuthProvider struct {
 	clientProvider *gitlab.ClientProvider
 	clientURL      *url.URL
 	codeHost       *extsvc.CodeHost
+	db             database.DB
 }
 
 type OAuthProviderOp struct {
@@ -57,6 +59,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauth
 		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli, tokenRefresher),
 		clientURL:      op.BaseURL,
 		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
+		db:             op.db,
 	}
 }
 
@@ -88,6 +91,7 @@ func (p *OAuthProvider) FetchAccount(context.Context, *types.User, []*extsvc.Acc
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
+
 func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
@@ -103,7 +107,13 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	client := p.clientProvider.GetOAuthClient(tok.AccessToken)
+	helper := database.RefreshTokenHelperForExternalAccount{
+		DB:                p.db,
+		ExternalAccountID: account.ID,
+		OauthRefreshToken: tok.RefreshToken,
+	}
+
+	client := p.clientProvider.NewClientWithTokenRefresher(p.clientURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, p.clientProvider.HTTPClient, helper.RefreshToken)
 	return listProjects(ctx, client)
 }
 
