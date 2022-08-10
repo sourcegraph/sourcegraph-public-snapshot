@@ -246,16 +246,16 @@ func removeClosePoints(points []store.SeriesPoint, series types.InsightViewSerie
 func intervalToMinutes(unit types.IntervalUnit, value int) float64 {
 	switch unit {
 	case types.Day:
-		return float64(time.Hour.Minutes()) * 24 * float64(value)
+		return time.Hour.Minutes() * 24 * float64(value)
 	case types.Week:
-		return float64(time.Hour.Minutes()) * 24 * 7 * float64(value)
+		return time.Hour.Minutes() * 24 * 7 * float64(value)
 	case types.Month:
-		return float64(time.Hour.Minutes()) * 24 * 30 * float64(value)
+		return time.Hour.Minutes() * 24 * 30 * float64(value)
 	case types.Year:
-		return float64(time.Hour.Minutes()) * 24 * 365 * float64(value)
+		return time.Hour.Minutes() * 24 * 365 * float64(value)
 	default:
 		// By default return the smallest interval (an hour)
-		return float64(time.Hour.Minutes()) * float64(value)
+		return time.Hour.Minutes() * float64(value)
 	}
 }
 
