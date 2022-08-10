@@ -203,15 +203,15 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                 </H1>
                 <div>
                     <Button
-                        to="/site-admin/users-statistics/archive"
+                        href="/site-admin/usage-statistics/archive"
                         download="true"
                         className="mr-4"
                         variant="secondary"
                         outline={true}
-                        as={Link}
+                        as="a"
                     >
-                        <Icon svgPath={mdiDownload} aria-label="Export CSV" className="mr-1" />
-                        Export CSV
+                        <Icon svgPath={mdiDownload} aria-label="Download usage stats" className="mr-1" />
+                        Download usage stats
                     </Button>
                     <Button to="/site-admin/users/new" variant="primary" as={Link}>
                         <Icon svgPath={mdiPlus} aria-label="create user" className="mr-1" />
