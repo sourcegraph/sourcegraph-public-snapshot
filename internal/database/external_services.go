@@ -329,7 +329,7 @@ type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalSer
 // ValidateExternalServiceConfig is the default non-enterprise version of our validation function
 var ValidateExternalServiceConfig = MakeValidateExternalServiceConfigFunc(nil, nil, nil, nil)
 
-func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHubConnection) error, gitLabValidators []func(*types.GitLabConnection, []schema.AuthProviders) error, bitbucketServerValidators []func(*schema.BitbucketServerConnection) error, perforceValidators []func(*schema.PerforceConnection) error) ValidateExternalServiceConfigFunc {
+func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHubConnection) error, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, bitbucketServerValidators []func(*schema.BitbucketServerConnection) error, perforceValidators []func(*schema.PerforceConnection) error) ValidateExternalServiceConfigFunc {
 	return func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
 		ext, ok := ExternalServiceKinds[opt.Kind]
 		if !ok {
@@ -504,15 +504,10 @@ func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) e
 	return err
 }
 
-func validateGitLabConnection(gitLabValidators []func(*types.GitLabConnection, []schema.AuthProviders) error, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
+func validateGitLabConnection(gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	var err error
 	for _, validate := range gitLabValidators {
-		err = errors.Append(err,
-			validate(&types.GitLabConnection{
-				URN:              extsvc.URN(extsvc.KindGitLab, id),
-				GitLabConnection: c,
-			}, ps),
-		)
+		err = errors.Append(err, validate(c, ps))
 	}
 	return err
 }

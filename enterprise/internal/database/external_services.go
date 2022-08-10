@@ -11,6 +11,6 @@ import (
 )
 
 var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc([]func(*types.GitHubConnection) error{github.ValidateAuthz},
-	[]func(*types.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
+	[]func(*schema.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
 	[]func(*schema.BitbucketServerConnection) error{bitbucketserver.ValidateAuthz},
 	[]func(connection *schema.PerforceConnection) error{perforce.ValidateAuthz})
