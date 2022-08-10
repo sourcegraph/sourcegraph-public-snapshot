@@ -68,13 +68,12 @@
     "exportUsageTelemetry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["topicName", "topicProjectName"],
       "properties": {
         "enabled": {
           "description": "Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.",
           "type": "boolean",
           "default": false,
-          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA."
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_ENABLED."
         },
         "batchSize": {
           "description": "Maximum number of events scraped from the events table in a single scrape.",
@@ -84,11 +83,13 @@
         },
         "topicProjectName": {
           "type": "string",
-          "description": "GCP project name containing the usage data pubsub topic"
+          "description": "GCP project name containing the usage data pubsub topic",
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_TOPIC_PROJECT."
         },
         "topicName": {
           "type": "string",
-          "description": "Destination pubsub topic name to export usage data"
+          "description": "Destination pubsub topic name to export usage data",
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_TOPIC_NAME."
         }
       }
     },
