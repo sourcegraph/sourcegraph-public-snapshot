@@ -7,6 +7,9 @@ import { PieChart } from './PieChart'
 const StoryConfig: Meta = {
     title: 'web/charts/pie',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
+        chromatic: { disableSnapshots: false, enableDarkMode: true },
+    },
 }
 
 export default StoryConfig

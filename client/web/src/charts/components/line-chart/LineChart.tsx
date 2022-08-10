@@ -3,7 +3,6 @@ import { ReactElement, useMemo, useState, SVGProps, CSSProperties, useRef } from
 import { Group } from '@visx/group'
 import { scaleTime, scaleLinear, getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
-import { LinePath } from '@visx/shape'
 import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -12,20 +11,10 @@ import { AxisLeft, AxisBottom } from '../../core'
 import { formatDateTick } from '../../core/components/axis/tick-formatters'
 import { SeriesLikeChart } from '../../types'
 
-import { Tooltip, TooltipContent, PointGlyph } from './components'
-import { StackedArea } from './components/stacked-area/StackedArea'
+import { Tooltip, TooltipContent, LineDataSeries, StackedArea } from './components'
 import { useChartEventHandlers } from './hooks/event-listeners'
 import { Point } from './types'
-import {
-    SeriesDatum,
-    getDatumValue,
-    isDatumWithValidNumber,
-    getSeriesData,
-    generatePointsField,
-    getChartContentSizes,
-    getMinMaxBoundaries,
-    SeriesWithData,
-} from './utils'
+import { getSeriesData, generatePointsField, getChartContentSizes, getMinMaxBoundaries, SeriesWithData } from './utils'
 
 import styles from './LineChart.module.scss'
 
@@ -50,6 +39,8 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
     /** Whether to start Y axis at zero */
     zeroYAxisMin?: boolean
 
+    activeSeriesId?: string
+
     /** Function to style a given line group */
     getLineGroupStyle?: (options: GetLineGroupStyleOptions) => CSSProperties
 
@@ -61,9 +52,6 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
      */
     getActiveSeries?: <D>(dataSeries: SeriesWithData<D>[]) => SeriesWithData<D>[]
 }
-
-const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
-    dataKey === activeDataKey ? 1 : -1
 
 const identity = <T,>(argument: T): T => argument
 
@@ -94,6 +82,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         stacked = false,
         zeroYAxisMin = false,
         className,
+        activeSeriesId,
         getLineGroupStyle,
         getActiveSeries = identity,
         onDatumClick = noop,
@@ -101,7 +90,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     } = props
 
     const rootReference = useRef<SVGSVGElement>(null)
-    const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
+    const [activePoint, setActivePoint] = useState<Point>()
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
 
@@ -121,6 +110,8 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     )
 
     const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
+    const activeSeries = useMemo(() => getActiveSeries(dataSeries), [getActiveSeries, dataSeries])
+
     const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
         dataSeries,
         zeroYAxisMin,
@@ -148,29 +139,18 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         [minY, maxY, content]
     )
 
-    const activeSeries = useMemo(() => getActiveSeries(dataSeries), [getActiveSeries, dataSeries])
-    const points = useMemo(
-        () =>
-            generatePointsField({
-                dataSeries: activeSeries,
-                yScale,
-                xScale,
-            }),
-        [activeSeries, yScale, xScale]
-    )
+    const voronoiLayout = useMemo(() => {
+        const points = generatePointsField(activeSeries)
 
-    const voronoiLayout = useMemo(
-        () =>
-            voronoi<Point<D>>({
-                // Taking into account content area shift in point distribution map
-                // see https://github.com/sourcegraph/sourcegraph/issues/38919
-                x: point => point.x + content.left,
-                y: point => point.y + content.top,
-                width: outerWidth,
-                height: outerHeight,
-            })(Object.values(points).flat()),
-        [content, outerWidth, outerHeight, points]
-    )
+        return voronoi<Point>({
+            // Taking into account content area shift in point distribution map
+            // see https://github.com/sourcegraph/sourcegraph/issues/38919
+            x: point => xScale(point.xValue) + content.left,
+            y: point => yScale(point.yValue) + content.top,
+            width: outerWidth,
+            height: outerHeight,
+        })(Object.values(points).flat())
+    }, [activeSeries, outerWidth, outerHeight, xScale, content.left, content.top, yScale])
 
     const handlers = useChartEventHandlers({
         onPointerMove: point => {
@@ -190,16 +170,9 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         onFocusOut: () => setActivePoint(undefined),
     })
 
-    const activeSeriesId = activePoint?.seriesId ?? ''
-    const sortedSeries = useMemo(
-        () =>
-            [...activeSeries]
-                // resorts array based on hover state
-                // this is to make sure the hovered series is always rendered on top
-                // since SVGs do not support z-index, we have to render the hovered
-                // series last
-                .sort(series => sortByDataKey(series.id, activeSeriesId)),
-        [activeSeries, activeSeriesId]
+    const currentSeries = useMemo(
+        () => activeSeries.find(series => series.id === activeSeriesId || series.id === activePoint?.seriesId),
+        [activeSeries, activeSeriesId, activePoint?.seriesId]
     )
 
     return (
@@ -233,58 +206,47 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             <Group top={content.top} left={content.left}>
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
-                {sortedSeries.map(line => (
-                    <LinePath
-                        key={line.id}
-                        data={line.data as SeriesDatum<D>[]}
-                        defined={isDatumWithValidNumber}
-                        x={data => xScale(data.x)}
-                        y={data => yScale(getDatumValue(data))}
-                        stroke={line.color}
-                        strokeLinecap="round"
-                        strokeWidth={2}
-                    />
-                ))}
-
                 {activeSeries.map(line => (
-                    <Group
+                    <LineDataSeries
                         key={line.id}
+                        id={line.id.toString()}
+                        xScale={xScale}
+                        yScale={yScale}
+                        dataset={line.data}
+                        color={line.color}
+                        getLinkURL={line.getLinkURL}
                         style={getLineGroupStyle?.({
                             id: `${line.id}`,
                             hasActivePoint: !!activePoint,
                             isActive: activePoint?.seriesId === line.id,
                         })}
-                    >
-                        {points[line.id].map(point => (
-                            <PointGlyph
-                                key={point.id}
-                                left={point.x}
-                                top={point.y}
-                                active={false}
-                                color={point.color}
-                                linkURL={point.linkUrl}
-                                onClick={onDatumClick}
-                                onFocus={event => setActivePoint({ ...point, element: event.target })}
-                            />
-                        ))}
-                    </Group>
+                        onDatumClick={onDatumClick}
+                        onDatumFocus={setActivePoint}
+                    />
                 ))}
 
-                {activePoint && (
-                    <PointGlyph
-                        left={activePoint.x}
-                        top={activePoint.y}
-                        active={true}
-                        color={activePoint.color}
-                        linkURL={activePoint.linkUrl}
-                        onClick={onDatumClick}
+                {currentSeries && (
+                    // Render line chart on top of all other lines and points in order to
+                    // solve problem with z-index for SVG elements.
+                    <LineDataSeries
+                        id={currentSeries.id.toString()}
+                        xScale={xScale}
+                        yScale={yScale}
+                        dataset={currentSeries.data}
+                        color={currentSeries.color}
+                        activePointId={activePoint?.id}
+                        getLinkURL={currentSeries.getLinkURL}
+                        onDatumClick={onDatumClick}
+                        onDatumFocus={setActivePoint}
                         tabIndex={-1}
+                        pointerEvents="none"
+                        aria-hidden={true}
                     />
                 )}
             </Group>
 
             {activePoint && rootReference.current && (
-                <Tooltip containerElement={rootReference.current} activeElement={activePoint.element as HTMLElement}>
+                <Tooltip containerElement={rootReference.current} activeElement={activePoint.node as HTMLElement}>
                     <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}
