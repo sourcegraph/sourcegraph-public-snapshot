@@ -45,7 +45,7 @@ type OAuthProviderOp struct {
 	// TokenType is the type of the access token. Default is gitlab.TokenTypePAT.
 	TokenType gitlab.TokenType
 
-	db database.DB
+	DB database.DB
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *OAuthProvider {
@@ -57,7 +57,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauth
 		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli, tokenRefresher),
 		clientURL:      op.BaseURL,
 		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
-		db:             op.db,
+		db:             op.DB,
 	}
 }
 
