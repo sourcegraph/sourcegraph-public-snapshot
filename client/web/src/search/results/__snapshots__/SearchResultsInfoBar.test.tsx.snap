@@ -180,7 +180,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         >
           <a
             class="anchorLink btn btnOutlineSecondary btnSm text-decoration-none a11y-ignore create-code-monitor-button"
-            href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Aliteral"
+            href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Astandard"
             tabindex="0"
           >
             <svg

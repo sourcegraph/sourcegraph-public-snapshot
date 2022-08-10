@@ -1239,14 +1239,14 @@ func TestEventLogs_LatestPing(t *testing.T) {
 		if err != nil || gotPing == nil {
 			t.Fatal(err)
 		}
-		expectedPing := &types.Event{
+		expectedPing := &Event{
 			ID:              2,
 			Name:            events[1].Name,
 			URL:             events[1].URL,
-			UserID:          userID,
+			UserID:          uint32(userID),
 			AnonymousUserID: events[1].AnonymousUserID,
 			Version:         version.Version(),
-			Argument:        string(events[1].Argument),
+			Argument:        events[1].Argument,
 			Source:          events[1].Source,
 			Timestamp:       timestamp,
 		}

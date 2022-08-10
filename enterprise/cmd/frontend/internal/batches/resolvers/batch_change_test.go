@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,16 +32,16 @@ func TestBatchChangeResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 	orgName := "test-batch-change-resolver-org"
-	orgID := ct.InsertTestOrg(t, db, orgName)
+	orgID := bt.InsertTestOrg(t, db, orgName)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
 	batchSpec := &btypes.BatchSpec{
-		RawSpec:        ct.TestRawBatchSpec,
+		RawSpec:        bt.TestRawBatchSpec,
 		UserID:         userID,
 		NamespaceOrgID: orgID,
 	}
@@ -151,7 +151,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	now := timeutil.Now()
@@ -164,7 +164,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	}
 
 	// Non-created-from-raw, attached to batch change
-	batchSpec1, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	batchSpec1, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +172,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	batchSpec1.NamespaceUserID = userID
 
 	// Non-created-from-raw, not attached to batch change
-	batchSpec2, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	batchSpec2, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +180,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	batchSpec2.NamespaceUserID = userID
 
 	// created-from-raw, not attached to batch change
-	batchSpec3, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	batchSpec3, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +213,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	assertBatchSpecsInResponse(t, userCtx, s, batchChange.ID, batchSpec1, batchSpec2, batchSpec3)
 
 	// When viewed as another user we don't want the created-from-raw batch spec to be returned
-	otherUserID := ct.CreateTestUser(t, db, false).ID
+	otherUserID := bt.CreateTestUser(t, db, false).ID
 	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
 	assertBatchSpecsInResponse(t, otherUserCtx, s, batchChange.ID, batchSpec1, batchSpec2)
 }

@@ -41,7 +41,10 @@ As part of this service you will receive a number of benefits from our team, inc
 
 <span class="badge badge-note">SOC2/CI-79</span>
 
-- Snapshots are taken daily and kept for 90 days.
+Backup and restore capability is provided via automated snapshots.
+
+- Frequency: Snapshots are produced daily.
+- Retention period: Snapshots are kept for 90 days.
 
 ## Training, feedback, and engagement
 

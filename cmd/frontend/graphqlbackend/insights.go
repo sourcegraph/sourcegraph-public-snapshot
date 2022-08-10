@@ -22,10 +22,6 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	RelatedInsightsInline(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsInlineResolver, error)
-	RelatedInsightsForFile(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsResolver, error)
-	RelatedInsightsForRepo(ctx context.Context, args RelatedInsightsRepoArgs) ([]RelatedInsightsResolver, error)
-
 	SearchQueryInsights(ctx context.Context, args SearchQueryInsightsArgs) (SearchQueryInsightsResult, error)
 
 	// Mutations
@@ -203,7 +199,7 @@ type InsightViewResolver interface {
 	DefaultSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
-	SeriesCount(ctx context.Context) (int32, error)
+	SeriesCount(ctx context.Context) (*int32, error)
 }
 
 type InsightDataSeriesDefinition interface {
@@ -454,36 +450,6 @@ type DeleteInsightViewArgs struct {
 type SearchInsightLivePreviewSeriesResolver interface {
 	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
 	Label(ctx context.Context) (string, error)
-}
-
-type RelatedInsightsArgs struct {
-	Input RelatedInsightsInput
-}
-
-type RelatedInsightsInput struct {
-	Repo     string
-	File     string
-	Revision string
-}
-
-type RelatedInsightsRepoArgs struct {
-	Input RelatedInsightsRepoInput
-}
-
-type RelatedInsightsRepoInput struct {
-	Repo     string
-	Revision string
-}
-
-type RelatedInsightsInlineResolver interface {
-	ViewID() string
-	Title() string
-	LineNumbers() []int32
-}
-
-type RelatedInsightsResolver interface {
-	ViewID() string
-	Title() string
 }
 
 type SearchQueryInsightsResolver interface {

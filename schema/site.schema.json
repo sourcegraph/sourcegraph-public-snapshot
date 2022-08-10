@@ -73,7 +73,8 @@
         "enabled": {
           "description": "Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.",
           "type": "boolean",
-          "default": false
+          "default": false,
+          "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA."
         },
         "batchSize": {
           "description": "Maximum number of events scraped from the events table in a single scrape.",
@@ -450,6 +451,12 @@
               ]
             }
           ]
+        },
+        "enableWebhookRepoSync": {
+          "description": "Enable webhooks for repo syncing",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         },
         "enablePermissionsWebhooks": {
           "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
@@ -1178,6 +1185,25 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "observability.client": {
+      "description": "EXPERIMENTAL: Configuration for client observability",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "openTelemetry": {
+          "description": "Configuration for the client OpenTelemetry exporter",
+          "type": "object",
+          "properties": {
+            "endpoint": {
+              "description": "OpenTelemetry tracing collector endpoint",
+              "type": "string",
+              "examples": ["/-/debug/otlp", "https://COLLECTOR_ENDPOINT"],
+              "default": "/-/debug/otlp"
+            }
+          }
+        }
+      }
+    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",
@@ -1198,6 +1224,12 @@
           "description": "Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.",
           "type": "boolean",
           "default": false
+        },
+        "urlTemplate": {
+          "description": "Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'.",
+          "type": "string",
+          "default": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}",
+          "examples": ["https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"]
         }
       }
     },

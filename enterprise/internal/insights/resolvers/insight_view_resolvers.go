@@ -354,9 +354,10 @@ func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 	return i.view.IsFrozen, nil
 }
 
-func (i *insightViewResolver) SeriesCount(ctx context.Context) (int32, error) {
+func (i *insightViewResolver) SeriesCount(ctx context.Context) (*int32, error) {
 	_, err := i.computeDataSeries(ctx)
-	return int32(i.totalSeries), err
+	total := int32(i.totalSeries)
+	return &total, err
 }
 
 type searchInsightDataSeriesDefinitionResolver struct {

@@ -3,9 +3,7 @@ package tracer
 import (
 	"context"
 	"io"
-	"os"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -16,12 +14,14 @@ import (
 	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	w3cpropagator "go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,7 +33,9 @@ import (
 // All configuration is sourced directly from the environment using the specification
 // laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
 func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
-	endpoint := getEndpoint()
+	// We don't support OTEL_EXPORTER_OTLP_ENDPOINT yet, see newOTelCollectorExporter
+	// docstring.
+	endpoint := otlpenv.GetEndpoint()
 	logger = logger.Scoped("otel", "OpenTelemetry tracer").With(log.String("endpoint", endpoint))
 
 	// Ensure propagation between services continues to work. This is also done by another
@@ -72,38 +74,41 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	return bridge, otelTracerProvider, &otelBridgeCloser{provider}, nil
 }
 
-// Get one based on spec https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options
-// or a custom defualt - the sdk seems to set a TLS endpoint by default, which is incorrect
-// based on the spec so we override it with something that's also not quite compliant but
-// hopefully close enough (there's a linter rule banning localhost). This is unlikely to
-// be patched upstream since it would be breaking, so we just work around it here.
-func getEndpoint() string {
-	for _, k := range []string{
-		"OTEL_EXPORTER_OTLP_ENDPOINT",
-		"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-	} {
-		if v, set := os.LookupEnv(k); set {
-			return v
-		}
-	}
-	return "http://127.0.0.1:4317"
-}
-
 // newOTelCollectorExporter creates a processor that exports spans to an OpenTelemetry
 // collector.
 func newOTelCollectorExporter(ctx context.Context, logger log.Logger, endpoint string, debug bool) (oteltracesdk.SpanProcessor, error) {
 	// Set up client to otel-collector - we replicate some of the logic used internally in
 	// https://github.com/open-telemetry/opentelemetry-go/blob/21c1641831ca19e3acf341cc11459c87b9791f2f/exporters/otlp/internal/otlpconfig/envconfig.go
 	// based on our own inferred endpoint.
-	opts := []otlptracegrpc.Option{
-		otlptracegrpc.WithEndpoint(trimSchema(endpoint)),
-	}
-	if isInsecureEndpoint(endpoint) {
-		opts = append(opts, otlptracegrpc.WithInsecure())
-	}
-	client := otlptracegrpc.NewClient(opts...)
+	var (
+		client          otlptrace.Client
+		protocol        = otlpenv.GetProtocol()
+		trimmedEndpoint = trimSchema(endpoint)
+		insecure        = otlpenv.IsInsecure(endpoint)
+	)
 
-	// Initialize exporter
+	// Work with different protocols
+	switch protocol {
+	case otlpenv.ProtocolGRPC:
+		opts := []otlptracegrpc.Option{
+			otlptracegrpc.WithEndpoint(trimmedEndpoint),
+		}
+		if insecure {
+			opts = append(opts, otlptracegrpc.WithInsecure())
+		}
+		client = otlptracegrpc.NewClient(opts...)
+
+	case otlpenv.ProtocolHTTPJSON:
+		opts := []otlptracehttp.Option{
+			otlptracehttp.WithEndpoint(trimmedEndpoint),
+		}
+		if insecure {
+			opts = append(opts, otlptracehttp.WithInsecure())
+		}
+		client = otlptracehttp.NewClient(opts...)
+	}
+
+	// Initialize the exporter
 	traceExporter, err := otlptrace.New(ctx, client)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create trace exporter")
@@ -140,10 +145,6 @@ func newResource(r log.Resource) *resource.Resource {
 		semconv.ServiceNamespaceKey.String(r.Namespace),
 		semconv.ServiceInstanceIDKey.String(r.InstanceID),
 		semconv.ServiceVersionKey.String(r.Version))
-}
-
-func isInsecureEndpoint(endpoint string) bool {
-	return strings.HasPrefix(strings.ToLower(endpoint), "http://")
 }
 
 var httpSchemeRegexp = regexp.MustCompile(`(?i)^http://|https://`)

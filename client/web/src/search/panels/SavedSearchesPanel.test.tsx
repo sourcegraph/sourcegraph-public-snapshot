@@ -14,7 +14,7 @@ describe('SavedSearchesPanel', () => {
     let container: HTMLElement
 
     const defaultProps = {
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         authenticatedUser: authUser,
         savedSearchesFragment: { savedSearches: savedSearchesPayload() },
         telemetryService: NOOP_TELEMETRY_SERVICE,

@@ -131,6 +131,8 @@ type HeartbeatRequest struct {
 	GitVersion      string `json:"gitVersion"`
 	IgniteVersion   string `json:"igniteVersion"`
 	SrcCliVersion   string `json:"srcCliVersion"`
+
+	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
 type CanceledJobsRequest struct {

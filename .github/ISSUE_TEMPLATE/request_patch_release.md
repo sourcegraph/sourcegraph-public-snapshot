@@ -1,11 +1,13 @@
 ---
 name: Request patch release
 about: Sourcegraph teams, use this issue to propose a patch release or include your changes in a patch release.
-title: ''
+title: '$MAJOR.$MINOR.$PATCH patch release request'
 labels: 'release-guild,patch-release-request'
 assignees: ''
 
 ---
+
+<!-- Update the title according to the relevant patch release -->
 
 @sourcegraph/release-guild I am requesting the following commits be included in a patch release. They are already merged into `main`:
 
@@ -52,8 +54,8 @@ I have read [when and why we perform patch releases](https://handbook.sourcegrap
       - [ ] Change `upcomingRelease` to the current patch release
       - [ ] Change `previousRelease` to the previous patch release version
       - [ ] Change `releaseDate` to the current date (time is optional) along with `oneWorkingDayAfterRelease` and `threeWorkingDaysBeforeRelease`
-      - [ ] Change `captainSlackUsername` and `captainGitHubUsername` accordingly
-    - [ ] `yarn release tracking:issues` 
+      - [ ] Change `captainSlackUsername` and `captainGitHubUsername` to the patch captain's
+    - [ ] Run `yarn release tracking:issues` on `main`
     - [ ] Add the listed commits alongside a link to this issue to the generated [release tracking issue](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+)
 - [ ] **Comment and close this issue once the relevant commit(s) have been cherry-picked into the release branch**.
 

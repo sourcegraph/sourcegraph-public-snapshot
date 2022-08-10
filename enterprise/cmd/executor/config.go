@@ -18,25 +18,28 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL                string
-	FrontendAuthorizationToken string
-	QueueName                  string
-	QueuePollInterval          time.Duration
-	MaximumNumJobs             int
-	FirecrackerImage           string
-	VMStartupScriptPath        string
-	VMPrefix                   string
-	KeepWorkspaces             bool
-	DockerHostMountPath        string
-	UseFirecracker             bool
-	JobNumCPUs                 int
-	JobMemory                  string
-	FirecrackerDiskSpace       string
-	MaximumRuntimePerJob       time.Duration
-	CleanupTaskInterval        time.Duration
-	NumTotalJobs               int
-	MaxActiveTime              time.Duration
-	WorkerHostname             string
+	FrontendURL                   string
+	FrontendAuthorizationToken    string
+	QueueName                     string
+	QueuePollInterval             time.Duration
+	MaximumNumJobs                int
+	FirecrackerImage              string
+	FirecrackerKernelImage        string
+	VMStartupScriptPath           string
+	VMPrefix                      string
+	KeepWorkspaces                bool
+	DockerHostMountPath           string
+	UseFirecracker                bool
+	JobNumCPUs                    int
+	JobMemory                     string
+	FirecrackerDiskSpace          string
+	MaximumRuntimePerJob          time.Duration
+	CleanupTaskInterval           time.Duration
+	NumTotalJobs                  int
+	MaxActiveTime                 time.Duration
+	NodeExporterURL               string
+	DockerRegistryNodeExporterURL string
+	WorkerHostname                string
 }
 
 func (c *Config) Load() {
@@ -47,6 +50,7 @@ func (c *Config) Load() {
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", "true", "Whether to isolate commands in virtual machines.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for virtual machines.")
+	c.FirecrackerKernelImage = c.Get("EXECUTOR_FIRECRACKER_KERNEL_IMAGE", "sourcegraph/ignite-kernel:5.10.135-amd64", "The base image containing the kernel binary to use for virtual machines.")
 	c.VMStartupScriptPath = c.GetOptional("EXECUTOR_VM_STARTUP_SCRIPT_PATH", "A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.")
 	c.VMPrefix = c.Get("EXECUTOR_VM_PREFIX", "executor", "A name prefix for virtual machines controlled by this instance.")
 	c.KeepWorkspaces = c.GetBool("EXECUTOR_KEEP_WORKSPACES", "false", "Whether to skip deletion of workspaces after a job completes (or fails). Note that when Firecracker is enabled that the workspace is initially copied into the VM, so modifications will not be observed.")
@@ -57,6 +61,8 @@ func (c *Config) Load() {
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
+	c.NodeExporterURL = c.GetOptional("NODE_EXPORTER_URL", "The URL of the node_exporter instance, without the /metrics path.")
+	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 
 	hn := hostname.Get()
@@ -88,6 +94,9 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 			// git repositories that make it into commands or stdout/stderr streams.
 			c.FrontendAuthorizationToken: "SECRET_REMOVED",
 		},
+
+		NodeExporterEndpoint:               c.NodeExporterURL,
+		DockerRegistryNodeExporterEndpoint: c.DockerRegistryNodeExporterURL,
 	}
 }
 
@@ -110,6 +119,7 @@ func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
 	return command.FirecrackerOptions{
 		Enabled:             c.UseFirecracker,
 		Image:               c.FirecrackerImage,
+		KernelImage:         c.FirecrackerKernelImage,
 		VMStartupScriptPath: c.VMStartupScriptPath,
 	}
 }

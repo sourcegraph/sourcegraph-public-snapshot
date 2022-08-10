@@ -31,7 +31,7 @@ import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
-import { ExternalServiceKind } from '../../graphql-operations'
+import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { PerforceIcon } from '../PerforceIcon'
 
@@ -1446,4 +1446,11 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,
     [ExternalServiceKind.PYTHONPACKAGES]: PYTHON_PACKAGES,
     [ExternalServiceKind.RUSTPACKAGES]: RUST_PACKAGES,
+}
+
+export const externalRepoIcon = (
+    externalRepo: ExternalRepositoryFields
+): React.ComponentType<{ className?: string }> | undefined => {
+    const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
+    return defaultExternalServices[externalServiceKind]?.icon ?? undefined
 }

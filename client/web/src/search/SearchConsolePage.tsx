@@ -95,7 +95,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
             () =>
                 streamSearch(transformedQuery, {
                     version: LATEST_VERSION,
-                    patternType: patternType ?? SearchPatternType.literal,
+                    patternType: patternType ?? SearchPatternType.standard,
                     caseSensitive: false,
                     trace: undefined,
                 }).pipe(debounceTime(500)),

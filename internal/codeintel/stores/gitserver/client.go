@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -173,20 +172,6 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	// resolved without error, return the original error as the command had
 	// failed for another reason.
 	return "", time.Time{}, false, errors.Wrap(err, "git.CommitDate")
-}
-
-func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
-	ctx, _, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numRepos", len(repos)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	resp, err := gitserver.NewClient(c.db).RepoInfo(ctx, repos...)
-	if resp == nil {
-		return nil, err
-	}
-
-	return resp.Results, err
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit

@@ -122,7 +122,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     type: 'link',
                     label: 'Open in new tab',
                     icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
-                    url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
+                    url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.standard, false)}`,
                 },
             ],
             [input]
@@ -171,7 +171,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     <div className={styles.queryInputWrapper}>
                         <CodeMirrorQueryInput
                             value={input.query}
-                            patternType={SearchPatternType.literal}
+                            patternType={SearchPatternType.standard}
                             interpretComments={true}
                             isLightTheme={isLightTheme}
                             onEditorCreated={setEditor}

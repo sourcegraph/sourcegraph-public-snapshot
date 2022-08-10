@@ -1,5 +1,7 @@
 # Debugging a Sourcegraph extension
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
+
 You can use your browser's devtools to debug Sourcegraph extensions running on a Sourcegraph instance (including Sourcegraph.com). Most browsers ship with an advanced JavaScript debugger, so this is a great way to find the cause of bugs in your extension.
 
 ## Setup

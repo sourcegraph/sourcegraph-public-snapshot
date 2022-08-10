@@ -205,7 +205,7 @@ func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "alice_private_repo",
@@ -216,7 +216,7 @@ func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -306,7 +306,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -417,7 +417,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	privateRepo2 := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "private_repo_2",
@@ -428,7 +428,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 
 	// Create an organization and add alice as a member
 	org, err := db.Orgs().Create(ctx, "org", nil)
@@ -571,7 +571,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	alicePublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
 			ID: siteLevelGitHubService.URN(),
@@ -588,7 +588,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
 			ID: siteLevelGitHubService.URN(),
@@ -604,7 +604,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	bobPublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
 			ID: siteLevelGitHubService.URN(),
@@ -621,7 +621,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
 			ID: siteLevelGitHubService.URN(),
@@ -673,7 +673,7 @@ VALUES (%s, %s, '')
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	cindyPrivateRepo.Sources = map[string]*types.SourceInfo{
 		cindyExternalService.URN(): {ID: cindyExternalService.URN()},
 	}
@@ -833,7 +833,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	alicePublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
 			ID: siteLevelGitHubService.URN(),
@@ -850,7 +850,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
 			ID: siteLevelGitHubService.URN(),
@@ -866,7 +866,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	bobPublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
 			ID: siteLevelGitHubService.URN(),
@@ -883,7 +883,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
-	)[0]
+	)
 	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
 			ID: siteLevelGitHubService.URN(),

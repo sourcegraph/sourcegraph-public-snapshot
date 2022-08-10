@@ -98,7 +98,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         initialSearch ?? {
             query: '',
             caseSensitive: false,
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             selectedSearchContextSpec: 'global',
         }
     )

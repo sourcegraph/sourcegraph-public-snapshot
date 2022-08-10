@@ -141,6 +141,12 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			kind:   KindBitbucketCloud,
 			want:   1.0,
 		},
+		{
+			name:   "Empty JVM config",
+			config: "",
+			kind:   KindJVMPackages,
+			want:   2.0,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rlc, err := ExtractRateLimit(tc.config, tc.kind)

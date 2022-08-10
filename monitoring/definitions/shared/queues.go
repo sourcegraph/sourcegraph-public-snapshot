@@ -19,7 +19,7 @@ type queueConstructor struct{}
 // Requires a gauge of the format `src_{options.MetricNameRoot}_total`
 func (queueConstructor) Size(options ObservableConstructorOptions) sharedObservable {
 	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{
@@ -40,7 +40,7 @@ func (queueConstructor) Size(options ObservableConstructorOptions) sharedObserva
 //   - counter of the format `src_{options.MetricNameRoot}_processor_total`
 func (queueConstructor) GrowthRate(options ObservableConstructorOptions) sharedObservable {
 	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{
@@ -60,7 +60,7 @@ func (queueConstructor) GrowthRate(options ObservableConstructorOptions) sharedO
 //   - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
 func (queueConstructor) MaxAge(options ObservableConstructorOptions) sharedObservable {
 	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{

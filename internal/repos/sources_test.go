@@ -645,12 +645,23 @@ func TestSources_ListRepos(t *testing.T) {
 }
 
 func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
+	mw, rec := testClientFactorySetup(t, name, mws...)
+	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
+		func(t testing.TB) { save(t, rec) }
+}
+
+func newClientFactoryWithOpt(t testing.TB, name string, opt httpcli.Opt) (*httpcli.Factory, func(testing.TB)) {
+	mw, rec := testClientFactorySetup(t, name)
+	return httpcli.NewFactory(mw, opt, httptestutil.NewRecorderOpt(rec)),
+		func(t testing.TB) { save(t, rec) }
+}
+
+func testClientFactorySetup(t testing.TB, name string, mws ...httpcli.Middleware) (httpcli.Middleware, *recorder.Recorder) {
 	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
 	rec := newRecorder(t, cassete, update(name))
 	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, gitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)
-	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
-		func(t testing.TB) { save(t, rec) }
+	return mw, rec
 }
 
 func gitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {

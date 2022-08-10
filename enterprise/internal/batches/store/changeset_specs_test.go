@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,13 +32,13 @@ var cmtRewirerMappingsOpts = cmp.FilterPath(func(p cmp.Path) bool {
 	}
 }, cmp.Ignore())
 
-func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	repoStore := database.ReposWith(logger, s)
 	esStore := database.ExternalServicesWith(logger, s)
 
-	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+	deletedRepo := bt.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
 
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -600,12 +600,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
-		user := ct.CreateTestUser(t, s.DatabaseDB(), true)
-		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID, 0)
+		user := bt.CreateTestUser(t, s.DatabaseDB(), true)
+		batchSpec := bt.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID, 0)
 		var mappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
-			spec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+			spec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 				HeadRef:   fmt.Sprintf("refs/heads/test-get-rewirer-mappings-%d", i),
 				Repo:      repo.ID,
 				BatchSpec: batchSpec.ID,
@@ -791,20 +791,20 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	})
 
 	t.Run("ListChangesetSpecsWithConflictingHeadRef", func(t *testing.T) {
-		user := ct.CreateTestUser(t, s.DatabaseDB(), true)
+		user := bt.CreateTestUser(t, s.DatabaseDB(), true)
 
-		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		repo2 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 		if err := repoStore.Create(ctx, repo2); err != nil {
 			t.Fatal(err)
 		}
-		repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		repo3 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 		if err := repoStore.Create(ctx, repo3); err != nil {
 			t.Fatal(err)
 		}
 
-		conflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
+		conflictingBatchSpec := bt.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
 		conflictingRef := "refs/heads/conflicting-head-ref"
-		for _, opts := range []ct.TestSpecOpts{
+		for _, opts := range []bt.TestSpecOpts{
 			{ExternalID: "4321", Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
 			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
 			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
@@ -812,7 +812,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			{HeadRef: conflictingRef, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
 			{HeadRef: conflictingRef, Repo: repo3.ID, BatchSpec: conflictingBatchSpec.ID},
 		} {
-			ct.CreateChangesetSpec(t, ctx, s, opts)
+			bt.CreateChangesetSpec(t, ctx, s, opts)
 		}
 
 		conflicts, err := s.ListChangesetSpecsWithConflictingHeadRef(ctx, conflictingBatchSpec.ID)
@@ -828,8 +828,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 		}
 
-		nonConflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
-		for _, opts := range []ct.TestSpecOpts{
+		nonConflictingBatchSpec := bt.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
+		for _, opts := range []bt.TestSpecOpts{
 			{ExternalID: "1234", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
 			{HeadRef: "refs/heads/branch-1", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
 			{HeadRef: "refs/heads/branch-2", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
@@ -837,7 +837,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			{HeadRef: "refs/heads/branch-2", Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
 			{HeadRef: "refs/heads/branch-1", Repo: repo3.ID, BatchSpec: nonConflictingBatchSpec.ID},
 		} {
-			ct.CreateChangesetSpec(t, ctx, s, opts)
+			bt.CreateChangesetSpec(t, ctx, s, opts)
 		}
 
 		conflicts, err = s.ListChangesetSpecsWithConflictingHeadRef(ctx, nonConflictingBatchSpec.ID)
@@ -850,24 +850,24 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	})
 }
 
-func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	repoStore := database.ReposWith(logger, s)
 	esStore := database.ExternalServicesWith(logger, s)
 
-	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
-	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Create old batch spec and batch change
-	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
-	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
 
 	// Create an archived changeset with a changeset spec
-	oldSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	oldSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -876,7 +876,7 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 		HeadRef:   "refs/heads/foobar",
 	})
 
-	opts := ct.TestChangesetOpts{}
+	opts := bt.TestChangesetOpts{}
 	opts.ExternalState = btypes.ChangesetExternalStateOpen
 	opts.ExternalID = "1223"
 	opts.ExternalServiceType = repo.ExternalRepo.ServiceType
@@ -887,10 +887,10 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 	opts.OwnedByBatchChange = batchChange.ID
 	opts.IsArchived = true
 
-	ct.CreateChangeset(t, ctx, s, opts)
+	bt.CreateChangeset(t, ctx, s, opts)
 
 	// Get preview for new batch spec without any changeset specs
-	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
+	newBatchSpec := bt.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
 	mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
 		BatchSpecID:   newBatchSpec.ID,
 		BatchChangeID: batchChange.ID,
@@ -904,7 +904,7 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 	}
 }
 
-func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	repoStore := database.ReposWith(logger, s)
 	esStore := database.ExternalServicesWith(logger, s)
@@ -912,20 +912,20 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	// Let's set up a batch change with one of every changeset state.
 
 	// First up, let's create a repo.
-	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need old and new batch specs.
-	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
-	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
+	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
+	newBatchSpec := bt.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
 
 	// That's enough to create a batch change, so let's do that.
-	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+	batchChange := bt.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
 
 	// Now for some changeset specs.
 	var (
@@ -935,7 +935,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 
 		// The keys are the desired current state that we'll search for; the
 		// values the changeset options we need to set on the changeset.
-		states = map[btypes.ChangesetState]*ct.TestChangesetOpts{
+		states = map[btypes.ChangesetState]*bt.TestChangesetOpts{
 			btypes.ChangesetStateRetrying:    {ReconcilerState: btypes.ReconcilerStateErrored},
 			btypes.ChangesetStateFailed:      {ReconcilerState: btypes.ReconcilerStateFailed},
 			btypes.ChangesetStateScheduled:   {ReconcilerState: btypes.ReconcilerStateScheduled},
@@ -950,7 +950,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 		}
 	)
 	for state, opts := range states {
-		specOpts := ct.TestSpecOpts{
+		specOpts := bt.TestSpecOpts{
 			User:      user.ID,
 			Repo:      repo.ID,
 			BatchSpec: oldBatchSpec.ID,
@@ -958,10 +958,10 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 			Published: true,
 			HeadRef:   string(state),
 		}
-		oldSpecs[state] = ct.CreateChangesetSpec(t, ctx, s, specOpts)
+		oldSpecs[state] = bt.CreateChangesetSpec(t, ctx, s, specOpts)
 
 		specOpts.BatchSpec = newBatchSpec.ID
-		newSpecs[state] = ct.CreateChangesetSpec(t, ctx, s, specOpts)
+		newSpecs[state] = bt.CreateChangesetSpec(t, ctx, s, specOpts)
 
 		if opts.ExternalState != "" {
 			opts.ExternalID = string(state)
@@ -972,7 +972,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 		opts.CurrentSpec = oldSpecs[state].ID
 		opts.OwnedByBatchChange = batchChange.ID
 		opts.Metadata = map[string]any{"Title": string(state)}
-		changesets[state] = ct.CreateChangeset(t, ctx, s, *opts)
+		changesets[state] = bt.CreateChangeset(t, ctx, s, *opts)
 	}
 
 	// OK, there's lots of good stuff here. Let's work our way through the
@@ -1001,7 +1001,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	}
 }
 
-func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, _ ct.Clock) {
+func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
 	logger := logtest.Scoped(t)
 	repoStore := database.ReposWith(logger, s)
 	esStore := database.ExternalServicesWith(logger, s)
@@ -1009,33 +1009,33 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	// Let's set up a batch change with one of every changeset state.
 
 	// First up, let's create a repo.
-	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need old and new batch specs.
-	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
-	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
+	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
+	newBatchSpec := bt.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
 
 	// That's enough to create a batch change, so let's do that.
-	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+	batchChange := bt.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
 
 	// Now we'll add three old and new pairs of changeset specs. Two will have
 	// matching statuses, and a different two will have matching names.
-	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldBatchSpec, newBatchSpec *btypes.BatchSpec, opts ct.TestSpecOpts) (old *btypes.ChangesetSpec) {
+	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldBatchSpec, newBatchSpec *btypes.BatchSpec, opts bt.TestSpecOpts) (old *btypes.ChangesetSpec) {
 		opts.BatchSpec = oldBatchSpec.ID
-		old = ct.CreateChangesetSpec(t, ctx, s, opts)
+		old = bt.CreateChangesetSpec(t, ctx, s, opts)
 
 		opts.BatchSpec = newBatchSpec.ID
-		_ = ct.CreateChangesetSpec(t, ctx, s, opts)
+		_ = bt.CreateChangesetSpec(t, ctx, s, opts)
 
 		return old
 	}
-	oldOpenFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+	oldOpenFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -1043,7 +1043,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Published: true,
 		HeadRef:   "open-foo",
 	})
-	oldOpenBar := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+	oldOpenBar := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -1051,7 +1051,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Published: true,
 		HeadRef:   "open-bar",
 	})
-	oldClosedFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+	oldClosedFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -1061,7 +1061,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	})
 
 	// Finally, the changesets.
-	openFoo := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	openFoo := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldOpenFoo.ID,
@@ -1075,7 +1075,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 			"Title": "foo",
 		},
 	})
-	openBar := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	openBar := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldOpenBar.ID,
@@ -1089,7 +1089,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 			"Title": "bar",
 		},
 	})
-	_ = ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	_ = bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldClosedFoo.ID,
@@ -1166,7 +1166,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	}
 }
 
-func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	repoStore := database.ReposWith(logger, s)
 	esStore := database.ExternalServicesWith(logger, s)
@@ -1177,8 +1177,8 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 	// First up, let's create the repos.
 	repos := []*types.Repo{
-		ct.TestRepo(t, esStore, extsvc.KindGitHub),
-		ct.TestRepo(t, esStore, extsvc.KindGitLab),
+		bt.TestRepo(t, esStore, extsvc.KindGitHub),
+		bt.TestRepo(t, esStore, extsvc.KindGitLab),
 	}
 	for _, repo := range repos {
 		if err := repoStore.Create(ctx, repo); err != nil {
@@ -1187,28 +1187,28 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need a batch spec.
-	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
+	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
 
 	// That's enough to create a batch change, so let's do that.
-	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+	batchChange := bt.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
 
 	// Now we can create the changeset specs.
-	oldTrackedGitHubSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	oldTrackedGitHubSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[0].ID,
 		BatchSpec:  oldBatchSpec.ID,
 		ExternalID: "1234",
 	})
-	oldTrackedGitLabSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	oldTrackedGitLabSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[1].ID,
 		BatchSpec:  oldBatchSpec.ID,
 		ExternalID: "1234",
 	})
-	oldBranchGitHubSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	oldBranchGitHubSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repos[0].ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -1216,7 +1216,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		Published: true,
 		Title:     "GitHub branch",
 	})
-	oldBranchGitLabSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	oldBranchGitLabSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repos[1].ID,
 		BatchSpec: oldBatchSpec.ID,
@@ -1226,7 +1226,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	})
 
 	// We also need actual changesets.
-	oldTrackedGitHub := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	oldTrackedGitHub := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:                repos[0].ID,
 		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldTrackedGitHubSpec.ID,
@@ -1237,7 +1237,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			"Title": "Tracked GitHub",
 		},
 	})
-	oldTrackedGitLab := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	oldTrackedGitLab := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:                repos[1].ID,
 		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldTrackedGitLabSpec.ID,
@@ -1248,7 +1248,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			"title": "Tracked GitLab",
 		},
 	})
-	oldBranchGitHub := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	oldBranchGitHub := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:                repos[0].ID,
 		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldBranchGitHubSpec.ID,
@@ -1259,7 +1259,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			"Title": "GitHub branch",
 		},
 	})
-	oldBranchGitLab := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	oldBranchGitLab := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:                repos[1].ID,
 		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldBranchGitLabSpec.ID,
@@ -1271,22 +1271,22 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		},
 	})
 	// Cool. Now let's set up a new batch spec.
-	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
+	newBatchSpec := bt.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
 
 	// And we need all new changeset specs to go into that spec.
-	newTrackedGitHub := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	newTrackedGitHub := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[0].ID,
 		BatchSpec:  newBatchSpec.ID,
 		ExternalID: "1234",
 	})
-	newTrackedGitLab := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	newTrackedGitLab := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[1].ID,
 		BatchSpec:  newBatchSpec.ID,
 		ExternalID: "1234",
 	})
-	newBranchGitHub := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	newBranchGitHub := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repos[0].ID,
 		BatchSpec: newBatchSpec.ID,
@@ -1294,7 +1294,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		Published: true,
 		Title:     "New GitHub branch",
 	})
-	newBranchGitLab := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	newBranchGitLab := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repos[1].ID,
 		BatchSpec: newBatchSpec.ID,

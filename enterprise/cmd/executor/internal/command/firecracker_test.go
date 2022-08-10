@@ -85,6 +85,7 @@ func TestSetupFirecracker(t *testing.T) {
 	options := Options{
 		FirecrackerOptions: FirecrackerOptions{
 			Image:               "ignite-ubuntu",
+			KernelImage:         "ignite-kernel:5.10.135",
 			VMStartupScriptPath: "/vm-startup.sh",
 		},
 		ResourceOptions: ResourceOptions{
@@ -123,6 +124,7 @@ func TestSetupFirecracker(t *testing.T) {
 			"--copy-files /proj:/work",
 			"--copy-files /vm-startup.sh:/vm-startup.sh",
 			"--ssh --name deadbeef",
+			"--kernel-image", "ignite-kernel:5.10.135",
 			"ignite-ubuntu",
 		}, " "),
 		"ignite exec deadbeef -- /vm-startup.sh",

@@ -13,7 +13,7 @@ import { SingleChildTreeLayer } from './SingleChildTreeLayer'
 import { TreeRootContext } from './TreeContext'
 import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
-import { hasSingleChild, SingleChildGitTree, TreeEntryInfo } from './util'
+import { hasSingleChild, NOOP, SingleChildGitTree, TreeEntryInfo } from './util'
 
 interface ChildTreeLayerProps extends Pick<TreeRootProps, Exclude<keyof TreeRootProps, 'sizeKey'>> {
     fileDecorationsByPath: FileDecorationsByPath
@@ -76,13 +76,11 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                     submodule: null,
                                                 }}
                                                 location={props.location}
-                                                repoID={props.repoID}
-                                                revision={props.revision}
                                                 depth={sharedProps.depth}
                                                 index={0}
                                                 isLightTheme={sharedProps.isLightTheme}
-                                                handleTreeClick={() => undefined}
-                                                noopRowClick={() => undefined}
+                                                handleTreeClick={NOOP}
+                                                noopRowClick={NOOP}
                                                 linkRowClick={() => props.telemetryService.log('FileTreeClick')}
                                                 isActive={false}
                                                 isSelected={false}
