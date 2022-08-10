@@ -47,7 +47,10 @@ export interface ConnectionFormProps {
     /** An element rendered as a sibling of the filters. */
     additionalFilterElement?: React.ReactElement
 
-    values?: Map<string, FilteredConnectionFilterValue>
+    /** Default values for each filter: the key must match the ID of a filter in
+     * filters, and the value must match the value of one of that filter's
+     * FilteredConnectionFilterValue elements. */
+    values?: Map<string, string>
 
     compact?: boolean
 }

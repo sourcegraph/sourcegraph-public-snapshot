@@ -40,7 +40,10 @@ interface FilterControlProps {
     /** Called when a filter is selected. */
     onValueSelect: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 
-    values: Map<string, FilteredConnectionFilterValue>
+    /** Default values for each filter: the key must match the ID of a filter in
+     * filters, and the value must match the value of one of that filter's
+     * FilteredConnectionFilterValue elements. */
+    values: Map<string, string>
 }
 
 export const FilterControl: React.FunctionComponent<React.PropsWithChildren<FilterControlProps>> = ({
@@ -69,7 +72,7 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
                             key={filter.id}
                             name={filter.id}
                             className="d-inline-flex flex-row"
-                            selected={values.get(filter.id)?.value}
+                            selected={values.get(filter.id)}
                             nodes={filter.values.map(({ value, label, tooltip }) => ({
                                 tooltip,
                                 label,
@@ -93,7 +96,7 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
                                     id=""
                                     name={filter.id}
                                     onChange={event => onChange(filter, event.currentTarget.value)}
-                                    value={values.get(filter.id)?.value}
+                                    value={values.get(filter.id)}
                                     className="mb-0"
                                 >
                                     {filter.values.map(value => (
