@@ -26,6 +26,8 @@ interface UseConnectionConfig<TResult> {
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
+    /** Allows modifying how subsequent queries interact with the Apollo cache */
+    nextFetchPolicy?: WatchQueryFetchPolicy
     /** Set to enable polling of all the nodes currently loaded in the connection */
     pollInterval?: number
     /** Allows running an optional callback on any successful request */
@@ -107,6 +109,7 @@ export const useConnection = <TResult, TVariables, TData>({
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
+        nextFetchPolicy: options?.nextFetchPolicy,
         onCompleted: options?.onCompleted,
     })
 
