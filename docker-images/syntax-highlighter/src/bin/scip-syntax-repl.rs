@@ -4,7 +4,7 @@ use rustyline::config::Configurer;
 use rustyline::Config;
 use sg_syntax::dump_document_range;
 use sg_syntax::make_highlight_config;
-use sg_syntax::scip_index_with_config;
+use sg_syntax::treesitter_index_with_config;
 use sg_syntax::DocumentFileRange;
 
 fn main() {
@@ -70,7 +70,7 @@ fn main() {
             }
         };
 
-        let document = match scip_index_with_config(&contents, &config) {
+        let document = match treesitter_index_with_config(&contents, &config) {
             Ok(document) => document,
             Err(err) => {
                 eprintln!("Failed to index document: {:?}", err);

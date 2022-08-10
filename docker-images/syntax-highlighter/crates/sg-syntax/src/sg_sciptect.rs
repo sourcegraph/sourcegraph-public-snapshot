@@ -133,9 +133,9 @@ impl Debug for HighlightManager {
             return write!(f, "HighlightManager(None)");
         }
 
-        write!(f, "HighlightManager {{\n")?;
+        writeln!(f, "HighlightManager {{")?;
         for hl in self.highlights.iter() {
-            write!(f, "  {:?}\n", hl)?;
+            writeln!(f, "  {:?}", hl)?;
         }
 
         write!(f, "}}")
@@ -210,7 +210,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
     scope_matches
         .iter()
         .find(|&(prefix, _)| prefix.is_prefix_of(*scope))
-        .and_then(|&(_, kind)| Some(kind))
+        .map(|&(_, kind)| kind)
 }
 
 impl<'a> DocumentGenerator<'a> {
@@ -355,7 +355,7 @@ fn push_document_occurence(
             vec![partial_hl.row, partial_hl.col, row, col],
             kind,
         )),
-        None => return,
+        None => (),
     }
 }
 

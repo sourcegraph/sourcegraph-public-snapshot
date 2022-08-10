@@ -1,7 +1,9 @@
 use std::path::Path;
 
+use protobuf::Message;
 use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
+use sg_treesitter::jsonify_err;
 use syntect::html::{highlighted_html_for_string, ClassStyle};
 use syntect::{
     highlighting::ThemeSet,
@@ -11,20 +13,18 @@ use syntect::{
 mod sg_treesitter;
 pub use sg_treesitter::dump_document;
 pub use sg_treesitter::dump_document_range;
-pub use sg_treesitter::index_language as scip_index;
-pub use sg_treesitter::index_language_with_config as scip_index_with_config;
+pub use sg_treesitter::index_language as treesitter_index;
+pub use sg_treesitter::index_language_with_config as treesitter_index_with_config;
 pub use sg_treesitter::lsif_highlight;
 pub use sg_treesitter::make_highlight_config;
-pub use sg_treesitter::scip_highlight;
 pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 
 mod sg_syntect;
 use sg_syntect::ClassedTableGenerator;
+use tree_sitter_highlight::Error;
 
-// TODO: Don't name it this, just wanted a different file
 mod sg_sciptect;
-// use sg_sciptect::DocumentGenerator;
 
 thread_local! {
     pub(crate) static SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
@@ -47,6 +47,9 @@ pub struct SourcegraphQuery {
     #[serde(default)]
     pub extension: String,
 
+    // Contents of the file
+    pub code: String,
+
     // default empty string value for backwards compat with clients who do not specify this field.
     #[serde(default)]
     pub filepath: String,
@@ -65,8 +68,6 @@ pub struct SourcegraphQuery {
 
     // theme is ignored if css is true
     pub theme: String,
-
-    pub code: String,
 }
 
 #[derive(Deserialize, Default)]
@@ -87,12 +88,12 @@ pub struct ScipHighlightQuery {
     // Contents of the file
     pub code: String,
 
-    // The language defined by the server. Required to tree-sitter to use for the filetype name.
-    // default empty string value for backwards compat with clients who do not specify this field.
-    pub language: Option<String>,
-
     // filepath is only used if language is None.
     pub filepath: String,
+
+    // The language defined by the server. Required to tree-sitter to use for the filetype name.
+    // default empty string value for backwards compat with clients who do not specify this field.
+    pub filetype: Option<String>,
 
     // line_length_limit is used to limit syntect problems when
     // parsing very long lines
@@ -252,6 +253,51 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
             })
         }
     })
+}
+
+pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
+    match q.engine {
+        crate::SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
+            let sg_query = SourcegraphQuery {
+                extension: "".to_string(),
+                filepath: q.filepath.clone(),
+                filetype: q.filetype.clone(),
+                css: true,
+                line_length_limit: None,
+                theme: Default::default(),
+                code: q.code.clone(),
+            };
+
+            let language = determine_language(&sg_query, ss).map_err(jsonify_err)?;
+            let document = sg_sciptect::DocumentGenerator::new(
+                ss,
+                language,
+                q.code.as_str(),
+                q.line_length_limit,
+            )
+            .generate();
+            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+            Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+        }),
+        crate::SyntaxEngine::TreeSitter => {
+            let language = q
+                .filetype
+                .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
+                .to_lowercase();
+
+            match treesitter_index(&language, &q.code) {
+                Ok(document) => {
+                    let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+
+                    Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+                }
+                Err(Error::InvalidLanguage) => Err(json!({
+                    "error": format!("{} is not a valid filetype for treesitter", language)
+                })),
+                Err(err) => Err(jsonify_err(err)),
+            }
+        }
+    }
 }
 
 #[cfg(test)]

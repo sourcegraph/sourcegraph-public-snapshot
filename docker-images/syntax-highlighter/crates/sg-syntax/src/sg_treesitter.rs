@@ -1,6 +1,7 @@
 use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
+use std::fmt::Write as _; // import without risk of name clashing
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -8,7 +9,7 @@ use rocket::serde::json::serde_json::json;
 use rocket::serde::json::Value as JsonValue;
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter as TSHighlighter};
 
-use crate::{determine_language, sg_sciptect, ScipHighlightQuery, SourcegraphQuery, SYNTAX_SET};
+use crate::SourcegraphQuery;
 use scip::types::{Document, Occurrence, SyntaxKind};
 use sg_macros::include_project_file_optional;
 
@@ -126,51 +127,6 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
             "error": format!("{} is not a valid filetype for treesitter", filetype)
         })),
         Err(err) => Err(jsonify_err(err)),
-    }
-}
-
-pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
-    match q.engine {
-        crate::SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
-            let sg_query = SourcegraphQuery {
-                extension: "".to_string(),
-                filepath: q.filepath.clone(),
-                filetype: q.language.clone(),
-                css: true,
-                line_length_limit: None,
-                theme: Default::default(),
-                code: q.code.clone(),
-            };
-
-            let language = determine_language(&sg_query, &ss).map_err(jsonify_err)?;
-            let document = sg_sciptect::DocumentGenerator::new(
-                ss,
-                language,
-                q.code.as_str(),
-                q.line_length_limit,
-            )
-            .generate();
-            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
-            Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
-        }),
-        crate::SyntaxEngine::TreeSitter => {
-            let language = q
-                .language
-                .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
-                .to_lowercase();
-
-            match index_language(&language, &q.code) {
-                Ok(document) => {
-                    let encoded = document.write_to_bytes().map_err(jsonify_err)?;
-
-                    Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
-                }
-                Err(Error::InvalidLanguage) => Err(json!({
-                    "error": format!("{} is not a valid filetype for treesitter", language)
-                })),
-                Err(err) => Err(jsonify_err(err)),
-            }
-        }
     }
 }
 
@@ -428,7 +384,7 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
 
     for (idx, line) in line_iterator {
         result += "  ";
-        result += &line.replace("\t", " ");
+        result += &line.replace('\t', " ");
         result += "\n";
 
         while let Some(occ) = occurrences.pop_front() {
@@ -441,21 +397,23 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
                 continue;
             }
 
-            if range.start_line < idx as i32 {
-                continue;
-            } else if range.start_line > idx as i32 {
-                occurrences.push_front(occ);
-                break;
+            match range.start_line.cmp(&(idx as i32)) {
+                std::cmp::Ordering::Less => continue,
+                std::cmp::Ordering::Greater => {
+                    occurrences.push_front(occ);
+                    break;
+                }
+                std::cmp::Ordering::Equal => {
+                    let length = (range.end_col - range.start_col) as usize;
+                    let _ = writeln!(
+                        result,
+                        "//{}{} {:?}",
+                        " ".repeat(range.start_col as usize),
+                        "^".repeat(length),
+                        occ.syntax_kind
+                    );
+                }
             }
-
-            let length = (range.end_col - range.start_col) as usize;
-
-            result.push_str(&format!(
-                "//{}{} {:?}\n",
-                " ".repeat(range.start_col as usize),
-                "^".repeat(length),
-                occ.syntax_kind
-            ));
         }
     }
 

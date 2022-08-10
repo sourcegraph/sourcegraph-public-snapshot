@@ -10,7 +10,7 @@ fn main() -> Result<(), std::io::Error> {
     println!("scip-syntect tester");
     let (path, contents) = if let Some(path) = std::env::args().nth(1) {
         match fs::read_to_string(&path) {
-            Ok(contents) => (path.clone(), contents),
+            Ok(contents) => (path, contents),
             Err(err) => {
                 eprintln!("Failed to read path: {:?}. {}", path, err);
                 return Ok(());
@@ -21,17 +21,19 @@ fn main() -> Result<(), std::io::Error> {
         return Ok(());
     };
 
-    let mut q = SourcegraphQuery::default();
-    q.filepath = path;
-    q.code = contents.clone();
+    let q = SourcegraphQuery {
+        filepath: path,
+        code: contents.clone(),
+        ..Default::default()
+    };
 
     let syntax_set = SyntaxSet::load_defaults_newlines();
     let syntax_def = determine_language(&q, &syntax_set).unwrap();
 
     let mut html_generator =
-        ClassedHTMLGenerator::new_with_class_style(&syntax_def, &syntax_set, ClassStyle::Spaced);
+        ClassedHTMLGenerator::new_with_class_style(syntax_def, &syntax_set, ClassStyle::Spaced);
     for line in contents.lines() {
-        html_generator.parse_html_for_line(&line);
+        html_generator.parse_html_for_line(line);
     }
     let html = html_generator.finalize();
     println!("{}", html);
