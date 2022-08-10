@@ -9,7 +9,6 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
@@ -17,17 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	executorgraphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, services *Services) error {
-	enterpriseServices.CodeIntelResolver = newResolver(db, config, services)
-	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
-	return nil
-}
-
-func newResolver(db database.DB, config *Config, services *Services) gql.CodeIntelResolver {
 	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
 
 	codenavCtx := &observation.Context{
@@ -36,6 +30,7 @@ func newResolver(db database.DB, config *Config, services *Services) gql.CodeInt
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, codenavCtx)
+	executorResolver := executorgraphql.New(db)
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
@@ -44,18 +39,16 @@ func newResolver(db database.DB, config *Config, services *Services) gql.CodeInt
 		policyMatcher,
 		services.indexEnqueuer,
 		symbols.DefaultClient,
-		db,
 		codenavResolver,
+		executorResolver,
 	)
 
-	obsCtx := &observation.Context{
-		Logger:       nil,
-		Tracer:       &trace.Tracer{},
-		Registerer:   nil,
-		HoneyDataset: &honey.Dataset{},
-	}
+	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}
 
-	return codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, obsCtx)
+	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, observationCtx)
+	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
+
+	return nil
 }
 
 func newUploadHandler(services *Services) func(internal bool) http.Handler {

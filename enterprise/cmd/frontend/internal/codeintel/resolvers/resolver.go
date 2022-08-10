@@ -9,7 +9,6 @@ import (
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	symbolsClient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -89,10 +88,10 @@ func NewResolver(
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	symbolsClient *symbolsClient.Client,
-	dbConn database.DB,
 	codenavResolver CodeNavResolver,
+	executorResolver executor.Resolver,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, dbConn, codenavResolver)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, codenavResolver, executorResolver)
 }
 
 func newResolver(
@@ -102,8 +101,8 @@ func newResolver(
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	symbolsClient *symbolsClient.Client,
-	dbConn database.DB,
 	codenavResolver CodeNavResolver,
+	executorResolver executor.Resolver,
 ) *resolver {
 	return &resolver{
 		dbStore:          dbStore,
@@ -112,7 +111,7 @@ func newResolver(
 		policyMatcher:    policyMatcher,
 		indexEnqueuer:    indexEnqueuer,
 		symbolsClient:    symbolsClient,
-		executorResolver: executor.New(dbConn),
+		executorResolver: executorResolver,
 		codenavResolver:  codenavResolver,
 	}
 }
