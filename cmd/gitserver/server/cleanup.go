@@ -149,6 +149,10 @@ var (
 		Help:    "Duration of gitserver janitor background job",
 		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
 	})
+	nonExistingReposRemoved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_non_existing_repos_removed",
+		Help: "number of non existing repos removed during cleanup",
+	})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -274,22 +278,22 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		return true, nil
 	}
 
-	var ctx = context.Background()
-	maybeRemoveNonexisting := func(dir GitDir) (bool, error) {
+	maybeRemoveNonExisting := func(dir GitDir) (bool, error) {
 		if !removeNonExistingRepos {
 			return false, nil
 		}
 
-		repo, err := s.DB.Repos().GetByName(ctx, s.name(dir))
+		repo, _ := s.DB.GitserverRepos().GetByName(bCtx, s.name(dir))
 		if repo == nil {
-			s.Logger.Debug("removing repo that is not in DB", log.String("repo", string(dir)))
-			err = s.removeRepoDirectory(dir, false)
-			if err != nil {
+			err := s.removeRepoDirectory(dir, false)
+			if err == nil {
+				nonExistingReposRemoved.Inc()
+			} else {
 				s.Logger.Warn("failed removing repo that is not in DB", log.String("repo", string(dir)))
 			}
 			return true, err
 		}
-		return true, nil
+		return false, nil
 	}
 
 	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
@@ -454,7 +458,7 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// Remove repo if DB does not contain it anymore
-		{"maybe remove non existing", maybeRemoveNonexisting},
+		{"maybe remove non existing", maybeRemoveNonExisting},
 		// If git is interrupted it can leave lock files lying around. It does not clean
 		// these up, and instead fails commands.
 		{"remove stale locks", removeStaleLocks},
@@ -1470,4 +1474,8 @@ func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
 		return true, err
 	}
 	return true, nil
+}
+
+func mockRemoveNonExistingReposConfig(value bool) {
+	removeNonExistingRepos = value
 }

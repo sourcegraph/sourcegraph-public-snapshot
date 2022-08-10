@@ -14,6 +14,7 @@ services:
       - ${REDIS_DATA_DIR:-redis_data}:/data
   postgresql:
     image: index.docker.io/sourcegraph/postgres-12-alpine:insiders
+    command: postgres -c log_statement=all -c log_destination=stderr
     ports:
       - 5432:5432
     environment:
