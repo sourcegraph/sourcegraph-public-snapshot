@@ -77,6 +77,7 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 			OriginalQuery: searchQuery,
 			Query:         q,
 			UserSettings:  &schema.Settings{},
+			Features:      &search.Features{},
 		},
 	}
 

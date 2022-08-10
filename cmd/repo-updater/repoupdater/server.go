@@ -206,17 +206,23 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		externalServiceID = req.ExternalService.ID
 	}
 
-	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
+	// We want to get soft-deleted external services as well, since we do a final
+	// sync when an external service gets deleted.
+	es, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
+		IDs:            []int64{externalServiceID},
+		IncludeDeleted: true,
+	})
 	if err != nil {
-		if errcode.IsNotFound(err) {
-			s.respond(w, http.StatusNotFound, err)
-			return
-		}
 		s.respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	src, err := sourcer(ctx, es)
+	if len(es) != 1 {
+		s.respond(w, http.StatusNotFound, errors.Newf("external service %d not found", externalServiceID))
+		return
+	}
+
+	src, err := sourcer(ctx, es[0])
 
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))

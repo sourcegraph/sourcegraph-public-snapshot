@@ -1,6 +1,8 @@
 # Sourcegraph extension architecture
 
-The Sourcegraph extension API allows extension of Sourcegraph functionality through [specific extension points](https://unpkg.com/sourcegraph@24.7.0/dist/docs/index.html). The Sourcegraph extension architecture refers to the system which allows Sourcegraph client applications, such as the web application or browser extension, to communicate with Sourcegraph extensions. 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../../extensions/deprecation.md).
+
+The Sourcegraph extension API allows extension of Sourcegraph functionality through [specific extension points](https://unpkg.com/sourcegraph@24.7.0/dist/docs/index.html). The Sourcegraph extension architecture refers to the system which allows Sourcegraph client applications, such as the web application or browser extension, to communicate with Sourcegraph extensions.
 
 <object data="/dev/background-information/web/extension-architecture.svg" type="image/svg+xml" style="width:100%;">
 </object>
@@ -33,12 +35,12 @@ Note that the extension host execution context varies depending on the client ap
 
 - Think about the UI through which users will interact with this feature
 	- If this feature significantly affects the Sourcegraph UI, consider [consulting a designer](https://handbook.sourcegraph.com/product/design#working-with-design-requesting-design-work).
-- Think about the API through which extension authors will interact with this feature. 
+- Think about the API through which extension authors will interact with this feature.
 	- Add type definitions for this API to [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/extension-api/src/sourcegraph.d.ts). Try to write detailed docstrings so extension authors can learn this API from their IDE or with Sourcegraph.
 
 ### Implementing
 
-- Extension host state is where the data that powers this extension feature should live. We use RxJS to to make it easy to notify one end of the system when the other end pushes changes. 
+- Extension host state is where the data that powers this extension feature should live. We use RxJS to to make it easy to notify one end of the system when the other end pushes changes.
 - Add methods to the extension host API ([type definition](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@79b7780a76bf93d4f153b3e5657013ca6f820d06/-/blob/client/shared/src/api/contract.ts#L27-32), [implementation](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/api/extension/extensionHostApi.ts)) so that client applications can read from and write to extension host state.
 - Implement the methods that you've added to the extension API [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@79b7780a76bf93d4f153b3e5657013ca6f820d06/-/blob/client/shared/src/api/extension/extensionApi.ts).
 - Sometimes, you may need to add to the main thread API ([type definition](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@79b7780a76bf93d4f153b3e5657013ca6f820d06/-/blob/client/shared/src/api/contract.ts#L169-174), [implementation](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/api/client/mainthread-api.ts)) as well. For example, some built-in commands can only work on the main thread, so command state is owned by the main thread API, and is consumed by the extension host.
@@ -58,7 +60,7 @@ Note that the extension host execution context varies depending on the client ap
 
 - Once you've opened a PR and received feedback and approval, bump the sourcegraph extension API version. Be sure to follow [semantic versioning](https://semver.org/).
 - Once your PR is merged into `main`, publish the new extension API to npm.
-- If necessary, update [extension-api-stubs](https://github.com/sourcegraph/extension-api-stubs) to reflect the latest version of the extension API. 
+- If necessary, update [extension-api-stubs](https://github.com/sourcegraph/extension-api-stubs) to reflect the latest version of the extension API.
 - Upgrade any extensions you've written to the latest version. Be sure to CHECK that the Sourcegraph extension host that loads your extension supports this feature ([example](https://sourcegraph.com/github.com/codecov/sourcegraph-codecov@19a302e7dccb48b4fe910f1862309e434cf76bb8/-/blob/src/extension.ts#L225-227)).
 	- Sourcegraph.com will support this new feature (almost) immediately
 	- Private Sourcegraph instances will support this new feature after they upgrade to a Sourcegraph version that includes this commit
@@ -95,6 +97,6 @@ The following diagram depicts the process by which the extension host is initial
 <!--- Update this diagram (../web/extension-host.drawio) on https://app.diagrams.net/  -->
 ## Inter-process communication
 
-The client application runs on the main thread, while the extension host runs in a Web Worker, in a seperate global execution context. Under the hood, the client application and extension host communicate through messages, but the we rely on [comlink](https://github.com/GoogleChromeLabs/comlink), a proxy-based RPC library, in order to manage complexity and simplify implementation of new functionality. 
+The client application runs on the main thread, while the extension host runs in a Web Worker, in a seperate global execution context. Under the hood, the client application and extension host communicate through messages, but the we rely on [comlink](https://github.com/GoogleChromeLabs/comlink), a proxy-based RPC library, in order to manage complexity and simplify implementation of new functionality.
 
 <!-- TODO(tj): Would visualization of how comlink + RxJS work together help? -->

@@ -185,9 +185,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 
 	var enableLegacyExtensions = true
-	if siteConfig.ExperimentalFeatures != nil {
-		enableLegacyExtensions = siteConfig.ExperimentalFeatures.EnableLegacyExtensions
-	}
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's

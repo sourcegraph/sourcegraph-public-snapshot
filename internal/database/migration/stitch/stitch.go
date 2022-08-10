@@ -83,7 +83,7 @@ const squashedMigrationPrefix = "squashed migrations"
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
 func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
-	fs, err := readMigrations(schemaName, root, rev)
+	fs, err := ReadMigrations(schemaName, root, rev)
 	if err != nil {
 		return shared.MigrationBounds{}, err
 	}

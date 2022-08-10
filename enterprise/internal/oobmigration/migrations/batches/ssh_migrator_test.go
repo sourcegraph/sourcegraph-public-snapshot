@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -21,13 +21,13 @@ func TestSSHMigrator(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	user := ct.CreateTestUser(t, db, false)
+	user := bt.CreateTestUser(t, db, false)
 
-	ct.MockRSAKeygen(t)
+	bt.MockRSAKeygen(t)
 
-	cstore := store.New(db, &observation.TestContext, et.TestKey{})
-
-	migrator := &sshMigrator{cstore}
+	key := et.TestKey{}
+	cstore := store.New(db, &observation.TestContext, key)
+	migrator := NewSSHMigratorWithDB(db, key)
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
 		t.Fatal(err)

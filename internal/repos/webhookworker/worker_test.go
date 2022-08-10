@@ -34,6 +34,8 @@ func TestJobQueue(t *testing.T) {
 		firstJob := &Job{
 			RepoID:     1,
 			RepoName:   "repo 1",
+			Org:        "https://example.com",
+			ExtSvcID:   1,
 			ExtSvcKind: extSvcKind,
 		}
 
@@ -43,8 +45,10 @@ func TestJobQueue(t *testing.T) {
 		}
 
 		secondJob := &Job{
-			RepoID:     1,
+			RepoID:     2,
 			RepoName:   "repo 2",
+			Org:        "https://example.com",
+			ExtSvcID:   2,
 			ExtSvcKind: extSvcKind,
 		}
 
@@ -89,6 +93,8 @@ const dequeueJobFmtStr = `
 SELECT
 	repo_id,
 	repo_name,
+	org,
+	extsvc_id,
 	extsvc_kind,
 	queued_at,
 	id,

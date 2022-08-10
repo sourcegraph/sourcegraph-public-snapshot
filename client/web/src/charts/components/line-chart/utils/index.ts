@@ -3,5 +3,5 @@ export { isValidNumber } from './data-guards'
 export { generatePointsField } from './generate-points-field'
 export { getChartContentSizes } from '../../../core/utils/get-chart-content-sizes'
 export { getMinMaxBoundaries } from './get-min-max-boundary'
-export { formatYTick, formatXTick, formatXLabel, getYScaleTicks, getXScaleTicks } from './ticks'
+
 export * from './data-series-processing'

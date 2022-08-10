@@ -124,6 +124,10 @@ export interface BlobProps
     // Experimental reference panel
     disableStatusBar: boolean
     disableDecorations: boolean
+    /**
+     * Only used by CodeMirror implementation.
+     */
+    disableHovercards?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -252,7 +256,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             codeViewReference.current = codeView
             codeViewElements.next(codeView)
         },
-        [codeViewElements]
+        // We dangerousSetInnerHTML and modify the <code> element.
+        // We need to listen to blobInfo to ensure that we correctly
+        // respond whenever this element updates.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [codeViewElements, blobInfo.html]
     )
 
     // Emits on changes from URL search params

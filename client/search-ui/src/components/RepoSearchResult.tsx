@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { highlightNode } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
@@ -32,6 +33,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     index,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const containerElement = useRef<HTMLDivElement>(null)
 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
@@ -104,7 +106,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 {result.description && (
                     <>
                         <div className={styles.dividerVertical} />
-                        <div>
+                        <div ref={containerElement}>
                             <small>
                                 <em>
                                     {result.description.length > REPO_DESCRIPTION_CHAR_LIMIT
@@ -118,6 +120,21 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             </div>
         </div>
     )
+
+    useEffect((): void => {
+        if (containerElement.current && result.descriptionMatches) {
+            const visibleDescription = containerElement.current.querySelector('small em')
+            if (visibleDescription) {
+                for (const range of result.descriptionMatches) {
+                    highlightNode(
+                        visibleDescription as HTMLElement,
+                        range.start.column,
+                        range.end.column - range.start.column
+                    )
+                }
+            }
+        }
+    }, [result.description, result.descriptionMatches, containerElement])
 
     return (
         <ResultContainer

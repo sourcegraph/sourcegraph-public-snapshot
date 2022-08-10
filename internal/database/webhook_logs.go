@@ -57,23 +57,16 @@ func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) err
 		return errors.Wrap(err, "marshalling response data")
 	}
 
-	encKeyID := ""
-	if s.key != nil {
-		encKeyID, err = keyID(ctx, s.key)
-		if err != nil {
-			return errors.Wrap(err, "getting key version")
-		}
-
-		rawRequest, err = s.key.Encrypt(ctx, rawRequest)
-		if err != nil {
-			return errors.Wrap(err, "encrypting request data")
-		}
-
-		rawResponse, err = s.key.Encrypt(ctx, rawResponse)
-		if err != nil {
-			return errors.Wrap(err, "encrypting response data")
-		}
+	maybeEncryptedRawRequest, _, err := s.maybeEncrypt(ctx, string(rawRequest))
+	if err != nil {
+		return err
 	}
+	maybeEncryptedRawResponse, encKeyID, err := s.maybeEncrypt(ctx, string(rawResponse))
+	if err != nil {
+		return err
+	}
+	rawRequest = []byte(maybeEncryptedRawRequest)
+	rawResponse = []byte(maybeEncryptedRawResponse)
 
 	q := sqlf.Sprintf(
 		webhookLogCreateQueryFmtstr,
@@ -320,46 +313,33 @@ func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.Webhook
 		log.ExternalServiceID = &externalServiceID
 	}
 
-	if encKeyID != "" {
-		// The record includes a field indicating the encryption key ID. We
-		// don't really have a way to look up a key by ID right now, so this is
-		// used as a marker of whether we should expect a key or not.
-		storeKeyID, err := keyID(ctx, s.key)
-		if err != nil {
-			return errors.Wrap(err, "retrieving store key ID")
-		}
-
-		if encKeyID != storeKeyID {
-			return errors.New("key mismatch: webhook log is encrypted with a different key to the one in the store")
-		}
-	}
-
-	if err := scanMessage(ctx, s.key, rawRequest, &log.Request); err != nil {
+	if err := s.scanMessage(ctx, encKeyID, rawRequest, &log.Request); err != nil {
 		return errors.Wrap(err, "scanning request data")
 	}
-	if err := scanMessage(ctx, s.key, rawResponse, &log.Response); err != nil {
+	if err := s.scanMessage(ctx, encKeyID, rawResponse, &log.Response); err != nil {
 		return errors.Wrap(err, "scanning response data")
 	}
 
 	return nil
 }
 
-func scanMessage(ctx context.Context, key encryption.Key, raw []byte, message *types.WebhookLogMessage) error {
-	var decrypted []byte
-	if key != nil {
-		secret, err := key.Decrypt(ctx, raw)
-		if err != nil {
-			return errors.Wrap(err, "decrypting")
-		}
-
-		decrypted = []byte(secret.Secret())
-	} else {
-		decrypted = raw
+func (s *webhookLogStore) scanMessage(ctx context.Context, encKeyID string, raw []byte, message *types.WebhookLogMessage) error {
+	decrypted, err := s.maybeDecrypt(ctx, string(raw), encKeyID)
+	if err != nil {
+		return err
 	}
 
-	if err := json.Unmarshal(decrypted, message); err != nil {
+	if err := json.Unmarshal([]byte(decrypted), message); err != nil {
 		return errors.Wrap(err, "unmarshalling")
 	}
 
 	return nil
+}
+
+func (s *webhookLogStore) maybeEncrypt(ctx context.Context, data string) (string, string, error) {
+	return encryption.MaybeEncrypt(ctx, s.key, data)
+}
+
+func (s *webhookLogStore) maybeDecrypt(ctx context.Context, data, keyIdent string) (string, error) {
+	return encryption.MaybeDecrypt(ctx, s.key, data, keyIdent)
 }

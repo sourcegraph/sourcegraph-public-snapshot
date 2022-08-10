@@ -14,16 +14,1200 @@ import (
 	regexp "github.com/grafana/regexp"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexing "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	gitserver1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
+
+// MockCodeNavResolver is a mock implementation of the CodeNavResolver
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockCodeNavResolver struct {
+	// DefinitionsFunc is an instance of a mock function object controlling
+	// the behavior of the method Definitions.
+	DefinitionsFunc *CodeNavResolverDefinitionsFunc
+	// DiagnosticsFunc is an instance of a mock function object controlling
+	// the behavior of the method Diagnostics.
+	DiagnosticsFunc *CodeNavResolverDiagnosticsFunc
+	// GetHunkCacheSizeFunc is an instance of a mock function object
+	// controlling the behavior of the method GetHunkCacheSize.
+	GetHunkCacheSizeFunc *CodeNavResolverGetHunkCacheSizeFunc
+	// HoverFunc is an instance of a mock function object controlling the
+	// behavior of the method Hover.
+	HoverFunc *CodeNavResolverHoverFunc
+	// ImplementationsFunc is an instance of a mock function object
+	// controlling the behavior of the method Implementations.
+	ImplementationsFunc *CodeNavResolverImplementationsFunc
+	// LSIFUploadsFunc is an instance of a mock function object controlling
+	// the behavior of the method LSIFUploads.
+	LSIFUploadsFunc *CodeNavResolverLSIFUploadsFunc
+	// RangesFunc is an instance of a mock function object controlling the
+	// behavior of the method Ranges.
+	RangesFunc *CodeNavResolverRangesFunc
+	// ReferencesFunc is an instance of a mock function object controlling
+	// the behavior of the method References.
+	ReferencesFunc *CodeNavResolverReferencesFunc
+	// StencilFunc is an instance of a mock function object controlling the
+	// behavior of the method Stencil.
+	StencilFunc *CodeNavResolverStencilFunc
+}
+
+// NewMockCodeNavResolver creates a new mock of the CodeNavResolver
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockCodeNavResolver() *MockCodeNavResolver {
+	return &MockCodeNavResolver{
+		DefinitionsFunc: &CodeNavResolverDefinitionsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 error) {
+				return
+			},
+		},
+		DiagnosticsFunc: &CodeNavResolverDiagnosticsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+				return
+			},
+		},
+		GetHunkCacheSizeFunc: &CodeNavResolverGetHunkCacheSizeFunc{
+			defaultHook: func() (r0 int) {
+				return
+			},
+		},
+		HoverFunc: &CodeNavResolverHoverFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 string, r1 shared.Range, r2 bool, r3 error) {
+				return
+			},
+		},
+		ImplementationsFunc: &CodeNavResolverImplementationsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 string, r2 error) {
+				return
+			},
+		},
+		LSIFUploadsFunc: &CodeNavResolverLSIFUploadsFunc{
+			defaultHook: func(context.Context, codenav.RequestState) (r0 []shared.Dump, r1 error) {
+				return
+			},
+		},
+		RangesFunc: &CodeNavResolverRangesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) (r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+				return
+			},
+		},
+		ReferencesFunc: &CodeNavResolverReferencesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.UploadLocation, r1 string, r2 error) {
+				return
+			},
+		},
+		StencilFunc: &CodeNavResolverStencilFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.Range, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCodeNavResolver creates a new mock of the CodeNavResolver
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCodeNavResolver() *MockCodeNavResolver {
+	return &MockCodeNavResolver{
+		DefinitionsFunc: &CodeNavResolverDefinitionsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Definitions")
+			},
+		},
+		DiagnosticsFunc: &CodeNavResolverDiagnosticsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Diagnostics")
+			},
+		},
+		GetHunkCacheSizeFunc: &CodeNavResolverGetHunkCacheSizeFunc{
+			defaultHook: func() int {
+				panic("unexpected invocation of MockCodeNavResolver.GetHunkCacheSize")
+			},
+		},
+		HoverFunc: &CodeNavResolverHoverFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Hover")
+			},
+		},
+		ImplementationsFunc: &CodeNavResolverImplementationsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Implementations")
+			},
+		},
+		LSIFUploadsFunc: &CodeNavResolverLSIFUploadsFunc{
+			defaultHook: func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+				panic("unexpected invocation of MockCodeNavResolver.LSIFUploads")
+			},
+		},
+		RangesFunc: &CodeNavResolverRangesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Ranges")
+			},
+		},
+		ReferencesFunc: &CodeNavResolverReferencesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+				panic("unexpected invocation of MockCodeNavResolver.References")
+			},
+		},
+		StencilFunc: &CodeNavResolverStencilFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
+				panic("unexpected invocation of MockCodeNavResolver.Stencil")
+			},
+		},
+	}
+}
+
+// NewMockCodeNavResolverFrom creates a new mock of the MockCodeNavResolver
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockCodeNavResolverFrom(i CodeNavResolver) *MockCodeNavResolver {
+	return &MockCodeNavResolver{
+		DefinitionsFunc: &CodeNavResolverDefinitionsFunc{
+			defaultHook: i.Definitions,
+		},
+		DiagnosticsFunc: &CodeNavResolverDiagnosticsFunc{
+			defaultHook: i.Diagnostics,
+		},
+		GetHunkCacheSizeFunc: &CodeNavResolverGetHunkCacheSizeFunc{
+			defaultHook: i.GetHunkCacheSize,
+		},
+		HoverFunc: &CodeNavResolverHoverFunc{
+			defaultHook: i.Hover,
+		},
+		ImplementationsFunc: &CodeNavResolverImplementationsFunc{
+			defaultHook: i.Implementations,
+		},
+		LSIFUploadsFunc: &CodeNavResolverLSIFUploadsFunc{
+			defaultHook: i.LSIFUploads,
+		},
+		RangesFunc: &CodeNavResolverRangesFunc{
+			defaultHook: i.Ranges,
+		},
+		ReferencesFunc: &CodeNavResolverReferencesFunc{
+			defaultHook: i.References,
+		},
+		StencilFunc: &CodeNavResolverStencilFunc{
+			defaultHook: i.Stencil,
+		},
+	}
+}
+
+// CodeNavResolverDefinitionsFunc describes the behavior when the
+// Definitions method of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverDefinitionsFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)
+	history     []CodeNavResolverDefinitionsFuncCall
+	mutex       sync.Mutex
+}
+
+// Definitions delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Definitions(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, error) {
+	r0, r1 := m.DefinitionsFunc.nextHook()(v0, v1, v2)
+	m.DefinitionsFunc.appendCall(CodeNavResolverDefinitionsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Definitions method
+// of the parent MockCodeNavResolver instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavResolverDefinitionsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Definitions method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverDefinitionsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverDefinitionsFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverDefinitionsFunc) PushReturn(r0 []shared.UploadLocation, r1 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavResolverDefinitionsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverDefinitionsFunc) appendCall(r0 CodeNavResolverDefinitionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverDefinitionsFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverDefinitionsFunc) History() []CodeNavResolverDefinitionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverDefinitionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverDefinitionsFuncCall is an object that describes an
+// invocation of method Definitions on an instance of MockCodeNavResolver.
+type CodeNavResolverDefinitionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverDefinitionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverDefinitionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavResolverDiagnosticsFunc describes the behavior when the
+// Diagnostics method of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverDiagnosticsFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)
+	history     []CodeNavResolverDiagnosticsFuncCall
+	mutex       sync.Mutex
+}
+
+// Diagnostics delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Diagnostics(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1, v2)
+	m.DiagnosticsFunc.appendCall(CodeNavResolverDiagnosticsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Diagnostics method
+// of the parent MockCodeNavResolver instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Diagnostics method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverDiagnosticsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverDiagnosticsFunc) SetDefaultReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverDiagnosticsFunc) PushReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *CodeNavResolverDiagnosticsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverDiagnosticsFunc) appendCall(r0 CodeNavResolverDiagnosticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverDiagnosticsFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverDiagnosticsFunc) History() []CodeNavResolverDiagnosticsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverDiagnosticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverDiagnosticsFuncCall is an object that describes an
+// invocation of method Diagnostics on an instance of MockCodeNavResolver.
+type CodeNavResolverDiagnosticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.DiagnosticAtUpload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverDiagnosticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverDiagnosticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// CodeNavResolverGetHunkCacheSizeFunc describes the behavior when the
+// GetHunkCacheSize method of the parent MockCodeNavResolver instance is
+// invoked.
+type CodeNavResolverGetHunkCacheSizeFunc struct {
+	defaultHook func() int
+	hooks       []func() int
+	history     []CodeNavResolverGetHunkCacheSizeFuncCall
+	mutex       sync.Mutex
+}
+
+// GetHunkCacheSize delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) GetHunkCacheSize() int {
+	r0 := m.GetHunkCacheSizeFunc.nextHook()()
+	m.GetHunkCacheSizeFunc.appendCall(CodeNavResolverGetHunkCacheSizeFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GetHunkCacheSize
+// method of the parent MockCodeNavResolver instance is invoked and the hook
+// queue is empty.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) SetDefaultHook(hook func() int) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetHunkCacheSize method of the parent MockCodeNavResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) PushHook(hook func() int) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) SetDefaultReturn(r0 int) {
+	f.SetDefaultHook(func() int {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) PushReturn(r0 int) {
+	f.PushHook(func() int {
+		return r0
+	})
+}
+
+func (f *CodeNavResolverGetHunkCacheSizeFunc) nextHook() func() int {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverGetHunkCacheSizeFunc) appendCall(r0 CodeNavResolverGetHunkCacheSizeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverGetHunkCacheSizeFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavResolverGetHunkCacheSizeFunc) History() []CodeNavResolverGetHunkCacheSizeFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverGetHunkCacheSizeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverGetHunkCacheSizeFuncCall is an object that describes an
+// invocation of method GetHunkCacheSize on an instance of
+// MockCodeNavResolver.
+type CodeNavResolverGetHunkCacheSizeFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverGetHunkCacheSizeFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverGetHunkCacheSizeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeNavResolverHoverFunc describes the behavior when the Hover method of
+// the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverHoverFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)
+	history     []CodeNavResolverHoverFuncCall
+	mutex       sync.Mutex
+}
+
+// Hover delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Hover(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) (string, shared.Range, bool, error) {
+	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2)
+	m.HoverFunc.appendCall(CodeNavResolverHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
+	return r0, r1, r2, r3
+}
+
+// SetDefaultHook sets function that is called when the Hover method of the
+// parent MockCodeNavResolver instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavResolverHoverFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Hover method of the parent MockCodeNavResolver instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeNavResolverHoverFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverHoverFunc) SetDefaultReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverHoverFunc) PushReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+func (f *CodeNavResolverHoverFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) (string, shared.Range, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverHoverFunc) appendCall(r0 CodeNavResolverHoverFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverHoverFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverHoverFunc) History() []CodeNavResolverHoverFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverHoverFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverHoverFuncCall is an object that describes an invocation of
+// method Hover on an instance of MockCodeNavResolver.
+type CodeNavResolverHoverFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 shared.Range
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 bool
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverHoverFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverHoverFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// CodeNavResolverImplementationsFunc describes the behavior when the
+// Implementations method of the parent MockCodeNavResolver instance is
+// invoked.
+type CodeNavResolverImplementationsFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
+	history     []CodeNavResolverImplementationsFuncCall
+	mutex       sync.Mutex
+}
+
+// Implementations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Implementations(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, string, error) {
+	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1, v2)
+	m.ImplementationsFunc.appendCall(CodeNavResolverImplementationsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Implementations
+// method of the parent MockCodeNavResolver instance is invoked and the hook
+// queue is empty.
+func (f *CodeNavResolverImplementationsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Implementations method of the parent MockCodeNavResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeNavResolverImplementationsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverImplementationsFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverImplementationsFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *CodeNavResolverImplementationsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverImplementationsFunc) appendCall(r0 CodeNavResolverImplementationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverImplementationsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavResolverImplementationsFunc) History() []CodeNavResolverImplementationsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverImplementationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverImplementationsFuncCall is an object that describes an
+// invocation of method Implementations on an instance of
+// MockCodeNavResolver.
+type CodeNavResolverImplementationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverImplementationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverImplementationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// CodeNavResolverLSIFUploadsFunc describes the behavior when the
+// LSIFUploads method of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverLSIFUploadsFunc struct {
+	defaultHook func(context.Context, codenav.RequestState) ([]shared.Dump, error)
+	hooks       []func(context.Context, codenav.RequestState) ([]shared.Dump, error)
+	history     []CodeNavResolverLSIFUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// LSIFUploads delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) LSIFUploads(v0 context.Context, v1 codenav.RequestState) ([]shared.Dump, error) {
+	r0, r1 := m.LSIFUploadsFunc.nextHook()(v0, v1)
+	m.LSIFUploadsFunc.appendCall(CodeNavResolverLSIFUploadsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LSIFUploads method
+// of the parent MockCodeNavResolver instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavResolverLSIFUploadsFunc) SetDefaultHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LSIFUploads method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverLSIFUploadsFunc) PushHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverLSIFUploadsFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverLSIFUploadsFunc) PushReturn(r0 []shared.Dump, r1 error) {
+	f.PushHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavResolverLSIFUploadsFunc) nextHook() func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverLSIFUploadsFunc) appendCall(r0 CodeNavResolverLSIFUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverLSIFUploadsFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverLSIFUploadsFunc) History() []CodeNavResolverLSIFUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverLSIFUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverLSIFUploadsFuncCall is an object that describes an
+// invocation of method LSIFUploads on an instance of MockCodeNavResolver.
+type CodeNavResolverLSIFUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverLSIFUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverLSIFUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavResolverRangesFunc describes the behavior when the Ranges method
+// of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverRangesFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
+	history     []CodeNavResolverRangesFuncCall
+	mutex       sync.Mutex
+}
+
+// Ranges delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Ranges(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState, v3 int, v4 int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.RangesFunc.appendCall(CodeNavResolverRangesFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Ranges method of the
+// parent MockCodeNavResolver instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavResolverRangesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Ranges method of the parent MockCodeNavResolver instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeNavResolverRangesFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverRangesFunc) SetDefaultReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverRangesFunc) PushReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavResolverRangesFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverRangesFunc) appendCall(r0 CodeNavResolverRangesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverRangesFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverRangesFunc) History() []CodeNavResolverRangesFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverRangesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverRangesFuncCall is an object that describes an invocation
+// of method Ranges on an instance of MockCodeNavResolver.
+type CodeNavResolverRangesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.AdjustedCodeIntelligenceRange
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverRangesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverRangesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavResolverReferencesFunc describes the behavior when the References
+// method of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverReferencesFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)
+	history     []CodeNavResolverReferencesFuncCall
+	mutex       sync.Mutex
+}
+
+// References delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavResolver) References(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.UploadLocation, string, error) {
+	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2)
+	m.ReferencesFunc.appendCall(CodeNavResolverReferencesFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the References method of
+// the parent MockCodeNavResolver instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavResolverReferencesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// References method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverReferencesFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverReferencesFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverReferencesFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *CodeNavResolverReferencesFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.UploadLocation, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverReferencesFunc) appendCall(r0 CodeNavResolverReferencesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverReferencesFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverReferencesFunc) History() []CodeNavResolverReferencesFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverReferencesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverReferencesFuncCall is an object that describes an
+// invocation of method References on an instance of MockCodeNavResolver.
+type CodeNavResolverReferencesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverReferencesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverReferencesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// CodeNavResolverStencilFunc describes the behavior when the Stencil method
+// of the parent MockCodeNavResolver instance is invoked.
+type CodeNavResolverStencilFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)
+	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)
+	history     []CodeNavResolverStencilFuncCall
+	mutex       sync.Mutex
+}
+
+// Stencil delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeNavResolver) Stencil(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.Range, error) {
+	r0, r1 := m.StencilFunc.nextHook()(v0, v1, v2)
+	m.StencilFunc.appendCall(CodeNavResolverStencilFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Stencil method of
+// the parent MockCodeNavResolver instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavResolverStencilFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Stencil method of the parent MockCodeNavResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavResolverStencilFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavResolverStencilFunc) SetDefaultReturn(r0 []shared.Range, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavResolverStencilFunc) PushReturn(r0 []shared.Range, r1 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavResolverStencilFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.Range, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavResolverStencilFunc) appendCall(r0 CodeNavResolverStencilFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavResolverStencilFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavResolverStencilFunc) History() []CodeNavResolverStencilFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavResolverStencilFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavResolverStencilFuncCall is an object that describes an invocation
+// of method Stencil on an instance of MockCodeNavResolver.
+type CodeNavResolverStencilFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Range
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavResolverStencilFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavResolverStencilFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
@@ -40,9 +1224,6 @@ type MockDBStore struct {
 	// object controlling the behavior of the method
 	// CreateConfigurationPolicy.
 	CreateConfigurationPolicyFunc *DBStoreCreateConfigurationPolicyFunc
-	// DefinitionDumpsFunc is an instance of a mock function object
-	// controlling the behavior of the method DefinitionDumps.
-	DefinitionDumpsFunc *DBStoreDefinitionDumpsFunc
 	// DeleteConfigurationPolicyByIDFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteConfigurationPolicyByID.
@@ -70,9 +1251,6 @@ type MockDBStore struct {
 	// object controlling the behavior of the method
 	// GetConfigurationPolicyByID.
 	GetConfigurationPolicyByIDFunc *DBStoreGetConfigurationPolicyByIDFunc
-	// GetDumpsByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetDumpsByIDs.
-	GetDumpsByIDsFunc *DBStoreGetDumpsByIDsFunc
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *DBStoreGetIndexByIDFunc
@@ -121,9 +1299,6 @@ type MockDBStore struct {
 	// RecentUploadsSummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method RecentUploadsSummary.
 	RecentUploadsSummaryFunc *DBStoreRecentUploadsSummaryFunc
-	// ReferenceIDsFunc is an instance of a mock function object controlling
-	// the behavior of the method ReferenceIDs.
-	ReferenceIDsFunc *DBStoreReferenceIDsFunc
 	// RepoIDsByGlobPatternsFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoIDsByGlobPatterns.
 	RepoIDsByGlobPatternsFunc *DBStoreRepoIDsByGlobPatternsFunc
@@ -169,11 +1344,6 @@ func NewMockDBStore() *MockDBStore {
 				return
 			},
 		},
-		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []dbstore.Dump, r1 error) {
-				return
-			},
-		},
 		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
 			defaultHook: func(context.Context, int) (r0 error) {
 				return
@@ -211,11 +1381,6 @@ func NewMockDBStore() *MockDBStore {
 		},
 		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
 			defaultHook: func(context.Context, int) (r0 dbstore.ConfigurationPolicy, r1 bool, r2 error) {
-				return
-			},
-		},
-		GetDumpsByIDsFunc: &DBStoreGetDumpsByIDsFunc{
-			defaultHook: func(context.Context, []int) (r0 []dbstore.Dump, r1 error) {
 				return
 			},
 		},
@@ -294,11 +1459,6 @@ func NewMockDBStore() *MockDBStore {
 				return
 			},
 		},
-		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
-			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
-				return
-			},
-		},
 		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
 			defaultHook: func(context.Context, []string, int, int) (r0 []int, r1 int, r2 error) {
 				return
@@ -356,11 +1516,6 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.CreateConfigurationPolicy")
 			},
 		},
-		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-				panic("unexpected invocation of MockDBStore.DefinitionDumps")
-			},
-		},
 		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
 			defaultHook: func(context.Context, int) error {
 				panic("unexpected invocation of MockDBStore.DeleteConfigurationPolicyByID")
@@ -399,11 +1554,6 @@ func NewStrictMockDBStore() *MockDBStore {
 		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
 			defaultHook: func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
 				panic("unexpected invocation of MockDBStore.GetConfigurationPolicyByID")
-			},
-		},
-		GetDumpsByIDsFunc: &DBStoreGetDumpsByIDsFunc{
-			defaultHook: func(context.Context, []int) ([]dbstore.Dump, error) {
-				panic("unexpected invocation of MockDBStore.GetDumpsByIDs")
 			},
 		},
 		GetIndexByIDFunc: &DBStoreGetIndexByIDFunc{
@@ -481,11 +1631,6 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.RecentUploadsSummary")
 			},
 		},
-		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
-			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
-				panic("unexpected invocation of MockDBStore.ReferenceIDs")
-			},
-		},
 		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
 			defaultHook: func(context.Context, []string, int, int) ([]int, int, error) {
 				panic("unexpected invocation of MockDBStore.RepoIDsByGlobPatterns")
@@ -537,9 +1682,6 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		CreateConfigurationPolicyFunc: &DBStoreCreateConfigurationPolicyFunc{
 			defaultHook: i.CreateConfigurationPolicy,
 		},
-		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
-			defaultHook: i.DefinitionDumps,
-		},
 		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
 			defaultHook: i.DeleteConfigurationPolicyByID,
 		},
@@ -563,9 +1705,6 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
 			defaultHook: i.GetConfigurationPolicyByID,
-		},
-		GetDumpsByIDsFunc: &DBStoreGetDumpsByIDsFunc{
-			defaultHook: i.GetDumpsByIDs,
 		},
 		GetIndexByIDFunc: &DBStoreGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
@@ -611,9 +1750,6 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		RecentUploadsSummaryFunc: &DBStoreRecentUploadsSummaryFunc{
 			defaultHook: i.RecentUploadsSummary,
-		},
-		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
-			defaultHook: i.ReferenceIDs,
 		},
 		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
 			defaultHook: i.RepoIDsByGlobPatterns,
@@ -977,114 +2113,6 @@ func (c DBStoreCreateConfigurationPolicyFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreCreateConfigurationPolicyFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreDefinitionDumpsFunc describes the behavior when the
-// DefinitionDumps method of the parent MockDBStore instance is invoked.
-type DBStoreDefinitionDumpsFunc struct {
-	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error)
-	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error)
-	history     []DBStoreDefinitionDumpsFuncCall
-	mutex       sync.Mutex
-}
-
-// DefinitionDumps delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDBStore) DefinitionDumps(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-	r0, r1 := m.DefinitionDumpsFunc.nextHook()(v0, v1)
-	m.DefinitionDumpsFunc.appendCall(DBStoreDefinitionDumpsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DefinitionDumps
-// method of the parent MockDBStore instance is invoked and the hook queue
-// is empty.
-func (f *DBStoreDefinitionDumpsFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DefinitionDumps method of the parent MockDBStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *DBStoreDefinitionDumpsFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreDefinitionDumpsFunc) SetDefaultReturn(r0 []dbstore.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreDefinitionDumpsFunc) PushReturn(r0 []dbstore.Dump, r1 error) {
-	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreDefinitionDumpsFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreDefinitionDumpsFunc) appendCall(r0 DBStoreDefinitionDumpsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreDefinitionDumpsFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreDefinitionDumpsFunc) History() []DBStoreDefinitionDumpsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreDefinitionDumpsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreDefinitionDumpsFuncCall is an object that describes an invocation
-// of method DefinitionDumps on an instance of MockDBStore.
-type DBStoreDefinitionDumpsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []precise.QualifiedMonikerData
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreDefinitionDumpsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreDefinitionDumpsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1995,114 +3023,6 @@ func (c DBStoreGetConfigurationPolicyByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreGetConfigurationPolicyByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// DBStoreGetDumpsByIDsFunc describes the behavior when the GetDumpsByIDs
-// method of the parent MockDBStore instance is invoked.
-type DBStoreGetDumpsByIDsFunc struct {
-	defaultHook func(context.Context, []int) ([]dbstore.Dump, error)
-	hooks       []func(context.Context, []int) ([]dbstore.Dump, error)
-	history     []DBStoreGetDumpsByIDsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetDumpsByIDs delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockDBStore) GetDumpsByIDs(v0 context.Context, v1 []int) ([]dbstore.Dump, error) {
-	r0, r1 := m.GetDumpsByIDsFunc.nextHook()(v0, v1)
-	m.GetDumpsByIDsFunc.appendCall(DBStoreGetDumpsByIDsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetDumpsByIDs method
-// of the parent MockDBStore instance is invoked and the hook queue is
-// empty.
-func (f *DBStoreGetDumpsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]dbstore.Dump, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetDumpsByIDs method of the parent MockDBStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBStoreGetDumpsByIDsFunc) PushHook(hook func(context.Context, []int) ([]dbstore.Dump, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreGetDumpsByIDsFunc) SetDefaultReturn(r0 []dbstore.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int) ([]dbstore.Dump, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreGetDumpsByIDsFunc) PushReturn(r0 []dbstore.Dump, r1 error) {
-	f.PushHook(func(context.Context, []int) ([]dbstore.Dump, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreGetDumpsByIDsFunc) nextHook() func(context.Context, []int) ([]dbstore.Dump, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreGetDumpsByIDsFunc) appendCall(r0 DBStoreGetDumpsByIDsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreGetDumpsByIDsFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreGetDumpsByIDsFunc) History() []DBStoreGetDumpsByIDsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreGetDumpsByIDsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreGetDumpsByIDsFuncCall is an object that describes an invocation of
-// method GetDumpsByIDs on an instance of MockDBStore.
-type DBStoreGetDumpsByIDsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreGetDumpsByIDsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreGetDumpsByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBStoreGetIndexByIDFunc describes the behavior when the GetIndexByID
@@ -3766,129 +4686,6 @@ func (c DBStoreRecentUploadsSummaryFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreRecentUploadsSummaryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreReferenceIDsFunc describes the behavior when the ReferenceIDs
-// method of the parent MockDBStore instance is invoked.
-type DBStoreReferenceIDsFunc struct {
-	defaultHook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)
-	hooks       []func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)
-	history     []DBStoreReferenceIDsFuncCall
-	mutex       sync.Mutex
-}
-
-// ReferenceIDs delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockDBStore) ReferenceIDs(v0 context.Context, v1 int, v2 string, v3 []precise.QualifiedMonikerData, v4 int, v5 int) (dbstore.PackageReferenceScanner, int, error) {
-	r0, r1, r2 := m.ReferenceIDsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.ReferenceIDsFunc.appendCall(DBStoreReferenceIDsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the ReferenceIDs method
-// of the parent MockDBStore instance is invoked and the hook queue is
-// empty.
-func (f *DBStoreReferenceIDsFunc) SetDefaultHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReferenceIDs method of the parent MockDBStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBStoreReferenceIDsFunc) PushHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreReferenceIDsFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreReferenceIDsFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *DBStoreReferenceIDsFunc) nextHook() func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreReferenceIDsFunc) appendCall(r0 DBStoreReferenceIDsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreReferenceIDsFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreReferenceIDsFunc) History() []DBStoreReferenceIDsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreReferenceIDsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreReferenceIDsFuncCall is an object that describes an invocation of
-// method ReferenceIDs on an instance of MockDBStore.
-type DBStoreReferenceIDsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 []precise.QualifiedMonikerData
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 dbstore.PackageReferenceScanner
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreReferenceIDsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreReferenceIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBStoreRepoIDsByGlobPatternsFunc describes the behavior when the
@@ -7898,63 +8695,18 @@ func (c IndexEnqueuerQueueIndexesFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockLSIFStore struct {
-	// BulkMonikerResultsFunc is an instance of a mock function object
-	// controlling the behavior of the method BulkMonikerResults.
-	BulkMonikerResultsFunc *LSIFStoreBulkMonikerResultsFunc
-	// DefinitionsFunc is an instance of a mock function object controlling
-	// the behavior of the method Definitions.
-	DefinitionsFunc *LSIFStoreDefinitionsFunc
-	// DiagnosticsFunc is an instance of a mock function object controlling
-	// the behavior of the method Diagnostics.
-	DiagnosticsFunc *LSIFStoreDiagnosticsFunc
 	// DocumentPathsFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentPaths.
 	DocumentPathsFunc *LSIFStoreDocumentPathsFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
 	ExistsFunc *LSIFStoreExistsFunc
-	// HoverFunc is an instance of a mock function object controlling the
-	// behavior of the method Hover.
-	HoverFunc *LSIFStoreHoverFunc
-	// ImplementationsFunc is an instance of a mock function object
-	// controlling the behavior of the method Implementations.
-	ImplementationsFunc *LSIFStoreImplementationsFunc
-	// MonikersByPositionFunc is an instance of a mock function object
-	// controlling the behavior of the method MonikersByPosition.
-	MonikersByPositionFunc *LSIFStoreMonikersByPositionFunc
-	// PackageInformationFunc is an instance of a mock function object
-	// controlling the behavior of the method PackageInformation.
-	PackageInformationFunc *LSIFStorePackageInformationFunc
-	// RangesFunc is an instance of a mock function object controlling the
-	// behavior of the method Ranges.
-	RangesFunc *LSIFStoreRangesFunc
-	// ReferencesFunc is an instance of a mock function object controlling
-	// the behavior of the method References.
-	ReferencesFunc *LSIFStoreReferencesFunc
-	// StencilFunc is an instance of a mock function object controlling the
-	// behavior of the method Stencil.
-	StencilFunc *LSIFStoreStencilFunc
 }
 
 // NewMockLSIFStore creates a new mock of the LSIFStore interface. All
 // methods return zero values for all results, unless overwritten.
 func NewMockLSIFStore() *MockLSIFStore {
 	return &MockLSIFStore{
-		BulkMonikerResultsFunc: &LSIFStoreBulkMonikerResultsFunc{
-			defaultHook: func(context.Context, string, []int, []precise.MonikerData, int, int) (r0 []lsifstore.Location, r1 int, r2 error) {
-				return
-			},
-		},
-		DefinitionsFunc: &LSIFStoreDefinitionsFunc{
-			defaultHook: func(context.Context, int, string, int, int, int, int) (r0 []lsifstore.Location, r1 int, r2 error) {
-				return
-			},
-		},
-		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 []lsifstore.Diagnostic, r1 int, r2 error) {
-				return
-			},
-		},
 		DocumentPathsFunc: &LSIFStoreDocumentPathsFunc{
 			defaultHook: func(context.Context, int, string) (r0 []string, r1 int, r2 error) {
 				return
@@ -7965,41 +8717,6 @@ func NewMockLSIFStore() *MockLSIFStore {
 				return
 			},
 		},
-		HoverFunc: &LSIFStoreHoverFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
-				return
-			},
-		},
-		ImplementationsFunc: &LSIFStoreImplementationsFunc{
-			defaultHook: func(context.Context, int, string, int, int, int, int) (r0 []lsifstore.Location, r1 int, r2 error) {
-				return
-			},
-		},
-		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 [][]precise.MonikerData, r1 error) {
-				return
-			},
-		},
-		PackageInformationFunc: &LSIFStorePackageInformationFunc{
-			defaultHook: func(context.Context, int, string, string) (r0 precise.PackageInformationData, r1 bool, r2 error) {
-				return
-			},
-		},
-		RangesFunc: &LSIFStoreRangesFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 []lsifstore.CodeIntelligenceRange, r1 error) {
-				return
-			},
-		},
-		ReferencesFunc: &LSIFStoreReferencesFunc{
-			defaultHook: func(context.Context, int, string, int, int, int, int) (r0 []lsifstore.Location, r1 int, r2 error) {
-				return
-			},
-		},
-		StencilFunc: &LSIFStoreStencilFunc{
-			defaultHook: func(context.Context, int, string) (r0 []lsifstore.Range, r1 error) {
-				return
-			},
-		},
 	}
 }
 
@@ -8007,21 +8724,6 @@ func NewMockLSIFStore() *MockLSIFStore {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockLSIFStore() *MockLSIFStore {
 	return &MockLSIFStore{
-		BulkMonikerResultsFunc: &LSIFStoreBulkMonikerResultsFunc{
-			defaultHook: func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error) {
-				panic("unexpected invocation of MockLSIFStore.BulkMonikerResults")
-			},
-		},
-		DefinitionsFunc: &LSIFStoreDefinitionsFunc{
-			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-				panic("unexpected invocation of MockLSIFStore.Definitions")
-			},
-		},
-		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
-			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error) {
-				panic("unexpected invocation of MockLSIFStore.Diagnostics")
-			},
-		},
 		DocumentPathsFunc: &LSIFStoreDocumentPathsFunc{
 			defaultHook: func(context.Context, int, string) ([]string, int, error) {
 				panic("unexpected invocation of MockLSIFStore.DocumentPaths")
@@ -8032,41 +8734,6 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 				panic("unexpected invocation of MockLSIFStore.Exists")
 			},
 		},
-		HoverFunc: &LSIFStoreHoverFunc{
-			defaultHook: func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error) {
-				panic("unexpected invocation of MockLSIFStore.Hover")
-			},
-		},
-		ImplementationsFunc: &LSIFStoreImplementationsFunc{
-			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-				panic("unexpected invocation of MockLSIFStore.Implementations")
-			},
-		},
-		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
-			defaultHook: func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
-				panic("unexpected invocation of MockLSIFStore.MonikersByPosition")
-			},
-		},
-		PackageInformationFunc: &LSIFStorePackageInformationFunc{
-			defaultHook: func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
-				panic("unexpected invocation of MockLSIFStore.PackageInformation")
-			},
-		},
-		RangesFunc: &LSIFStoreRangesFunc{
-			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error) {
-				panic("unexpected invocation of MockLSIFStore.Ranges")
-			},
-		},
-		ReferencesFunc: &LSIFStoreReferencesFunc{
-			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-				panic("unexpected invocation of MockLSIFStore.References")
-			},
-		},
-		StencilFunc: &LSIFStoreStencilFunc{
-			defaultHook: func(context.Context, int, string) ([]lsifstore.Range, error) {
-				panic("unexpected invocation of MockLSIFStore.Stencil")
-			},
-		},
 	}
 }
 
@@ -8074,413 +8741,13 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 	return &MockLSIFStore{
-		BulkMonikerResultsFunc: &LSIFStoreBulkMonikerResultsFunc{
-			defaultHook: i.BulkMonikerResults,
-		},
-		DefinitionsFunc: &LSIFStoreDefinitionsFunc{
-			defaultHook: i.Definitions,
-		},
-		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
-			defaultHook: i.Diagnostics,
-		},
 		DocumentPathsFunc: &LSIFStoreDocumentPathsFunc{
 			defaultHook: i.DocumentPaths,
 		},
 		ExistsFunc: &LSIFStoreExistsFunc{
 			defaultHook: i.Exists,
 		},
-		HoverFunc: &LSIFStoreHoverFunc{
-			defaultHook: i.Hover,
-		},
-		ImplementationsFunc: &LSIFStoreImplementationsFunc{
-			defaultHook: i.Implementations,
-		},
-		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
-			defaultHook: i.MonikersByPosition,
-		},
-		PackageInformationFunc: &LSIFStorePackageInformationFunc{
-			defaultHook: i.PackageInformation,
-		},
-		RangesFunc: &LSIFStoreRangesFunc{
-			defaultHook: i.Ranges,
-		},
-		ReferencesFunc: &LSIFStoreReferencesFunc{
-			defaultHook: i.References,
-		},
-		StencilFunc: &LSIFStoreStencilFunc{
-			defaultHook: i.Stencil,
-		},
 	}
-}
-
-// LSIFStoreBulkMonikerResultsFunc describes the behavior when the
-// BulkMonikerResults method of the parent MockLSIFStore instance is
-// invoked.
-type LSIFStoreBulkMonikerResultsFunc struct {
-	defaultHook func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error)
-	hooks       []func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error)
-	history     []LSIFStoreBulkMonikerResultsFuncCall
-	mutex       sync.Mutex
-}
-
-// BulkMonikerResults delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) BulkMonikerResults(v0 context.Context, v1 string, v2 []int, v3 []precise.MonikerData, v4 int, v5 int) ([]lsifstore.Location, int, error) {
-	r0, r1, r2 := m.BulkMonikerResultsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.BulkMonikerResultsFunc.appendCall(LSIFStoreBulkMonikerResultsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the BulkMonikerResults
-// method of the parent MockLSIFStore instance is invoked and the hook queue
-// is empty.
-func (f *LSIFStoreBulkMonikerResultsFunc) SetDefaultHook(hook func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BulkMonikerResults method of the parent MockLSIFStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *LSIFStoreBulkMonikerResultsFunc) PushHook(hook func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreBulkMonikerResultsFunc) SetDefaultReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreBulkMonikerResultsFunc) PushReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *LSIFStoreBulkMonikerResultsFunc) nextHook() func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreBulkMonikerResultsFunc) appendCall(r0 LSIFStoreBulkMonikerResultsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreBulkMonikerResultsFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreBulkMonikerResultsFunc) History() []LSIFStoreBulkMonikerResultsFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreBulkMonikerResultsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreBulkMonikerResultsFuncCall is an object that describes an
-// invocation of method BulkMonikerResults on an instance of MockLSIFStore.
-type LSIFStoreBulkMonikerResultsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 []precise.MonikerData
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []lsifstore.Location
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreBulkMonikerResultsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreBulkMonikerResultsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// LSIFStoreDefinitionsFunc describes the behavior when the Definitions
-// method of the parent MockLSIFStore instance is invoked.
-type LSIFStoreDefinitionsFunc struct {
-	defaultHook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
-	hooks       []func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
-	history     []LSIFStoreDefinitionsFuncCall
-	mutex       sync.Mutex
-}
-
-// Definitions delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockLSIFStore) Definitions(v0 context.Context, v1 int, v2 string, v3 int, v4 int, v5 int, v6 int) ([]lsifstore.Location, int, error) {
-	r0, r1, r2 := m.DefinitionsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.DefinitionsFunc.appendCall(LSIFStoreDefinitionsFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the Definitions method
-// of the parent MockLSIFStore instance is invoked and the hook queue is
-// empty.
-func (f *LSIFStoreDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Definitions method of the parent MockLSIFStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *LSIFStoreDefinitionsFunc) PushHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDefinitionsFunc) SetDefaultReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDefinitionsFunc) PushReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *LSIFStoreDefinitionsFunc) nextHook() func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDefinitionsFunc) appendCall(r0 LSIFStoreDefinitionsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreDefinitionsFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreDefinitionsFunc) History() []LSIFStoreDefinitionsFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDefinitionsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDefinitionsFuncCall is an object that describes an invocation of
-// method Definitions on an instance of MockLSIFStore.
-type LSIFStoreDefinitionsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 int
-	// Arg6 is the value of the 7th argument passed to this method
-	// invocation.
-	Arg6 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []lsifstore.Location
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDefinitionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDefinitionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// LSIFStoreDiagnosticsFunc describes the behavior when the Diagnostics
-// method of the parent MockLSIFStore instance is invoked.
-type LSIFStoreDiagnosticsFunc struct {
-	defaultHook func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error)
-	hooks       []func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error)
-	history     []LSIFStoreDiagnosticsFuncCall
-	mutex       sync.Mutex
-}
-
-// Diagnostics delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockLSIFStore) Diagnostics(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]lsifstore.Diagnostic, int, error) {
-	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DiagnosticsFunc.appendCall(LSIFStoreDiagnosticsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the Diagnostics method
-// of the parent MockLSIFStore instance is invoked and the hook queue is
-// empty.
-func (f *LSIFStoreDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Diagnostics method of the parent MockLSIFStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *LSIFStoreDiagnosticsFunc) PushHook(hook func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDiagnosticsFunc) SetDefaultReturn(r0 []lsifstore.Diagnostic, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDiagnosticsFunc) PushReturn(r0 []lsifstore.Diagnostic, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *LSIFStoreDiagnosticsFunc) nextHook() func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDiagnosticsFunc) appendCall(r0 LSIFStoreDiagnosticsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreDiagnosticsFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreDiagnosticsFunc) History() []LSIFStoreDiagnosticsFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDiagnosticsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDiagnosticsFuncCall is an object that describes an invocation of
-// method Diagnostics on an instance of MockLSIFStore.
-type LSIFStoreDiagnosticsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []lsifstore.Diagnostic
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDiagnosticsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDiagnosticsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // LSIFStoreDocumentPathsFunc describes the behavior when the DocumentPaths
@@ -8705,1285 +8972,6 @@ func (c LSIFStoreExistsFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreExistsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// LSIFStoreHoverFunc describes the behavior when the Hover method of the
-// parent MockLSIFStore instance is invoked.
-type LSIFStoreHoverFunc struct {
-	defaultHook func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error)
-	hooks       []func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error)
-	history     []LSIFStoreHoverFuncCall
-	mutex       sync.Mutex
-}
-
-// Hover delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockLSIFStore) Hover(v0 context.Context, v1 int, v2 string, v3 int, v4 int) (string, lsifstore.Range, bool, error) {
-	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.HoverFunc.appendCall(LSIFStoreHoverFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
-	return r0, r1, r2, r3
-}
-
-// SetDefaultHook sets function that is called when the Hover method of the
-// parent MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreHoverFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Hover method of the parent MockLSIFStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *LSIFStoreHoverFunc) PushHook(hook func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreHoverFunc) SetDefaultReturn(r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreHoverFunc) PushReturn(r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-func (f *LSIFStoreHoverFunc) nextHook() func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreHoverFunc) appendCall(r0 LSIFStoreHoverFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreHoverFuncCall objects describing
-// the invocations of this function.
-func (f *LSIFStoreHoverFunc) History() []LSIFStoreHoverFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreHoverFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreHoverFuncCall is an object that describes an invocation of
-// method Hover on an instance of MockLSIFStore.
-type LSIFStoreHoverFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 lsifstore.Range
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 bool
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreHoverFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreHoverFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
-}
-
-// LSIFStoreImplementationsFunc describes the behavior when the
-// Implementations method of the parent MockLSIFStore instance is invoked.
-type LSIFStoreImplementationsFunc struct {
-	defaultHook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
-	hooks       []func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
-	history     []LSIFStoreImplementationsFuncCall
-	mutex       sync.Mutex
-}
-
-// Implementations delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) Implementations(v0 context.Context, v1 int, v2 string, v3 int, v4 int, v5 int, v6 int) ([]lsifstore.Location, int, error) {
-	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.ImplementationsFunc.appendCall(LSIFStoreImplementationsFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the Implementations
-// method of the parent MockLSIFStore instance is invoked and the hook queue
-// is empty.
-func (f *LSIFStoreImplementationsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Implementations method of the parent MockLSIFStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *LSIFStoreImplementationsFunc) PushHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreImplementationsFunc) SetDefaultReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreImplementationsFunc) PushReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *LSIFStoreImplementationsFunc) nextHook() func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreImplementationsFunc) appendCall(r0 LSIFStoreImplementationsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreImplementationsFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreImplementationsFunc) History() []LSIFStoreImplementationsFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreImplementationsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreImplementationsFuncCall is an object that describes an
-// invocation of method Implementations on an instance of MockLSIFStore.
-type LSIFStoreImplementationsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 int
-	// Arg6 is the value of the 7th argument passed to this method
-	// invocation.
-	Arg6 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []lsifstore.Location
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreImplementationsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreImplementationsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// LSIFStoreMonikersByPositionFunc describes the behavior when the
-// MonikersByPosition method of the parent MockLSIFStore instance is
-// invoked.
-type LSIFStoreMonikersByPositionFunc struct {
-	defaultHook func(context.Context, int, string, int, int) ([][]precise.MonikerData, error)
-	hooks       []func(context.Context, int, string, int, int) ([][]precise.MonikerData, error)
-	history     []LSIFStoreMonikersByPositionFuncCall
-	mutex       sync.Mutex
-}
-
-// MonikersByPosition delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) MonikersByPosition(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([][]precise.MonikerData, error) {
-	r0, r1 := m.MonikersByPositionFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.MonikersByPositionFunc.appendCall(LSIFStoreMonikersByPositionFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the MonikersByPosition
-// method of the parent MockLSIFStore instance is invoked and the hook queue
-// is empty.
-func (f *LSIFStoreMonikersByPositionFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([][]precise.MonikerData, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// MonikersByPosition method of the parent MockLSIFStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *LSIFStoreMonikersByPositionFunc) PushHook(hook func(context.Context, int, string, int, int) ([][]precise.MonikerData, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreMonikersByPositionFunc) SetDefaultReturn(r0 [][]precise.MonikerData, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreMonikersByPositionFunc) PushReturn(r0 [][]precise.MonikerData, r1 error) {
-	f.PushHook(func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreMonikersByPositionFunc) nextHook() func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreMonikersByPositionFunc) appendCall(r0 LSIFStoreMonikersByPositionFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreMonikersByPositionFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreMonikersByPositionFunc) History() []LSIFStoreMonikersByPositionFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreMonikersByPositionFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreMonikersByPositionFuncCall is an object that describes an
-// invocation of method MonikersByPosition on an instance of MockLSIFStore.
-type LSIFStoreMonikersByPositionFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 [][]precise.MonikerData
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreMonikersByPositionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreMonikersByPositionFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// LSIFStorePackageInformationFunc describes the behavior when the
-// PackageInformation method of the parent MockLSIFStore instance is
-// invoked.
-type LSIFStorePackageInformationFunc struct {
-	defaultHook func(context.Context, int, string, string) (precise.PackageInformationData, bool, error)
-	hooks       []func(context.Context, int, string, string) (precise.PackageInformationData, bool, error)
-	history     []LSIFStorePackageInformationFuncCall
-	mutex       sync.Mutex
-}
-
-// PackageInformation delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) PackageInformation(v0 context.Context, v1 int, v2 string, v3 string) (precise.PackageInformationData, bool, error) {
-	r0, r1, r2 := m.PackageInformationFunc.nextHook()(v0, v1, v2, v3)
-	m.PackageInformationFunc.appendCall(LSIFStorePackageInformationFuncCall{v0, v1, v2, v3, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the PackageInformation
-// method of the parent MockLSIFStore instance is invoked and the hook queue
-// is empty.
-func (f *LSIFStorePackageInformationFunc) SetDefaultHook(hook func(context.Context, int, string, string) (precise.PackageInformationData, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// PackageInformation method of the parent MockLSIFStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *LSIFStorePackageInformationFunc) PushHook(hook func(context.Context, int, string, string) (precise.PackageInformationData, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStorePackageInformationFunc) SetDefaultReturn(r0 precise.PackageInformationData, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStorePackageInformationFunc) PushReturn(r0 precise.PackageInformationData, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *LSIFStorePackageInformationFunc) nextHook() func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStorePackageInformationFunc) appendCall(r0 LSIFStorePackageInformationFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStorePackageInformationFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStorePackageInformationFunc) History() []LSIFStorePackageInformationFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStorePackageInformationFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStorePackageInformationFuncCall is an object that describes an
-// invocation of method PackageInformation on an instance of MockLSIFStore.
-type LSIFStorePackageInformationFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 precise.PackageInformationData
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStorePackageInformationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStorePackageInformationFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// LSIFStoreRangesFunc describes the behavior when the Ranges method of the
-// parent MockLSIFStore instance is invoked.
-type LSIFStoreRangesFunc struct {
-	defaultHook func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error)
-	hooks       []func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error)
-	history     []LSIFStoreRangesFuncCall
-	mutex       sync.Mutex
-}
-
-// Ranges delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockLSIFStore) Ranges(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]lsifstore.CodeIntelligenceRange, error) {
-	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.RangesFunc.appendCall(LSIFStoreRangesFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Ranges method of the
-// parent MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreRangesFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Ranges method of the parent MockLSIFStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *LSIFStoreRangesFunc) PushHook(hook func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreRangesFunc) SetDefaultReturn(r0 []lsifstore.CodeIntelligenceRange, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreRangesFunc) PushReturn(r0 []lsifstore.CodeIntelligenceRange, r1 error) {
-	f.PushHook(func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreRangesFunc) nextHook() func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreRangesFunc) appendCall(r0 LSIFStoreRangesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreRangesFuncCall objects describing
-// the invocations of this function.
-func (f *LSIFStoreRangesFunc) History() []LSIFStoreRangesFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreRangesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreRangesFuncCall is an object that describes an invocation of
-// method Ranges on an instance of MockLSIFStore.
-type LSIFStoreRangesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []lsifstore.CodeIntelligenceRange
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreRangesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreRangesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// LSIFStoreReferencesFunc describes the behavior when the References method
-// of the parent MockLSIFStore instance is invoked.
-type LSIFStoreReferencesFunc struct {
-	defaultHook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
-	hooks       []func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
-	history     []LSIFStoreReferencesFuncCall
-	mutex       sync.Mutex
-}
-
-// References delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockLSIFStore) References(v0 context.Context, v1 int, v2 string, v3 int, v4 int, v5 int, v6 int) ([]lsifstore.Location, int, error) {
-	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.ReferencesFunc.appendCall(LSIFStoreReferencesFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the References method of
-// the parent MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreReferencesFunc) SetDefaultHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// References method of the parent MockLSIFStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *LSIFStoreReferencesFunc) PushHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreReferencesFunc) SetDefaultReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreReferencesFunc) PushReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *LSIFStoreReferencesFunc) nextHook() func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreReferencesFunc) appendCall(r0 LSIFStoreReferencesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreReferencesFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreReferencesFunc) History() []LSIFStoreReferencesFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreReferencesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreReferencesFuncCall is an object that describes an invocation of
-// method References on an instance of MockLSIFStore.
-type LSIFStoreReferencesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 int
-	// Arg6 is the value of the 7th argument passed to this method
-	// invocation.
-	Arg6 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []lsifstore.Location
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreReferencesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// LSIFStoreStencilFunc describes the behavior when the Stencil method of
-// the parent MockLSIFStore instance is invoked.
-type LSIFStoreStencilFunc struct {
-	defaultHook func(context.Context, int, string) ([]lsifstore.Range, error)
-	hooks       []func(context.Context, int, string) ([]lsifstore.Range, error)
-	history     []LSIFStoreStencilFuncCall
-	mutex       sync.Mutex
-}
-
-// Stencil delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockLSIFStore) Stencil(v0 context.Context, v1 int, v2 string) ([]lsifstore.Range, error) {
-	r0, r1 := m.StencilFunc.nextHook()(v0, v1, v2)
-	m.StencilFunc.appendCall(LSIFStoreStencilFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Stencil method of
-// the parent MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreStencilFunc) SetDefaultHook(hook func(context.Context, int, string) ([]lsifstore.Range, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Stencil method of the parent MockLSIFStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *LSIFStoreStencilFunc) PushHook(hook func(context.Context, int, string) ([]lsifstore.Range, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreStencilFunc) SetDefaultReturn(r0 []lsifstore.Range, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) ([]lsifstore.Range, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreStencilFunc) PushReturn(r0 []lsifstore.Range, r1 error) {
-	f.PushHook(func(context.Context, int, string) ([]lsifstore.Range, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreStencilFunc) nextHook() func(context.Context, int, string) ([]lsifstore.Range, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreStencilFunc) appendCall(r0 LSIFStoreStencilFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreStencilFuncCall objects describing
-// the invocations of this function.
-func (f *LSIFStoreStencilFunc) History() []LSIFStoreStencilFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreStencilFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreStencilFuncCall is an object that describes an invocation of
-// method Stencil on an instance of MockLSIFStore.
-type LSIFStoreStencilFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []lsifstore.Range
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreStencilFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreStencilFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// MockPositionAdjuster is a mock implementation of the PositionAdjuster
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
-// used for unit testing.
-type MockPositionAdjuster struct {
-	// AdjustPathFunc is an instance of a mock function object controlling
-	// the behavior of the method AdjustPath.
-	AdjustPathFunc *PositionAdjusterAdjustPathFunc
-	// AdjustPositionFunc is an instance of a mock function object
-	// controlling the behavior of the method AdjustPosition.
-	AdjustPositionFunc *PositionAdjusterAdjustPositionFunc
-	// AdjustRangeFunc is an instance of a mock function object controlling
-	// the behavior of the method AdjustRange.
-	AdjustRangeFunc *PositionAdjusterAdjustRangeFunc
-}
-
-// NewMockPositionAdjuster creates a new mock of the PositionAdjuster
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockPositionAdjuster() *MockPositionAdjuster {
-	return &MockPositionAdjuster{
-		AdjustPathFunc: &PositionAdjusterAdjustPathFunc{
-			defaultHook: func(context.Context, string, string, bool) (r0 string, r1 bool, r2 error) {
-				return
-			},
-		},
-		AdjustPositionFunc: &PositionAdjusterAdjustPositionFunc{
-			defaultHook: func(context.Context, string, string, lsifstore.Position, bool) (r0 string, r1 lsifstore.Position, r2 bool, r3 error) {
-				return
-			},
-		},
-		AdjustRangeFunc: &PositionAdjusterAdjustRangeFunc{
-			defaultHook: func(context.Context, string, string, lsifstore.Range, bool) (r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockPositionAdjuster creates a new mock of the PositionAdjuster
-// interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockPositionAdjuster() *MockPositionAdjuster {
-	return &MockPositionAdjuster{
-		AdjustPathFunc: &PositionAdjusterAdjustPathFunc{
-			defaultHook: func(context.Context, string, string, bool) (string, bool, error) {
-				panic("unexpected invocation of MockPositionAdjuster.AdjustPath")
-			},
-		},
-		AdjustPositionFunc: &PositionAdjusterAdjustPositionFunc{
-			defaultHook: func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
-				panic("unexpected invocation of MockPositionAdjuster.AdjustPosition")
-			},
-		},
-		AdjustRangeFunc: &PositionAdjusterAdjustRangeFunc{
-			defaultHook: func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
-				panic("unexpected invocation of MockPositionAdjuster.AdjustRange")
-			},
-		},
-	}
-}
-
-// NewMockPositionAdjusterFrom creates a new mock of the
-// MockPositionAdjuster interface. All methods delegate to the given
-// implementation, unless overwritten.
-func NewMockPositionAdjusterFrom(i PositionAdjuster) *MockPositionAdjuster {
-	return &MockPositionAdjuster{
-		AdjustPathFunc: &PositionAdjusterAdjustPathFunc{
-			defaultHook: i.AdjustPath,
-		},
-		AdjustPositionFunc: &PositionAdjusterAdjustPositionFunc{
-			defaultHook: i.AdjustPosition,
-		},
-		AdjustRangeFunc: &PositionAdjusterAdjustRangeFunc{
-			defaultHook: i.AdjustRange,
-		},
-	}
-}
-
-// PositionAdjusterAdjustPathFunc describes the behavior when the AdjustPath
-// method of the parent MockPositionAdjuster instance is invoked.
-type PositionAdjusterAdjustPathFunc struct {
-	defaultHook func(context.Context, string, string, bool) (string, bool, error)
-	hooks       []func(context.Context, string, string, bool) (string, bool, error)
-	history     []PositionAdjusterAdjustPathFuncCall
-	mutex       sync.Mutex
-}
-
-// AdjustPath delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockPositionAdjuster) AdjustPath(v0 context.Context, v1 string, v2 string, v3 bool) (string, bool, error) {
-	r0, r1, r2 := m.AdjustPathFunc.nextHook()(v0, v1, v2, v3)
-	m.AdjustPathFunc.appendCall(PositionAdjusterAdjustPathFuncCall{v0, v1, v2, v3, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the AdjustPath method of
-// the parent MockPositionAdjuster instance is invoked and the hook queue is
-// empty.
-func (f *PositionAdjusterAdjustPathFunc) SetDefaultHook(hook func(context.Context, string, string, bool) (string, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// AdjustPath method of the parent MockPositionAdjuster instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *PositionAdjusterAdjustPathFunc) PushHook(hook func(context.Context, string, string, bool) (string, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PositionAdjusterAdjustPathFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, bool) (string, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PositionAdjusterAdjustPathFunc) PushReturn(r0 string, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, string, string, bool) (string, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *PositionAdjusterAdjustPathFunc) nextHook() func(context.Context, string, string, bool) (string, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PositionAdjusterAdjustPathFunc) appendCall(r0 PositionAdjusterAdjustPathFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PositionAdjusterAdjustPathFuncCall objects
-// describing the invocations of this function.
-func (f *PositionAdjusterAdjustPathFunc) History() []PositionAdjusterAdjustPathFuncCall {
-	f.mutex.Lock()
-	history := make([]PositionAdjusterAdjustPathFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PositionAdjusterAdjustPathFuncCall is an object that describes an
-// invocation of method AdjustPath on an instance of MockPositionAdjuster.
-type PositionAdjusterAdjustPathFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 bool
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PositionAdjusterAdjustPathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PositionAdjusterAdjustPathFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// PositionAdjusterAdjustPositionFunc describes the behavior when the
-// AdjustPosition method of the parent MockPositionAdjuster instance is
-// invoked.
-type PositionAdjusterAdjustPositionFunc struct {
-	defaultHook func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)
-	hooks       []func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)
-	history     []PositionAdjusterAdjustPositionFuncCall
-	mutex       sync.Mutex
-}
-
-// AdjustPosition delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockPositionAdjuster) AdjustPosition(v0 context.Context, v1 string, v2 string, v3 lsifstore.Position, v4 bool) (string, lsifstore.Position, bool, error) {
-	r0, r1, r2, r3 := m.AdjustPositionFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.AdjustPositionFunc.appendCall(PositionAdjusterAdjustPositionFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
-	return r0, r1, r2, r3
-}
-
-// SetDefaultHook sets function that is called when the AdjustPosition
-// method of the parent MockPositionAdjuster instance is invoked and the
-// hook queue is empty.
-func (f *PositionAdjusterAdjustPositionFunc) SetDefaultHook(hook func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// AdjustPosition method of the parent MockPositionAdjuster instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *PositionAdjusterAdjustPositionFunc) PushHook(hook func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PositionAdjusterAdjustPositionFunc) SetDefaultReturn(r0 string, r1 lsifstore.Position, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PositionAdjusterAdjustPositionFunc) PushReturn(r0 string, r1 lsifstore.Position, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-func (f *PositionAdjusterAdjustPositionFunc) nextHook() func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PositionAdjusterAdjustPositionFunc) appendCall(r0 PositionAdjusterAdjustPositionFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PositionAdjusterAdjustPositionFuncCall
-// objects describing the invocations of this function.
-func (f *PositionAdjusterAdjustPositionFunc) History() []PositionAdjusterAdjustPositionFuncCall {
-	f.mutex.Lock()
-	history := make([]PositionAdjusterAdjustPositionFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PositionAdjusterAdjustPositionFuncCall is an object that describes an
-// invocation of method AdjustPosition on an instance of
-// MockPositionAdjuster.
-type PositionAdjusterAdjustPositionFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 lsifstore.Position
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 bool
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 lsifstore.Position
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 bool
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PositionAdjusterAdjustPositionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PositionAdjusterAdjustPositionFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
-}
-
-// PositionAdjusterAdjustRangeFunc describes the behavior when the
-// AdjustRange method of the parent MockPositionAdjuster instance is
-// invoked.
-type PositionAdjusterAdjustRangeFunc struct {
-	defaultHook func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)
-	hooks       []func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)
-	history     []PositionAdjusterAdjustRangeFuncCall
-	mutex       sync.Mutex
-}
-
-// AdjustRange delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockPositionAdjuster) AdjustRange(v0 context.Context, v1 string, v2 string, v3 lsifstore.Range, v4 bool) (string, lsifstore.Range, bool, error) {
-	r0, r1, r2, r3 := m.AdjustRangeFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.AdjustRangeFunc.appendCall(PositionAdjusterAdjustRangeFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
-	return r0, r1, r2, r3
-}
-
-// SetDefaultHook sets function that is called when the AdjustRange method
-// of the parent MockPositionAdjuster instance is invoked and the hook queue
-// is empty.
-func (f *PositionAdjusterAdjustRangeFunc) SetDefaultHook(hook func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// AdjustRange method of the parent MockPositionAdjuster instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *PositionAdjusterAdjustRangeFunc) PushHook(hook func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PositionAdjusterAdjustRangeFunc) SetDefaultReturn(r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PositionAdjusterAdjustRangeFunc) PushReturn(r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-func (f *PositionAdjusterAdjustRangeFunc) nextHook() func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PositionAdjusterAdjustRangeFunc) appendCall(r0 PositionAdjusterAdjustRangeFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PositionAdjusterAdjustRangeFuncCall objects
-// describing the invocations of this function.
-func (f *PositionAdjusterAdjustRangeFunc) History() []PositionAdjusterAdjustRangeFuncCall {
-	f.mutex.Lock()
-	history := make([]PositionAdjusterAdjustRangeFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PositionAdjusterAdjustRangeFuncCall is an object that describes an
-// invocation of method AdjustRange on an instance of MockPositionAdjuster.
-type PositionAdjusterAdjustRangeFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 lsifstore.Range
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 bool
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 lsifstore.Range
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 bool
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PositionAdjusterAdjustRangeFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PositionAdjusterAdjustRangeFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
 // MockRepoUpdaterClient is a mock implementation of the RepoUpdaterClient

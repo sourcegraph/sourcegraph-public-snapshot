@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/google/zoekt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -111,7 +113,7 @@ func (s *searchClient) Plan(
 		OriginalQuery:       searchQuery,
 		UserSettings:        settings,
 		OnSourcegraphDotCom: sourcegraphDotComMode,
-		Features:            featureflag.FromContext(ctx),
+		Features:            toFeatures(featureflag.FromContext(ctx), s.logger),
 		PatternType:         searchType,
 		Protocol:            protocol,
 	}
@@ -177,6 +179,8 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 			searchType = query.SearchTypeStructural
 		case "lucky":
 			searchType = query.SearchTypeLucky
+		case "keyword":
+			searchType = query.SearchTypeKeyword
 		default:
 			return -1, errors.Errorf("unrecognized patternType %q", *patternType)
 		}
@@ -215,10 +219,32 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeStructural
 		case "lucky":
 			searchType = query.SearchTypeLucky
+		case "keyword":
+			searchType = query.SearchTypeKeyword
 		}
 	})
 	return searchType
 }
+
+func toFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Features {
+	if flagSet == nil {
+		flagSet = &featureflag.FlagSet{}
+		metricFeatureFlagUnavailable.Inc()
+		logger.Warn("search feature flags are not available")
+	}
+
+	return &search.Features{
+		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
+		CodeOwnershipFilters:    flagSet.GetBoolOr("code-ownership", false),
+		AbLuckySearch:           flagSet.GetBoolOr("ab-lucky-search", false),
+	}
+}
+
+var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_featureflag_unavailable",
+	Help: "temporary counter to check if we have feature flag available in practice.",
+})
 
 func getBoolPtr(b *bool, def bool) bool {
 	if b == nil {

@@ -93,10 +93,10 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/json-iterator/go v1.1.12
-	github.com/karrick/godirwalk v1.16.1
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.1
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
+	github.com/kljensen/snowball v0.6.0
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf
@@ -199,6 +199,8 @@ require (
 )
 
 require github.com/hmarr/codeowners v0.4.0
+
+require github.com/stretchr/objx v0.4.0 // indirect
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
@@ -359,7 +361,7 @@ require (
 	github.com/pkg/profile v1.6.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
-	github.com/prometheus/client_model v0.2.0 // indirect
+	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect

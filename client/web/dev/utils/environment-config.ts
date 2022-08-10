@@ -38,8 +38,8 @@ export const ENVIRONMENT_CONFIG = {
 
     // The commit SHA the client bundle was built with.
     COMMIT_SHA: process.env.COMMIT_SHA,
-    // New release candidate version.
-    RELEASE_CANDIDATE_VERSION: process.env.RELEASE_CANDIDATE_VERSION,
+    // The current Docker image version, use to associate builds with Sentry's source maps.
+    VERSION: process.env.VERSION,
     // Should sourcemaps be uploaded to Sentry.
     SENTRY_UPLOAD_SOURCE_MAPS: getEnvironmentBoolean('SENTRY_UPLOAD_SOURCE_MAPS'),
     // Sentry's Dotcom project's authentication token

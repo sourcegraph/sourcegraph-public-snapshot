@@ -50,7 +50,9 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
+import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
+import { useExperimentalFeatures } from '../stores'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -602,6 +604,10 @@ const SideBlob: React.FunctionComponent<
         }
     >
 > = props => {
+    const BlobComponent = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+        ? CodeMirrorBlob
+        : Blob
+
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -660,12 +666,17 @@ const SideBlob: React.FunctionComponent<
     }
 
     return (
-        <Blob
+        <BlobComponent
             {...props}
             nav={props.blobNav}
             history={props.history}
             location={props.location}
             disableStatusBar={true}
+            // The CodeMirror-React integration uses its own <Router />
+            // component and therefore doesn't work with MemoryRouter as used by
+            // the reference panel (clicking on the buttons in the hovercard
+            // doesn't have any effect).
+            disableHovercards={true}
             disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
             wrapCode={true}
             className={styles.sideBlobCode}

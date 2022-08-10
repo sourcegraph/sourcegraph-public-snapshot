@@ -106,14 +106,18 @@
             padding: 0;
             color: var(--search-query-text-color);
             background-color: var(--color-bg-1);
+            // Default is 50vw
+            max-width: 70vw;
 
             > ul {
+                font-size: var(--code-font-size);
                 font-family: var(--code-font-family);
+                max-height: 15rem;
 
                 > li {
+                    align-items: center;
                     box-sizing: content-box;
-                    padding-top: 0.25rem;
-                    padding-bottom: 0.25rem;
+                    padding: 0.25rem 0.375rem;
                     display: flex;
                     height: 1.25rem;
 
@@ -136,6 +140,7 @@
                         min-width: 0;
                         overflow: hidden;
                         text-overflow: ellipsis;
+                        font-style: initial;
                     }
 
                     :global(.cm-completionMatchedText) {

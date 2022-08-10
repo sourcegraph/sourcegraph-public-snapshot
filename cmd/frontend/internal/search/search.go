@@ -126,7 +126,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	progress := &streamclient.ProgressAggregator{
 		Start:        start,
 		Limit:        limit,
-		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
+		Trace:        trace.URL(trace.ID(ctx), conf.DefaultClient()),
 		DisplayLimit: displayLimit,
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
@@ -457,6 +457,17 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		RepositoryID: int32(rm.ID),
 		Repository:   string(rm.Name),
 		Branches:     branches,
+	}
+
+	if len(rm.DescriptionMatches) > 0 {
+		dms := make([]streamhttp.Range, 0, len(rm.DescriptionMatches))
+		for _, matchRange := range rm.DescriptionMatches {
+			dms = append(dms, streamhttp.Range{
+				Start: fromLocation(matchRange.Start),
+				End:   fromLocation(matchRange.End),
+			})
+		}
+		repoEvent.DescriptionMatches = dms
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {

@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -17,6 +18,8 @@ import (
 type handler struct {
 	QueueOptions
 	executorStore executor.Store
+	metricsStore  metricsstore.DistributedStore
+	logger        log.Logger
 }
 
 type QueueOptions struct {
@@ -31,9 +34,11 @@ type QueueOptions struct {
 	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
 }
 
-func newHandler(executorStore executor.Store, queueOptions QueueOptions) *handler {
+func newHandler(executorStore executor.Store, metricsStore metricsstore.DistributedStore, queueOptions QueueOptions) *handler {
 	return &handler{
 		executorStore: executorStore,
+		metricsStore:  metricsStore,
+		logger:        log.Scoped("executor-queue-handler", "The route handler for all executor dbworker API tunnel endpoints"),
 		QueueOptions:  queueOptions,
 	}
 }

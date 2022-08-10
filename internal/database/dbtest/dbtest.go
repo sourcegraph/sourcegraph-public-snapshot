@@ -193,7 +193,7 @@ func wdHash() string {
 
 func dbConn(logger log.Logger, t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
 	t.Helper()
-	db, err := connections.NewTestDB(logger, cfg.String(), schemas...)
+	db, err := connections.NewTestDB(t, logger, cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

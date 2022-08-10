@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -15,21 +16,20 @@ func Test_descriptionMatchRanges(t *testing.T) {
 		2: "description for tests and validating input, among other things",
 		3: "description containing go but also\na newline",
 		4: "---zb bz zb bz---",
+		5: "this description has unicode 🙈 characters",
 	}
 
 	// NOTE: Any pattern passed into repo:has.description() is converted to the format `(?:*).*?(?:*)` when the predicate
-	// is parsed (see `internal/search/query/types.RepoHasDescription()`). The resulting value(s) are then used to populate
-	// the DescriptionPatterns field on RepoOptions. As of now, descriptionMatchRanges() should never receive a []string
-	// argument containing a pattern that has not already been formatted in this manner.
-	// If you're wondering why all the test cases have inputPatterns' elements formatted this way, that's the reason.
+	// is parsed (see `internal/search/query/types.RepoHasDescription()`). The resulting value(s) are then compiled into
+	// regex during job construction.
 	tests := []struct {
 		name          string
-		inputPatterns []string
+		inputPatterns []*regexp.Regexp
 		want          map[api.RepoID][]result.Range
 	}{
 		{
 			name:          "string literal match",
-			inputPatterns: []string{"(?:go).*?(?:package)"},
+			inputPatterns: []*regexp.Regexp{regexp.MustCompile(`(?is)(?:go).*?(?:package)`)},
 			want: map[api.RepoID][]result.Range{
 				1: {
 					result.Range{
@@ -49,7 +49,7 @@ func Test_descriptionMatchRanges(t *testing.T) {
 		},
 		{
 			name:          "wildcard match",
-			inputPatterns: []string{"(?:test).*?(?:input)"},
+			inputPatterns: []*regexp.Regexp{regexp.MustCompile(`(?is)(?:test).*?(?:input)`)},
 			want: map[api.RepoID][]result.Range{
 				2: {
 					result.Range{
@@ -69,7 +69,7 @@ func Test_descriptionMatchRanges(t *testing.T) {
 		},
 		{
 			name:          "match across newline",
-			inputPatterns: []string{"(?:containing).*?(?:newline)"},
+			inputPatterns: []*regexp.Regexp{regexp.MustCompile(`(?is)(?:containing).*?(?:newline)`)},
 			want: map[api.RepoID][]result.Range{
 				3: {
 					result.Range{
@@ -89,12 +89,12 @@ func Test_descriptionMatchRanges(t *testing.T) {
 		},
 		{
 			name:          "no matches",
-			inputPatterns: []string{"(?:this).*?(?:matches).*?(?:nothing)"},
+			inputPatterns: []*regexp.Regexp{regexp.MustCompile(`(?is)(?:this).*?(?:matches).*?(?:nothing)`)},
 			want:          map[api.RepoID][]result.Range{},
 		},
 		{
 			name:          "matches same pattern multiple times",
-			inputPatterns: []string{"(?:zb)"},
+			inputPatterns: []*regexp.Regexp{regexp.MustCompile(`(?is)(?:zb)`)},
 			want: map[api.RepoID][]result.Range{
 				4: {
 					result.Range{
@@ -124,11 +124,35 @@ func Test_descriptionMatchRanges(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:          "counts unicode characters correctly",
+			inputPatterns: []*regexp.Regexp{regexp.MustCompile(`(?is)(?:unicode).*?(?:🙈).*?(?:char)`)},
+			want: map[api.RepoID][]result.Range{
+				5: {
+					result.Range{
+						Start: result.Location{
+							Offset: 21,
+							Line:   0,
+							Column: 21,
+						},
+						End: result.Location{
+							Offset: 38,
+							Line:   0,
+							Column: 35,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := descriptionMatchRanges(repoIDsToDescriptions, tc.inputPatterns)
+			job := &RepoSearchJob{
+				DescriptionPatterns: tc.inputPatterns,
+			}
+
+			got := job.descriptionMatchRanges(repoIDsToDescriptions)
 
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("unexpected results (-want +got)\n%s", diff)

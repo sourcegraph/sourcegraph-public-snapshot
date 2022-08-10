@@ -57,7 +57,6 @@ var (
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	RepoInfo                func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
 	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
@@ -71,25 +70,14 @@ func ResetClientMocks() {
 
 var _ Client = &clientImplementor{}
 
-// NewClient returns a new gitserver.Client instantiated with default arguments
-// and httpcli.Doer.
+// NewClient returns a new gitserver.Client.
 func NewClient(db database.DB) Client {
-	return newClientImplementor(db)
-}
-
-func newClientImplementor(db database.DB) *clientImplementor {
 	return &clientImplementor{
-		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client instantiated with default arguments and httpcli.Doer."),
+		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
-		pinned: func() map[string]string {
-			cfg := conf.Get()
-			if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
-				return cfg.ExperimentalFeatures.GitServerPinnedRepos
-			}
-			return map[string]string{}
-		},
+		pinned:      pinnedReposFromConfig,
 		db:          db,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
@@ -101,16 +89,15 @@ func newClientImplementor(db database.DB) *clientImplementor {
 	}
 }
 
+// NewTestClient returns a test client that will use the given hard coded list of
+// addresses instead of reading them from config.
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 	return &clientImplementor{
 		logger: sglog.Scoped("NewTestClient", "Test New client"),
 		addrs: func() []string {
 			return addrs
 		},
-		pinned: func() map[string]string {
-			// nothing needs to be pinned for the tests
-			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
-		},
+		pinned:      pinnedReposFromConfig,
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -234,15 +221,6 @@ type Client interface {
 	// ResolveRevisions expands a set of RevisionSpecifiers (which may include hashes, globs, refs, or glob exclusions)
 	// into an equivalent set of commit hashes
 	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
-
-	// RepoInfo retrieves information about one or more repositories on gitserver.
-	//
-	// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
-	// will be false and the error will be nil.
-	//
-	// If multiple errors occurred, an incomplete result is returned along with an
-	// error.errors.
-	RepoInfo(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
 
 	// ReposStats will return a map of the ReposStats for each gitserver in a
 	// map. If we fail to fetch a stat from a gitserver, it won't be in the
@@ -378,9 +356,8 @@ type Client interface {
 	// revspecs).
 	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
 
-	// ShortLog
-	// TODO: Rename to something like PersonCount?
-	ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error)
+	// ContributorCount returns the number of commits grouped by contributor
+	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
 
 	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
 	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
@@ -1047,87 +1024,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	return &res, err
 }
 
-func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	if ClientMocks.RepoInfo != nil {
-		return ClientMocks.RepoInfo(ctx, repos...)
-	}
-
-	totalShards := len(c.Addrs())
-	shards := make(map[string]*protocol.RepoInfoRequest, totalShards)
-
-	// Build a map of each shards -> [list of repos that belong to that shard]. We do this so that
-	// we can send only one request with the entire list of repos for that shard. This allows us to
-	// get away with making only N HTTP requests, where N is the total number of shards.
-	for _, r := range repos {
-		addr, err := c.AddrForRepo(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-
-		repoInfoReq := shards[addr]
-		if repoInfoReq == nil {
-			repoInfoReq = new(protocol.RepoInfoRequest)
-			shards[addr] = repoInfoReq
-		}
-
-		repoInfoReq.Repos = append(repoInfoReq.Repos, r)
-	}
-
-	type op struct {
-		req *protocol.RepoInfoRequest
-		res *protocol.RepoInfoResponse
-		err error
-	}
-
-	ch := make(chan op, len(shards))
-	for _, req := range shards {
-		go func(o op) {
-			var resp *http.Response
-			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repos", o.req)
-			if o.err != nil {
-				ch <- o
-				return
-			}
-
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				o.err = &url.Error{
-					URL: resp.Request.URL.String(),
-					Op:  "RepoInfo",
-					Err: errors.Errorf("RepoInfo: http status code: %d, reason: %s", resp.StatusCode, readResponseBody(resp.Body)),
-				}
-
-				ch <- o
-				return // we never get an error status code AND result
-			}
-
-			o.res = new(protocol.RepoInfoResponse)
-			o.err = json.NewDecoder(resp.Body).Decode(o.res)
-			ch <- o
-		}(op{req: req})
-	}
-
-	var err error
-	res := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]*protocol.RepoInfo),
-	}
-
-	for i := 0; i < cap(ch); i++ {
-		o := <-ch
-
-		if o.err != nil {
-			err = errors.Append(err, o.err)
-			continue
-		}
-
-		for repo, info := range o.res.Results {
-			res.Results[repo] = info
-		}
-	}
-
-	return &res, err
-}
-
 func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
@@ -1425,4 +1321,12 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
+}
+
+func pinnedReposFromConfig() map[string]string {
+	cfg := conf.Get()
+	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
+		return cfg.ExperimentalFeatures.GitServerPinnedRepos
+	}
+	return map[string]string{}
 }

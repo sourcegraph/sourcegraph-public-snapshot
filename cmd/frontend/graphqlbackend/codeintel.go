@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -40,6 +41,10 @@ type AutoindexingServiceResolver interface {
 
 type ExecutorResolver interface {
 	ExecutorResolver() executor.Resolver
+}
+
+type CodeNavResolver interface {
+	CodeNavResolver() codenav.Resolver
 }
 
 type UploadsServiceResolver interface {

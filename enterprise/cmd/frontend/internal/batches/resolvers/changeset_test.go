@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,7 +34,7 @@ func TestChangesetResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -45,7 +45,7 @@ func TestChangesetResolver(t *testing.T) {
 	// Set up the scheduler configuration to a consistent state where a window
 	// will always open at 00:00 UTC on the "next" day.
 	schedulerWindow := now.UTC().Truncate(24 * time.Hour).Add(24 * time.Hour)
-	ct.MockConfig(t, &conf.Unified{
+	bt.MockConfig(t, &conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			BatchChangesRolloutWindows: &[]*schema.BatchChangeRolloutWindow{
 				{
@@ -70,7 +70,7 @@ func TestChangesetResolver(t *testing.T) {
 	mockBackendCommits(t, api.CommitID(baseRev))
 	mockRepoComparison(t, baseRev, headRev, testDiff)
 
-	unpublishedSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+	unpublishedSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
 		User:          userID,
 		Repo:          repo.ID,
 		HeadRef:       "refs/heads/my-new-branch",
@@ -82,14 +82,14 @@ func TestChangesetResolver(t *testing.T) {
 		BaseRev:       baseRev,
 		BaseRef:       "refs/heads/master",
 	})
-	unpublishedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	unpublishedChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		CurrentSpec:         unpublishedSpec.ID,
 		ExternalServiceType: "github",
 		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
 		ReconcilerState:     btypes.ReconcilerStateCompleted,
 	})
-	erroredSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+	erroredSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
 		User:          userID,
 		Repo:          repo.ID,
 		HeadRef:       "refs/heads/my-failing-branch",
@@ -101,7 +101,7 @@ func TestChangesetResolver(t *testing.T) {
 		BaseRev:       baseRev,
 		BaseRef:       "refs/heads/master",
 	})
-	erroredChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	erroredChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		CurrentSpec:         erroredSpec.ID,
 		ExternalServiceType: "github",
@@ -112,7 +112,7 @@ func TestChangesetResolver(t *testing.T) {
 
 	labelEventDescriptionText := "the best label in town"
 
-	syncedGitHubChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	syncedGitHubChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "12345",
@@ -168,7 +168,7 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readOnlyGitHubChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	readOnlyGitHubChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "123456",
@@ -192,7 +192,7 @@ func TestChangesetResolver(t *testing.T) {
 		},
 	})
 
-	unsyncedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	unsyncedChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "9876",
@@ -200,7 +200,7 @@ func TestChangesetResolver(t *testing.T) {
 		ReconcilerState:     btypes.ReconcilerStateQueued,
 	})
 
-	forkedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	forkedChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                  repo.ID,
 		ExternalServiceType:   "github",
 		ExternalID:            "98765",
@@ -209,7 +209,7 @@ func TestChangesetResolver(t *testing.T) {
 		ReconcilerState:       btypes.ReconcilerStateQueued,
 	})
 
-	scheduledChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	scheduledChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "987654",
