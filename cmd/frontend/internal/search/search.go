@@ -685,8 +685,9 @@ func (h *eventHandler) convertEvent(event streaming.SearchEvent, reservedDecorat
 		return nil
 	}
 
-	eventMatches := make([]streamhttp.EventMatch, 0, len(event.Results))
-	for _, match := range event.Results {
+	eventMatches := make([]streamhttp.EventMatch, len(event.Results))
+	g := group.New()
+	for i, match := range event.Results {
 		repo := match.RepoName()
 
 		// Don't send matches which we cannot map to a repo the actor has access to. This
@@ -697,19 +698,21 @@ func (h *eventHandler) convertEvent(event streaming.SearchEvent, reservedDecorat
 		}
 
 		eventMatch := fromMatch(match, repoMetadata, h.enableChunkMatches)
+		eventMatches[i] = eventMatch
 
 		if reservedDecorations > 0 {
-			switch cm := eventMatch.(type) {
+			switch cm := eventMatches[i].(type) {
 			case *streamhttp.EventContentMatch:
-				if err := decorateFileChunksHTML(h.ctx, h.db, h.decorationContextLines, cm); err != nil {
-					h.logger.Error("failed to decorate match", log.Error(err))
-				}
+				g.Go(func() {
+					if err := decorateFileChunksHTML(h.ctx, h.db, h.decorationContextLines, cm); err != nil {
+						h.logger.Error("failed to decorate match", log.Error(err))
+					}
+				})
 				reservedDecorations--
 			}
 		}
-
-		eventMatches = append(eventMatches, eventMatch)
 	}
+	g.Wait()
 
 	return eventMatches
 }
