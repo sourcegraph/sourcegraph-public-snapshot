@@ -79,6 +79,8 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
 }
 
+// IsGlobal returns whether a given set of repo options can be fulfilled
+// with a global search with Zoekt.
 func IsGlobal(op search.RepoOptions) bool {
 	// We do not do global searches if a repo: filter was specified. I
 	// (@camdencheek) could not find any documentation or historical reasons
