@@ -1,0 +1,63 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 539
+expression: "dump_document(&document, &contents)"
+---
+  ---
+  json:
+//^^^^ StringLiteral
+  - rigid
+//  ^^^^^ StringLiteral
+  - better for data interchange
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  yaml:
+//^^^^ StringLiteral
+  - slim and flexible
+//  ^^^^^^^^^^^^^^^^^ StringLiteral
+  - better for configuration
+//  ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  object:
+//^^^^^^ StringLiteral
+    key: value
+//  ^^^ StringLiteral
+//       ^^^^^ StringLiteral
+    array:
+//  ^^^^^ StringLiteral
+    - null_value:
+//    ^^^^^^^^^^ StringLiteral
+    - boolean: true
+//    ^^^^^^^ StringLiteral
+//             ^^^^ IdentifierBuiltin
+    - integer: 1
+//    ^^^^^^^ StringLiteral
+//             ^ NumericLiteral
+    - alias: aliases are like variables
+//    ^^^^^ StringLiteral
+//           ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+    - alias: aliases are like variables
+//    ^^^^^ StringLiteral
+//           ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  paragraph: |
+//^^^^^^^^^ StringLiteral
+//           ^ IdentifierKeyword
+    Blank lines denote
+    paragraph breaks
+  content: |-
+//^^^^^^^ StringLiteral
+//         ^ IdentifierKeyword
+//          ^ IdentifierKeyword
+    Or we
+    can auto
+    convert line breaks
+    to save space
+  alias:
+//^^^^^ StringLiteral
+    bar: baz
+//  ^^^ StringLiteral
+//       ^^^ StringLiteral
+  alias_reuse:
+//^^^^^^^^^^^ StringLiteral
+    bar: baz
+//  ^^^ StringLiteral
+//       ^^^ StringLiteral
+

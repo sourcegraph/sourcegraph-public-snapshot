@@ -4911,6 +4911,27 @@ Query: `sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))`
 
 <br />
 
+#### gitserver: non_existent_repos_removed
+
+<p class="subtitle">Repositories removed because they are not defined in the DB</p>
+
+Repositoriess removed because they are not defined in the DB
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100440` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance) (increase(src_gitserver_non_existing_repos_removed[5m]))`
+
+</details>
+
+<br />
+
 #### gitserver: sg_maintenance_reason
 
 <p class="subtitle">Successful sg maintenance jobs over 1h (by reason)</p>
@@ -4919,7 +4940,7 @@ the rate of successful sg maintenance jobs and the reason why they were triggere
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100440` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100450` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -4940,7 +4961,7 @@ the rate of successful git prune jobs over 1h and whether they were skipped
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100450` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100460` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 

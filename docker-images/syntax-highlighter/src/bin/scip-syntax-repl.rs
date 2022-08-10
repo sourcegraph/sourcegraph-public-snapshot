@@ -3,13 +3,13 @@ use std::fs;
 use rustyline::config::Configurer;
 use rustyline::Config;
 use sg_syntax::dump_document_range;
-use sg_syntax::lsif_index_with_config;
 use sg_syntax::make_highlight_config;
+use sg_syntax::treesitter_index_with_config;
 use sg_syntax::DocumentFileRange;
 
 fn main() {
     println!("========================================");
-    println!("  Welcome to lsif-syntax-repl");
+    println!("  Welcome to scip-syntax-repl");
     println!("========================================");
 
     let contents = if let Some(path) = std::env::args().nth(1) {
@@ -70,7 +70,7 @@ fn main() {
             }
         };
 
-        let document = match lsif_index_with_config(&contents, &config) {
+        let document = match treesitter_index_with_config(&contents, &config) {
             Ok(document) => document,
             Err(err) => {
                 eprintln!("Failed to index document: {:?}", err);
