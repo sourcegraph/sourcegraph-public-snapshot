@@ -1,5 +1,14 @@
 import { Annotation, Extension, RangeSet, Range, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, Decoration, lineNumbers, ViewPlugin, PluginValue, ViewUpdate, GutterMarker, gutterLineClass } from '@codemirror/view'
+import {
+    EditorView,
+    Decoration,
+    lineNumbers,
+    ViewPlugin,
+    PluginValue,
+    ViewUpdate,
+    GutterMarker,
+    gutterLineClass,
+} from '@codemirror/view'
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -165,6 +174,7 @@ export function selectableLineNumbers(config: {
                     function onmouseup(): void {
                         dragging = false
                         window.removeEventListener('mouseup', onmouseup)
+                        window.removeEventListener('mousemove', onmousemove)
 
                         let range = view.state.field(selectedLines)
                         if (range) {
@@ -182,22 +192,23 @@ export function selectableLineNumbers(config: {
                         }
                         config.onSelection(range)
                     }
-                    window.addEventListener('mouseup', onmouseup)
-                    return true
-                },
-                mousemove(view, line) {
-                    if (dragging) {
-                        const newEndline = view.state.doc.lineAt(line.from).number
-                        const { endLine } = view.state.field(selectedLines) ?? {}
-                        if (endLine !== newEndline) {
-                            view.dispatch({
-                                effects: setEndLine.of(newEndline),
-                                annotations: lineSelectionSource.of('gutter'),
-                            })
+
+                    function onmousemove(event: MouseEvent) {
+                        if (dragging) {
+                            const newEndline = view.state.doc.lineAt(view.posAtCoords(event, false)).number
+                            if (view.state.field(selectedLines)?.endLine !== newEndline) {
+                                view.dispatch({
+                                    effects: setEndLine.of(newEndline),
+                                    annotations: lineSelectionSource.of('gutter'),
+                                })
+                            }
+                            event.preventDefault()
                         }
-                        return true
                     }
-                    return false
+
+                    window.addEventListener('mouseup', onmouseup)
+                    window.addEventListener('mousemove', onmousemove)
+                    return true
                 },
             },
         }),
