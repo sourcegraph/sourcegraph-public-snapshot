@@ -154,7 +154,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	r.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
+		return nil, errors.Wrapf(err, "oauth2: cannot fetch token: %v")
 	}
 
 	if code := r.StatusCode; code < 200 || code > 299 {
