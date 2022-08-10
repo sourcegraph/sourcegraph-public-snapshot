@@ -3,10 +3,8 @@ import React, { useContext, useMemo } from 'react'
 import { groupBy } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo } from '@sourcegraph/wildcard'
+import { useDeepMemo, BarChart, LegendList, LegendItem, Series } from '@sourcegraph/wildcard'
 
-import { LegendItem, LegendList, Series } from '../../../../../../../charts'
-import { BarChart } from '../../../../../../../charts/components/bar-chart/BarChart'
 import { GroupByField } from '../../../../../../../graphql-operations'
 import {
     LivePreviewUpdateButton,

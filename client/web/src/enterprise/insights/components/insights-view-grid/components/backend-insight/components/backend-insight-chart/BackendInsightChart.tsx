@@ -4,8 +4,8 @@ import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
-import { BarChart } from '../../../../../../../../charts/components/bar-chart/BarChart'
+import { BarChart, ScrollBox, LegendList, LegendItem, Series } from '@sourcegraph/wildcard'
+
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
@@ -13,6 +13,10 @@ import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
 
 import styles from './BackendInsightChart.module.scss'
+
+function getLineColor(series: Series<any>): string {
+    return series.color ?? 'var(--gray-07)'
+}
 
 /**
  * If width of the chart is less than this var width value we should put the legend

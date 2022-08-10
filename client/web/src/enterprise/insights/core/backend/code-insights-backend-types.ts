@@ -1,6 +1,7 @@
 import { Duration } from 'date-fns'
 
-import { Series } from '../../../../charts'
+import { Series } from '@sourcegraph/wildcard'
+
 import { GroupByField } from '../../../../graphql-operations'
 import {
     RuntimeInsight,
