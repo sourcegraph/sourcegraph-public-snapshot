@@ -7,7 +7,83 @@ use syntect::{
     util::LinesWithEndings,
 };
 
-/// The RangeGenerator generate a Document with occurrences set to the corresponding syntax kinds
+// Whenever a scope matches any of the scopes in IGNORED_SCOPES,
+// it will not emit an occurrence for that range. The most specific
+// scope that overlaps this region will instead emit an occurrence for
+// that range (if applicable).
+static IGNORED_SCOPES: OnceCell<Vec<Scope>> = OnceCell::new();
+fn should_skip_scope(scope: &Scope) -> bool {
+    IGNORED_SCOPES
+        .get_or_init(|| {
+            // See match_scope_to_kind
+            let scope = |s| Scope::new(s).unwrap();
+            vec![
+                scope("source"),
+                scope("punctuation.definition.string.begin"),
+                scope("punctuation.definition.string.end"),
+                scope("punctuation.definition.comment"),
+            ]
+        })
+        .iter()
+        .any(|ignored| ignored.is_prefix_of(*scope))
+}
+
+// Maps scopes to SyntaxKind. Runs after checking if a scope is in IGNORED_SCOPES
+static SCOPE_MATCHES: OnceCell<Vec<(Scope, SyntaxKind)>> = OnceCell::new();
+fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
+    let scope_matches: &Vec<(Scope, SyntaxKind)> = SCOPE_MATCHES.get_or_init(|| {
+        use SyntaxKind::*;
+
+        // TODO: We should probably make sure that we can't even ship syntax-highlighter if this
+        // doesn't work (which should happen because it won't be able to pass tests or do anything
+        // without this)
+        //
+        // The only way (as far as I can tell) this can fail is if you pass in a Scope with >=8
+        // atoms (so we just won't do that here). This only runs once, so we don't have to worry
+        // about subsequent failures for any of these unwraps.
+        let scope = |s| Scope::new(s).unwrap();
+
+        // These are IN ORDER.
+        //  If you want something to resolve to something more specifically or as a higher priority
+        //  make sure to place the scope(...) at the beginning of the list.
+        vec![
+            (scope("comment"), Comment),
+            (scope("meta.documentation"), Comment),
+            // TODO: How does this play with this: keyword.control.import.include
+            (scope("meta.preprocessor.include"), IdentifierNamespace),
+            (scope("storage.type.keyword"), IdentifierKeyword),
+            (scope("entity.name.function"), IdentifierFunction),
+            (scope("keyword.operator"), IdentifierOperator),
+            (scope("keyword"), IdentifierKeyword),
+            (scope("variable"), Identifier),
+            (scope("constant.character.escape"), StringLiteralEscape),
+            (scope("string"), StringLiteral),
+            (scope("constant.numeric"), NumericLiteral),
+            (scope("constant.character"), CharacterLiteral),
+            (scope("constant.language"), IdentifierBuiltin),
+            (scope("storage.modifier.array"), PunctuationBracket),
+            (scope("storage.modifier"), IdentifierKeyword),
+            (scope("storage.type.namespace"), IdentifierNamespace),
+            (scope("storage.type"), IdentifierType),
+            (scope("support.type.builtin"), IdentifierBuiltinType),
+            (scope("meta.path"), IdentifierNamespace),
+            //
+            // Punctuation Types
+            (scope("punctuation.section.mapping"), PunctuationBracket),
+            (scope("punctuation.section.sequence"), PunctuationBracket),
+            (scope("punctuation.terminator"), PunctuationDelimiter),
+            // TODO: Consider what to do w/ this
+            // (scope("punctuation"), PunctuationBracket),
+        ]
+    });
+
+    scope_matches
+        .iter()
+        .find(|&(prefix, _)| prefix.is_prefix_of(*scope))
+        .map(|&(_, kind)| kind)
+}
+
+/// The DocumentGenerator generate a Document with occurrences set to the corresponding syntax kinds
 ///
 /// If max_line_len is not None, any lines with length greater than the
 /// provided number will not be highlighted.
@@ -139,77 +215,6 @@ impl Debug for HighlightManager {
 
         write!(f, "}}")
     }
-}
-
-static IGNORED_SCOPES: OnceCell<Vec<Scope>> = OnceCell::new();
-fn should_skip_scope(scope: &Scope) -> bool {
-    IGNORED_SCOPES
-        .get_or_init(|| {
-            // See match_scope_to_kind
-            let scope = |s| Scope::new(s).unwrap();
-            vec![
-                scope("source"),
-                scope("punctuation.definition.string.begin"),
-                scope("punctuation.definition.string.end"),
-                scope("punctuation.definition.comment"),
-            ]
-        })
-        .iter()
-        .any(|ignored| ignored.is_prefix_of(*scope))
-}
-
-static SCOPE_MATCHES: OnceCell<Vec<(Scope, SyntaxKind)>> = OnceCell::new();
-fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
-    let scope_matches: &Vec<(Scope, SyntaxKind)> = SCOPE_MATCHES.get_or_init(|| {
-        use SyntaxKind::*;
-
-        // TODO: We should probably make sure that we can't even ship syntax-highlighter if this
-        // doesn't work (which should happen because it won't be able to pass tests or do anything
-        // without this)
-        //
-        // The only way (as far as I can tell) this can fail is if you pass in a Scope with >=8
-        // atoms (so we just won't do that here). This only runs once, so we don't have to worry
-        // about subsequent failures for any of these unwraps.
-        let scope = |s| Scope::new(s).unwrap();
-
-        // These are IN ORDER.
-        //  If you want something to resolve to something more specifically or as a higher priority
-        //  make sure to place the scope(...) at the beginning of the list.
-        vec![
-            (scope("comment"), Comment),
-            (scope("meta.documentation"), Comment),
-            // TODO: How does this play with this: keyword.control.import.include
-            (scope("meta.preprocessor.include"), IdentifierNamespace),
-            (scope("storage.type.keyword"), IdentifierKeyword),
-            (scope("entity.name.function"), IdentifierFunction),
-            (scope("keyword.operator"), IdentifierOperator),
-            (scope("keyword"), IdentifierKeyword),
-            (scope("variable"), Identifier),
-            (scope("constant.character.escape"), StringLiteralEscape),
-            (scope("string"), StringLiteral),
-            (scope("constant.numeric"), NumericLiteral),
-            (scope("constant.character"), CharacterLiteral),
-            (scope("constant.language"), IdentifierBuiltin),
-            (scope("storage.modifier.array"), PunctuationBracket),
-            (scope("storage.modifier"), IdentifierKeyword),
-            (scope("storage.type.namespace"), IdentifierNamespace),
-            (scope("storage.type"), IdentifierType),
-            (scope("support.type.builtin"), IdentifierBuiltinType),
-            (scope("meta.path"), IdentifierNamespace),
-            //
-            // Punctuation Types
-            (scope("punctuation.section.mapping"), PunctuationBracket),
-            (scope("punctuation.section.sequence"), PunctuationBracket),
-            (scope("punctuation.terminator"), PunctuationDelimiter),
-            // TODO: Consider what to do w/ this
-            // (scope("punctuation"), PunctuationBracket),
-        ]
-    });
-
-    scope_matches
-        .iter()
-        .find(|&(prefix, _)| prefix.is_prefix_of(*scope))
-        .map(|&(_, kind)| kind)
 }
 
 impl<'a> DocumentGenerator<'a> {
