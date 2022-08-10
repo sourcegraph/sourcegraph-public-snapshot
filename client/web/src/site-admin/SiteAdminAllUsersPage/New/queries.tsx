@@ -54,10 +54,29 @@ export const USERS_MANAGEMENT = gql`
     }
 `
 
-export const FORCE_SIGN_OUT_USER = gql`
-    mutation InvalidateSessionsByIDs {
-        invalidateSessionsByIDs(userIDs: ["userID1", "userID2"]) {
+export const FORCE_SIGN_OUT_USERS = gql`
+    mutation InvalidateSessionsByIDs($userIDs: [ID!]!) {
+        invalidateSessionsByIDs(userIDs: $userIDs) {
             alwaysNil
         }
     }
 `
+
+export const DELETE_USERS = gql`
+    mutation DeleteUsers($userIDs: [ID!]!) {
+        deleteUsers(users: $userIDs) {
+            alwaysNil
+        }
+    }
+`
+
+export const DELETE_USERS_FOREVER = gql`
+    mutation DeleteUsersForever($userIDs: [ID!]!) {
+        deleteUsers(users: $userIDs, hard: true) {
+            alwaysNil
+        }
+    }
+`
+
+// TODO: reset password
+// TODO: revoke/promote to site admin

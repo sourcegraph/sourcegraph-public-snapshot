@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { useMemo, useEffect, useState, useCallback } from 'react'
 
 /* TODO:
 - Add link to billable events in bottom note
@@ -25,7 +25,7 @@ import { format as formatDate } from 'date-fns'
 import { startCase, isEqual } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     H1,
     H2,
@@ -60,7 +60,7 @@ import { useChartFilters } from '../../analytics/useChartFilters'
 import { StandardDatum } from '../../analytics/utils'
 
 import { Table } from './components/Table'
-import { USERS_MANAGEMENT } from './queries'
+import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS, USERS_MANAGEMENT } from './queries'
 
 import styles from './index.module.scss'
 
@@ -97,6 +97,8 @@ interface ContentProps {
     refetch: (variables: UsersManagementVariables) => any
 }
 
+type SiteUser = UsersManagementResult['site']['users']['nodes'][0]
+
 const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refetch }) => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
     const [usersQuery, setUsersQuery] = useState<string>('')
@@ -105,7 +107,7 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
     )
     const [first, setFirst] = useState(3)
 
-    const showMore = () => setFirst(count => count * 2)
+    const showMore = useCallback(() => setFirst(count => count * 2), [])
 
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
@@ -188,6 +190,13 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
 
         return [activities, legends]
     }, [data, aggregation.selected, dateRange.value])
+    const refresh = useCallback(() => {}, [])
+    const { handleDeleteUsers } = useDeleteUsers(refresh)
+    const { handleDeleteUsersForever } = useDeleteUsersForever(refresh)
+    const { handleForceSignOutUsers } = useForceSignOutUsers(refresh)
+    const { handleRevokeSiteAdmin } = useRevokeSiteAdmin(refresh)
+    const { handlePromoteToSiteAdmin } = usePromoteToSiteAdmin(refresh)
+    const { handleResetUserPassword } = useResetUserPassword(refresh)
 
     const groupingLabel = startCase(grouping.value.toLowerCase())
 
@@ -283,14 +292,14 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                             key: 'force-sign-out',
                             label: 'Force sign-out',
                             icon: mdiLogoutVariant,
-                            onClick: () => '',
+                            onClick: handleForceSignOutUsers,
                         },
                         {
                             key: 'delete',
                             label: 'Delete',
                             icon: mdiArchive,
                             iconColor: 'danger',
-                            onClick: () => '',
+                            onClick: handleDeleteUsers,
                         },
                         {
                             key: 'delete',
@@ -298,7 +307,7 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                             icon: mdiDelete,
                             iconColor: 'danger',
                             labelColor: 'danger',
-                            onClick: () => '',
+                            onClick: handleDeleteUsersForever,
                         },
                     ]}
                     columns={[
@@ -307,10 +316,7 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                             accessor: 'username',
                             header: 'User',
                             sortable: true,
-                            render: function RenderUsernameAndEmail({
-                                username,
-                                email,
-                            }: typeof data.site.users.nodes[0]): JSX.Element {
+                            render: function RenderUsernameAndEmail({ username, email }: SiteUser): JSX.Element {
                                 return (
                                     <div className="d-flex flex-column p-2">
                                         <Text className={classNames(styles.linkColor, 'mb-0')}>{username}</Text>
@@ -368,9 +374,7 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                         },
                         {
                             key: 'actions',
-                            render: function RenderActions({
-                                siteAdmin,
-                            }: typeof data.site.users.nodes[0]): JSX.Element {
+                            render: function RenderActions(item: SiteUser): JSX.Element {
                                 return (
                                     <Popover>
                                         <div className="d-flex justify-content-center">
@@ -381,7 +385,13 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                                             />
                                             <PopoverContent position={Position.bottom}>
                                                 <ul className="list-unstyled mb-0">
-                                                    <li className="d-flex p-2 cursor-pointer">
+                                                    <Button
+                                                        className="d-flex cursor-pointer"
+                                                        variant="link"
+                                                        as="li"
+                                                        outline={true}
+                                                        onClick={() => handleForceSignOutUsers([item])}
+                                                    >
                                                         <Icon
                                                             svgPath={mdiLogoutVariant}
                                                             aria-label="Force sign-out"
@@ -389,9 +399,15 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                                                             className="text-muted"
                                                         />
                                                         <span className="ml-2">Force sign-out</span>
-                                                    </li>
+                                                    </Button>
                                                     {window.context.resetPasswordEnabled && (
-                                                        <li className="d-flex p-2 cursor-pointer">
+                                                        <Button
+                                                            className="d-flex cursor-pointer"
+                                                            variant="link"
+                                                            as="li"
+                                                            outline={true}
+                                                            onClick={() => handleResetUserPassword(item)}
+                                                        >
                                                             <Icon
                                                                 svgPath={mdiLockReset}
                                                                 aria-label="Reset password"
@@ -399,10 +415,17 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                                                                 className="text-muted"
                                                             />
                                                             <span className="ml-2">Reset password</span>
-                                                        </li>
+                                                        </Button>
                                                     )}
-                                                    {siteAdmin ? (
-                                                        <li className="d-flex p-2 cursor-pointer">
+
+                                                    {item.siteAdmin ? (
+                                                        <Button
+                                                            className="d-flex cursor-pointer"
+                                                            variant="link"
+                                                            as="li"
+                                                            outline={true}
+                                                            onClick={() => handleRevokeSiteAdmin(item)}
+                                                        >
                                                             <Icon
                                                                 svgPath={mdiClipboardMinus}
                                                                 aria-label="Revoke site admin"
@@ -410,9 +433,15 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                                                                 className="text-muted"
                                                             />
                                                             <span className="ml-2">Revoke site admin</span>
-                                                        </li>
+                                                        </Button>
                                                     ) : (
-                                                        <li className="d-flex p-2 cursor-pointer">
+                                                        <Button
+                                                            className="d-flex cursor-pointer"
+                                                            variant="link"
+                                                            as="li"
+                                                            outline={true}
+                                                            onClick={() => handlePromoteToSiteAdmin(item)}
+                                                        >
                                                             <Icon
                                                                 svgPath={mdiClipboardPlus}
                                                                 aria-label="Promote to site admin"
@@ -420,9 +449,15 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                                                                 className="text-muted"
                                                             />
                                                             <span className="ml-2">Promote to site admin</span>
-                                                        </li>
+                                                        </Button>
                                                     )}
-                                                    <li className="d-flex p-2 cursor-pointer">
+                                                    <Button
+                                                        className="d-flex cursor-pointer"
+                                                        variant="link"
+                                                        as="li"
+                                                        outline={true}
+                                                        onClick={() => handleDeleteUsers([item])}
+                                                    >
                                                         <Icon
                                                             svgPath={mdiArchive}
                                                             aria-label="Delete user"
@@ -430,8 +465,14 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                                                             className="text-danger"
                                                         />
                                                         <span className="ml-2">Delete</span>
-                                                    </li>
-                                                    <li className="d-flex p-2 cursor-pointer">
+                                                    </Button>
+                                                    <Button
+                                                        className="d-flex cursor-pointer"
+                                                        variant="link"
+                                                        as="li"
+                                                        outline={true}
+                                                        onClick={() => handleDeleteUsersForever([item])}
+                                                    >
                                                         <Icon
                                                             svgPath={mdiDelete}
                                                             aria-label="Delete user forever"
@@ -439,7 +480,7 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
                                                             className="text-danger"
                                                         />
                                                         <span className="ml-2 text-danger">Delete forever</span>
-                                                    </li>
+                                                    </Button>
                                                 </ul>
                                             </PopoverContent>
                                         </div>
@@ -473,4 +514,89 @@ const Content: React.FunctionComponent<ContentProps> = ({ data, variables, refet
             </Text>
         </>
     )
+}
+function useForceSignOutUsers(refetch: () => void) {
+    const [forceSignOutUsers, { loading, error }] = useMutation(FORCE_SIGN_OUT_USERS)
+
+    const handleForceSignOutUsers = useCallback((users: SiteUser[]) => {
+        if (confirm('Are you sure you want to force sign out the selected user(s)?')) {
+            forceSignOutUsers({ variables: { userIDs: users.map(u => u.id) } })
+                .then(refetch)
+                .catch(console.error)
+        }
+    }, [])
+
+    return {
+        handleForceSignOutUsers,
+        loading,
+        error,
+    }
+}
+
+function useDeleteUsers(refetch: () => void) {
+    const [deleteUsers, { loading, error }] = useMutation(DELETE_USERS)
+
+    const handleDeleteUsers = useCallback((users: SiteUser[]) => {
+        if (confirm('Are you sure you want to delete the selected user(s)?')) {
+            deleteUsers({ variables: { userIDs: users.map(u => u.id) } })
+                .then(refetch)
+                .catch(console.error)
+        }
+    }, [])
+    return {
+        handleDeleteUsers,
+        loading,
+        error,
+    }
+}
+
+function useDeleteUsersForever(refetch: () => void) {
+    const [deleteUsersForever, { loading, error }] = useMutation(DELETE_USERS_FOREVER)
+    const handleDeleteUsersForever = useCallback((users: SiteUser[]) => {
+        if (confirm('Are you sure you want to delete the selected user(s)?')) {
+            deleteUsersForever({ variables: { userIDs: users.map(u => u.id) } })
+                .then(refetch)
+                .catch(console.error)
+        }
+    }, [])
+    return {
+        handleDeleteUsersForever,
+        loading,
+        error,
+    }
+}
+
+function usePromoteToSiteAdmin(refetch: () => void) {
+    const handlePromoteToSiteAdmin = useCallback((user: SiteUser) => {
+        if (confirm('Are you sure you want to promote the selected user to site admin?')) {
+            console.log('Promote to site admin', user)
+        }
+    }, [])
+
+    return {
+        handlePromoteToSiteAdmin,
+    }
+}
+
+function useRevokeSiteAdmin(refetch: () => void) {
+    const handleRevokeSiteAdmin = useCallback((user: SiteUser) => {
+        if (confirm('Are you sure you want to revoke the selected user from site admin?')) {
+            console.log('Revoke site admin', user)
+        }
+    }, [])
+
+    return {
+        handleRevokeSiteAdmin,
+    }
+}
+
+function useResetUserPassword(refetch: () => void) {
+    const handleResetUserPassword = useCallback((user: SiteUser) => {
+        if (confirm('Are you sure you want to reset the selected user password?')) {
+            console.log('Reset user password', user)
+        }
+    }, [])
+    return {
+        handleResetUserPassword,
+    }
 }

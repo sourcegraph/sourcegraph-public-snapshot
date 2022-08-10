@@ -80,6 +80,11 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminAllUsersPage/New'), 'UsersManagement'),
     },
     {
+        path: '/users-old',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminAllUsersPage'), 'SiteAdminAllUsersPage'),
+    },
+    {
         path: '/users/new',
         render: lazyComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage'),
         exact: true,

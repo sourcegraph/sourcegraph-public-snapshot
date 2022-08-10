@@ -32,19 +32,19 @@ interface IColumn<TData> {
     render?: (data: TData, index: number) => JSX.Element
 }
 
-interface IAction {
+interface IAction<TData> {
     key: string
     label: string
     icon: string
     iconColor?: 'muted' | 'danger'
     labelColor?: 'body' | 'danger'
-    onClick: (ids: (string | number)[]) => void
+    onClick: (items: TData[]) => void
 }
 
 interface TableProps<TData> {
     columns: IColumn<TData>[]
     data: TData[]
-    actions?: IAction[]
+    actions?: IAction<TData>[]
     selectable?: boolean
     note?: string | JSX.Element
     getRowId?: (data: TData) => string | number
@@ -236,7 +236,7 @@ function Row<TData>({
 }
 
 interface SelectionActionsProps<TData> {
-    actions: IAction[]
+    actions: IAction<TData>[]
     position: 'top' | 'bottom'
     selection: TData[]
 }
@@ -260,22 +260,25 @@ function SelectionActions<TData>({ actions, position, selection }: SelectionActi
                 </PopoverTrigger>
                 <PopoverContent position={Position.bottom}>
                     <ul className="list-unstyled mb-0">
-                        {actions.map(action => (
-                            <li key={action.key} className="d-flex p-2">
+                        {actions.map(({ key, label, icon, iconColor, labelColor, onClick }) => (
+                            <Button
+                                className="d-flex cursor-pointer"
+                                key={key}
+                                variant="link"
+                                as="li"
+                                outline={true}
+                                onClick={() => onClick?.(selection)}
+                            >
                                 <Icon
-                                    aria-label={action.label}
-                                    svgPath={action.icon}
+                                    aria-label={label}
+                                    svgPath={icon}
                                     size="md"
-                                    className={`text-${action.iconColor || 'muted'}`}
+                                    className={`text-${iconColor || 'muted'}`}
                                 />
-                                <span
-                                    className={classNames('ml-2', {
-                                        'text-danger': action.labelColor === 'danger',
-                                    })}
-                                >
-                                    {action.label}
+                                <span className={classNames('ml-2', labelColor === 'danger' && 'text-danger')}>
+                                    {label}
                                 </span>
-                            </li>
+                            </Button>
                         ))}
                     </ul>
                 </PopoverContent>
