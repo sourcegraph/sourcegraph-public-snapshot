@@ -16,7 +16,7 @@ func (a *Aggregate) Less(b *Aggregate) bool {
 		// Sort alphabetically if of same count.
 		return strings.Compare(a.value, b.value) < 0
 	}
-	return a.count < b.count
+	return a.count > b.count
 }
 
 type aggregated map[string]*Aggregate
@@ -31,7 +31,7 @@ func (a aggregated) Add(value string, count int32) {
 }
 
 // Aggregate returns an ordered slice of elements to present to the user.
-func (a aggregated) Aggregate(max int) []*Aggregate {
+func (a aggregated) SortAggregate(max int) []*Aggregate {
 	heap := aggregateHeap{max: max}
 	for _, elt := range a {
 		heap.Add(elt)
@@ -68,6 +68,11 @@ func (ah *aggregateHeap) Add(a *Aggregate) {
 		heap.Pop(ah)
 		heap.Push(ah, a)
 	}
+}
+
+func (ah *aggregateHeap) Less(i, j int) bool {
+	// We want a min heap i.e. the head of the heap is the least important value we have kept so far.
+	return ah.aggregateSlice[j].Less(ah.aggregateSlice[i])
 }
 
 func (ah *aggregateHeap) Push(a any) {
