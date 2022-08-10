@@ -57,7 +57,7 @@ import { ValueLegendList, ValueLegendListProps } from '../../analytics/component
 import { useChartFilters } from '../../analytics/useChartFilters'
 import { StandardDatum } from '../../analytics/utils'
 
-import Table from './components/Table'
+import { Table } from './components/Table'
 import { USERS_MANAGEMENT } from './queries'
 
 import styles from './index.module.scss'
@@ -305,12 +305,17 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                             accessor: 'username',
                             header: 'User',
                             sortable: true,
-                            render: ({ username, email }) => (
-                                <div className="d-flex flex-column p-2">
-                                    <Text className={classNames(styles.linkColor, 'mb-0')}>{username}</Text>
-                                    <Text className="mb-0">{email}</Text>
-                                </div>
-                            ),
+                            render: function RenderUsernameAndEmail({
+                                username,
+                                email,
+                            }: typeof data.site.users.nodes[0]): JSX.Element {
+                                return (
+                                    <div className="d-flex flex-column p-2">
+                                        <Text className={classNames(styles.linkColor, 'mb-0')}>{username}</Text>
+                                        <Text className="mb-0">{email}</Text>
+                                    </div>
+                                )
+                            },
                         },
                         {
                             key: SiteUserOrderBy.EVENTS_COUNT,
@@ -354,60 +359,68 @@ export const Content: React.FunctionComponent<ContentProps> = ({ data, variables
                         },
                         {
                             key: 'actions',
-                            accessor: () => (
-                                <Popover>
-                                    <PopoverTrigger as={Icon} svgPath={mdiDotsHorizontal} className="cursor-pointer" />
-                                    <PopoverContent position={Position.bottom}>
-                                        <ul className="list-unstyled mb-0">
-                                            <li className="d-flex p-2 cursor-pointer">
-                                                <Icon
-                                                    svgPath={mdiLogoutVariant}
-                                                    aria-label="Force sign-out"
-                                                    size="md"
-                                                    className="text-muted"
-                                                />
-                                                <span className="ml-2">Force sign-out</span>
-                                            </li>
-                                            <li className="d-flex p-2 cursor-pointer">
-                                                <Icon
-                                                    svgPath={mdiLockReset}
-                                                    aria-label="Reset password"
-                                                    size="md"
-                                                    className="text-muted"
-                                                />
-                                                <span className="ml-2">Reset password</span>
-                                            </li>
-                                            <li className="d-flex p-2 cursor-pointer">
-                                                <Icon
-                                                    svgPath={mdiClipboardMinus}
-                                                    aria-label="Revoke site admin"
-                                                    size="md"
-                                                    className="text-muted"
-                                                />
-                                                <span className="ml-2">Revoke site admin</span>
-                                            </li>
-                                            <li className="d-flex p-2 cursor-pointer">
-                                                <Icon
-                                                    svgPath={mdiArchive}
-                                                    aria-label="Delete user"
-                                                    size="md"
-                                                    className="text-danger"
-                                                />
-                                                <span className="ml-2">Delete</span>
-                                            </li>
-                                            <li className="d-flex p-2 cursor-pointer">
-                                                <Icon
-                                                    svgPath={mdiDelete}
-                                                    aria-label="Delete user forever"
-                                                    size="md"
-                                                    className="text-danger"
-                                                />
-                                                <span className="ml-2 text-danger">Delete forever</span>
-                                            </li>
-                                        </ul>
-                                    </PopoverContent>
-                                </Popover>
-                            ),
+                            render: function RenderActions(): JSX.Element {
+                                return (
+                                    <Popover>
+                                        <div className="d-flex justify-content-center">
+                                            <PopoverTrigger
+                                                as={Icon}
+                                                svgPath={mdiDotsHorizontal}
+                                                className="cursor-pointer"
+                                            />
+                                            <PopoverContent position={Position.bottom}>
+                                                <ul className="list-unstyled mb-0">
+                                                    <li className="d-flex p-2 cursor-pointer">
+                                                        <Icon
+                                                            svgPath={mdiLogoutVariant}
+                                                            aria-label="Force sign-out"
+                                                            size="md"
+                                                            className="text-muted"
+                                                        />
+                                                        <span className="ml-2">Force sign-out</span>
+                                                    </li>
+                                                    <li className="d-flex p-2 cursor-pointer">
+                                                        <Icon
+                                                            svgPath={mdiLockReset}
+                                                            aria-label="Reset password"
+                                                            size="md"
+                                                            className="text-muted"
+                                                        />
+                                                        <span className="ml-2">Reset password</span>
+                                                    </li>
+                                                    <li className="d-flex p-2 cursor-pointer">
+                                                        <Icon
+                                                            svgPath={mdiClipboardMinus}
+                                                            aria-label="Revoke site admin"
+                                                            size="md"
+                                                            className="text-muted"
+                                                        />
+                                                        <span className="ml-2">Revoke site admin</span>
+                                                    </li>
+                                                    <li className="d-flex p-2 cursor-pointer">
+                                                        <Icon
+                                                            svgPath={mdiArchive}
+                                                            aria-label="Delete user"
+                                                            size="md"
+                                                            className="text-danger"
+                                                        />
+                                                        <span className="ml-2">Delete</span>
+                                                    </li>
+                                                    <li className="d-flex p-2 cursor-pointer">
+                                                        <Icon
+                                                            svgPath={mdiDelete}
+                                                            aria-label="Delete user forever"
+                                                            size="md"
+                                                            className="text-danger"
+                                                        />
+                                                        <span className="ml-2 text-danger">Delete forever</span>
+                                                    </li>
+                                                </ul>
+                                            </PopoverContent>
+                                        </div>
+                                    </Popover>
+                                )
+                            },
                             header: { label: 'Actions', align: 'right' },
                             align: 'center',
                         },

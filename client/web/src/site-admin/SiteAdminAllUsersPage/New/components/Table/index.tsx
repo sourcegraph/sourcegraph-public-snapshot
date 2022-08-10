@@ -54,7 +54,7 @@ interface TableProps<TData> {
     onSelectionChange?: (rows: TData[]) => void
 }
 
-export default function Table<TData>({
+export function Table<TData>({
     data,
     columns,
     selectable = false,
@@ -136,8 +136,18 @@ export default function Table<TData>({
                                         </Tooltip>
                                         {column.sortable && (
                                             <div className={classNames('d-flex flex-column', styles.sortableIcons)}>
-                                                <Icon svgPath={mdiMenuUp} size="md" className={styles.sortAscIcon} />
-                                                <Icon svgPath={mdiMenuDown} size="md" className={styles.sortDescIcon} />
+                                                <Icon
+                                                    aria-label="Sort ascending"
+                                                    svgPath={mdiMenuUp}
+                                                    size="md"
+                                                    className={styles.sortAscIcon}
+                                                />
+                                                <Icon
+                                                    aria-label="Sort descending"
+                                                    svgPath={mdiMenuDown}
+                                                    size="md"
+                                                    className={styles.sortDescIcon}
+                                                />
                                             </div>
                                         )}
                                     </div>
@@ -196,6 +206,7 @@ function Row<TData>({
                 <td className={styles.selectionTd}>
                     <div className={classNames(styles.cell, styles.selection)}>
                         <Checkbox
+                            aria-labelledby={`${key} selection checkbox`}
                             className="m-0"
                             checked={selected}
                             onChange={event => onSelectionChange(data, event.target.checked)}
@@ -245,13 +256,14 @@ function SelectionActions<TData>({ actions, position, selection }: SelectionActi
             <Popover>
                 <PopoverTrigger as={Button} disabled={!selection.length} variant="secondary" outline={true}>
                     Actions
-                    <Icon svgPath={mdiChevronDown} className="ml-1" />
+                    <Icon aria-label="Arrow down" svgPath={mdiChevronDown} className="ml-1" />
                 </PopoverTrigger>
                 <PopoverContent position={Position.bottom}>
                     <ul className="list-unstyled mb-0">
                         {actions.map(action => (
                             <li key={action.key} className="d-flex p-2">
                                 <Icon
+                                    aria-label={action.label}
                                     svgPath={action.icon}
                                     size="md"
                                     className={`text-${action.iconColor || 'muted'}`}
