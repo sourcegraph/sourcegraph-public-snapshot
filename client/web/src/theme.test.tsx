@@ -2,9 +2,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { renderHook, act } from '@testing-library/react'
 
-import { useThemeState } from './stores'
-import { ThemePreference } from './stores/themeState'
-import { useThemeProps } from './theme'
+import { ThemePreference, useThemeProps } from './theme'
 
 // Don't test reacting to system-wide theme changes, for simplicity. This means that
 // observeSystemIsLightTheme's initial value will be used, but it will not monitor for subsequent
@@ -39,7 +37,8 @@ describe('useTheme()', () => {
             expect(result.current.themePreference).toBe(ThemePreference.System)
             expect(document.documentElement.classList).toContain('theme-light')
             expect(document.documentElement.classList).not.toContain('theme-dark')
-            expect(localStorage.getItem('light-theme')).toBe('system')
+            // Local storage item not set by default, will get set when the preference is changed
+            expect(localStorage).toHaveLength(0)
         })
 
         it('dark', () => {
@@ -51,7 +50,8 @@ describe('useTheme()', () => {
             expect(result.current.themePreference).toBe(ThemePreference.System)
             expect(document.documentElement.classList).toContain('theme-dark')
             expect(document.documentElement.classList).not.toContain('theme-light')
-            expect(localStorage.getItem('light-theme')).toBe('system')
+            // Local storage item not set by default, will get set when the preference is changed
+            expect(localStorage).toHaveLength(0)
         })
     })
 
@@ -59,36 +59,43 @@ describe('useTheme()', () => {
         it('light', () => {
             mockSystemTheme('dark')
             const { result } = renderHook(() => useThemeProps())
-            act(() => useThemeState.setState({ theme: ThemePreference.Light }))
+            act(() => result.current.onThemePreferenceChange(ThemePreference.Light))
 
             expect(result.current.isLightTheme).toBe(true)
             expect(result.current.themePreference).toBe(ThemePreference.Light)
             expect(document.documentElement.classList).toContain('theme-light')
             expect(document.documentElement.classList).not.toContain('theme-dark')
-            expect(localStorage.getItem('light-theme')).toBe(ThemePreference.Light)
+            expect(JSON.parse(localStorage.getItem('temporarySettings') ?? '')).toEqual({
+                'user.themePreference': 'light',
+            })
         })
 
         it('dark', () => {
             mockSystemTheme('light')
             const { result } = renderHook(() => useThemeProps())
-            act(() => useThemeState.setState({ theme: ThemePreference.Dark }))
+            act(() => result.current.onThemePreferenceChange(ThemePreference.Dark))
 
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.Dark)
             expect(document.documentElement.classList).toContain('theme-dark')
             expect(document.documentElement.classList).not.toContain('theme-light')
-            expect(localStorage.getItem('light-theme')).toBe(ThemePreference.Dark)
+            expect(JSON.parse(localStorage.getItem('temporarySettings') ?? '')).toEqual({
+                'user.themePreference': 'dark',
+            })
         })
 
         it('system', () => {
             mockSystemTheme('dark')
             const { result } = renderHook(() => useThemeProps())
-            act(() => useThemeState.setState({ theme: ThemePreference.System }))
+            act(() => result.current.onThemePreferenceChange(ThemePreference.System))
+
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.System)
             expect(document.documentElement.classList).toContain('theme-dark')
             expect(document.documentElement.classList).not.toContain('theme-light')
-            expect(localStorage.getItem('light-theme')).toBe(ThemePreference.System)
+            expect(JSON.parse(localStorage.getItem('temporarySettings') ?? '')).toEqual({
+                'user.themePreference': 'system',
+            })
         })
     })
 
@@ -106,7 +113,7 @@ describe('useTheme()', () => {
         expect(result.current.themePreference).toBe(ThemePreference.Dark)
         expect(document.documentElement.classList).toContain('theme-dark')
         expect(document.documentElement.classList).not.toContain('theme-light')
-        expect(localStorage.getItem('light-theme')).toBe(ThemePreference.Dark)
+        expect(JSON.parse(localStorage.getItem('temporarySettings') ?? '')).toEqual({ 'user.themePreference': 'dark' })
 
         // Change to system.
         act(() => {
@@ -116,6 +123,8 @@ describe('useTheme()', () => {
         expect(result.current.themePreference).toBe(ThemePreference.System)
         expect(document.documentElement.classList).toContain('theme-light')
         expect(document.documentElement.classList).not.toContain('theme-dark')
-        expect(localStorage.getItem('light-theme')).toBe(ThemePreference.System)
+        expect(JSON.parse(localStorage.getItem('temporarySettings') ?? '')).toEqual({
+            'user.themePreference': 'system',
+        })
     })
 })

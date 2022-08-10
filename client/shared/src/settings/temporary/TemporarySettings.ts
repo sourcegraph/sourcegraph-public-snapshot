@@ -26,6 +26,7 @@ export interface TemporarySettingsSchema {
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
+    'user.themePreference': string
     'signup.finishedWelcomeFlow': boolean
     'homepage.userInvites.tab': number
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
