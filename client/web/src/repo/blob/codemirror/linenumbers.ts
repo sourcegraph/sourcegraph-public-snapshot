@@ -19,7 +19,7 @@ export type SelectedLineRange = { line: number; endLine?: number } | null
 
 const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
 const selectedLineGutterMarker = new (class extends GutterMarker {
-    elementClass = 'selected-line'
+    public elementClass = 'selected-line'
 })()
 const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
