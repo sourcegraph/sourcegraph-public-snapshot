@@ -1,14 +1,20 @@
 package sources
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -128,6 +134,80 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
+}
+
+func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
+	cli := new(mockDoer)
+	// Version lookup
+	versionMatchedBy := func(req *http.Request) bool {
+		return req.Method == http.MethodGet && req.URL.Path == "/"
+	}
+	cli.On("Do", mock.MatchedBy(versionMatchedBy)).
+		Once().
+		Return(
+			&http.Response{
+				StatusCode: http.StatusOK,
+				Header: map[string][]string{
+					"X-GitHub-Enterprise-Version": {"99"},
+				},
+				Body: io.NopCloser(bytes.NewReader([]byte{})),
+			},
+			nil,
+		)
+	// Create Changeset mutation
+	createChangesetMatchedBy := func(req *http.Request) bool {
+		return req.Method == http.MethodPost && req.URL.Path == "/graphql"
+	}
+	cli.On("Do", mock.MatchedBy(createChangesetMatchedBy)).
+		Once().
+		Return(
+			&http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader([]byte(`{"errors": [{"message": "error in GraphQL response: was submitted too quickly"}]}`))),
+			},
+			nil,
+		)
+
+	apiURL, err := url.Parse("https://fake.api.github.com")
+	require.NoError(t, err)
+	client := github.NewV4Client("extsvc:github:0", apiURL, nil, cli)
+	source := &GithubSource{
+		client: client,
+	}
+
+	repo := &types.Repo{
+		Metadata: &github.Repository{
+			ID:            "bLAhBLAh",
+			NameWithOwner: "some-org/some-repo",
+		},
+	}
+	cs := &Changeset{
+		Title:      "This is a test PR",
+		Body:       "This is the description of the test PR",
+		HeadRef:    "refs/heads/always-open-pr",
+		BaseRef:    "refs/heads/master",
+		RemoteRepo: repo,
+		TargetRepo: repo,
+		Changeset:  &btypes.Changeset{},
+	}
+
+	exists, err := source.CreateChangeset(context.Background(), cs)
+	assert.False(t, exists)
+	assert.Error(t, err)
+	assert.Equal(
+		t,
+		"reached GitHub's internal creation limit: see https://docs.sourcegraph.com/admin/config/batch_changes#avoiding-hitting-rate-limits: error in GraphQL response: error in GraphQL response: was submitted too quickly",
+		err.Error(),
+	)
+}
+
+type mockDoer struct {
+	mock.Mock
+}
+
+func (d *mockDoer) Do(req *http.Request) (*http.Response, error) {
+	args := d.Called(req)
+	return args.Get(0).(*http.Response), args.Error(1)
 }
 
 func TestGithubSource_CloseChangeset(t *testing.T) {

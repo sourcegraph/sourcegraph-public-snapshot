@@ -42,7 +42,8 @@ import (
 func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
-		numHandlers = 1
+		// Default concurrency is set to 5.
+		numHandlers = 5
 	}
 
 	options := workerutil.WorkerOptions{
@@ -53,7 +54,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		Metrics:           metrics,
 	}
 
-	defaultRateLimit := rate.Limit(10.0)
+	defaultRateLimit := rate.Limit(20.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
 
 	limiter := ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit(), 1))
@@ -67,7 +68,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	sharedCache := make(map[string]*types.InsightSeries)
 
 	prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_insights_search_queue_total",
+		Name: "src_query_runner_worker_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
 		count, err := workerStore.QueuedCount(context.Background(), false)

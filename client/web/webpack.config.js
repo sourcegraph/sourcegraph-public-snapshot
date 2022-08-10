@@ -190,11 +190,12 @@ const config = {
     VERSION &&
       SENTRY_UPLOAD_SOURCE_MAPS &&
       new SentryWebpackPlugin({
+        silent: true,
         org: SENTRY_ORGANIZATION,
         project: SENTRY_PROJECT,
         authToken: SENTRY_DOT_COM_AUTH_TOKEN,
         release: `frontend@${VERSION}`,
-        include: path.join(STATIC_ASSETS_PATH, 'scripts'),
+        include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
       }),
   ].filter(Boolean),
   resolve: {

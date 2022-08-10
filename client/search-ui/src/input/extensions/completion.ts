@@ -23,6 +23,7 @@ import {
     mdiFileDocument,
     mdiFilterOutline,
     mdiFunction,
+    mdiHistory,
     mdiKey,
     mdiLink,
     mdiMatrix,
@@ -50,9 +51,10 @@ import {
     regexInsertText,
     repositoryInsertText,
 } from '@sourcegraph/shared/src/search/query/completion'
-import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
@@ -60,7 +62,7 @@ import { queryTokens } from './parsedQuery'
 
 import styles from '../CodeMirrorQueryInput.module.scss'
 
-type CompletionType = SymbolKind | 'queryfilter' | 'repository'
+type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
 // See SymbolIcon
 const typeIconMap: Record<CompletionType, string> = {
@@ -93,6 +95,7 @@ const typeIconMap: Record<CompletionType, string> = {
     UNKNOWN: mdiShape,
     queryfilter: mdiFilterOutline,
     repository: mdiSourceBranch,
+    searchhistory: mdiHistory,
 }
 
 function createIcon(pathSpec: string): Node {
@@ -126,12 +129,14 @@ type SuggestionSource<R, C extends SuggestionContext> = (
     tokenAtPosition?: Token
 ) => R | null | Promise<R | null>
 
+export type StandardSuggestionSource = SuggestionSource<CompletionResult | null, SuggestionContext>
+
 /**
  * searchQueryAutocompletion registers extensions for automcompletion, using the
  * provided suggestion sources.
  */
 export function searchQueryAutocompletion(
-    sources: SuggestionSource<CompletionResult | null, SuggestionContext>[],
+    sources: StandardSuggestionSource[],
     // By default we do not enable suggestion selection with enter because that
     // interferes with the query submission logic.
     applyOnEnter = false
@@ -161,6 +166,34 @@ export function searchQueryAutocompletion(
             // Per CodeMirror documentation, 20 is the default icon
             // position
             position: 20,
+        },
+        {
+            render(completion) {
+                if (completion.type !== 'searchhistory') {
+                    return null
+                }
+                const tokens = scanSearchQuery(completion.label)
+                if (tokens.type !== 'success') {
+                    throw new Error('this should not happen')
+                }
+                const nodes = tokens.term
+                    .flatMap(token => decorate(token))
+                    .map(token => {
+                        const decoration = toDecoration(completion.label, token)
+                        const node = document.createElement('span')
+                        node.className = decoration.className
+                        node.textContent = decoration.value
+                        return node
+                    })
+
+                const container = document.createElement('div')
+                container.style.whiteSpace = 'initial'
+                for (const node of nodes) {
+                    container.append(node)
+                }
+                return container
+            },
+            position: 30,
         },
     ]
 
@@ -206,6 +239,13 @@ export function searchQueryAutocompletion(
             '.cm-tooltip-autocomplete svg path': {
                 fillOpacity: 0.6,
             },
+            '.completion-type-searchhistory > .cm-completionLabel': {
+                display: 'none',
+            },
+            'li.completion-type-searchhistory': {
+                height: 'initial !important',
+                minHeight: '1.3rem',
+            },
         }),
         EditorView.updateListener.of(update => {
             // If a filter was completed, show the completion list again for
@@ -231,25 +271,34 @@ export function searchQueryAutocompletion(
     ]
 }
 
-/**
- * Creates default suggestion sources to complete available filters, dynamic
- * suggestions for the current pattern and static and dynamic suggestions for
- * the current filter value.
- */
-export function createDefaultSuggestionSources(options: {
+export interface DefaultSuggestionSourcesOptions {
     fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
     isSourcegraphDotCom: boolean
     globbing: boolean
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
-}): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
+    showWhenEmpty?: boolean
+}
+
+/**
+ * Creates default suggestion sources to complete available filters, dynamic
+ * suggestions for the current pattern and static and dynamic suggestions for
+ * the current filter value.
+ */
+export function createDefaultSuggestionSources(
+    options: DefaultSuggestionSourcesOptions
+): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
     const sources: SuggestionSource<CompletionResult | null, SuggestionContext>[] = []
 
     if (options.disableFilterCompletion !== true) {
         sources.push(
             // Static suggestions shown if the current position is outside a
             // filter value
-            createDefaultSource((context, _tokens, token) => {
+            createDefaultSource((context, tokens, token) => {
+                if (tokens.length === 0 && options.showWhenEmpty === false) {
+                    return null
+                }
+
                 // Default to the current cursor position (e.g. if the token is a
                 // whitespace, we want the suggestion to be inserted after it)
                 let from = context.position

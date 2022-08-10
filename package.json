@@ -56,15 +56,6 @@
     "build-vsce": "yarn --cwd client/vscode run build",
     "watch-vsce": "yarn --cwd client/vscode run watch"
   },
-  "browserslist": [
-    "last 1 version",
-    ">1%",
-    "not dead",
-    "not <0.25%",
-    "last 1 Chrome versions",
-    "last 3 Safari major versions",
-    "not IE > 0"
-  ],
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
     "all": true,
@@ -249,7 +240,7 @@
     "babel-plugin-lodash": "^3.3.4",
     "babel-plugin-webpack-chunkname": "^1.2.0",
     "babel-preset-react-app": "^10.0.0",
-    "browserslist": "^4.17.4",
+    "browserslist": "^4.21.3",
     "buffer": "^6.0.3",
     "bundlesize2": "^0.0.31",
     "chai": "^4.2.0",
@@ -396,7 +387,7 @@
     "@stripe/react-stripe-js": "^1.8.0-0",
     "@stripe/stripe-js": "^1.29.0",
     "@visx/annotation": "^2.10.0",
-    "@visx/axis": "^2.10.0",
+    "@visx/axis": "^2.11.1",
     "@visx/glyph": "^2.10.0",
     "@visx/grid": "^2.10.0",
     "@visx/group": "^2.10.0",
@@ -486,7 +477,7 @@
     "use-callback-ref": "^1.2.5",
     "use-debounce": "^8.0.1",
     "use-deep-compare-effect": "^1.6.1",
-    "use-resize-observer": "^7.0.0",
+    "use-resize-observer": "^9.0.2",
     "utility-types": "^3.10.0",
     "uuid": "^8.3.0",
     "webext-domain-permission-toggle": "^1.0.1",

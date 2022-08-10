@@ -22,33 +22,35 @@ export interface SearchBoxProps
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'>,
-        Pick<LazyMonacoQueryInputProps, 'editorComponent' | 'applySuggestionsOnEnter'> {
+        Pick<
+            LazyMonacoQueryInputProps,
+            | 'editorComponent'
+            | 'autoFocus'
+            | 'onFocus'
+            | 'onSubmit'
+            | 'globbing'
+            | 'interpretComments'
+            | 'onChange'
+            | 'onCompletionItemSelected'
+            | 'onHandleFuzzyFinder'
+            | 'applySuggestionsOnEnter'
+            | 'suggestionSources'
+            | 'defaultSuggestionsShowWhenEmpty'
+            | 'showSuggestionsOnFocus'
+        > {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
     showSearchContextManagement: boolean
     queryState: QueryState
-    onChange: (newState: QueryState) => void
-    onSubmit: () => void
     submitSearchOnSearchContextChange?: SubmitSearchProps['submitSearch']
     submitSearchOnToggle?: SubmitSearchProps['submitSearch']
-    onFocus?: () => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
-    onCompletionItemSelected?: () => void
-    autoFocus?: boolean
     className?: string
     containerClassName?: string
 
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
-
-    /** Whether comments are parsed and highlighted */
-    interpretComments?: boolean
-
     /** Don't show search help button */
     hideHelpButton?: boolean
-
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 
     /** Set in JSContext only available to the web app. */
     isExternalServicesUserModeAll?: boolean
@@ -123,9 +125,12 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         onSubmit={props.onSubmit}
                         patternType={props.patternType}
-                        queryState={props.queryState}
+                        queryState={queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         applySuggestionsOnEnter={props.applySuggestionsOnEnter}
+                        suggestionSources={props.suggestionSources}
+                        defaultSuggestionsShowWhenEmpty={props.defaultSuggestionsShowWhenEmpty}
+                        showSuggestionsOnFocus={props.showSuggestionsOnFocus}
                     />
                     <Toggles
                         patternType={props.patternType}

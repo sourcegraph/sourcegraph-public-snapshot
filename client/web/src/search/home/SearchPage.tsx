@@ -1,14 +1,15 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { SearchContextInputProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -21,6 +22,7 @@ import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
+import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
@@ -54,6 +56,12 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
+    /** The value entered by the user in the query input */
+    const [queryState, setQueryState] = useState<QueryState>({
+        query: '',
+    })
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
@@ -65,10 +73,11 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             )}
             <div
                 className={classNames(styles.searchContainer, {
-                    [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
+                    [styles.searchContainerWithContentBelow]:
+                        props.isSourcegraphDotCom || showEnterpriseHomePanels || coreWorkflowImprovementsEnabled,
                 })}
             >
-                <SearchPageInput {...props} source="home" />
+                <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
             </div>
             <div
                 className={classNames(styles.panelsContainer, {
@@ -79,6 +88,14 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
 
                 {showEnterpriseHomePanels && props.authenticatedUser && (
                     <HomePanels showCollaborators={showCollaborators} {...props} />
+                )}
+
+                {coreWorkflowImprovementsEnabled && !showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
+                    <QueryExamplesHomepage
+                        telemetryService={props.telemetryService}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
+                    />
                 )}
             </div>
 

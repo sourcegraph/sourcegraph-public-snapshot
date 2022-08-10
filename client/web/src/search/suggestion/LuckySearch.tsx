@@ -61,6 +61,12 @@ export const luckySearchEvent = (alertTitle: string, descriptions: string[]): st
         if (entry.match(/AND patterns together/)) {
             return 'And'
         }
+        if (entry.match(/language filter for pattern/)) {
+            return 'Lang'
+        }
+        if (entry.match(/search type for pattern/)) {
+            return 'Type'
+        }
         return 'Other'
     })
 

@@ -5,10 +5,15 @@ import { Observable } from 'rxjs'
 import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { createDefaultSuggestionSources, searchQueryAutocompletion } from './completion'
+import {
+    createDefaultSuggestionSources,
+    DefaultSuggestionSourcesOptions,
+    searchQueryAutocompletion,
+    StandardSuggestionSource,
+} from './completion'
 import { loadingIndicator } from './loading-indicator'
 
-export { createDefaultSuggestionSources, searchQueryAutocompletion }
+export { createDefaultSuggestionSources, searchQueryAutocompletion, StandardSuggestionSource }
 
 /**
  * Creates an extension that calls the provided callback whenever the editor
@@ -62,12 +67,14 @@ export const createDefaultSuggestions = ({
     disableFilterCompletion,
     disableSymbolCompletion,
     applyOnEnter,
-}: {
-    isSourcegraphDotCom: boolean
-    globbing: boolean
+    showWhenEmpty,
+    additionalSources = [],
+}: Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> & {
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
-    disableSymbolCompletion?: true
-    disableFilterCompletion?: true
+    additionalSources?: StandardSuggestionSource[]
+    /**
+     * Whether or not to allow suggestions selection by Enter key.
+     */
     applyOnEnter?: boolean
 }): Extension => [
     searchQueryAutocompletion(
@@ -77,7 +84,8 @@ export const createDefaultSuggestions = ({
             isSourcegraphDotCom,
             disableSymbolCompletion,
             disableFilterCompletion,
-        }),
+            showWhenEmpty,
+        }).concat(additionalSources),
         applyOnEnter
     ),
     loadingIndicator(),

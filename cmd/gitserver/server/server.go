@@ -1863,10 +1863,6 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
-func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
-	return s.DB.GitserverRepos().SetLastError(ctx, name, error, s.Hostname)
-}
-
 func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 	dir := s.dir(name)
 
@@ -1887,13 +1883,14 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 	})
 }
 
-// setLastErrorNonFatal is the same as setLastError but only logs errors
+// setLastErrorNonFatal will set the last_error column for the repo in the gitserver table.
 func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
 	var errString string
 	if err != nil {
 		errString = err.Error()
 	}
-	if err := s.setLastError(ctx, name, errString); err != nil {
+
+	if err := s.DB.GitserverRepos().SetLastError(ctx, name, errString, s.Hostname); err != nil {
 		s.Logger.Warn("Setting last error in DB", log.Error(err))
 	}
 }

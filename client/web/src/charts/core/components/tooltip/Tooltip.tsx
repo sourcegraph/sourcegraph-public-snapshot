@@ -9,7 +9,7 @@ import styles from './Tooltip.module.scss'
 const TOOLTIP_PADDING = createRectangle(0, 0, 10, 10)
 
 interface TooltipProps {
-    containerElement: SVGSVGElement
+    containerElement: Element
     activeElement?: HTMLElement
 }
 
@@ -35,6 +35,10 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
     }, [activeElement])
 
     useEffect(() => {
+        // We need this casting because Element type doesn't support
+        // pointer or mouse events in pointermove handlers
+        const element = containerElement as HTMLElement
+
         function handleMove(event: PointerEvent): void {
             setVirtualElement({
                 target: null,
@@ -43,10 +47,10 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
             })
         }
 
-        containerElement.addEventListener('pointermove', handleMove)
+        element.addEventListener('pointermove', handleMove)
 
         return () => {
-            containerElement.removeEventListener('pointermove', handleMove)
+            element.removeEventListener('pointermove', handleMove)
         }
     }, [containerElement])
 

@@ -1,0 +1,56 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 538
+expression: "dump_document(&document, &contents)"
+---
+  class MyClass {
+//^^^^^ IdentifierType
+    public static myValue: string;
+//  ^^^^^^ IdentifierKeyword
+//         ^^^^^^ IdentifierKeyword
+//                ^^^^^^^ Identifier
+//                       ^ IdentifierOperator
+//                               ^ PunctuationDelimiter
+    constructor(init: string) {
+//  ^^^^^^^^^^^ IdentifierType
+//              ^^^^ Identifier
+//                  ^ IdentifierOperator
+      this.myValue = init;
+//    ^^^^ Identifier
+//         ^^^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^^^^ Identifier
+//                       ^ PunctuationDelimiter
+    }
+  }
+  import fs = require("fs");
+//^^^^^^ IdentifierKeyword
+//       ^^ Identifier
+//          ^ IdentifierOperator
+//            ^^^^^^^ IdentifierKeyword
+//                    ^^^^ StringLiteral
+//                         ^ PunctuationDelimiter
+  module MyModule {
+//^^^^^^ IdentifierNamespace
+    export interface MyInterface extends Other {
+//  ^^^^^^ IdentifierKeyword
+//         ^^^^^^^^^ IdentifierType
+//                               ^^^^^^^ IdentifierKeyword
+      myProperty: any;
+//    ^^^^^^^^^^ Identifier
+//              ^ IdentifierOperator
+//                   ^ PunctuationDelimiter
+    }
+  }
+  declare magicNumber number;
+//^^^^^^^ IdentifierKeyword
+//        ^^^^^^^^^^^ Identifier
+//                    ^^^^^^ Identifier
+//                          ^ PunctuationDelimiter
+  myArray.forEach(() => { }); // fat arrow syntax
+//^^^^^^^ Identifier
+//                   ^^ IdentifierType
+//                          ^ PunctuationDelimiter
+//                            ^^ Comment
+//                              ^^^^^^^^^^^^^^^^^ Comment
+

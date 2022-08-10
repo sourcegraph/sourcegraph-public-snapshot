@@ -18,7 +18,7 @@ import (
 )
 
 func TestSynchronizeMetadata(t *testing.T) {
-	// Note: this blocks test parallelism
+	// Note: package globals block test parallelism
 	testEnterprise(t)
 
 	ctx := context.Background()
@@ -91,7 +91,8 @@ func TestSynchronizeMetadata(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
-	t.Parallel()
+	// Note: package globals block test parallelism
+	withMigrationIDs(t, []int{1, 2, 3})
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -114,8 +115,9 @@ func TestList(t *testing.T) {
 }
 
 func TestListEnterprise(t *testing.T) {
-	// Note: this blocks test parallelism
+	// Note: package globals block test parallelism
 	testEnterprise(t)
+	withMigrationIDs(t, []int{1, 2, 3, 4, 5})
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -425,6 +427,12 @@ func newVersionPtr(major, minor int) *Version {
 func testEnterprise(t *testing.T) {
 	ReturnEnterpriseMigrations = true
 	t.Cleanup(func() { ReturnEnterpriseMigrations = false })
+}
+
+func withMigrationIDs(t *testing.T, ids []int) {
+	old := yamlMigrationIDs
+	yamlMigrationIDs = ids
+	t.Cleanup(func() { yamlMigrationIDs = old })
 }
 
 func testStore(t *testing.T, db database.DB) *Store {
