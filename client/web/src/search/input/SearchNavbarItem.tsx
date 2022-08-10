@@ -11,6 +11,7 @@ import { ActivationProps } from '@sourcegraph/shared/src/components/activation/A
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -67,6 +68,10 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const fuzzyFinderShortcut = useKeyboardShortcut('fuzzyFinder')
+    const applySuggestionsOnEnter = useExperimentalFeatures(
+        features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
+    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -111,6 +116,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             <SearchBox
                 {...props}
                 editorComponent={editorComponent}
+                applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
                 showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}

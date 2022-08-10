@@ -136,6 +136,7 @@ export interface RepositoryMatch {
     archived?: boolean
     private?: boolean
     branches?: string[]
+    descriptionMatches?: Range[]
 }
 
 /**

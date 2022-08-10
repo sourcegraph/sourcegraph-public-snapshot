@@ -35,10 +35,13 @@ func TestUserCredential_Authenticator(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("errors", func(t *testing.T) {
+		testKey := &et.TestKey{}
+		transparentKey := et.NewTransparentKey(t)
+
 		for name, credential := range map[string]*UserCredential{
 			"no credential": {
-				EncryptionKeyID: "test key",
-				key:             &et.TestKey{},
+				EncryptionKeyID: testEncryptionKeyID(testKey),
+				key:             testKey,
 			},
 			"bad decrypter": {
 				EncryptionKeyID:     "it's the bad guy... uh, key",
@@ -46,9 +49,9 @@ func TestUserCredential_Authenticator(t *testing.T) {
 				key:                 &et.BadKey{Err: errors.New("bad key bad key what you gonna do")},
 			},
 			"invalid secret": {
-				EncryptionKeyID:     "transparent key",
+				EncryptionKeyID:     testEncryptionKeyID(transparentKey),
 				EncryptedCredential: []byte("foo"),
-				key:                 et.NewTransparentKey(t),
+				key:                 transparentKey,
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
@@ -62,12 +65,12 @@ func TestUserCredential_Authenticator(t *testing.T) {
 	t.Run("plaintext credential", func(t *testing.T) {
 		a := &auth.BasicAuth{}
 
-		enc, err := EncryptAuthenticator(ctx, nil, a)
+		enc, _, err := EncryptAuthenticator(ctx, nil, a)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		for _, keyID := range []string{"", UserCredentialUnmigratedEncryptionKeyID} {
+		for _, keyID := range []string{"", encryption.UnmigratedEncryptionKeyID} {
 			t.Run(keyID, func(t *testing.T) {
 				uc := &UserCredential{
 					EncryptionKeyID:     keyID,
@@ -89,12 +92,12 @@ func TestUserCredential_Authenticator(t *testing.T) {
 		key := et.TestKey{}
 		a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
-		enc, err := EncryptAuthenticator(ctx, key, a)
+		enc, kid, err := EncryptAuthenticator(ctx, key, a)
 		if err != nil {
 			t.Fatal(err)
 		}
 		uc := &UserCredential{
-			EncryptionKeyID:     "test key",
+			EncryptionKeyID:     kid,
 			EncryptedCredential: enc,
 			key:                 key,
 		}
@@ -110,7 +113,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 	t.Run("nil key", func(t *testing.T) {
 		a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
-		enc, err := EncryptAuthenticator(ctx, nil, a)
+		enc, _, err := EncryptAuthenticator(ctx, nil, a)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -538,9 +541,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 		// helper to make that easier.
 
 		insertRawCredential := func(t *testing.T, domain string, raw string) int64 {
-			kid, err := keyID(ctx, key)
-			require.NoError(t, err)
-
+			kid := testEncryptionKeyID(key)
 			secret, err := key.Encrypt(ctx, []byte(raw))
 			require.NoError(t, err)
 

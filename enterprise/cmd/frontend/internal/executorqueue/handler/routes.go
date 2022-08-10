@@ -228,16 +228,28 @@ func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFa
 		// Attach the extra labels.
 		metricLabelInstance := "sg_instance"
 		metricLabelJob := "sg_job"
-		job := "sourcegraph-executors"
+		executorJob := "sourcegraph-executors"
+		registryJob := "sourcegraph-executors-registry"
 		for _, m := range mf.Metric {
-			var found bool
+			var metricLabelInstanceValue string
 			for _, l := range m.Label {
-				found = found || *l.Name == metricLabelInstance
+				if *l.Name == metricLabelInstance {
+					metricLabelInstanceValue = l.GetValue()
+					break
+				}
 			}
-			if !found {
+			// if sg_instance not set, set it as the executor name sent in the heartbeat.
+			// this is done for the executor's own and it's node_exporter metrics, executors
+			// set sg_instance for metrics scraped from the registry+registry's node_exporter
+			if metricLabelInstanceValue == "" {
 				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
 			}
-			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &job})
+
+			if metricLabelInstanceValue == "docker-registry" {
+				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &registryJob})
+			} else {
+				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &executorJob})
+			}
 		}
 
 		data = append(data, &mf)

@@ -74,7 +74,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                     <LoaderButton
                         loading={isLoading}
                         label="Add"
-                        className="btn-block"
+                        display="block"
                         onClick={navigateToAuthProvider}
                         variant="success"
                     />

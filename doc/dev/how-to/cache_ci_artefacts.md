@@ -10,8 +10,6 @@ Because [Buildkite agents are stateless](../background-information/ci/developmen
 
 A common strategy to address this problem of having to rebuild everything is to store objects that are commonly reused accross jobs and to download them again rather than rebuilding everything from scratch.
 
-Cached artefacts *are automatically expired after 30 days* (by an object lifecycle policy on the bucket).
-
 ## What and when to cache?
 
 In order to determine what we can cache and when to do it, we need to make sure to cover the following questions:
@@ -44,7 +42,7 @@ pipeline.AddStep(":jest::chrome: Test browser extension",
 The important part here are:
 
 - The `Key` which defines how the cached version is named, so we can find it again on ulterior builds.
-  - It includes a `{{ checkusm 'yarn.lock' }}` segment in its name, which means that any changes in the `yarn.lock` will be reflected in the key name.
+  - It includes a `{{ checksum 'yarn.lock' }}` segment in its name, which means that any changes in the `yarn.lock` will be reflected in the key name.
   - It means that if the `yarn.lock` checksum would change because dependencies have changed, it should use a different version of the cached dependencies. If those were to not be present on the cache, it will simply rebuild them and upload the result to the cache.
 - The `RestoreKeys` lists the keys we can use to know if there is a cached version or not available. 99% of the time, that's the same exact thing as the `Key`.
 - The `Paths` lists the path to the files that needs to be cached. They **must be within the repository**, not outside.
@@ -68,4 +66,80 @@ gsutil rm gs://sourcegraph_buildkite_cache/sourcegraph/sourcegraph/[MY-KEY].tar.
 
 ## When is the cache purged?
 
-The cached is purged every TODO
+Cached artefacts expire automatically after 30 days, as mandated by an object lifecycle policy on the bucket.
+
+## How to enable caching for a new Buildkite pipeline?
+
+> NOTE: These instructions assume that the new pipeline is defined in a `pipeline.yaml` file directly instead of being generated.
+ 
+While the [Cache Buildkite Plugin](https://github.com/sourcegraph/cache-buildkite-plugin) takes care of the caching itself, new pipelines require some bootstrapping to ensure required dependencies are installed and configured.
+
+1. Add `.buildkite/hooks/pre-command` to the root of your repository if it does not exist yet. This is a [Buildkite lifecycle hook](https://buildkite.com/docs/agent/v3/hooks#job-lifecycle-hooks) that runs before every build command. Then add the following snippet to this file:
+   ```bash
+   #!/usr/bin/env bash
+   
+   set -e
+  
+   # awscli is needed for Cache Buildkite Plugin
+   asdf install awscli
+  
+   # set the buildkite cache access keys
+   AWS_CONFIG_DIR_PATH="/buildkite/.aws"
+   mkdir -p "$AWS_CONFIG_DIR_PATH"
+   AWS_CONFIG_FILE="$AWS_CONFIG_DIR_PATH/config"
+   export AWS_CONFIG_FILE
+   AWS_SHARED_CREDENTIALS_FILE="$AWS_CONFIG_DIR_PATH/credentials"
+   export AWS_SHARED_CREDENTIALS_FILE
+   aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
+   aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
+   ```
+   > NOTE: for `asdf install awscli` to succeed, a `.tool-versions` file containing the dependency and the desired version number must be present. You may replace `asdf` with any other installation method.
+
+   > NOTE: the environment variables `$BUILDKITE_HMAC_KEY` and `$BUILDKITE_HMAC_SECRET` are set on the Buildkite agent already.
+
+2. Add the following snippet to the top of `pipeline.yaml`:
+   ```yaml
+   s3-settings: &s3-settings
+     backend: s3
+     s3:
+       bucket: sourcegraph_buildkite_cache
+       endpoint: https://storage.googleapis.com
+       profile: buildkite
+       region: us-central1
+   ```
+   
+3. For each build step where you would like to cache artifacts, define what to cache and how it should invalidate. Decide what the key should be as described in [What and when to cache?](#what-and-when-to-cache). Generally, consider these cache types:   
+   
+    * **Long-lived** caches. An example is a project's dependencies, which do not change frequently and may consume a significant portion of the build time when pulled from repositories. In this case, using the checksum of the dependency list (such as `go.mod` or `requirements.txt`) as a cache key will cause the cache to be recreated whenever the dependencies are updated. You may also hash [a directory instead of a file](https://github.com/sourcegraph/cache-buildkite-plugin#hashing-checksum-against-directory). **It is important to set the `paths` to the dependency directory to ensure only those files are cached**. This snippet shows an example configuration: 
+       ```yaml
+       plugins:
+         - https://github.com/sourcegraph/cache-buildkite-plugin.git#master:
+           id: <fitting ID> # e.g. go-mod
+           key: "{{ id }}-{{ git.branch }}-{{ checksum /path/to/dependency-file }}"
+           restore-keys:
+             - "{{ id }}-{{ git.branch }}-{{ checksum /path/to/dependency-file }}"
+             - "{{ id }}-{{ git.branch }}-"
+             - "{{ id }}-"
+           compress: true
+           compress-program: pigz
+           paths:
+             - "/path/to/dependencies"
+           <<: *s3-settings
+        ```
+   
+    * **Short-lived** caches. These contain artifacts of a project that are frequently changed, such as application code. These caches can be useful for e.g. rerunning a build on a network timeout. A cache key should be used that is unique across multiple builds. A good default is the build's git commit SHA. The following snippet demonstrates how to do this:
+      ```yaml
+      plugins:
+         - https://github.com/sourcegraph/cache-buildkite-plugin.git#master:
+           id: <fitting ID> # e.g. project name
+           key: "{{ id }}-{{ git.branch }}-{{ git.commit }}"
+           restore-keys:
+             - "{{ id }}-{{ git.branch }}-{{ git.commit }}"
+             - "{{ id }}-{{ git.branch }}-"
+             - "{{ id }}-"
+           compress: true
+           compress-program: pigz
+           <<: *s3-settings
+       ```
+
+    Add every plugin definition to the relevant steps in your `pipeline.yaml`. An example of a valid pipeline step with a plugin configured can be found [here](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/image-updater-pipeline/-/blob/.buildkite/image-updater/pipeline.yaml?L25).

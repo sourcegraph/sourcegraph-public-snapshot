@@ -104,3 +104,5 @@ export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRo
         a.location === b.location
     )
 }
+
+export const NOOP = (): void => undefined

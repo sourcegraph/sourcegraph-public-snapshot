@@ -121,7 +121,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               class="form-group"
             >
               <button
-                class="btn btnPrimary btn-block"
+                class="btn btnPrimary btnBlock"
                 type="submit"
               >
                 Sign in
@@ -147,7 +147,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btn-block"
+              class="btn btnSecondary btnBlock"
               href=""
             >
               <svg
@@ -297,7 +297,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               class="form-group"
             >
               <button
-                class="btn btnPrimary btn-block"
+                class="btn btnPrimary btnBlock"
                 type="submit"
               >
                 Sign in
@@ -323,7 +323,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btn-block"
+              class="btn btnSecondary btnBlock"
               href=""
             >
               <svg

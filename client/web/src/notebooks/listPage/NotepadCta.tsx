@@ -3,8 +3,7 @@ import React from 'react'
 import { ProductStatusBadge, Button, H3, Text } from '@sourcegraph/wildcard'
 
 import { NotepadIcon } from '../../search/Notepad'
-import { ThemePreference } from '../../stores/themeState'
-import { useTheme } from '../../theme'
+import { useTheme, ThemePreference } from '../../theme'
 
 export const NOTEPAD_CTA_ID = 'notepad-cta'
 
