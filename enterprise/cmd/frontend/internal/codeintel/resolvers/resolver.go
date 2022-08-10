@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	symbolsClient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -71,7 +70,6 @@ type RepositorySummary struct {
 }
 
 type resolver struct {
-	db               database.DB
 	dbStore          DBStore
 	lsifStore        LSIFStore
 	gitserverClient  GitserverClient
@@ -91,11 +89,10 @@ func NewResolver(
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	symbolsClient *symbolsClient.Client,
-	observationContext *observation.Context,
 	dbConn database.DB,
 	codenavResolver CodeNavResolver,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, observationContext, dbConn, codenavResolver)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, dbConn, codenavResolver)
 }
 
 func newResolver(
@@ -105,12 +102,10 @@ func newResolver(
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	symbolsClient *symbolsClient.Client,
-	observationContext *observation.Context,
 	dbConn database.DB,
 	codenavResolver CodeNavResolver,
 ) *resolver {
 	return &resolver{
-		db:               dbConn,
 		dbStore:          dbStore,
 		lsifStore:        lsifStore,
 		gitserverClient:  gitserverClient,

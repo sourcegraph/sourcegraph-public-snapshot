@@ -21,23 +21,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
-	resolverObservationContext := &observation.Context{
-		Logger:     observationContext.Logger,
-		Tracer:     observationContext.Tracer,
-		Registerer: observationContext.Registerer,
-		HoneyDataset: &honey.Dataset{
-			Name:       "codeintel-graphql",
-			SampleRate: 4,
-		},
-	}
-
-	enterpriseServices.CodeIntelResolver = newResolver(db, config, resolverObservationContext, services)
+func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, services *Services) error {
+	enterpriseServices.CodeIntelResolver = newResolver(db, config, services)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
 	return nil
 }
 
-func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) gql.CodeIntelResolver {
+func newResolver(db database.DB, config *Config, services *Services) gql.CodeIntelResolver {
 	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
 
 	codenavCtx := &observation.Context{
@@ -54,7 +44,6 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		policyMatcher,
 		services.indexEnqueuer,
 		symbols.DefaultClient,
-		observationContext,
 		db,
 		codenavResolver,
 	)
