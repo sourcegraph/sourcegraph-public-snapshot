@@ -1,4 +1,4 @@
-# Admin Analytics
+# Analytics
 
 <aside class="experimental">
 <p>
@@ -46,6 +46,6 @@ The data is updated approximately every 24 hours.
 
 **How does this work with the existing usage stats page?**
 
-This new admin analytics experience has been redesigned from the ground up to provide the most value to administrators. In the future, we plan to deprecate the legacy usage stats page and statistics section once this functionality moved from experimental to generally available. 
+This new analytics experience has been redesigned from the ground up to provide the most value to administrators. In the future, we plan to deprecate the legacy usage stats page and statistics section once this functionality moved from experimental to generally available. 
 
-Note: The new admin analytics experience is experimental. For billing information, use [usage stats](./usage_statistics.md).
+Note: The new analytics experience is experimental. For billing information, use [usage stats](./usage_statistics.md).
