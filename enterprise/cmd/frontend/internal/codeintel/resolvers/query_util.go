@@ -2,244 +2,16 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// adjustedUpload pairs an upload visible from the current target commit with the
-// current target path and position adjusted so that it matches the data within the
-// underlying index.
-type adjustedUpload struct {
-	Upload               store.Dump
-	AdjustedPath         string
-	AdjustedPosition     lsifstore.Position
-	AdjustedPathInBundle string
-}
-
-// adjustUploads adjusts the current target path and the given position for each upload visible
-// from the current target commit. If an upload cannot be adjusted, it will be omitted from the
-// returned slice.
-func (r *queryResolver) adjustUploads(ctx context.Context, line, character int) ([]adjustedUpload, error) {
-	adjustedUploads := make([]adjustedUpload, 0, len(r.uploads))
-	for i := range r.uploads {
-		adjustedUpload, ok, err := r.adjustUpload(ctx, line, character, r.uploads[i])
-		if err != nil {
-			return nil, err
-		}
-		if ok {
-			adjustedUploads = append(adjustedUploads, adjustedUpload)
-		}
-	}
-
-	return adjustedUploads, nil
-}
-
-// adjustUpload adjusts the current target path and the given position for the given upload. If
-// the upload cannot be adjusted, a false-valued flag is returned.
-func (r *queryResolver) adjustUpload(ctx context.Context, line, character int, upload store.Dump) (adjustedUpload, bool, error) {
-	position := lsifstore.Position{
-		Line:      line,
-		Character: character,
-	}
-
-	adjustedPath, adjustedPosition, ok, err := r.positionAdjuster.AdjustPosition(ctx, upload.Commit, r.path, position, false)
-	if err != nil || !ok {
-		return adjustedUpload{}, false, errors.Wrap(err, "positionAdjuster.AdjustPosition")
-	}
-
-	return adjustedUpload{
-		Upload:               upload,
-		AdjustedPath:         adjustedPath,
-		AdjustedPosition:     adjustedPosition,
-		AdjustedPathInBundle: strings.TrimPrefix(adjustedPath, upload.Root),
-	}, true, nil
-}
-
-// definitionUploads returns the set of uploads that provide any of the given monikers. This method will
-// not return uploads for commits which are unknown to gitserver.
-func (r *queryResolver) definitionUploads(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]store.Dump, error) {
-	uploads, err := r.dbStore.DefinitionDumps(ctx, orderedMonikers)
-	if err != nil {
-		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
-	}
-
-	r.updateUploadCache(uploads)
-	return filterUploadsWithCommits(ctx, r.cachedCommitChecker, uploads)
-}
-
-// monikerLimit is the maximum number of monikers that can be returned from orderedMonikers.
-const monikerLimit = 10
-
-// orderedMonikers returns the set of monikers of the given kind(s) attached to the ranges specified by
-// the given upload list.
-//
-// The return slice is ordered by visible upload, then by specificity, i.e., monikers attached to
-// enclosed ranges before before monikers attached to enclosing ranges. Monikers are de-duplicated, such
-// that the second (third, ...) occurrences are removed.
-func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []adjustedUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
-	monikerSet := newQualifiedMonikerSet()
-
-	for i := range adjustedUploads {
-		rangeMonikers, err := r.lsifStore.MonikersByPosition(
-			ctx,
-			adjustedUploads[i].Upload.ID,
-			adjustedUploads[i].AdjustedPathInBundle,
-			adjustedUploads[i].AdjustedPosition.Line,
-			adjustedUploads[i].AdjustedPosition.Character,
-		)
-		if err != nil {
-			return nil, errors.Wrap(err, "lsifStore.MonikersByPosition")
-		}
-
-		for _, monikers := range rangeMonikers {
-			for _, moniker := range monikers {
-				if moniker.PackageInformationID == "" || !sliceContains(kinds, moniker.Kind) {
-					continue
-				}
-
-				packageInformationData, _, err := r.lsifStore.PackageInformation(
-					ctx,
-					adjustedUploads[i].Upload.ID,
-					adjustedUploads[i].AdjustedPathInBundle,
-					string(moniker.PackageInformationID),
-				)
-				if err != nil {
-					return nil, errors.Wrap(err, "lsifStore.PackageInformation")
-				}
-
-				monikerSet.add(precise.QualifiedMonikerData{
-					MonikerData:            moniker,
-					PackageInformationData: packageInformationData,
-				})
-
-				if len(monikerSet.monikers) >= monikerLimit {
-					return monikerSet.monikers, nil
-				}
-			}
-		}
-	}
-
-	return monikerSet.monikers, nil
-}
-
-// monikerLocations returns the set of locations (within the given uploads) with an attached moniker
-// whose scheme+identifier matches any of the given monikers.
-func (r *queryResolver) monikerLocations(ctx context.Context, uploads []store.Dump, orderedMonikers []precise.QualifiedMonikerData, tableName string, limit, offset int) ([]lsifstore.Location, int, error) {
-	ids := make([]int, 0, len(uploads))
-	for i := range uploads {
-		ids = append(ids, uploads[i].ID)
-	}
-
-	args := make([]precise.MonikerData, 0, len(orderedMonikers))
-	for _, moniker := range orderedMonikers {
-		args = append(args, moniker.MonikerData)
-	}
-
-	locations, totalCount, err := r.lsifStore.BulkMonikerResults(ctx, tableName, ids, args, limit, offset)
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "lsifStore.BulkMonikerResults")
-	}
-
-	return locations, totalCount, nil
-}
-
-// adjustLocations translates a set of locations into an equivalent set of locations in the requested
-// commit.
-func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifstore.Location) ([]AdjustedLocation, error) {
-	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
-
-	checkerEnabled := authz.SubRepoEnabled(r.checker)
-	var a *actor.Actor
-	if checkerEnabled {
-		a = actor.FromContext(ctx)
-	}
-	for _, location := range locations {
-		upload, ok := r.uploadFromCache(location.DumpID)
-		if !ok {
-			continue
-		}
-
-		adjustedLocation, err := r.adjustLocation(ctx, upload, location)
-		if err != nil {
-			return nil, err
-		}
-
-		if !checkerEnabled {
-			adjustedLocations = append(adjustedLocations, adjustedLocation)
-		} else {
-			repo := api.RepoName(adjustedLocation.Dump.RepositoryName)
-			if include, err := authz.FilterActorPath(ctx, r.checker, a, repo, adjustedLocation.Path); err != nil {
-				return nil, err
-			} else if include {
-				adjustedLocations = append(adjustedLocations, adjustedLocation)
-			}
-		}
-	}
-
-	return adjustedLocations, nil
-}
-
-// adjustLocation translates a location (relative to the indexed commit) into an equivalent location in
-// the requested commit. If the translation fails, then the original commit and range are used as the
-// commit and range of the adjusted location.
-func (r *queryResolver) adjustLocation(ctx context.Context, dump store.Dump, location lsifstore.Location) (AdjustedLocation, error) {
-	adjustedCommit, adjustedRange, _, err := r.adjustRange(ctx, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
-	if err != nil {
-		return AdjustedLocation{}, err
-	}
-
-	return AdjustedLocation{
-		Dump:           dump,
-		Path:           dump.Root + location.Path,
-		AdjustedCommit: adjustedCommit,
-		AdjustedRange:  adjustedRange,
-	}, nil
-}
-
-// adjustRange translates a range (relative to the indexed commit) into an equivalent range in the requested
-// commit. If the translation fails, then the original commit and range are returned along with a false-valued
-// flag.
-func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commit, path string, rn lsifstore.Range) (string, lsifstore.Range, bool, error) {
-	if repositoryID != r.repositoryID {
-		// No diffs between distinct repositories
-		return commit, rn, true, nil
-	}
-
-	if _, adjustedRange, ok, err := r.positionAdjuster.AdjustRange(ctx, commit, path, rn, true); err != nil {
-		return "", lsifstore.Range{}, false, errors.Wrap(err, "positionAdjuster.AdjustRange")
-	} else if ok {
-		return r.commit, adjustedRange, true, nil
-	}
-
-	return commit, rn, false, nil
-}
-
-func (r *queryResolver) uploadFromCache(id int) (store.Dump, bool) {
-	r.uploadCacheMutex.RLock()
-	defer r.uploadCacheMutex.RUnlock()
-
-	upload, ok := r.uploadCache[id]
-	return upload, ok
-}
-
-func (r *queryResolver) updateUploadCache(uploads []store.Dump) {
-	r.uploadCacheMutex.Lock()
-	defer r.uploadCacheMutex.Unlock()
-
-	for i := range uploads {
-		r.uploadCache[uploads[i].ID] = uploads[i]
-	}
-}
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
 // slice. The slice is filtered in-place and returned (to update the slice length).
@@ -275,20 +47,176 @@ func uploadIDsToString(vs []store.Dump) string {
 	return strings.Join(ids, ", ")
 }
 
-func monikersToString(vs []precise.QualifiedMonikerData) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s:%s", v.Kind, v.Scheme, v.Identifier, v.Version))
+func sharedRangeTolsifstoreRange(r shared.Range) lsifstore.Range {
+	return lsifstore.Range{
+		Start: lsifstore.Position(r.Start),
+		End:   lsifstore.Position(r.End),
 	}
-
-	return strings.Join(strs, ", ")
 }
 
-func sliceContains(slice []string, str string) bool {
-	for _, el := range slice {
-		if el == str {
-			return true
+func sharedDiagnosticAtUploadToAdjustedDiagnostic(shared []shared.DiagnosticAtUpload) []AdjustedDiagnostic {
+	adjustedDiagnostics := make([]AdjustedDiagnostic, 0, len(shared))
+	for _, diag := range shared {
+		diagnosticData := precise.DiagnosticData{
+			Severity:       diag.Severity,
+			Code:           diag.Code,
+			Message:        diag.Message,
+			Source:         diag.Source,
+			StartLine:      diag.StartLine,
+			StartCharacter: diag.StartCharacter,
+			EndLine:        diag.EndLine,
+			EndCharacter:   diag.EndCharacter,
 		}
+		lsifDiag := lsifstore.Diagnostic{
+			DiagnosticData: diagnosticData,
+			DumpID:         diag.DumpID,
+			Path:           diag.Path,
+		}
+
+		adjusted := AdjustedDiagnostic{
+			Diagnostic:     lsifDiag,
+			Dump:           store.Dump(diag.Dump),
+			AdjustedCommit: diag.AdjustedCommit,
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position(diag.AdjustedRange.Start),
+				End:   lsifstore.Position(diag.AdjustedRange.End),
+			},
+		}
+		adjustedDiagnostics = append(adjustedDiagnostics, adjusted)
 	}
-	return false
+	return adjustedDiagnostics
+}
+
+func sharedDumpToDbstoreUpload(dump shared.Dump) dbstore.Upload {
+	return dbstore.Upload{
+		ID:                dump.ID,
+		Commit:            dump.Commit,
+		Root:              dump.Root,
+		VisibleAtTip:      dump.VisibleAtTip,
+		UploadedAt:        dump.UploadedAt,
+		State:             dump.State,
+		FailureMessage:    dump.FailureMessage,
+		StartedAt:         dump.StartedAt,
+		FinishedAt:        dump.FinishedAt,
+		ProcessAfter:      dump.ProcessAfter,
+		NumResets:         dump.NumResets,
+		NumFailures:       dump.NumFailures,
+		RepositoryID:      dump.RepositoryID,
+		RepositoryName:    dump.RepositoryName,
+		Indexer:           dump.Indexer,
+		IndexerVersion:    dump.IndexerVersion,
+		NumParts:          0,
+		UploadedParts:     []int{},
+		UploadSize:        nil,
+		Rank:              nil,
+		AssociatedIndexID: dump.AssociatedIndexID,
+	}
+}
+
+func sharedRangeToAdjustedRange(rng []shared.AdjustedCodeIntelligenceRange) []AdjustedCodeIntelligenceRange {
+	adjustedRange := make([]AdjustedCodeIntelligenceRange, 0, len(rng))
+	for _, r := range rng {
+
+		definitions := make([]AdjustedLocation, 0, len(r.Definitions))
+		for _, d := range r.Definitions {
+			def := AdjustedLocation{
+				Dump:           store.Dump(d.Dump),
+				Path:           d.Path,
+				AdjustedCommit: d.TargetCommit,
+				AdjustedRange: lsifstore.Range{
+					Start: lsifstore.Position(d.TargetRange.Start),
+					End:   lsifstore.Position(d.TargetRange.End),
+				},
+			}
+			definitions = append(definitions, def)
+		}
+
+		references := make([]AdjustedLocation, 0, len(r.References))
+		for _, d := range r.References {
+			ref := AdjustedLocation{
+				Dump:           store.Dump(d.Dump),
+				Path:           d.Path,
+				AdjustedCommit: d.TargetCommit,
+				AdjustedRange: lsifstore.Range{
+					Start: lsifstore.Position(d.TargetRange.Start),
+					End:   lsifstore.Position(d.TargetRange.End),
+				},
+			}
+			references = append(references, ref)
+		}
+
+		implementations := make([]AdjustedLocation, 0, len(r.Implementations))
+		for _, d := range r.Implementations {
+			impl := AdjustedLocation{
+				Dump:           store.Dump(d.Dump),
+				Path:           d.Path,
+				AdjustedCommit: d.TargetCommit,
+				AdjustedRange: lsifstore.Range{
+					Start: lsifstore.Position(d.TargetRange.Start),
+					End:   lsifstore.Position(d.TargetRange.End),
+				},
+			}
+			implementations = append(implementations, impl)
+		}
+
+		adj := AdjustedCodeIntelligenceRange{
+			Range: lsifstore.Range{
+				Start: lsifstore.Position(r.Range.Start),
+				End:   lsifstore.Position(r.Range.End),
+			},
+			Definitions:     definitions,
+			References:      references,
+			Implementations: implementations,
+			HoverText:       r.HoverText,
+		}
+
+		adjustedRange = append(adjustedRange, adj)
+	}
+
+	return adjustedRange
+}
+
+func uploadLocationToAdjustedLocations(location []shared.UploadLocation) []AdjustedLocation {
+	uploadLocation := make([]AdjustedLocation, 0, len(location))
+	for _, loc := range location {
+		dump := store.Dump{
+			ID:                loc.Dump.ID,
+			Commit:            loc.Dump.Commit,
+			Root:              loc.Dump.Root,
+			VisibleAtTip:      loc.Dump.VisibleAtTip,
+			UploadedAt:        loc.Dump.UploadedAt,
+			State:             loc.Dump.State,
+			FailureMessage:    loc.Dump.FailureMessage,
+			StartedAt:         loc.Dump.StartedAt,
+			FinishedAt:        loc.Dump.FinishedAt,
+			ProcessAfter:      loc.Dump.ProcessAfter,
+			NumResets:         loc.Dump.NumResets,
+			NumFailures:       loc.Dump.NumFailures,
+			RepositoryID:      loc.Dump.RepositoryID,
+			RepositoryName:    loc.Dump.RepositoryName,
+			Indexer:           loc.Dump.Indexer,
+			IndexerVersion:    loc.Dump.IndexerVersion,
+			AssociatedIndexID: loc.Dump.AssociatedIndexID,
+		}
+
+		adjustedRange := lsifstore.Range{
+			Start: lsifstore.Position{
+				Line:      loc.TargetRange.Start.Line,
+				Character: loc.TargetRange.Start.Character,
+			},
+			End: lsifstore.Position{
+				Line:      loc.TargetRange.End.Line,
+				Character: loc.TargetRange.End.Character,
+			},
+		}
+
+		uploadLocation = append(uploadLocation, AdjustedLocation{
+			Dump:           dump,
+			Path:           loc.Path,
+			AdjustedCommit: loc.TargetCommit,
+			AdjustedRange:  adjustedRange,
+		})
+	}
+
+	return uploadLocation
 }

@@ -1,11 +1,11 @@
 package shared
 
 import (
-	"context"
+	"database/sql"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -85,6 +85,37 @@ type GetUploadsOptions struct {
 	InCommitGraph bool
 }
 
+type DependencyReferenceCountUpdateType int
+
+const (
+	DependencyReferenceCountUpdateTypeNone DependencyReferenceCountUpdateType = iota
+	DependencyReferenceCountUpdateTypeAdd
+	DependencyReferenceCountUpdateTypeRemove
+)
+
+type CursorAdjustedUpload struct {
+	DumpID               int      `json:"dumpID"`
+	AdjustedPath         string   `json:"adjustedPath"`
+	AdjustedPosition     Position `json:"adjustedPosition"`
+	AdjustedPathInBundle string   `json:"adjustedPathInBundle"`
+}
+
+// AdjustedUpload pairs an upload visible from the current target commit with the
+// current target path and position adjusted so that it matches the data within the
+// underlying index.
+type AdjustedUpload struct {
+	Upload               Dump
+	AdjustedPath         string
+	AdjustedPosition     lsifstore.Position
+	AdjustedPathInBundle string
+}
+
+// Position is a unique position within a file.
+type Position struct {
+	Line      int
+	Character int
+}
+
 // Package pairs a package schem+name+version with the dump that provides it.
 type Package struct {
 	DumpID  int
@@ -98,15 +129,75 @@ type PackageReference struct {
 	Package
 }
 
-type DependencyReferenceCountUpdateType int
+// PackageReferenceScanner allows for on-demand scanning of PackageReference values.
+//
+// A scanner for this type was introduced as a memory optimization. Instead of reading a
+// large number of large byte arrays into memory at once, we allow the user to request
+// the next filter value when they are ready to process it. This allows us to hold only
+// a single bloom filter in memory at any give time during reference requests.
+type PackageReferenceScanner interface {
+	// Next reads the next package reference value from the database cursor.
+	Next() (PackageReference, bool, error)
 
-const (
-	DependencyReferenceCountUpdateTypeNone DependencyReferenceCountUpdateType = iota
-	DependencyReferenceCountUpdateTypeAdd
-	DependencyReferenceCountUpdateTypeRemove
-)
+	// Close the underlying row object.
+	Close() error
+}
 
-type GitserverClient interface {
-	CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
-	RefDescriptions(ctx context.Context, repositoryID int, pointedAt ...string) (_ map[string][]gitdomain.RefDescription, err error)
+type rowScanner struct {
+	rows *sql.Rows
+}
+
+// packageReferenceScannerFromRows creates a PackageReferenceScanner that feeds the given values.
+func PackageReferenceScannerFromRows(rows *sql.Rows) PackageReferenceScanner {
+	return &rowScanner{
+		rows: rows,
+	}
+}
+
+// Next reads the next package reference value from the database cursor.
+func (s *rowScanner) Next() (reference PackageReference, _ bool, _ error) {
+	if !s.rows.Next() {
+		return PackageReference{}, false, nil
+	}
+
+	if err := s.rows.Scan(
+		&reference.DumpID,
+		&reference.Scheme,
+		&reference.Name,
+		&reference.Version,
+	); err != nil {
+		return PackageReference{}, false, err
+	}
+
+	return reference, true, nil
+}
+
+// Close the underlying row object.
+func (s *rowScanner) Close() error {
+	return basestore.CloseRows(s.rows, nil)
+}
+
+type sliceScanner struct {
+	references []PackageReference
+}
+
+// PackageReferenceScannerFromSlice creates a PackageReferenceScanner that feeds the given values.
+func PackageReferenceScannerFromSlice(references ...PackageReference) PackageReferenceScanner {
+	return &sliceScanner{
+		references: references,
+	}
+}
+
+func (s *sliceScanner) Next() (PackageReference, bool, error) {
+	if len(s.references) == 0 {
+		return PackageReference{}, false, nil
+	}
+
+	next := s.references[0]
+	s.references = s.references[1:]
+	return next, true, nil
+}
+
+func (s *sliceScanner) Close() error {
+	return nil
 }

@@ -564,11 +564,21 @@ type ExternalService struct {
 	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
+type ExternalServiceRepo struct {
+	ExternalServiceID int64      `json:"externalServiceID"`
+	RepoID            api.RepoID `json:"repoID"`
+	CloneURL          string     `json:"cloneURL"`
+	UserID            int32      `json:"userID"`
+	OrgID             int32      `json:"orgID"`
+	CreatedAt         time.Time  `json:"createdAt"`
+}
+
 // ExternalServiceSyncJob represents an sync job for an external service
 type ExternalServiceSyncJob struct {
 	ID                int64
 	State             string
 	FailureMessage    string
+	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
@@ -1216,7 +1226,7 @@ type Event struct {
 	ID              int32
 	Name            string
 	URL             string
-	UserID          *int32
+	UserID          int32
 	AnonymousUserID string
 	Argument        string
 	Source          string

@@ -8,7 +8,6 @@
   },
   "scripts": {
     "storybook": "STORIES_GLOB=client/browser/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
-    "fetch-code-intel-extensions": "node scripts/fetch-code-intel-extensions",
     "build-inline-extensions": "node scripts/build-inline-extensions",
     "predev": "yarn run build-inline-extensions",
     "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=8192 node -r ts-node/register scripts/development",

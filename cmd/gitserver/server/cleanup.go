@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -163,7 +164,7 @@ const reposStatsName = "repos-stats.json"
 // 10. Perform sg-maintenance
 // 11. Git prune
 // 12. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos(gitServerAddrs []string) {
+func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
 	defer func() {
@@ -173,14 +174,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
 
 	knownGitServerShard := false
-	for _, addr := range gitServerAddrs {
+	for _, addr := range gitServerAddrs.Addresses {
 		if s.hostnameMatch(addr) {
 			knownGitServerShard = true
 			break
 		}
 	}
 	if !knownGitServerShard {
-		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
+		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs.Addresses))
 	}
 
 	bCtx, bCancel := s.serverContext()
@@ -207,7 +208,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		}
 	}()
 
-	maybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
+	collectSizeAndMaybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
 		name := s.name(dir)
@@ -215,7 +216,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr := addrForKey(name, gitServerAddrs)
+		addr, err := s.addrForRepo(bCtx, name, gitServerAddrs)
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
@@ -428,7 +429,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 	cleanups := []cleanupFn{
 		// Compute the amount of space used by the repo
-		{"compute stats and delete wrong shard repos", maybeDeleteWrongShardRepos},
+		{"compute stats and delete wrong shard repos", collectSizeAndMaybeDeleteWrongShardRepos},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// If git is interrupted it can leave lock files lying around. It does not clean
@@ -514,8 +515,6 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		cleanupLogger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	// Repo sizes are set only once during the first janitor run.
-	// There is no need for a second run because all repo sizes will be set until this moment
 	err = s.setRepoSizes(context.Background(), repoToSize)
 	if err != nil {
 		cleanupLogger.Error("setting repo sizes", log.Error(err))
@@ -533,7 +532,8 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 }
 
-// setRepoSizes uses calculated sizes of repos to update database entries of repos with actual sizes
+// setRepoSizes uses calculated sizes of repos to update database entries of repos
+// with actual sizes, but only up to 10,000 in one run.
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
 	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
 
@@ -567,18 +567,19 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	}
 
 	// updating repos
-	err = s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
 	if err != nil {
 		return err
 	}
-	logger.Info("repos had their sizes updated",
-		log.Int("reposToUpdate", len(reposToUpdate)))
+	if updatedRepos > 0 {
+		logger.Info("repos had their sizes updated", log.Int("updatedRepos", updatedRepos))
+	}
 
 	return nil
 }
 
 // fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
-func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]*types.Repo, error) {
+func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]types.MinimalRepo, error) {
 	reposToUpdateNames := make([]string, count)
 	idx := 0
 	// random nature of map traversal yields a different subset of repos every time this function is called
@@ -590,7 +591,7 @@ func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int
 		idx++
 	}
 
-	foundRepos, err := s.DB.Repos().List(ctx, database.ReposListOptions{
+	foundRepos, err := s.DB.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
 		Names:          reposToUpdateNames,
 		LimitOffset:    &database.LimitOffset{Limit: count},
 		IncludeBlocked: true,

@@ -82,7 +82,7 @@ func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos 
 	t.Helper()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	depsSvc := livedependencies.TestService(db, nil)
+	depsSvc := livedependencies.TestService(db)
 
 	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
 	if err != nil {

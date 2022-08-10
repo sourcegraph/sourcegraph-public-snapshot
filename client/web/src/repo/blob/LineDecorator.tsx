@@ -135,42 +135,52 @@ const LineDecorator = React.memo<LineDecoratorProps>(
 
         // Render decoration attachments into portal
         return ReactDOM.createPortal(
-            decorations?.filter(property('after', isDefined)).map((decoration, index) => {
-                const attachment = decoration.after
-                const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
-
-                return (
-                    <Tooltip
-                        content={attachment.hoverMessage}
-                        // Key by content, use index to remove possibility of duplicate keys
-                        key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
-                    >
-                        <LinkOrSpan
-                            className={styles.lineDecorationAttachment}
-                            data-line-decoration-attachment={true}
-                            to={attachment.linkURL}
-                            // Use target to open external URLs
-                            target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
-                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                            rel="noreferrer noopener"
-                        >
-                            <span
-                                className={styles.contents}
-                                data-line-decoration-attachment-content={true}
-                                // eslint-disable-next-line react/forbid-dom-props
-                                style={{
-                                    color: style.color,
-                                    backgroundColor: style.backgroundColor,
-                                }}
-                                data-contents={attachment.contentText || ''}
-                            />
-                        </LinkOrSpan>
-                    </Tooltip>
-                )
-            }),
+            <LineDecoratorContents decorations={decorations} isLightTheme={isLightTheme} />,
             portalNode
         )
     }
+)
+
+export const LineDecoratorContents: React.FunctionComponent<{
+    decorations: TextDocumentDecoration[] | undefined
+    isLightTheme: boolean
+    portalRoot?: HTMLElement
+}> = ({ decorations, isLightTheme }) => (
+    <>
+        {decorations?.filter(property('after', isDefined)).map((decoration, index) => {
+            const attachment = decoration.after
+            const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+
+            return (
+                <Tooltip
+                    content={attachment.hoverMessage}
+                    // Key by content, use index to remove possibility of duplicate keys
+                    key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
+                >
+                    <LinkOrSpan
+                        className={styles.lineDecorationAttachment}
+                        data-line-decoration-attachment={true}
+                        to={attachment.linkURL}
+                        // Use target to open external URLs
+                        target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
+                        // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                        rel="noreferrer noopener"
+                    >
+                        <span
+                            className={styles.contents}
+                            data-line-decoration-attachment-content={true}
+                            // eslint-disable-next-line react/forbid-dom-props
+                            style={{
+                                color: style.color,
+                                backgroundColor: style.backgroundColor,
+                            }}
+                            data-contents={attachment.contentText || ''}
+                        />
+                    </LinkOrSpan>
+                </Tooltip>
+            )
+        })}
+    </>
 )
 
 LineDecorator.displayName = 'LineDecorator'

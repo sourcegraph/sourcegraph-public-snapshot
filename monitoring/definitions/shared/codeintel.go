@@ -287,6 +287,7 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 
 	constructorOptions := ObservableConstructorOptions{
 		MetricNameRoot:        "executor",
+		JobLabel:              "sg_job",
 		MetricDescriptionRoot: "handler",
 		Filters:               filters,
 	}
@@ -322,22 +323,26 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 // src_executor_run_lock_wait_total
 // src_executor_run_lock_held_total
 func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName string) monitoring.Group {
+	constructor := func(metricNameRoot, legend string) Observable {
+		filters := makeFilters("sg_job", containerName)
+		return Observable{
+			Name:        metricNameRoot + "_total",
+			Description: fmt.Sprintf("milliseconds %s every 5m", legend),
+			Owner:       monitoring.ObservableOwnerCodeIntel,
+			Query:       fmt.Sprintf(`sum(increase(src_%s_total{%s}[5m]))`, metricNameRoot, filters),
+			Panel:       monitoring.Panel().LegendFormat(legend).Unit(monitoring.Milliseconds),
+		}
+	}
+
 	return monitoring.Group{
 		Title:  "Run lock contention",
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				Standard.Count("wait")(ObservableConstructorOptions{
-					MetricNameRoot:        "executor_run_lock_wait",
-					MetricDescriptionRoot: "milliseconds",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				constructor("executor_run_lock_wait", "wait").WithNoAlerts(`
 					Number of milliseconds spent waiting for the run lock every 5m
 				`).Observable(),
-
-				Standard.Count("held")(ObservableConstructorOptions{
-					MetricNameRoot:        "executor_run_lock_held",
-					MetricDescriptionRoot: "milliseconds",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+				constructor("executor_run_lock_held", "held").WithNoAlerts(`
 					Number of milliseconds spent holding for the run lock every 5m
 				`).Observable(),
 			},
@@ -357,6 +362,7 @@ func (codeIntelligence) NewExecutorSetupCommandGroup(containerName string) monit
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
+				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "command",
 				Filters:               []string{`op=~"setup.*"`},
 				By:                    []string{"op"},
@@ -390,6 +396,7 @@ func (codeIntelligence) NewExecutorExecutionCommandGroup(containerName string) m
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
+				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "command",
 				Filters:               []string{`op=~"exec.*"`},
 				By:                    []string{"op"},
@@ -423,6 +430,7 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
+				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "command",
 				Filters:               []string{`op=~"teardown.*"`},
 				By:                    []string{"op"},
@@ -456,6 +464,7 @@ func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitori
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_apiclient",
+				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "client",
 				Filters:               nil,
 				By:                    []string{"op"},

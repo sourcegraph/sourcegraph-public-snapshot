@@ -4,17 +4,21 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
+	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
@@ -28,28 +32,20 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		},
 	}
 
-	resolver, err := newResolver(db, config, resolverObservationContext, services)
-	if err != nil {
-		return err
-	}
-
-	enterpriseServices.CodeIntelResolver = resolver
+	enterpriseServices.CodeIntelResolver = newResolver(db, config, resolverObservationContext, services)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
 	return nil
 }
 
-func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
-	policyMatcher := policies.NewMatcher(
-		services.gitserverClient,
-		policies.NoopExtractor,
-		false,
-		false,
-	)
+func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) gql.CodeIntelResolver {
+	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
 
-	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
-	if err != nil {
-		return nil, errors.Errorf("failed to initialize hunk cache: %s", err)
+	codenavCtx := &observation.Context{
+		Logger:     logger.Scoped("codenav.transport.graphql", "codeintel symbols graphql transport"),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
+	codenavResolver := codenavgraphql.New(services.CodeNavSvc, config.HunkCacheSize, codenavCtx)
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
@@ -57,21 +53,21 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		services.gitserverClient,
 		policyMatcher,
 		services.indexEnqueuer,
-		hunkCache,
 		symbols.DefaultClient,
 		config.MaximumIndexesPerMonikerSearch,
 		observationContext,
 		db,
+		codenavResolver,
 	)
 
-	lsifStore := database.NewDBWith(observationContext.Logger, services.lsifStore)
-
-	return codeintelgqlresolvers.NewResolver(db, lsifStore, services.gitserverClient, innerResolver, &observation.Context{
+	obsCtx := &observation.Context{
 		Logger:       nil,
 		Tracer:       &trace.Tracer{},
 		Registerer:   nil,
 		HoneyDataset: &honey.Dataset{},
-	}), nil
+	}
+
+	return codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, obsCtx)
 }
 
 func newUploadHandler(services *Services) func(internal bool) http.Handler {

@@ -3803,7 +3803,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 250 remaining calls to GitHub graphql API before hitting the rate limit
-- <span class="badge badge-critical">critical</span> repo-updater: less than 250 remaining calls to GitHub graphql API before hitting the rate limit for 50m0s
 
 **Next steps**
 
@@ -3813,8 +3812,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_graphql_rate_limit_remaining",
-  "critical_repo-updater_github_graphql_rate_limit_remaining"
+  "warning_repo-updater_github_graphql_rate_limit_remaining"
 ]
 ```
 
@@ -3829,7 +3827,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 250 remaining calls to GitHub rest API before hitting the rate limit
-- <span class="badge badge-critical">critical</span> repo-updater: less than 250 remaining calls to GitHub rest API before hitting the rate limit for 50m0s
 
 **Next steps**
 
@@ -3839,8 +3836,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_rest_rate_limit_remaining",
-  "critical_repo-updater_github_rest_rate_limit_remaining"
+  "warning_repo-updater_github_rest_rate_limit_remaining"
 ]
 ```
 
@@ -3855,7 +3851,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 5 remaining calls to GitHub search API before hitting the rate limit
-- <span class="badge badge-critical">critical</span> repo-updater: less than 5 remaining calls to GitHub search API before hitting the rate limit for 50m0s
 
 **Next steps**
 
@@ -3865,8 +3860,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_search_rate_limit_remaining",
-  "critical_repo-updater_github_search_rate_limit_remaining"
+  "warning_repo-updater_github_search_rate_limit_remaining"
 ]
 ```
 
@@ -4547,6 +4541,33 @@ with your code hosts connections or networking issues affecting communication wi
 ```
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<br />
+
+## symbols: mean_blocked_seconds_per_conn_request
+
+<p class="subtitle">mean blocked seconds per conn request</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> symbols: 0.05s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> symbols: 0.1s+ mean blocked seconds per conn request for 15m0s
+
+**Next steps**
+
+- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
+- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-mean-blocked-seconds-per-conn-request).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_symbols_mean_blocked_seconds_per_conn_request",
+  "critical_symbols_mean_blocked_seconds_per_conn_request"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
 <br />
 
@@ -5910,7 +5931,7 @@ with your code hosts connections or networking issues affecting communication wi
 <details>
 <summary>Technical details</summary>
 
-Custom alert query: `last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))[5h:])) * 100`
+Custom alert query: `last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100`
 
 </details>
 

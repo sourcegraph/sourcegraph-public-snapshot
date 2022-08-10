@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -182,7 +181,7 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 }
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
-func RunPhabricatorRepositorySyncWorker(ctx context.Context, logger log.Logger, s Store) {
+func RunPhabricatorRepositorySyncWorker(ctx context.Context, db database.DB, logger log.Logger, s Store) {
 	cf := httpcli.ExternalClientFactory
 
 	for {
@@ -206,7 +205,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, logger log.Logger, 
 				continue
 			}
 
-			err = updatePhabRepos(ctx, repos)
+			err = updatePhabRepos(ctx, db, repos)
 			if err != nil {
 				logger.Error("Error updating Phabricator repos", log.Error(err))
 				continue
@@ -228,15 +227,10 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, logger log.Logger, 
 }
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, repos []*types.Repo) error {
+func updatePhabRepos(ctx context.Context, db database.DB, repos []*types.Repo) error {
 	for _, r := range repos {
 		repo := r.Metadata.(*phabricator.Repo)
-		err := internalapi.Client.PhabricatorRepoCreate(
-			ctx,
-			r.Name,
-			repo.Callsign,
-			r.ExternalRepo.ServiceID,
-		)
+		_, err := db.Phabricator().CreateOrUpdate(ctx, repo.Callsign, r.Name, r.ExternalRepo.ServiceID)
 		if err != nil {
 			return err
 		}

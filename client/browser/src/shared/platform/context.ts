@@ -116,9 +116,6 @@ export function createPlatformContext(
         },
         requestGraphQL,
         getGraphQLClient: getBrowserGraphQLClient,
-        forceUpdateTooltip: () => {
-            // TODO(sqs): implement tooltips on the browser extension
-        },
         createExtensionHost: () => createExtensionHost({ assetsURL }),
         getScriptURLForExtension: () => {
             if (isInPage || shouldUseInlineExtensions()) {

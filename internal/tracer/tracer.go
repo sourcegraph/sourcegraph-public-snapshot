@@ -1,7 +1,9 @@
 package tracer
 
 import (
+	"fmt"
 	"io"
+	"text/template"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log"
@@ -9,6 +11,7 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -148,6 +151,18 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 		}
 		globalOTTracer.set(tracerLogger, otImpl, closer, opts.debug)
 		globalOTelTracerProvider.set(otelImpl, opts.debug)
+	})
+
+	// Contribute validation for tracing package
+	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) conf.Problems {
+		tracing := c.SiteConfig().ObservabilityTracing
+		if tracing == nil || tracing.UrlTemplate == "" {
+			return nil
+		}
+		if _, err := template.New("").Parse(tracing.UrlTemplate); err != nil {
+			return conf.NewSiteProblems(fmt.Sprintf("observability.tracing.traceURL is not a valid template: %s", err.Error()))
+		}
+		return nil
 	})
 }
 

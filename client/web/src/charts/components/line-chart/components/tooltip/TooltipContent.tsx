@@ -4,18 +4,19 @@ import { isDefined } from '@sourcegraph/common'
 import { H3 } from '@sourcegraph/wildcard'
 
 import { TooltipList, TooltipListBlankItem, TooltipListItem } from '../../../../core'
+import { formatYTick } from '../../../../core/components/axis/tick-formatters'
 import { Point } from '../../types'
-import { isValidNumber, formatYTick, SeriesWithData, SeriesDatum, getDatumValue, getLineColor } from '../../utils'
+import { isValidNumber, SeriesWithData, SeriesDatum, getDatumValue, getLineColor } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
-export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'seriesId' | 'value' | 'time'>
+export type MinimumPointInfo = Pick<Point, 'seriesId' | 'yValue' | 'xValue'>
 
 export interface TooltipContentProps<Datum> {
     series: SeriesWithData<Datum>[]
-    activePoint: MinimumPointInfo<Datum>
+    activePoint: MinimumPointInfo
     stacked: boolean
 }
 
@@ -35,7 +36,7 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
         const sortedSeries = series
             .map(line => {
                 const seriesDatum = (line.data as SeriesDatum<Datum>[]).find(
-                    datum => datum.x.getTime() === activePoint.time.getTime()
+                    datum => datum.x.getTime() === activePoint.xValue.getTime()
                 )
                 const value = seriesDatum ? getDatumValue(seriesDatum) : null
 
@@ -59,16 +60,16 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
 
     return (
         <>
-            <H3>{activePoint.time.toDateString()}</H3>
+            <H3>{activePoint.xValue.toDateString()}</H3>
 
             <TooltipList>
                 {lines.leftRemaining > 0 && (
                     <TooltipListBlankItem>... and {lines.leftRemaining} more</TooltipListBlankItem>
                 )}
                 {lines.window.map(line => {
+                    // TODO: Support stacked formatted value
                     const value = formatYTick(line.value)
                     const isActiveLine = activePoint.seriesId === line.id
-                    const stackedValue = isActiveLine && stacked ? formatYTick(activePoint.value) : null
 
                     return (
                         <TooltipListItem
@@ -76,7 +77,6 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
                             isActive={isActiveLine}
                             name={line.name}
                             value={value}
-                            stackedValue={stackedValue}
                             color={getLineColor(line)}
                         />
                     )

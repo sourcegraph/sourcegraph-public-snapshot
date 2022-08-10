@@ -14,6 +14,7 @@ export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<S
     type: SeriesBasedChartTypes
     width: number
     height: number
+    activeSeriesId?: string
     zeroYAxisMin?: boolean
     locked?: boolean
     seriesToggleState?: UseSeriesToggleReturn
@@ -59,9 +60,10 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
 
         return {
             opacity,
-            transitionProperty: 'opacity',
-            transitionDuration: '200ms',
-            transitionTimingFunction: 'ease-out',
+            // TODO: Bring this animation back when https://github.com/sourcegraph/sourcegraph/issues/40162 is resolved
+            // transitionProperty: 'opacity',
+            // transitionDuration: '200ms',
+            // transitionTimingFunction: 'ease-out',
         }
     }
 
@@ -80,6 +82,7 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
             series={series}
             getLineGroupStyle={getHoverStyle}
             getActiveSeries={getActiveSeries}
+            activeSeriesId={seriesToggleState?.hoveredId}
             {...otherProps}
         />
     )

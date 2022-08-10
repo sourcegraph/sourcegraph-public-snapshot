@@ -397,7 +397,7 @@ type ContainerVariable struct {
 	// conjunction with Query
 	Options ContainerVariableOptions
 
-	// WildcardAllValue indicates to Grafana that is should NOT use Query or Options to
+	// WildcardAllValue indicates to Grafana that is should NOT use OptionsQuery or Options to
 	// generate a concatonated 'All' value for the variable, and use a '.*' wildcard
 	// instead. Setting this to true primarily useful if you use Query and expect it to be
 	// a large enough result set to cause issues when viewing the dashboard.

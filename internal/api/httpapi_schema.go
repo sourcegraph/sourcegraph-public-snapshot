@@ -33,12 +33,6 @@ type RepoCreateOrUpdateRequest struct {
 	Archived bool `json:"archived"`
 }
 
-type PhabricatorRepoCreateRequest struct {
-	RepoName `json:"repo"`
-	Callsign string `json:"callsign"`
-	URL      string `json:"url"`
-}
-
 type ExternalServiceConfigsRequest struct {
 	Kind    string `json:"kind"`
 	Limit   int    `json:"limit"`
@@ -46,9 +40,6 @@ type ExternalServiceConfigsRequest struct {
 }
 
 type ExternalServicesListRequest struct {
-	// NOTE(tsenart): We must keep this field in addition to the
-	// Kinds field until after we roll-out this change, for backwards compatibility.
-	Kind    string   `json:"kind"`
 	Kinds   []string `json:"kinds"`
 	Limit   int      `json:"limit"`
 	AfterID int      `json:"after_id"`

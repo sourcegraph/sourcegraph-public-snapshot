@@ -27,13 +27,6 @@
         stroke-width: 1;
     }
 
-    // tick label
-    text {
-        fill: var(--text-muted);
-        font-size: 0.75rem;
-        font-weight: 400;
-    }
-
     &--vertical {
         line {
             // Hide line ticks visually and hide them from voice over

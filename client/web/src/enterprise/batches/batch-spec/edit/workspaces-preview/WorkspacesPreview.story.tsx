@@ -8,7 +8,9 @@ import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graph
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../../../create/backend'
+import { IMPORTING_CHANGESETS, WORKSPACE_RESOLUTION_STATUS, WORKSPACES } from '../../../create/backend'
+import { GET_LICENSE_AND_USAGE_INFO } from '../../../list/backend'
+import { getLicenseAndUsageInfoResult } from '../../../list/testData'
 import {
     mockBatchChange,
     mockBatchSpec,
@@ -346,3 +348,67 @@ export const ReadOnly: Story = () => (
 )
 
 ReadOnly.storyName = 'read-only'
+
+export const UnstartedWithLicenseAlertConnectionResult: Story = () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider
+                link={
+                    new WildcardMockLink([
+                        ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
+                        {
+                            request: {
+                                query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: { data: getLicenseAndUsageInfoResult(false, true) },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                    ])
+                }
+            >
+                <BatchSpecContextProvider
+                    batchChange={mockBatchChange()}
+                    batchSpec={mockBatchSpec()}
+                    refetchBatchChange={() => Promise.resolve()}
+                >
+                    <WorkspacesPreview {...props} isReadOnly={false} />
+                </BatchSpecContextProvider>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+UnstartedWithLicenseAlertConnectionResult.storyName = 'unstarted, with license alert'
+
+export const ReadOnlyWithLicenseAlert: Story = () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider
+                link={
+                    new WildcardMockLink([
+                        ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
+                        {
+                            request: {
+                                query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: { data: getLicenseAndUsageInfoResult(false, true) },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                    ])
+                }
+            >
+                <BatchSpecContextProvider
+                    batchChange={mockBatchChange()}
+                    batchSpec={mockBatchSpec()}
+                    refetchBatchChange={() => Promise.resolve()}
+                >
+                    <WorkspacesPreview {...props} isReadOnly={true} />
+                </BatchSpecContextProvider>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+ReadOnlyWithLicenseAlert.storyName = 'read-only, with license alert'

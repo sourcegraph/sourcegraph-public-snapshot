@@ -43,10 +43,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	// Simple, fast-ish linter checks
-	linterOps := operations.NewNamedSet("Linters and static analysis",
-		// lightweight check that works over a lot of stuff - we are okay with running
-		// these on all PRs
-		addPrettier)
+	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if diff.Has(changed.GraphQL) {
 		linterOps.Append(addGraphQLLint)
 	}
@@ -150,13 +147,6 @@ func addGraphQLLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
 
-// yarn ~41s + ~30s
-func addPrettier(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: Prettier",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh format:check"))
-}
-
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
@@ -214,24 +204,6 @@ func addWebApp(pipeline *bk.Pipeline) {
 			},
 		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-}
-
-// Adds steps for building webapp with the Sentry Webpack plugin enabled to upload sourcemaps
-// Only builds webapp without ENTERPRISE=1, no tests are performed. Should only run on release branches.
-func buildWebAppWithSentrySourcemaps(version string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Webapp build with Sentry's webpack plugin enabled
-		pipeline.AddStep(":webpack::globe_with_meridians: Build and upload sourcemaps to Sentry",
-			withYarnCache(),
-			bk.Cmd("dev/ci/yarn-build.sh client/web"),
-			bk.Env("NODE_ENV", "production"),
-			bk.Env("ENTERPRISE", ""),
-			bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
-			bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
-			bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
-			bk.Env("RELEASE_CANDIDATE_VERSION", version),
-		)
-	}
 }
 
 var browsers = []string{"chrome"}
@@ -365,7 +337,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
 			bk.AutomaticRetry(3),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent"),
+			bk.Cmd("./dev/ci/yarn-install-with-retry.sh"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
 		}
@@ -683,7 +655,7 @@ func candidateImageStepKey(app string) string {
 // tags once the e2e tests pass.
 //
 // Version is the actual version of the code, and
-func buildCandidateDockerImage(app, version, tag string) operations.Operation {
+func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		localImage := "sourcegraph/" + image + ":" + version
@@ -694,6 +666,16 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
 			bk.Env("VERSION", version),
+		}
+
+		// Add Sentry environment variables if we are building off main branch
+		// to enable building the webapp with source maps enabled
+		if uploadSourcemaps {
+			cmds = append(cmds,
+				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
+				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
+				bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
+			)
 		}
 
 		// Allow all build scripts to emit info annotations
@@ -825,12 +807,29 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 	}
 }
 
+// executorImageFamilyForConfig returns the image family to be used for the build.
+// This defaults to `-nightly`, and will be `-$MAJOR-$MINOR` for a tagged release
+// build.
+func executorImageFamilyForConfig(c Config) string {
+	imageFamily := "sourcegraph-executors-nightly"
+	if c.RunType.Is(runtype.TaggedRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-%d-%d", ver.Major(), ver.Minor())
+	}
+	return imageFamily
+}
+
 // ~15m (building executor base VM)
-func buildExecutor(version string, skipHashCompare bool) operations.Operation {
+func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor.vm-image")),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		if !skipHashCompare {
 			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
@@ -846,12 +845,14 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 	}
 }
 
-func publishExecutor(version string, skipHashCompare bool) operations.Operation {
+func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor.vm-image")
+		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		if !skipHashCompare {
 			// Publish iff not soft-failed on previous step
@@ -868,12 +869,29 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 	}
 }
 
+// executorDockerMirrorImageFamilyForConfig returns the image family to be used for the build.
+// This defaults to `-nightly`, and will be `-$MAJOR-$MINOR` for a tagged release
+// build.
+func executorDockerMirrorImageFamilyForConfig(c Config) string {
+	imageFamily := "sourcegraph-executors-docker-mirror-nightly"
+	if c.RunType.Is(runtype.TaggedRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d", ver.Major(), ver.Minor())
+	}
+	return imageFamily
+}
+
 // ~15m (building executor docker mirror base VM)
-func buildExecutorDockerMirror(version string) operations.Operation {
+func buildExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
@@ -882,12 +900,14 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 	}
 }
 
-func publishExecutorDockerMirror(version string) operations.Operation {
+func publishExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
+		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))

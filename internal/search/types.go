@@ -1,6 +1,7 @@
 package search
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -8,12 +9,40 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// Inputs contains fields we set before kicking off search.
+type Inputs struct {
+	Plan                query.Plan // the comprehensive query plan
+	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
+	OriginalQuery       string     // the raw string of the original search query
+	PatternType         query.SearchType
+	UserSettings        *schema.Settings
+	OnSourcegraphDotCom bool
+	Features            *Features
+	Protocol            Protocol
+}
+
+// MaxResults computes the limit for the query.
+func (inputs Inputs) MaxResults() int {
+	return inputs.Query.MaxResults(inputs.DefaultLimit())
+}
+
+// DefaultLimit is the default limit to use if not specified in query.
+func (inputs Inputs) DefaultLimit() int {
+	if inputs.Protocol == Batch || inputs.PatternType == query.SearchTypeStructural {
+		return limits.DefaultMaxSearchResults
+	}
+	return limits.DefaultMaxSearchResultsStreaming
+}
 
 type Protocol int
 
@@ -287,19 +316,38 @@ type Features struct {
 	// ContentBasedLangFilters when true will use the language detected from
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
-	ContentBasedLangFilters bool
+	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
 
 	// HybridSearch when true will consult the Zoekt index when running
 	// unindexed searches. Searcher (unindexed search) will the only search
 	// what has changed since the indexed commit.
-	HybridSearch bool
+	HybridSearch bool `json:"search-hybrid"`
+
+	// CodeOwnershipFilters when true will add the code ownership post-search
+	// filter and allow users to search by code owners using the has.owner
+	// predicate.
+	CodeOwnershipFilters bool `json:"code-ownership"`
+
+	// When true lucky search runs by default. Adding for A/B testing in
+	// 08/2022. To be removed at latest by 12/2022.
+	AbLuckySearch bool `json:"ab-lucky-search"`
+}
+
+func (f *Features) String() string {
+	jsonObject, err := json.Marshal(f)
+	if err != nil {
+		return "error encoding features as string"
+	}
+	flagMap := featureflag.EvaluatedFlagSet{}
+	if err := json.Unmarshal(jsonObject, &flagMap); err != nil {
+		return "error decoding features"
+	}
+	return flagMap.String()
 }
 
 type RepoOptions struct {
 	RepoFilters         []string
 	MinusRepoFilters    []string
-	Dependencies        []string
-	Dependents          []string
 	DescriptionPatterns []string
 
 	CaseSensitiveRepoFilters bool
@@ -340,12 +388,6 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	}
 	if len(op.MinusRepoFilters) > 0 {
 		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))
-	}
-	if len(op.Dependencies) > 0 {
-		add(trace.Strings("dependencies", op.Dependencies))
-	}
-	if len(op.Dependents) > 0 {
-		add(trace.Strings("dependents", op.Dependents))
 	}
 	if len(op.DescriptionPatterns) > 0 {
 		add(trace.Strings("descriptionPatterns", op.DescriptionPatterns))

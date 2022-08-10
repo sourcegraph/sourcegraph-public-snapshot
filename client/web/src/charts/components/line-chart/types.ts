@@ -1,10 +1,8 @@
-export interface Point<D> {
+export interface Point {
     id: string
     seriesId: string
-    value: number
-    time: Date
-    x: number
-    y: number
+    node?: Element
+    xValue: Date
+    yValue: number
     linkUrl?: string
-    color: string
 }

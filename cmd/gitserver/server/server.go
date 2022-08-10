@@ -6,9 +6,7 @@ import (
 	"bytes"
 	"container/list"
 	"context"
-	"crypto/md5"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
@@ -459,11 +457,8 @@ func (s *Server) Handler() http.Handler {
 		conf.DefaultClient(),
 		s.handleP4Exec,
 	)))
-	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
-	mux.HandleFunc("/is-repo-cloned", trace.WithRouteName("is-repo-cloned", s.handleIsRepoCloned))
-	mux.HandleFunc("/repos", trace.WithRouteName("repos", s.handleRepoInfo))
 	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
 	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
@@ -513,9 +508,8 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(interval time.Duration) {
 	for {
-		cfg := conf.Get()
-		addrs := cfg.ServiceConnectionConfig.GitServers
-		s.cleanupRepos(addrs)
+		gitserverAddrs := currentGitserverAddresses()
+		s.cleanupRepos(gitserverAddrs)
 		time.Sleep(interval)
 	}
 }
@@ -526,27 +520,49 @@ func (s *Server) Janitor(interval time.Duration) {
 // repos that have not yet been assigned a shard.
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
+	var previousPinned string
 	for {
-		cfg := conf.Get()
-		addrs := cfg.ServiceConnectionConfig.GitServers
+		gitServerAddrs := currentGitserverAddresses()
+		addrs := gitServerAddrs.Addresses
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
 		currentAddrs := strings.Join(addrs, ",")
 		fullSync := currentAddrs != previousAddrs
 		previousAddrs = currentAddrs
 
-		gitServerAddrs := gitserver.GitServerAddresses{
-			Addresses: addrs,
+		// We turn PinnedServers into a string here for easy comparison and storage
+		// of previous pins.
+		pinnedServerPairs := make([]string, 0, len(gitServerAddrs.PinnedServers))
+		for k, v := range gitServerAddrs.PinnedServers {
+			pinnedServerPairs = append(pinnedServerPairs, fmt.Sprintf("%s=%s", k, v))
 		}
-		if cfg.ExperimentalFeatures != nil {
-			gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
-		}
+		sort.Strings(pinnedServerPairs)
+		currentPinned := strings.Join(pinnedServerPairs, ",")
+		fullSync = fullSync || currentPinned != previousPinned
+		previousPinned = currentPinned
+
 		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 			s.Logger.Error("Syncing repo state", log.Error(err))
 		}
 
 		time.Sleep(interval)
 	}
+}
+
+func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) (string, error) {
+	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), s.DB, repoName, gitServerAddrs)
+}
+
+func currentGitserverAddresses() gitserver.GitServerAddresses {
+	cfg := conf.Get()
+	gitServerAddrs := gitserver.GitServerAddresses{
+		Addresses: cfg.ServiceConnectionConfig.GitServers,
+	}
+	if cfg.ExperimentalFeatures != nil {
+		gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
+	}
+
+	return gitServerAddrs
 }
 
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
@@ -711,9 +727,9 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 			return
 		}
 
-		if err := store.Upsert(ctx, batch...); err != nil {
+		if err := store.Update(ctx, batch...); err != nil {
 			repoStateUpsertCounter.WithLabelValues("false").Add(float64(len(batch)))
-			s.Logger.Error("Upserting GitserverRepos", log.Error(err))
+			s.Logger.Error("Updating GitserverRepos", log.Error(err))
 			return
 		}
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
@@ -734,8 +750,11 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		// directory.
 		repo.Name = api.UndeletedRepoName(repo.Name)
 
-		// Ensure we're only dealing with repos we are responsible for
-		addr := addrForKey(repo.Name, gitServerAddrs.Addresses)
+		// Ensure we're only dealing with repos we are responsible for.
+		addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
+		if err != nil {
+			return err
+		}
 		if !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
@@ -747,12 +766,6 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		_, cloning := s.locker.Status(dir)
 
 		var shouldUpdate bool
-		if repo.GitserverRepo == nil {
-			repo.GitserverRepo = &types.GitserverRepo{
-				RepoID: repo.ID,
-			}
-			shouldUpdate = true
-		}
 		if repo.ShardID != s.Hostname {
 			repo.ShardID = s.Hostname
 			shouldUpdate = true
@@ -780,21 +793,6 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	writeBatch()
 
 	return err
-}
-
-// addrForKey is used only during gitserver client experiment and will be removed as soon as the experiment ends.
-// In fact this commit will be just reverted.
-// If it still bothers you -- contact sashaostrikov
-func addrForKey(repo api.RepoName, addrs []string) string {
-	if len(addrs) == 0 {
-		// Avoid a panic where we index lower down
-		return ""
-	}
-	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	rs := string(repo)
-	sum := md5.Sum([]byte(rs))
-	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
-	return addrs[serverIndex]
 }
 
 // Stop cancels the running background jobs and returns when done.
@@ -941,19 +939,6 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
-	var req protocol.IsRepoClonedRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if repoCloned(s.dir(req.Repo)) {
-		w.WriteHeader(http.StatusOK)
-	} else {
-		w.WriteHeader(http.StatusNotFound)
-	}
-}
-
 // handleRepoUpdate is a synchronous (waits for update to complete or
 // time out) method so it can yield errors. Updates are not
 // unconditional; we debounce them based on the provided
@@ -975,12 +960,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	defer cancel1()
 	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
-	resp.QueueCap, resp.QueueLen = s.queryCloneLimiter()
 	if !repoCloned(dir) && !s.skipCloneForTests {
-		// optimistically, we assume that our cloning attempt might
-		// succeed.
-		resp.CloneInProgress = true
-
 		// We do not need to check if req.CloneFromShard is non-zero here since that has no effect on
 		// the code path at this point. Since the repo is already not cloned at this point, either
 		// this request was received for a repo migration or a regular clone - for both of which we
@@ -993,7 +973,6 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.Error = err.Error()
 		}
 	} else {
-		resp.Cloned = true
 		var statusErr, updateErr error
 
 		if debounce(req.Repo, req.Since) {
@@ -1079,7 +1058,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if format == "zip" {
+	if format == string(gitserver.ArchiveFormatZip) {
 		// Compression level of 0 (no compression) seems to perform the
 		// best overall on fast network links, but this has not been tuned
 		// thoroughly.
@@ -1160,7 +1139,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		if traceID := trace.ID(ctx); traceID != "" {
 			ev.AddField("traceID", traceID)
-			ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
+			ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
 		}
 		if honey.Enabled() {
 			_ = ev.Send()
@@ -1591,7 +1570,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 				if traceID := trace.ID(ctx); traceID != "" {
 					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
+					ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
 				}
 
 				if honey.Enabled() {
@@ -1836,7 +1815,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 				if traceID := trace.ID(ctx); traceID != "" {
 					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL(), conf.Tracer()))
+					ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
 				}
 
 				_ = ev.Send()
@@ -1884,18 +1863,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
-func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
-	if s.DB == nil {
-		return nil
-	}
-	return s.DB.GitserverRepos().SetLastError(ctx, name, error, s.Hostname)
-}
-
 func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
-	if s.DB == nil {
-		return nil
-	}
-
 	dir := s.dir(name)
 
 	lastFetched, err := repoLastFetched(dir)
@@ -1915,21 +1883,19 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 	})
 }
 
-// setLastErrorNonFatal is the same as setLastError but only logs errors
+// setLastErrorNonFatal will set the last_error column for the repo in the gitserver table.
 func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
 	var errString string
 	if err != nil {
 		errString = err.Error()
 	}
-	if err := s.setLastError(ctx, name, errString); err != nil {
+
+	if err := s.DB.GitserverRepos().SetLastError(ctx, name, errString, s.Hostname); err != nil {
 		s.Logger.Warn("Setting last error in DB", log.Error(err))
 	}
 }
 
 func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
-	if s.DB == nil {
-		return nil
-	}
 	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
 }
 
@@ -1942,10 +1908,6 @@ func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, 
 
 // setRepoSize calculates the size of the repo and stores it in the database.
 func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
-	if s.DB == nil {
-		return nil
-	}
-
 	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
 }
 
@@ -2538,7 +2500,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 		return errors.Wrap(err, `git config set "sourcegraph.type"`)
 	}
 
-	// Update the last-changed stamp.
+	// Update the last-changed stamp on disk.
 	if err := setLastChanged(dir); err != nil {
 		s.Logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
 	}

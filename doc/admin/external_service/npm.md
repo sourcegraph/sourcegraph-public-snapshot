@@ -14,7 +14,6 @@ To add npm dependencies to Sourcegraph you need to setup an npm dependencies cod
 There are three ways to sync npm dependency repositories.
 
 * **SCIP** (recommended): run [`scip-typescript`](https://github.com/sourcegraph/scip-typescript) on your JavaScript/TypeScript codebase and upload the generated index to Sourcegraph using the [src-cli](https://github.com/sourcegraph/src-cli) command `src code-intel upload`. Sourcegraph automatically synchronizes npm dependency repositories based on the dependencies that are discovered by `scip-typescript`.
-* **Dependencies search**: Sourcegraph automatically synchronizes npm dependency repositories that are in `package-lock.json` or `yarn.lock` files during a [dependencies search](../../code_search/how-to/dependencies_search.md).
 * **Code host configuration**: manually list dependencies in the `"dependencies"` section of the JSON configuration when creating the npm dependency code host. This method can be useful to verify that the credentials are picked up correctly without having to upload an index.
 
 ## Credentials

@@ -1,5 +1,7 @@
 # Importing the Sourcegraph API module
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
+
 In order to use the Sourcegraph extension API, your extension needs to import
 the `sourcegraph` module at the top of the file.
 

@@ -24,7 +24,7 @@
 
 </style>
 
-# Code intelligence
+# Code navigation
 
 <p class="subtitle">Navigate your code with tooling that understands it</p>
 
@@ -32,7 +32,7 @@
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/code-intel-overview.png" class="lead-screenshot">
 
 <p class="lead">
-Code Intelligence adds advanced code navigation to Sourcegraph, enabling
+Code navigation enables
 developers to explore code by
 </p>
 
@@ -56,37 +56,37 @@ developers to explore code by
 <a class="btn" href="references/indexers">🗂 Indexers</a>
 </div>
 
-Code Intelligence is made up of multiple features that build on top of each other:
+Code navigation is made up of multiple features that build on top of each other:
 
-- [Search-based code intelligence](explanations/search_based_code_intelligence.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
-- [Precise code intelligence](explanations/precise_code_intelligence.md) uses SCIP and LSIF indexes to provide correct code intelligence features and accurate cross-repository navigation.
-- [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code intelligence.
-- [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code intelligence and auto-indexing.
+- [Search-based code navigation](explanations/search_based_code_intelligence.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
+- [Precise code navigation](explanations/precise_code_intelligence.md) uses code graph data to provide correct code navigation features and accurate cross-repository navigation.
+- [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code navigation.
+- [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code navigation and auto-indexing.
 
-## Code Intelligence for your code
+## Code navigation for your code
 
-Here's how you go from search-based code intelligence to **automatically-updating, precise code intelligence across multiple repositories and dependencies**:
+Here's how you go from search-based code navigation to **automatically-updating, precise code navigation across multiple repositories and dependencies**:
 
-1. Navigate code with [search-based code intelligence](explanations/search_based_code_intelligence.md) and [Sourcegraph extensions](../../../extensions/index.md).
+1. Navigate code with [search-based code navigation](explanations/search_based_code_intelligence.md) and [Sourcegraph extensions](../../../extensions/index.md).
 
     Included in a standard Sourcegraph installation and works out of the box on the instances connected to the Internet.
-    To see how to enable code intelligence on the air-gapped instances please check [this guide](how-to/enable_code_intel_on_air_gapped_instances.md).
-1. Start using [precise code intelligence](explanations/precise_code_intelligence.md) by creating an index of a repository and uploading it to your Sourcegraph instance:
+    To see how to enable code navigation on the air-gapped instances please check [this guide](how-to/enable_code_intel_on_air_gapped_instances.md).
+1. Start using [precise code navigation](explanations/precise_code_intelligence.md) by creating an index of a repository and uploading it to your Sourcegraph instance:
 
     - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
     - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md#manual-indexing)
     - [Index a C++ repository](how-to/index_a_cpp_repository.md)
     - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
+    - [Index a Python repository](https://github.com/sourcegraph/scip-python)
 
-    See the [tutorials](#tutorials) for more step-by-step instructions.
 1. _Optional_: automate the uploading of indexes by [adding indexing and uploading to your CI setup](how-to/adding_lsif_to_workflows.md).
-1. Get **automatic precise code intelligence** by [enabling auto-indexing](how-to/enable_auto_indexing.md) which makes Sourcegraph automatically index the your repositories and enable precise code intelligence for them.
+1. Get **automatic precise code navigation** by [enabling auto-indexing](how-to/enable_auto_indexing.md) which makes Sourcegraph automatically index the your repositories and enable precise code navigation for them.
 1. Setup **auto-dependency indexing** to navigate and search through the dependencies used by your code:
     - **Go**: Enable [auto-indexing](explanations/auto_indexing.md) and Sourcegraph will start indexing your dependencies.
     - **Java, Scala, Kotlin**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [JVM dependencies code host](../../integration/jvm.md).
     - **JavaScript, TypeScript**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [npm dependencies code host](../../integration/npm.md).
 
-Once setup, code intelligence is available for use across popular development tools:
+Once setup, code navigation is available for use across popular development tools:
 
 - In the Sourcegraph web UI
 - When browsing code on your code host, via [integrations](../../../integration/index.md)
@@ -95,22 +95,22 @@ Once setup, code intelligence is available for use across popular development to
 
 ## [Explanations](explanations/index.md)
 
-- [Introduction to code intelligence](explanations/introduction_to_code_intelligence.md)
-- [Precise code intelligence](explanations/precise_code_intelligence.md)
-  - [Precise code intelligence uploads](explanations/uploads.md)
-- [Search-based code intelligence](explanations/search_based_code_intelligence.md)
+- [Introduction to code navigation](explanations/introduction_to_code_intelligence.md)
+- [Precise code navigation](explanations/precise_code_intelligence.md)
+  - [Code graph data uploads](explanations/uploads.md)
+- [Search-based code navigation](explanations/search_based_code_intelligence.md)
 - [Code navigation features](explanations/features.md)
-- <span class="badge badge-experimental">Experimental</span> [Rockskip: faster search-based code intelligence](explanations/rockskip.md)
+- <span class="badge badge-beta">Beta</span> [Rockskip: faster search-based code navigation](explanations/rockskip.md)
 - [Writing an indexer](explanations/writing_an_indexer.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
+- <span class="badge badge-beta">Beta</span> [Auto-indexing](explanations/auto_indexing.md)
+- <span class="badge badge-beta">Beta</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
 
 
 ## [How-tos](how-to/index.md)
 
 - General
   - [Configure data retention policies](how-to/configure_data_retention.md)
-  - [Enable code intelligence on the air-gapped instances](how-to/enable_code_intel_on_air_gapped_instances.md)
+  - [Enable code navigation on the air-gapped instances](how-to/enable_code_intel_on_air_gapped_instances.md)
 
 - Language-specific guides
   - [Index a Go repository](how-to/index_a_go_repository.md)
@@ -120,12 +120,8 @@ Once setup, code intelligence is available for use across popular development to
 - Automate uploading LSIF data
   - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
   - [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
-  - <span class="badge badge-experimental">Experimental</span> [Enable auto-indexing](how-to/enable_auto_indexing.md)
-  - <span class="badge badge-experimental">Experimental</span> [Configure auto-indexing](how-to/configure_auto_indexing.md)
-
-## [Tutorials](tutorials/index.md)
-
-- [Manually index a popular Go repository](tutorials/indexing_go_repo.md)
+  - <span class="badge badge-beta">Beta</span> [Enable auto-indexing](how-to/enable_auto_indexing.md)
+  - <span class="badge badge-beta">Beta</span> [Configure auto-indexing](how-to/configure_auto_indexing.md)
 
 ## [References](references/index.md)
 
@@ -134,6 +130,6 @@ Once setup, code intelligence is available for use across popular development to
 - [FAQ](references/faq.md)
 - [Sourcegraph recommended indexers](references/indexers.md)
 - [Environment variables](references/envvars.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto-indexing configuration](references/auto_indexing_configuration.md)
+- <span class="badge badge-beta">Beta</span> [Auto-indexing configuration](references/auto_indexing_configuration.md)
 
 

@@ -8,6 +8,7 @@ import { QueryState } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
@@ -128,6 +129,10 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const applySuggestionsOnEnter = useExperimentalFeatures(
+        features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
+    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
 
     useEffect(() => {
         const value = queryState.query
@@ -238,7 +243,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 <LazyMonacoQueryInput
                                     editorComponent={editorComponent}
                                     isLightTheme={isLightTheme}
-                                    patternType={SearchPatternType.literal}
+                                    patternType={SearchPatternType.standard}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                     caseSensitive={false}
                                     queryState={queryState}
@@ -246,13 +251,14 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     globbing={false}
                                     preventNewLine={true}
                                     autoFocus={true}
+                                    applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
                                 />
                             </div>
                             <div className={styles.queryInputPreviewLink}>
                                 <Link
                                     to={`/search?${buildSearchURLQuery(
                                         queryState.query,
-                                        SearchPatternType.literal,
+                                        SearchPatternType.standard,
                                         false
                                     )}`}
                                     target="_blank"

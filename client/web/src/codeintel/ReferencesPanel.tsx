@@ -14,7 +14,6 @@ import {
     lprToRange,
     pluralize,
     toPositionOrRangeQueryParameter,
-    toViewStateHash,
 } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -51,7 +50,9 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
+import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
+import { useExperimentalFeatures } from '../stores'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -71,7 +72,7 @@ type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisio
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -336,7 +337,7 @@ export const ReferencesList: React.FunctionComponent<
             }
         }
 
-        panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
+        panelHistory.push(appendJumpToFirstQueryParameter(url))
     }
 
     const navigateToUrl = (url: string): void => {
@@ -348,17 +349,24 @@ export const ReferencesList: React.FunctionComponent<
     const location = useLocation()
     const initialCollapseState = useMemo((): Record<string, boolean> => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
-        return {
+        const state = {
             references: viewState === 'references',
             definitions: viewState === 'definitions',
             implementations: viewState?.startsWith('implementations_') ?? false,
         }
+        // If the URL doesn't contain tab=<tab>, we open it (likely because the
+        // user clicked on a link in the preview code blob) to show definitions.
+        if (!state.references && !state.definitions && !state.implementations) {
+            state.definitions = true
+        }
+        return state
     }, [location])
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
 
     const isOpen = (id: string): boolean | undefined => collapsed[id]
+
     // But when the input changes, we reset the collapse state
     useEffect(() => {
         setCollapsed(initialCollapseState)
@@ -453,7 +461,7 @@ export const ReferencesList: React.FunctionComponent<
                                 <Button
                                     aria-label="Close"
                                     onClick={() => setActiveLocation(undefined)}
-                                    className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
+                                    className={classNames('p-0', styles.sideBlobCollapseButton)}
                                     size="sm"
                                     data-testid="close-code-view"
                                 >
@@ -596,6 +604,10 @@ const SideBlob: React.FunctionComponent<
         }
     >
 > = props => {
+    const BlobComponent = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+        ? CodeMirrorBlob
+        : Blob
+
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -654,12 +666,17 @@ const SideBlob: React.FunctionComponent<
     }
 
     return (
-        <Blob
+        <BlobComponent
             {...props}
             nav={props.blobNav}
             history={props.history}
             location={props.location}
             disableStatusBar={true}
+            // The CodeMirror-React integration uses its own <Router />
+            // component and therefore doesn't work with MemoryRouter as used by
+            // the reference panel (clicking on the buttons in the hovercard
+            // doesn't have any effect).
+            disableHovercards={true}
             disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
             wrapCode={true}
             className={styles.sideBlobCode}

@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	repoName   = "perforce/test-perms"
-	aliceEmail = "alice@perforce.sgdev.org"
+	perforceRepoName = "perforce/test-perms"
+	aliceEmail       = "alice@perforce.sgdev.org"
 )
 
 func TestSubRepoPermissionsPerforce(t *testing.T) {
@@ -82,7 +82,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	createPerforceExternalService(t)
 	userClient, _ := createTestUserAndWaitForRepo(t)
 
-	err := client.WaitForReposToBeIndexed(repoName)
+	err := client.WaitForReposToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +232,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 
 	for _, test := range commitAccessTests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := userClient.GitGetCommitMessage(repoName, test.revision)
+			_, err := userClient.GitGetCommitMessage(perforceRepoName, test.revision)
 			if err != nil {
 				if test.hasAccess {
 					t.Fatal(err)
@@ -246,7 +246,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	}
 
 	t.Run("archive repo", func(t *testing.T) {
-		url := fmt.Sprintf("%s/%s/-/raw/", *baseURL, repoName)
+		url := fmt.Sprintf("%s/%s/-/raw/", *baseURL, perforceRepoName)
 		response, err := userClient.GetWithHeaders(url, map[string][]string{"Accept": {"application/zip"}})
 		if err != nil {
 			t.Fatal(err)
@@ -295,11 +295,11 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
 		t.Fatal(err)
 	}
 
-	err = userClient.WaitForReposToBeCloned(repoName)
+	err = userClient.WaitForReposToBeCloned(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return userClient, repoName
+	return userClient, perforceRepoName
 }
 
 func enableSubRepoPermissions(t *testing.T) {

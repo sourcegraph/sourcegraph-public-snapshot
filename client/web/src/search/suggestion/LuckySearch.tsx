@@ -49,3 +49,34 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
             </ul>
         </div>
     )
+
+export const luckySearchEvent = (alertTitle: string, descriptions: string[]): string[] => {
+    const rules = descriptions.map(entry => {
+        if (entry.match(/patterns as regular expressions/)) {
+            return 'Regexp'
+        }
+        if (entry.match(/unquote patterns/)) {
+            return 'Unquote'
+        }
+        if (entry.match(/AND patterns together/)) {
+            return 'And'
+        }
+        if (entry.match(/language filter for pattern/)) {
+            return 'Lang'
+        }
+        if (entry.match(/search type for pattern/)) {
+            return 'Type'
+        }
+        return 'Other'
+    })
+
+    const prefix = alertTitle.match(/No results for original query/)
+        ? 'SearchResultsAutoPure'
+        : 'SearchResultsAutoAdded'
+
+    const events = []
+    for (const rule of rules) {
+        events.push(`${prefix}${rule}`)
+    }
+    return events
+}

@@ -793,10 +793,15 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 					return test.err
 				},
 			}
-			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalService": {"ID":1,"kind":"GITHUB"}}}`))
+			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalServiceID": 1}`))
 			w := httptest.NewRecorder()
-			s := &Server{Logger: logtest.Scoped(t), Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
-			s.handleExternalServiceSync(w, r)
+			s := repos.NewMockStore()
+			es := database.NewMockExternalServiceStore()
+			s.ExternalServiceStoreFunc.SetDefaultReturn(es)
+			es.ListFunc.PushReturn([]*types.ExternalService{{ID: 1, Kind: extsvc.KindGitHub}}, nil)
+
+			srv := &Server{Logger: logtest.Scoped(t), Store: s, Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
+			srv.handleExternalServiceSync(w, r)
 			if w.Code != test.wantErrCode {
 				t.Errorf("Code: want %v but got %v", test.wantErrCode, w.Code)
 			}

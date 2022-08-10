@@ -6,6 +6,7 @@ import { QueryState } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Card } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../alias/ModalVideo'
 
@@ -48,9 +49,9 @@ const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExam
             <div className={styles.searchExamples}>
                 {examples.map(example => (
                     <div key={example.queryPreview} className="search-example-card-wrapper">
-                        <button
-                            type="button"
-                            className={classNames('card p-0 w-100', styles.searchExampleCard)}
+                        <Card
+                            as="button"
+                            className={classNames('p-0 w-100', styles.searchExampleCard)}
                             onClick={searchExampleClicked(example.trackEventName, example.fullQuery)}
                         >
                             <div className={classNames('search-example-example-icons', styles.searchExampleIcon)}>
@@ -61,7 +62,7 @@ const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExam
                                     <SyntaxHighlightedSearchQuery query={example.queryPreview} />
                                 </div>
                             </div>
-                        </button>
+                        </Card>
                         <p className={styles.searchExampleLabel}>{example.label}</p>
                     </div>
                 ))}

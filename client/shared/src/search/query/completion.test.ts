@@ -1,7 +1,7 @@
 import { SymbolKind } from '../../graphql-operations'
 import { isSearchMatchOfType, SearchMatch } from '../stream'
 
-import { FetchSuggestions, getCompletionItems, repositoryCompletionItemKind } from './completion'
+import { FetchSuggestions, getCompletionItems } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
@@ -320,26 +320,6 @@ describe('getCompletionItems()', () => {
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
         ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
-    })
-
-    test('inserts valid suggestion when completing repo:deps predicate', async () => {
-        expect(
-            (
-                await getCompletionItems(
-                    getToken('repo:deps(sourcegraph', 0),
-                    { column: 21 },
-                    createFetcher([
-                        {
-                            type: 'repo',
-                            repository: 'github.com/sourcegraph/jsonrpc2.go',
-                        },
-                    ]),
-                    {}
-                )
-            )?.suggestions
-                .filter(({ kind }) => kind === repositoryCompletionItemKind)
-                .map(({ insertText }) => insertText)
-        ).toStrictEqual(['deps(^github\\.com/sourcegraph/jsonrpc2\\.go$) '])
     })
 
     test('sets current filter value as filterText', async () => {

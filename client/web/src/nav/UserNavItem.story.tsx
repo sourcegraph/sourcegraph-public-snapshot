@@ -71,6 +71,7 @@ const commonProps = (): UserNavItemProps => ({
     showRepositorySection: true,
     authenticatedUser,
     position: Position.bottomStart,
+    showKeyboardShortcutsHelp: () => undefined,
 })
 
 const OpenByDefaultWrapper: React.FunctionComponent<{

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"sort"
 	"strconv"
@@ -13,9 +12,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -47,6 +49,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		wantQuery            string
 		onlyCloudDefault     bool
 		noCachedWebhooks     bool
+		includeDeleted       bool
 		wantArgs             []any
 	}{
 		{
@@ -56,14 +59,14 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		{
 			name:      "only one kind: GitHub",
 			kinds:     []string{extsvc.KindGitHub},
-			wantQuery: "deleted_at IS NULL AND kind IN ($1)",
-			wantArgs:  []any{extsvc.KindGitHub},
+			wantQuery: "deleted_at IS NULL AND kind = ANY($1)",
+			wantArgs:  []any{pq.Array([]string{extsvc.KindGitHub})},
 		},
 		{
 			name:      "two kinds: GitHub and GitLab",
 			kinds:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
-			wantQuery: "deleted_at IS NULL AND kind IN ($1 , $2)",
-			wantArgs:  []any{extsvc.KindGitHub, extsvc.KindGitLab},
+			wantQuery: "deleted_at IS NULL AND kind = ANY($1)",
+			wantArgs:  []any{pq.Array([]string{extsvc.KindGitHub, extsvc.KindGitLab})},
 		},
 		{
 			name:            "has namespace user ID",
@@ -111,6 +114,11 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			noCachedWebhooks: true,
 			wantQuery:        "deleted_at IS NULL AND has_webhooks IS NULL",
 		},
+		{
+			name:           "includeDeleted",
+			includeDeleted: true,
+			wantQuery:      "TRUE",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -124,6 +132,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				UpdatedAfter:         test.updatedAfter,
 				OnlyCloudDefault:     test.onlyCloudDefault,
 				NoCachedWebhooks:     test.noCachedWebhooks,
+				IncludeDeleted:       test.includeDeleted,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -1154,15 +1163,10 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// create a store with a NoopKey to read the raw encrypted value
-	noopStore := db.ExternalServices().WithEncryptionKey(&encryption.NoopKey{})
-	encrypted, err := noopStore.GetByID(ctx, es.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// if the TestKey worked, the config should just be a base64 encoded version
-	if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(es.Config)) {
-		t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
+	// values encrypted should not be readable without the encrypting key
+	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
+	if _, err := noopStore.GetByID(ctx, es.ID); err == nil {
+		t.Fatalf("expected error decrypting with a different key")
 	}
 
 	// Should be able to get back by its ID
@@ -1513,6 +1517,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 			DisplayName:     "GITHUB #1",
 			Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 			NamespaceUserID: user.ID,
+			CloudDefault:    true,
 		},
 		{
 			Kind:        extsvc.KindGitHub,
@@ -1534,6 +1539,19 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 	}
 	createdAt := time.Now()
+
+	deletedES := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #4",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+	}
+	err = db.ExternalServices().Create(ctx, confGet, deletedES)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ExternalServices().Delete(ctx, deletedES.ID); err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("list all external services", func(t *testing.T) {
 		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{})
@@ -1680,7 +1698,33 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 		// We should find all services were updated after a time in the past
 		if len(ess) != 3 {
-			t.Fatalf("Want 0 external service but got %d", len(ess))
+			t.Fatalf("Want 3 external services but got %d", len(ess))
+		}
+	})
+
+	t.Run("list cloud default services", func(t *testing.T) {
+		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+			OnlyCloudDefault: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We should find all services were updated after a time in the past
+		if len(ess) != 1 {
+			t.Fatalf("Want 0 external services but got %d", len(ess))
+		}
+	})
+
+	t.Run("list including deleted", func(t *testing.T) {
+		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+			IncludeDeleted: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We should find all services were updated after a time in the past
+		if len(ess) != 4 {
+			t.Fatalf("Want 4 external services but got %d", len(ess))
 		}
 	})
 }
@@ -1953,26 +1997,21 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-
-		// create a store with a NoopKey to read the raw encrypted value
-		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{})
-
 		for _, e := range want {
 			if e.Kind != strings.ToUpper(e.Kind) {
 				t.Errorf("external service kind didn't get upper-cased: %q", e.Kind)
 				break
 			}
-			encrypted, err := noopStore.GetByID(ctx, e.ID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			// if the TestKey worked, the config should just be a base64 encoded version
-			if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(e.Config)) {
-				t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
-			}
 		}
 
-		sort.Sort(want)
+		// values encrypted should not be readable without the encrypting key
+		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
+
+		for _, e := range want {
+			if _, err := noopStore.GetByID(ctx, e.ID); err == nil {
+				t.Fatalf("expected error decrypting with a different key")
+			}
+		}
 
 		have, err := tx.List(ctx, ExternalServicesListOptions{
 			Kinds: svcs.Kinds(),
@@ -1982,6 +2021,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 
 		sort.Sort(types.ExternalServices(have))
+		sort.Sort(want)
 
 		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
 			t.Fatalf("List:\n%s", diff)
@@ -2032,7 +2072,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 }
 
-func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
+func TestExternalServiceStore_GetSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2060,7 +2100,7 @@ func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := db.ExternalServices().GetSyncJobs(ctx)
+	have, err := db.ExternalServices().GetSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2073,8 +2113,109 @@ func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
 		State:             "queued",
 		ExternalServiceID: es.ID,
 	}
-	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID")); diff != "" {
+	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (external_service_id) VALUES ($1)", es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	have, err := db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if have != 1 {
+		t.Fatalf("Expected 1 job, got %d", have)
+	}
+
+	require.Exactly(t, int64(1), have, "total count is incorrect")
+
+	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{ExternalServiceID: es.ID + 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if have != 0 {
+		t.Fatalf("Expected 0 jobs, got %d", have)
+	}
+
+	require.Exactly(t, int64(0), have, "total count is incorrect")
+}
+
+func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (id, external_service_id) VALUES (1, $1)", es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	have, err := db.ExternalServices().GetSyncJobByID(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &types.ExternalServiceSyncJob{
+		ID:                1,
+		State:             "queued",
+		ExternalServiceID: es.ID,
+	}
+	if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Test not found:
+	_, err = db.ExternalServices().GetSyncJobByID(ctx, 2)
+	if err == nil {
+		t.Fatal("no error for not found")
+	}
+	if !errcode.IsNotFound(err) {
+		t.Fatal("wrong err code for not found")
 	}
 }
 
@@ -2254,4 +2395,103 @@ func TestConfigurationHasWebhooks(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestExternalServiceStore_ListRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create new user
+	user, err := db.Users().Create(ctx,
+		NewUser{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			Password:        "password",
+			EmailIsVerified: true,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create new org
+	displayName := "Acme org"
+	org, err := db.Orgs().Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const repoId = 1
+	err = db.Repos().Create(ctx, &types.Repo{ID: repoId, Name: "test1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id, org_id) VALUES ($1, $2, $3, $4, $5)",
+		es.ID,
+		repoId,
+		"cloneUrl",
+		user.ID,
+		org.ID,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check that repos are found with empty ExternalServiceReposListOptions
+	haveRepos, err := db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(haveRepos) != 1 {
+		t.Fatalf("Expected 1 external service repo, got %d", len(haveRepos))
+	}
+
+	have := haveRepos[0]
+
+	require.Exactly(t, es.ID, have.ExternalServiceID, "externalServiceID is incorrect")
+	require.Exactly(t, api.RepoID(repoId), have.RepoID, "repoID is incorrect")
+	require.Exactly(t, "cloneUrl", have.CloneURL, "cloneURL is incorrect")
+	require.Exactly(t, user.ID, have.UserID, "userID is incorrect")
+	require.Exactly(t, org.ID, have.OrgID, "orgID is incorrect")
+
+	// check that repos are found with given externalServiceID
+	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(haveRepos) != 1 {
+		t.Fatalf("Expected 1 external service repo, got %d", len(haveRepos))
+	}
+
+	// check that repos are limited
+	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 0}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(haveRepos) != 0 {
+		t.Fatalf("Expected 0 external service repos, got %d", len(haveRepos))
+	}
 }

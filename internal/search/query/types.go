@@ -35,6 +35,7 @@ const (
 	SearchTypeStructural
 	SearchTypeLucky
 	SearchTypeStandard
+	SearchTypeKeyword
 )
 
 func (s SearchType) String() string {
@@ -49,6 +50,8 @@ func (s SearchType) String() string {
 		return "structural"
 	case SearchTypeLucky:
 		return "lucky"
+	case SearchTypeKeyword:
+		return "keyword"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
@@ -326,6 +329,7 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 			// Skip predicates
 			return
 		}
+
 		if negated {
 			exclude = append(exclude, v)
 		} else {
@@ -381,6 +385,17 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 	return res
 }
 
+func (p Parameters) FileContainsContent() (include []string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
+		if field == FieldFile && (name == "contains" || name == "contains.content") {
+			var pred FileContainsContentPredicate
+			pred.ParseParams(value)
+			include = append(include, pred.Pattern)
+		}
+	})
+	return include
+}
+
 func (p Parameters) RepoContainsCommitAfter() (value string) {
 	nodes := toNodes(p)
 
@@ -414,24 +429,6 @@ func (p Parameters) Exists(field string) bool {
 		found = true
 	})
 	return found
-}
-
-func (p Parameters) Dependencies() (dependencies []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			dependencies = append(dependencies, value)
-		}
-	})
-	return dependencies
-}
-
-func (p Parameters) Dependents() (dependents []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
-			dependents = append(dependents, value)
-		}
-	})
-	return dependents
 }
 
 func (p Parameters) RepoHasDescription() (descriptionPatterns []string) {

@@ -258,7 +258,6 @@ func convertConfigPolicies(configs []policyShared.ConfigurationPolicy) []dbstore
 			IndexingEnabled:           c.IndexingEnabled,
 			IndexCommitMaxAge:         c.IndexCommitMaxAge,
 			IndexIntermediateCommits:  c.IndexIntermediateCommits,
-			LockfileIndexingEnabled:   c.LockfileIndexingEnabled,
 		})
 	}
 

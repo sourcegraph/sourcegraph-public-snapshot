@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -104,6 +106,9 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 		l = append(l, &UserResolver{
 			db:   r.db,
 			user: user,
+			logger: log.Scoped("userResolver", "resolves a specific user").With(
+				log.Object("repo",
+					log.String("user", user.Username))),
 		})
 	}
 	return l, nil

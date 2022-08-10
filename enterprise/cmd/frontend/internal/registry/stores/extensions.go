@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -410,7 +411,7 @@ ORDER BY %s,
 	for rows.Next() {
 		var t Extension
 		var publisherUserID, publisherOrgID sql.NullInt64
-		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &t.Publisher.NonCanonicalName, &t.NonCanonicalIsWorkInProgress); err != nil {
+		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &dbutil.NullString{S: &t.Publisher.NonCanonicalName}, &t.NonCanonicalIsWorkInProgress); err != nil {
 			return nil, err
 		}
 		t.Publisher.UserID = int32(publisherUserID.Int64)

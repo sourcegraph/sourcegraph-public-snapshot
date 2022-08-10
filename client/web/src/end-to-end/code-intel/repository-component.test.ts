@@ -205,7 +205,7 @@ describe('Repository component', () => {
             await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true })
             expect(
                 await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]').length)
-            ).toEqual(1)
+            ).toEqual(2)
         })
 
         test('responds to keyboard shortcuts', async () => {
@@ -529,7 +529,8 @@ describe('Repository component', () => {
                     )
                 })
 
-                test('does navigation (same repo, same file)', async () => {
+                test.skip('does navigation (same repo, same file)', async () => {
+                    // See https://github.com/sourcegraph/sourcegraph/pull/39747
                     await driver.page.goto(
                         sourcegraphBaseUrl +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L25:10'

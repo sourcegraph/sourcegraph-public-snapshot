@@ -1,6 +1,6 @@
 # Migrations
 
-For each of our Postgres instances, we define a sequence of SQL schema commands that must be applied before the database is in the state the application expects. We also support zero-downtime upgrades between one minor version in both Sourcegraph Cloud, managed instances, and enterprise instances.
+For each of our Postgres instances, we define a sequence of SQL schema commands that must be applied before the database is in the state the application expects. We also support zero-downtime upgrades between one minor version on Sourcegraph.com, Cloud managed instances, and enterprise instances.
 
 In development environments, these migrations are applied automatically on application startup. This is a specific choice to keep the response latency small during development. In production environments, a typical upgrade requires that the site-administrator first run a `migrator` service to prepare the database schema for the new version of the application. This is a type of _database-first_ deployment (opposed to _code-first_ deployments), where database migrations are applied prior to the corresponding code change.
 

@@ -7,6 +7,9 @@ import { BarChart } from './BarChart'
 const StoryConfig: Meta = {
     title: 'web/charts/bar',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
+        chromatic: { disableSnapshots: false, enableDarkMode: true },
+    },
 }
 
 export default StoryConfig

@@ -72,7 +72,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 		repoName,
 		gitserver.ArchiveOptions{
 			Treeish:   "HEAD",
-			Format:    "tar",
+			Format:    gitserver.ArchiveFormatTar,
 			Pathspecs: []gitdomain.Pathspec{},
 		},
 	)

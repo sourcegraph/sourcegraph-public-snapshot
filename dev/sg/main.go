@@ -54,6 +54,8 @@ var (
 	// configOverwriteFile is the path to use with sgconf.Get - it must not be used before
 	// flag initialization.
 	configOverwriteFile string
+	// disableOverwrite causes configuration to ignore configOverwriteFile.
+	disableOverwrite bool
 
 	// Global verbose mode
 	verbose bool
@@ -77,7 +79,7 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 
 // sg is the main sg CLI application.
 //
-//go:generate go run . help -full -output ./doc/dev/background-information/sg/reference.md
+//go:generate go run . -disable-overwrite help -full -output ./doc/dev/background-information/sg/reference.md
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
@@ -109,6 +111,13 @@ var sg = &cli.App{
 			TakesFile:   true,
 			Value:       sgconf.DefaultOverwriteFile,
 			Destination: &configOverwriteFile,
+		},
+		&cli.BoolFlag{
+			Name:        "disable-overwrite",
+			Usage:       "disable loading additional sg configuration from overwrite file (see -overwrite)",
+			EnvVars:     []string{"SG_DISABLE_OVERWRITE"},
+			Value:       false,
+			Destination: &disableOverwrite,
 		},
 		&cli.BoolFlag{
 			Name:    "skip-auto-update",
@@ -312,4 +321,11 @@ func loadSecrets() (*secrets.Store, error) {
 	}
 	fp := filepath.Join(homePath, secrets.DefaultFile)
 	return secrets.LoadFromFile(fp)
+}
+
+func getConfig() (*sgconf.Config, error) {
+	if disableOverwrite {
+		return sgconf.GetWithoutOverwrites(configFile)
+	}
+	return sgconf.Get(configFile, configOverwriteFile)
 }

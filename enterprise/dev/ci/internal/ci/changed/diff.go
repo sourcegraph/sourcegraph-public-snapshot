@@ -104,6 +104,10 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
 			diff |= Docs
 		}
+		// dev/release contains a nodejs script that doesn't have tests but needs to be linted
+		if strings.HasPrefix(p, "dev/release/") {
+			diff |= Docs
+		}
 
 		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {

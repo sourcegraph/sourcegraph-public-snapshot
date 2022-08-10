@@ -694,9 +694,9 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 	detachTextSearch, viewTextSearch := getRewirerMappingTextSearch(opts.TextSearch)
 
 	// Happily, current state is simpler. Less happily, it can error.
-	currentState, err := getRewirerMappingCurrentState(opts.CurrentState)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing current state option")
+	currentState := sqlf.Sprintf("")
+	if opts.CurrentState != nil {
+		currentState = sqlf.Sprintf("AND computed_state = %s", *opts.CurrentState)
 	}
 
 	return sqlf.Sprintf(
@@ -717,51 +717,6 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 		currentState,
 		opts.LimitOffset.SQL(),
 	), nil
-}
-
-func getRewirerMappingCurrentState(state *btypes.ChangesetState) (*sqlf.Query, error) {
-	if state == nil {
-		return sqlf.Sprintf(""), nil
-	}
-
-	// This is essentially the reverse mapping of changesetResolver.State. Note
-	// that if one changes, so should the other.
-	var q *sqlf.Query
-	switch *state {
-	case btypes.ChangesetStateRetrying:
-		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateErrored.ToDB())
-	case btypes.ChangesetStateFailed:
-		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateFailed.ToDB())
-	case btypes.ChangesetStateScheduled:
-		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateScheduled.ToDB())
-	case btypes.ChangesetStateProcessing:
-		q = sqlf.Sprintf("reconciler_state NOT IN (%s)",
-			sqlf.Join([]*sqlf.Query{
-				sqlf.Sprintf("%s", btypes.ReconcilerStateErrored.ToDB()),
-				sqlf.Sprintf("%s", btypes.ReconcilerStateFailed.ToDB()),
-				sqlf.Sprintf("%s", btypes.ReconcilerStateScheduled.ToDB()),
-				sqlf.Sprintf("%s", btypes.ReconcilerStateCompleted.ToDB()),
-			}, ","),
-		)
-	case btypes.ChangesetStateUnpublished:
-		q = sqlf.Sprintf("publication_state = %s", btypes.ChangesetPublicationStateUnpublished)
-	case btypes.ChangesetStateDraft:
-		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateDraft)
-	case btypes.ChangesetStateOpen:
-		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateOpen)
-	case btypes.ChangesetStateClosed:
-		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateClosed)
-	case btypes.ChangesetStateMerged:
-		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateMerged)
-	case btypes.ChangesetStateReadOnly:
-		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateReadOnly)
-	case btypes.ChangesetStateDeleted:
-		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateDeleted)
-	default:
-		return nil, errors.Errorf("unknown changeset state: %q", *state)
-	}
-
-	return sqlf.Sprintf("AND %s", q), nil
 }
 
 func getRewirerMappingTextSearch(terms []search.TextSearchTerm) (detachTextSearch, viewTextSearch *sqlf.Query) {

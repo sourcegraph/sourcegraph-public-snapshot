@@ -2,7 +2,9 @@
 package linters
 
 import (
+	"bytes"
 	"context"
+	"io"
 
 	"github.com/sourcegraph/run"
 
@@ -48,6 +50,7 @@ var Targets = []Target{
 		Description: "Documentation checks",
 		Checks: []*linter{
 			runScript("Docsite lint", "dev/docsite.sh check"),
+			prettier,
 		},
 	},
 	{
@@ -66,6 +69,7 @@ var Targets = []Target{
 			inlineTemplates,
 			runScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
 			checkUnversionedDocsLinks(),
+			prettier,
 		},
 	},
 	{
@@ -101,5 +105,28 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 	return &linter{
 		Name:  name,
 		Check: check,
+	}
+}
+
+// yarnInstallFilter is a LineMap that filters out all the warning junk that yarn install
+// emits that seem inconsequential, for example:
+//
+// 	warning "@storybook/addon-storyshots > react-test-renderer@16.14.0" has incorrect peer dependency "react@^16.14.0".
+// 	warning "@storybook/addon-storyshots > @storybook/core > @storybook/core-server > @storybook/builder-webpack4 > webpack-filter-warnings-plugin@1.2.1" has incorrect peer dependency "webpack@^2.0.0 || ^3.0.0 || ^4.0.0".
+// 	warning " > @storybook/react@6.5.9" has unmet peer dependency "require-from-string@^2.0.2".
+// 	warning "@storybook/react > react-element-to-jsx-string@14.3.4" has incorrect peer dependency "react@^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1".
+// 	warning " > @testing-library/react-hooks@8.0.0" has incorrect peer dependency "react@^16.9.0 || ^17.0.0".
+// 	warning "storybook-addon-designs > @figspec/react@1.0.0" has incorrect peer dependency "react@^16.14.0 || ^17.0.0".
+// 	warning Workspaces can only be enabled in private projects.
+// 	warning Workspaces can only be enabled in private projects.
+//
+func yarnInstallFilter() run.LineMap {
+	return func(ctx context.Context, line []byte, dst io.Writer) (int, error) {
+		// We can't seem to do a simple prefix check, so let's just do something lazy for
+		// now and figure it out later if it's an issue.
+		if bytes.Contains(line, []byte("warning")) {
+			return 0, nil
+		}
+		return dst.Write(line)
 	}
 }
