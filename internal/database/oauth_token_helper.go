@@ -24,10 +24,6 @@ type RefreshTokenHelperForExternalService struct {
 	OauthRefreshToken string
 }
 
-//type TokenRefresher interface {
-//	RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error)
-//}
-
 func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error) {
 	refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
 
