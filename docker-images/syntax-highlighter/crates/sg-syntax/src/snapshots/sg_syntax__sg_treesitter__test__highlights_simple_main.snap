@@ -1,12 +1,11 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 381
-expression: "dump_document(document, src)"
-
+assertion_line: 452
+expression: "dump_document(&document, src)"
 ---
   package main
 //^^^^^^^ IdentifierKeyword
-//        ^^^^ IdentifierModule
+//        ^^^^ IdentifierNamespace
   import "fmt"
 //^^^^^^ IdentifierKeyword
 //       ^^^^^ StringLiteral
