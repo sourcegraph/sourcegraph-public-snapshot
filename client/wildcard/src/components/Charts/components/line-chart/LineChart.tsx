@@ -9,12 +9,12 @@ import { noop } from 'lodash'
 
 import { AxisLeft, AxisBottom } from '../../core'
 import { formatDateTick } from '../../core/components/axis/tick-formatters'
-import { SeriesLikeChart } from '../../types'
+import { Series, SeriesLikeChart } from '../../types'
 
 import { Tooltip, TooltipContent, LineDataSeries, StackedArea } from './components'
 import { useChartEventHandlers } from './hooks/event-listeners'
 import { Point } from './types'
-import { getSeriesData, generatePointsField, getChartContentSizes, getMinMaxBoundaries, SeriesWithData } from './utils'
+import { getSeriesData, generatePointsField, getChartContentSizes, getMinMaxBoundaries } from './utils'
 
 import styles from './LineChart.module.scss'
 
@@ -50,7 +50,7 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
      * @param dataSeries a SeriesWithData array containing the data to render
      * @returns a SeriesWithData array that has been filtered
      */
-    getActiveSeries?: <D>(dataSeries: SeriesWithData<D>[]) => SeriesWithData<D>[]
+    getActiveSeries?: <S extends Pick<Series<Datum>, 'id'>>(dataSeries: S[]) => S[]
 }
 
 const identity = <T,>(argument: T): T => argument

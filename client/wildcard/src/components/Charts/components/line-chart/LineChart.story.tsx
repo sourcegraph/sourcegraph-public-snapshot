@@ -3,14 +3,20 @@ import { useState } from 'react'
 import { Meta, Story } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
 
-import { WebStory } from '../../../components/WebStory'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
 import { Series } from '../../types'
 
 import { LineChart, LegendList, LegendItem, getLineColor } from './index'
 
 const StoryConfig: Meta = {
-    title: 'web/charts/line',
-    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    title: 'wildcard/Charts',
+    decorators: [
+        story => (
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+        ),
+    ],
     parameters: {
         chromatic: { disableSnapshots: false, enableDarkMode: true },
     },
@@ -32,7 +38,7 @@ export const LineChartsVitrina: Story = () => (
 )
 
 interface StandardDatum {
-    value: number | null
+    value: number
     x: Date | number
     link?: string
 }
@@ -218,8 +224,6 @@ const WithHugeData = () => {
                 { x: 1625097600000, value: 100218000 },
                 { x: 1627776000000, value: 1002280 },
                 { x: 1630454400000, value: 100237600 },
-                { x: 1633046400000, value: null },
-                { x: 1635724800000, value: null },
             ],
             color: 'var(--oc-orange-7)',
             name: 'Revert',
@@ -301,11 +305,8 @@ const WithDataMissingValues = () => {
         {
             id: 'series_001',
             data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 94 },
                 { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: 134 },
-                { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 134 },
                 { x: 1588965700286, value: 123 },
             ],
@@ -317,10 +318,7 @@ const WithDataMissingValues = () => {
         {
             id: 'series_002',
             data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 200 },
-                { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: 150 },
                 { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 190 },
                 { x: 1588965700286, value: 170 },
@@ -348,16 +346,10 @@ const StackedWithDataMissingValues = () => {
         {
             id: 'series_001',
             data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 94 },
                 { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: 134 },
-                { x: 1588965700286 - 1.4 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 134 },
                 { x: 1588965700286, value: 123 },
-                { x: 1588965700286 + 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 + 1.3 * 24 * 60 * 60 * 1000, value: null },
             ],
             name: 'A metric',
             color: 'var(--blue)',
@@ -367,10 +359,6 @@ const StackedWithDataMissingValues = () => {
         {
             id: 'series_002',
             data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 1.4 * 24 * 60 * 60 * 1000, value: 150 },
                 { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: 150 },
                 { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 190 },
@@ -386,16 +374,10 @@ const StackedWithDataMissingValues = () => {
         {
             id: 'series_003',
             data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, value: 200 },
-                { x: 1588965700286 - 1.4 * 24 * 60 * 60 * 1000, value: null },
                 { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, value: 150 },
                 { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 190 },
                 { x: 1588965700286, value: 170 },
-                { x: 1588965700286 + 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 + 1.3 * 24 * 60 * 60 * 1000, value: null },
             ],
             name: 'B metric',
             color: 'var(--warning)',

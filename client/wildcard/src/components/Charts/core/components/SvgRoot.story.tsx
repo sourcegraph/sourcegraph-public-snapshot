@@ -4,14 +4,19 @@ import { AxisScale } from '@visx/axis/lib/types'
 import { ParentSize } from '@visx/responsive'
 import { scaleBand, scaleLinear, scaleTime } from '@visx/scale'
 
-import { WebStory } from '../../../components/WebStory'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { formatDateTick } from './axis/tick-formatters'
 import { SvgRoot, SvgAxisLeft, SvgAxisBottom, SvgContent } from './SvgRoot'
 
 const StoryConfig: Meta = {
-    title: 'web/charts/core/axis',
-    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    title: 'wildcard/Charts/Core',
+    decorators: [
+        story => (
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+        ),
+    ],
     parameters: { chromatic: { disableSnapshots: false } },
 }
 
@@ -40,7 +45,7 @@ const SimpleChartTemplate: Story<TemplateProps> = args => (
     </ParentSize>
 )
 
-export const MainAxisDemo: Story = () => (
+export const SmartAxisDemo: Story = () => (
     <section style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
         <SimpleChartTemplate
             xScale={scaleTime<number>({

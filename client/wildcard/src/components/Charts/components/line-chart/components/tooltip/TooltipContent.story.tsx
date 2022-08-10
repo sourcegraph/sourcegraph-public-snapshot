@@ -1,16 +1,21 @@
 import { Meta, Story } from '@storybook/react'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { H2 } from '@sourcegraph/wildcard'
 
-import { WebStory } from '../../../../../components/WebStory'
 import { Series } from '../../../../types'
 import { getSeriesData, SeriesWithData } from '../../utils'
 
 import { MinimumPointInfo, TooltipContent } from './TooltipContent'
 
 const StoryConfig: Meta = {
-    title: 'web/charts/tooltip',
-    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    title: 'wildcard/Charts/Core',
+    decorators: [
+        story => (
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+        ),
+    ],
 }
 
 export default StoryConfig
@@ -90,7 +95,7 @@ const ACTIVE_POINT: MinimumPointInfo = {
     xValue: new Date('2020-05-07T19:21:40.286Z'),
 }
 
-export const TooltipLayouts: Story = () => (
+export const TooltipLayoutDemo: Story = () => (
     <div className="d-flex flex-column" style={{ gap: 20 }}>
         <div>
             <H2>Regular tooltip</H2>

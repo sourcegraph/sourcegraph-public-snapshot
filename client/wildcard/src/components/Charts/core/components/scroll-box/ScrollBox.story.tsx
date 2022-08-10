@@ -1,15 +1,20 @@
 import { Meta } from '@storybook/react'
 
-import { WebStory } from '../../../../components/WebStory'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { ScrollBox } from './ScrollBox'
 
 export default {
-    title: 'web/charts/core/scroll-box',
-    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    title: 'wildcard/Charts/Core',
+    decorators: [
+        story => (
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+        ),
+    ],
 } as Meta
 
-export const ScrollBoxExample = () => (
+export const ScrollBoxDemo = () => (
     <ScrollBox style={{ height: 400, width: 200 }}>
         Sorokin's works, bright and striking examples of underground culture, were banned during the Soviet period. His
         first publication in the USSR appeared in November 1989, when the Riga-based Latvian magazine Rodnik (Spring)

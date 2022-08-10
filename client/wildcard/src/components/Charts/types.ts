@@ -38,7 +38,7 @@ export interface Series<Datum> {
      * value for series points.
      */
     getXValue: (datum: Datum) => Date
-    getYValue: (datum: Datum) => number | null
+    getYValue: (datum: Datum) => number
 
     /**
      * Link for data series point. It may be used to make datum points with links

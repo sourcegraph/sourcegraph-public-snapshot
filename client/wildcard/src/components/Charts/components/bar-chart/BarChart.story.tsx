@@ -1,12 +1,17 @@
 import { Meta, Story } from '@storybook/react'
 
-import { WebStory } from '../../../components/WebStory'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { BarChart } from './BarChart'
 
 const StoryConfig: Meta = {
-    title: 'web/charts/bar',
-    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    title: 'wildcard/Charts',
+    decorators: [
+        story => (
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+        ),
+    ],
     parameters: {
         chromatic: { disableSnapshots: false, enableDarkMode: true },
     },

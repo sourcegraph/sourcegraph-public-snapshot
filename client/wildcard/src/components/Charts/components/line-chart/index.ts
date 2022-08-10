@@ -1,4 +1,5 @@
 export { LineChart } from './LineChart'
+export type { LineChartProps } from './LineChart'
 
 // Building blocks for chart legend layouts
 export { LegendList, LegendItem } from './components/legend-list/LegendList'

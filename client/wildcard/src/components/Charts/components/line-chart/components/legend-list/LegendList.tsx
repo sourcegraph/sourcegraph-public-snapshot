@@ -19,14 +19,14 @@ export const LegendList: React.FunctionComponent<React.PropsWithChildren<LegendL
 }
 
 interface LegendItemProps extends LiHTMLAttributes<HTMLLIElement> {
-    color: string
     name: string
+    color?: string
     selected?: boolean
     hovered?: boolean
 }
 
 export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendItemProps>> = ({
-    color,
+    color = 'var(--gray-07)',
     name,
     selected = true,
     hovered,
