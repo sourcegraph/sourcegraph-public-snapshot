@@ -33,7 +33,7 @@ type uploadState struct {
 	suppliedIndex     bool
 	index             int
 	done              bool
-	uncompressedSize  int64
+	uncompressedSize  *int64
 }
 
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
@@ -42,9 +42,10 @@ var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 // This function should be used instead of reading directly from the request as the upload state's fields are
 // backfilled/denormalized from the database, depending on the type of request.
 func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Request) (uploadState, int, error) {
-	var uncompressedSize int64
+	var uncompressedSize *int64
 	if size := r.Header.Get("X-Uncompressed-Size"); size != "" {
-		uncompressedSize, _ = strconv.ParseInt(size, 10, 64)
+		parsedSize, _ := strconv.ParseInt(size, 10, 64)
+		*uncompressedSize = parsedSize
 	}
 
 	uploadState := uploadState{
