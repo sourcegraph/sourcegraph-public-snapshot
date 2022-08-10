@@ -7,15 +7,9 @@ import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { NotificationContext } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { IQuery } from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { IQuery, SearchResult } from '@sourcegraph/shared/src/schema'
 
-import { getFromSettings } from '../../util/settings'
-
-interface ExportSearchResultsConfig
-    extends SearchPatternTypeProps,
-        SettingsCascadeProps,
-        Pick<PlatformContext, 'sourcegraphURL'> {
+interface ExportSearchResultsConfig extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
     query?: string
 }
 
@@ -23,26 +17,6 @@ type ExportSearchResultsQueryResult = Pick<IQuery, 'search'>
 
 interface ExportSearchResultsQueryVariables extends SearchPatternTypeProps {
     query: string
-}
-
-const DEFAULT_MAX_CONTENT_LENGTH = 200
-
-/**
- * Truncate "Search matches" string to avoid hitting the maximum URL length in Chrome:
- * https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/security/url_display_guidelines/url_display_guidelines.md#url-length)
- */
-function truncateMatches(settingsCascade: SettingsCascadeOrError, searchMatches: string): string {
-    // Determine at what length "Search matches" string should be truncated (to avoid hitting the maximum URL length in Chrome:
-    // https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/security/url_display_guidelines/url_display_guidelines.md#url-length)
-    let maxMatchContentLength = getFromSettings<number>(settingsCascade, 'searchExport.maxMatchContentLength')
-
-    if (typeof maxMatchContentLength !== 'number' || maxMatchContentLength < 0) {
-        maxMatchContentLength = DEFAULT_MAX_CONTENT_LENGTH
-    }
-
-    return searchMatches.length > maxMatchContentLength
-        ? `${searchMatches.slice(0, maxMatchContentLength)}...`
-        : searchMatches
 }
 
 const SEARCH_RESULTS_QUERY = gql`
@@ -94,13 +68,74 @@ const SEARCH_RESULTS_QUERY = gql`
     }
 `
 
+const searchResultsToFileContent = (searchResults: SearchResult[], sourcegraphURL: string): string => {
+    const headers =
+        searchResults[0].__typename !== 'CommitSearchResult'
+            ? [
+                  'Match type',
+                  'Repository',
+                  'Repository external URL',
+                  'File path',
+                  'File URL',
+                  'File external URL',
+                  'Search matches',
+              ]
+            : ['Date', 'Author', 'Subject', 'Commit URL']
+    const content = [
+        headers,
+        ...searchResults.map(result => {
+            switch (result.__typename) {
+                // on FileMatch
+                case 'FileMatch': {
+                    const searchMatches = result.lineMatches
+                        .map(line =>
+                            line.offsetAndLengths
+                                .map(offset => line.preview?.slice(offset[0], offset[0] + offset[1]))
+                                .join(' ')
+                        )
+                        .join(' ')
+                    return [
+                        result.__typename,
+                        result.repository.name,
+                        result.repository.externalURLs[0]?.url,
+                        result.file.path,
+                        new URL(result.file.canonicalURL, sourcegraphURL).toString(),
+                        result.file.externalURLs[0]?.url,
+                        searchMatches,
+                    ].map(string_ => JSON.stringify(string_))
+                }
+                // on Repository
+                case 'Repository':
+                    return [result.__typename, result.name, result.externalURLs[0]?.url].map(string_ =>
+                        JSON.stringify(string_)
+                    )
+                // on CommitSearchResult
+                case 'CommitSearchResult':
+                    return [
+                        result.commit.author.date,
+                        result.commit.author.person.displayName,
+                        result.commit.subject,
+                        result.url,
+                    ].map(string_ => JSON.stringify(string_))
+                // If no typename can be found
+                default:
+                    throw new Error('Please try another query.')
+            }
+        }),
+    ]
+        .map(row => row.join(','))
+        .join('\n')
+
+    return content
+}
+
 export const useExportSearchResultsQuery = ({
     query = '',
     patternType,
     sourcegraphURL,
-    settingsCascade,
 }: ExportSearchResultsConfig): QueryTuple<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables> => {
     const { addNotification } = useContext(NotificationContext)
+
     return useLazyQuery<ExportSearchResultsQueryResult, ExportSearchResultsQueryVariables>(SEARCH_RESULTS_QUERY, {
         variables: { query, patternType },
         onCompleted: data => {
@@ -108,65 +143,14 @@ export const useExportSearchResultsQuery = ({
             if (!results?.length || !results[0]) {
                 throw new Error('No results to be exported.')
             }
-            const headers =
-                results[0].__typename !== 'CommitSearchResult'
-                    ? [
-                          'Match type',
-                          'Repository',
-                          'Repository external URL',
-                          'File path',
-                          'File URL',
-                          'File external URL',
-                          'Search matches',
-                      ]
-                    : ['Date', 'Author', 'Subject', 'Commit URL']
-            const csvData = [
-                headers,
-                ...results.map(result => {
-                    switch (result.__typename) {
-                        // on FileMatch
-                        case 'FileMatch': {
-                            const searchMatches = result.lineMatches
-                                .map(line =>
-                                    line.offsetAndLengths
-                                        .map(offset => line.preview?.slice(offset[0], offset[0] + offset[1]))
-                                        .join(' ')
-                                )
-                                .join(' ')
-                            return [
-                                result.__typename,
-                                result.repository.name,
-                                result.repository.externalURLs[0]?.url,
-                                result.file.path,
-                                new URL(result.file.canonicalURL, sourcegraphURL).toString(),
-                                result.file.externalURLs[0]?.url,
-                                truncateMatches(settingsCascade, searchMatches),
-                            ].map(string_ => JSON.stringify(string_))
-                        }
-                        // on Repository
-                        case 'Repository':
-                            return [result.__typename, result.name, result.externalURLs[0]?.url].map(string_ =>
-                                JSON.stringify(string_)
-                            )
-                        // on CommitSearchResult
-                        case 'CommitSearchResult':
-                            return [
-                                result.commit.author.date,
-                                result.commit.author.person.displayName,
-                                result.commit.subject,
-                                result.url,
-                            ].map(string_ => JSON.stringify(string_))
-                        // If no typename can be found
-                        default:
-                            throw new Error('Please try another query.')
-                    }
-                }),
-            ]
-            const encodedData = encodeURIComponent(csvData.map(row => row.join(',')).join('\n'))
+            const content = searchResultsToFileContent(results, sourcegraphURL)
             const downloadFilename = `sourcegraph-search-export-${query.replace(/\W/g, '-')}.csv`
+            const blob = new Blob([content], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
             addNotification({
                 type: NotificationType.Success,
-                message: `Search results export is complete.\n\n<a href="data:text/csv;charset=utf-8,${encodedData}" download="${downloadFilename}"><strong>Download CSV</strong></a>`,
+                message: `Search results export is complete.\n\n<a href="${url}" download="${downloadFilename}"><strong>Download CSV</strong></a>`,
+                onDismiss: () => URL.revokeObjectURL(url),
             })
         },
     })

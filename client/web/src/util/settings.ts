@@ -76,7 +76,7 @@ export function extensionsAsCoreFeaturesEnabled(settingsCascade: SettingsCascade
  * Returns undefined if the settings cannot be loaded or if the setting doesn't
  * exist.
  */
-export function getFromSettings<T>(settingsCascade: SettingsCascadeOrError, setting: string): T | undefined {
+function getFromSettings<T>(settingsCascade: SettingsCascadeOrError, setting: string): T | undefined {
     if (!settingsCascade.final) {
         return undefined
     }

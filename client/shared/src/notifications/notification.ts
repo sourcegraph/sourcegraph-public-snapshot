@@ -26,3 +26,7 @@ export interface Notification {
 export interface NotificationWithId extends Notification {
     id: string
 }
+
+export interface WebAppNotification extends NotificationWithId {
+    onDismiss?: () => void
+}

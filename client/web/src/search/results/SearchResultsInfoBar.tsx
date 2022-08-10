@@ -19,7 +19,6 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -49,7 +48,6 @@ export interface SearchResultsInfoBarProps
         PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps,
         SearchPatternTypeProps,
-        SettingsCascadeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
     /** The currently authenticated user or null */
@@ -265,7 +263,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         query: props.query,
         patternType: props.patternType,
         sourcegraphURL: props.platformContext.sourcegraphURL,
-        settingsCascade: props.settingsCascade,
     })
     const onExportSearchResultsClick = useCallback(() => {
         // eslint-disable-next-line no-void
