@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -345,6 +346,9 @@ func (f *Features) String() string {
 	return flagMap.String()
 }
 
+// RepoOptions is the source of truth for the options a user specified
+// in their search query that affect which repos should be searched.
+// When adding fields to this struct, be sure to update IsGlobal().
 type RepoOptions struct {
 	RepoFilters         []string
 	MinusRepoFilters    []string

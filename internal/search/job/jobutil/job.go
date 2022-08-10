@@ -86,8 +86,8 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		resultTypes := computeResultTypes(types, b, inputs.PatternType)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
-		repoOptions := toRepoOptions(b, inputs.UserSettings)
-		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
+		repoOptions := ToRepoOptions(b, inputs.UserSettings)
+		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
 
 		builder := &jobBuilder{
 			query:          b,
@@ -294,9 +294,9 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	fileMatchLimit := int32(computeFileMatchLimit(f.ToBasic(), searchInputs.Protocol))
 	selector, _ := filter.SelectPathFromString(f.FindValue(query.FieldSelect)) // Invariant: select is validated
 
-	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
+	repoOptions := ToRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
-	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
+	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), repoOptions, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
 	var allJobs []job.Job
 	addJob := func(job job.Job) {
@@ -597,7 +597,7 @@ func computeResultTypes(types []string, b query.Basic, searchType query.SearchTy
 	return rts
 }
 
-func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
+func ToRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
 	repoFilters, minusRepoFilters := b.Repositories()
 
 	var settingForks, settingArchived bool
@@ -739,32 +739,8 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
 }
 
-func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
-	isGlobalSearch := func() bool {
-		if st == query.SearchTypeStructural {
-			return false
-		}
-
-		return query.ForAll(b.ToParseTree(), func(node query.Node) bool {
-			n, ok := node.(query.Parameter)
-			if !ok {
-				return true
-			}
-			switch n.Field {
-			case query.FieldContext:
-				return searchcontexts.IsGlobalSearchContextSpec(n.Value)
-			case query.FieldRepo:
-				// We allow -repo: in global search.
-				return n.Negated
-			case query.FieldRepoHasFile:
-				return false
-			case query.FieldRepoHasCommitAfter:
-				return false
-			default:
-				return true
-			}
-		})
-	}
+func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
+	isGlobalSearch := zoekt.IsGlobal(repoOptions) && st != query.SearchTypeStructural
 
 	hasGlobalSearchResultType := resultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := b.Index() != query.No
