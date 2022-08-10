@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use once_cell::sync::OnceCell;
 use protobuf::{EnumOrUnknown, SpecialFields};
 use scip::types::{Document, Occurrence, SyntaxKind};
@@ -391,7 +390,6 @@ mod test {
     };
 
     use pretty_assertions::assert_eq;
-    use unicode_width::UnicodeWidthStr;
 
     use super::*;
     use crate::{determine_language, dump_document, SourcegraphQuery};
@@ -564,26 +562,5 @@ int main() {
         assert!(failed.is_empty(), "Failed: {:?}", failed);
 
         Ok(())
-    }
-
-    #[test]
-    fn test_various_unicode_characters() {
-        // 1 double width char
-        assert_eq!(2, UnicodeWidthStr::width("世"));
-
-        // 3 single width chars, 10 double width chars -> 23
-        assert_eq!(23, UnicodeWidthStr::width("Ｈｅｌｌｏ, ｗｏｒｌｄ!"));
-
-        // 1 emoji is double width
-        assert_eq!(2, UnicodeWidthStr::width("🥳"));
-        assert_eq!(2, UnicodeWidthStr::width("👩"),); // Woman
-        assert_eq!(2, UnicodeWidthStr::width("🔬")); // Microscope
-
-        // This one is confusing because it's two emojis with a zero-width
-        // item combining them... I'm not sure how we should handle this case, but for now we will
-        // leave it like this.
-        //
-        // So for now it essentially 2 double width emojis + 1 zero-width = 4
-        assert_eq!(4, UnicodeWidthStr::width("👩‍🔬")); // Woman scientist
     }
 }
