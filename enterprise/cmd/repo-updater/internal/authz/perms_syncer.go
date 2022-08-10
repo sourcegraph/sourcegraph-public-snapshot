@@ -3,7 +3,9 @@ package authz
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -267,6 +270,69 @@ func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config
 	}
 }
 
+func (s *PermsSyncer) updateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account) error {
+	if acct.ServiceType != extsvc.TypeGitHub {
+		return nil
+	}
+
+	_, tok, err := github.GetExternalAccountData(&acct.AccountData)
+
+	apiURL, _ := url.Parse(acct.ServiceID)
+	apiURL, _ = github.APIRoot(apiURL)
+	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
+		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil)
+
+	installations, err := ghClient.GetUserInstallations(ctx)
+	if err != nil {
+		return err
+	}
+
+	acctInstallations, err := s.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
+		ExcludeExpired: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	validInstallations := []*extsvc.Account{}
+ACCTINSTALLATIONS:
+	for _, acctInstallation := range acctInstallations {
+		for _, installation := range installations {
+			installationID := strconv.FormatInt(*installation.ID, 10)
+			if acctInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
+				validInstallations = append(validInstallations, acctInstallation)
+				continue ACCTINSTALLATIONS
+			}
+		}
+		if err = s.db.UserExternalAccounts().Delete(ctx, acctInstallation.ID); err != nil {
+			return err
+		}
+	}
+
+INSTALLATIONS:
+	for _, installation := range installations {
+		installationID := strconv.FormatInt(*installation.ID, 10)
+		for _, validInstallation := range validInstallations {
+			if validInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
+				continue INSTALLATIONS
+			}
+		}
+		accountID := installationID + "/" + acct.AccountID
+		if err := s.db.UserExternalAccounts().Insert(ctx, acct.UserID, extsvc.AccountSpec{
+			ServiceType: acct.ServiceType,
+			ServiceID:   acct.ServiceID,
+			ClientID:    acct.ClientID,
+			AccountID:   accountID,
+		},
+			extsvc.AccountData{AuthData: nil, Data: nil},
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) (err error) {
 	if acct.ServiceType != extsvc.TypeGitLab {
 		return nil
@@ -441,6 +507,11 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			continue
 		}
 
+		logger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
+		if err := s.updateGitHubAppInstallations(ctx, acct); err != nil {
+			acctLogger.Warn("failed to update GitHub App installation access", log.Error(err))
+		}
+
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
 			acctLogger.Debug("fetching user permissions", log.Error(err))
@@ -454,6 +525,19 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			if unauthorized || accountSuspended || forbidden {
 				// These are fatal errors that mean we should continue as if the account no
 				// longer has any access.
+				linkedAccts, err := s.db.UserExternalAccounts().List(ctx,
+					database.ExternalAccountsListOptions{
+						AccountIDLike: fmt.Sprintf("%%/%s", acct.AccountID),
+					},
+				)
+				if err != nil {
+					return nil, nil, errors.Wrapf(err, "list linked accounts for %d", acct.ID)
+				}
+				for _, linkedAcct := range linkedAccts {
+					if err = accounts.TouchExpired(ctx, linkedAcct.ID); err != nil {
+						return nil, nil, errors.Wrapf(err, "set expired for external account %d", linkedAcct.ID)
+					}
+				}
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)

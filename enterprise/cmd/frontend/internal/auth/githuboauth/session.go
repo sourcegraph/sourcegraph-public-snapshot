@@ -128,7 +128,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		})
 		if err == nil {
 			for _, installation := range installations {
-				accountID := strconv.FormatInt(*installation.AppID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)
+				accountID := strconv.FormatInt(*installation.ID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)
 				_, _, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 					UserProps: database.NewUser{
 						Username:        login,
