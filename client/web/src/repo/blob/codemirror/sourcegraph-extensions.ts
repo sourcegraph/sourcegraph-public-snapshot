@@ -129,13 +129,11 @@ export function sourcegraphExtensions({
     return [
         // This view plugin is used to have a way to cleanup any resources via the
         // `destroy` method.
-        ViewPlugin.define(() => {
-            return {
-                destroy() {
-                    subscriptions.unsubscribe()
-                },
-            }
-        }),
+        ViewPlugin.define(() => ({
+            destroy() {
+                subscriptions.unsubscribe()
+            },
+        })),
         // This needs to come before document highlights so that the hovered
         // token is highlighted differently
         disableHovercards ? [] : hovercardDataSource(contextObservable),
