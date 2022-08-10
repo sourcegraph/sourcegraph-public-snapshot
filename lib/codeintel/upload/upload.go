@@ -189,7 +189,7 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 	return id, err
 }
 
-// uploadMultipartIndexParts uploads the contents available via each of the given reader
+// uploadMultipartIndexParts uploads the contents available via each of the given reader(s)
 // to a Sourcegraph instance as part of the same multipart upload as indiciated
 // by the given identifier.
 func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts UploadOptions, readers []io.ReadSeeker, id int, readerLen int64) (err error) {
