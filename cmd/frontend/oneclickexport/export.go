@@ -13,9 +13,9 @@ import (
 )
 
 type Exporter interface {
-	// Export accepts an ExportRequest and returns bytes of a zip archive
+	// Export accepts an ExportRequest and returns io.Reader of a zip archive
 	// with requested data.
-	Export(ctx context.Context, request ExportRequest) ([]byte, error)
+	Export(ctx context.Context, request ExportRequest) (io.Reader, error)
 }
 
 var _ Exporter = &DataExporter{}
@@ -86,7 +86,7 @@ type ExportRequest struct {
 // this directory is zipped in the end)
 // 2) ExportRequest is read and each corresponding processor is invoked
 // 3) Tmp directory is zipped after all the Processors finished their job
-func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byte, error) {
+func (e *DataExporter) Export(ctx context.Context, request ExportRequest) (io.Reader, error) {
 	// 1) creating a tmp dir
 	dir, err := os.MkdirTemp(os.TempDir(), "export-*")
 	if err != nil {
@@ -150,5 +150,5 @@ func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byt
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return &buf, nil
 }

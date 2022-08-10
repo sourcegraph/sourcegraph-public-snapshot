@@ -356,9 +356,8 @@ type Client interface {
 	// revspecs).
 	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
 
-	// ShortLog
-	// TODO: Rename to something like PersonCount?
-	ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error)
+	// ContributorCount returns the number of commits grouped by contributor
+	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
 
 	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
 	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error

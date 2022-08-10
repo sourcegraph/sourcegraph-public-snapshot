@@ -25,9 +25,9 @@ func TestSSHMigrator(t *testing.T) {
 
 	bt.MockRSAKeygen(t)
 
-	cstore := store.New(db, &observation.TestContext, et.TestKey{})
-
-	migrator := &sshMigrator{cstore}
+	key := et.TestKey{}
+	cstore := store.New(db, &observation.TestContext, key)
+	migrator := NewSSHMigratorWithDB(db, key)
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
 		t.Fatal(err)

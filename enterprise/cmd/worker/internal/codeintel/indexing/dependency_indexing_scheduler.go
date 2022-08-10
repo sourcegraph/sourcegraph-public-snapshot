@@ -85,8 +85,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 
 	if job.ExternalServiceKind != "" {
 		externalServices, err := h.extsvcStore.List(ctx, database.ExternalServicesListOptions{
-			Kinds:              []string{job.ExternalServiceKind},
-			ExcludeConfigField: true,
+			Kinds: []string{job.ExternalServiceKind},
 		})
 		if err != nil {
 			return errors.Wrap(err, "extsvcStore.List")

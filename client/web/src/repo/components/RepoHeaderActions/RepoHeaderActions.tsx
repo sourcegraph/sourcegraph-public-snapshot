@@ -40,7 +40,7 @@ RepoHeaderActionButtonLink.displayName = 'RepoHeaderActionButtonLink'
 export const RepoHeaderActionDropdownToggle: React.FunctionComponent<
     React.PropsWithChildren<Pick<React.AriaAttributes, 'aria-label'>>
 > = ({ children, ...ariaAttributes }) => (
-    <Button as={MenuButton} className={classNames('btn-icon', styles.action)} {...ariaAttributes}>
+    <Button as={MenuButton} className={styles.action} {...ariaAttributes}>
         {children}
     </Button>
 )

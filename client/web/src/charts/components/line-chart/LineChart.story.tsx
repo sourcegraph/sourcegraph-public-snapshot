@@ -11,6 +11,9 @@ import { LineChart, LegendList, LegendItem, getLineColor } from './index'
 const StoryConfig: Meta = {
     title: 'web/charts/line',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
+        chromatic: { disableSnapshots: false, enableDarkMode: true },
+    },
 }
 
 export default StoryConfig
