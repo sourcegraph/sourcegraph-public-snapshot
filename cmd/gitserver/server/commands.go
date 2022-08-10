@@ -22,7 +22,7 @@ func handleGetObject(getObject gitdomain.GetObjectFunc) func(w http.ResponseWrit
 			return
 		}
 
-		// Log which which actor is accessing the repo.
+		// Log which actor is accessing the repo.
 		accesslog.Record(r.Context(), string(req.Repo), map[string]string{
 			"objectname": req.ObjectName,
 		})

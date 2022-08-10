@@ -107,7 +107,7 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 	if len(userIDs) == 0 {
 		return
 	} else if s.isDisabled() {
-		s.logger.Warn("PermsSyncer.ScheduleUsers.disabled", log.Int("userIDs", len(userIDs)))
+		s.logger.Debug("PermsSyncer.ScheduleUsers.disabled", log.Int("userIDs", len(userIDs)))
 		return
 	}
 
@@ -156,7 +156,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 	if numberOfRepos == 0 {
 		return
 	} else if s.isDisabled() {
-		s.logger.Warn("ScheduleRepos.disabled", log.Int("len(repoIDs)", len(repoIDs)))
+		s.logger.Debug("ScheduleRepos.disabled", log.Int("len(repoIDs)", len(repoIDs)))
 		return
 	}
 

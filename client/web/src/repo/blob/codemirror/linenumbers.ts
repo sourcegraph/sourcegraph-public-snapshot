@@ -1,5 +1,14 @@
-import { Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, Decoration, lineNumbers } from '@codemirror/view'
+import { Annotation, Extension, RangeSet, Range, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
+import {
+    EditorView,
+    Decoration,
+    lineNumbers,
+    ViewPlugin,
+    PluginValue,
+    ViewUpdate,
+    GutterMarker,
+    gutterLineClass,
+} from '@codemirror/view'
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -8,7 +17,10 @@ import { EditorView, Decoration, lineNumbers } from '@codemirror/view'
  */
 export type SelectedLineRange = { line: number; endLine?: number } | null
 
-const highlighedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineGutterMarker = new (class extends GutterMarker {
+    public elementClass = 'selected-line'
+})()
 const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
 
@@ -16,9 +28,12 @@ const setEndLine = StateEffect.define<number>()
  * This field stores the selected line range and provides the corresponding line
  * decorations.
  */
-const selectedLines = StateField.define<SelectedLineRange>({
+export const selectedLines = StateField.define<SelectedLineRange>({
     create() {
         return null
+    },
+    compare(previous, next): boolean {
+        return previous?.line === next?.line && previous?.endLine === next?.endLine
     },
     update(value, transaction) {
         for (const effect of transaction.effects) {
@@ -50,15 +65,76 @@ const selectedLines = StateField.define<SelectedLineRange>({
 
             const builder = new RangeSetBuilder<Decoration>()
 
-            for (let line = from; line <= to; line++) {
-                const from = state.doc.line(line).from
-                builder.add(from, from, highlighedLineDecoration)
+            for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                const from = state.doc.line(lineNumber).from
+                builder.add(from, from, selectedLineDecoration)
             }
 
             return builder.finish()
         }),
+        gutterLineClass.compute([field], state => {
+            const range = state.field(field)
+            const marks: Range<GutterMarker>[] = []
+
+            if (range) {
+                const endLine = range.endLine ?? range.line
+                const from = Math.min(range.line, endLine)
+                const to = from === endLine ? range.line : endLine
+
+                for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                    marks.push(selectedLineGutterMarker.range(state.doc.line(lineNumber).from))
+                }
+            }
+
+            return RangeSet.of(marks)
+        }),
     ],
 })
+
+/**
+ * An annotation to indicate where a line selection is comming from.
+ * Transactions that set selected lines without this annotion are assumed to be
+ * "external" (e.g. from syncing with the URL).
+ */
+const lineSelectionSource = Annotation.define<'gutter'>()
+
+/**
+ * View plugin resonsible for scrolling the selected line(s) into view if/when
+ * necessary.
+ */
+const scrollIntoView = ViewPlugin.fromClass(
+    class implements PluginValue {
+        private lastSelectedLines: SelectedLineRange | null = null
+        constructor(private readonly view: EditorView) {}
+
+        public update(update: ViewUpdate): void {
+            const currentSelectedLines = update.state.field(selectedLines)
+            if (
+                this.lastSelectedLines !== currentSelectedLines &&
+                update.transactions.some(transaction => transaction.annotation(lineSelectionSource) !== 'gutter')
+            ) {
+                // Only scroll selected lines into view when the user isn't
+                // currently selecting lines themselves (as indicated by the
+                // presence of the "gutter" annotation). Otherwise the scroll
+                // position might change while the user is selecting lines.
+                this.lastSelectedLines = currentSelectedLines
+                this.scrollIntoView(currentSelectedLines)
+            }
+        }
+
+        public scrollIntoView(selection: SelectedLineRange): void {
+            if (selection && shouldScrollIntoView(this.view, selection)) {
+                window.requestAnimationFrame(() => {
+                    this.view.dispatch({
+                        effects: EditorView.scrollIntoView(this.view.state.doc.line(selection.line).from, {
+                            y: 'center',
+                        }),
+                    })
+                })
+            }
+        }
+    }
+)
 
 /**
  * This extension provides a line gutter that allows selecting (ranges of) lines
@@ -71,10 +147,15 @@ const selectedLines = StateField.define<SelectedLineRange>({
  * NOTE: Dragging to select on the gutter won't automatically scroll the
  * document.
  */
-export function selectableLineNumbers(config: { onSelection: (range: SelectedLineRange) => void }): Extension {
+export function selectableLineNumbers(config: {
+    onSelection: (range: SelectedLineRange) => void
+    initialSelection: SelectedLineRange | null
+}): Extension {
     let dragging = false
 
     return [
+        scrollIntoView,
+        selectedLines.init(() => config.initialSelection),
         lineNumbers({
             domEventHandlers: {
                 mousedown(view, block, event) {
@@ -85,6 +166,7 @@ export function selectableLineNumbers(config: { onSelection: (range: SelectedLin
                         effects: (event as MouseEvent).shiftKey
                             ? setEndLine.of(line)
                             : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                        annotations: lineSelectionSource.of('gutter'),
                     })
 
                     dragging = true
@@ -92,6 +174,7 @@ export function selectableLineNumbers(config: { onSelection: (range: SelectedLin
                     function onmouseup(): void {
                         dragging = false
                         window.removeEventListener('mouseup', onmouseup)
+                        window.removeEventListener('mousemove', onmousemove)
 
                         let range = view.state.field(selectedLines)
                         if (range) {
@@ -109,23 +192,26 @@ export function selectableLineNumbers(config: { onSelection: (range: SelectedLin
                         }
                         config.onSelection(range)
                     }
-                    window.addEventListener('mouseup', onmouseup)
-                    return true
-                },
-                mousemove(view, line) {
-                    if (dragging) {
-                        const newEndline = view.state.doc.lineAt(line.from).number
-                        const { endLine } = view.state.field(selectedLines) ?? {}
-                        if (endLine !== newEndline) {
-                            view.dispatch({ effects: setEndLine.of(newEndline) })
+
+                    function onmousemove(event: MouseEvent): void {
+                        if (dragging) {
+                            const newEndline = view.state.doc.lineAt(view.posAtCoords(event, false)).number
+                            if (view.state.field(selectedLines)?.endLine !== newEndline) {
+                                view.dispatch({
+                                    effects: setEndLine.of(newEndline),
+                                    annotations: lineSelectionSource.of('gutter'),
+                                })
+                            }
+                            event.preventDefault()
                         }
-                        return true
                     }
-                    return false
+
+                    window.addEventListener('mouseup', onmouseup)
+                    window.addEventListener('mousemove', onmousemove)
+                    return true
                 },
             },
         }),
-        selectedLines,
         EditorView.theme({
             '.cm-lineNumbers': {
                 cursor: 'pointer',
@@ -139,23 +225,10 @@ export function selectableLineNumbers(config: { onSelection: (range: SelectedLin
 }
 
 /**
- * Set selected lines (e.g. from the URL). The function won't trigger an update
- * if the same lines are already selected.
+ * Set selected lines (e.g. from the URL).
  */
 export function selectLines(view: EditorView, newRange: SelectedLineRange): void {
-    const currentRange = view.state.field(selectedLines)
-
-    if (currentRange?.line === newRange?.line && currentRange?.endLine === newRange?.endLine) {
-        return
-    }
-
-    const effects: StateEffect<unknown>[] = [setSelectedLines.of(newRange)]
-
-    if (newRange && shouldScrollIntoView(view, newRange)) {
-        effects.push(EditorView.scrollIntoView(view.state.doc.line(newRange.line).from, { y: 'center' }))
-    }
-
-    view.dispatch({ effects })
+    view.dispatch({ effects: setSelectedLines.of(newRange) })
 }
 
 /**

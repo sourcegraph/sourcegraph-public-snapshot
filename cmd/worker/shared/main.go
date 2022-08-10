@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
@@ -46,6 +46,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
+		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
 	}
 
 	jobs := map[string]job.Job{}

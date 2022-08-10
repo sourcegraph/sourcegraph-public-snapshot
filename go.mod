@@ -200,6 +200,8 @@ require (
 
 require github.com/hmarr/codeowners v0.4.0
 
+require github.com/stretchr/objx v0.4.0 // indirect
+
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.101.0 // indirect

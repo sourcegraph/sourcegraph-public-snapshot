@@ -74,7 +74,8 @@ func newExternalHTTPHandler(
 	githubAppCloudSetupHandler := newGitHubAppCloudSetupHandler()
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
-	appHandler := app.NewHandler(db, githubAppCloudSetupHandler)
+	logger := log.Scoped("external", "external http handlers")
+	appHandler := app.NewHandler(db, logger, githubAppCloudSetupHandler)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
@@ -97,7 +98,6 @@ func newExternalHTTPHandler(
 
 	var h http.Handler = sm
 
-	logger := log.Scoped("external", "external http handlers")
 	// Wrap in middleware, first line is last to run.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.

@@ -20,6 +20,7 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { StandardSuggestionSource } from './extensions'
 import { IEditor } from './LazyMonacoQueryInput'
 import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
@@ -106,6 +107,20 @@ export interface MonacoQueryInputProps
      * a suggestion by default. This is currently an experimental feature.
      */
     applySuggestionsOnEnter?: boolean
+    /**
+     * Additional sources to use for autocompletion.
+     */
+    suggestionSources?: StandardSuggestionSource[]
+    /**
+     * Show suggestions from default sources when query is empty. Defaults to
+     * true.
+     */
+    defaultSuggestionsShowWhenEmpty?: boolean
+    /**
+     * Automatically show suggestions when the input receives focus and it is
+     * empty. Defaults to false.
+     */
+    showSuggestionsOnFocus?: boolean
 }
 
 /**

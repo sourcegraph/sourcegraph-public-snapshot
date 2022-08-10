@@ -1012,9 +1012,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.10.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
+checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 
 [[package]]
 name = "onig"
@@ -1228,9 +1228,23 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.27.1"
+version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf7e6d18738ecd0902d30d1ad232c9125985a3422929b16c65517b38adc14f96"
+checksum = "4ee4a7d8b91800c8f167a6268d1a1026607368e1adc84e98fe044aeb905302f7"
+dependencies = [
+ "once_cell",
+ "protobuf-support",
+ "thiserror",
+]
+
+[[package]]
+name = "protobuf-support"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ca157fe12fc7ee2e315f2f735e27df41b3d97cdd70ea112824dac1ffb08ee1c"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "quote"
@@ -1592,6 +1606,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "scip"
+version = "0.1.0"
+source = "git+https://github.com/sourcegraph/scip#7ff845ef5b78772f65463542d5f384967d329b2c"
+dependencies = [
+ "protobuf",
+]
+
+[[package]]
 name = "scoped-tls"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1662,13 +1684,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sg-lsif"
-version = "0.1.0"
-dependencies = [
- "protobuf",
-]
-
-[[package]]
 name = "sg-macros"
 version = "0.1.0"
 dependencies = [
@@ -1686,12 +1701,14 @@ dependencies = [
  "insta",
  "lazy_static",
  "libloading",
+ "once_cell",
  "paste",
+ "pretty_assertions",
  "protobuf",
  "rocket 0.5.0-rc.1 (git+https://github.com/SergioBenitez/Rocket)",
+ "scip",
  "serde",
  "serde_json",
- "sg-lsif",
  "sg-macros",
  "syntect",
  "tree-sitter",
@@ -1906,6 +1923,7 @@ version = "1.0.1"
 dependencies = [
  "rocket 0.5.0-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustyline",
+ "scip",
  "serde",
  "serde_json",
  "sg-syntax",

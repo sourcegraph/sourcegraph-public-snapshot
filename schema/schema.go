@@ -611,6 +611,8 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
+	// EnableWebhookRepoSync description: Enable webhooks for repo syncing
+	EnableWebhookRepoSync bool `json:"enableWebhookRepoSync,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// Gerrit description: Allow adding Gerrit code host connections
@@ -661,9 +663,9 @@ type ExportUsageTelemetry struct {
 	// Enabled description: Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.
 	Enabled bool `json:"enabled,omitempty"`
 	// TopicName description: Destination pubsub topic name to export usage data
-	TopicName string `json:"topicName"`
+	TopicName string `json:"topicName,omitempty"`
 	// TopicProjectName description: GCP project name containing the usage data pubsub topic
-	TopicProjectName string `json:"topicProjectName"`
+	TopicProjectName string `json:"topicProjectName,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.

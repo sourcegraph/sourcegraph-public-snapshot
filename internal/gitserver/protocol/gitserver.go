@@ -171,14 +171,13 @@ type RepoUpdateRequest struct {
 	CloneFromShard string `json:"cloneFromShard"`
 }
 
-// RepoUpdateResponse returns meta information of the repo enqueued for
-// update.
-//
-// TODO just use RepoInfoResponse?
+// RepoUpdateResponse returns meta information of the repo enqueued for update.
 type RepoUpdateResponse struct {
-	LastFetched *time.Time
-	LastChanged *time.Time
-	Error       string // an error reported by the update, as opposed to a protocol error
+	LastFetched *time.Time `json:",omitempty"`
+	LastChanged *time.Time `json:",omitempty"`
+
+	// Error is an error reported by the update operation, and not a network protocol error.
+	Error string `json:",omitempty"`
 }
 
 type NotFoundPayload struct {

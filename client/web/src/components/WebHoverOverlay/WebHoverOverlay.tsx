@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
 
-import classNames from 'classnames'
 import { fromEvent } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
@@ -23,20 +22,28 @@ const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
 
 const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-interface Props extends HoverOverlayProps, HoverThresholdProps, SettingsCascadeProps {
+export interface WebHoverOverlayProps
+    extends Omit<
+            HoverOverlayProps,
+            'className' | 'closeButtonClassName' | 'actionItemClassName' | 'getAlertVariant' | 'actionItemStyleProps'
+        >,
+        HoverThresholdProps,
+        SettingsCascadeProps {
     hoveredTokenElement?: HTMLElement
     nav?: (url: string) => void
 }
 
-export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<WebHoverOverlayProps>> = props => {
+    const { onAlertDismissed: outerOnAlertDismissed } = props
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
             if (!dismissedAlerts.includes(alertType)) {
                 setDismissedAlerts([...dismissedAlerts, alertType])
+                outerOnAlertDismissed?.(alertType)
             }
         },
-        [dismissedAlerts, setDismissedAlerts]
+        [dismissedAlerts, setDismissedAlerts, outerOnAlertDismissed]
     )
 
     let propsToUse = props
@@ -122,7 +129,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<Pr
         <HoverOverlay
             {...propsToUse}
             className={styles.webHoverOverlay}
-            closeButtonClassName={classNames('btn btn-icon', styles.webHoverOverlayCloseButton)}
+            closeButtonClassName={styles.webHoverOverlayCloseButton}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
             getAlertVariant={getAlertVariant}

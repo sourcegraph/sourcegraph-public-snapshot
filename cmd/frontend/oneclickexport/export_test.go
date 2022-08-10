@@ -4,9 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
@@ -185,6 +185,24 @@ const (
     "TokenExpiresAt": null
   }
 ]`
+	wantExtSvcReposDBQueryResult = `[
+  {
+    "externalServiceID": 1,
+    "repoID": 1,
+    "cloneURL": "cloneUrl",
+    "userID": 1,
+    "orgID": 1,
+    "createdAt": "0001-01-01T00:00:00Z"
+  },
+  {
+    "externalServiceID": 1,
+    "repoID": 2,
+    "cloneURL": "cloneUrl",
+    "userID": 1,
+    "orgID": 1,
+    "createdAt": "0001-01-01T00:00:00Z"
+  }
+]`
 )
 
 func TestExport(t *testing.T) {
@@ -229,7 +247,7 @@ func TestExport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,7 +329,7 @@ func TestExport_CumulativeTest(t *testing.T) {
 			},
 		},
 		dbProcessors: map[string]Processor[Limit]{
-			"externalServices": ExtSvcDBQueryProcessor{
+			"externalServices": ExtSvcQueryProcessor{
 				db:     db,
 				logger: logger,
 				Type:   "externalServices",
@@ -331,7 +349,7 @@ func TestExport_CumulativeTest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -395,7 +413,7 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -499,7 +517,7 @@ func TestExport_DB_ExternalServices(t *testing.T) {
 	exporter := &DataExporter{
 		logger: logger,
 		dbProcessors: map[string]Processor[Limit]{
-			"externalServices": ExtSvcDBQueryProcessor{
+			"externalServices": ExtSvcQueryProcessor{
 				db:     db,
 				logger: logger,
 				Type:   "externalServices",
@@ -515,7 +533,7 @@ func TestExport_DB_ExternalServices(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -539,8 +557,6 @@ func TestExport_DB_ExternalServices(t *testing.T) {
 
 		have := string(haveBytes)
 
-		fmt.Println(have)
-
 		if diff := cmp.Diff(wantExtSvcDBQueryResult, have); diff != "" {
 			t.Fatalf("Exported external services are different. (-want +got):\n%s", diff)
 		}
@@ -549,4 +565,95 @@ func TestExport_DB_ExternalServices(t *testing.T) {
 	if !found {
 		t.Fatal(errors.New("external services file not found in exported zip archive"))
 	}
+}
+
+func TestExport_DB_ExternalServiceRepos(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.ListReposFunc.SetDefaultReturn([]*types.ExternalServiceRepo{
+		{
+			ExternalServiceID: 1,
+			RepoID:            1,
+			CloneURL:          "cloneUrl",
+			UserID:            1,
+			OrgID:             1,
+			CreatedAt:         time.Time{},
+		},
+		{
+			ExternalServiceID: 1,
+			RepoID:            2,
+			CloneURL:          "cloneUrl",
+			UserID:            1,
+			OrgID:             1,
+			CreatedAt:         time.Time{},
+		},
+	},
+		nil,
+	)
+
+	db := database.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+	exporter := &DataExporter{
+		logger: logger,
+		dbProcessors: map[string]Processor[Limit]{
+			"externalServiceRepos": ExtSvcReposQueryProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "externalServiceRepos",
+			},
+		},
+	}
+
+	archive, err := exporter.Export(ctx, ExportRequest{DBQueries: []*DBQueryRequest{{
+		TableName: "externalServiceRepos",
+		Count:     2,
+	}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zr, err := getArchiveReader(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := false
+
+	for _, f := range zr.File {
+		if f.Name != "db-external-service-repos.txt" {
+			continue
+		}
+		found = true
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		haveBytes, err := io.ReadAll(rc)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have := string(haveBytes)
+
+		if diff := cmp.Diff(wantExtSvcReposDBQueryResult, have); diff != "" {
+			t.Fatalf("Exported external services are different. (-want +got):\n%s", diff)
+		}
+	}
+
+	if !found {
+		t.Fatal(errors.New("external services file not found in exported zip archive"))
+	}
+}
+
+func getArchiveReader(archive io.Reader) (*zip.Reader, error) {
+	buf := new(bytes.Buffer)
+	_, err := buf.ReadFrom(archive)
+	if err != nil {
+		return nil, err
+	}
+	return zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
 }

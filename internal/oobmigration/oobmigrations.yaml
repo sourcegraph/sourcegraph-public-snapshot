@@ -14,14 +14,6 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 26
-- id: 3
-  team: core-application
-  component: frontend-db.external-services
-  description: Encrypt configuration
-  non_destructive: true
-  is_enterprise: false
-  introduced_version_major: 3
-  introduced_version_minor: 26
 - id: 4
   team: code-intelligence
   component: codeintel-db.lsif_data_definitions
@@ -38,14 +30,6 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 26
-- id: 6
-  team: core-application
-  component: frontend-db.external-accounts
-  description: Encrypt auth data
-  non_destructive: true
-  is_enterprise: false
-  introduced_version_major: 3
-  introduced_version_minor: 26
 - id: 7
   team: code-intelligence
   component: codeintel-db.lsif_data_documents
@@ -59,22 +43,6 @@
   component: frontend-db.lsif_uploads
   description: Backfill committed_at
   non_destructive: true
-  is_enterprise: true
-  introduced_version_major: 3
-  introduced_version_minor: 28
-- id: 9
-  team: batch-changes
-  component: frontend-db.user-credentials
-  description: Encrypt batch changes user credentials
-  non_destructive: false
-  is_enterprise: true
-  introduced_version_major: 3
-  introduced_version_minor: 28
-- id: 10
-  team: batch-changes
-  component: frontend-db.site-credentials
-  description: Encrypt batch changes site credentials
-  non_destructive: false
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 28

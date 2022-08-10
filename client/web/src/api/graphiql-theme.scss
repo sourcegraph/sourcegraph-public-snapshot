@@ -150,17 +150,11 @@
     .doc-explorer-rhs {
         display: flex;
         align-items: center;
-        .docExplorerHide {
-            @extend .btn;
-            @extend .btn-link;
-        }
     }
 
     .toolbar-button,
     .docExplorerShow,
     .doc-category .show-btn {
-        @extend .btn;
-        @extend .btn-secondary;
         background: var(--secondary);
         box-shadow: none;
         &:active {
@@ -171,8 +165,6 @@
         }
     }
     .execute-button {
-        @extend .btn;
-        @extend .btn-primary;
         background: var(--primary);
         fill: #ffffff;
         padding: 0;
@@ -180,6 +172,10 @@
         box-shadow: none;
         &:active {
             box-shadow: none;
+        }
+        &:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-box-shadow);
         }
     }
 
