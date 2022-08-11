@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -739,7 +740,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 }
 
 func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
-	isGlobalSearch := zoekt.IsGlobal(repoOptions) && st != query.SearchTypeStructural
+	isGlobalSearch := isGlobal(repoOptions) && st != query.SearchTypeStructural
 
 	hasGlobalSearchResultType := resultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := b.Index() != query.No
@@ -847,4 +848,84 @@ func toFlatJobs(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	} else {
 		return toPatternExpressionJob(inputs, b)
 	}
+}
+
+// isGlobal returns whether a given set of repo options can be fulfilled
+// with a global search with Zoekt.
+func isGlobal(op search.RepoOptions) bool {
+	// We do not do global searches if a repo: filter was specified. I
+	// (@camdencheek) could not find any documentation or historical reasons
+	// for why this is, so I'm going to speculate here for future wanderers.
+	//
+	// If a user specifies a single repo, that repo may or may not be indexed
+	// but we still want to search it. A Zoekt search will not tell us that a
+	// search returned no results because the repo filtered to was unindexed,
+	// it will just return no results.
+	//
+	// Additionally, if a user specifies a repo: filter, they are likely
+	// targeting only a few repos, so the benefits of running a filtered global
+	// search vs just paging over the few repos that match the query are
+	// probably do not outweigh the cost of potentially skipping unindexed
+	// repos.
+	//
+	// We see this assumption break down with filters like `repo:github.com/`
+	// or `repo:.*`, in which case a global search would be much faster than
+	// paging through all the repos.
+	if len(op.RepoFilters) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo descriptions, so we depend on the
+	// database to handle this filter.
+	if len(op.DescriptionPatterns) > 0 {
+		return false
+	}
+
+	// If a search context is specified, we do not know ahead of time whether
+	// the repos in the context are indexed and we need to go through the repo
+	// resolution process.
+	if !searchcontexts.IsGlobalSearchContextSpec(op.SearchContextSpec) {
+		return false
+	}
+
+	// repo:has.commit.after() is handled during the repo resolution step,
+	// and we cannot depend on Zoekt for this information.
+	if op.CommitAfter != "" {
+		return false
+	}
+
+	// There should be no cursors when calling this, but if there are that
+	// means we're already paginating. Cursors should probably not live on this
+	// struct since they are an implementation detail of pagination.
+	if len(op.Cursors) > 0 {
+		return false
+	}
+
+	// If indexed search is explicitly disabled, that implicitly means global
+	// search is also disabled since global search means Zoekt.
+	if op.UseIndex == query.No {
+		return false
+	}
+
+	// For now, we handle all repo:has.file and repo:has.content during repo
+	// pagination. Zoekt can handle this, so we should push this down to Zoekt
+	// and allow global search with these filters.
+	if len(op.HasFileContent) > 0 {
+		return false
+	}
+
+	// All the fields not mentioned above can be handled by Zoekt global search.
+	// Listing them here for posterity:
+	// - MinusRepoFilters
+	// - CaseSensitiveRepoFilters
+	// - Visibility
+	// - Limit
+	// - ForkSet
+	// - NoForks
+	// - OnlyForks
+	// - OnlyCloned
+	// - ArchivedSet
+	// - NoArchived
+	// - OnlyArchived
+	return true
 }
