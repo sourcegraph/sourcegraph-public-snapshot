@@ -138,7 +138,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 						AvatarURL:       deref(ghUser.AvatarURL),
 					},
 					ExternalAccount: extsvc.AccountSpec{
-						ServiceType: s.ServiceType,
+						ServiceType: fmt.Sprintf("%sApp", s.ServiceType),
 						ServiceID:   s.ServiceID,
 						ClientID:    s.clientID,
 						AccountID:   accountID,

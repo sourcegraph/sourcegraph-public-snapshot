@@ -292,6 +292,7 @@ func (s *PermsSyncer) updateGitHubAppInstallations(ctx context.Context, acct *ex
 	}
 
 	acctInstallations, err := s.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+        ServiceType: fmt.Sprintf("%sApp", acct.ServiceType),
 		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
 		ExcludeExpired: true,
 	})
@@ -324,7 +325,7 @@ INSTALLATIONS:
 		}
 		accountID := installationID + "/" + acct.AccountID
 		if err := s.db.UserExternalAccounts().Insert(ctx, acct.UserID, extsvc.AccountSpec{
-			ServiceType: acct.ServiceType,
+			ServiceType: fmt.Sprintf("%sApp", acct.ServiceType),
 			ServiceID:   acct.ServiceID,
 			ClientID:    acct.ClientID,
 			AccountID:   accountID,
@@ -531,6 +532,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				// longer has any access.
 				linkedAccts, err := s.db.UserExternalAccounts().List(ctx,
 					database.ExternalAccountsListOptions{
+                        ServiceType: fmt.Sprintf("%sApp", acct.ServiceType),
 						AccountIDLike: fmt.Sprintf("%%/%s", acct.AccountID),
 					},
 				)
