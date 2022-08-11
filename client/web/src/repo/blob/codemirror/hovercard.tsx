@@ -143,6 +143,9 @@ const hovercardTheme = EditorView.theme({
         // Reset CodeMirror's default style
         border: 'initial',
         backgroundColor: 'initial',
+        // Needed to ensure that the hovercard is not covered by the reference
+        // panel header.
+        zIndex: 1024,
     },
 })
 

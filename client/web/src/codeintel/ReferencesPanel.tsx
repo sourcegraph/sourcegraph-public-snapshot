@@ -300,7 +300,7 @@ export const ReferencesList: React.FunctionComponent<
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
         if (props.jumpToFirst && definitions.length > 0) {
-            blobMemoryHistory.push(definitions[0].url)
+            blobMemoryHistory.push(definitions[0].url, { syncToPanel: false })
             setActiveLocation(definitions[0])
         }
     }, [blobMemoryHistory, props.jumpToFirst, definitions])
@@ -310,7 +310,7 @@ export const ReferencesList: React.FunctionComponent<
     // highlight the correct line.
     const onReferenceClick = (location: Location | undefined): void => {
         if (location) {
-            blobMemoryHistory.push(location.url)
+            blobMemoryHistory.push(location.url, { syncToPanel: false })
         }
         setActiveLocation(location)
     }
@@ -328,12 +328,13 @@ export const ReferencesList: React.FunctionComponent<
     // '?jumpToFirst=true' causes the panel to select the first reference and
     // open it in code blob on right.
     const onBlobNav = (url: string): void => {
+        console.log('on blob nav')
         // If we're going to navigate inside the same file in the same repo we
         // can optimistically jump to that position in the code blob.
         if (activeLocation !== undefined) {
             const urlToken = tokenFromUrl(url)
             if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
-                blobMemoryHistory.push(url)
+                blobMemoryHistory.push(url, { syncToPanel: false })
             }
         }
 
@@ -489,6 +490,7 @@ export const ReferencesList: React.FunctionComponent<
                         {...props}
                         blobNav={onBlobNav}
                         history={blobMemoryHistory}
+                        panelHistory={panelHistory}
                         location={blobMemoryHistory.location}
                         activeLocation={activeLocation}
                     />
@@ -601,12 +603,35 @@ const SideBlob: React.FunctionComponent<
             location: H.Location
             history: H.History
             blobNav: (url: string) => void
+            panelHistory: H.History
         }
     >
 > = props => {
-    const BlobComponent = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-        ? CodeMirrorBlob
-        : Blob
+    const { history, panelHistory } = props
+    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
+
+    // When using CodeMirror we have to forward history entries to the panel's
+    // router. That's because the CodeMirror <-> React integration uses its own
+    // Router and so clicks on <Link />s are not caught by the panel's router
+    // context.
+    useEffect(
+        () =>
+            history.listen((location, method) => {
+                if (useCodeMirror && (location.state as any)?.syncToPanel !== false) {
+                    console.log('sync to panel')
+                    switch (method) {
+                        case 'PUSH':
+                            panelHistory.push(location)
+                            break
+                        case 'REPLACE':
+                            panelHistory.replace(location)
+                            break
+                    }
+                }
+            }),
+        [useCodeMirror, history, panelHistory]
+    )
 
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
@@ -672,11 +697,6 @@ const SideBlob: React.FunctionComponent<
             history={props.history}
             location={props.location}
             disableStatusBar={true}
-            // The CodeMirror-React integration uses its own <Router />
-            // component and therefore doesn't work with MemoryRouter as used by
-            // the reference panel (clicking on the buttons in the hovercard
-            // doesn't have any effect).
-            disableHovercards={true}
             disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
             wrapCode={true}
             className={styles.sideBlobCode}
