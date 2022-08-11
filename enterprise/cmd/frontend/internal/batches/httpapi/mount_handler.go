@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -37,7 +36,7 @@ type BatchesStore interface {
 
 // NewMountHandler creates a new MountHandler.
 func NewMountHandler(
-	db database.DB,
+	//db database.DB,
 	store BatchesStore,
 	uploadStore uploadstore.Store,
 	operations *Operations,
@@ -57,7 +56,8 @@ func NewMountHandler(
 
 	// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 	// visibility check with the remote code host (if enabled via site configuration).
-	return authMiddleware(handler, db, operations.authMiddleware)
+	//return authMiddleware(handler, db, operations.authMiddleware)
+	return handler
 }
 
 func (h *MountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
