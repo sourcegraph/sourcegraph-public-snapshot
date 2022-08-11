@@ -536,7 +536,7 @@ SELECT
 	NULL::integer[] as uploaded_parts,
 	au.upload_size, au.associated_index_id,
 	COALESCE((snapshot->'expired')::boolean, false) AS expired,
-	NULL AS uncompressed_size
+	NULL::bigint AS uncompressed_size
 FROM (
 	SELECT upload_id, snapshot_transition_columns(transition_columns ORDER BY sequence ASC) AS snapshot
 	FROM lsif_uploads_audit_logs
