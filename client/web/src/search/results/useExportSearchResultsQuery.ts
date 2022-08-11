@@ -154,6 +154,10 @@ export const useExportSearchResultsQuery: UseExportSearchResultsQuery = ({
                 a.style.display = 'none'
                 a.download = downloadFilename
                 a.click()
+
+                // cleanup
+                a.remove()
+                URL.revokeObjectURL(url)
             },
         }
     )
