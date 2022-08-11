@@ -60,24 +60,9 @@ describe('getSeriesData', () => {
                 name: 'Series a',
                 data: [
                     {
-                        y: null,
-                        x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), value: null },
-                    },
-                    {
-                        y: null,
-                        x: new Date(2022, 2, 3),
-                        datum: { x: new Date(2022, 2, 3), value: null },
-                    },
-                    {
                         y: 1,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 1 },
-                    },
-                    {
-                        y: null,
-                        x: new Date(2022, 2, 5),
-                        datum: { x: new Date(2022, 2, 5), value: null },
                     },
                     {
                         y: 2,
@@ -94,11 +79,6 @@ describe('getSeriesData', () => {
                 name: 'Series b',
                 data: [
                     {
-                        y: null,
-                        x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), value: null },
-                    },
-                    {
                         y: 2,
                         x: new Date(2022, 2, 3),
                         datum: { x: new Date(2022, 2, 3), value: 2 },
@@ -107,11 +87,6 @@ describe('getSeriesData', () => {
                         y: 2,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 2 },
-                    },
-                    {
-                        y: null,
-                        x: new Date(2022, 2, 5),
-                        datum: { x: new Date(2022, 2, 5), value: null },
                     },
                     {
                         y: 2,
@@ -128,11 +103,6 @@ describe('getSeriesData', () => {
                 name: 'Series c',
                 data: [
                     {
-                        y: null,
-                        x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), value: null },
-                    },
-                    {
                         y: 3,
                         x: new Date(2022, 2, 3),
                         datum: { x: new Date(2022, 2, 3), value: 3 },
@@ -146,11 +116,6 @@ describe('getSeriesData', () => {
                         y: 3,
                         x: new Date(2022, 2, 5),
                         datum: { x: new Date(2022, 2, 5), value: 3 },
-                    },
-                    {
-                        y: null,
-                        x: new Date(2022, 2, 6),
-                        datum: { x: new Date(2022, 2, 6), value: null },
                     },
                 ],
                 getXValue,
@@ -174,28 +139,10 @@ describe('getSeriesData', () => {
                 getYValue,
                 data: [
                     {
-                        y0: null,
-                        y1: null,
-                        x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), value: null },
-                    },
-                    {
-                        y0: null,
-                        y1: null,
-                        x: new Date(2022, 2, 3),
-                        datum: { x: new Date(2022, 2, 3), value: null },
-                    },
-                    {
                         y0: 0,
                         y1: 1,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 1 },
-                    },
-                    {
-                        y0: null,
-                        y1: null,
-                        x: new Date(2022, 2, 5),
-                        datum: { x: new Date(2022, 2, 5), value: null },
                     },
                     {
                         y0: 0,
@@ -213,12 +160,6 @@ describe('getSeriesData', () => {
                 getYValue,
                 data: [
                     {
-                        y0: null,
-                        y1: null,
-                        x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), value: null },
-                    },
-                    {
                         y0: 0,
                         y1: 2,
                         x: new Date(2022, 2, 3),
@@ -229,12 +170,6 @@ describe('getSeriesData', () => {
                         y1: 3,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 2 },
-                    },
-                    {
-                        y0: null,
-                        y1: null,
-                        x: new Date(2022, 2, 5),
-                        datum: { x: new Date(2022, 2, 5), value: null },
                     },
                     {
                         y0: 2,
@@ -252,12 +187,6 @@ describe('getSeriesData', () => {
                 getYValue,
                 data: [
                     {
-                        y0: null,
-                        y1: null,
-                        x: new Date(2022, 2, 2),
-                        datum: { x: new Date(2022, 2, 2), value: null },
-                    },
-                    {
                         y0: 2,
                         y1: 5,
                         x: new Date(2022, 2, 3),
@@ -274,12 +203,6 @@ describe('getSeriesData', () => {
                         y1: 6.5,
                         x: new Date(2022, 2, 5),
                         datum: { x: new Date(2022, 2, 5), value: 3 },
-                    },
-                    {
-                        y0: null,
-                        y1: null,
-                        x: new Date(2022, 2, 6),
-                        datum: { x: new Date(2022, 2, 6), value: null },
                     },
                 ],
             },

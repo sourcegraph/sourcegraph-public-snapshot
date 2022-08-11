@@ -1,6 +1,10 @@
 import { Optional } from 'utility-types'
 
-import { createRectangle, Rectangle } from '@sourcegraph/wildcard'
+import { Rectangle } from '@sourcegraph/wildcard'
+
+// In order to resolve cyclic deps in tests
+// see https://github.com/sourcegraph/sourcegraph/pull/40209#pullrequestreview-1069334480
+import { createRectangle } from '../../../Popover'
 
 interface GetChartContentSizesInput {
     width: number

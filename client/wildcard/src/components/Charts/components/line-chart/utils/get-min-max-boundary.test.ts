@@ -58,7 +58,7 @@ const testSeriesWithData: SeriesWithData<Datum>[] = [
 describe('getMinMaxBoundary', () => {
     it('should calculate a valid boundary box', () => {
         expect(getMinMaxBoundaries({ dataSeries: testSeriesWithData, zeroYAxisMin: false })).toStrictEqual({
-            minX: +new Date(2022, 2, 2),
+            minX: +new Date(2022, 2, 3),
             minY: 1,
             maxX: +new Date(2022, 2, 6),
             maxY: 3,
@@ -67,7 +67,7 @@ describe('getMinMaxBoundary', () => {
 
     it('should calculate a valid boundary box with zeroYAxisMin setting', () => {
         expect(getMinMaxBoundaries({ dataSeries: testSeriesWithData, zeroYAxisMin: true })).toStrictEqual({
-            minX: +new Date(2022, 2, 2),
+            minX: +new Date(2022, 2, 3),
             minY: 0,
             maxX: +new Date(2022, 2, 6),
             maxY: 3,
