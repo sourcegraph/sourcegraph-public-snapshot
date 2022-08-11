@@ -68,7 +68,7 @@ export const UsersList: React.FunctionComponent = () => {
         <div className="position-relative">
             <div className="mb-2 mt-4 pt-4 d-flex justify-content-between align-items-center text-nowrap">
                 <H2>Users</H2>
-                <div className="d-flex">
+                <div className="d-flex w-75">
                     <HorizontalSelect<SiteUsersLastActivePeriod>
                         className="mr-4"
                         value={lastActivePeriod}
@@ -84,11 +84,15 @@ export const UsersList: React.FunctionComponent = () => {
                             { value: SiteUsersLastActivePeriod.THIS_MONTH, label: 'This month' },
                         ]}
                     />
-                    <Input
-                        placeholder="Search username or name"
-                        value={searchText}
-                        onChange={event => setSearchText(event.target.value)}
-                    />
+                    <div className="flex-1 d-flex align-items-baseline m-0">
+                        <Text as="label">Search users</Text>
+                        <Input
+                            className="flex-1 ml-2"
+                            placeholder="Search username or name"
+                            value={searchText}
+                            onChange={event => setSearchText(event.target.value)}
+                        />
+                    </div>
                 </div>
             </div>
             {notification && (
