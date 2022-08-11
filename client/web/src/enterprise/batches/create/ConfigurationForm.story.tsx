@@ -87,6 +87,8 @@ export const ExistingBatchChange: Story = () => (
                         namespace: {
                             __typename: 'Org',
                             namespaceName: 'Sourcegraph',
+                            displayName: null,
+                            name: 'sourcegraph',
                             url: '/orgs/sourcegraph',
                             id: 'test1234',
                         },
@@ -112,6 +114,8 @@ export const LicenseAlert: Story = () => (
                         namespace: {
                             __typename: 'Org',
                             namespaceName: 'Sourcegraph',
+                            displayName: null,
+                            name: 'sourcegraph',
                             url: '/orgs/sourcegraph',
                             id: 'test1234',
                         },
