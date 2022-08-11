@@ -277,6 +277,10 @@ func (s *PermsSyncer) updateGitHubAppInstallations(ctx context.Context, acct *ex
 
 	_, tok, err := github.GetExternalAccountData(&acct.AccountData)
 
+	if err != nil {
+		return err
+	}
+
 	apiURL, _ := url.Parse(acct.ServiceID)
 	apiURL, _ = github.APIRoot(apiURL)
 	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
