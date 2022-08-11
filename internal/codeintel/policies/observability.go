@@ -18,7 +18,11 @@ type operations struct {
 	update                           *observation.Operation
 
 	// Configurations
-	getConfigurationPolicies *observation.Operation
+	getConfigurationPolicies      *observation.Operation
+	getConfigurationPoliciesByID  *observation.Operation
+	createConfigurationPolicy     *observation.Operation
+	updateConfigurationPolicy     *observation.Operation
+	deleteConfigurationPolicyByID *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -48,6 +52,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		update:                           op("Update"),
 
 		// Configurations
-		getConfigurationPolicies: op("GetConfigurationPolicies"),
+		getConfigurationPolicies:      op("GetConfigurationPolicies"),
+		getConfigurationPoliciesByID:  op("GetConfigurationPoliciesByID"),
+		createConfigurationPolicy:     op("CreateConfigurationPolicy"),
+		updateConfigurationPolicy:     op("UpdateConfigurationPolicy"),
+		deleteConfigurationPolicyByID: op("DeleteConfigurationPolicyByID"),
 	}
 }

@@ -21,39 +21,39 @@ import (
 // by a symmetrics resolver in this package's graphql subpackage, which is exposed directly
 // by the API.
 type Resolver interface {
+	// TODO: Move to uploads resolver.
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]dbstore.Upload, error)
 	DeleteUploadByID(ctx context.Context, uploadID int) error
 	GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error)
+	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
+	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
+	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
+	UploadConnectionResolver(opts dbstore.GetUploadsOptions) *UploadsResolver
+	AuditLogsForUpload(ctx context.Context, id int) ([]dbstore.UploadLog, error)
+	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
-	GetIndexByID(ctx context.Context, id int) (dbstore.Index, bool, error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
-	DeleteIndexByID(ctx context.Context, id int) error
-
+	// TODO: Move to policy service.
 	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
 	GetConfigurationPolicyByID(ctx context.Context, id int) (dbstore.ConfigurationPolicy, bool, error)
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)
 	UpdateConfigurationPolicy(ctx context.Context, policy dbstore.ConfigurationPolicy) (err error)
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
+	RetentionPolicyOverview(ctx context.Context, upload dbstore.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []RetentionPolicyMatchCandidate, totalCount int, err error)
 
+	// TODO: Move to autoindex service.
+	GetIndexByID(ctx context.Context, id int) (dbstore.Index, bool, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
+	DeleteIndexByID(ctx context.Context, id int) error
 	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
 	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error)
 	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
-
-	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]dbstore.Index, error)
-	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
-	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
-	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
-	RetentionPolicyOverview(ctx context.Context, upload dbstore.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []RetentionPolicyMatchCandidate, totalCount int, err error)
-
-	AuditLogsForUpload(ctx context.Context, id int) ([]dbstore.UploadLog, error)
-
-	UploadConnectionResolver(opts dbstore.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts dbstore.GetIndexesOptions) *IndexesResolver
-	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
+	// TODO: Move to codenav service.
+	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
 	RequestLanguageSupport(ctx context.Context, userID int, language string) error
 	RequestedLanguageSupport(ctx context.Context, userID int) ([]string, error)
 

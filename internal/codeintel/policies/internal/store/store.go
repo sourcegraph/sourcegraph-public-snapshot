@@ -5,6 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,12 +21,18 @@ type Store interface {
 
 	// Configurations
 	GetConfigurationPolicies(ctx context.Context, opts shared.GetConfigurationPoliciesOptions) (_ []shared.ConfigurationPolicy, totalCount int, err error)
+	GetConfigurationPolicyByID(ctx context.Context, id int) (_ shared.ConfigurationPolicy, _ bool, err error)
+	CreateConfigurationPolicy(ctx context.Context, configurationPolicy shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)
+	UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) (err error)
+	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
+
 	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
 }
 
 // store manages the policies store.
 type store struct {
 	db         *basestore.Store
+	logger     logger.Logger
 	operations *operations
 }
 
@@ -33,6 +40,7 @@ type store struct {
 func New(db database.DB, observationContext *observation.Context) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
+		logger:     logger.Scoped("policies.store", ""),
 		operations: newOperations(observationContext),
 	}
 }
