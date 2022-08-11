@@ -207,7 +207,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
-		Site:              publicSiteConfiguration(),
+		Site:              conf.PublicSiteConfiguration(),
 		LikelyDockerOnMac: likelyDockerOnMac(),
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
@@ -249,23 +249,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
+		// TODO: remove and refactor
 		EnableLegacyExtensions: enableLegacyExtensions,
-	}
-}
-
-// publicSiteConfiguration is the subset of the site.schema.json site
-// configuration that is necessary for the web app and is not sensitive/secret.
-func publicSiteConfiguration() schema.SiteConfiguration {
-	c := conf.Get()
-	updateChannel := c.UpdateChannel
-	if updateChannel == "" {
-		updateChannel = "release"
-	}
-	return schema.SiteConfiguration{
-		AuthPublic:                  c.AuthPublic,
-		UpdateChannel:               updateChannel,
-		AuthzEnforceForSiteAdmins:   c.AuthzEnforceForSiteAdmins,
-		DisableNonCriticalTelemetry: c.DisableNonCriticalTelemetry,
 	}
 }
 

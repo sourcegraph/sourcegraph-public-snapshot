@@ -519,7 +519,8 @@
         "enableLegacyExtensions": {
           "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
           "type": "boolean",
-          "default": true
+          "default": true,
+          "!go": { "pointer": true }
         }
       },
       "examples": [

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
@@ -65,6 +66,10 @@ func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationRes
 		return nil, err
 	}
 	return &siteConfigurationResolver{db: r.db}, nil
+}
+
+func (r *siteResolver) PublicConfiguration(ctx context.Context) (*publicSiteConfigurationResolver, error) {
+	return &publicSiteConfigurationResolver{}, nil
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -191,4 +196,27 @@ var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS
 
 func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
+}
+
+type publicSiteConfigurationResolver struct{}
+
+func (r *publicSiteConfigurationResolver) ID(ctx context.Context) (int32, error) {
+	return 0, nil
+}
+
+func (r *publicSiteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
+	siteConfig := conf.PublicSiteConfiguration()
+	json, err := json.Marshal(siteConfig)
+	if err != nil {
+		return "", err
+	}
+	return JSONCString(json), nil
+}
+
+func (r *publicSiteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
+	contents, err := r.EffectiveContents(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return conf.ValidateSite(string(contents))
 }
