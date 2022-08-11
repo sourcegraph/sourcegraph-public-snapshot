@@ -68,7 +68,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                         <span className="text-muted small">Regexp:</span> <Code weight="bold">(read|write)File</Code>
                     </li>
                     <li>
-                        <span className="text-muted small">Exact:</span> <Code weight="bold">"fs.open(f)"</Code>
+                        <span className="text-muted small">Exact:</span> <Code weight="bold">fs.open(f)</Code>
                     </li>
                 </ul>
                 <MenuDivider />
