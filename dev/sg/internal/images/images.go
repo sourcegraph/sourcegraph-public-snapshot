@@ -285,6 +285,7 @@ func parseImgString(rawImg string) (*ImageReference, error) {
 // Callers should not treat the returned error as fatal.
 func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credentials, pinTag string) (newImage string, err error) {
 	str := strings.Split(originalImage, "/")
+	registry := str[0]
 	imageName := str[len(str)-1]
 
 	var found bool
@@ -294,8 +295,21 @@ func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credenti
 			break
 		}
 	}
+	if registry == "gcr.io" && !found {
+		image, err := parseImgString(originalImage)
+		if err != nil {
+			return "", err
+		}
+
+		newImage, err := fetchUpdatedImageGCR(image.Name)
+		if err != nil {
+			return "", err
+		}
+		return newImage, nil
+	}
+
 	if !found {
-		return imageName, errors.New("not a sourcegraph image")
+		return imageName, errors.New("not a sourcegraph or gcr image")
 	}
 
 	newImage, err = getUpdatedImage(originalImage, creds, pinTag)

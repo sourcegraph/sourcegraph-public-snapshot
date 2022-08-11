@@ -1,4 +1,4 @@
-package gcr
+package images
 
 import (
 	"context"
@@ -34,7 +34,7 @@ type Manifest struct {
 	TimeUploadedMs string
 }
 
-func fetchAuthToken(ctx context.Context) (string, error) {
+func fetchAuthTokenGCR(ctx context.Context) (string, error) {
 	creds, err := transport.Creds(ctx, option.WithScopes(compute.CloudPlatformScope))
 	if err != nil {
 		return "", err
@@ -47,7 +47,7 @@ func fetchAuthToken(ctx context.Context) (string, error) {
 
 	return accessToken, nil
 }
-func findUpdatedTag(tagsList []string) string {
+func findUpdatedTagGCR(tagsList []string) string {
 	var tags []string
 	//var updatedManifest manifest
 	for _, tag := range tagsList {
@@ -60,7 +60,7 @@ func findUpdatedTag(tagsList []string) string {
 	return updatedTag
 }
 
-func findUpdatedManifest(manifest map[string]Manifest, tag string) string {
+func findUpdatedManifestGCR(manifest map[string]Manifest, tag string) string {
 	for sha, manifest := range manifest {
 		if len(manifest.Tag) > 0 {
 			if manifest.Tag[0] == tag {
@@ -72,9 +72,9 @@ func findUpdatedManifest(manifest map[string]Manifest, tag string) string {
 	return ""
 }
 
-func fetchUpdatedImage(imageName string, currentTag string) (string, error) {
+func fetchUpdatedImageGCR(imageName string) (string, error) {
 	ctx := context.Background()
-	token, err := fetchAuthToken(ctx)
+	token, err := fetchAuthTokenGCR(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -83,7 +83,6 @@ func fetchUpdatedImage(imageName string, currentTag string) (string, error) {
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
-	//req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -105,10 +104,10 @@ func fetchUpdatedImage(imageName string, currentTag string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	updatedTag := findUpdatedTag(result.Tags)
-	updatedManifest := findUpdatedManifest(result.Manifest, updatedTag)
+	updatedTag := findUpdatedTagGCR(result.Tags)
+	updatedManifest := findUpdatedManifestGCR(result.Manifest, updatedTag)
 	if updatedTag == "" || updatedManifest == "" {
-		return "", errors.New("updated image not found")
+		return "", errors.New("an updated gcr image not found")
 	}
 	updatedImage := registry + "/" + imageName + ":" + updatedTag + "@" + updatedManifest
 	return updatedImage, nil
