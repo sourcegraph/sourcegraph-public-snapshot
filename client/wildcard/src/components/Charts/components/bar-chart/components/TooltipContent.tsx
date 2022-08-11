@@ -1,7 +1,6 @@
 import { ReactElement } from 'react'
 
-import { H3 } from '@sourcegraph/wildcard'
-
+import { H3 } from '../../../../Typography'
 import { DEFAULT_FALLBACK_COLOR } from '../../../constants'
 import { TooltipList, TooltipListItem } from '../../../core'
 import { Category } from '../utils/get-grouped-categories'

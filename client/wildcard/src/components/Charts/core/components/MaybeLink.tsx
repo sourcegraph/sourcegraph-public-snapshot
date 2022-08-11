@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link } from '../../../Link'
 
 interface MaybeLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
     to?: string | void | null

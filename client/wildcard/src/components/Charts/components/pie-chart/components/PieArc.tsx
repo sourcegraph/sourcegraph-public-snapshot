@@ -6,8 +6,7 @@ import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
 import { Arc as ArcType } from 'd3-shape'
 
-import { H3 } from '@sourcegraph/wildcard'
-
+import { H3 } from '../../../../Typography'
 import { DEFAULT_FALLBACK_COLOR } from '../../../constants'
 
 import styles from './PieArc.module.scss'

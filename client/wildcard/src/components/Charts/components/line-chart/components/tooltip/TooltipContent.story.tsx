@@ -2,8 +2,8 @@ import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { H2 } from '@sourcegraph/wildcard'
 
+import { H2 } from '../../../../../Typography'
 import { Series } from '../../../../types'
 import { getSeriesData, SeriesWithData } from '../../utils'
 

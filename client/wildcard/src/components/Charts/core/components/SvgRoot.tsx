@@ -20,11 +20,9 @@ import { noop } from 'lodash'
 import { useMergeRefs } from 'use-callback-ref'
 import useResizeObserver from 'use-resize-observer'
 
-import { EMPTY_RECTANGLE, Rectangle } from '@sourcegraph/wildcard'
-
 // In order to resolve cyclic deps in tests
 // see https://github.com/sourcegraph/sourcegraph/pull/40209#pullrequestreview-1069334480
-import { createRectangle } from '../../../Popover'
+import { createRectangle, EMPTY_RECTANGLE, Rectangle } from '../../../Popover'
 
 import { AxisBottom, AxisLeft } from './axis/Axis'
 import { getMaxTickWidth, Tick, TickProps } from './axis/Tick'

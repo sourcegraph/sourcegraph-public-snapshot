@@ -2,11 +2,9 @@ import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes, useEffect, 
 
 import classNames from 'classnames'
 
-import { PopoverContent, Position } from '@sourcegraph/wildcard'
-
 // In order to resolve cyclic deps in tests
 // see https://github.com/sourcegraph/sourcegraph/pull/40209#pullrequestreview-1069334480
-import { createRectangle } from '../../../../Popover'
+import { createRectangle, PopoverContent, Position } from '../../../../Popover'
 
 import styles from './Tooltip.module.scss'
 
