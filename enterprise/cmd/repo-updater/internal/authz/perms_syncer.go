@@ -281,7 +281,14 @@ func (s *PermsSyncer) updateGitHubAppInstallations(ctx context.Context, acct *ex
 		return err
 	}
 
-	apiURL, _ := url.Parse(acct.ServiceID)
+	if tok == nil {
+		return nil
+	}
+
+	apiURL, err := url.Parse(acct.ServiceID)
+	if err != nil {
+		return err
+	}
 	apiURL, _ = github.APIRoot(apiURL)
 	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
 		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil)
