@@ -86,6 +86,8 @@ Repositories can also be placed onto the `updateQueue` if we receive a webhook i
 
 The [update scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.36.3/-/blob/internal/repos/scheduler.go#L174) has a number of workers equal to the value of [`conf.GitMaxConcurrentClones`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.36.3/-/blob/schema/site.schema.json#L596-601), which process the `updateQueue` and issue git clone/fetch commands via an RPC call to the appropriate gitserver instance. It is important to remember that the `updateQueue` only exists in memory in `repo-updater`. `gitserver` has no knowledge of the queue and only handles requests to update repositories.
 
+See [this diagram](updatqqueue.svg) which shows the relationship between the scheduler and update queue.
+
 >NOTE: gitserver also enforces `GitMaxConcurrentClones` per shard. So it is possible to have `GitMaxConcurrentClones * GITSERVER_REPLICA_COUNT` clone/fetch running, although uncommon.
 
 ## Identity Coherence
