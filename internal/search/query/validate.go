@@ -397,7 +397,7 @@ func validatePredicate(field, value string, negated bool) error {
 	}
 	name, params := ParseAsPredicate(value)                // guaranteed to succeed
 	predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
-	if err := predicate.Unmarshal(params); err != nil {
+	if err := predicate.Unmarshal(params, negated); err != nil {
 		return errors.Errorf("invalid predicate value: %s", err)
 	}
 	return nil

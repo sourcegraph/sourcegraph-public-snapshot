@@ -24,7 +24,7 @@ func TestRepoContainsFilePredicate(t *testing.T) {
 		for _, tc := range valid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &RepoContainsFilePredicate{}
-				err := p.Unmarshal(tc.params)
+				err := p.Unmarshal(tc.params, false)
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
 				}
@@ -47,7 +47,7 @@ func TestRepoContainsFilePredicate(t *testing.T) {
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &RepoContainsFilePredicate{}
-				err := p.Unmarshal(tc.params)
+				err := p.Unmarshal(tc.params, false)
 				if err == nil {
 					t.Fatal("expected error but got none")
 				}
@@ -97,7 +97,7 @@ func TestRepoHasDescriptionPredicate(t *testing.T) {
 		for _, tc := range valid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &RepoHasDescriptionPredicate{}
-				err := p.Unmarshal(tc.params)
+				err := p.Unmarshal(tc.params, false)
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
 				}
@@ -116,7 +116,7 @@ func TestRepoHasDescriptionPredicate(t *testing.T) {
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &RepoHasDescriptionPredicate{}
-				err := p.Unmarshal(tc.params)
+				err := p.Unmarshal(tc.params, false)
 				if err == nil {
 					t.Fatal("expected error but got none")
 				}
@@ -142,7 +142,7 @@ func TestFileHasOwnerPredicate(t *testing.T) {
 		for _, tc := range valid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &FileHasOwnerPredicate{}
-				err := p.Unmarshal(tc.params)
+				err := p.Unmarshal(tc.params, false)
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
 				}
@@ -160,7 +160,7 @@ func TestFileHasOwnerPredicate(t *testing.T) {
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &FileHasOwnerPredicate{}
-				err := p.Unmarshal(tc.params)
+				err := p.Unmarshal(tc.params, false)
 				if err == nil {
 					t.Fatal("expected error but got none")
 				}

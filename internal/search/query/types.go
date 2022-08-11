@@ -154,7 +154,7 @@ func (q Q) Repositories() (repos []string, negatedRepos []string) {
 }
 
 func (q Q) Dependencies() (dependencies []string) {
-	VisitPredicate(q, func(field, name, value string) {
+	VisitPredicate(q, func(field, name, value string, _ bool) {
 		if field == FieldRepo && (name == "dependencies" || name == "deps") {
 			dependencies = append(dependencies, value)
 		}
@@ -163,7 +163,7 @@ func (q Q) Dependencies() (dependencies []string) {
 }
 
 func (q Q) Dependents() (dependents []string) {
-	VisitPredicate(q, func(field, name, value string) {
+	VisitPredicate(q, func(field, name, value string, _ bool) {
 		if field == FieldRepo && (name == "dependents" || name == "revdeps") {
 			dependents = append(dependents, value)
 		}

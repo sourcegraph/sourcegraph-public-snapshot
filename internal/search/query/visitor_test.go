@@ -10,7 +10,7 @@ func TestSubstitute(t *testing.T) {
 	test := func(input string) string {
 		q, _ := ParseLiteral(input)
 		var result string
-		VisitPredicate(q, func(field, name, value string) {
+		VisitPredicate(q, func(field, name, value string, negated bool) {
 			if field == FieldRepo && name == "contains.file" {
 				result = "contains.file value is " + value
 			}

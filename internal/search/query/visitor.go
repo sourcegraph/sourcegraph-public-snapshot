@@ -74,11 +74,11 @@ func VisitField(nodes []Node, field string, f func(value string, negated bool, a
 
 // VisitPredicate convenience function that calls `f` on all query predicates,
 // supplying the node's field and predicate info.
-func VisitPredicate(nodes []Node, f func(field, name, value string)) {
-	VisitParameter(nodes, func(gotField, value string, _ bool, annotation Annotation) {
+func VisitPredicate(nodes []Node, f func(field, name, value string, negated bool)) {
+	VisitParameter(nodes, func(gotField, value string, negated bool, annotation Annotation) {
 		if annotation.Labels.IsSet(IsPredicate) {
 			name, predValue := ParseAsPredicate(value)
-			f(gotField, name, predValue)
+			f(gotField, name, predValue, negated)
 		}
 	})
 }
@@ -107,7 +107,7 @@ func VisitTypedPredicate[T any, PT predicatePointer[T]](nodes []Node, f func(pre
 		}
 
 		newPred := PT(new(T))
-		err := newPred.Unmarshal(predArgs)
+		err := newPred.Unmarshal(predArgs, negated)
 		if err != nil {
 			panic(err) // should already be validated
 		}
