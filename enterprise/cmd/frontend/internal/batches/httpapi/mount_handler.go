@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -19,67 +20,126 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// MountHandler handles retrieving and uploading of mount files.
 type MountHandler struct {
 	logger      sglog.Logger
-	store       *store.Store
+	store       BatchesStore
 	uploadStore uploadstore.Store
 	operations  *Operations
 }
 
-func NewMountUploadHandler(
-	store *store.Store,
+type BatchesStore interface {
+	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
+	GetBatchSpecMount(context.Context, store.GetBatchSpecMountOpts) (*btypes.BatchSpecMount, error)
+	UpsertBatchSpecMount(context.Context, *btypes.BatchSpecMount) error
+}
+
+// NewMountHandler creates a new MountHandler.
+func NewMountHandler(
+	store BatchesStore,
 	uploadStore uploadstore.Store,
 	operations *Operations,
+	executor bool,
 ) http.Handler {
 	handler := &MountHandler{
-		logger:      sglog.Scoped("MountHandler", ""),
+		logger:      sglog.Scoped("MountHandler", "").With(sglog.Bool("executor", executor)),
 		store:       store,
 		uploadStore: uploadStore,
 		operations:  operations,
 	}
 
+	// If the handler is being used in the executor, no need to add security. Executor comes with its own security.
+	if executor {
+		return handler
+	}
+
 	// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 	// visibility check with the remote code host (if enabled via site configuration).
-	return authMiddleware(http.HandlerFunc(handler.handleUpload), store, operations.authMiddleware)
+	return authMiddleware(handler, store, operations.authMiddleware)
 }
 
-func (h *MountHandler) handleUpload(w http.ResponseWriter, r *http.Request) {
+func (h *MountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		h.get(w, r)
+	case http.MethodPost:
+		h.upload(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (h *MountHandler) get(w http.ResponseWriter, r *http.Request) {
 	batchSpecID := mux.Vars(r)["spec"]
-	// 32MB
+	batchSpecRandID, err := unmarshalRandID(batchSpecID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("batch spec id is malformed: %s", err), http.StatusBadRequest)
+		return
+	}
+	batchSpecMountID := mux.Vars(r)["mount"]
+	batchSpecMountRandID, err := unmarshalRandID(batchSpecMountID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("mount id is malformed: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	mount, err := h.store.GetBatchSpecMount(r.Context(), store.GetBatchSpecMountOpts{
+		RandID: batchSpecMountRandID,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to lookup mount file metadata: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	key := filepath.Join(batchSpecRandID, mount.Path, mount.FileName)
+	reader, err := h.uploadStore.Get(r.Context(), key)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to retrieve file: %s", err), http.StatusInternalServerError)
+		return
+	}
+	defer reader.Close()
+	if _, err = io.Copy(w, reader); err != nil {
+		http.Error(w, fmt.Sprintf("failed to write file to reponse: %s", err), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *MountHandler) upload(w http.ResponseWriter, r *http.Request) {
+	batchSpecID := mux.Vars(r)["spec"]
+	randID, err := unmarshalRandID(batchSpecID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("batch spec id is malformed: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	// max memory: 32MB
 	if err := r.ParseMultipartForm(32 << 20); err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("failed to parse multipart form: %s", err), http.StatusBadRequest)
 		return
 	}
 
 	count := r.Form.Get("count")
 	if count == "" {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("count was not provided"), http.StatusBadRequest)
 		return
 	}
 	countNumber, err := strconv.Atoi(count)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("count is not a number: %s", err), http.StatusBadRequest)
 		return
 	}
 
-	randID, err := unmarshalRandID(batchSpecID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	spec, err := h.store.GetBatchSpec(r.Context(), store.GetBatchSpecOpts{
 		RandID: randID,
 	})
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to lookup batch spec: %s", err), http.StatusInternalServerError)
 		return
 	}
 
 	for i := 0; i < countNumber; i++ {
 		if err = h.uploadFile(r, spec, i); err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("failed to upload file: %s", err), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -106,58 +166,6 @@ func (h *MountHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec, index
 		return err
 	}
 	return nil
-}
-
-func NewMountRetrievalHandler(
-	store *store.Store,
-	uploadStore uploadstore.Store,
-	operations *Operations,
-) http.Handler {
-	handler := &MountHandler{
-		logger:      sglog.Scoped("MountHandler", ""),
-		store:       store,
-		uploadStore: uploadStore,
-		operations:  operations,
-	}
-
-	return http.HandlerFunc(handler.handleRetrieval)
-}
-
-func (h *MountHandler) handleRetrieval(w http.ResponseWriter, r *http.Request) {
-	batchSpecID := mux.Vars(r)["spec"]
-	batchSpecRandID, err := unmarshalRandID(batchSpecID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	batchSpecMountID := mux.Vars(r)["mount"]
-	batchSpecMountRandID, err := unmarshalRandID(batchSpecMountID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	mount, err := h.store.GetBatchSpecMount(r.Context(), store.GetBatchSpecMountOpts{
-		RandID: batchSpecMountRandID,
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	key := filepath.Join(batchSpecRandID, mount.Path, mount.FileName)
-	reader, err := h.uploadStore.Get(r.Context(), key)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer reader.Close()
-	if _, err = io.Copy(w, reader); err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 }
 
 func unmarshalRandID(id string) (batchSpecRandID string, err error) {
