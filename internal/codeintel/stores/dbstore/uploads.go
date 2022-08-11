@@ -407,7 +407,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				uploaded_parts,
 				upload_size,
 				associated_index_id,
-				expired
+				expired,
+				uncompressed_size
 			FROM lsif_uploads
 			UNION ALL
 			SELECT *
@@ -510,7 +511,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	s.rank,
-	u.uncompressed_size
+	u.uncompressed_size,
 	COUNT(*) OVER() AS count
 FROM %s
 LEFT JOIN (` + uploadRankQueryFragment + `) s
