@@ -1,6 +1,6 @@
 use std::fs;
 
-use sg_syntax::{dump_document, lsif_index};
+use sg_syntax::{dump_document, treesitter_index};
 
 fn main() {
     if let Some(path) = std::env::args().nth(1) {
@@ -12,8 +12,7 @@ fn main() {
             }
         };
 
-        // let language = determine_language();
-        let document = match lsif_index("go", &contents) {
+        let document = match treesitter_index("go", &contents) {
             Ok(document) => document,
             Err(err) => {
                 eprintln!("Failed to index document: {:?}", err);

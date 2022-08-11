@@ -82,14 +82,14 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 	)
 	defer func() { complete(err) }()
 
-	// Create a function that can re-create our reader for retries
-	readerFactory := func() io.Reader { return newBoundedReader(r, 0, readerLen) }
+	// Create a section reader that can reset our reader view for retries
+	reader := io.NewSectionReader(r, 0, readerLen)
 
 	requestOptions := uploadRequestOptions{
 		UploadOptions: opts,
 		Target:        &id,
 	}
-	err = uploadIndexFile(ctx, httpClient, opts, readerFactory, readerLen, requestOptions, progress, retry, 0, 1)
+	err = uploadIndexFile(ctx, httpClient, opts, reader, readerLen, requestOptions, progress, retry, 0, 1)
 
 	if progress != nil {
 		// Mark complete in case we debounced our last updates
@@ -99,9 +99,9 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 	return id, err
 }
 
-// uploadIndexFile uploads the contents available via the given reader factory to a
+// uploadIndexFile uploads the contents available via the given reader to a
 // Sourcegraph instance with the given request options.i
-func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, readerFactory func() io.Reader, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry func(message string) output.Progress, barIndex int, numParts int) error {
+func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, reader io.ReadSeeker, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry func(message string) output.Progress, barIndex int, numParts int) error {
 	return makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)(func(attempt int) (_ bool, err error) {
 		defer func() {
 			if err != nil && !errors.Is(err, ctx.Err()) && progress != nil {
@@ -122,7 +122,7 @@ func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions Uploa
 		}
 
 		// Create fresh reader on each attempt
-		reader := readerFactory()
+		reader.Seek(0, io.SeekStart)
 
 		// Report upload progress as writes occur
 		requestOptions.Payload = newProgressCallbackReader(reader, readerLen, progress, barIndex)
@@ -136,19 +136,19 @@ func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions Uploa
 // Sourcegraph instance over multiple HTTP POST requests. The identifier of the upload
 // is returned after a successful upload.
 func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen int64) (_ int, err error) {
-	// Create a slice of functions that can re-create our reader for an
-	// upload part for retries. This allows us to both read concurrently
-	// from the same reader, but also retry reads from arbitrary offsets.
-	readerFactories := splitReader(r, readerLen, opts.MaxPayloadSizeBytes)
+	// Create a slice of section readers for upload part retries.
+	// This allows us to both read concurrently from the same reader,
+	// but also retry reads from arbitrary offsets.
+	readers := splitReader(r, readerLen, opts.MaxPayloadSizeBytes)
 
 	// Perform initial request that gives us our upload identifier
-	id, err := uploadMultipartIndexInit(ctx, httpClient, opts, len(readerFactories))
+	id, err := uploadMultipartIndexInit(ctx, httpClient, opts, len(readers))
 	if err != nil {
 		return 0, err
 	}
 
 	// Upload each payload of the multipart index
-	if err := uploadMultipartIndexParts(ctx, httpClient, opts, readerFactories, id, readerLen); err != nil {
+	if err := uploadMultipartIndexParts(ctx, httpClient, opts, readers, id, readerLen); err != nil {
 		return 0, err
 	}
 
@@ -189,13 +189,13 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 	return id, err
 }
 
-// uploadMultipartIndexParts uploads the contents available via each of the given reader
-// factories to a Sourcegraph instance as part of the same multipart upload as indiciated
+// uploadMultipartIndexParts uploads the contents available via each of the given reader(s)
+// to a Sourcegraph instance as part of the same multipart upload as indiciated
 // by the given identifier.
-func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts UploadOptions, readerFactories []func() io.Reader, id int, readerLen int64) (err error) {
+func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts UploadOptions, readers []io.ReadSeeker, id int, readerLen int64) (err error) {
 	var bars []output.ProgressBar
-	for i := range readerFactories {
-		label := fmt.Sprintf("Upload part %d of %d", i+1, len(readerFactories))
+	for i := range readers {
+		label := fmt.Sprintf("Upload part %d of %d", i+1, len(readers))
 		bars = append(bars, output.ProgressBar{Label: label, Max: 1.0})
 	}
 	progress, retry, complete := logProgress(
@@ -207,22 +207,22 @@ func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts Uplo
 	defer func() { complete(err) }()
 
 	var wg sync.WaitGroup
-	errs := make(chan error, len(readerFactories))
+	errs := make(chan error, len(readers))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	for i, readerFactory := range readerFactories {
+	for i, reader := range readers {
 		wg.Add(1)
 
-		go func(i int, readerFactory func() io.Reader) {
+		go func(i int, reader io.ReadSeeker) {
 			defer wg.Done()
 
 			// Determine size of this reader. If we're not the last reader in the slice,
 			// then we're the maximum payload size. Otherwise, we're whatever is left.
 			partReaderLen := opts.MaxPayloadSizeBytes
-			if i == len(readerFactories)-1 {
-				partReaderLen = readerLen - int64(len(readerFactories)-1)*opts.MaxPayloadSizeBytes
+			if i == len(readers)-1 {
+				partReaderLen = readerLen - int64(len(readers)-1)*opts.MaxPayloadSizeBytes
 			}
 
 			requestOptions := uploadRequestOptions{
@@ -231,14 +231,14 @@ func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts Uplo
 				Index:         i,
 			}
 
-			if err := uploadIndexFile(ctx, httpClient, opts, readerFactory, partReaderLen, requestOptions, progress, retry, i, len(readerFactories)); err != nil {
+			if err := uploadIndexFile(ctx, httpClient, opts, reader, partReaderLen, requestOptions, progress, retry, i, len(readers)); err != nil {
 				errs <- err
 				cancel()
 			} else if progress != nil {
 				// Mark complete in case we debounced our last updates
 				progress.SetValue(i, 1)
 			}
-		}(i, readerFactory)
+		}(i, reader)
 	}
 
 	wg.Wait()
@@ -277,29 +277,18 @@ func uploadMultipartIndexFinalize(ctx context.Context, httpClient Client, opts U
 	})
 }
 
-// splitReader returns a slice of functions, each which returns a fresh instance of a reader
-// looking into a slice of the original reader.
+// splitReader returns a slice of read-seekers into the input ReaderAt, each of max size maxPayloadSize.
 //
-// Two readers from the same factory contain the same content that allows retrying reads from
-// the beginning. The sequential concatenation of each reader produces the content of the original
-// reader.
+// The sequential concatenation of each reader produces the content of the original reader.
 //
-// Each reader is safe to use concurrently. The original reader should be closed when all produced
+// Each reader is safe to use concurrently with others. The original reader should be closed when all produced
 // readers are no longer active.
-func splitReader(r io.ReaderAt, n, maxPayloadSize int64) (readerFactories []func() io.Reader) {
-	for i := int64(0); i < n; i += maxPayloadSize {
-		minOffset := i
-		maxOffset := minOffset + maxPayloadSize
-		if maxOffset > n {
-			maxOffset = n
-		}
-
-		readerFactories = append(readerFactories, func() io.Reader {
-			return newBoundedReader(r, minOffset, maxOffset)
-		})
+func splitReader(r io.ReaderAt, n, maxPayloadSize int64) (readers []io.ReadSeeker) {
+	for offset := int64(0); offset < n; offset += maxPayloadSize {
+		readers = append(readers, io.NewSectionReader(r, offset, maxPayloadSize))
 	}
 
-	return readerFactories
+	return readers
 }
 
 // openFileAndGetSize returns an open file handle and the size on disk for the given filename.

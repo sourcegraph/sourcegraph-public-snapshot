@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/lib/pq"
@@ -64,9 +62,7 @@ func TestInitializeJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			reset := envvar.MockExportUsageData(test.setting)
-			defer reset()
-
+			mockEnvVars(t, test.setting)
 			if have, want := isEnabled(), test.shouldInit; have != want {
 				t.Errorf("unexpected isEnabled return value have=%t want=%t", have, want)
 			}
@@ -95,21 +91,15 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			reset := envvar.MockExportUsageData(test.setting)
-			defer reset()
 			confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
+			mockEnvVars(t, test.setting)
 			handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
 				return nil
 			})
 			err := handler.Handle(ctx)
-			if err != nil {
-				if !errors.Is(err, disabledErr) {
-					t.Error("unexpected error from Handle function, expected disabled error")
-				}
-			} else {
-				if test.expectErr != nil {
-					t.Error("expected error but did not receive one")
-				}
+			if !errors.Is(err, test.expectErr) {
+				t.Errorf("unexpected error from Handle function, expected error: %v, received: %s", test.expectErr, err.Error())
+
 			}
 		})
 	}
@@ -122,8 +112,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	db := database.NewDB(logger, dbHandle)
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
-	reset := envvar.MockExportUsageData(true)
-	defer reset()
+	mockEnvVars(t, true)
 
 	initAllowedEvents(t, db, []string{"event1", "event2"})
 
@@ -227,8 +216,6 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	dbHandle := dbtest.NewDB(logger, t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
-	reset := envvar.MockExportUsageData(true)
-	defer reset()
 
 	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
@@ -255,6 +242,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	config := validConfiguration()
 	config.ExportUsageTelemetry.BatchSize = 1
 	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+	mockEnvVars(t, true)
 
 	handler := mockTelemetryHandler(t, noopHandler())
 	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
@@ -316,8 +304,6 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	dbHandle := dbtest.NewDB(logger, t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
-	reset := envvar.MockExportUsageData(true)
-	defer reset()
 
 	initAllowedEvents(t, db, []string{"allowed"})
 	testData := []*database.Event{
@@ -348,6 +334,7 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 
 	config := validConfiguration()
 	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+	mockEnvVars(t, true)
 
 	handler := mockTelemetryHandler(t, noopHandler())
 	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
@@ -384,10 +371,7 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 }
 
 func validConfiguration() schema.SiteConfiguration {
-	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{
-		TopicName:        "test-topic",
-		TopicProjectName: "test-project",
-	}}
+	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{}}
 }
 
 func TestHandleInvalidConfig(t *testing.T) {
@@ -398,8 +382,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 	bookmarkStore := newBookmarkStore(db)
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
-	reset := envvar.MockExportUsageData(true)
-	defer reset()
+	mockEnvVars(t, true)
 
 	obsContext := &observation.Context{
 		Logger:       logger,
@@ -409,20 +392,14 @@ func TestHandleInvalidConfig(t *testing.T) {
 	}
 
 	t.Run("handle fails when missing project name", func(t *testing.T) {
-		config := validConfiguration()
-		config.ExportUsageTelemetry.TopicProjectName = ""
-		confClient.Mock(&conf.Unified{SiteConfiguration: config})
-
+		projectName = ""
 		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
 	})
 	t.Run("handle fails when missing topic name", func(t *testing.T) {
-		config := validConfiguration()
-		config.ExportUsageTelemetry.TopicName = ""
-		confClient.Mock(&conf.Unified{SiteConfiguration: config})
-
+		topicName = ""
 		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
 		err := handler.Handle(ctx)
 
@@ -496,6 +473,7 @@ func TestGetInstanceMetadata(t *testing.T) {
 	version.Mock("fake-Version-1")
 	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{LicenseKey: "mock-license"}})
 	deploy.Mock("fake-deploy-type")
+	mockEnvVars(t, true)
 
 	stateStore.GetFunc.SetDefaultReturn(database.GlobalState{
 		SiteID:      "fake-site-id",
@@ -644,4 +622,20 @@ func initAllowedEvents(t *testing.T, db database.DB, names []string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func mockEnvVars(t *testing.T, flag bool) {
+	prevEnabled := enabled
+	prevTopicName := topicName
+	prevProjectName := projectName
+
+	t.Cleanup(func() {
+		enabled = prevEnabled
+		topicName = prevTopicName
+		projectName = prevProjectName
+	})
+
+	enabled = flag
+	topicName = "test-name"
+	projectName = "project-name"
 }
