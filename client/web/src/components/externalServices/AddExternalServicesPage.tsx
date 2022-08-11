@@ -154,9 +154,6 @@ export const AddExternalServicesPage: React.FunctionComponent<
 }
 
 function getAddURL(id: string): string {
-    if (id === 'githubApp') {
-        return '/site-admin/external-services/github-app'
-    }
     const parameters = new URLSearchParams()
     parameters.append('id', id)
     return `?${parameters.toString()}`

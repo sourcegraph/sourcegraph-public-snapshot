@@ -516,16 +516,6 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
 ]
 
-const GITHUB_APP: AddExternalServiceOptions = {
-    kind: ExternalServiceKind.GITHUB,
-    title: 'GitHub App (Recommended for GitHub)',
-    icon: GithubIcon,
-    jsonSchema: githubSchemaJSON,
-    editorActions: githubEditorActions(false),
-    instructions: githubInstructions(false),
-    defaultDisplayName: 'GitHub',
-    defaultConfig: '{}',
-}
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
     title: 'GitHub',
@@ -1410,7 +1400,6 @@ const RUST_PACKAGES = {
 }
 
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
-    githubApp: GITHUB_APP,
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
     gitlabcom: GITLAB_DOTCOM,
