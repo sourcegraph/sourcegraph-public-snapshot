@@ -16,7 +16,8 @@ Search-based code navigation also filters results by file extension and by impor
 
 ## What languages are supported?
 
-Search-based code navigation supports all of [the most popular programming languages](https://sourcegraph.com/extensions?category=Programming+languages).
+Search-based code navigation supports 40 programming languages, including all of the most popular ones: Apex, Clojure, Cobol, C++, C#, CSS, Cuda, Dart, Elixir, Erlang, Go, GraphQL, Groovy, Haskell, Java, JavaScript, Jsonnet, Kotlin, Lisp, Lua, OCaml, Pascal, Perl, PHP, PowerShell, Protobuf, Python, R, Ruby, Rust, Scala, Shell, Starlark, Strato, Swift, Tcl, Thrift, TypeScript, Verilog, VHDL.
+
 
 Are you using a language we don't support? [File a GitHub issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) or [submit a PR](https://github.com/sourcegraph/sourcegraph-basic-code-intel#adding-a-new-sourcegraphsourcegraph-lang-extension).
 
