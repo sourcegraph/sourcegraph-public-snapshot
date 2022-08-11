@@ -105,7 +105,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	installations, err := ghClient.GetUserInstallations(ctx)
 	if err != nil {
-		return nil, fmt.Sprintf("Error fetching list of accessible GitHub App installations."), err
+		log15.Warn("Could not get GitHub App installations", "error", err)
 	}
 
 	for i, attempt := range attempts {
