@@ -1,8 +1,8 @@
-import { combineLatest, ReplaySubject } from 'rxjs'
+import { combineLatest, ReplaySubject, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { asError, LocalStorageSubject } from '@sourcegraph/common'
-import { isHTTPAuthError } from '@sourcegraph/http-client'
+import { isHTTPAuthError, gql, isErrorGraphQLResult } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
@@ -44,6 +44,39 @@ export interface BrowserPlatformContext extends PlatformContext {
      */
     refreshSettings(): Promise<void>
 }
+
+const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false after Sourcegraph 4.0 release
+export const fetchEnableLegacyExtensions = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<boolean> =>
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query PublicConfiguration {
+                site {
+                    publicConfiguration {
+                        effectiveContents
+                    }
+                }
+            }
+        `,
+        variables: {},
+        mightContainPrivateInfo: false,
+    }).pipe(
+        map(result => {
+            if (isErrorGraphQLResult(result)) {
+                // PublicConfiguration query resolver may not be implemented on older versions.
+                // Return `true` by default.
+                return true
+            }
+
+            try {
+                // const parsedConfig = JSON.parse(site.publicConfiguration.effectiveContents)
+                // return Boolean(parsedConfig?.experimentalFeatures?.enableLegacyExtensions)
+
+                return DEFAULT_ENABLE_LEGACY_EXTENSIONS // Should be taken from site config after Sourcegraph 4.0 release (uncomment the above lines)
+            } catch {
+                return DEFAULT_ENABLE_LEGACY_EXTENSIONS
+            }
+        })
+    )
 
 /**
  * Creates the {@link PlatformContext} for the browser (for browser extensions and native integrations)
@@ -146,13 +179,16 @@ export function createPlatformContext(
         sideloadedExtensionURL: isInPage
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
             : new ExtensionStorageSubject('sideloadedExtensionURL', null),
-        getStaticExtensions: () => {
-            if (shouldUseInlineExtensions()) {
-                return getInlineExtensions()
-            }
+        getStaticExtensions: () =>
+            fetchEnableLegacyExtensions(requestGraphQL).pipe(
+                map(enableLegacyExtensions => {
+                    if (!enableLegacyExtensions && shouldUseInlineExtensions()) {
+                        return getInlineExtensions()
+                    }
 
-            return undefined
-        },
+                    return undefined
+                })
+            ),
     }
     return context
 }

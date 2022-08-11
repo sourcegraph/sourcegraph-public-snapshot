@@ -160,10 +160,18 @@ export const initMainThreadAPI = (
             return proxy(getScriptURL)
         },
         getEnabledExtensions: () => {
-            const staticExtensions = platformContext.getStaticExtensions?.()
-            if (staticExtensions) {
-                // Ensure that the observable never completes while subscribed to
-                return proxySubscribable(from(staticExtensions).pipe(publishReplay(1), refCount()))
+            if (platformContext.getStaticExtensions) {
+                return proxySubscribable(
+                    platformContext
+                        .getStaticExtensions()
+                        .pipe(
+                            switchMap(staticExtensions =>
+                                staticExtensions
+                                    ? staticExtensions.pipe(publishReplay(1), refCount())
+                                    : getEnabledExtensions(platformContext)
+                            )
+                        )
+                )
             }
 
             return proxySubscribable(getEnabledExtensions(platformContext))

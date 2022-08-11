@@ -159,7 +159,7 @@ function writeSchema(writeDirectory: string): void {
 
 const version = process.env.BROWSER_EXTENSION_VERSION || utcVersion()
 
-const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
+const shouldBuildWithInlineExtensions = (browser: Browser): boolean => true
 
 function writeManifest(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
     const extensionInfo = cloneDeep(manifestSpec)
