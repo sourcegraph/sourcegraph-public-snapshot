@@ -1,15 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const USERS_MANAGEMENT = gql`
-    query UsersManagement(
-        $dateRange: AnalyticsDateRange!
-        $first: Int!
-        $grouping: AnalyticsGrouping!
-        $usersLastActivePeriod: SiteUsersLastActivePeriod
-        $usersQuery: String
-        $usersOrderBy: SiteUserOrderBy
-        $usersOrderDescending: Boolean
-    ) {
+export const USERS_MANAGEMENT_CHART = gql`
+    query UsersManagementChart($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
         site {
             analytics {
                 users(dateRange: $dateRange, grouping: $grouping) {
@@ -31,9 +23,28 @@ export const USERS_MANAGEMENT = gql`
                     userCount
                 }
             }
-            users(query: $usersQuery, lastActivePeriod: $usersLastActivePeriod) {
+            adminUsers: users(siteAdmin: true) {
                 totalCount
-                nodes(first: $first, orderBy: $usersOrderBy, descending: $usersOrderDescending) {
+            }
+        }
+        users {
+            totalCount
+        }
+    }
+`
+
+export const USERS_MANAGEMENT_USERS_LIST = gql`
+    query UsersManagementUsersList(
+        $first: Int!
+        $lastActivePeriod: SiteUsersLastActivePeriod
+        $query: String
+        $orderBy: SiteUserOrderBy
+        $descending: Boolean
+    ) {
+        site {
+            users(query: $query, lastActivePeriod: $lastActivePeriod) {
+                totalCount
+                nodes(first: $first, orderBy: $orderBy, descending: $descending) {
                     id
                     username
                     email
@@ -44,12 +55,6 @@ export const USERS_MANAGEMENT = gql`
                     deletedAt
                 }
             }
-            adminUsers: users(siteAdmin: true) {
-                totalCount
-            }
-        }
-        users {
-            totalCount
         }
     }
 `

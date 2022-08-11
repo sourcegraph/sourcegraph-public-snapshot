@@ -48,9 +48,11 @@ interface TableProps<TData> {
     selectable?: boolean
     note?: string | JSX.Element
     getRowId?: (data: TData) => string | number
-    initialSortColumn?: string
-    initialSortDirection?: 'asc' | 'desc'
-    onSortChange?: (column: string | undefined, direction: 'asc' | 'desc' | undefined) => void
+    sortBy?: {
+        key: string
+        descending?: boolean
+    }
+    onSortByChange?: (newOderBy: NonNullable<TableProps<TData>['sortBy']>) => void
     onSelectionChange?: (rows: TData[]) => void
 }
 
@@ -61,13 +63,10 @@ export function Table<TData>({
     actions = [],
     note,
     getRowId = (data: any) => data.id,
-    onSortChange,
-    initialSortColumn,
-    initialSortDirection = 'asc',
+    onSortByChange,
+    sortBy,
     onSelectionChange,
 }: TableProps<TData>): JSX.Element {
-    const [sortedColumn, setSortedColumn] = useState(initialSortColumn)
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(initialSortDirection)
     const [selection, setSelection] = useState<TData[]>([])
 
     const onRowSelectionChange = (row: TData, selected: boolean): void => {
@@ -101,32 +100,21 @@ export function Table<TData>({
                             const align = typeof column.header !== 'string' ? column.header.align || 'left' : 'left'
                             const tooltip = typeof column.header !== 'string' ? column.header.tooltip : undefined
 
-                            const sort = (): void => {
-                                let newColumn = sortedColumn
-                                let newDirection = sortDirection
-
-                                if (sortedColumn !== key) {
-                                    newColumn = key
-                                    newDirection = 'asc'
-                                } else if (sortDirection === 'desc') {
-                                    newColumn = undefined
-                                    newDirection = undefined
-                                } else {
-                                    newDirection = 'desc'
-                                }
-                                setSortedColumn(newColumn)
-                                setSortDirection(newDirection)
-
-                                onSortChange?.(newColumn, newDirection)
+                            const handleSort = (): void => {
+                                onSortByChange?.({ key, descending: sortBy?.key === key && !sortBy?.descending })
                             }
                             return (
-                                <th key={key} onClick={column.sortable ? sort : undefined}>
+                                <th key={key} onClick={column.sortable ? handleSort : undefined}>
                                     <div
-                                        className={classNames(styles.header, styles.sortable, {
-                                            [styles.alignRight]: align === 'right',
-                                            [styles.sortedAsc]: sortedColumn === key && sortDirection === 'asc',
-                                            [styles.sortedDesc]: sortedColumn === key && sortDirection === 'desc',
-                                        })}
+                                        className={classNames(
+                                            styles.header,
+                                            styles.sortable,
+                                            align === 'right' && styles.alignRight,
+                                            {
+                                                [styles.sortedAsc]: sortBy?.key === key && !sortBy.descending,
+                                                [styles.sortedDesc]: sortBy?.key === key && sortBy.descending,
+                                            }
+                                        )}
                                     >
                                         <Tooltip content={tooltip}>
                                             <Text as="span" weight="bold">
@@ -197,16 +185,16 @@ function Row<TData>({
     getRowId,
     onSelectionChange,
 }: RowProps<TData>): JSX.Element {
-    const key = getRowId(data)
-    const selected = useMemo(() => !!selection.find(row => getRowId(row) === key), [getRowId, key, selection])
+    const rowKey = getRowId(data)
+    const selected = useMemo(() => !!selection.find(row => getRowId(row) === rowKey), [getRowId, rowKey, selection])
 
     return (
-        <tr key={key}>
+        <tr>
             {selectable && (
                 <td className={styles.selectionTd}>
                     <div className={classNames(styles.cell, styles.selection)}>
                         <Checkbox
-                            aria-labelledby={`${key} selection checkbox`}
+                            aria-labelledby={`${rowKey} selection checkbox`}
                             className="m-0"
                             checked={selected}
                             onChange={event => onSelectionChange(data, event.target.checked)}
@@ -214,7 +202,7 @@ function Row<TData>({
                     </div>
                 </td>
             )}
-            {columns.map(({ align, accessor, render }, index) => (
+            {columns.map(({ align, accessor, render, key }, index) => (
                 <td key={key}>
                     {render ? (
                         render(data, index)

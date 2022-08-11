@@ -1,3 +1,9 @@
 .link-color {
     color: var(--link-color);
 }
+
+.loading-spinner-container {
+    background-color: var(--border-color);
+    opacity: 0.5;
+    z-index: 1;
+}
