@@ -41,14 +41,13 @@ import (
 )
 
 type Handlers struct {
-	GitHubWebhook                webhooks.Registerer
-	GitLabWebhook                http.Handler
-	BitbucketServerWebhook       http.Handler
-	BitbucketCloudWebhook        http.Handler
-	BatchesMountUploadHandler    http.Handler
-	BatchesMountRetrievalHandler http.Handler
-	NewCodeIntelUploadHandler    enterprise.NewCodeIntelUploadHandler
-	NewComputeStreamHandler      enterprise.NewComputeStreamHandler
+	GitHubWebhook             webhooks.Registerer
+	GitLabWebhook             http.Handler
+	BitbucketServerWebhook    http.Handler
+	BitbucketCloudWebhook     http.Handler
+	BatchesMountHandler       http.Handler
+	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
+	NewComputeStreamHandler   enterprise.NewComputeStreamHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -96,8 +95,8 @@ func NewHandler(
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
-	m.Get(apirouter.BatchesMountUpload).Handler(trace.Route(handlers.BatchesMountUploadHandler))
-	m.Get(apirouter.BatchesMountRetrieval).Handler(trace.Route(handlers.BatchesMountRetrievalHandler))
+	m.Get(apirouter.BatchesMountUpload).Handler(trace.Route(handlers.BatchesMountHandler))
+	m.Get(apirouter.BatchesMountRetrieval).Handler(trace.Route(handlers.BatchesMountHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(false)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
