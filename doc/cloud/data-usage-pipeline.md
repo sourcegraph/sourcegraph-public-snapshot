@@ -8,12 +8,28 @@ to certain mangaged instances (cloud) where the customer has signed a correspond
 This process is a background that can be enabled that will periodically scrape the `event_logs` table in the primary database
 and send it to Sourcegraph centralized analytics. More information can be found in [RFC 719: Managed Instance Telemetry](https://docs.google.com/document/d/1N9aO0uTlvwXI7FzdPjIUCn_d1tRkJUfsc0urWigRf6s/edit).
 
+The [job interval](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/worker/internal/telemetry/telemetry_job.go?L118) determines how often the job is executed. The [batch size option](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/worker/internal/telemetry/telemetry_job.go?L246-252) determines how many records can be pulled in a single scrape. The batch size has a [default value](https://sourcegraph.sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/cmd/worker/internal/telemetry/telemetry_job%5C.go+MaxEventsCountDefault&patternType=standard) and can be overridden with a site setting:
+``` json
+  "exportUsageTelemetry": {
+    "batchSize": 100,
+  }
+```
+
+The scraping job maintains state using a bookmark stored in the primary postgres database in the table `event_logs_scrape_state`. [If the bookmark is not found, one will be inserted](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/worker/internal/telemetry/telemetry_job.go?L424-440) such that the bookmark is the most recent event at the time.
+
+The scraping process has a crude at-least once semantics guarantee. If any scrape should fail the bookmark state will not be updated causing future scrapes to retry the same set of events.
+
+### Allow list
+
+Only events that [exist in an allow list](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@735bc0f69ce417ecce55a9194dbf349c954043e3/-/blob/internal/database/event_logs.go?L321-324) will be scraped. Events are keyed in the allow list by the `event_logs.name` column. The allow list can be found in the primary
+postgres database in the table `event_logs_export_allowlist`.
 
 ### How to enable for a managed instance
-1. Ensure the managed instance has the appropriate IAM policy applied (todo add link)
-2. Update the managed instance deployment configuration to include the following environment variables:
-3. `EXPORT_USAGE_DATA_ENABLED=true`
-4. [`EXPORT_USAGE_DATA_TOPIC_NAME`](https://sourcegraph.sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-managed%24+EXPORT_USAGE_DATA_TOPIC_NAME&patternType=standard)
-5. [`EXPORT_USAGE_DATA_TOPIC_PROJECT`](https://sourcegraph.sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-managed%24+EXPORT_USAGE_DATA_TOPIC_PROJECT&patternType=standard)
-6. Deploy the updated deployment manifest and restart the `worker` service.
+1. Ensure the managed instance has the [appropriate IAM policy](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-managed/-/blob/modules/terraform-managed-instance-new/iam.tf?L19-31&utm_source=raycast-sourcegraph&utm_campaign=search) applied
+2. Update the managed instance deployment manifest to include the following environment variables:
+   1. `EXPORT_USAGE_DATA_ENABLED=true`
+   2. [`EXPORT_USAGE_DATA_TOPIC_NAME`](https://sourcegraph.sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-managed%24+EXPORT_USAGE_DATA_TOPIC_NAME&patternType=standard)
+   3. [`EXPORT_USAGE_DATA_TOPIC_PROJECT`](https://sourcegraph.sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-managed%24+EXPORT_USAGE_DATA_TOPIC_PROJECT&patternType=standard)
+3. Deploy the updated deployment manifest and restart the `worker` service.
 
+### Monitoring
