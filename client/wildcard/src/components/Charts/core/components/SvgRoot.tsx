@@ -114,7 +114,9 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
     )
 }
 
-interface SvgAxisLeftProps {}
+interface SvgAxisLeftProps {
+    pixelsPerTick?: number
+}
 
 export const SvgAxisLeft: FC<SvgAxisLeftProps> = props => {
     const { content, yScale, setPadding } = useContext(SVGRootContext)
@@ -154,7 +156,7 @@ interface SvgAxisBottomProps<Tick> {
 export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): ReactElement {
     const {
         pixelsPerTick = 0,
-        maxRotateAngle = 90,
+        maxRotateAngle = 45,
         tickFormat = defaultToString,
         getTruncatedTick = defaultTruncatedTick,
     } = props

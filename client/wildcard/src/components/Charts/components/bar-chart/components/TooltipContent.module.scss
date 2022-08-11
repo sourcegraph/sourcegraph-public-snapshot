@@ -1,0 +1,7 @@
+.one-line-tooltip {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    // Be default Text (which is p element) has bottom margin
+    margin: 0;
+}
