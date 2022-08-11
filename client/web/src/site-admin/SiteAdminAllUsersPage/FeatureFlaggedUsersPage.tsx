@@ -1,6 +1,6 @@
 import { withFeatureFlag } from '../../featureFlags/withFeatureFlag'
 
-import { UsersManagement } from './New'
+import { UsersManagement } from './UserManagement'
 
 import { SiteAdminAllUsersPage } from '.'
 
