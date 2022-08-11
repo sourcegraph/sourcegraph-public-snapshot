@@ -331,7 +331,7 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err er
 	)
 
 	for repositoryID := range repositories {
-		if err := s.SetRepositoryAsDirty(ctx, repositoryID, tx); err != nil {
+		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
 			return 0, err
 		}
 	}
