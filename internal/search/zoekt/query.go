@@ -60,6 +60,14 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		and = append(and, &zoekt.Not{Child: q})
 	}
 
+	var repoHasFilters []zoekt.Q
+	for _, filter := range b.RepoHasFileContent() {
+		repoHasFilters = append(repoHasFilters, QueryForFileContentArgs(filter, isCaseSensitive))
+	}
+	if len(repoHasFilters) > 0 {
+		and = append(and, &zoekt.Type{Type: zoekt.TypeRepo, Child: zoekt.NewAnd(repoHasFilters...)})
+	}
+
 	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
 	// more precise language metadata based on file contents analyzed by go-enry, so it's
 	// useful to pass lang: queries down.

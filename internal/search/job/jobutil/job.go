@@ -908,17 +908,11 @@ func isGlobal(op search.RepoOptions) bool {
 		return false
 	}
 
-	// For now, we handle all repo:has.file and repo:has.content during repo
-	// pagination. Zoekt can handle this, so we should push this down to Zoekt
-	// and allow global search with these filters.
-	if len(op.HasFileContent) > 0 {
-		return false
-	}
-
 	// All the fields not mentioned above can be handled by Zoekt global search.
 	// Listing them here for posterity:
 	// - MinusRepoFilters
 	// - CaseSensitiveRepoFilters
+	// - HasFileContent
 	// - Visibility
 	// - Limit
 	// - ForkSet
