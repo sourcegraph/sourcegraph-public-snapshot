@@ -368,7 +368,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 }
 
-interface Props extends RouteComponentProps<{}> {
+export interface Props extends RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
     history: H.History
 }

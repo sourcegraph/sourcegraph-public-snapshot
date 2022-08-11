@@ -1,10 +1,6 @@
 import React, { useEffect } from 'react'
 
-/* TODO:
-- Fix typos, linting, types, self-refactoring
-- Figure out feature flagging
-- Add link to billable events in bottom note
-*/
+// TODO: Fix typos, linting, types, self-refactoring
 
 import { mdiAccount, mdiPlus, mdiDownload } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'

@@ -120,6 +120,7 @@ export const UsersList: React.FunctionComponent = () => {
                                 icon: mdiLogoutVariant,
                                 onClick: handleForceSignOutUsers,
                                 bulk: true,
+                                condition: users => users.some(user => !user.deletedAt),
                             },
                             {
                                 key: 'delete',
@@ -128,6 +129,7 @@ export const UsersList: React.FunctionComponent = () => {
                                 iconColor: 'danger',
                                 onClick: handleDeleteUsers,
                                 bulk: true,
+                                condition: users => users.some(user => !user.deletedAt),
                             },
                             {
                                 key: 'delete',
@@ -143,21 +145,21 @@ export const UsersList: React.FunctionComponent = () => {
                                 label: 'Revoke site admin',
                                 icon: mdiClipboardMinus,
                                 onClick: handleRevokeSiteAdmin,
-                                condition: ([user]) => user?.siteAdmin,
+                                condition: ([user]) => user?.siteAdmin && !user?.deletedAt,
                             },
                             {
                                 key: 'promote-to-site-admin',
                                 label: 'Promote to site admin',
                                 icon: mdiClipboardPlus,
                                 onClick: handlePromoteToSiteAdmin,
-                                condition: ([user]) => !user?.siteAdmin,
+                                condition: ([user]) => !user?.siteAdmin && !user?.deletedAt,
                             },
                             {
                                 key: 'reset-password',
                                 label: 'Reset password',
                                 icon: mdiLockReset,
                                 onClick: handleResetUserPassword,
-                                condition: ([user]) => !user?.siteAdmin,
+                                condition: ([user]) => !user?.deletedAt,
                             },
                         ]}
                         columns={[
@@ -219,6 +221,7 @@ export const UsersList: React.FunctionComponent = () => {
                         note={
                             <Text as="span">
                                 Note: Events is the count of all billable events which equate to billable usage.
+                                {/* TODO: Add link to billable events in bottom note */}
                             </Text>
                         }
                     />
