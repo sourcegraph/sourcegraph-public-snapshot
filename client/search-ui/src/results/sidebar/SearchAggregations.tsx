@@ -1,10 +1,12 @@
-import { FC, useState } from 'react'
+import { FC, useMemo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client';
 import { mdiArrowExpand, mdiPlus } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 
 import { ButtonGroup, Button, Icon, BarChart } from '@sourcegraph/wildcard'
+
+import { LANGUAGE_USAGE_DATA, LanguageUsageDatum } from './search-aggregation-mock-data';
 
 import styles from './SearchAggregations.module.scss'
 
@@ -14,113 +16,27 @@ const IS_CODE_INSIGHTS_ENABLED_QUERY = gql`
     }
 `
 
-interface LanguageUsageDatum {
-    name: string
-    value: number
-    fill: string
-    linkURL: string
-    group?: string
-}
-
 const getValue = (datum: LanguageUsageDatum): number => datum.value
 const getColor = (datum: LanguageUsageDatum): string => datum.fill
 const getLink = (datum: LanguageUsageDatum): string => datum.linkURL
 const getName = (datum: LanguageUsageDatum): string => datum.name
 
-// Mock data for bar chart, will be removed and replace with
-// actual data in https://github.com/sourcegraph/sourcegraph/issues/39956
-const LANGUAGE_USAGE_DATA: LanguageUsageDatum[] = [
-    {
-        name: 'Julia',
-        value: 1000,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
-    },
-    {
-        name: 'Erlang',
-        value: 700,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
-    },
-    {
-        name: 'SQL',
-        value: 550,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
-    },
-    {
-        name: 'Cobol',
-        value: 500,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
-    },
-    {
-        name: 'JavaScript',
-        value: 422,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
-    },
-    {
-        name: 'CSS',
-        value: 273,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/CSS',
-    },
-    {
-        name: 'HTML',
-        value: 129,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/HTML',
-    },
-    {
-        name: 'С++',
-        value: 110,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
-    },
-    {
-        name: 'TypeScript',
-        value: 95,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
-    },
-    {
-        name: 'Elm',
-        value: 84,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
-    },
-    {
-        name: 'Rust',
-        value: 60,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
-    },
-    {
-        name: 'Go',
-        value: 45,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
-    },
-    {
-        name: 'Markdown',
-        value: 35,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
-    },
-    {
-        name: 'Zig',
-        value: 20,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
-    },
-    {
-        name: 'XML',
-        value: 5,
-        fill: 'var(--primary)',
-        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
-    },
-]
+const MAX_TRUNCATED_LABEL_LENGTH = 10
+const getTruncatedTick = (tick: string): string => (tick.length >= MAX_TRUNCATED_LABEL_LENGTH ? `${tick.slice(0, MAX_TRUNCATED_LABEL_LENGTH)}...` : tick)
+const getTruncatedTickFromTheEnd = (tick: string): string => (tick.length >= MAX_TRUNCATED_LABEL_LENGTH ? `...${tick.slice(-MAX_TRUNCATED_LABEL_LENGTH)}` : tick)
+
+const getTruncationFormatter = (aggregationMode: AggregationModes): (tick: string) => string => {
+    switch (aggregationMode) {
+        // These types possible have long labels with the same pattern at the start of the string,
+        // so we truncate their labels from the end
+        case AggregationModes.Repository:
+        case AggregationModes.FilePath:
+            return getTruncatedTickFromTheEnd
+
+        default:
+            return getTruncatedTick
+    }
+}
 
 enum AggregationModes {
     Repository,
@@ -129,11 +45,14 @@ enum AggregationModes {
     CaptureGroups,
 }
 
-interface SearchAggregationsProps {}
+interface SearchAggregationsProps {
+}
 
 export const SearchAggregations: FC<SearchAggregationsProps> = props => {
     const [aggregationMode, setAggregationMode] = useState(AggregationModes.Repository)
     const { data } = useQuery<{ enterpriseLicenseHasFeature: boolean }>(IS_CODE_INSIGHTS_ENABLED_QUERY, { fetchPolicy: 'cache-first' })
+
+    const getTruncatedXLabel = useMemo(() => getTruncationFormatter(aggregationMode), [aggregationMode])
 
     return (
         <article className="pt-2">
@@ -191,19 +110,20 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                         pixelsPerYTick={20}
                         pixelsPerXTick={20}
                         maxAngleXTick={45}
+                        getTruncatedXTick={getTruncatedXLabel}
                     />
                 )}
             </ParentSize>
 
             <footer className={styles.actions}>
                 <Button variant="secondary" size="sm" outline={true} className={styles.detailsAction}>
-                    <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
+                    <Icon aria-hidden={true} svgPath={mdiArrowExpand}/> Expand
                 </Button>
 
                 {
                     data?.enterpriseLicenseHasFeature &&
                     <Button variant="secondary" outline={true} size="sm">
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Save insight
+                        <Icon aria-hidden={true} svgPath={mdiPlus}/> Save insight
                     </Button>
                 }
             </footer>
