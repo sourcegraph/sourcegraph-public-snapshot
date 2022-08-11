@@ -28,6 +28,7 @@ type operations struct {
 	getUploadsWithDefinitionsForMonikers *observation.Operation
 	getUploadIDsWithReferences           *observation.Operation
 	getDumpsByIDs                        *observation.Operation
+	getClosestDumpsForBlob               *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -63,6 +64,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getUploadsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
 		getUploadIDsWithReferences:           op("GetUploadIDsWithReferences"),
 		getDumpsByIDs:                        op("GetDumpsByIDs"),
+		getClosestDumpsForBlob:               op("GetClosestDumpsForBlob"),
 	}
 }
 

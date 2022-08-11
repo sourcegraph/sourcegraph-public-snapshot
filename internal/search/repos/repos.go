@@ -133,11 +133,21 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		return Resolved{}, errs
 	}
 
+	kvpFilters := make([]database.RepoKVPFilter, 0, len(op.HasKVPs))
+	for _, filter := range op.HasKVPs {
+		kvpFilters = append(kvpFilters, database.RepoKVPFilter{
+			Key:     filter.Key,
+			Value:   filter.Value,
+			Negated: filter.Negated,
+		})
+	}
+
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
 		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		DescriptionPatterns:   op.DescriptionPatterns,
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
+		KVPFilters:            kvpFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:  &database.LimitOffset{Limit: limit + 1},

@@ -246,6 +246,16 @@ func TestScanPredicate(t *testing.T) {
 		Result:       `{"field":"r","value":"contains.file(sup)","negated":false}`,
 		ResultLabels: "IsPredicate",
 	}).Equal(t, test(`r:contains.file(sup)`))
+
+	autogold.Want("Repo has key value pair", value{
+		Result:       `{"field":"r","value":"has(key:value)","negated":false}`,
+		ResultLabels: "IsPredicate",
+	}).Equal(t, test(`r:has(key:value)`))
+
+	autogold.Want("Repo has tag", value{
+		Result:       `{"field":"r","value":"has.tag(tag)","negated":false}`,
+		ResultLabels: "IsPredicate",
+	}).Equal(t, test(`r:has.tag(tag)`))
 }
 
 func TestScanField(t *testing.T) {
