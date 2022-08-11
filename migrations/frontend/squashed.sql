@@ -2819,8 +2819,8 @@ ALTER SEQUENCE repo_id_seq OWNED BY repo.id;
 
 CREATE TABLE repo_kvps (
     repo_id integer NOT NULL,
-    key citext NOT NULL,
-    value citext
+    key text NOT NULL,
+    value text
 );
 
 CREATE TABLE repo_pending_permissions (

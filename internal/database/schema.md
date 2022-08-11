@@ -2389,8 +2389,8 @@ Triggers:
  Column  |  Type   | Collation | Nullable | Default 
 ---------+---------+-----------+----------+---------
  repo_id | integer |           | not null | 
- key     | citext  |           | not null | 
- value   | citext  |           |          | 
+ key     | text    |           | not null | 
+ value   | text    |           |          | 
 Indexes:
     "repo_kvps_pkey" PRIMARY KEY, btree (repo_id, key) INCLUDE (value)
 Foreign-key constraints:

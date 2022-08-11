@@ -15522,7 +15522,7 @@
         {
           "Name": "key",
           "Index": 2,
-          "TypeName": "citext",
+          "TypeName": "text",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -15548,7 +15548,7 @@
         {
           "Name": "value",
           "Index": 3,
-          "TypeName": "citext",
+          "TypeName": "text",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,

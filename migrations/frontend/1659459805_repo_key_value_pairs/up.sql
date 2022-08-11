@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS repo_kvps (
     repo_id INTEGER NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
-    key CITEXT NOT NULL,
-    value CITEXT NULL,
+    key TEXT NOT NULL,
+    value TEXT NULL,
     PRIMARY KEY (repo_id, key) INCLUDE (value)
 );
