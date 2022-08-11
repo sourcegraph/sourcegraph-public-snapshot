@@ -9,7 +9,7 @@ import (
 
 type Operations struct {
 	authMiddleware *observation.Operation
-	handle         *observation.Operation
+	serveHTTP      *observation.Operation
 }
 
 func NewOperations(observationContext *observation.Context) *Operations {
@@ -30,6 +30,6 @@ func NewOperations(observationContext *observation.Context) *Operations {
 
 	return &Operations{
 		authMiddleware: op("authMiddleware"),
-		handle:         op("handle"),
+		serveHTTP:      op("serveHTTP"),
 	}
 }
