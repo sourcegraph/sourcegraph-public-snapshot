@@ -159,26 +159,36 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
-    const fetchHighlightedFileMatchLineRanges = React.useCallback(
-        (startLine: number, endLine: number) => {
-            const startTime = Date.now()
-            return fetchHighlightedFileLineRanges(
+    const fetchFileRangeMatches = useCallback(
+        (args: { highlighted: boolean; ranges: IHighlightLineRange[] }): Observable<string[][]> =>
+            fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
                     commitID: result.commit || '',
                     filePath: result.path,
                     disableTimeout: false,
-                    ranges: optimizeHighlighting
-                        ? grouped.map(
-                              (group): IHighlightLineRange => ({
-                                  startLine: group.startLine,
-                                  endLine: group.endLine,
-                              })
-                          )
-                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                    formatOnly: !args.highlighted,
+                    ranges: args.ranges,
                 },
                 false
-            ).pipe(
+            ),
+        [fetchHighlightedFileLineRanges, result.commit, result.path, result.repository]
+    )
+
+    const fetchHighlightedFileMatchLineRanges = React.useCallback(
+        (startLine: number, endLine: number) => {
+            const startTime = Date.now()
+            return fetchFileRangeMatches({
+                highlighted: true,
+                ranges: optimizeHighlighting
+                    ? grouped.map(
+                          (group): IHighlightLineRange => ({
+                              startLine: group.startLine,
+                              endLine: group.endLine,
+                          })
+                      )
+                    : [{ startLine: 0, endLine: 2147483647 }], // entire file
+            }).pipe(
                 map(lines => {
                     const endTime = Date.now()
                     telemetryService.log(
@@ -192,7 +202,29 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService]
+        [fetchFileRangeMatches, optimizeHighlighting, grouped, telemetryService]
+    )
+
+    const fetchUnhighlightedFileMatchLineRanges = React.useCallback(
+        (startLine: number, endLine: number) =>
+            fetchFileRangeMatches({
+                highlighted: false,
+                ranges: optimizeHighlighting
+                    ? grouped.map(
+                          (group): IHighlightLineRange => ({
+                              startLine: group.startLine,
+                              endLine: group.endLine,
+                          })
+                      )
+                    : [{ startLine: 0, endLine: 2147483647 }], // entire file
+            }).pipe(
+                map(lines =>
+                    optimizeHighlighting
+                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
+                        : lines[0].slice(startLine, endLine)
+                )
+            ),
+        [fetchFileRangeMatches, optimizeHighlighting, grouped]
     )
 
     const fetchHighlightedSymbolMatchLineRanges = React.useCallback(
@@ -202,23 +234,17 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             }
 
             const startTime = Date.now()
-            return fetchHighlightedFileLineRanges(
-                {
-                    repoName: result.repository,
-                    commitID: result.commit || '',
-                    filePath: result.path,
-                    disableTimeout: false,
-                    ranges: optimizeHighlighting
-                        ? result.symbols.map(
-                              (symbol): IHighlightLineRange => ({
-                                  startLine: symbol.line - 1,
-                                  endLine: symbol.line,
-                              })
-                          )
-                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
-                },
-                false
-            ).pipe(
+            return fetchFileRangeMatches({
+                highlighted: true,
+                ranges: optimizeHighlighting
+                    ? result.symbols.map(
+                          (symbol): IHighlightLineRange => ({
+                              startLine: symbol.line - 1,
+                              endLine: symbol.line,
+                          })
+                      )
+                    : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+            }).pipe(
                 map(lines => {
                     const endTime = Date.now()
                     telemetryService.log(
@@ -236,7 +262,38 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, optimizeHighlighting, telemetryService]
+        [result.type, result.symbols, fetchFileRangeMatches, optimizeHighlighting, telemetryService]
+    )
+
+    const fetchUnhighlightedSymbolMatchLineRanges = React.useCallback(
+        (startLine: number, endLine: number) => {
+            if (result.type !== 'symbol') {
+                return of([])
+            }
+
+            return fetchFileRangeMatches({
+                highlighted: false,
+                ranges: optimizeHighlighting
+                    ? result.symbols.map(
+                          (symbol): IHighlightLineRange => ({
+                              startLine: symbol.line - 1,
+                              endLine: symbol.line,
+                          })
+                      )
+                    : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+            }).pipe(
+                map(lines =>
+                    optimizeHighlighting
+                        ? lines[
+                              result.symbols.findIndex(
+                                  symbol => symbol.line - 1 === startLine && symbol.line === endLine
+                              )
+                          ]
+                        : lines[0].slice(startLine, endLine)
+                )
+            )
+        },
+        [result.type, result.symbols, fetchFileRangeMatches, optimizeHighlighting]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -365,6 +422,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                             startLine={symbol.line - 1}
                             endLine={symbol.line}
                             fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
+                            fetchUnhighlightedFileRangeLines={fetchUnhighlightedSymbolMatchLineRanges}
                             viewerUpdates={viewerUpdates}
                             hoverifier={props.hoverifier}
                             onCopy={logEventOnCopy}
@@ -406,6 +464,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
+                                    fetchUnhighlightedFileRangeLines={fetchUnhighlightedFileMatchLineRanges}
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}
                                     hoverifier={props.hoverifier}
