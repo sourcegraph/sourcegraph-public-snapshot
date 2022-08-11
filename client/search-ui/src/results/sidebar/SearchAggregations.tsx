@@ -1,11 +1,18 @@
 import { FC, useState } from 'react'
 
+import { gql, useQuery } from '@apollo/client';
 import { mdiArrowExpand, mdiPlus } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 
 import { ButtonGroup, Button, Icon, BarChart } from '@sourcegraph/wildcard'
 
 import styles from './SearchAggregations.module.scss'
+
+const IS_CODE_INSIGHTS_ENABLED_QUERY = gql`
+    query IsCodeInsightsEnabled {
+        enterpriseLicenseHasFeature(feature: "code-insights")
+    }
+`
 
 interface LanguageUsageDatum {
     name: string
@@ -126,6 +133,7 @@ interface SearchAggregationsProps {}
 
 export const SearchAggregations: FC<SearchAggregationsProps> = props => {
     const [aggregationMode, setAggregationMode] = useState(AggregationModes.Repository)
+    const { data } = useQuery<{ enterpriseLicenseHasFeature: boolean }>(IS_CODE_INSIGHTS_ENABLED_QUERY, { fetchPolicy: 'cache-first' })
 
     return (
         <article className="pt-2">
@@ -192,9 +200,12 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                     <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
                 </Button>
 
-                <Button variant="secondary" outline={true} size="sm">
-                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Save insight
-                </Button>
+                {
+                    data?.enterpriseLicenseHasFeature &&
+                    <Button variant="secondary" outline={true} size="sm">
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Save insight
+                    </Button>
+                }
             </footer>
         </article>
     )
