@@ -177,10 +177,9 @@ describe('FormTriggerArea', () => {
         const triggerInput = screen.getByTestId('trigger-query-edit')
         userEvent.click(triggerInput)
 
-        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
-
-        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
-        userEvent.type(textbox, 'test type:diff repo:test')
+        await waitFor(() => expect(triggerInput.querySelector('.test-trigger-input')).toBeInTheDocument())
+        ;(triggerInput.querySelector('.test-trigger-input') as HTMLElement).focus()
+        userEvent.keyboard('test type:diff repo:test')
 
         act(() => {
             clock.tick(600)
@@ -208,10 +207,9 @@ describe('FormTriggerArea', () => {
         const triggerInput = screen.getByTestId('trigger-query-edit')
         userEvent.click(triggerInput)
 
-        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
-
-        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
-        userEvent.type(textbox, 'test patternType:regexp type:diff repo:test')
+        await waitFor(() => expect(triggerInput.querySelector('.test-trigger-input')).toBeInTheDocument())
+        ;(triggerInput.querySelector('.test-trigger-input') as HTMLElement).focus()
+        userEvent.keyboard('test patternType:regexp type:diff repo:test')
         act(() => {
             clock.tick(600)
         })
