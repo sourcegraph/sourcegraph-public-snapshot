@@ -984,7 +984,6 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 return result
             }
             break
-
         }
         case 'contains.file':
         case 'contains.content':
