@@ -6,6 +6,8 @@
     border-radius: var(--border-radius);
     padding: 0.125rem 0.375rem;
     font-size: 0.75rem;
+    max-width: 20rem;
+    text-align: left;
 
     &:hover {
         border: 1px solid var(--border-color);
