@@ -100,6 +100,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
         options: {
             fetchPolicy: 'network-only',
             nextFetchPolicy: 'cache-first',
+            pollInterval: 5000,
             useURL: true,
         },
     })
