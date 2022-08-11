@@ -4,12 +4,10 @@ import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { useDebounce } from '@sourcegraph/wildcard'
-
 import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
 import { BarChart } from '../../../../../../../../charts/components/bar-chart/BarChart'
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData, CategoricalChartContent, InsightContent } from '../../../../../../core'
+import { BackendInsightData, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
@@ -51,17 +49,24 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
-    const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
+    const { ref, width = 0 } = useResizeObserver()
     const { setHoveredId } = seriesToggleState
+
+    const isEmptyDataset = useMemo(() => hasNoData(data), [data])
 
     const hasViewManySeries = isManyKeysInsight(data)
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
-
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
-    const isEmptyDataset = useMemo(() => hasNoData(data), [data])
+    const isSeriesLikeInsight = data.type === InsightContentType.Series
 
     return (
-        <div ref={ref} className={classNames(className, styles.root, { [styles.rootHorizontal]: isHorizontalMode })}>
+        <div
+            ref={ref}
+            className={classNames(className, styles.root, {
+                [styles.rootHorizontal]: isHorizontalMode,
+                [styles.rootWithLegend]: isSeriesLikeInsight,
+            })}
+        >
             {width && (
                 <>
                     <ParentSize
@@ -96,13 +101,11 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         )}
                     </ParentSize>
 
-                    <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
-                        {data.type === InsightContentType.Series ? (
+                    {isSeriesLikeInsight && (
+                        <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
                             <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
-                        ) : (
-                            <CategoricalLegends data={data.content} />
-                        )}
-                    </ScrollBox>
+                        </ScrollBox>
+                    )}
                 </>
             )}
         </div>
@@ -158,29 +161,6 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         )
                     }
                     onMouseEnter={() => setHoveredId(`${item.id}`)}
-                    // prevent accidental dragging events
-                    onMouseDown={event => event.stopPropagation()}
-                />
-            ))}
-        </LegendList>
-    )
-}
-
-interface CategoricalLegendsProps {
-    data: CategoricalChartContent<any>
-}
-
-const CategoricalLegends: FC<CategoricalLegendsProps> = props => {
-    const { data } = props
-
-    return (
-        <LegendList className={styles.legendList}>
-            {data.data.map(item => (
-                <LegendItem
-                    key={item.id as string}
-                    color={data.getDatumColor(item) ?? 'gray'}
-                    name={data.getDatumName(item)}
-                    className={styles.legendListItem}
                     // prevent accidental dragging events
                     onMouseDown={event => event.stopPropagation()}
                 />

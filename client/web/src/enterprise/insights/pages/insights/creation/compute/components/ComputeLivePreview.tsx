@@ -91,7 +91,7 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
                                 <BarChart
                                     width={parent.width}
                                     height={parent.height}
-                                    data={mapSeriesToCompute(state.data.series)}
+                                    data={mapSeriesToCompute(settings.series, state.data.series)}
                                     getCategory={(datum: LanguageUsageDatum) => datum.group}
                                     getDatumName={(datum: LanguageUsageDatum) => datum.name}
                                     getDatumValue={(datum: LanguageUsageDatum) => datum.value}
@@ -117,8 +117,8 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
 
                 {state.status === StateStatus.Data && (
                     <LegendList className="mt-3">
-                        {mapSeriesToCompute(state.data.series).map(series => (
-                            <LegendItem key={series.name} color={series.fill} name={series.name} />
+                        {settings.series.map(series => (
+                            <LegendItem key={series.label} color={series.stroke} name={series.label} />
                         ))}
                     </LegendList>
                 )}
@@ -127,7 +127,10 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
     )
 }
 
-const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] => {
+const mapSeriesToCompute = (
+    seriesDefinitions: SeriesPreviewSettings[],
+    series: Series<BackendInsightDatum>[]
+): LanguageUsageDatum[] => {
     const seriesGroups = groupBy(
         series.filter(series => series.name),
         series => series.name
@@ -143,7 +146,9 @@ const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsag
             },
             {
                 name: getComputeSeriesName(seriesGroups[key][0]),
-                fill: getComputeSeriesColor(seriesGroups[key][0]),
+                // We pick color only from the first series since compute-powered insight
+                // can't have more than one series see https://github.com/sourcegraph/sourcegraph/issues/38832
+                fill: getComputeSeriesColor(seriesDefinitions[0]),
                 value: 0,
             }
         )
@@ -151,5 +156,4 @@ const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsag
 }
 
 const getComputeSeriesName = (series: Series<any>): string => (series.name ? series.name : 'Other')
-const getComputeSeriesColor = (series: Series<any>): string =>
-    series.name ? series.color ?? 'var(--blue)' : 'var(--oc-gray-4)'
+const getComputeSeriesColor = (series: SeriesPreviewSettings): string => series.stroke ?? 'var(--blue)'
