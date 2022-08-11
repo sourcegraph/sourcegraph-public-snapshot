@@ -102,13 +102,10 @@ func (EmptyPredicate) Unmarshal(_ string, negated bool) error {
 type RepoContainsFilePredicate struct {
 	Path    string
 	Content string
+	Negated bool
 }
 
 func (f *RepoContainsFilePredicate) Unmarshal(params string, negated bool) error {
-	if negated {
-		return ErrNegatedPredicate
-	}
-
 	nodes, err := Parse(params, SearchTypeRegex)
 	if err != nil {
 		return err
@@ -123,7 +120,7 @@ func (f *RepoContainsFilePredicate) Unmarshal(params string, negated bool) error
 	if f.Path == "" && f.Content == "" {
 		return errors.New("one of path or content must be set")
 	}
-
+	f.Negated = negated
 	return nil
 }
 
@@ -177,13 +174,10 @@ func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
 
 type RepoContainsContentPredicate struct {
 	Pattern string
+	Negated bool
 }
 
 func (f *RepoContainsContentPredicate) Unmarshal(params string, negated bool) error {
-	if negated {
-		return ErrNegatedPredicate
-	}
-
 	if _, err := regexp.Compile(params); err != nil {
 		return errors.Errorf("contains.content argument: %w", err)
 	}
@@ -191,6 +185,7 @@ func (f *RepoContainsContentPredicate) Unmarshal(params string, negated bool) er
 		return errors.Errorf("contains.content argument should not be empty")
 	}
 	f.Pattern = params
+	f.Negated = negated
 	return nil
 }
 
@@ -201,13 +196,10 @@ func (f *RepoContainsContentPredicate) Name() string  { return "contains.content
 
 type RepoContainsPathPredicate struct {
 	Pattern string
+	Negated bool
 }
 
 func (f *RepoContainsPathPredicate) Unmarshal(params string, negated bool) error {
-	if negated {
-		return ErrNegatedPredicate
-	}
-
 	if _, err := regexp.Compile(params); err != nil {
 		return errors.Errorf("contains.path argument: %w", err)
 	}
@@ -215,6 +207,7 @@ func (f *RepoContainsPathPredicate) Unmarshal(params string, negated bool) error
 		return errors.Errorf("contains.path argument should not be empty")
 	}
 	f.Pattern = params
+	f.Negated = negated
 	return nil
 }
 
@@ -266,18 +259,16 @@ func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
 func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
 
 type RepoHasTagPredicate struct {
-	Key string
+	Key     string
+	Negated bool
 }
 
 func (f *RepoHasTagPredicate) Unmarshal(params string, negated bool) (err error) {
-	if negated {
-		return ErrNegatedPredicate
-	}
-
 	if len(params) == 0 {
 		return errors.New("tag must be non-empty")
 	}
 	f.Key = params
+	f.Negated = negated
 	return nil
 }
 
@@ -285,20 +276,19 @@ func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
 func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
 
 type RepoHasKVPPredicate struct {
-	Key   string
-	Value string
+	Key     string
+	Value   string
+	Negated bool
 }
 
 func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error) {
-	if negated {
-		return ErrNegatedPredicate
-	}
 	split := strings.Split(params, ":")
 	if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
 		return errors.New("expected params in the form of key:value")
 	}
 	p.Key = split[0]
 	p.Value = split[1]
+	p.Negated = negated
 	return nil
 }
 
@@ -332,18 +322,16 @@ func (f FileContainsContentPredicate) Name() string  { return "contains.content"
 /* file:has.owner(pattern) */
 
 type FileHasOwnerPredicate struct {
-	Owner string
+	Owner   string
+	Negated bool
 }
 
 func (f *FileHasOwnerPredicate) Unmarshal(params string, negated bool) error {
-	if negated {
-		return ErrNegatedPredicate
-	}
-
 	if params == "" {
 		return errors.Errorf("file:has.owner argument should not be empty")
 	}
 	f.Owner = params
+	f.Negated = negated
 	return nil
 }
 
