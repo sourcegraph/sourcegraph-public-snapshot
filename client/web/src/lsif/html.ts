@@ -70,6 +70,10 @@ function highlightSlice(html: HtmlBuilder, kind: SyntaxKind | undefined, slice: 
 
 // Currently assumes that no ranges overlap in the occurrences.
 export function render(lsif_json: string, content: string): string {
+    if (!lsif_json.trim()) {
+        return ''
+    }
+
     const occurrences = (JSON.parse(lsif_json) as JsonDocument).occurrences?.map(occ => new Occurrence(occ))
     if (!occurrences) {
         return ''
