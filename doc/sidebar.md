@@ -59,7 +59,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [User authentication](admin/auth/index.md)
   - [Extension registry](admin/extensions/index.md)
   - [Observability](admin/observability/index.md)
-  - [Analytics](admin/admin_analytics.md)
+  - [Analytics](admin/analytics.md)
   - [FAQ](admin/faq.md)
   - [Troubleshooting](admin/troubleshooting.md)
   - [How-to guides](admin/how-to/index.md)

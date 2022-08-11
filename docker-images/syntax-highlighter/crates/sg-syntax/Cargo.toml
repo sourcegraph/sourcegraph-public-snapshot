@@ -16,14 +16,19 @@ serde_json = "1.0"
 lazy_static = "1.0"
 tree-sitter = "0.20.3"
 tree-sitter-highlight = "0.20"
-protobuf = "2.25.2"
 base64 = "0.13.0"
 anyhow = "1"
 libloading = "0.7"
 paste = "1.0.6"
-sg-macros = { path = "../sg-macros" }
-sg-lsif = { path = "../sg-lsif" }
+once_cell = "1.13.0"
 
+sg-macros = { path = "../sg-macros" }
+
+# Scip related items
+scip = { git = "https://github.com/sourcegraph/scip" }
+protobuf = "3"
+
+# Tree-sitter Parsers
 tree-sitter-go = "0.19.1"
 
 # As of 2022 Apr 06, the upstream crate seems to have paused development,
@@ -41,3 +46,4 @@ tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonne
 
 [dev-dependencies]
 insta = "1.11.0"
+pretty_assertions = "1.2.1"

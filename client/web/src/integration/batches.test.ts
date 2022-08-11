@@ -369,11 +369,24 @@ function mockCommonGraphQLResponses(
                     username: 'alice',
                 },
                 name: 'test-batch-change',
-                namespace: {
-                    id: '1234',
-                    namespaceName: entityType === 'user' ? 'alice' : 'test-org',
-                    url: namespaceURL,
-                },
+                namespace:
+                    entityType === 'user'
+                        ? {
+                              __typename: 'User',
+                              id: '1234',
+                              displayName: null,
+                              namespaceName: 'alice',
+                              url: namespaceURL,
+                              username: 'alice',
+                          }
+                        : {
+                              __typename: 'Org',
+                              id: '1234',
+                              displayName: null,
+                              namespaceName: 'test-org',
+                              url: namespaceURL,
+                              name: 'test-org',
+                          },
                 diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
                 url: `${namespaceURL}/batch-changes/test-batch-change`,
                 viewerCanAdminister: true,
