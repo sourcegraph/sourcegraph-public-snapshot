@@ -59,6 +59,6 @@ func newAppProvider(
 				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli),
 			}, nil
 		},
-        InstallationID: &installationID,
+		InstallationID: &installationID,
 	}, nil
 }

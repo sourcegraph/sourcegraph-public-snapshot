@@ -132,21 +132,21 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 		return nil, err
 	}
 
-    if account.ServiceType == extsvc.TypeGitHub {
-        opts := database.ExternalAccountsListOptions {
-            AccountIDLike: fmt.Sprintf("%%/%s", account.AccountID),
-        }
-        accts, err := r.db.UserExternalAccounts().List(ctx, opts)
-        if err != nil {
-            return nil, err
-        }
+	if account.ServiceType == extsvc.TypeGitHub {
+		opts := database.ExternalAccountsListOptions{
+			AccountIDLike: fmt.Sprintf("%%/%s", account.AccountID),
+		}
+		accts, err := r.db.UserExternalAccounts().List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
 
-        for _, acct := range accts {
-            if err := r.db.UserExternalAccounts().Delete(ctx, acct.ID); err != nil {
-                return nil, err
-            }
-        }
-    }
+		for _, acct := range accts {
+			if err := r.db.UserExternalAccounts().Delete(ctx, acct.ID); err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	if err := r.db.UserExternalAccounts().Delete(ctx, account.ID); err != nil {
 		return nil, err

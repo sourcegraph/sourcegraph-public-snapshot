@@ -201,13 +201,13 @@ func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
 	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
-            GitHubApp: &schema.GitHubApp{
-                AppID:      "404",
-                PrivateKey: bogusKey,
-                Slug:       "test-app",
-                ClientID:   "Iv1.deb0cd1048cf1040",
-                ClientSecret: "c6d0ed049217a89825c457898c701c30324f873b",
-            },
+			GitHubApp: &schema.GitHubApp{
+				AppID:        "404",
+				PrivateKey:   bogusKey,
+				Slug:         "test-app",
+				ClientID:     "Iv1.deb0cd1048cf1040",
+				ClientSecret: "c6d0ed049217a89825c457898c701c30324f873b",
+			},
 		},
 	})
 	defer conf.Mock(nil)

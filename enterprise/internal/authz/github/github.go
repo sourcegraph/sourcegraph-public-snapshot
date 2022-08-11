@@ -36,7 +36,7 @@ type Provider struct {
 	// become the default behaviour.
 	enableGithubInternalRepoVisibility bool
 
-    InstallationID *int64
+	InstallationID *int64
 }
 
 type ProviderOptions struct {
@@ -405,7 +405,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return nil, errors.Wrap(err, "split nameWithOwner")
 	}
 
-    p.ServiceType()
+	p.ServiceType()
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -464,10 +464,10 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		}
 
 		for _, u := range users {
-            userID := strconv.FormatInt(u.DatabaseID, 10)
-            if p.InstallationID != nil {
-                userID = strconv.FormatInt(*p.InstallationID, 10) + "/" + userID
-            }
+			userID := strconv.FormatInt(u.DatabaseID, 10)
+			if p.InstallationID != nil {
+				userID = strconv.FormatInt(*p.InstallationID, 10) + "/" + userID
+			}
 
 			addUserToRepoPerms(extsvc.AccountID(userID))
 		}
