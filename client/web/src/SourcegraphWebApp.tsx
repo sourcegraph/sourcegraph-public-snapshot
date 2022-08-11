@@ -184,29 +184,33 @@ export class SourcegraphWebApp extends React.Component<
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly platformContext: PlatformContext = createPlatformContext()
-    private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
+    private readonly extensionsController: ExtensionsController | null = window.context.enableLegacyExtensions
+        ? createExtensionsController(this.platformContext)
+        : null
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
-        this.subscriptions.add(this.extensionsController)
 
-        // Preload extensions whenever user enabled extensions or the viewed language changes.
-        this.subscriptions.add(
-            combineLatest([
-                getEnabledExtensions(this.platformContext),
-                observeLocation(history).pipe(
-                    startWith(location),
-                    map(location => getModeFromPath(location.pathname)),
-                    distinctUntilChanged()
-                ),
-            ]).subscribe(([extensions, languageID]) => {
-                preloadExtensions({
-                    extensions,
-                    languages: new Set([languageID]),
+        if (this.extensionsController !== null) {
+            this.subscriptions.add(this.extensionsController)
+
+            // Preload extensions whenever user enabled extensions or the viewed language changes.
+            this.subscriptions.add(
+                combineLatest([
+                    getEnabledExtensions(this.platformContext),
+                    observeLocation(history).pipe(
+                        startWith(location),
+                        map(location => getModeFromPath(location.pathname)),
+                        distinctUntilChanged()
+                    ),
+                ]).subscribe(([extensions, languageID]) => {
+                    preloadExtensions({
+                        extensions,
+                        languages: new Set([languageID]),
+                    })
                 })
-            })
-        )
-
+            )
+        }
         setQueryStateFromURL(window.location.search)
 
         this.state = {
@@ -460,6 +464,9 @@ export class SourcegraphWebApp extends React.Component<
     }
 
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
+        if (this.extensionsController === null) {
+            return
+        }
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }

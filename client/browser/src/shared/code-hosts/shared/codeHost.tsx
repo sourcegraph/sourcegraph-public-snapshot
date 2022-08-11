@@ -1573,7 +1573,9 @@ export function injectCodeIntelligenceToCodeHost(
     )
     const { requestGraphQL } = platformContext
 
-    subscriptions.add(extensionsController)
+    if (extensionsController !== null) {
+        subscriptions.add(extensionsController)
+    }
 
     const isTelemetryEnabled = combineLatest([
         observeSendTelemetry(isExtension),
@@ -1622,7 +1624,7 @@ export function injectCodeIntelligenceToCodeHost(
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else {
+            } else if (extensionsController !== null) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,

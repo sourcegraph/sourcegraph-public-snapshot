@@ -34,11 +34,13 @@ export const GlobalDebug: React.FunctionComponent<React.PropsWithChildren<Props>
         <ul className={classNames('nav', styles.globalDebug)}>
             <li className="nav-item">
                 <ErrorBoundary location={props.location} render={ExtensionDevelopmentToolsError}>
-                    <ExtensionDevelopmentToolsPopover
-                        link={ExtensionLink}
-                        extensionsController={props.extensionsController}
-                        platformContext={props.platformContext}
-                    />
+                    {props.extensionsController !== null ? (
+                        <ExtensionDevelopmentToolsPopover
+                            link={ExtensionLink}
+                            extensionsController={props.extensionsController}
+                            platformContext={props.platformContext}
+                        />
+                    ) : null}
                 </ErrorBoundary>
             </li>
         </ul>

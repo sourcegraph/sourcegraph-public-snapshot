@@ -44,6 +44,9 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
     /**
      * The client, which is used to communicate with and manage extensions.
      */
+    extensionsController: Pick<Controller, K> | null
+}
+export interface RequiredExtensionsControllerProps<K extends keyof Controller = keyof Controller> {
     extensionsController: Pick<Controller, K>
 }
 

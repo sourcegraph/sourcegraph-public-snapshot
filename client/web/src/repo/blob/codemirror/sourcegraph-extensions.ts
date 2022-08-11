@@ -11,7 +11,7 @@ import { Extension, Facet, StateEffect, StateEffectType, StateField } from '@cod
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
-import { combineLatest, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
+import { combineLatest, EMPTY, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
 import { filter, map, catchError, switchMap, distinctUntilChanged, startWith } from 'rxjs/operators'
 import { TextDocumentDecorationType } from 'sourcegraph'
 
@@ -75,6 +75,10 @@ export function sourcegraphExtensions({
     blobInfo: BlobInfo
     extensionsController: ExtensionsControllerProps['extensionsController']
 }): Extension {
+    if (extensionsController === null) {
+        return []
+    }
+
     const context = extensionsController.extHostAPI.then(async extensionHostAPI => {
         const uri = toURIWithPath(blobInfo)
 
@@ -429,22 +433,24 @@ const statusBar = ViewPlugin.fromClass(
                     startWith(view.state.facet(blobPropsFacet))
                 ),
             ]).subscribe(([context, props]) => {
-                this.reactRoot.render(
-                    React.createElement(
-                        Container,
-                        { history: props.history },
-                        React.createElement(StatusBar, {
-                            getStatusBarItems,
-                            extensionsController: context.extensionsController,
-                            uri: toURIWithPath(context.blobInfo),
-                            location: props.location,
-                            className: blobStyles.blobStatusBarBody,
-                            statusBarRef: () => {},
-                            hideWhileInitializing: true,
-                            isBlobPage: true,
-                        })
+                if (context.extensionsController !== null) {
+                    this.reactRoot.render(
+                        React.createElement(
+                            Container,
+                            { history: props.history },
+                            React.createElement(StatusBar, {
+                                getStatusBarItems,
+                                extensionsController: context.extensionsController,
+                                uri: toURIWithPath(context.blobInfo),
+                                location: props.location,
+                                className: blobStyles.blobStatusBarBody,
+                                statusBarRef: () => {},
+                                hideWhileInitializing: true,
+                                isBlobPage: true,
+                            })
+                        )
                     )
-                )
+                }
             })
 
             this.view.dom.append(this.container)
@@ -473,7 +479,13 @@ const warmupReferences = ViewPlugin.fromClass(
         constructor() {
             this.subscription.add(
                 this.nextContext
-                    .pipe(switchMap(context => haveInitialExtensionsLoaded(context.extensionsController.extHostAPI)))
+                    .pipe(
+                        switchMap(context =>
+                            context.extensionsController !== null
+                                ? haveInitialExtensionsLoaded(context.extensionsController.extHostAPI)
+                                : EMPTY
+                        )
+                    )
                     .subscribe()
             )
         }

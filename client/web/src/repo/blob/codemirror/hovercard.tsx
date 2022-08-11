@@ -451,53 +451,55 @@ class Hovercard implements TooltipView {
         root.render(
             <Container onRender={() => repositionTooltips(this.view)} history={props.history}>
                 <div className="cm-code-intel-hovercard">
-                    <WebHoverOverlay
-                        // Blob props
-                        location={props.location}
-                        onHoverShown={props.onHoverShown}
-                        isLightTheme={props.isLightTheme}
-                        platformContext={props.platformContext}
-                        settingsCascade={props.settingsCascade}
-                        telemetryService={props.telemetryService}
-                        extensionsController={props.extensionsController}
-                        nav={props.nav ?? (url => props.history.push(url))}
-                        // Hover props
-                        actionsOrError={actionsOrError}
-                        hoverOrError={hoverOrError}
-                        // CodeMirror handles the positioning but a
-                        // non-nullable value must be passed for the
-                        // hovercard to render
-                        overlayPosition={dummyOverlayPosition}
-                        hoveredToken={hoveredToken}
-                        hoveredTokenElement={dummyHoveredElement}
-                        onAlertDismissed={() => repositionTooltips(this.view)}
-                        pinOptions={{
-                            showCloseButton: true,
-                            onCloseButtonClick: () => {
-                                const parameters = new URLSearchParams(props.location.search)
-                                parameters.delete('popover')
+                    {props.extensionsController !== null ? (
+                        <WebHoverOverlay
+                            // Blob props
+                            location={props.location}
+                            onHoverShown={props.onHoverShown}
+                            isLightTheme={props.isLightTheme}
+                            platformContext={props.platformContext}
+                            settingsCascade={props.settingsCascade}
+                            telemetryService={props.telemetryService}
+                            extensionsController={props.extensionsController}
+                            nav={props.nav ?? (url => props.history.push(url))}
+                            // Hover props
+                            actionsOrError={actionsOrError}
+                            hoverOrError={hoverOrError}
+                            // CodeMirror handles the positioning but a
+                            // non-nullable value must be passed for the
+                            // hovercard to render
+                            overlayPosition={dummyOverlayPosition}
+                            hoveredToken={hoveredToken}
+                            hoveredTokenElement={dummyHoveredElement}
+                            onAlertDismissed={() => repositionTooltips(this.view)}
+                            pinOptions={{
+                                showCloseButton: true,
+                                onCloseButtonClick: () => {
+                                    const parameters = new URLSearchParams(props.location.search)
+                                    parameters.delete('popover')
 
-                                updateBrowserHistoryIfChanged(props.history, props.location, parameters)
-                            },
-                            onCopyLinkButtonClick: async () => {
-                                const context = {
-                                    position: this.range.range.start,
-                                    range: {
-                                        start: this.range.range.start,
-                                        end: this.range.range.start,
-                                    },
-                                }
-                                const search = new URLSearchParams(location.search)
-                                search.set('popover', 'pinned')
-                                updateBrowserHistoryIfChanged(
-                                    props.history,
-                                    props.location,
-                                    addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
-                                )
-                                await navigator.clipboard.writeText(window.location.href)
-                            },
-                        }}
-                    />
+                                    updateBrowserHistoryIfChanged(props.history, props.location, parameters)
+                                },
+                                onCopyLinkButtonClick: async () => {
+                                    const context = {
+                                        position: this.range.range.start,
+                                        range: {
+                                            start: this.range.range.start,
+                                            end: this.range.range.start,
+                                        },
+                                    }
+                                    const search = new URLSearchParams(location.search)
+                                    search.set('popover', 'pinned')
+                                    updateBrowserHistoryIfChanged(
+                                        props.history,
+                                        props.location,
+                                        addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
+                                    )
+                                    await navigator.clipboard.writeText(window.location.href)
+                                },
+                            }}
+                        />
+                    ) : null}
                 </div>
             </Container>
         )

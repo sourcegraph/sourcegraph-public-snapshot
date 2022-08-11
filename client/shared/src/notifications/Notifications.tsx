@@ -47,15 +47,21 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     private notificationsReference = React.createRef<HTMLDivElement>()
 
     public componentDidMount(): void {
+        const { extensionsController } = this.props
+
+        if (extensionsController === null) {
+            return
+        }
+
         // Subscribe to plain notifications
         this.subscriptions.add(
-            from(this.props.extensionsController.extHostAPI)
+            from(extensionsController.extHostAPI)
                 .pipe(
                     switchMap(extensionHostAPI =>
                         merge(
                             wrapRemoteObservable(extensionHostAPI.getPlainNotifications()),
                             // Subscribe to command error notifications (also plain)
-                            this.props.extensionsController.commandErrors
+                            extensionsController.commandErrors
                         )
                     ),
                     map(notification => ({ ...notification, id: uniqueId('n') }))
@@ -71,7 +77,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
         // plain notifications because the emissions of the progress notification observable
         // have to be proxied as well
         this.subscriptions.add(
-            from(this.props.extensionsController.extHostAPI)
+            from(extensionsController.extHostAPI)
                 .pipe(mergeMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getProgressNotifications())))
                 .subscribe(progressNotification => {
                     // Progress notifications are remote, so property access is asynchronous
@@ -136,7 +142,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
 
         // Register command to focus notifications.
         this.subscriptions.add(
-            this.props.extensionsController.registerCommand({
+            extensionsController.registerCommand({
                 command: 'focusNotifications',
                 run: () => {
                     const notificationsElement = this.notificationsReference.current
@@ -149,7 +155,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
         )
         this.subscriptions.add(
             syncRemoteSubscription(
-                this.props.extensionsController.extHostAPI.then(extensionHostAPI =>
+                extensionsController.extHostAPI.then(extensionHostAPI =>
                     extensionHostAPI.registerContributions({
                         menus: {
                             commandPalette: [
@@ -173,8 +179,12 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     }
 
     public componentDidUpdate(): void {
+        const { extensionsController } = this.props
+        if (extensionsController === null) {
+            return
+        }
         // Update context to show/hide "Focus notifications" command.
-        this.props.extensionsController.extHostAPI
+        extensionsController.extHostAPI
             .then(extensionHostAPI =>
                 extensionHostAPI.updateContext({
                     [HAS_NOTIFICATIONS_CONTEXT_KEY]: this.state.notifications.length > 0,
