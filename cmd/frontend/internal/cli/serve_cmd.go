@@ -18,8 +18,9 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/throttled/throttled/v2/store/redigostore"
+
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -340,14 +341,13 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
-			GitHubWebhook:                enterprise.GitHubWebhook,
-			GitLabWebhook:                enterprise.GitLabWebhook,
-			BitbucketServerWebhook:       enterprise.BitbucketServerWebhook,
-			BitbucketCloudWebhook:        enterprise.BitbucketCloudWebhook,
-			BatchesMountUploadHandler:    enterprise.BatchesMountUploadHandler,
-			BatchesMountRetrievalHandler: enterprise.BatchesMountRetrievalHandler,
-			NewCodeIntelUploadHandler:    enterprise.NewCodeIntelUploadHandler,
-			NewComputeStreamHandler:      enterprise.NewComputeStreamHandler,
+			GitHubWebhook:             enterprise.GitHubWebhook,
+			GitLabWebhook:             enterprise.GitLabWebhook,
+			BitbucketServerWebhook:    enterprise.BitbucketServerWebhook,
+			BitbucketCloudWebhook:     enterprise.BitbucketCloudWebhook,
+			BatchesMountHandler:       enterprise.BatchesMountHandler,
+			NewCodeIntelUploadHandler: enterprise.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:   enterprise.NewComputeStreamHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppCloudSetupHandler,
