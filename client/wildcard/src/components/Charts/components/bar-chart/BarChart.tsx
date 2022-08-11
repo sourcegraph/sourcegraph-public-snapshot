@@ -19,6 +19,7 @@ interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVG
     pixelsPerYTick?: number
     pixelsPerXTick?: number
     maxAngleXTick?: number
+    getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
 }
 
@@ -32,6 +33,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         maxAngleXTick,
         stacked = false,
         getDatumHover,
+        getTruncatedXTick,
         getDatumName,
         getDatumValue,
         getDatumColor,
@@ -76,7 +78,11 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
     return (
         <SvgRoot {...attributes} width={outerWidth} height={outerHeight} xScale={xScale} yScale={yScale}>
             <SvgAxisLeft pixelsPerTick={pixelsPerYTick} />
-            <SvgAxisBottom pixelsPerTick={pixelsPerXTick} maxRotateAngle={maxAngleXTick} />
+            <SvgAxisBottom
+                pixelsPerTick={pixelsPerXTick}
+                maxRotateAngle={maxAngleXTick}
+                getTruncatedTick={getTruncatedXTick}
+            />
 
             <SvgContent<ScaleBand<string>, any>>
                 {({ yScale, xScale, content }) => (
