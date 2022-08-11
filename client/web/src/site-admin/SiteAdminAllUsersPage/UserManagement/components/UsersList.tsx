@@ -49,7 +49,7 @@ export const UsersList: React.FunctionComponent = () => {
         },
     })
 
-    const refresh = useCallback(() => {
+    const reload = useCallback(() => {
         refetch(variables).catch(console.error)
     }, [refetch, variables])
 
@@ -61,7 +61,7 @@ export const UsersList: React.FunctionComponent = () => {
         handlePromoteToSiteAdmin,
         handleResetUserPassword,
         notification,
-    } = useUserListActions(refresh)
+    } = useUserListActions(reload)
 
     const users = (data || previousData)?.site.users
     return (
@@ -134,7 +134,7 @@ export const UsersList: React.FunctionComponent = () => {
                                 condition: users => users.some(user => !user.deletedAt),
                             },
                             {
-                                key: 'delete',
+                                key: 'delete-forever',
                                 label: 'Delete forever',
                                 icon: mdiDelete,
                                 iconColor: 'danger',
@@ -223,7 +223,8 @@ export const UsersList: React.FunctionComponent = () => {
                         note={
                             <Text as="span">
                                 {/* TODO: Fix link */}
-                                Note: Events is the count of <Link to='#'>all billable events</Link> which equate to billable usage.
+                                Note: Events is the count of <Link to="#">all billable events</Link> which equate to
+                                billable usage.
                             </Text>
                         }
                     />
@@ -264,7 +265,9 @@ interface UseUserListActionReturnType {
     handleResetUserPassword: ActionHandler
 }
 
-function useUserListActions(refetch: () => void): UseUserListActionReturnType {
+const getUsernames = (users: SiteUser[]): string => users.map(user => user.username).join(', ')
+
+function useUserListActions(reload: () => void): UseUserListActionReturnType {
     const [forceSignOutUsers] = useMutation(FORCE_SIGN_OUT_USERS)
     const [deleteUsers] = useMutation(DELETE_USERS)
     const [deleteUsersForever] = useMutation(DELETE_USERS_FOREVER)
@@ -286,44 +289,69 @@ function useUserListActions(refetch: () => void): UseUserListActionReturnType {
         console.error(error)
     }, [])
 
-    const onSuccess = useCallback(
-        (text: React.ReactNode) => () => {
+    const createOnSuccess = useCallback(
+        (text: React.ReactNode, shouldReload = false) => () => {
             setNotification({ text })
-            refetch()
+            if (shouldReload) {
+                reload()
+            }
         },
-        [refetch]
+        [reload]
     )
 
     const handleForceSignOutUsers = useCallback(
         (users: SiteUser[]) => {
             if (confirm('Are you sure you want to force sign out the selected user(s)?')) {
                 forceSignOutUsers({ variables: { userIDs: users.map(user => user.id) } })
-                    .then(onSuccess(`Successfully force signed out the ${users.length} user(s).`))
+                    .then(
+                        createOnSuccess(
+                            <Text as="span">
+                                Successfully force signed out following {users.length} user(s):{' '}
+                                <strong>{getUsernames(users)}</strong>
+                            </Text>
+                        )
+                    )
                     .catch(onError)
             }
         },
-        [forceSignOutUsers, onError, onSuccess]
+        [forceSignOutUsers, onError, createOnSuccess]
     )
 
     const handleDeleteUsers = useCallback(
         (users: SiteUser[]) => {
             if (confirm('Are you sure you want to delete the selected user(s)?')) {
                 deleteUsers({ variables: { userIDs: users.map(user => user.id) } })
-                    .then(onSuccess(`Successfully deleted the ${users.length} user(s).`))
+                    .then(
+                        createOnSuccess(
+                            <Text as="span">
+                                Successfully deleted following {users.length} user(s):{' '}
+                                <strong>{getUsernames(users)}</strong>
+                            </Text>,
+                            true
+                        )
+                    )
                     .catch(onError)
             }
         },
-        [deleteUsers, onError, onSuccess]
+        [deleteUsers, onError, createOnSuccess]
     )
     const handleDeleteUsersForever = useCallback(
         (users: SiteUser[]) => {
             if (confirm('Are you sure you want to delete the selected user(s)?')) {
                 deleteUsersForever({ variables: { userIDs: users.map(user => user.id) } })
-                    .then(onSuccess(`Successfully deleted forever the ${users.length} user(s).`))
+                    .then(
+                        createOnSuccess(
+                            <Text as="span">
+                                Successfully deleted forever following {users.length} user(s):{' '}
+                                <strong>{getUsernames(users)}</strong>
+                            </Text>,
+                            true
+                        )
+                    )
                     .catch(onError)
             }
         },
-        [deleteUsersForever, onError, onSuccess]
+        [deleteUsersForever, onError, createOnSuccess]
     )
 
     const handlePromoteToSiteAdmin = useCallback(
@@ -331,11 +359,18 @@ function useUserListActions(refetch: () => void): UseUserListActionReturnType {
             if (confirm('Are you sure you want to promote the selected user to site admin?')) {
                 setUserIsSiteAdmin(user.id, true)
                     .toPromise()
-                    .then(onSuccess(`Successfully promoted to site admin user ${user.username}.`))
+                    .then(
+                        createOnSuccess(
+                            <Text as="span">
+                                Successfully promoted user <strong>{user.username}</strong> to site admin.
+                            </Text>,
+                            true
+                        )
+                    )
                     .catch(onError)
             }
         },
-        [onError, onSuccess]
+        [onError, createOnSuccess]
     )
 
     const handleRevokeSiteAdmin = useCallback(
@@ -343,26 +378,35 @@ function useUserListActions(refetch: () => void): UseUserListActionReturnType {
             if (confirm('Are you sure you want to revoke the selected user from site admin?')) {
                 setUserIsSiteAdmin(user.id, false)
                     .toPromise()
-                    .then(onSuccess(`Successfully revoked site admin from user ${user.username}.`))
+                    .then(
+                        createOnSuccess(
+                            <Text as="span">
+                                Successfully revoked site admin from <strong>{user.username}</strong> user.
+                            </Text>,
+                            true
+                        )
+                    )
                     .catch(onError)
             }
         },
-        [onError, onSuccess]
+        [onError, createOnSuccess]
     )
 
     const handleResetUserPassword = useCallback(
         ([user]: SiteUser[]) => {
             if (confirm('Are you sure you want to reset the selected user password?')) {
-                console.log('Reset user password', user)
                 randomizeUserPassword(user.id)
                     .toPromise()
                     .then(({ resetPasswordURL }) => {
                         if (resetPasswordURL === null) {
-                            onSuccess(
-                                `Password was reset. The reset link was sent to the primary email of the user: ${user.email}`
-                            )
+                            createOnSuccess(
+                                <Text as="span">
+                                    Password was reset. The reset link was sent to the primary email of the user:{' '}
+                                    <strong>{user.username}</strong>
+                                </Text>
+                            )()
                         } else {
-                            onSuccess(
+                            createOnSuccess(
                                 <>
                                     <Text>
                                         Password was reset. You must manually send <strong>{user.username}</strong> this
@@ -370,13 +414,13 @@ function useUserListActions(refetch: () => void): UseUserListActionReturnType {
                                     </Text>
                                     <CopyableText text={resetPasswordURL} size={40} />
                                 </>
-                            )
+                            )()
                         }
                     })
                     .catch(onError)
             }
         },
-        [onError, onSuccess]
+        [onError, createOnSuccess]
     )
 
     return {
