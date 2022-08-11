@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -35,21 +36,11 @@ func oneClickExportHandler(db database.DB, logger log.Logger) http.HandlerFunc {
 			return
 		}
 
-		// TODO: change when Exporter.Export is refactored to return io.Reader
-		for len(archive) > 0 {
-			bytesWritten, err := w.Write(archive)
-			if err != nil {
-				logger.Error("OneClickExport output write", log.Error(err))
-				return
-			}
-
-			// all bytes written, exiting the function
-			if bytesWritten == len(archive) {
-				break
-			}
-
-			// writing remaining bytes
-			archive = archive[bytesWritten:]
+		_, err = io.Copy(w, archive)
+		if err != nil {
+			logger.Error("Writing archive to HTTP response", log.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 	}
 }

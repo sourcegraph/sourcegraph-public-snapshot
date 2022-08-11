@@ -1,14 +1,21 @@
 import { useMemo } from 'react'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { observeSystemIsLightTheme, ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { useThemeState } from './stores'
-import { ThemePreference } from './stores/themeState'
-
+/**
+ * The user preference for the theme.
+ * These values are stored in temporary settings.
+ */
+export enum ThemePreference {
+    Light = 'light',
+    Dark = 'dark',
+    System = 'system',
+}
 export interface ThemeState {
     /**
-     * Parsed from local storage theme preference value.
+     * Parsed from temporary settings theme preference value.
      */
     themePreference: ThemePreference
 
@@ -29,7 +36,12 @@ export const useTheme = (): ThemeState => {
     )
     const systemIsLightTheme = useObservable(systemIsLightThemeObservable) ?? systemIsLightThemeInitialValue
 
-    const [themePreference, setThemePreference] = useThemeState(state => [state.theme, state.setTheme])
+    const [storedThemePreference, setThemePreference] = useTemporarySetting(
+        'user.themePreference',
+        ThemePreference.System
+    )
+    const themePreference = readStoredThemePreference(storedThemePreference)
+
     const enhancedThemePreference =
         themePreference === ThemePreference.System
             ? systemIsLightTheme
@@ -72,5 +84,20 @@ export const useThemeProps = (): ThemeProps & ThemePreferenceProps => {
         isLightTheme,
         themePreference,
         onThemePreferenceChange: setThemePreference,
+    }
+}
+
+/** Reads the stored theme preference from temporary settings */
+export const readStoredThemePreference = (value?: string): ThemePreference => {
+    // Handle both old and new preference values
+    switch (value) {
+        case 'true':
+        case 'light':
+            return ThemePreference.Light
+        case 'false':
+        case 'dark':
+            return ThemePreference.Dark
+        default:
+            return ThemePreference.System
     }
 }

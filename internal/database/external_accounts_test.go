@@ -384,7 +384,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	}
 
 	// values encrypted should not be readable without the encrypting key
-	noopStore := store.WithEncryptionKey(&encryption.NoopKey{})
+	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
 	if _, err := noopStore.List(ctx, ExternalAccountsListOptions{}); err == nil {
 		t.Fatalf("expected error decrypting with a different key")
 	}

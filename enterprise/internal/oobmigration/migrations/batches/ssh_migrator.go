@@ -2,108 +2,211 @@ package batches
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-const sshMigrationCountPerRun = 5
-
-// sshMigrator migrates existing batch changes credentials that have no SSH key stored
-// to a variant that includes it.
-type sshMigrator struct {
-	store *store.Store
+type SSHMigrator struct {
+	logger    log.Logger
+	store     *basestore.Store
+	BatchSize int
+	key       encryption.Key
 }
 
-var _ oobmigration.Migrator = &sshMigrator{}
+var _ oobmigration.Migrator = &SSHMigrator{}
 
-// Progress returns the ratio of migrated records to total records. Any record with a
-// credential type that ends on WithSSH is considered migrated.
-func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
-	progress, _, err := basestore.ScanFirstFloat(
-		m.store.Query(ctx, sqlf.Sprintf(
-			sshMigratorProgressQuery,
-			database.UserCredentialDomainBatches,
-			database.UserCredentialDomainBatches,
-		)))
-	if err != nil {
-		return 0, err
+func NewSSHMigratorWithDB(db database.DB, key encryption.Key) *SSHMigrator {
+	return &SSHMigrator{
+		logger:    log.Scoped("SSHMigrator", ""),
+		store:     basestore.NewWithHandle(db.Handle()),
+		BatchSize: 5,
+		key:       key,
 	}
+}
 
-	return progress, nil
+func (m *SSHMigrator) ID() int {
+	return 2
+}
+
+// Progress returns the percentage (ranged [0, 1]) of external services without a marker
+// indicating that this migration has been applied to that row.
+func (m *SSHMigrator) Progress(ctx context.Context) (float64, error) {
+	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(sshMigratorProgressQuery, "batches", "batches")))
+	return progress, err
 }
 
 const sshMigratorProgressQuery = `
--- source: enterprise/internal/batches/ssh_migrator.go:Progress
-SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float) END FROM
-	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND ssh_migration_applied = FALSE) c1,
+-- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:Progress
+SELECT
+	CASE c2.count WHEN 0 THEN 1 ELSE
+		CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float)
+	END
+FROM
+	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND NOT ssh_migration_applied) c1,
 	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s) c2
 `
 
-// Up loops over all credentials and finds authenticators that are missing
-// SSH credentials, generates a keypair for them and upgrades them.
-func (m *sshMigrator) Up(ctx context.Context) (err error) {
+type jsonSSHMigratorAuth struct {
+	Username string `json:"Username,omitempty"`
+	Password string `json:"Password,omitempty"`
+	Token    string `json:"Token,omitempty"`
+}
+
+type jsonSSHMigratorSSHFragment struct {
+	PrivateKey string `json:"PrivateKey"`
+	PublicKey  string `json:"PublicKey"`
+	Passphrase string `json:"Passphrase"`
+}
+
+// Up generates a keypair for authenticators missing SSH credentials.
+func (m *SSHMigrator) Up(ctx context.Context) (err error) {
+	return m.run(ctx, false, func(credential string) (string, bool, error) {
+		var envelope struct {
+			Type    string          `json:"Type"`
+			Payload json.RawMessage `json:"Auth"`
+		}
+		if err := json.Unmarshal([]byte(credential), &envelope); err != nil {
+			return "", false, err
+		}
+		if envelope.Type != "BasicAuth" && envelope.Type != "OAuthBearerToken" {
+			// Not a key type that supports SSH additions, leave credentials as-is
+			return "", false, nil
+		}
+
+		auth := jsonSSHMigratorAuth{}
+		if err := json.Unmarshal(envelope.Payload, &auth); err != nil {
+			return "", false, err
+		}
+
+		keypair, err := encryption.GenerateRSAKey()
+		if err != nil {
+			return "", false, err
+		}
+
+		encoded, err := json.Marshal(struct {
+			Type string
+			Auth any
+		}{
+			Type: envelope.Type + "WithSSH",
+			Auth: struct {
+				jsonSSHMigratorAuth
+				jsonSSHMigratorSSHFragment
+			}{
+				auth,
+				jsonSSHMigratorSSHFragment{
+					PrivateKey: keypair.PrivateKey,
+					PublicKey:  keypair.PublicKey,
+					Passphrase: keypair.Passphrase,
+				},
+			},
+		})
+		if err != nil {
+			return "", false, err
+		}
+
+		return string(encoded), true, nil
+	})
+}
+
+// Down converts all credentials with an SSH key back to a historically supported version.
+func (m *SSHMigrator) Down(ctx context.Context) (err error) {
+	return m.run(ctx, true, func(credential string) (string, bool, error) {
+		var envelope struct {
+			Type    string          `json:"Type"`
+			Payload json.RawMessage `json:"Auth"`
+		}
+		if err := json.Unmarshal([]byte(credential), &envelope); err != nil {
+			return "", false, err
+		}
+		if envelope.Type != "BasicAuthWithSSH" && envelope.Type != "OAuthBearerTokenWithSSH" {
+			// Not a key type that that has SSH additions (nothing to remove)
+			return "", false, nil
+		}
+
+		auth := jsonSSHMigratorAuth{}
+		if err := json.Unmarshal(envelope.Payload, &auth); err != nil {
+			return "", false, err
+		}
+
+		encoded, err := json.Marshal(struct {
+			Type string
+			Auth jsonSSHMigratorAuth
+		}{
+			Type: strings.TrimSuffix(envelope.Type, "WithSSH"),
+			Auth: auth,
+		})
+		if err != nil {
+			return "", false, err
+		}
+
+		return string(encoded), true, nil
+	})
+}
+
+func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func(string) (string, bool, error)) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	f := false
-	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
-		Scope: database.UserCredentialScope{
-			Domain: database.UserCredentialDomainBatches,
-		},
-		LimitOffset: &database.LimitOffset{
-			Limit: sshMigrationCountPerRun,
-		},
-		ForUpdate:           true,
-		SSHMigrationApplied: &f,
-	})
+	type credential struct {
+		ID         int
+		Credential string
+	}
+	credentials, err := func() (credentials []credential, err error) {
+		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorSelectQuery, "batches", sshMigrationsApplied, m.BatchSize))
+		if err != nil {
+			return nil, err
+		}
+		defer func() { err = basestore.CloseRows(rows, err) }()
+
+		for rows.Next() {
+			var id int
+			var rawCredential, keyID string
+			if err := rows.Scan(&id, &rawCredential, &keyID); err != nil {
+				return nil, err
+			}
+			rawCredential, err = encryption.MaybeDecrypt(ctx, m.key, rawCredential, keyID)
+			if err != nil {
+				return nil, err
+			}
+
+			credentials = append(credentials, credential{ID: id, Credential: rawCredential})
+		}
+
+		return credentials, nil
+	}()
 	if err != nil {
 		return err
 	}
-	for _, cred := range credentials {
-		a, err := cred.Authenticator(ctx)
+
+	for _, credential := range credentials {
+		newCred, ok, err := f(credential.Credential)
 		if err != nil {
 			return err
 		}
+		if !ok {
+			if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateFlagonlyQuery, !sshMigrationsApplied, credential.ID)); err != nil {
+				return err
+			}
 
-		switch a := a.(type) {
-		case *auth.OAuthBearerToken:
-			newCred := &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: *a}
-			keypair, err := encryption.GenerateRSAKey()
-			if err != nil {
-				return err
-			}
-			newCred.PrivateKey = keypair.PrivateKey
-			newCred.PublicKey = keypair.PublicKey
-			newCred.Passphrase = keypair.Passphrase
-			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
-				return err
-			}
-		case *auth.BasicAuth:
-			newCred := &auth.BasicAuthWithSSH{BasicAuth: *a}
-			keypair, err := encryption.GenerateRSAKey()
-			if err != nil {
-				return err
-			}
-			newCred.PrivateKey = keypair.PrivateKey
-			newCred.PublicKey = keypair.PublicKey
-			newCred.Passphrase = keypair.Passphrase
-			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
-				return err
-			}
+			continue
 		}
 
-		cred.SSHMigrationApplied = true
-		if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+		secret, keyID, err := encryption.MaybeEncrypt(ctx, m.key, newCred)
+		if err != nil {
+			return err
+		}
+		if err := tx.Exec(ctx, sqlf.Sprintf(sshMigratorUpdateQuery, !sshMigrationsApplied, secret, keyID, credential.ID)); err != nil {
 			return err
 		}
 	}
@@ -111,50 +214,25 @@ func (m *sshMigrator) Up(ctx context.Context) (err error) {
 	return nil
 }
 
-// Down converts all credentials that have an SSH key back to a version without, so
-// an older version of Sourcegraph would be able to match those credentials again.
-func (m *sshMigrator) Down(ctx context.Context) (err error) {
-	tx, err := m.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+const sshMigratorSelectQuery = `
+-- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
+SELECT id, credential, encryption_key_id FROM user_credentials WHERE domain = %s AND ssh_migration_applied = %s ORDER BY ID LIMIT %s FOR UPDATE
+`
 
-	t := true
-	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
-		Scope: database.UserCredentialScope{
-			Domain: database.UserCredentialDomainBatches,
-		},
-		LimitOffset: &database.LimitOffset{
-			Limit: sshMigrationCountPerRun,
-		},
-		ForUpdate:           true,
-		SSHMigrationApplied: &t,
-	})
-	for _, cred := range credentials {
-		a, err := cred.Authenticator(ctx)
-		if err != nil {
-			return err
-		}
+const sshMigratorUpdateQuery = `
+-- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
+UPDATE user_credentials
+SET
+	updated_at = NOW(),
+	ssh_migration_applied = %s,
+	credential = %s,
+	encryption_key_id = %s
+WHERE id = %s
+`
 
-		switch a := a.(type) {
-		case *auth.OAuthBearerTokenWithSSH:
-			newCred := &a.OAuthBearerToken
-			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
-				return err
-			}
-		case *auth.BasicAuthWithSSH:
-			newCred := &a.BasicAuth
-			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
-				return err
-			}
-		}
-
-		cred.SSHMigrationApplied = false
-		if err := tx.UserCredentials().Update(ctx, cred); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
+const sshMigratorUpdateFlagonlyQuery = `
+-- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
+UPDATE user_credentials
+SET ssh_migration_applied = %s
+WHERE id = %s
+`

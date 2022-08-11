@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"cloud.google.com/go/pubsub"
 
@@ -241,7 +240,7 @@ func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore dat
 var confClient = conf.DefaultClient()
 
 func isEnabled() bool {
-	return envvar.ExportUsageData()
+	return enabled
 }
 
 func getBatchSize() int {
@@ -260,16 +259,26 @@ type topicConfig struct {
 func getTopicConfig() (topicConfig, error) {
 	var config topicConfig
 
-	config.topicName = confClient.Get().ExportUsageTelemetry.TopicName
+	config.topicName = topicName
 	if config.topicName == "" {
 		return config, errors.New("missing topic name to export usage data")
 	}
-	config.projectName = confClient.Get().ExportUsageTelemetry.TopicProjectName
+	config.projectName = projectName
 	if config.projectName == "" {
 		return config, errors.New("missing project name to export usage data")
 	}
 	return config, nil
 }
+
+const (
+	enabledEnvVar     = "EXPORT_USAGE_DATA_ENABLED"
+	topicNameEnvVar   = "EXPORT_USAGE_DATA_TOPIC_NAME"
+	projectNameEnvVar = "EXPORT_USAGE_DATA_TOPIC_PROJECT"
+)
+
+var enabled, _ = strconv.ParseBool(env.Get(enabledEnvVar, "false", "Export usage data from this Sourcegraph instance to centralized Sourcegraph analytics (requires restart)."))
+var topicName = env.Get(topicNameEnvVar, "", "GCP pubsub topic name for event level data usage exporter")
+var projectName = env.Get(projectNameEnvVar, "", "GCP project name for pubsub topic for event level data usage exporter")
 
 func emptyIfNil(s *string) string {
 	if s == nil {

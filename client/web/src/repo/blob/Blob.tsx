@@ -124,6 +124,10 @@ export interface BlobProps
     // Experimental reference panel
     disableStatusBar: boolean
     disableDecorations: boolean
+    /**
+     * Only used by CodeMirror implementation.
+     */
+    disableHovercards?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay

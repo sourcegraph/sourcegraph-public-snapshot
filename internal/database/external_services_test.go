@@ -13,10 +13,11 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -47,7 +48,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		updatedAfter         time.Time
 		wantQuery            string
 		onlyCloudDefault     bool
-		noCachedWebhooks     bool
 		includeDeleted       bool
 		wantArgs             []any
 	}{
@@ -109,11 +109,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery:        "deleted_at IS NULL AND cloud_default = true",
 		},
 		{
-			name:             "has noCachedWebhooks",
-			noCachedWebhooks: true,
-			wantQuery:        "deleted_at IS NULL AND has_webhooks IS NULL",
-		},
-		{
 			name:           "includeDeleted",
 			includeDeleted: true,
 			wantQuery:      "TRUE",
@@ -130,7 +125,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				AfterID:              test.afterID,
 				UpdatedAfter:         test.updatedAfter,
 				OnlyCloudDefault:     test.onlyCloudDefault,
-				NoCachedWebhooks:     test.noCachedWebhooks,
 				IncludeDeleted:       test.includeDeleted,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
@@ -1163,7 +1157,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	}
 
 	// values encrypted should not be readable without the encrypting key
-	noopStore := store.WithEncryptionKey(&encryption.NoopKey{})
+	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
 	if _, err := noopStore.GetByID(ctx, es.ID); err == nil {
 		t.Fatalf("expected error decrypting with a different key")
 	}
@@ -2004,7 +1998,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 
 		// values encrypted should not be readable without the encrypting key
-		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{})
+		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
 
 		for _, e := range want {
 			if _, err := noopStore.GetByID(ctx, e.ID); err == nil {

@@ -154,7 +154,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                        applySuggestionsOnEnter={applySuggestionsOnEnter}
+                        applySuggestionsOnEnter={coreWorkflowImprovementsEnabled || applySuggestionsOnEnter}
                         suggestionSources={suggestionSources}
                         defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
                         showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
