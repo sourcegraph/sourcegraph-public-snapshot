@@ -6,7 +6,7 @@ import { format as formatDate } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce } from '@sourcegraph/wildcard'
+import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce, Link } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import {
@@ -222,8 +222,8 @@ export const UsersList: React.FunctionComponent = () => {
                         ]}
                         note={
                             <Text as="span">
-                                Note: Events is the count of all billable events which equate to billable usage.
-                                {/* TODO: Add link to billable events in bottom note */}
+                                {/* TODO: Fix link */}
+                                Note: Events is the count of <Link to='#'>all billable events</Link> which equate to billable usage.
                             </Text>
                         }
                     />
