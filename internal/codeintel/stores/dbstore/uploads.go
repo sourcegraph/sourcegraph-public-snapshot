@@ -1448,7 +1448,8 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
-	s.rank
+	s.rank,
+	u.uncompressed_size
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
