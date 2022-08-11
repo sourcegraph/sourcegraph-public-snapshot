@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -43,7 +44,13 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	},
 }
 
-var ErrNegatedPredicate = errors.New("predicates do not support negation")
+type NegatedPredicateError struct {
+	name string
+}
+
+func (e *NegatedPredicateError) Error() string {
+	return fmt.Sprintf("search predicate %q does not support negation", e.name)
+}
 
 // PredicateTable is a lookup map of one or more predicate names that resolve to the Predicate type.
 type PredicateTable map[string]func() Predicate
@@ -91,7 +98,7 @@ func (EmptyPredicate) Field() string { return "" }
 func (EmptyPredicate) Name() string  { return "" }
 func (EmptyPredicate) Unmarshal(_ string, negated bool) error {
 	if negated {
-		return ErrNegatedPredicate
+		return &NegatedPredicateError{"empty"}
 	}
 
 	return nil
@@ -222,7 +229,7 @@ type RepoContainsCommitAfterPredicate struct {
 
 func (f *RepoContainsCommitAfterPredicate) Unmarshal(params string, negated bool) error {
 	if negated {
-		return ErrNegatedPredicate
+		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
 	}
 
 	f.TimeRef = params
@@ -242,7 +249,7 @@ type RepoHasDescriptionPredicate struct {
 
 func (f *RepoHasDescriptionPredicate) Unmarshal(params string, negated bool) (err error) {
 	if negated {
-		return ErrNegatedPredicate
+		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
 	}
 
 	if _, err := regexp.Compile(params); err != nil {
@@ -303,7 +310,7 @@ type FileContainsContentPredicate struct {
 
 func (f *FileContainsContentPredicate) Unmarshal(params string, negated bool) error {
 	if negated {
-		return ErrNegatedPredicate
+		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
 	}
 
 	if _, err := regexp.Compile(params); err != nil {
