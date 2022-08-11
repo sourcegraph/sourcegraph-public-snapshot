@@ -2,13 +2,12 @@ import { Remote } from 'comlink'
 import { from, Observable, Subscription, Unsubscribable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
-import { createExtensionHostClientConnection } from '../api/client/connection'
-import { CommandEntry, ExecuteCommandParameters } from '../api/client/mainthread-api'
-import { FlatExtensionHostAPI } from '../api/contract'
-import { InitData } from '../api/extension/extensionHost'
-import { PlainNotification } from '../api/extension/extensionHostApi'
+import type { CommandEntry, ExecuteCommandParameters } from '../api/client/mainthread-api'
+import type { FlatExtensionHostAPI } from '../api/contract'
+import type { InitData } from '../api/extension/extensionHost'
+import type { PlainNotification } from '../api/extension/extensionHostApi'
 import { syncPromiseSubscription } from '../api/util'
-import { PlatformContext } from '../platform/context'
+import type { PlatformContext } from '../platform/context'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -55,6 +54,9 @@ export interface RequiredExtensionsControllerProps<K extends keyof Controller = 
  *
  * There should only be a single controller for the entire client application. The controller's model represents
  * all of the client application state that the client needs to know.
+ *
+ * The implementation (`createExtensionHostClientConnection`) is lazy loaded to avoid adding bytes when
+ * the extension system is disabled
  */
 export function createController(
     context: Pick<
@@ -75,16 +77,12 @@ export function createController(
     >
 ): Controller {
     const subscriptions = new Subscription()
-
     const initData: Omit<InitData, 'initialSettings'> = {
         sourcegraphURL: context.sourcegraphURL,
         clientApplication: context.clientApplication,
     }
-
-    const extensionHostClientPromise = createExtensionHostClientConnection(
-        context.createExtensionHost(),
-        initData,
-        context
+    const extensionHostClientPromise = import('../api/client/connection').then(module =>
+        module.createExtensionHostClientConnection(context.createExtensionHost(), initData, context)
     )
 
     subscriptions.add(() => extensionHostClientPromise.then(({ subscription }) => subscription.unsubscribe()))
