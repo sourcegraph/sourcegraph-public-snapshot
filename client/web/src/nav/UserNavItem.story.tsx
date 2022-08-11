@@ -8,7 +8,7 @@ import { Meta, Story } from '@storybook/react'
 import { Position } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../components/WebStory'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 

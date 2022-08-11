@@ -2817,6 +2817,12 @@ CREATE SEQUENCE repo_id_seq
 
 ALTER SEQUENCE repo_id_seq OWNED BY repo.id;
 
+CREATE TABLE repo_kvps (
+    repo_id integer NOT NULL,
+    key text NOT NULL,
+    value text
+);
+
 CREATE TABLE repo_pending_permissions (
     repo_id integer NOT NULL,
     permission text NOT NULL,
@@ -3575,6 +3581,9 @@ ALTER TABLE ONLY registry_extension_releases
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY repo_kvps
+    ADD CONSTRAINT repo_kvps_pkey PRIMARY KEY (repo_id, key) INCLUDE (value);
+
 ALTER TABLE ONLY repo
     ADD CONSTRAINT repo_name_unique UNIQUE (name) DEFERRABLE;
 
@@ -4299,6 +4308,9 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY repo_kvps
+    ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id);

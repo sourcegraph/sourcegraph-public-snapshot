@@ -6883,6 +6883,9 @@ type MockEnterpriseDB struct {
 	// QueryRowContextFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryRowContext.
 	QueryRowContextFunc *EnterpriseDBQueryRowContextFunc
+	// RepoKVPsFunc is an instance of a mock function object controlling the
+	// behavior of the method RepoKVPs.
+	RepoKVPsFunc *EnterpriseDBRepoKVPsFunc
 	// ReposFunc is an instance of a mock function object controlling the
 	// behavior of the method Repos.
 	ReposFunc *EnterpriseDBReposFunc
@@ -7043,6 +7046,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		QueryRowContextFunc: &EnterpriseDBQueryRowContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 *sql.Row) {
+				return
+			},
+		},
+		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
+			defaultHook: func() (r0 database.RepoKVPStore) {
 				return
 			},
 		},
@@ -7238,6 +7246,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.QueryRowContext")
 			},
 		},
+		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
+			defaultHook: func() database.RepoKVPStore {
+				panic("unexpected invocation of MockEnterpriseDB.RepoKVPs")
+			},
+		},
 		ReposFunc: &EnterpriseDBReposFunc{
 			defaultHook: func() database.RepoStore {
 				panic("unexpected invocation of MockEnterpriseDB.Repos")
@@ -7384,6 +7397,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		QueryRowContextFunc: &EnterpriseDBQueryRowContextFunc{
 			defaultHook: i.QueryRowContext,
+		},
+		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
+			defaultHook: i.RepoKVPs,
 		},
 		ReposFunc: &EnterpriseDBReposFunc{
 			defaultHook: i.Repos,
@@ -9764,6 +9780,105 @@ func (c EnterpriseDBQueryRowContextFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBQueryRowContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBRepoKVPsFunc describes the behavior when the RepoKVPs method
+// of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBRepoKVPsFunc struct {
+	defaultHook func() database.RepoKVPStore
+	hooks       []func() database.RepoKVPStore
+	history     []EnterpriseDBRepoKVPsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoKVPs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RepoKVPs() database.RepoKVPStore {
+	r0 := m.RepoKVPsFunc.nextHook()()
+	m.RepoKVPsFunc.appendCall(EnterpriseDBRepoKVPsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoKVPs method of
+// the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBRepoKVPsFunc) SetDefaultHook(hook func() database.RepoKVPStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoKVPs method of the parent MockEnterpriseDB instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnterpriseDBRepoKVPsFunc) PushHook(hook func() database.RepoKVPStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRepoKVPsFunc) SetDefaultReturn(r0 database.RepoKVPStore) {
+	f.SetDefaultHook(func() database.RepoKVPStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRepoKVPsFunc) PushReturn(r0 database.RepoKVPStore) {
+	f.PushHook(func() database.RepoKVPStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRepoKVPsFunc) nextHook() func() database.RepoKVPStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRepoKVPsFunc) appendCall(r0 EnterpriseDBRepoKVPsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBRepoKVPsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBRepoKVPsFunc) History() []EnterpriseDBRepoKVPsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRepoKVPsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRepoKVPsFuncCall is an object that describes an invocation of
+// method RepoKVPs on an instance of MockEnterpriseDB.
+type EnterpriseDBRepoKVPsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RepoKVPStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRepoKVPsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRepoKVPsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

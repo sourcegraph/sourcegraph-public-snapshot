@@ -3678,6 +3678,9 @@ type MockDB struct {
 	// QueryRowContextFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryRowContext.
 	QueryRowContextFunc *DBQueryRowContextFunc
+	// RepoKVPsFunc is an instance of a mock function object controlling the
+	// behavior of the method RepoKVPs.
+	RepoKVPsFunc *DBRepoKVPsFunc
 	// ReposFunc is an instance of a mock function object controlling the
 	// behavior of the method Repos.
 	ReposFunc *DBReposFunc
@@ -3828,6 +3831,11 @@ func NewMockDB() *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 *sql.Row) {
+				return
+			},
+		},
+		RepoKVPsFunc: &DBRepoKVPsFunc{
+			defaultHook: func() (r0 RepoKVPStore) {
 				return
 			},
 		},
@@ -4013,6 +4021,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.QueryRowContext")
 			},
 		},
+		RepoKVPsFunc: &DBRepoKVPsFunc{
+			defaultHook: func() RepoKVPStore {
+				panic("unexpected invocation of MockDB.RepoKVPs")
+			},
+		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: func() RepoStore {
 				panic("unexpected invocation of MockDB.Repos")
@@ -4152,6 +4165,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: i.QueryRowContext,
+		},
+		RepoKVPsFunc: &DBRepoKVPsFunc{
+			defaultHook: i.RepoKVPs,
 		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: i.Repos,
@@ -6318,6 +6334,104 @@ func (c DBQueryRowContextFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBQueryRowContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRepoKVPsFunc describes the behavior when the RepoKVPs method of the
+// parent MockDB instance is invoked.
+type DBRepoKVPsFunc struct {
+	defaultHook func() RepoKVPStore
+	hooks       []func() RepoKVPStore
+	history     []DBRepoKVPsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoKVPs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) RepoKVPs() RepoKVPStore {
+	r0 := m.RepoKVPsFunc.nextHook()()
+	m.RepoKVPsFunc.appendCall(DBRepoKVPsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoKVPs method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBRepoKVPsFunc) SetDefaultHook(hook func() RepoKVPStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoKVPs method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBRepoKVPsFunc) PushHook(hook func() RepoKVPStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRepoKVPsFunc) SetDefaultReturn(r0 RepoKVPStore) {
+	f.SetDefaultHook(func() RepoKVPStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRepoKVPsFunc) PushReturn(r0 RepoKVPStore) {
+	f.PushHook(func() RepoKVPStore {
+		return r0
+	})
+}
+
+func (f *DBRepoKVPsFunc) nextHook() func() RepoKVPStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoKVPsFunc) appendCall(r0 DBRepoKVPsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoKVPsFuncCall objects describing the
+// invocations of this function.
+func (f *DBRepoKVPsFunc) History() []DBRepoKVPsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoKVPsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoKVPsFuncCall is an object that describes an invocation of method
+// RepoKVPs on an instance of MockDB.
+type DBRepoKVPsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RepoKVPStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoKVPsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoKVPsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

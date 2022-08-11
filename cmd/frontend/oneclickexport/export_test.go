@@ -247,7 +247,7 @@ func TestExport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +349,7 @@ func TestExport_CumulativeTest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -413,7 +413,7 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -533,7 +533,7 @@ func TestExport_DB_ExternalServices(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -615,7 +615,7 @@ func TestExport_DB_ExternalServiceRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := getArchiveReader(archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -647,4 +647,13 @@ func TestExport_DB_ExternalServiceRepos(t *testing.T) {
 	if !found {
 		t.Fatal(errors.New("external services file not found in exported zip archive"))
 	}
+}
+
+func getArchiveReader(archive io.Reader) (*zip.Reader, error) {
+	buf := new(bytes.Buffer)
+	_, err := buf.ReadFrom(archive)
+	if err != nil {
+		return nil, err
+	}
+	return zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
 }

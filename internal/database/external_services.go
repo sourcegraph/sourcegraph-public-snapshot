@@ -266,12 +266,6 @@ type ExternalServicesListOptions struct {
 
 	*LimitOffset
 
-	// When true, only external services without has_webhooks set will be
-	// returned. For use by ExternalServiceWebhookMigrator only.
-	NoCachedWebhooks bool
-	// When true, records will be locked. For use by
-	// ExternalServiceWebhookMigrator only.
-	ForUpdate bool
 	// When true, soft-deleted external services will also be included in the results.
 	IncludeDeleted bool
 }
@@ -309,9 +303,6 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
-	}
-	if o.NoCachedWebhooks {
-		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
@@ -1276,13 +1267,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		opt.OrderByDirection = "DESC"
 	}
 
-	var forUpdate *sqlf.Query
-	if opt.ForUpdate {
-		forUpdate = sqlf.Sprintf("FOR UPDATE SKIP LOCKED")
-	} else {
-		forUpdate = sqlf.Sprintf("")
-	}
-
 	q := sqlf.Sprintf(`
 		SELECT
 			id,
@@ -1304,11 +1288,9 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
-		%s
 		%s`,
 		sqlf.Join(opt.sqlConditions(), ") AND ("),
 		opt.LimitOffset.SQL(),
-		forUpdate,
 	)
 
 	rows, err := e.Query(ctx, q)

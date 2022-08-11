@@ -76,6 +76,16 @@ remoteUrlReplacements = git.example.com, git-web.example.com
 
 **+1 tip for git remotes:** By default, the plugin will use the git remote called `origin` to determine which repository on Sourcegraph corresponds to your local repository. If your `origin` remote doesn’t match Sourcegraph, you may instead configure a Git remote by the name of `sourcegraph`. It will take priority when creating Sourcegraph links.
 
+## Managing Custom Keymaps
+
+![A screenshot of the JetBrains preferences panel inside the Keymap tab](docs/keymaps.png)
+
+You can configure JetBrains to set custom keymaps for Sourcegraph actions:
+
+1. Open the JetBrains preferences panel and go to to the Keymap page.
+2. Filter by "sourcegraph" to see actions supplied by this plugin.
+3. Now select an option to overwrite the keymap information and supply the new bindings.
+
 ## Questions & Feedback
 
 If you have any questions, feedback, or bug report, we appreciate if you [open an issue on GitHub](https://github.com/sourcegraph/sourcegraph/issues/new?title=JetBrains:+&labels=jetbrains-ide).
