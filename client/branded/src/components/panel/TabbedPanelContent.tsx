@@ -144,9 +144,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const areExtensionsReady = useObservable(
         useMemo(
             () =>
-                extensionsController !== null
-                    ? haveInitialExtensionsLoaded(extensionsController.extHostAPI)
-                    : of(false),
+                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : of(true),
             [extensionsController]
         )
     )
