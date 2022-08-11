@@ -1,10 +1,13 @@
-import { FC, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 
 import { gql, useQuery } from '@apollo/client';
 import { mdiArrowExpand, mdiPlus } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
+import { useHistory, useLocation } from 'react-router';
 
 import { ButtonGroup, Button, Icon, BarChart } from '@sourcegraph/wildcard'
+
+import { IsCodeInsightsEnabledResult } from '../../graphql-operations';
 
 import { LANGUAGE_USAGE_DATA, LanguageUsageDatum } from './search-aggregation-mock-data';
 
@@ -15,6 +18,60 @@ const IS_CODE_INSIGHTS_ENABLED_QUERY = gql`
         enterpriseLicenseHasFeature(feature: "code-insights")
     }
 `
+
+interface URLStateOptions<State> {
+    urlKey: string,
+    deserializer: (value: string | null) => State,
+    serializer: (state: State) => string
+}
+
+type SetStateResult<State> = [state: State, dispatch: (state: State) => void]
+
+/**
+ * React hook analog standard react useState hook but with synced value with URL
+ * through URL query parameter.
+ */
+function useSyncedWithURLState<State>(options: URLStateOptions<State>): SetStateResult<State> {
+    const { urlKey, serializer, deserializer } = options
+    const history = useHistory()
+    const { search } = useLocation()
+
+    const urlSearchParameters = useMemo(() => new URLSearchParams(search), [search])
+    const queryParameter = useMemo(
+        () => deserializer(urlSearchParameters.get(urlKey)),
+        [urlSearchParameters, urlKey, deserializer]
+    )
+
+    const setNextState = useCallback((nextState: State) => {
+        urlSearchParameters.set(urlKey, serializer(nextState))
+
+        history.replace({ search: `?${urlSearchParameters.toString()}`})
+    }, [history, serializer, urlKey, urlSearchParameters])
+
+    return [queryParameter, setNextState]
+}
+
+enum AggregationModes {
+    Repository = 'repo',
+    FilePath = 'file',
+    Author = 'author',
+    CaptureGroups = 'groups',
+}
+
+const AGGREGATION_MODE_URL_KEY = 'aggregation_mode'
+
+const aggregationModeDeserializer = (serializedValue: string | null): AggregationModes => {
+    switch (serializedValue) {
+        case 'repo': return AggregationModes.Repository
+        case 'file': return AggregationModes.FilePath
+        case 'author': return AggregationModes.Author
+        case 'groups': return AggregationModes.CaptureGroups
+
+        default: return AggregationModes.Repository
+    }
+}
+
+const aggregationModeSerializer = (mode: AggregationModes): string => mode.toString()
 
 const getValue = (datum: LanguageUsageDatum): number => datum.value
 const getColor = (datum: LanguageUsageDatum): string => datum.fill
@@ -38,19 +95,16 @@ const getTruncationFormatter = (aggregationMode: AggregationModes): (tick: strin
     }
 }
 
-enum AggregationModes {
-    Repository,
-    FilePath,
-    Author,
-    CaptureGroups,
-}
-
 interface SearchAggregationsProps {
 }
 
 export const SearchAggregations: FC<SearchAggregationsProps> = props => {
-    const [aggregationMode, setAggregationMode] = useState(AggregationModes.Repository)
-    const { data } = useQuery<{ enterpriseLicenseHasFeature: boolean }>(IS_CODE_INSIGHTS_ENABLED_QUERY, { fetchPolicy: 'cache-first' })
+    const { data } = useQuery<IsCodeInsightsEnabledResult>(IS_CODE_INSIGHTS_ENABLED_QUERY, { fetchPolicy: 'cache-first' })
+    const [aggregationMode, setAggregationMode] = useSyncedWithURLState({
+        urlKey: AGGREGATION_MODE_URL_KEY,
+        serializer: aggregationModeSerializer,
+        deserializer: aggregationModeDeserializer
+    })
 
     const getTruncatedXLabel = useMemo(() => getTruncationFormatter(aggregationMode), [aggregationMode])
 
