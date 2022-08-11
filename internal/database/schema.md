@@ -2374,12 +2374,27 @@ Referenced by:
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_kvps"
+```
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ repo_id | integer |           | not null | 
+ key     | text    |           | not null | 
+ value   | text    |           |          | 
+Indexes:
+    "repo_kvps_pkey" PRIMARY KEY, btree (repo_id, key) INCLUDE (value)
+Foreign-key constraints:
+    "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 

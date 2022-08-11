@@ -648,6 +648,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		HasFileContent:      b.RepoHasFileContent(),
 		CommitAfter:         b.RepoContainsCommitAfter(),
 		UseIndex:            b.Index(),
+		HasKVPs:             b.RepoHasKVPs(),
 	}
 }
 

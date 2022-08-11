@@ -15516,6 +15516,73 @@
       ]
     },
     {
+      "Name": "repo_kvps",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "key",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "value",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "repo_kvps_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_kvps_pkey ON repo_kvps USING btree (repo_id, key) INCLUDE (value)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (repo_id, key) INCLUDE (value)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "repo_kvps_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "repo_pending_permissions",
       "Comment": "",
       "Columns": [

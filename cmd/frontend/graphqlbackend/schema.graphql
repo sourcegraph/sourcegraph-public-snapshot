@@ -768,6 +768,21 @@ type Mutation {
     Site-admin or owner of the external service only.
     """
     syncExternalService(id: ID!): EmptyResponse!
+
+    """
+    Associate a new key-value pair with a repo.
+    """
+    addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Update a key-value pair associated with a repo.
+    """
+    updateRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Delete a key-value pair associated with a repo.
+    """
+    deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
 }
 
 """
@@ -2832,6 +2847,26 @@ type Repository implements Node & GenericSearchResultInterface {
     The star count the repository has in the code host.
     """
     stars: Int!
+
+    """
+    A set of user-defined key-value pairs associated with the repo.
+    """
+    keyValuePairs: [KeyValuePair!]!
+}
+
+"""
+A key-value pair
+"""
+type KeyValuePair {
+    """
+    The non-nullable key.
+    """
+    key: String!
+
+    """
+    The nullable value. A null value indicates this key-value pair should be treated as a tag.
+    """
+    value: String
 }
 
 """
