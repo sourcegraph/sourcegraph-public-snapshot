@@ -24,6 +24,28 @@ The scraping process has a crude at-least once semantics guarantee. If any scrap
 Only events that [exist in an allow list](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@735bc0f69ce417ecce55a9194dbf349c954043e3/-/blob/internal/database/event_logs.go?L321-324) will be scraped. Events are keyed in the allow list by the `event_logs.name` column. The allow list can be found in the primary
 postgres database in the table `event_logs_export_allowlist`.
 
+#### Adding to the allow list
+1. Create a migration using the sg tool `sg migration add -db=frontend your_migration_name_goes_here`
+2. In the generated `up.sql` add the SQL required to insert events
+```postgresql
+insert into event_logs_export_allowlist (event_name) values (''), ('') on conflict do nothing;
+```
+3. In the generated `down.sql` add the SQL required to remove the events previously added.
+```postgresql
+delete from event_logs_export_allowlist where event_name in ('', '');
+```
+4. Create a pull request and get a review from the Data Engineering team.
+
+
+#### Determine if an event is in the allow list
+Currently, there is not a single document that shows the entire allow list. There are two options:
+1. Start Sourcegraph and migrate to the latest version, and query the database
+```postgresql
+select * from event_logs_export_allowlist;
+```
+2. [Look through migration files](https://sourcegraph.sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:migrations+lang:sql+MY_EVENT_NAME&patternType=standard) to see if the event you are looking for has been added and not deleted
+
+
 ### How to enable for a managed instance
 1. Ensure the managed instance has the [appropriate IAM policy](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-managed/-/blob/modules/terraform-managed-instance-new/iam.tf?L19-31&utm_source=raycast-sourcegraph&utm_campaign=search) applied
 2. Update the managed instance deployment manifest to include the following environment variables:
@@ -33,3 +55,4 @@ postgres database in the table `event_logs_export_allowlist`.
 3. Deploy the updated deployment manifest and restart the `worker` service.
 
 ### Monitoring
+Metrics are emitted on each Sourcegraph instance with this export job enabled that are prefixed with `src_telemetry_job`.
