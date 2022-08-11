@@ -1,11 +1,11 @@
 # Event level data usage pipeline
 
 This document outlines information about the ability to export raw user event data from Sourcegraph. This is limited
-to certain mangaged instances (cloud) where the customer has signed a corresponding data collection agreement.
+to certain managed instances (cloud) where the customer has signed a corresponding data collection agreement.
 
 ### What is it?
 
-This process is a background that can be enabled that will periodically scrape the `event_logs` table in the primary database
+This process is a background job that can be enabled that will periodically scrape the `event_logs` table in the primary database
 and send it to Sourcegraph centralized analytics. More information can be found in [RFC 719: Managed Instance Telemetry](https://docs.google.com/document/d/1N9aO0uTlvwXI7FzdPjIUCn_d1tRkJUfsc0urWigRf6s/edit).
 
 The [job interval](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/worker/internal/telemetry/telemetry_job.go?L118) determines how often the job is executed. The [batch size option](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/worker/internal/telemetry/telemetry_job.go?L246-252) determines how many records can be pulled in a single scrape. The batch size has a [default value](https://sourcegraph.sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/cmd/worker/internal/telemetry/telemetry_job%5C.go+MaxEventsCountDefault&patternType=standard) and can be overridden with a site setting:
@@ -17,7 +17,7 @@ The [job interval](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/so
 
 The scraping job maintains state using a bookmark stored in the primary postgres database in the table `event_logs_scrape_state`. [If the bookmark is not found, one will be inserted](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/worker/internal/telemetry/telemetry_job.go?L424-440) such that the bookmark is the most recent event at the time.
 
-The scraping process has a crude at-least once semantics guarantee. If any scrape should fail the bookmark state will not be updated causing future scrapes to retry the same set of events.
+The scraping process has a crude at-least once semantics guarantee. If any scrape should fail, the bookmark state will not be updated causing future scrapes to retry the same set of events.
 
 ### Allow list
 
@@ -55,4 +55,4 @@ select * from event_logs_export_allowlist;
 3. Deploy the updated deployment manifest and restart the `worker` service.
 
 ### Monitoring
-Metrics are emitted on each Sourcegraph instance with this export job enabled that are prefixed with `src_telemetry_job`.
+Each Sourcegraph instance with this export job enabled will emit metrics that are prefixed with `src_telemetry_job`.
