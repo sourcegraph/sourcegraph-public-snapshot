@@ -134,7 +134,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 
 	if account.ServiceType == extsvc.TypeGitHub {
 		opts := database.ExternalAccountsListOptions{
-            ServiceType: fmt.Sprintf("%sApp", account.ServiceType),
+			ServiceType:   fmt.Sprintf("%sApp", account.ServiceType),
 			AccountIDLike: fmt.Sprintf("%%/%s", account.AccountID),
 		}
 		accts, err := r.db.UserExternalAccounts().List(ctx, opts)
