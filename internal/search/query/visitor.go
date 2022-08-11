@@ -107,7 +107,7 @@ func VisitTypedPredicate[T any, PT predicatePointer[T]](nodes []Node, f func(pre
 		}
 
 		newPred := PT(new(T))
-		err := newPred.ParseParams(predArgs)
+		err := newPred.Unmarshal(predArgs)
 		if err != nil {
 			panic(err) // should already be validated
 		}

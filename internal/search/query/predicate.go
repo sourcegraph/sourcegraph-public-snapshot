@@ -17,9 +17,9 @@ type Predicate interface {
 	// For example, with `repo:contains.file`, Name returns "contains.file".
 	Name() string
 
-	// ParseParams parses the contents of the predicate arguments
+	// Unmarshal parses the contents of the predicate arguments
 	// into the predicate object.
-	ParseParams(string) error
+	Unmarshal(string) error
 }
 
 var DefaultPredicateRegistry = PredicateRegistry{
@@ -85,9 +85,9 @@ func ParseAsPredicate(value string) (name, params string) {
 // EmptyPredicate is a noop value that satisfies the Predicate interface.
 type EmptyPredicate struct{}
 
-func (EmptyPredicate) Field() string            { return "" }
-func (EmptyPredicate) Name() string             { return "" }
-func (EmptyPredicate) ParseParams(string) error { return nil }
+func (EmptyPredicate) Field() string          { return "" }
+func (EmptyPredicate) Name() string           { return "" }
+func (EmptyPredicate) Unmarshal(string) error { return nil }
 
 // RepoContainsFilePredicate represents the `repo:contains.file()` predicate,
 // which filters to repos that contain a path and/or content
@@ -96,7 +96,7 @@ type RepoContainsFilePredicate struct {
 	Content string
 }
 
-func (f *RepoContainsFilePredicate) ParseParams(params string) error {
+func (f *RepoContainsFilePredicate) Unmarshal(params string) error {
 	nodes, err := Parse(params, SearchTypeRegex)
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ type RepoContainsContentPredicate struct {
 	Pattern string
 }
 
-func (f *RepoContainsContentPredicate) ParseParams(params string) error {
+func (f *RepoContainsContentPredicate) Unmarshal(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
 		return errors.Errorf("contains.content argument: %w", err)
 	}
@@ -187,7 +187,7 @@ type RepoContainsPathPredicate struct {
 	Pattern string
 }
 
-func (f *RepoContainsPathPredicate) ParseParams(params string) error {
+func (f *RepoContainsPathPredicate) Unmarshal(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
 		return errors.Errorf("contains.path argument: %w", err)
 	}
@@ -207,7 +207,7 @@ type RepoContainsCommitAfterPredicate struct {
 	TimeRef string
 }
 
-func (f *RepoContainsCommitAfterPredicate) ParseParams(params string) error {
+func (f *RepoContainsCommitAfterPredicate) Unmarshal(params string) error {
 	f.TimeRef = params
 	return nil
 }
@@ -223,7 +223,7 @@ type RepoHasDescriptionPredicate struct {
 	Pattern string
 }
 
-func (f *RepoHasDescriptionPredicate) ParseParams(params string) (err error) {
+func (f *RepoHasDescriptionPredicate) Unmarshal(params string) (err error) {
 	if _, err := regexp.Compile(params); err != nil {
 		return errors.Errorf("invalid repo:has.description() argument: %w", err)
 	}
@@ -241,7 +241,7 @@ type RepoHasTagPredicate struct {
 	Key string
 }
 
-func (f *RepoHasTagPredicate) ParseParams(params string) (err error) {
+func (f *RepoHasTagPredicate) Unmarshal(params string) (err error) {
 	if len(params) == 0 {
 		return errors.New("tag must be non-empty")
 	}
@@ -257,7 +257,7 @@ type RepoHasKVPPredicate struct {
 	Value string
 }
 
-func (p *RepoHasKVPPredicate) ParseParams(params string) (err error) {
+func (p *RepoHasKVPPredicate) Unmarshal(params string) (err error) {
 	split := strings.Split(params, ":")
 	if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
 		return errors.New("expected params in the form of key:value")
@@ -276,7 +276,7 @@ type FileContainsContentPredicate struct {
 	Pattern string
 }
 
-func (f *FileContainsContentPredicate) ParseParams(params string) error {
+func (f *FileContainsContentPredicate) Unmarshal(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
 		return errors.Errorf("file:contains.content argument: %w", err)
 	}
@@ -296,7 +296,7 @@ type FileHasOwnerPredicate struct {
 	Owner string
 }
 
-func (f *FileHasOwnerPredicate) ParseParams(params string) error {
+func (f *FileHasOwnerPredicate) Unmarshal(params string) error {
 	if params == "" {
 		return errors.Errorf("file:has.owner argument should not be empty")
 	}
