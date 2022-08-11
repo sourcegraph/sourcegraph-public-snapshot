@@ -130,12 +130,6 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                 >
                     <Icon aria-hidden={true} className="small" svgPath={mdiOpenInNew} /> All search keywords
                 </MenuText>
-                {isSourcegraphDotCom && (
-                    <Alert className="small rounded-0 mb-0 mt-1" variant="info">
-                        On Sourcegraph.com, use a <Code>repo:</Code> filter to narrow your search to &le;500
-                        repositories.
-                    </Alert>
-                )}
             </PopoverContent>
         </Popover>
     )
