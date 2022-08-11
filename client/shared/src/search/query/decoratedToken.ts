@@ -978,13 +978,14 @@ const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | u
 const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (path.join('.')) {
-        case 'contains':
-            // eslint-disable-next-line no-case-declarations
+        case 'contains': {
             const result = decorateContainsBody(body, offset)
             if (result !== undefined) {
                 return result
             }
             break
+
+        }
         case 'contains.file':
         case 'contains.content':
         case 'has.description':
@@ -1004,12 +1005,13 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 value: body,
                 kind: PatternKind.Regexp,
             })
-        case 'has':
-            const decorateResult = decorateRepoHasBody(body, offset)
-            if (decorateResult !== undefined) {
-                return decorateResult
+        case 'has': {
+            const result = decorateRepoHasBody(body, offset)
+            if (result !== undefined) {
+                return result
             }
             break
+        }
         case 'has.tag':
             return [
                 {
