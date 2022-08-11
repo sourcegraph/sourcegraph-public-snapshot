@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -87,12 +90,8 @@ func TestRefreshToken_ExternalServices(t *testing.T) {
 	h := &RefreshTokenHelperForExternalService{DB: db, ExternalServiceID: 2, OauthRefreshToken: "refresh_token"}
 	newToken, err := h.RefreshToken(ctx, doer, ctxOauth)
 
-	if newToken != expectedNewToken {
-		t.Fatalf("got %v, want %v", newToken, expectedNewToken)
-	}
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, expectedNewToken, newToken)
 }
 
 func TestRefreshToken_ExternalAccounts(t *testing.T) {
@@ -146,10 +145,6 @@ func TestRefreshToken_ExternalAccounts(t *testing.T) {
 	h := &RefreshTokenHelperForExternalAccount{DB: db, ExternalAccountID: 1, OauthRefreshToken: "refresh_token"}
 	newToken, err := h.RefreshToken(ctx, doer, ctxOauth)
 
-	if newToken != expectedNewToken {
-		t.Fatalf("got %v, want %v", newToken, expectedNewToken)
-	}
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, expectedNewToken, newToken)
 }

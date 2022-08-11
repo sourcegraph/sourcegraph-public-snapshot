@@ -85,13 +85,12 @@ func (p *OAuthProvider) FetchAccount(context.Context, *types.User, []*extsvc.Acc
 // has read access to. The project ID has the same value as it would be
 // used as api.ExternalRepoSpec.ID. The returned list only includes private project IDs.
 //
-// The client used by this method will be in charge of updating the oauth token if it is expired and retry the request.
+// The client used by this method will be in charge of updating the Oauth token if it is expired and retry the request.
 //
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-
 func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
@@ -113,7 +112,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		OauthRefreshToken: tok.RefreshToken,
 	}
 
-	client := p.clientProvider.NewClientWithTokenRefresher(p.clientURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, p.clientProvider.HTTPClient, helper.RefreshToken)
+	client := p.clientProvider.NewClientWithTokenRefresher(&auth.OAuthBearerToken{Token: tok.AccessToken}, p.clientProvider.HTTPClient, helper.RefreshToken)
 	return listProjects(ctx, client)
 }
 

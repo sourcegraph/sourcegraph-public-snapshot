@@ -72,7 +72,7 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
-func TestClient_doWithBaseURLWithOAuthContext(t *testing.T) {
+func TestClient_doWithBaseURL(t *testing.T) {
 	baseURL, err := url.Parse("https://gitlab.com/")
 	require.NoError(t, err)
 

@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -146,13 +148,24 @@ func RetrieveToken(doer httpcli.Doer, oauthCtx OauthContext, refreshToken string
 }
 
 func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
+	var logger log.Logger
+
 	r, err := doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
 	}
 
+	if r != nil {
+
+	}
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
-	r.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			logger.Error("oauth2: error closing body", log.Error(err))
+		}
+	}(r.Body)
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "oauth2: cannot fetch token: %v")
 	}

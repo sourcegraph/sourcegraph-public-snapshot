@@ -372,6 +372,10 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			continue
 		}
 
+		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
+			return nil, nil, errors.Wrap(err, "wait for rate limiter")
+		}
+
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
 			// FetchUserPerms makes API requests using a client that will deal with the token expiration and try to

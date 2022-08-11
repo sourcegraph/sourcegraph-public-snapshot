@@ -10,11 +10,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -93,6 +95,21 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		},
 		nil,
 	)
+
+	mockedOauthCtx :=
+		&oauthutil.OauthContext{
+			ClientID:     "client",
+			ClientSecret: "client_sec",
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  "url/oauth/authorize",
+				TokenURL: "url/oauth/token",
+			},
+			Scopes: []string{"read_user"},
+		}
+	gitlab.MockGetOauthContext = func() *oauthutil.OauthContext {
+		return mockedOauthCtx
+	}
+	defer func() { gitlab.MockGetOauthContext = nil }()
 
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),

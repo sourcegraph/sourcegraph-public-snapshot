@@ -132,7 +132,6 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	if oauthToken == "" {
 		return p.getClient(nil)
 	}
-
 	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 }
 
@@ -153,7 +152,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, a, p.HTTPClient)
+	c := p.newClient(a, p.HTTPClient)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -191,10 +190,14 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer) *Client {
+func (p *ClientProvider) newClient(a auth.Authenticator, httpClient httpcli.Doer) *Client {
+	return p.NewClientWithTokenRefresher(a, httpClient, nil)
+}
+
+func (p *ClientProvider) NewClientWithTokenRefresher(a auth.Authenticator, httpClient httpcli.Doer, refresher oauthutil.TokenRefresher) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
-	if isGitLabDotComURL(baseURL) && a == nil {
+	if isGitLabDotComURL(p.baseURL) && a == nil {
 		cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
 	} else {
 		cacheTTL = 30 * time.Second
@@ -208,11 +211,11 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
 	rl := ratelimit.DefaultRegistry.Get(p.urn)
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
 		urn:              p.urn,
-		baseURL:          baseURL,
+		baseURL:          p.baseURL,
 		httpClient:       httpClient,
 		projCache:        projCache,
 		Auth:             a,
@@ -222,13 +225,6 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 	}
 }
 
-func (p *ClientProvider) NewClientWithTokenRefresher(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer, refresher oauthutil.TokenRefresher) *Client {
-	client := p.newClient(baseURL, a, httpClient)
-	client.tokenRefresher = refresher
-
-	return client
-}
-
 func isGitLabDotComURL(baseURL *url.URL) bool {
 	hostname := strings.ToLower(baseURL.Hostname())
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
@@ -236,15 +232,16 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 
 // do is the default method for making API requests and will prepare the correct
 // base path.
+var MockGetOauthContext func() *oauthutil.OauthContext
+
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-
 	oauthContext := getOauthContext()
 	return c.doWithBaseURL(ctx, oauthContext, req, result)
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is used for authentication,
-// it  will make a retry and refresh in case the token has expired.
+// it will try to refresh the token and retry the same request when the token has expired.
 func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OauthContext, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var responseStatus string
 
@@ -274,13 +271,11 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.Oaut
 	var body []byte
 
 	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
-	if ok {
-		if oauthContext != nil {
-			code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, *oauthContext)
-			if err != nil {
-				trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-				return nil, 0, errors.Wrap(err, "do request with retry and refresh")
-			}
+	if ok && oauthContext != nil {
+		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, *oauthContext)
+		if err != nil {
+			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
 		}
 	} else {
 		if c.Auth != nil {
@@ -451,6 +446,10 @@ func (e ProjectNotFoundError) Error() string {
 func (e ProjectNotFoundError) NotFound() bool { return true }
 
 func getOauthContext() *oauthutil.OauthContext {
+	if MockGetOauthContext != nil {
+		return MockGetOauthContext()
+	}
+
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
 		if authProvider.Gitlab != nil {
 			p := authProvider.Gitlab
