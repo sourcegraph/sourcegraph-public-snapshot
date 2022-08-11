@@ -73,8 +73,8 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			FileName: mount.FileName,
 			Path:     mount.Path,
 			URL: filepath.Join(
-				".executors/batches/mount",
-				string(relay.MarshalID("BatchSpecMount", batchSpec.RandID)),
+				"batches/mount",
+				string(relay.MarshalID("BatchSpec", batchSpec.RandID)),
 				string(relay.MarshalID("BatchSpecMount", mount.RandID)),
 			),
 		}
