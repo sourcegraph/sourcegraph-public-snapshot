@@ -15,10 +15,10 @@ A common strategy to address this problem of having to rebuild everything is to 
 In order to determine what we can cache and when to do it, we need to make sure to cover the following questions:
 
 1. Will it be faster to download a cached version rather than building it?
-1. Can we come up with an identifier that represents accurately what version of the cache is needed, before building anything?
-- Ex: the checksum of `yarn.lock` accurately tells us which version of the dependencies cache needs to be downloaded if it exists.
-1. Is what is being cached, not the end result of that test?
-- If it were the case, it means we would be caching the result of the test, which is defeating the purpose of a continuous integration process.
+2. Can we come up with an identifier that represents accurately what version of the cache is needed, before building anything?
+   - Ex: the checksum of `yarn.lock` accurately tells us which version of the dependencies cache needs to be downloaded if it exists.
+3. Is what is being cached, not the end result of that test?
+   - If it were the case, it means we would be caching the result of the test, which is defeating the purpose of a continuous integration process.
 
 ## How to write a step that caches an artefact?
 
@@ -29,14 +29,14 @@ For example: we want to cache the `node_modules` folder to avoid dowloading agai
 ```go
 // Browser extension unit tests
 pipeline.AddStep(":jest::chrome: Test browser extension",
-bk.Cache(&buildkite.CacheOptions{
-ID:          "node_modules",
-Key:         "cache-node_modules-{{ checksum 'yarn.lock' }}",
-RestoreKeys: []string{"cache-node_modules-{{ checksum 'yarn.lock' }}"},
-Paths:       []string{"node_modules", "client/extension-api/node_modules"},
-})
-bk.Cmd("dev/ci/yarn-test.sh client/browser"),
-bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+  bk.Cache(&buildkite.CacheOptions{
+    ID:          "node_modules",
+    Key:         "cache-node_modules-{{ checksum 'yarn.lock' }}",
+    RestoreKeys: []string{"cache-node_modules-{{ checksum 'yarn.lock' }}"},
+    Paths:       []string{"node_modules", "client/extension-api/node_modules"},
+  }),
+  bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+  bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 ```
 
 The important part here are:
