@@ -49,7 +49,7 @@ func fetchAuthTokenGCR(ctx context.Context) (string, error) {
 }
 func findUpdatedTagGCR(tagsList []string) string {
 	var tags []string
-	//var updatedManifest manifest
+
 	for _, tag := range tagsList {
 		if strings.Contains(tag, "-") || strings.Contains(tag, "latest") {
 			continue
