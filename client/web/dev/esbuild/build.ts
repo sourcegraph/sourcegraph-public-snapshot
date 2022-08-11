@@ -34,6 +34,8 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     bundle: true,
     format: 'esm',
     logLevel: 'error',
+    jsx: 'automatic',
+    jsxDev: true, // we're only using esbuild for dev server right now
     splitting: true,
     chunkNames: 'chunks/chunk-[name]-[hash]',
     outdir: STATIC_ASSETS_PATH,
