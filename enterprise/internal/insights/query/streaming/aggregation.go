@@ -7,16 +7,16 @@ import (
 )
 
 type Aggregate struct {
-	value string
-	count int32
+	Value string
+	Count int32
 }
 
 func (a *Aggregate) Less(b *Aggregate) bool {
-	if a.count == b.count {
+	if a.Count == b.Count {
 		// Sort alphabetically if of same count.
-		return strings.Compare(a.value, b.value) < 0
+		return strings.Compare(a.Value, b.Value) < 0
 	}
-	return a.count > b.count
+	return a.Count > b.Count
 }
 
 type aggregated map[string]*Aggregate
@@ -26,7 +26,7 @@ func (a aggregated) Add(value string, count int32) {
 	if !ok {
 		a[value] = &Aggregate{value, count}
 	} else {
-		result.count += count
+		result.Count += count
 	}
 }
 
