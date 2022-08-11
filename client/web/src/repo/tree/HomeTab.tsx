@@ -106,7 +106,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
-                            html: blob.highlight.html,
+                            html: blob.highlight.html ?? '',
                             repoName: repo.name,
                             revision,
                             commitID,

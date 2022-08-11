@@ -1,8 +1,7 @@
 import React, { SVGProps, useCallback } from 'react'
 
-import { LineChart, SeriesLikeChart } from '../../../../../../charts'
-import { LineChartProps } from '../../../../../../charts/components/line-chart/LineChart'
-import { SeriesWithData } from '../../../../../../charts/components/line-chart/utils'
+import { LineChart, SeriesLikeChart, LineChartProps } from '@sourcegraph/wildcard'
+
 import { UseSeriesToggleReturn } from '../../../../../../insights/utils/use-series-toggle'
 import { LockedChart } from '../locked/LockedChart'
 
@@ -68,7 +67,7 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
     }
 
     const getActiveSeries = useCallback(
-        <D,>(dataSeries: SeriesWithData<D>[]): SeriesWithData<D>[] =>
+        <D extends { id: string | number }>(dataSeries: D[]): D[] =>
             dataSeries.filter(series => isSeriesSelected(`${series.id}`) || isSeriesHovered(`${series.id}`)),
         [isSeriesSelected, isSeriesHovered]
     )

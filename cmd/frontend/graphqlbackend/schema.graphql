@@ -4327,6 +4327,24 @@ type GitTree implements TreeEntry {
 }
 
 """
+The format and highlighting to use when requesting highlighting information for a file.
+"""
+enum HighlightResponseFormat {
+    """
+    HTML formatted file content without syntax highlighting.
+    """
+    HTML_PLAINTEXT
+    """
+    HTML formatted file content with syntax highlighting.
+    """
+    HTML_HIGHLIGHT
+    """
+    SCIP highlighting information as JSON.
+    """
+    JSON_SCIP
+}
+
+"""
 A file.
 In a future version of Sourcegraph, a repository's files may be distinct from a repository's blobs
 (for example, to support searching/browsing generated files that aren't committed and don't exist
@@ -4393,9 +4411,9 @@ interface File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
 
@@ -4460,9 +4478,9 @@ type VirtualFile implements File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
 
@@ -4565,9 +4583,9 @@ type GitBlob implements TreeEntry & File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
