@@ -68,7 +68,8 @@
 .tip {
     color: var(--text-muted);
     display: flex;
-    align-items: center;
+    align-items: baseline;
+    align-content: center;
     justify-content: center;
     flex-wrap: wrap;
     min-height: 2rem;
