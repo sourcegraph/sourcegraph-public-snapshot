@@ -1,15 +1,44 @@
 package streaming
 
 import (
-	"container/heap"
 	"sort"
 	"strings"
 )
+
+type aggregated struct {
+	maxResults int
+	Results    map[string]int32
+	Overflow   int32
+}
 
 type Aggregate struct {
 	Value string
 	Count int32
 }
+
+func (a *aggregated) Add(value string, count int32) {
+	if _, ok := a.Results[value]; !ok {
+		if len(a.Results) >= a.maxResults {
+			a.Overflow += count
+		} else {
+			a.Results[value] = count
+		}
+	} else {
+		a.Results[value] += count
+	}
+}
+
+func (a aggregated) SortAggregate() []*Aggregate {
+	aggregateSlice := make(aggregateSlice, 0, len(a.Results))
+	for val, count := range a.Results {
+		aggregateSlice = append(aggregateSlice, &Aggregate{val, count})
+	}
+	sort.Sort(aggregateSlice)
+
+	return aggregateSlice
+}
+
+type aggregateSlice []*Aggregate
 
 func (a *Aggregate) Less(b *Aggregate) bool {
 	if a.Count == b.Count {
@@ -18,30 +47,6 @@ func (a *Aggregate) Less(b *Aggregate) bool {
 	}
 	return a.Count > b.Count
 }
-
-type aggregated map[string]*Aggregate
-
-func (a aggregated) Add(value string, count int32) {
-	result, ok := a[value]
-	if !ok {
-		a[value] = &Aggregate{value, count}
-	} else {
-		result.Count += count
-	}
-}
-
-// SortAggregate returns an ordered slice of elements to present to the user.
-func (a aggregated) SortAggregate(max int) []*Aggregate {
-	h := aggregateHeap{max: max}
-	for _, elt := range a {
-		h.Add(elt)
-	}
-	sort.Sort(h.aggregateSlice)
-
-	return h.aggregateSlice
-}
-
-type aggregateSlice []*Aggregate
 
 func (as aggregateSlice) Len() int {
 	return len(as)
@@ -53,36 +58,4 @@ func (as aggregateSlice) Less(i, j int) bool {
 
 func (as aggregateSlice) Swap(i, j int) {
 	as[i], as[j] = as[j], as[i]
-}
-
-type aggregateHeap struct {
-	aggregateSlice
-	max int
-}
-
-func (ah *aggregateHeap) Add(a *Aggregate) {
-	if len(ah.aggregateSlice) < ah.max {
-		heap.Push(ah, a)
-	} else if ah.max > 0 && a.Less(ah.aggregateSlice[0]) {
-		// We keep the element with the least count at index 0.
-		heap.Pop(ah)
-		heap.Push(ah, a)
-	}
-}
-
-func (ah *aggregateHeap) Less(i, j int) bool {
-	// We want a min heap i.e. the head of the heap is the least important value we have kept so far.
-	return ah.aggregateSlice[j].Less(ah.aggregateSlice[i])
-}
-
-func (ah *aggregateHeap) Push(a any) {
-	ah.aggregateSlice = append(ah.aggregateSlice, a.(*Aggregate))
-}
-
-func (ah *aggregateHeap) Pop() any {
-	old := ah.aggregateSlice
-	n := len(old)
-	a := old[n-1]
-	ah.aggregateSlice = old[0 : n-1]
-	return a
 }
