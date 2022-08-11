@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,6 +37,7 @@ type BatchesStore interface {
 
 // NewMountHandler creates a new MountHandler.
 func NewMountHandler(
+	db database.DB,
 	store BatchesStore,
 	uploadStore uploadstore.Store,
 	operations *Operations,
@@ -55,7 +57,7 @@ func NewMountHandler(
 
 	// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 	// visibility check with the remote code host (if enabled via site configuration).
-	return authMiddleware(handler, store, operations.authMiddleware)
+	return authMiddleware(handler, db, operations.authMiddleware)
 }
 
 func (h *MountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -137,6 +139,7 @@ func (h *MountHandler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: could probably use some goroutines here
 	for i := 0; i < countNumber; i++ {
 		if err = h.uploadFile(r, spec, i); err != nil {
 			http.Error(w, fmt.Sprintf("failed to upload file: %s", err), http.StatusInternalServerError)
