@@ -55,8 +55,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(cstore)
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
 	operations := httpapi.NewOperations(observationContext)
-	enterpriseServices.BatchesMountUploadHandler = httpapi.NewMountUploadHandler(cstore, uploadStore, operations)
-	enterpriseServices.BatchesMountRetrievalHandler = httpapi.NewMountRetrievalHandler(cstore, uploadStore, operations)
+	enterpriseServices.BatchesMountHandler = httpapi.NewMountHandler(cstore, uploadStore, operations, false)
 
 	return nil
 }
