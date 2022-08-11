@@ -132,7 +132,7 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
     /**
      * The repository that this header is for.
      */
-    repo:
+    repo?:
         | GQL.IRepository
         | {
               /** The repository's ID, if it has one.
@@ -145,7 +145,10 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
           }
 
     /** Information about the revision of the repository. */
-    resolvedRev: ResolvedRevision | ErrorLike | undefined
+    resolvedRev?: ResolvedRevision | ErrorLike | undefined
+
+    /** The repoName from the URL */
+    repoName: string
 
     /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
     revision?: string
@@ -188,10 +191,10 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
 
     const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
         () => ({
-            repoName: repo.name,
+            repoName: props.repoName,
             encodedRev: props.revision,
         }),
-        [repo.name, props.revision]
+        [props.repoName, props.revision]
     )
 
     const leftActions = useMemo(

@@ -245,7 +245,7 @@ export interface RepoFile extends RepoSpec, RevisionSpec, Partial<ResolvedRevisi
 /**
  * A file at an exact commit
  */
-export interface AbsoluteRepoFile extends RepoSpec, RevisionSpec, ResolvedRevisionSpec, FileSpec {}
+export interface AbsoluteRepoFile extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, FileSpec {}
 
 /**
  * A position in file at an exact commit

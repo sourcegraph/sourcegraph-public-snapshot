@@ -71,10 +71,11 @@ interface Props
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
-    repo: RepositoryFields
+    repo?: RepositoryFields
+    repoName: string
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
-    commitID: string
+    commitID?: string
     revision: string
     location: H.Location
     history: H.History
@@ -96,6 +97,7 @@ export const treePageRepositoryFragment = gql`
 
 export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
+    repoName,
     commitID,
     revision,
     filePath,
@@ -127,30 +129,29 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 element: (
                     <FilePathBreadcrumbs
                         key="path"
-                        repoName={repo.name}
+                        repoName={repoName}
                         revision={revision}
                         filePath={filePath}
                         isDir={true}
-                        repoUrl={repo.url}
                         telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [repo.name, repo.url, revision, filePath, props.telemetryService])
+        }, [filePath, repoName, revision, props.telemetryService])
     )
 
     const treeOrError = useObservable(
         useMemo(
             () =>
                 fetchTreeEntries({
-                    repoName: repo.name,
+                    repoName,
                     commitID,
                     revision,
                     filePath,
                     first: 2500,
                     requestGraphQL: props.platformContext.requestGraphQL,
                 }).pipe(catchError((error): [ErrorLike] => [asError(error)])),
-            [repo.name, commitID, revision, filePath, props.platformContext]
+            [repoName, commitID, revision, filePath, props.platformContext]
         )
     )
 
@@ -160,7 +161,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         settingsCascade.final['insights.displayLocation.directory'] === true
 
     // Add DirectoryViewer
-    const uri = toURIWithPath({ repoName: repo.name, commitID, filePath })
+    const uri = toURIWithPath({ repoName, commitID, filePath })
 
     useEffect(() => {
         if (!showCodeInsights) {
@@ -193,7 +194,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }, [uri, showCodeInsights, props.extensionsController])
 
     const getPageTitle = (): string => {
-        const repoString = displayRepoName(repo.name)
+        const repoString = displayRepoName(repoName)
         if (filePath) {
             return `${basename(filePath)} - ${repoString}`
         }
@@ -257,16 +258,16 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             <div className="d-flex justify-content-between align-items-center">
                 <div>
                     <PageHeader
-                        path={[{ icon: mdiSourceRepository, text: displayRepoName(repo.name) }]}
+                        path={[{ icon: mdiSourceRepository, text: displayRepoName(repoName) }]}
                         className="mb-3 test-tree-page-title"
                     />
-                    {repo.description && <Text>{repo.description}</Text>}
+                    {repo?.description && <Text>{repo.description}</Text>}
                 </div>
                 {isNewRepoPageEnabled && (
                     <ButtonGroup>
                         <Button
                             to={`/search?q=${encodeURIPathComponent(
-                                `context:global count:all repo:dependencies(${repo.name.replaceAll('.', '\\.')}$) `
+                                `context:global count:all repo:dependencies(${repoName.replaceAll('.', '\\.')}$) `
                             )}`}
                             variant="secondary"
                             outline={true}
@@ -291,9 +292,9 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             </Button>
                         )}
 
-                        {repo.viewerCanAdminister && (
+                        {repo?.viewerCanAdminister && (
                             <Button
-                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                to={`/${encodeURIPathComponent(repoName)}/-/settings`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}

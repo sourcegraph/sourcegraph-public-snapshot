@@ -34,7 +34,7 @@ import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 import styles from './RepoRevisionSidebar.module.scss'
 
 interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
-    repoID: Scalars['ID']
+    repoID?: Scalars['ID']
     isDir: boolean
     defaultBranch: string
     className: string
@@ -140,37 +140,40 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                         )}
                     </TabList>
                     <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
-                        <TabPanels>
-                            <TabPanel>
-                                <Tree
-                                    key="files"
-                                    repoName={props.repoName}
-                                    repoID={props.repoID}
-                                    revision={props.revision}
-                                    commitID={props.commitID}
-                                    history={props.history}
-                                    location={props.location}
-                                    scrollRootSelector=".explorer"
-                                    activePath={props.filePath}
-                                    activePathIsDir={props.isDir}
-                                    sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                    extensionsController={props.extensionsController}
-                                    isLightTheme={props.isLightTheme}
-                                    telemetryService={props.telemetryService}
-                                />
-                            </TabPanel>
-                            {!coreWorkflowImprovementsEnabled && (
+                        {/* TODO: See if we can render more here, instead of waiting for these props */}
+                        {props.repoID && props.commitID && (
+                            <TabPanels>
                                 <TabPanel>
-                                    <RepoRevisionSidebarSymbols
-                                        key="symbols"
+                                    <Tree
+                                        key="files"
+                                        repoName={props.repoName}
                                         repoID={props.repoID}
                                         revision={props.revision}
+                                        commitID={props.commitID}
+                                        history={props.history}
+                                        location={props.location}
+                                        scrollRootSelector=".explorer"
                                         activePath={props.filePath}
-                                        onHandleSymbolClick={handleSymbolClick}
+                                        activePathIsDir={props.isDir}
+                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                        extensionsController={props.extensionsController}
+                                        isLightTheme={props.isLightTheme}
+                                        telemetryService={props.telemetryService}
                                     />
                                 </TabPanel>
-                            )}
-                        </TabPanels>
+                                {!coreWorkflowImprovementsEnabled && (
+                                    <TabPanel>
+                                        <RepoRevisionSidebarSymbols
+                                            key="symbols"
+                                            repoID={props.repoID}
+                                            revision={props.revision}
+                                            activePath={props.filePath}
+                                            onHandleSymbolClick={handleSymbolClick}
+                                        />
+                                    </TabPanel>
+                                )}
+                            </TabPanels>
+                        )}
                     </div>
                 </Tabs>
             </div>

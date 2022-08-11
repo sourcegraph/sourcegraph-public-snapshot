@@ -71,6 +71,11 @@ import { redirectToExternalHost } from '.'
 
 import styles from './RepoContainer.module.scss'
 
+interface CoreRepoRevisionData {
+    repoName: string
+    revision?: string
+}
+
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
  */
@@ -91,7 +96,7 @@ export interface RepoContainerContext
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps {
-    repo: RepositoryFields
+    repo?: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -218,7 +223,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const childBreadcrumbSetters = props.useBreadcrumb(
         useMemo(() => {
-            if (isErrorLike(repoOrError) || !repoOrError) {
+            if (isErrorLike(repoOrError)) {
                 return
             }
 
@@ -227,15 +232,16 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     to={
                         resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                             ? resolvedRevisionOrError.rootTreeURL
-                            : repoOrError.url
+                            : repoOrError?.url || ''
                     }
+                    disabled={!resolvedRevisionOrError && !repoOrError}
                     className="text-nowrap test-repo-header-repo-link"
                     variant="secondary"
                     outline={true}
                     size="sm"
                     as={Link}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> {displayRepoName(repoOrError.name)}
+                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> {displayRepoName(repoName)}
                 </Button>
             )
 
@@ -264,7 +270,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                             aria-label="Change repository"
                         >
                             <RepositoriesPopover
-                                currentRepo={repoOrError.id}
+                                currentRepo={repoOrError?.id}
                                 telemetryService={props.telemetryService}
                             />
                         </PopoverContent>
@@ -324,11 +330,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    if (!repoOrError) {
-        // Render nothing while loading
-        return null
-    }
-
     const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
     if (isErrorLike(repoOrError)) {
@@ -372,6 +373,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     actionButtons={props.repoHeaderActionButtons}
                     useActionItemsToggle={useActionItemsToggle}
                     breadcrumbs={props.breadcrumbs}
+                    repoName={repoName}
                     revision={revision}
                     repo={repoOrError}
                     resolvedRev={resolvedRevisionOrError}
@@ -395,7 +397,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                             key="go-to-code-host"
                             repo={repoOrError}
                             // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                            revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
+                            revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
                             filePath={filePath}
                             commitRange={commitRange}
                             position={position}
@@ -456,6 +458,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                         {...context}
                                         {...childBreadcrumbSetters}
                                         routes={props.repoRevisionContainerRoutes}
+                                        repoName={repoName}
                                         revision={revision || ''}
                                         resolvedRevisionOrError={resolvedRevisionOrError}
                                         // must exactly match how the revision was encoded in the URL

@@ -32,7 +32,6 @@ import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
-import { useBlameDecorations } from '../blame/useBlameDecorations'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -46,7 +45,6 @@ import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
-import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 import { RenderedNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedNotebookMarkdown'
 
@@ -68,12 +66,12 @@ interface Props
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
-    repoID: Scalars['ID']
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
-    repoUrl: string
+    repoID?: Scalars['ID']
+    repoUrl?: string
 }
 
 /**
@@ -139,12 +137,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         revision={revision}
                         filePath={filePath}
                         isDir={false}
-                        repoUrl={repoUrl}
                         telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [filePath, revision, repoName, repoUrl, props.telemetryService])
+        }, [filePath, revision, repoName, props.telemetryService])
     )
 
     /**
@@ -158,7 +155,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 return of(undefined)
             }
 
-            return fetchBlob({ repoName, commitID, filePath, formatOnly: true }).pipe(
+            return fetchBlob({ repoName, revision, filePath, formatOnly: true }).pipe(
                 map(blob => {
                     if (blob === null) {
                         return blob
@@ -199,7 +196,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     switchMap(disableTimeout =>
                         fetchBlob({
                             repoName,
-                            commitID,
+                            revision,
                             filePath,
                             disableTimeout,
                         })
@@ -261,9 +258,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         return `${repoString}`
     }
 
-    useBlobPanelViews(props)
+    // useBlobPanelViews(props)
 
-    const blameDecorations = useBlameDecorations({ repoName, commitID, filePath })
+    // const blameDecorations = useBlameDecorations({ repoName, commitID, filePath })
 
     const isSearchNotebook =
         blobInfoOrError &&
@@ -455,7 +452,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     disableDecorations={false}
                     role="region"
                     ariaLabel="File blob"
-                    blameDecorations={blameDecorations}
+                    // blameDecorations={blameDecorations}
                 />
             )}
         </>

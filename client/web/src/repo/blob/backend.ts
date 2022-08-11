@@ -14,7 +14,7 @@ function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean; f
 
 interface FetchBlobArguments {
     repoName: string
-    commitID: string
+    revision: string
     filePath: string
     disableTimeout?: boolean
     formatOnly?: boolean
@@ -23,7 +23,7 @@ interface FetchBlobArguments {
 export const fetchBlob = memoizeObservable(
     ({
         repoName,
-        commitID,
+        revision,
         filePath,
         disableTimeout = false,
         formatOnly = false,
@@ -32,13 +32,13 @@ export const fetchBlob = memoizeObservable(
             gql`
                 query Blob(
                     $repoName: String!
-                    $commitID: String!
+                    $revision: String!
                     $filePath: String!
                     $disableTimeout: Boolean!
                     $formatOnly: Boolean!
                 ) {
                     repository(name: $repoName) {
-                        commit(rev: $commitID) {
+                        commit(rev: $revision) {
                             file(path: $filePath) {
                                 ...BlobFileFields
                             }
@@ -56,7 +56,7 @@ export const fetchBlob = memoizeObservable(
                     }
                 }
             `,
-            { repoName, commitID, filePath, disableTimeout, formatOnly }
+            { repoName, revision, filePath, disableTimeout, formatOnly }
         ).pipe(
             map(dataOrThrowErrors),
             map(data => {
