@@ -244,11 +244,11 @@ func isEnabled() bool {
 }
 
 func getBatchSize() int {
-	val := confClient.Get().ExportUsageTelemetry.BatchSize
-	if val <= 0 {
-		val = MaxEventsCountDefault
+	config := confClient.Get()
+	if config == nil || config.ExportUsageTelemetry == nil || config.ExportUsageTelemetry.BatchSize <= 0 {
+		return MaxEventsCountDefault
 	}
-	return val
+	return config.ExportUsageTelemetry.BatchSize
 }
 
 type topicConfig struct {
