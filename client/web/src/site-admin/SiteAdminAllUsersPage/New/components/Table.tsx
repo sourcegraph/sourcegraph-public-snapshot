@@ -15,7 +15,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import styles from './index.module.scss'
+import styles from './Table.module.scss'
 
 interface IColumn<T> {
     key: string
