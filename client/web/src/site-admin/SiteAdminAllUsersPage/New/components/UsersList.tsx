@@ -6,7 +6,7 @@ import { format as formatDate } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { H2, LoadingSpinner, Text, Input, Button, Alert } from '@sourcegraph/wildcard'
+import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import {
@@ -27,7 +27,9 @@ import styles from '../index.module.scss'
 type SiteUser = UsersManagementUsersListResult['site']['users']['nodes'][0]
 
 export const UsersList: React.FunctionComponent = () => {
-    const [searchTxt, setSearchTxt] = useState<string>('')
+    const [searchText, setSearchText] = useState<string>('')
+    const debouncedSearchText = useDebounce(searchText, 300)
+
     const [lastActivePeriod, setLastActivePeriod] = useState<SiteUsersLastActivePeriod>(SiteUsersLastActivePeriod.ALL)
     const [limit, setLimit] = useState(8) // TODO: fix to 25 before merging
     const [sortBy, setSortBy] = useState({ key: SiteUserOrderBy.EVENTS_COUNT, descending: false })
@@ -40,7 +42,7 @@ export const UsersList: React.FunctionComponent = () => {
     >(USERS_MANAGEMENT_USERS_LIST, {
         variables: {
             first: limit,
-            query: searchTxt || null,
+            query: debouncedSearchText || null,
             lastActivePeriod,
             orderBy: sortBy.key,
             descending: sortBy.descending,
@@ -84,8 +86,8 @@ export const UsersList: React.FunctionComponent = () => {
                     />
                     <Input
                         placeholder="Search username or name"
-                        value={searchTxt}
-                        onChange={event => setSearchTxt(event.target.value)}
+                        value={searchText}
+                        onChange={event => setSearchText(event.target.value)}
                     />
                 </div>
             </div>
