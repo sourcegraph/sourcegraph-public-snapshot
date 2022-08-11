@@ -179,7 +179,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     <SearchSidebarSection
                         sectionId={SectionID.GROUPED_BY}
                         className={styles.item}
-                        header="Grouped by"
+                        header="Aggregate results by"
                         startCollapsed={collapsedSections?.[SectionID.GROUPED_BY]}
                         onToggle={persistToggleState}
                     >

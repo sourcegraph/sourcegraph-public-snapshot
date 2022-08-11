@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useState } from 'react'
 
 import { mdiArrowExpand, mdiPlus } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
@@ -6,7 +6,7 @@ import { ParentSize } from '@visx/responsive'
 // TODO: import Chart UI from the wildcard, see https://github.com/sourcegraph/sourcegraph/issues/40136
 // eslint-disable-next-line no-restricted-imports
 import { BarChart } from '@sourcegraph/web/src/charts'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { ButtonGroup, Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SearchAggregations.module.scss'
 
@@ -29,72 +29,142 @@ const LANGUAGE_USAGE_DATA: LanguageUsageDatum[] = [
     {
         name: 'JavaScript',
         value: 422,
-        fill: '#f1e05a',
+        fill: 'var(--primary)',
         linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
     },
     {
         name: 'CSS',
         value: 273,
-        fill: '#563d7c',
+        fill: 'var(--primary)',
         linkURL: 'https://en.wikipedia.org/wiki/CSS',
     },
     {
         name: 'HTML',
         value: 129,
-        fill: '#e34c26',
+        fill: 'var(--primary)',
         linkURL: 'https://en.wikipedia.org/wiki/HTML',
+    },
+    {
+        name: 'С++',
+        value: 110,
+        fill: 'var(--primary)',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+    {
+        name: 'TypeScript',
+        value: 95,
+        fill: 'var(--primary)',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+    {
+        name: 'Elm',
+        value: 84,
+        fill: 'var(--primary)',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+    {
+        name: 'Rust',
+        value: 60,
+        fill: 'var(--primary)',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+    {
+        name: 'Go',
+        value: 45,
+        fill: 'var(--primary)',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
     },
     {
         name: 'Markdown',
         value: 35,
-        fill: '#083fa1',
+        fill: 'var(--primary)',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+    {
+        name: 'Zig',
+        value: 20,
+        fill: 'var(--primary)',
+        linkURL: 'https://en.wikipedia.org/wiki/Markdown',
+    },
+    {
+        name: 'XML',
+        value: 5,
+        fill: 'var(--primary)',
         linkURL: 'https://en.wikipedia.org/wiki/Markdown',
     },
 ]
 
+enum AggregationModes {
+    Repository,
+    FilePath,
+    Author,
+    CaptureGroups,
+}
+
 interface SearchAggregationsProps {}
 
-export const SearchAggregations: FC<SearchAggregationsProps> = props => (
-    <div>
-        <header className={styles.buttonGroup}>
-            <Button variant="secondary" size="sm">
-                Repository
-            </Button>
+export const SearchAggregations: FC<SearchAggregationsProps> = props => {
+    const [aggregationMode, setAggregationMode] = useState(AggregationModes.Repository)
 
-            <Button variant="secondary" size="sm">
-                Capture group
-            </Button>
+    return (
+        <article className='pt-2'>
+            <ButtonGroup className='mb-3'>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    outline={aggregationMode !== AggregationModes.Repository}
+                    onClick={() => setAggregationMode(AggregationModes.Repository)}
+                >
+                    Repo
+                </Button>
 
-            <Button variant="secondary" size="sm">
-                Author
-            </Button>
-            <Button variant="secondary" size="sm">
-                File path
-            </Button>
-        </header>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    outline={aggregationMode !== AggregationModes.FilePath}
+                    onClick={() => setAggregationMode(AggregationModes.FilePath)}>
+                    File
+                </Button>
 
-        <ParentSize className={styles.chartContainer}>
-            {parent => (
-                <BarChart
-                    width={parent.width}
-                    height={parent.height}
-                    data={LANGUAGE_USAGE_DATA}
-                    getDatumName={getName}
-                    getDatumValue={getValue}
-                    getDatumColor={getColor}
-                    getDatumLink={getLink}
-                />
-            )}
-        </ParentSize>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    outline={aggregationMode !== AggregationModes.Author}
+                    onClick={() => setAggregationMode(AggregationModes.Author)}>
+                    Author
+                </Button>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    outline={aggregationMode !== AggregationModes.CaptureGroups}
+                    onClick={() => setAggregationMode(AggregationModes.CaptureGroups)}>
+                    Group
+                </Button>
+            </ButtonGroup>
 
-        <footer className={styles.actions}>
-            <Button variant="secondary" size="sm" className={styles.detailsAction}>
-                <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Details
-            </Button>
+            <ParentSize className={styles.chartContainer}>
+                {parent => (
+                    <BarChart
+                        width={parent.width}
+                        height={parent.height}
+                        data={LANGUAGE_USAGE_DATA}
+                        getDatumName={getName}
+                        getDatumValue={getValue}
+                        getDatumColor={getColor}
+                        getDatumLink={getLink}
+                    />
+                )}
+            </ParentSize>
 
-            <Button variant="primary" size="sm">
-                <Icon aria-hidden={true} svgPath={mdiPlus} /> Create code insight
-            </Button>
-        </footer>
-    </div>
-)
+            <footer className={styles.actions}>
+                <Button variant="secondary" size="sm" outline={true} className={styles.detailsAction}>
+                    <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
+                </Button>
+
+                <Button variant="secondary" outline={true} size="sm">
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Save insight
+                </Button>
+            </footer>
+        </article>
+    )
+}
