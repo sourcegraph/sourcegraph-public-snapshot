@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 
-import { mdiMenuUp, mdiMenuDown, mdiArrowRightTop, mdiArrowRightBottom, mdiChevronDown } from '@mdi/js'
+import { mdiMenuUp, mdiMenuDown, mdiArrowRightTop, mdiArrowRightBottom, mdiChevronDown, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 
 import {
@@ -17,9 +17,9 @@ import {
 
 import styles from './index.module.scss'
 
-interface IColumn<TData> {
+interface IColumn<T> {
     key: string
-    accessor?: keyof TData | ((data: TData) => any)
+    accessor?: keyof T | ((data: T) => any)
     header:
         | string
         | {
@@ -29,61 +29,85 @@ interface IColumn<TData> {
           }
     sortable?: boolean
     align?: 'left' | 'right' | 'center'
-    render?: (data: TData, index: number) => JSX.Element
+    render?: (data: T, index: number) => JSX.Element
 }
 
-interface IAction<TData> {
+interface IAction<T> {
     key: string
     label: string
     icon: string
     iconColor?: 'muted' | 'danger'
     labelColor?: 'body' | 'danger'
-    onClick: (items: TData[]) => void
+    onClick: (items: T[]) => void
+    bulk?: boolean
+    condition?: (items: T[]) => boolean
 }
 
-interface TableProps<TData> {
-    columns: IColumn<TData>[]
-    data: TData[]
-    actions?: IAction<TData>[]
+interface TableProps<T> {
+    columns: IColumn<T>[]
+    data: T[]
+    actions?: IAction<T>[]
     selectable?: boolean
     note?: string | JSX.Element
-    getRowId?: (data: TData) => string | number
+    getRowId: (data: T) => string
     sortBy?: {
         key: string
         descending?: boolean
     }
-    onSortByChange?: (newOderBy: NonNullable<TableProps<TData>['sortBy']>) => void
-    onSelectionChange?: (rows: TData[]) => void
+    onSortByChange?: (newOderBy: NonNullable<TableProps<T>['sortBy']>) => void
 }
 
-export function Table<TData>({
+export function Table<T>({
     data,
     columns,
-    selectable = false,
     actions = [],
     note,
-    getRowId = (data: any) => data.id,
-    onSortByChange,
     sortBy,
-    onSelectionChange,
-}: TableProps<TData>): JSX.Element {
-    const [selection, setSelection] = useState<TData[]>([])
+    getRowId,
+    onSortByChange,
+    selectable = false,
+}: TableProps<T>): JSX.Element {
+    const [selection, setSelection] = useState<T[]>([])
 
-    const onRowSelectionChange = (row: TData, selected: boolean): void => {
-        const newSelection = selection.filter(selectedRow => getRowId(selectedRow) !== getRowId(row))
-        if (selected) {
-            newSelection.push(row)
-        }
+    const onRowSelectionChange = useCallback(
+        (row: T, selected: boolean): void => {
+            setSelection(selection => [
+                ...selection.filter(selectedRow => getRowId(selectedRow) !== getRowId(row)),
+                ...(selected ? [row] : []),
+            ])
+        },
+        [getRowId]
+    )
 
-        setSelection(newSelection)
-        onSelectionChange?.(newSelection)
-    }
+    const bulkActions = useMemo(() => actions.filter(action => action.bulk), [actions])
+
+    const memoizedColumns = useMemo(
+        (): IColumn<T>[] => [
+            ...columns,
+            {
+                key: 'actions',
+                header: { label: 'Actions', align: 'right' },
+                align: 'right',
+                render: function RenderActions(user: T) {
+                    return (
+                        <div className="d-flex justify-content-end">
+                            <Actions actions={actions} selection={[user]}>
+                                <Icon aria-label="Pencil icon" svgPath={mdiPencil} className="ml-1" />
+                                <Icon aria-label="Arrow down" svgPath={mdiChevronDown} className="ml-1" />
+                            </Actions>
+                        </div>
+                    )
+                },
+            },
+        ],
+        [actions, columns]
+    )
 
     return (
         <>
             {selectable && (
                 <div className="mb-4">
-                    <SelectionActions<TData> actions={actions} position="top" selection={selection} />
+                    <SelectionActions<T> actions={bulkActions} position="top" selection={selection} />
                 </div>
             )}
             <table className={styles.table}>
@@ -94,7 +118,7 @@ export function Table<TData>({
                                 <div className={styles.header} />
                             </th>
                         )}
-                        {columns.map(column => {
+                        {memoizedColumns.map(column => {
                             const key = column.key
                             const label = typeof column.header === 'string' ? column.header : column.header.label
                             const align = typeof column.header !== 'string' ? column.header.align || 'left' : 'left'
@@ -146,10 +170,10 @@ export function Table<TData>({
                 </thead>
                 <tbody>
                     {data.map(item => (
-                        <Row<TData>
+                        <Row<T>
                             key={getRowId(item)}
                             data={item}
-                            columns={columns}
+                            columns={memoizedColumns}
                             selectable={selectable}
                             selection={selection}
                             getRowId={getRowId}
@@ -160,7 +184,7 @@ export function Table<TData>({
             </table>
             {selectable && (
                 <div className="mt-4 d-flex justify-content-between align-items-center">
-                    <SelectionActions<TData> actions={actions} position="bottom" selection={selection} />
+                    <SelectionActions<T> actions={actions} position="bottom" selection={selection} />
                     {note}
                 </div>
             )}
@@ -168,25 +192,18 @@ export function Table<TData>({
     )
 }
 
-interface RowProps<TData> {
-    data: TData
-    columns: IColumn<TData>[]
+interface RowProps<T> {
+    data: T
+    columns: IColumn<T>[]
     selectable: boolean
-    selection: TData[]
-    getRowId: (data: TData) => string | number
-    onSelectionChange: (data: TData, selected: boolean) => void
+    selection: T[]
+    getRowId: (data: T) => string | number
+    onSelectionChange: (data: T, selected: boolean) => void
 }
 
-function Row<TData>({
-    data,
-    columns,
-    selectable,
-    selection,
-    getRowId,
-    onSelectionChange,
-}: RowProps<TData>): JSX.Element {
+function Row<T>({ data, columns, selectable, selection, getRowId, onSelectionChange }: RowProps<T>): JSX.Element {
     const rowKey = getRowId(data)
-    const selected = useMemo(() => !!selection.find(row => getRowId(row) === rowKey), [getRowId, rowKey, selection])
+    const isSelected = useMemo(() => !!selection.find(row => getRowId(row) === rowKey), [getRowId, rowKey, selection])
 
     return (
         <tr>
@@ -196,7 +213,7 @@ function Row<TData>({
                         <Checkbox
                             aria-labelledby={`${rowKey} selection checkbox`}
                             className="m-0"
-                            checked={selected}
+                            checked={isSelected}
                             onChange={event => onSelectionChange(data, event.target.checked)}
                         />
                     </div>
@@ -223,13 +240,13 @@ function Row<TData>({
     )
 }
 
-interface SelectionActionsProps<TData> {
-    actions: IAction<TData>[]
+interface SelectionActionsProps<T> {
+    actions: IAction<T>[]
     position: 'top' | 'bottom'
-    selection: TData[]
+    selection: T[]
 }
 
-function SelectionActions<TData>({ actions, position, selection }: SelectionActionsProps<TData>): JSX.Element {
+function SelectionActions<T>({ actions, position, selection }: SelectionActionsProps<T>): JSX.Element {
     return (
         <div className="d-flex align-items-center">
             <Icon
@@ -241,14 +258,32 @@ function SelectionActions<TData>({ actions, position, selection }: SelectionActi
             <Text className="mx-2 my-0">
                 {selection.length ? `With ${selection.length} selected` : 'With selected'}
             </Text>
-            <Popover>
-                <PopoverTrigger as={Button} disabled={!selection.length} variant="secondary" outline={true}>
-                    Actions
-                    <Icon aria-label="Arrow down" svgPath={mdiChevronDown} className="ml-1" />
-                </PopoverTrigger>
-                <PopoverContent position={Position.bottom}>
-                    <ul className="list-unstyled mb-0">
-                        {actions.map(({ key, label, icon, iconColor, labelColor, onClick }) => (
+            <Actions actions={actions} selection={selection} disabled={!selection.length}>
+                Actions
+                <Icon aria-label="Arrow down" svgPath={mdiChevronDown} className="ml-1" />
+            </Actions>
+        </div>
+    )
+}
+
+interface ActionsProps<T> {
+    selection: T[]
+    actions: IAction<T>[]
+    disabled?: boolean
+    children?: React.ReactNode
+}
+
+function Actions<T>({ children, actions, disabled, selection }: ActionsProps<T>): JSX.Element {
+    return (
+        <Popover>
+            <PopoverTrigger as={Button} disabled={disabled} variant="secondary" outline={true}>
+                {children}
+            </PopoverTrigger>
+            <PopoverContent position={Position.bottom}>
+                <ul className="list-unstyled mb-0">
+                    {actions
+                        .filter(({ condition }) => !condition || condition(selection))
+                        .map(({ key, label, icon, iconColor, labelColor, onClick }) => (
                             <Button
                                 className="d-flex cursor-pointer"
                                 key={key}
@@ -268,9 +303,8 @@ function SelectionActions<TData>({ actions, position, selection }: SelectionActi
                                 </span>
                             </Button>
                         ))}
-                    </ul>
-                </PopoverContent>
-            </Popover>
-        </div>
+                </ul>
+            </PopoverContent>
+        </Popover>
     )
 }
