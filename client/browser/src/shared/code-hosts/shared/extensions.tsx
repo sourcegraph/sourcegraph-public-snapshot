@@ -20,6 +20,7 @@ import {
 import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
+    RequiredExtensionsControllerProps,
 } from '@sourcegraph/shared/src/extensions/controller'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
@@ -49,7 +50,7 @@ export function initializeExtensions(
 
 interface InjectProps
     extends PlatformContextProps<'settings' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
-        ExtensionsControllerProps {
+        RequiredExtensionsControllerProps {
     history: H.History
     render: Renderer
 }
@@ -67,27 +68,25 @@ export const renderCommandPalette = ({
     render,
     ...props
 }: RenderCommandPaletteProps) => (mount: HTMLElement): void => {
-    if (extensionsController !== null) {
-        render(
-            <ShortcutProvider>
-                <CommandListPopoverButton
-                    {...props}
-                    popoverClassName={classNames('command-list-popover', props.popoverClassName)}
-                    popoverInnerClassName={props.popoverInnerClassName}
-                    menu={ContributableMenu.CommandPalette}
-                    extensionsController={extensionsController}
-                    location={history.location}
-                />
-                <Notifications
-                    extensionsController={extensionsController}
-                    notificationItemStyleProps={{
-                        notificationItemClassNames: props.notificationClassNames,
-                    }}
-                />
-            </ShortcutProvider>,
-            mount
-        )
-    }
+    render(
+        <ShortcutProvider>
+            <CommandListPopoverButton
+                {...props}
+                popoverClassName={classNames('command-list-popover', props.popoverClassName)}
+                popoverInnerClassName={props.popoverInnerClassName}
+                menu={ContributableMenu.CommandPalette}
+                extensionsController={extensionsController}
+                location={history.location}
+            />
+            <Notifications
+                extensionsController={extensionsController}
+                notificationItemStyleProps={{
+                    notificationItemClassNames: props.notificationClassNames,
+                }}
+            />
+        </ShortcutProvider>,
+        mount
+    )
 }
 
 export const renderGlobalDebug = ({

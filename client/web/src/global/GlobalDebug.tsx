@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Link } from '@sourcegraph/wildcard'
@@ -12,7 +12,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 
 import styles from './GlobalDebug.module.scss'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
+interface Props extends RequiredExtensionsControllerProps, PlatformContextProps {
     location: H.Location
 }
 
@@ -34,13 +34,11 @@ export const GlobalDebug: React.FunctionComponent<React.PropsWithChildren<Props>
         <ul className={classNames('nav', styles.globalDebug)}>
             <li className="nav-item">
                 <ErrorBoundary location={props.location} render={ExtensionDevelopmentToolsError}>
-                    {props.extensionsController !== null ? (
-                        <ExtensionDevelopmentToolsPopover
-                            link={ExtensionLink}
-                            extensionsController={props.extensionsController}
-                            platformContext={props.platformContext}
-                        />
-                    ) : null}
+                    <ExtensionDevelopmentToolsPopover
+                        link={ExtensionLink}
+                        extensionsController={props.extensionsController}
+                        platformContext={props.platformContext}
+                    />
                 </ErrorBoundary>
             </li>
         </ul>

@@ -921,7 +921,7 @@ export async function handleCodeHost({
 
     // Inject UI components
     // Render command palette
-    if (codeHost.getCommandPaletteMount && !minimalUI) {
+    if (codeHost.getCommandPaletteMount && !minimalUI && extensionsController !== null) {
         subscriptions.add(
             addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(
                 renderCommandPalette({
@@ -940,7 +940,7 @@ export async function handleCodeHost({
     // Render extension debug menu
     // This renders to document.body, which we can assume is never removed,
     // so we don't need to subscribe to mutations.
-    if (showGlobalDebug) {
+    if (showGlobalDebug && extensionsController !== null) {
         const mount = createGlobalDebugMount()
         renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }

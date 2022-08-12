@@ -11,7 +11,7 @@ import { ShortcutProvider } from './ShortcutProvider'
 
 interface Props extends PlatformContextProps<'sideloadedExtensionURL' | 'settings'> {
     location: H.Location
-    extensionsController: ClientController | null
+    extensionsController: ClientController
     sourcegraphURL: string
 }
 
@@ -31,13 +31,11 @@ export const GlobalDebug: React.FunctionComponent<React.PropsWithChildren<Props>
         <div className="navbar-nav align-items-center">
             <div className="nav-item">
                 <ShortcutProvider>
-                    {props.extensionsController !== null ? (
-                        <ExtensionDevelopmentToolsPopover
-                            extensionsController={props.extensionsController}
-                            link={makeExtensionLink(props.sourcegraphURL)}
-                            platformContext={props.platformContext}
-                        />
-                    ) : null}
+                    <ExtensionDevelopmentToolsPopover
+                        extensionsController={props.extensionsController}
+                        link={makeExtensionLink(props.sourcegraphURL)}
+                        platformContext={props.platformContext}
+                    />
                 </ShortcutProvider>
             </div>
         </div>
