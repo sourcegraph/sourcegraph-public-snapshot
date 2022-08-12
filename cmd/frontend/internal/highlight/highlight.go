@@ -106,10 +106,8 @@ type Params struct {
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
 
-	// FormatOnly, if true, will skip highlighting and only return the code
-	// in a formatted table view. This is useful if we want to display code
-	// as quickly as possible, without waiting for highlighting.
-	FormatOnly bool
+	// Format defines the response format of the syntax highlighting request.
+	Format gosyntect.HighlightResponseType
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -405,7 +403,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return plainResponse, true, nil
 	}
 
-	if p.FormatOnly {
+	if p.Format == gosyntect.FormatHTMLPlaintext {
 		return unhighlightedCode(err, code)
 	}
 
@@ -431,6 +429,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
+		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
 	// Set the Filetype part of the command if:
@@ -443,7 +442,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		query.Filetype = filetypeQuery.Language
 	}
 
-	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
+	resp, err := client.Highlight(ctx, query, p.Format)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
@@ -487,7 +486,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return unhighlightedCode(err, code)
 	}
 
-	if filetypeQuery.Engine == EngineTreeSitter {
+	// We need to return SCIP data if explicitly requested or if the selected
+	// engine is tree sitter.
+	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine == EngineTreeSitter {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 

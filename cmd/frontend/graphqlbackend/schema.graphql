@@ -768,6 +768,21 @@ type Mutation {
     Site-admin or owner of the external service only.
     """
     syncExternalService(id: ID!): EmptyResponse!
+
+    """
+    Associate a new key-value pair with a repo.
+    """
+    addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Update a key-value pair associated with a repo.
+    """
+    updateRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Delete a key-value pair associated with a repo.
+    """
+    deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
 }
 
 """
@@ -2832,6 +2847,26 @@ type Repository implements Node & GenericSearchResultInterface {
     The star count the repository has in the code host.
     """
     stars: Int!
+
+    """
+    A set of user-defined key-value pairs associated with the repo.
+    """
+    keyValuePairs: [KeyValuePair!]!
+}
+
+"""
+A key-value pair
+"""
+type KeyValuePair {
+    """
+    The non-nullable key.
+    """
+    key: String!
+
+    """
+    The nullable value. A null value indicates this key-value pair should be treated as a tag.
+    """
+    value: String
 }
 
 """
@@ -4327,6 +4362,24 @@ type GitTree implements TreeEntry {
 }
 
 """
+The format and highlighting to use when requesting highlighting information for a file.
+"""
+enum HighlightResponseFormat {
+    """
+    HTML formatted file content without syntax highlighting.
+    """
+    HTML_PLAINTEXT
+    """
+    HTML formatted file content with syntax highlighting.
+    """
+    HTML_HIGHLIGHT
+    """
+    SCIP highlighting information as JSON.
+    """
+    JSON_SCIP
+}
+
+"""
 A file.
 In a future version of Sourcegraph, a repository's files may be distinct from a repository's blobs
 (for example, to support searching/browsing generated files that aren't committed and don't exist
@@ -4393,9 +4446,9 @@ interface File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
 
@@ -4460,9 +4513,9 @@ type VirtualFile implements File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
 
@@ -4565,9 +4618,9 @@ type GitBlob implements TreeEntry & File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule

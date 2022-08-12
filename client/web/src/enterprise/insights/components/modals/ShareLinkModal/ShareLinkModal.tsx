@@ -17,7 +17,7 @@ import {
     isOrganizationOwner,
     isVirtualDashboard,
 } from '../../../core'
-import { useCopyURLHandler } from '../../../hooks/use-copy-url-handler'
+import { useCopyURLHandler } from '../../../hooks'
 
 import { decodeDashboardIds, GET_SHARABLE_INSIGHT_INFO_GQL } from './get-sharable-insight-info'
 

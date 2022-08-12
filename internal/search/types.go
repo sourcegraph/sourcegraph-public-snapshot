@@ -361,6 +361,7 @@ type RepoOptions struct {
 	// Whether we should depend on Zoekt for resolving repositories
 	UseIndex       query.YesNoOnly
 	HasFileContent []query.RepoHasFileContentArgs
+	HasKVPs        []query.RepoKVPFilter
 
 	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
@@ -428,6 +429,21 @@ func (op *RepoOptions) Tags() []otlog.Field {
 			add(trace.Scoped(fmt.Sprintf("hasFileContent[%d]", i), nondefault...))
 		}
 	}
+	if len(op.HasKVPs) > 0 {
+		for i, arg := range op.HasKVPs {
+			nondefault := []otlog.Field{}
+			if arg.Key != "" {
+				nondefault = append(nondefault, otlog.String("key", arg.Key))
+			}
+			if arg.Value != nil {
+				nondefault = append(nondefault, otlog.String("value", *arg.Value))
+			}
+			if arg.Negated {
+				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+			}
+			add(trace.Scoped(fmt.Sprintf("hasKVPs[%d]", i), nondefault...))
+		}
+	}
 	if op.ForkSet {
 		add(otlog.Bool("forkSet", op.ForkSet))
 	}
@@ -485,7 +501,20 @@ func (op *RepoOptions) String() string {
 				fmt.Fprintf(&b, "HasFileContent[%d].content: %s\n", i, arg.Content)
 			}
 			if arg.Negated {
-				fmt.Fprintf(&b, "HasFileContent[%d].negate: %s\n", i, arg.Path)
+				fmt.Fprintf(&b, "HasFileContent[%d].negated: %t\n", i, arg.Negated)
+			}
+		}
+	}
+	if len(op.HasKVPs) > 0 {
+		for i, arg := range op.HasKVPs {
+			if arg.Key != "" {
+				fmt.Fprintf(&b, "HasKVPs[%d].key: %s\n", i, arg.Key)
+			}
+			if arg.Value != nil {
+				fmt.Fprintf(&b, "HasKVPs[%d].value: %s\n", i, *arg.Value)
+			}
+			if arg.Negated {
+				fmt.Fprintf(&b, "HasKVPs[%d].negated: %t\n", i, arg.Negated)
 			}
 		}
 	}

@@ -941,18 +941,50 @@ const decorateContainsBody = (body: string, offset: number): DecoratedToken[] | 
 }
 
 /**
+ * Attempts to decorate `repo:has(key:value)` syntax. Fails if
+ * the body contains unsupported syntax.
+ */
+const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+    const matches = body.match(/([^:]+):([^:]+)/)
+    if (!matches) {
+        return undefined
+    }
+    console.log(matches)
+
+    return [
+        {
+            type: 'literal',
+            value: matches[1],
+            range: { start: offset, end: offset + matches[1].length },
+            quoted: false,
+        },
+        {
+            type: 'metaFilterSeparator',
+            range: { start: offset + matches[1].length, end: offset + matches[1].length + 1 },
+            value: ':',
+        },
+        {
+            type: 'literal',
+            value: matches[1],
+            range: { start: offset + matches[1].length + 1, end: offset + matches[1].length + 1 + matches[2].length },
+            quoted: false,
+        },
+    ]
+}
+
+/**
  * Decorates the body part of predicate syntax `name(body)`.
  */
 const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (path.join('.')) {
-        case 'contains':
-            // eslint-disable-next-line no-case-declarations
+        case 'contains': {
             const result = decorateContainsBody(body, offset)
             if (result !== undefined) {
                 return result
             }
             break
+        }
         case 'contains.file':
         case 'contains.content':
         case 'has.description':
@@ -972,6 +1004,22 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 value: body,
                 kind: PatternKind.Regexp,
             })
+        case 'has': {
+            const result = decorateRepoHasBody(body, offset)
+            if (result !== undefined) {
+                return result
+            }
+            break
+        }
+        case 'has.tag':
+            return [
+                {
+                    type: 'literal',
+                    range: { start: offset, end: offset + body.length },
+                    value: body,
+                    quoted: false,
+                },
+            ]
     }
     decorated.push({
         type: 'literal',

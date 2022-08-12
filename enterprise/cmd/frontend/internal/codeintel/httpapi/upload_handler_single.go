@@ -41,6 +41,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 		State:             "uploading",
 		NumParts:          1,
 		UploadedParts:     []int{0},
+		UncompressedSize:  uploadState.uncompressedSize,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err

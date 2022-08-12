@@ -6616,6 +6616,25 @@ Query: `sum(src_codeintel_upload_processor_handlers{job=~"^precise-code-intel-wo
 
 <br />
 
+#### precise-code-intel-worker: codeintel_upload_processor_upload_size
+
+<p class="subtitle">Sum of upload sizes in bytes being processed by each precise code-intel worker instance</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(instance) (src_codeintel_upload_processor_upload_size)`
+
+</details>
+
+<br />
+
 #### precise-code-intel-worker: codeintel_upload_processor_total
 
 <p class="subtitle">Handler operations every 5m</p>
