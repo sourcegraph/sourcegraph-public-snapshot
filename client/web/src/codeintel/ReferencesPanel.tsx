@@ -209,6 +209,14 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     )
 }
 
+interface BlobMemoryHistoryState {
+    /**
+     * Whether or not to sync this change from the blob history object to the
+     * panel's history object.
+     */
+    syncToPanel?: boolean
+}
+
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
@@ -283,7 +291,7 @@ export const ReferencesList: React.FunctionComponent<
         activeLocation !== undefined && activeLocation.url === location.url
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
-    const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
+    const blobMemoryHistory = useMemo(() => H.createMemoryHistory<BlobMemoryHistoryState>(), [])
 
     // When the token for which we display data changed, we want to reset
     // activeLocation.
@@ -599,8 +607,8 @@ const SideBlob: React.FunctionComponent<
         ReferencesPanelProps & {
             activeLocation: Location
 
-            location: H.Location
-            history: H.History
+            location: H.Location<BlobMemoryHistoryState>
+            history: H.History<BlobMemoryHistoryState>
             blobNav: (url: string) => void
             panelHistory: H.History
         }
@@ -617,7 +625,7 @@ const SideBlob: React.FunctionComponent<
     useEffect(
         () =>
             history.listen((location, method) => {
-                if (useCodeMirror && (location.state as any)?.syncToPanel !== false) {
+                if (useCodeMirror && location.state?.syncToPanel !== false) {
                     switch (method) {
                         case 'PUSH':
                             panelHistory.push(location)
