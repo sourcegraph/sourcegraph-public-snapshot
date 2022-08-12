@@ -92,7 +92,7 @@ export function searchQueryHistorySource({
                 filter: false,
                 options: searches
                     .map(
-                        (search, index): Completion => {
+                        (search): Completion => {
                             let query = search.searchText
 
                             {
@@ -124,12 +124,12 @@ export function searchQueryHistorySource({
                             }
                         }
                     )
-                    .filter(item => item.label.trim() !== '')
-                    .map((item, index) => {
+                    .filter(completion => completion.label.trim() !== '')
+                    .map((completion, index) => {
                         // This is here not in the .map call above so we can use
                         // the correct index after filtering out empty entries
-                        item.apply = createApplyCompletion(index)
-                        return item
+                        completion.apply = createApplyCompletion(index)
+                        return completion
                     }),
             }
         } catch {
