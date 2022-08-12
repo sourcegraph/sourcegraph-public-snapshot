@@ -65,7 +65,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		repoHasFilters = append(repoHasFilters, QueryForFileContentArgs(filter, isCaseSensitive))
 	}
 	if len(repoHasFilters) > 0 {
-		and = append(and, &zoekt.Type{Type: zoekt.TypeRepo, Child: zoekt.NewAnd(repoHasFilters...)})
+		and = append(and, zoekt.NewAnd(repoHasFilters...))
 	}
 
 	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
@@ -99,6 +99,7 @@ func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive boo
 		children = append(children, &zoekt.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
 	}
 	q := zoekt.NewAnd(children...)
+	q = &zoekt.Type{Type: zoekt.TypeRepo, Child: q}
 	if opt.Negated {
 		q = &zoekt.Not{Child: q}
 	}
