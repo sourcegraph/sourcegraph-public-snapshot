@@ -5,7 +5,7 @@ import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
 
-import { HighlightedFileResult, HighlightedFileVariables } from '../graphql-operations'
+import { HighlightedFileResult, HighlightedFileVariables, HighlightResponseFormat } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
 import { makeRepoURI } from '../util/url'
 
@@ -17,6 +17,7 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
     (
         {
             platformContext,
+            format = HighlightResponseFormat.HTML_HIGHLIGHT,
             ...context
         }: FetchFileParameters & {
             platformContext: Pick<PlatformContext, 'requestGraphQL'>
@@ -50,6 +51,7 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                 `,
                 variables: {
                     ...context,
+                    format,
                     disableTimeout: Boolean(context.disableTimeout),
                 },
                 mightContainPrivateInfo: true,

@@ -26,7 +26,7 @@ export interface FetchFileParameters {
     filePath: string
     disableTimeout?: boolean
     ranges: GQL.IHighlightLineRange[]
-    format: HighlightResponseFormat
+    format?: HighlightResponseFormat
 }
 
 interface Props extends Repo {

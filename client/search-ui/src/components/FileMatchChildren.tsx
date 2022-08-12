@@ -169,21 +169,15 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
     const fetchFileRangeMatches = useCallback(
-        ({
-            format = HighlightResponseFormat.HTML_HIGHLIGHT,
-            ranges,
-        }: {
-            format?: HighlightResponseFormat
-            ranges: IHighlightLineRange[]
-        }): Observable<string[][]> =>
+        (args: { format?: HighlightResponseFormat; ranges: IHighlightLineRange[] }): Observable<string[][]> =>
             fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
                     commitID: result.commit || '',
                     filePath: result.path,
                     disableTimeout: false,
-                    format,
-                    ranges,
+                    format: args.format,
+                    ranges: args.ranges,
                 },
                 false
             ),
