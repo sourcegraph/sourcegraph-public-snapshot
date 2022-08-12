@@ -101,18 +101,18 @@ export const SearchPageFooter: React.FunctionComponent<
                 ))}
                 <li>
                     <Link
-                        to="https://info.sourcegraph.com/dev-tool-time"
+                        to="https://srcgr.ph/discord-server"
                         className={styles.devToolTimeWrapper}
                         onClick={logDevelopmentToolTimeClicked}
                     >
                         <img
-                            src={`${assetsRoot}/img/devtooltime-logo.svg`}
+                            src={`${assetsRoot}/img/discord-footer-logo.svg`}
                             alt=""
                             className={styles.devToolTimeImage}
                         />
                         <div className={styles.devToolTimeText}>
-                            <H2 className={styles.linkSectionHeading}>Dev tool time</H2>
-                            <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
+                            <H2 className={styles.linkSectionHeading}>Join our Discord</H2>
+                            <div>If you need help or want to share something with the community, join us!</div>
                         </div>
                     </Link>
                 </li>
