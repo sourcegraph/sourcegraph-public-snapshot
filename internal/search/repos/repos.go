@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
@@ -594,7 +593,7 @@ func (r *Resolver) filterRepoHasFileContent(
 			}
 			var revsMatchingAllPredicates Set[repoAndRev]
 			for i, opt := range op.HasFileContent {
-				q := zoektQueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
+				q := searchzoekt.QueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
 				q = zoektquery.NewAnd(&zoektquery.BranchesRepos{List: indexed.BranchRepos()}, q)
 
 				foundRevs := Set[repoAndRev]{}
@@ -677,24 +676,6 @@ func (r *Resolver) filterRepoHasFileContent(
 
 	tr.LogFields(otlog.Int("filteredRevCount", len(matchedRepoRevs)))
 	return matchedRepoRevs, missing, nil
-}
-
-func zoektQueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoektquery.Q {
-	var children []zoektquery.Q
-	if opt.Path != "" {
-		re, _ := syntax.Parse(opt.Path, 0)
-		children = append(children, &zoektquery.Regexp{Regexp: re, FileName: true, CaseSensitive: caseSensitive})
-	}
-	if opt.Content != "" {
-		re, _ := syntax.Parse(opt.Content, 0)
-		children = append(children, &zoektquery.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
-	}
-	q := zoektquery.NewAnd(children...)
-	if opt.Negated {
-		q = &zoektquery.Not{Child: q}
-	}
-	q = zoektquery.Simplify(q)
-	return q
 }
 
 func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
