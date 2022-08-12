@@ -144,24 +144,27 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     }, [])
 
-    const extensions = useMemo(
-        () => [
-            staticExtensions,
-            selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
-            syntaxHighlight.of(blobInfo),
-            pinnedRangeField.init(() => (hasPin ? position : null)),
-            sourcegraphExtensions({
-                blobInfo,
-                initialSelection: position,
-                extensionsController,
-                disableStatusBar,
-                disableDecorations,
-                disableHovercards,
-            }),
-            blobPropsCompartment.of(blobProps),
-            blameDecorationsCompartment.of(blameDecorations),
-            settingsCompartment.of(settings),
-        ],
+    const extensions: Extension[] = useMemo(
+        () =>
+            [
+                staticExtensions,
+                selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
+                syntaxHighlight.of(blobInfo),
+                pinnedRangeField.init(() => (hasPin ? position : null)),
+                extensionsController !== null
+                    ? sourcegraphExtensions({
+                          blobInfo,
+                          initialSelection: position,
+                          extensionsController,
+                          disableStatusBar,
+                          disableDecorations,
+                          disableHovercards,
+                      })
+                    : null,
+                blobPropsCompartment.of(blobProps),
+                blameDecorationsCompartment.of(blameDecorations),
+                settingsCompartment.of(settings),
+            ].filter(Boolean) as Extension[],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
         // further below. However they are still needed here because we need to

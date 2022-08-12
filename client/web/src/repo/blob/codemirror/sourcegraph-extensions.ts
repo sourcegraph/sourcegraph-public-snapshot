@@ -11,7 +11,7 @@ import { Extension, Facet, StateEffect, StateEffectType, StateField } from '@cod
 import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
-import { combineLatest, Observable, of, ReplaySubject, Subject, Subscription, EMPTY } from 'rxjs'
+import { combineLatest, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
 import { filter, map, catchError, switchMap, distinctUntilChanged, startWith } from 'rxjs/operators'
 import { TextDocumentDecorationType } from 'sourcegraph'
 
@@ -24,7 +24,7 @@ import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { toURIWithPath, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
@@ -49,7 +49,7 @@ import blobStyles from '../Blob.module.scss'
  */
 interface Context {
     viewerId: ViewerId
-    extensionsController: ExtensionsControllerProps['extensionsController']
+    extensionsController: RequiredExtensionsControllerProps['extensionsController']
     extensionHostAPI: Remote<FlatExtensionHostAPI>
     blobInfo: BlobInfo
     subscriptions: Subscription
@@ -73,15 +73,11 @@ export function sourcegraphExtensions({
 }: {
     blobInfo: BlobInfo
     initialSelection: LineOrPositionOrRange
-    extensionsController: ExtensionsControllerProps['extensionsController']
+    extensionsController: RequiredExtensionsControllerProps['extensionsController']
     disableStatusBar?: boolean
     disableDecorations?: boolean
     disableHovercards?: boolean
 }): Extension {
-    if (extensionsController === null) {
-        return []
-    }
-
     const context = extensionsController.extHostAPI.then(async extensionHostAPI => {
         const uri = toURIWithPath(blobInfo)
 
@@ -424,24 +420,22 @@ const statusBar: Extension = [
                         startWith(view.state.facet(blobPropsFacet))
                     ),
                 ]).subscribe(([context, props]) => {
-                    if (context.extensionsController !== null) {
-                        this.reactRoot.render(
-                            React.createElement(
-                                Container,
-                                { history: props.history },
-                                React.createElement(StatusBar, {
-                                    getStatusBarItems,
-                                    extensionsController: context.extensionsController,
-                                    uri: toURIWithPath(context.blobInfo),
-                                    location: props.location,
-                                    className: blobStyles.blobStatusBarBody,
-                                    statusBarRef: () => {},
-                                    hideWhileInitializing: true,
-                                    isBlobPage: true,
-                                })
-                            )
+                    this.reactRoot.render(
+                        React.createElement(
+                            Container,
+                            { history: props.history },
+                            React.createElement(StatusBar, {
+                                getStatusBarItems,
+                                extensionsController: context.extensionsController,
+                                uri: toURIWithPath(context.blobInfo),
+                                location: props.location,
+                                className: blobStyles.blobStatusBarBody,
+                                statusBarRef: () => {},
+                                hideWhileInitializing: true,
+                                isBlobPage: true,
+                            })
                         )
-                    }
+                    )
                 })
 
                 this.view.dom.append(this.container)
@@ -471,13 +465,7 @@ const warmupReferences = ViewPlugin.fromClass(
         constructor() {
             this.subscription.add(
                 this.nextContext
-                    .pipe(
-                        switchMap(context =>
-                            context.extensionsController !== null
-                                ? haveInitialExtensionsLoaded(context.extensionsController.extHostAPI)
-                                : EMPTY
-                        )
-                    )
+                    .pipe(switchMap(context => haveInitialExtensionsLoaded(context.extensionsController.extHostAPI)))
                     .subscribe()
             )
         }
