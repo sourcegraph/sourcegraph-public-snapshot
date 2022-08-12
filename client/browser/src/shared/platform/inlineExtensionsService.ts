@@ -1,11 +1,16 @@
-import { Subscribable, from } from 'rxjs'
+import { Subscribable, Observable, from } from 'rxjs'
+import { map, tap } from 'rxjs/operators'
 
-import { checkOk } from '@sourcegraph/http-client'
+import { checkOk, isErrorGraphQLResult, gql } from '@sourcegraph/http-client'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import extensions from '../../../code-intel-extensions.json'
 import { isExtension } from '../context'
+
+const DEFAULT_ENABLE_LEGACY_EXTENSIONS = false // Should be changed to false after Sourcegraph 4.0 release
 
 /**
  * Determine if inline extensions should be loaded.
@@ -13,7 +18,39 @@ import { isExtension } from '../context'
  * This requires the browser extension to be built with inline extensions enabled.
  * At build time this is determined by `shouldBuildWithInlineExtensions`.
  */
-export const shouldUseInlineExtensions = (): boolean => isExtension
+export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<boolean> =>
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query PublicConfiguration {
+                site {
+                    publicConfiguration {
+                        effectiveContents
+                    }
+                }
+            }
+        `,
+        variables: {},
+        mightContainPrivateInfo: false,
+    }).pipe(
+        map(result => {
+            if (isErrorGraphQLResult(result)) {
+                // PublicConfiguration query resolver may not be implemented on older versions.
+                // Return `true` by default.
+                return true
+            }
+
+            try {
+                // const parsedConfig = JSON.parse(result.data.site.publicConfiguration.effectiveContents)
+                // return Boolean(parsedConfig?.experimentalFeatures?.enableLegacyExtensions)
+
+                return DEFAULT_ENABLE_LEGACY_EXTENSIONS // Should be taken from site config after Sourcegraph 4.0 release (uncomment the above lines)
+            } catch {
+                return DEFAULT_ENABLE_LEGACY_EXTENSIONS
+            }
+        }),
+        map(enableLegacyExtensions => !enableLegacyExtensions && isExtension),
+        tap(enableLegacyExtensions => console.log({ enableLegacyExtensions }))
+    )
 
 /**
  * Get the manifest URL and script URL for a Sourcegraph extension which is inline (bundled with the browser add-on).
