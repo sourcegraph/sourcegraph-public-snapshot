@@ -8,12 +8,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	codenavShared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	gs "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -75,16 +75,7 @@ type IndexEnqueuer interface {
 }
 
 type CodeNavResolver interface {
-	Definitions(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (_ []codenavShared.UploadLocation, err error)
-	Diagnostics(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []codenavShared.DiagnosticAtUpload, _ int, err error)
-	Hover(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (string, codenavShared.Range, bool, error)
-	Implementations(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (_ []codenavShared.UploadLocation, _ string, err error)
-	LSIFUploads(ctx context.Context, requestState codenav.RequestState) (uploads []codenavShared.Dump, err error)
-	Ranges(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []codenavShared.AdjustedCodeIntelligenceRange, err error)
-	References(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (_ []codenavShared.UploadLocation, _ string, err error)
-	Stencil(ctx context.Context, args codenavShared.RequestArgs, requestState codenav.RequestState) (adjustedRanges []codenavShared.Range, err error)
-
-	GetHunkCacheSize() int
+	GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ codenavgraphql.GitBlobLSIFDataResolver, err error)
 }
 
 type (

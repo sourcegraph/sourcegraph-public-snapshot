@@ -7,19 +7,31 @@
     grid-template-columns: auto minmax(10rem, 30%);
     grid-template-rows: auto 1fr;
     gap: 0.75rem;
+
     grid-template-areas:
         'chart chart'
-        'chart chart'
-        'legend legend';
+        'chart chart';
 
-    &--horizontal {
+    // Hack for generating a proper scoped css nested class
+    // see https://css-tricks.com/using-sass-control-scope-bem-naming/
+    $self: &;
+
+    // stylelint-disable-next-line selector-class-pattern
+    &--withLegend {
         grid-template-areas:
-            'chart legend'
-            'chart legend';
+            'chart chart'
+            'chart chart'
+            'legend legend';
 
-        .legend-list {
-            flex-wrap: nowrap;
-            flex-direction: column;
+        &#{ $self }--horizontal {
+            grid-template-areas:
+                'chart legend'
+                'chart legend';
+
+            .legend-list {
+                flex-wrap: nowrap;
+                flex-direction: column;
+            }
         }
     }
 }

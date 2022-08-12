@@ -149,7 +149,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                         seriesField={series}
                         repositories={repositories.input.value}
                         showValidationErrorsOnMount={formAPI.submitted}
-                        showColorPicker={false}
+                        hasAddNewSeriesButton={false}
                         queryFieldDescription={
                             <ul className="pl-3">
                                 <li>

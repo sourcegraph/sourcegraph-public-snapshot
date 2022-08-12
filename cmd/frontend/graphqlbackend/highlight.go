@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -35,7 +36,7 @@ type HighlightArgs struct {
 	DisableTimeout     bool
 	IsLightTheme       *bool
 	HighlightLongLines bool
-	FormatOnly         bool
+	Format             string
 }
 
 type highlightedFileResolver struct {
@@ -92,7 +93,7 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		HighlightLongLines: args.HighlightLongLines,
 		SimulateTimeout:    simulateTimeout,
 		Metadata:           metadata,
-		FormatOnly:         args.FormatOnly,
+		Format:             gosyntect.GetResponseFormat(args.Format),
 	})
 
 	result.aborted = aborted

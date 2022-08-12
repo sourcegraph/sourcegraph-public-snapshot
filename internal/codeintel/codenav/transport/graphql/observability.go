@@ -22,6 +22,8 @@ type operations struct {
 	diagnostics     *observation.Operation
 	stencil         *observation.Operation
 	ranges          *observation.Operation
+
+	getGitBlobLSIFDataResolver *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -50,6 +52,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		diagnostics:     op("Diagnostics"),
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
+
+		getGitBlobLSIFDataResolver: op("GetGitBlobLSIFDataResolver"),
 	}
 }
 

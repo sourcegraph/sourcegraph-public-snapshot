@@ -588,7 +588,44 @@ func TestNewPlanJob(t *testing.T) {
           (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))
         (REPOSEARCH
           (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))))))`),
-		}}
+		}, {
+			query:      `repo:has(key:value)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Want("repo has kvp", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . literal)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (PARALLEL
+        (REPOSCOMPUTEEXCLUDED
+          (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))
+        (REPOSEARCH
+          (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))))))`),
+		}, {
+			query:      `repo:has.tag(tag)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Want("repo has tag", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . literal)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (PARALLEL
+        (REPOSCOMPUTEEXCLUDED
+          (repoOpts.hasKVPs[0].key . tag))
+        (REPOSEARCH
+          (repoOpts.hasKVPs[0].key . tag))))))`),
+		},
+	}
 
 	for _, tc := range cases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
