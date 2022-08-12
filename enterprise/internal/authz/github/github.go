@@ -77,34 +77,6 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	}
 }
 
-func NewAppProvider(urn string, opts ProviderOptions) *Provider {
-	if opts.GitHubClient == nil {
-		apiURL, _ := github.APIRoot(opts.GitHubURL)
-		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
-			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
-	}
-
-	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
-
-	var cg *cachedGroups
-	if opts.GroupsCacheTTL >= 0 {
-		cg = &cachedGroups{
-			cache: rcache.NewWithTTL(
-				fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(opts.GroupsCacheTTL.Seconds()),
-			),
-		}
-	}
-
-	return &Provider{
-		urn:         urn,
-		codeHost:    codeHost,
-		groupsCache: cg,
-		client: func() (client, error) {
-			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
-		},
-	}
-}
-
 var _ authz.Provider = (*Provider)(nil)
 
 // FetchAccount implements the authz.Provider interface. It always returns nil, because the GitHub
