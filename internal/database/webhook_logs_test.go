@@ -148,7 +148,7 @@ func TestWebhookLogStore(t *testing.T) {
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
-			Config:      "{}",
+			Config:      extsvc.NewUnencryptedConfig("{}"),
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
@@ -264,7 +264,7 @@ func TestWebhookLogStore(t *testing.T) {
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
-			Config:      "{}",
+			Config:      extsvc.NewUnencryptedConfig("{}"),
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 

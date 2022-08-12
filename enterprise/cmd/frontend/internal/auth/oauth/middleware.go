@@ -135,7 +135,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		esConfg, err := extsvc.ParseConfig("github", externalServices[0].Config)
+		ctx := req.Context()
+		esConfg, err := extsvc.ParseEncryptableConfig(ctx, "github", externalServices[0].Config)
 		if err != nil {
 			logger.Error("Unexpected error while parsing external service config.", log.Error(err))
 			http.Error(w, "Unexpected error while processing external service connection.", http.StatusBadRequest)

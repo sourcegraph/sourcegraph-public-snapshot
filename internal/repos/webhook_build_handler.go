@@ -52,7 +52,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: get external service failed"))
 	}
 
-	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	parsed, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: ParseConfig failed"))
 	}
@@ -111,12 +111,11 @@ func addWebhookToExtSvc(svc *types.ExternalService, conn *schema.GitHubConnectio
 		Org: org, Secret: secret,
 	})
 
-	newConfig, err := json.Marshal(conn)
+	serialized, err := json.Marshal(conn)
 	if err != nil {
 		return err
 	}
-
-	svc.Config = string(newConfig)
+	svc.Config.Set(string(serialized))
 	return nil
 }
 
