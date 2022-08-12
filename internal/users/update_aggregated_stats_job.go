@@ -33,7 +33,8 @@ var (
 	ON CONFLICT (user_id) DO UPDATE
 		SET
 			user_last_active_at = EXCLUDED.user_last_active_at,
-			user_events_count = EXCLUDED.user_events_count;
+			user_events_count = EXCLUDED.user_events_count,
+			updated_at = NOW();
 	`
 )
 

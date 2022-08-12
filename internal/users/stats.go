@@ -75,7 +75,7 @@ var (
 			stats.user_last_active_at AS last_active_at,
 			users.deleted_at,
 			users.site_admin,
-			stats.user_events_count AS events_count
+			COALESCE(stats.user_events_count, 0) AS events_count
 		FROM users
 			LEFT JOIN aggregated_user_statistics stats ON stats.user_id = users.id
 			LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true
