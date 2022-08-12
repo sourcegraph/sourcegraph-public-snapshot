@@ -291,7 +291,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         )
     }, [items, hash, currentTabID])
 
-    if (!areExtensionsReady && extensionsController !== null) {
+    if (!areExtensionsReady) {
         return <ExtensionsLoadingPanelView className={styles.panel} />
     }
 
