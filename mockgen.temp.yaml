@@ -13,8 +13,11 @@
 - filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
   interfaces:
-    - QueryResolver
     - Resolver
+- filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
+  interfaces:
+    - GitBlobLSIFDataResolver
 - filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
   interfaces:

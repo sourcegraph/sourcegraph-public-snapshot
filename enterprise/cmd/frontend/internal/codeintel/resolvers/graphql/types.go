@@ -1,4 +1,4 @@
-package resolvers
+package graphql
 
 import (
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"

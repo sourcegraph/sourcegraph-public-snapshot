@@ -502,6 +502,49 @@ func noopHandler() sendEventsCallbackFunc {
 	}
 }
 
+func Test_getBatchSize(t *testing.T) {
+	tests := []struct {
+		name   string
+		config *conf.Unified
+		want   int
+	}{
+		{
+			name:   "null config object",
+			config: nil,
+			want:   MaxEventsCountDefault,
+		},
+		{
+			name:   "null inner config object",
+			config: &conf.Unified{},
+			want:   MaxEventsCountDefault,
+		},
+		{
+			name:   "null export data object",
+			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{}},
+			want:   MaxEventsCountDefault,
+		},
+		{
+			name:   "no batch size specified",
+			config: &conf.Unified{SiteConfiguration: validConfiguration()},
+			want:   MaxEventsCountDefault,
+		},
+		{
+			name:   "override batch size",
+			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{BatchSize: 5}}},
+			want:   5,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			confClient.Mock(test.config)
+			got := getBatchSize()
+			if got != test.want {
+				t.Errorf("unexpected batch size want:%d, got:%d", test.want, got)
+			}
+		})
+	}
+}
+
 func TestGetBookmark(t *testing.T) {
 	logger := logtest.Scoped(t)
 	dbHandle := dbtest.NewDB(logger, t)
