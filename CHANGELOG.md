@@ -63,6 +63,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
 - Added `ROCKSKIP_MIN_REPO_SIZE_MB` to automatically use [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) for repositories over a certain size. [#38192](https://github.com/sourcegraph/sourcegraph/pull/38192)
 - `"observability.tracing": { "urlTemplate": "..." }` can now be set to configure generated trace URLs (for example those generated via `&trace=1`). [#39765](https://github.com/sourcegraph/sourcegraph/pull/39765)
+- Negation support for the search predicates `-repo:contains.file(path)` and `-repo:contains.content(needle)`. [#40283](https://github.com/sourcegraph/sourcegraph/pull/40283)
 
 ### Changed
 
@@ -71,6 +72,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Replaced the `ALLOW_DECRYPT_MIGRATION` envvar with `ALLOW_DECRYPTION`. See [updated documentation](https://docs.sourcegraph.com/admin/config/encryption). [#39984](https://github.com/sourcegraph/sourcegraph/pull/39984)
 - Compute-powered insight now supports only one series custom colors for compute series bars [40038](https://github.com/sourcegraph/sourcegraph/pull/40038)
 - **IMPORTANT:** `repo:contains(file:foo content:bar)` has been renamed to `repo:contains.file(path:foo content:bar)`. `repo:contains.file(foo)` has been renamed to `repo:contains.path(foo)`. `repo:contains()` **is no longer a valid predicate. Saved searches using** `repo:contains()` **will need to be updated to use the new syntax.** [#40389](https://github.com/sourcegraph/sourcegraph/pull/40389)
+- Significant performance improvements to the search predicates `repo:contains.file()`, `repo:contains.content()`, and `file:contains.content()`. [#40239](https://github.com/sourcegraph/sourcegraph/pull/40239), [#39501](https://github.com/sourcegraph/sourcegraph/pull/39501), [#38988](https://github.com/sourcegraph/sourcegraph/pull/38988)
 
 ### Fixed
 
