@@ -118,7 +118,13 @@ export const UsersList: React.FunctionComponent = () => {
                         selectable={true}
                         sortBy={sortBy}
                         data={users.nodes}
-                        onSortByChange={setSortBy}
+                        onSortByChange={value =>
+                            setSortBy(
+                                value
+                                    ? { key: (value.key as any) as SiteUserOrderBy, descending: value.descending }
+                                    : value
+                            )
+                        }
                         getRowId={({ id }) => id}
                         actions={[
                             {
