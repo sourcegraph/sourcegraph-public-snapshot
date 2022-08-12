@@ -3,6 +3,7 @@ export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
 export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
+export { LineChart, BarChart, PieChart, LegendList, LegendItem, ScrollBox, ParentSize } from './Charts'
 export {
     Checkbox,
     FlexTextArea,
@@ -54,6 +55,7 @@ export type { AlertProps, AlertLinkProps } from './Alert'
 export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
+export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps } from './Charts'
 export type { LinkProps } from './Link'
 export type { PopoverOpenEvent, Rectangle } from './Popover'
 export type { MenuLinkProps, MenuItemProps } from './Menu'

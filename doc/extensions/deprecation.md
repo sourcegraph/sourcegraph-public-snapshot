@@ -9,6 +9,7 @@ We’re investing in a new model of integrations that allow deeper integration w
 This decision means that after the September 2022 release of Sourcegraph you can no longer create new extensions on our public registry. If you’re using a private registry, you are unaffected.
 
 After upgrading to the latest release you’ll notice the following changes:
+
 - Top extensions (code navigation, git-extras, open-in-editor and search-exports) will become native functionality of the code intelligence platform
 - A new feature flag will be introduced that turns on the extensions and the extension registry. This feature flag will be disabled by default.
 - You will no longer be able to create extensions on a private registry unless you have enabled the feature flag.

@@ -78,6 +78,10 @@ func (r *Resolver) ExecutorResolver() executor.Resolver {
 	return r.resolver.ExecutorResolver()
 }
 
+func (r *Resolver) CodeNavResolver() resolvers.CodeNavResolver {
+	return r.resolver.CodeNavResolver()
+}
+
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSIFUploadResolver, err error) {
 	ctx, traceErrs, endObservation := r.observationContext.lsifUploadByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -310,12 +314,13 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	resolver, err := r.resolver.QueryResolver(ctx, args)
-	if err != nil || resolver == nil {
+	codenav := r.resolver.CodeNavResolver()
+	gitBlobResolver, err := codenav.GitBlobLSIFDataResolverFactory(ctx, args.Repo, string(args.Commit), args.Path, args.ToolName, args.ExactPath)
+	if err != nil || gitBlobResolver == nil {
 		return nil, err
 	}
 
-	return NewQueryResolver(r.gitserver, resolver, r.resolver, r.locationResolver, errTracer), nil
+	return NewQueryResolver(r.gitserver, gitBlobResolver, r.resolver, r.locationResolver, errTracer), nil
 }
 
 func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitTreeEntryCodeIntelInfoArgs) (_ gql.GitBlobCodeIntelSupportResolver, err error) {

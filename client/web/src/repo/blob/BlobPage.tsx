@@ -13,7 +13,7 @@ import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -158,7 +158,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 return of(undefined)
             }
 
-            return fetchBlob({ repoName, commitID, filePath, formatOnly: true }).pipe(
+            return fetchBlob({ repoName, commitID, filePath, format: HighlightResponseFormat.HTML_PLAINTEXT }).pipe(
                 map(blob => {
                     if (blob === null) {
                         return blob
@@ -166,7 +166,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
                     const blobInfo: BlobPageInfo = {
                         content: blob.content,
-                        html: blob.highlight.html,
+                        html: blob.highlight.html ?? '',
                         repoName,
                         revision,
                         commitID,
@@ -202,6 +202,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             commitID,
                             filePath,
                             disableTimeout,
+                            format: enableCodeMirror
+                                ? HighlightResponseFormat.JSON_SCIP
+                                : HighlightResponseFormat.HTML_HIGHLIGHT,
                         })
                     ),
                     map(blob => {
@@ -219,8 +222,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
                         const blobInfo: BlobPageInfo = {
                             content: blob.content,
-                            html: blob.highlight.html,
-                            lsif: blob.highlight.lsif,
+                            html: blob.highlight.html ?? '',
+                            lsif: blob.highlight.lsif ?? '',
                             repoName,
                             revision,
                             commitID,

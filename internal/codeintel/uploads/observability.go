@@ -41,6 +41,7 @@ type operations struct {
 	deleteUploadsWithoutRepository    *observation.Operation
 	deleteUploadsStuckUploading       *observation.Operation
 	hardDeleteUploads                 *observation.Operation
+	inferClosestUploads               *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
@@ -107,6 +108,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteUploadsStuckUploading:       op("DeleteUploadsStuckUploading"),
 		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
 		hardDeleteUploads:                 op("HardDeleteUploads"),
+		inferClosestUploads:               op("InferClosestUploads"),
 
 		// Dumps
 		findClosestDumps:                   op("FindClosestDumps"),

@@ -2029,6 +2029,7 @@ CREATE TABLE lsif_uploads (
     indexer_version text,
     queued_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
+    uncompressed_size bigint,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2421,7 +2422,8 @@ CREATE VIEW lsif_uploads_with_repository_name AS
     u.associated_index_id,
     u.expired,
     u.last_retention_scan_at,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.uncompressed_size
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
@@ -2816,6 +2818,12 @@ CREATE SEQUENCE repo_id_seq
     CACHE 1;
 
 ALTER SEQUENCE repo_id_seq OWNED BY repo.id;
+
+CREATE TABLE repo_kvps (
+    repo_id integer NOT NULL,
+    key text NOT NULL,
+    value text
+);
 
 CREATE TABLE repo_pending_permissions (
     repo_id integer NOT NULL,
@@ -3575,6 +3583,9 @@ ALTER TABLE ONLY registry_extension_releases
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY repo_kvps
+    ADD CONSTRAINT repo_kvps_pkey PRIMARY KEY (repo_id, key) INCLUDE (value);
+
 ALTER TABLE ONLY repo
     ADD CONSTRAINT repo_name_unique UNIQUE (name) DEFERRABLE;
 
@@ -4299,6 +4310,9 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY repo_kvps
+    ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id);
