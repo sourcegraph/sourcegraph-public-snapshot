@@ -1,33 +1,22 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const USERS_MANAGEMENT_CHART = gql`
-    query UsersManagementChart($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
+export const USERS_MANAGEMENT_SUMMARY = gql`
+    query UsersManagementSummary {
         site {
-            analytics {
-                users(dateRange: $dateRange, grouping: $grouping) {
-                    activity {
-                        nodes {
-                            date
-                            count
-                            uniqueUsers
-                        }
-                        summary {
-                            totalCount
-                            totalUniqueUsers
-                        }
-                    }
-                }
-            }
             productSubscription {
                 license {
                     userCount
                 }
             }
             adminUsers: users(siteAdmin: true) {
+                # TODO: exclude deleted users
+                totalCount
+            }
+            users {
                 totalCount
             }
         }
-        users {
+        registeredUsers: users {
             totalCount
         }
     }

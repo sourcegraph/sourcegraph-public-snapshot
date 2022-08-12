@@ -9,8 +9,8 @@ import { H1, Card, Text, Icon, Button, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 
-import { ActivityChart } from './components/ActivityChart'
 import { UsersList } from './components/UsersList'
+import { UsersSummary } from './components/UsersSummary'
 
 import styles from './index.module.scss'
 
@@ -49,7 +49,7 @@ export const UsersManagement: React.FunctionComponent<RouteComponentProps<{}>> =
                 </div>
             </div>
             <Card className="p-3">
-                <ActivityChart />
+                <UsersSummary />
                 <UsersList />
             </Card>
             <Text className="font-italic text-center mt-2">
