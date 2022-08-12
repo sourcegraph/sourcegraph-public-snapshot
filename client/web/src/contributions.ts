@@ -29,7 +29,7 @@ export class GlobalContributions extends React.Component<Props> {
             })
 
         const { extensionsController } = this.props
-        if (extensionsController != null) {
+        if (extensionsController !== null) {
             this.subscriptions.add(
                 registerHoverContributions({
                     ...this.props,

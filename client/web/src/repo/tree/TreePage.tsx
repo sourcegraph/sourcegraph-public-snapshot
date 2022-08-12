@@ -162,8 +162,8 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName: repo.name, commitID, filePath })
 
+    const { extensionsController } = props
     useEffect(() => {
-        const { extensionsController } = props
         if (!showCodeInsights || extensionsController === null) {
             return
         }
@@ -191,7 +191,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 })
                 .catch(error => console.error('Error removing viewer from extension host:', error))
         }
-    }, [uri, showCodeInsights, props.extensionsController])
+    }, [uri, showCodeInsights, extensionsController])
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)

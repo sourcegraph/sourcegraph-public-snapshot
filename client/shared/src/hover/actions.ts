@@ -50,7 +50,7 @@ export function getHoverActions(
     }: ExtensionsControllerProps<'extHostAPI'> & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
     hoverContext: HoveredToken & HoverContext
 ): Observable<ActionItemAction[]> {
-    if (extensionsController == null) {
+    if (extensionsController === null) {
         return EMPTY
     }
 

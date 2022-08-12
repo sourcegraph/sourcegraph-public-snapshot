@@ -150,7 +150,7 @@ export class Notebook {
                     }),
                 })
                 break
-            case 'query':
+            case 'query': {
                 const { extensionHostAPI } = this.dependencies
                 // Removes comments
                 const query = block.input.query.replace(/\/\/.*/g, '')
@@ -172,6 +172,7 @@ export class Notebook {
                     ).pipe(startWith(emptyAggregateResults)),
                 })
                 break
+            }
             case 'file':
                 this.blocks.set(block.id, {
                     ...block,
