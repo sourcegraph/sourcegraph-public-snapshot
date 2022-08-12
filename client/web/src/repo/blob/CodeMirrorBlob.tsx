@@ -16,7 +16,7 @@ import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 
 import { blameDecorationType, BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
-import { blobPropsFacet } from './codemirror'
+import { blobPropsFacet, hideCaret } from './codemirror'
 import {
     enableExtensionsDecorationsColumnView as enableColumnView,
     showTextDocumentDecorations,
@@ -50,6 +50,7 @@ const staticExtensions: Extension = [
     // *focusable* but read-only (see EditorState.readOnly above).
     search({ top: true }),
     keymap.of(searchKeymap),
+    hideCaret,
 ]
 
 // Compartments are used to reconfigure some parts of the editor withoug
@@ -332,6 +333,7 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
                     start: startPosition,
                     end: endPosition,
                 },
+                pinned: true,
             },
         ]
     })

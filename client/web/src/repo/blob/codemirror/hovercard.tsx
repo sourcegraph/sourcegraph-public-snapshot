@@ -23,7 +23,7 @@
  *       │ uses       │ provides                                  │ enables
  *       │            ▼                                           │
  *       │          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  enables   ┌─────────────────────────┐
- *       │          ┃                      hovercardRanges (facet)                       ┃ ─────────▶ │ highlightRanges (field) │ ◀┐
+ *       │          ┃                      hovercardRanges (facet)                       ┃ ─────────▶ │   activeRanges (field)  │ ◀┐
  *       │          ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛            └─────────────────────────┘  │
  *       │            │                                 ▲         ▲                                     │                          │
  *       │            │ enables                         │ reads   │ provides                            │ provides                 │
@@ -55,10 +55,10 @@
  *
  *  Because with the current implementation we don't know which of the
  *  {@link hovercardRanges} also has hover information associated with it, we
- *  require {@link Hovercard} to update {@link highlightRanges} as necessary to
+ *  require {@link Hovercard} to update {@link activeRanges} as necessary to
  *  highlight the ranges for which hover information exists.
  */
-import { Extension, Facet, RangeSet, StateEffect, StateEffectType, StateField } from '@codemirror/state'
+import { Extension, Facet, RangeSet, StateEffect, StateEffectType, StateField, Text } from '@codemirror/state'
 import {
     Decoration,
     EditorView,
@@ -82,27 +82,48 @@ import { WebHoverOverlay, WebHoverOverlayProps } from '../../../components/WebHo
 import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
 
 import { Container } from './react-interop'
-import { distinctWordAtCoords, offsetToUIPosition, rangesContain } from './utils'
+import {
+    distinctWordAtCoords,
+    offsetToUIPosition,
+    preciseOffsetAtCoords,
+    rangesContain,
+    uiPositionToOffset,
+} from './utils'
 
 import { blobPropsFacet } from '.'
 
 import webOverlayStyles from '../../../components/WebHoverOverlay/WebHoverOverlay.module.scss'
 
+type UIRange = UIRangeSpec['range']
+type UIPosition = UIPositionSpec['position']
+
 type HovercardData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
 interface HovercardRange {
-    // Line/column position
-    range: UIRangeSpec['range']
-
     // CodeMirror document offsets
     from: number
     to: number
+
+    // Line/column position
+    range: UIRange
+
+    // Sometimes the range returned by the hover provider differs from the
+    // "word" range determined by CodeMirror. Highlighting and
+    // click-to-go-to-definition should use this range if available.
+    providerRange?: UIRange
+
+    // Used to provide "click to go to definition"
+    onClick?: () => void
+
+    // Whether or not this hovercard is considered "pinned". We only show a
+    // close button for pinned hovercards
+    pinned?: boolean
 }
 
 /**
  * A HovercardSource is a function that is passed a position and returns an
  * observable that provides hover information.
  */
-export type HovercardSource = (view: EditorView, position: UIPositionSpec['position']) => Observable<HovercardData>
+export type HovercardSource = (view: EditorView, position: UIPosition) => Observable<HovercardData>
 
 /**
  * Some style overrides to replicate the existing hovercard style.
@@ -137,40 +158,41 @@ const addRange = StateEffect.define<HovercardRange>()
 const removeRange = StateEffect.define<HovercardRange>()
 const selectionHighlightDecoration = Decoration.mark({ class: 'selection-highlight' })
 
-const highlightRanges = StateField.define<HovercardRange[]>({
+const activeRanges = StateField.define<Map<number, HovercardRange>>({
     create() {
-        return []
+        return new Map()
     },
 
     update(ranges, transaction) {
         const availableRanges = transaction.state.facet(hovercardRanges)
 
-        const newRanges = [...ranges]
+        const newRanges = new Map(ranges)
         let changed = false
 
         // Remove any values not in the current set of ranges. availableRanges and
         // value will be small, so processing them this way should be fine.
-        for (const range of ranges) {
+        for (const [key, range] of ranges) {
             // It's enough to look for the range start because we never have
             // overlapping ranges.
             if (!rangesContain(availableRanges, range.from)) {
-                newRanges.splice(newRanges.indexOf(range), 1)
+                newRanges.delete(key)
                 changed = true
             }
         }
 
-        // FIXME: Use from/to comparison instead
         for (const effect of transaction.effects) {
             if (effect.is(addRange)) {
-                if (rangesContain(availableRanges, effect.value.from) && !rangesContain(newRanges, effect.value.from)) {
-                    newRanges.push(effect.value)
+                if (rangesContain(availableRanges, effect.value.from)) {
+                    // Always set the value even if it might already exist. This
+                    // ensures we have up-to-date values for `onClick` and
+                    // `providerRange`.
+                    newRanges.set(effect.value.from, effect.value)
                     changed = true
                 }
             }
             if (effect.is(removeRange)) {
-                const index = newRanges.findIndex(range => range.from === effect.value.from)
-                if (index > -1) {
-                    newRanges.splice(index, 1)
+                if (newRanges.has(effect.value.from)) {
+                    newRanges.delete(effect.value.from)
                     changed = true
                 }
             }
@@ -180,14 +202,65 @@ const highlightRanges = StateField.define<HovercardRange[]>({
     },
 
     provide(field) {
-        return EditorView.decorations.from(field, ranges =>
-            RangeSet.of(
-                ranges.map(range => selectionHighlightDecoration.range(range.from, range.to)),
-                true
-            )
-        )
+        return [
+            EditorView.decorations.from(field, ranges => view =>
+                RangeSet.of(
+                    Array.from(ranges.values(), range => {
+                        const { from, to } = getHoverOffsets(range, view.state.doc)
+                        return selectionHighlightDecoration.range(from, to)
+                    }),
+                    true
+                )
+            ),
+            // Handles click-to-go-to-definition if enabled (as determined by WebHoverOverlay)
+            EditorView.domEventHandlers({
+                click(event: MouseEvent, view: EditorView) {
+                    const ranges = view.state.field(activeRanges)
+                    if (ranges.size === 0) {
+                        return false
+                    }
+
+                    const offset = preciseOffsetAtCoords(view, event)
+
+                    if (offset === null) {
+                        return false
+                    }
+
+                    for (const range of ranges.values()) {
+                        if (isOffsetInHoverRange(offset, range, view.state.doc)) {
+                            range.onClick?.()
+                            return true
+                        }
+                    }
+                    return false
+                },
+            }),
+        ]
     },
 })
+
+function isOffsetInHoverRange(offset: number, range: HovercardRange, textDocument: Text): boolean {
+    if (range.from <= offset && offset <= range.to) {
+        return true
+    }
+
+    if (range.providerRange) {
+        const { from, to } = getHoverOffsets(range, textDocument)
+        return from <= offset && offset <= to
+    }
+
+    return false
+}
+
+function getHoverOffsets(range: HovercardRange, textDocument: Text): { from: number; to: number } {
+    if (range.providerRange) {
+        return {
+            from: uiPositionToOffset(textDocument, range.providerRange.start),
+            to: uiPositionToOffset(textDocument, range.providerRange.end),
+        }
+    }
+    return range
+}
 
 /**
  * HovercardMangaer is responsible for creating {@link Tooltip}s and updating
@@ -261,7 +334,7 @@ export const hovercardRanges = Facet.define<HovercardRange>({
         // Compute CodeMirror tooltips from hovercard ranges
         hovercardManager(),
         // Highlight hovered token(s)
-        highlightRanges,
+        activeRanges,
     ],
 })
 
@@ -292,6 +365,19 @@ class HoverManager implements PluginValue {
             .pipe(
                 // Ignore events when hovering over hovercards
                 filter(event => !(event.target as HTMLElement | null)?.closest('.cm-code-intel-hovercard')),
+                // Ignore events inside an active range.  Without this hovercards
+                // flicker when the active range is wider than the
+                // word-under-cursor range.
+                filter(event => {
+                    const offset = preciseOffsetAtCoords(view, event)
+                    if (offset === null) {
+                        return true
+                    }
+                    const ranges = view.state.field(activeRanges)
+                    return Array.from(ranges.values()).every(
+                        range => !isOffsetInHoverRange(offset, range, view.state.doc)
+                    )
+                }),
                 distinctWordAtCoords(this.view)
             )
             .subscribe(position => {
@@ -331,10 +417,6 @@ function hovercard(): Extension {
     return [hovercardRange, ViewPlugin.define(view => new HoverManager(view, setHovercardRange))]
 }
 
-// WebHoverOverlay requires to be passed an element representing the currently
-// hovered token.  Since we don't have/want that for CodeMirror we are passing a
-// dummy element.
-const dummyHoveredElement = document.createElement('span')
 // WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
 // positions the element we always use the same value.
 const dummyOverlayPosition = { left: 0, bottom: 0 }
@@ -353,6 +435,7 @@ class Hovercard implements TooltipView {
     private props: BlobProps | null = null
     public overlap = true
     private subscription: Subscription
+    private nextPinned = new Subject<boolean>()
 
     constructor(private readonly view: EditorView, private readonly range: HovercardRange) {
         this.dom = document.createElement('div')
@@ -361,7 +444,8 @@ class Hovercard implements TooltipView {
             this.nextContainer,
             this.view.state.facet(hovercardSource)(view, range.range.start),
             this.nextProps.pipe(startWith(view.state.facet(blobPropsFacet))),
-        ]).subscribe(([container, hovercardData, props]) => {
+            this.nextPinned.pipe(startWith(range.pinned ?? false)),
+        ]).subscribe(([container, hovercardData, props, pinned]) => {
             // undefined means the data is still loading
             if (hovercardData.hoverOrError !== undefined) {
                 if (!this.root) {
@@ -369,7 +453,7 @@ class Hovercard implements TooltipView {
                     // necessary
                     this.root = createRoot(container)
                 }
-                this.render(this.root, hovercardData, props)
+                this.render(this.root, hovercardData, props, pinned)
             }
         })
     }
@@ -385,7 +469,9 @@ class Hovercard implements TooltipView {
                 .facet(hovercardRanges)
                 .some(range => range.from === this.range.from && range.to === this.range.to)
         ) {
-            this.root?.unmount()
+            window.requestAnimationFrame(() => {
+                this.root?.unmount()
+            })
             this.subscription.unsubscribe()
             return
         }
@@ -398,9 +484,9 @@ class Hovercard implements TooltipView {
         }
     }
 
-    private addRange(): void {
+    private addRange(extendedProperties: { providerRange?: UIRange; onClick?: () => void }): void {
         window.requestAnimationFrame(() => {
-            this.view.dispatch({ effects: addRange.of(this.range) })
+            this.view.dispatch({ effects: addRange.of({ ...this.range, ...extendedProperties }) })
         })
     }
 
@@ -410,7 +496,12 @@ class Hovercard implements TooltipView {
         })
     }
 
-    private render(root: Root, { hoverOrError, actionsOrError }: HovercardData, props: BlobProps): void {
+    private render(
+        root: Root,
+        { hoverOrError, actionsOrError }: HovercardData,
+        props: BlobProps,
+        pinned: boolean
+    ): void {
         // Only render if we either have something for hover or actions. Adapted
         // from shouldRenderOverlay in codeintellify/src/hoverifier.ts
         if (
@@ -426,8 +517,6 @@ class Hovercard implements TooltipView {
             return
         }
 
-        this.addRange()
-
         const hoverContext = {
             commitID: props.blobInfo.commitID,
             filePath: props.blobInfo.filePath,
@@ -440,12 +529,31 @@ class Hovercard implements TooltipView {
             ...this.range.range.start,
         }
 
+        // Used to implement "click to go to definition"
+        const clicks = new Subject<void>()
+        const onClick = (): void => clicks.next()
+
         if (hoverOrError && hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && hoverOrError.range) {
             hoveredToken = {
                 ...hoveredToken,
                 line: hoverOrError.range.start.line + 1,
                 character: hoverOrError.range.start.character + 1,
             }
+            this.addRange({
+                providerRange: {
+                    start: {
+                        line: hoverOrError.range.start.line + 1,
+                        character: hoverOrError.range.start.character + 1,
+                    },
+                    end: {
+                        line: hoverOrError.range.end.line + 1,
+                        character: hoverOrError.range.end.character + 1,
+                    },
+                },
+                onClick,
+            })
+        } else {
+            this.addRange({ onClick })
         }
 
         root.render(
@@ -469,15 +577,16 @@ class Hovercard implements TooltipView {
                         // hovercard to render
                         overlayPosition={dummyOverlayPosition}
                         hoveredToken={hoveredToken}
-                        hoveredTokenElement={dummyHoveredElement}
+                        hoveredTokenClick={clicks.asObservable()}
                         onAlertDismissed={() => repositionTooltips(this.view)}
                         pinOptions={{
-                            showCloseButton: true,
+                            showCloseButton: pinned,
                             onCloseButtonClick: () => {
                                 const parameters = new URLSearchParams(props.location.search)
                                 parameters.delete('popover')
 
                                 updateBrowserHistoryIfChanged(props.history, props.location, parameters)
+                                this.nextPinned.next(false)
                             },
                             onCopyLinkButtonClick: async () => {
                                 const context = {
@@ -495,6 +604,8 @@ class Hovercard implements TooltipView {
                                     addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
                                 )
                                 await navigator.clipboard.writeText(window.location.href)
+
+                                this.nextPinned.next(true)
                             },
                         }}
                     />
