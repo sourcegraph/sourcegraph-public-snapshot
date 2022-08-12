@@ -1,3 +1,5 @@
+import { Completion, insertCompletionText } from '@codemirror/autocomplete'
+import { EditorView } from '@codemirror/view'
 import { from } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -9,8 +11,6 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { requestGraphQL } from '../../backend/graphql'
 import { SearchHistoryQueryResult, SearchHistoryQueryVariables } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
-import { Completion, insertCompletionText } from '@codemirror/autocomplete'
-import { EditorView } from '@codemirror/view'
 
 interface RecentSearch {
     count: number
