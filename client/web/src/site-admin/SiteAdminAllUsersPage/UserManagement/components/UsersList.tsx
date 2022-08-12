@@ -26,15 +26,16 @@ import styles from '../index.module.scss'
 
 type SiteUser = UsersManagementUsersListResult['site']['users']['nodes'][0]
 
+const LIMIT = 25
 export const UsersList: React.FunctionComponent = () => {
     const [searchText, setSearchText] = useState<string>('')
     const debouncedSearchText = useDebounce(searchText, 300)
 
     const [lastActivePeriod, setLastActivePeriod] = useState<SiteUsersLastActivePeriod>(SiteUsersLastActivePeriod.ALL)
-    const [limit, setLimit] = useState(8) // TODO: fix to 25 before merging
+    const [limit, setLimit] = useState(LIMIT)
     const [sortBy, setSortBy] = useState({ key: SiteUserOrderBy.EVENTS_COUNT, descending: false })
 
-    const showMore = useCallback(() => setLimit(count => count * 2), [])
+    const showMore = useCallback(() => setLimit(limit => limit + LIMIT), [])
 
     const { data, previousData, refetch, variables, error, loading } = useQuery<
         UsersManagementUsersListResult,
@@ -129,22 +130,11 @@ export const UsersList: React.FunctionComponent = () => {
                                 condition: users => users.some(user => !user.deletedAt),
                             },
                             {
-                                key: 'delete',
-                                label: 'Delete',
-                                icon: mdiArchive,
-                                iconColor: 'danger',
-                                onClick: handleDeleteUsers,
-                                bulk: true,
-                                condition: users => users.some(user => !user.deletedAt),
-                            },
-                            {
-                                key: 'delete-forever',
-                                label: 'Delete forever',
-                                icon: mdiDelete,
-                                iconColor: 'danger',
-                                labelColor: 'danger',
-                                onClick: handleDeleteUsersForever,
-                                bulk: true,
+                                key: 'reset-password',
+                                label: 'Reset password',
+                                icon: mdiLockReset,
+                                onClick: handleResetUserPassword,
+                                condition: ([user]) => !user?.deletedAt,
                             },
                             {
                                 key: 'revoke-site-admin',
@@ -161,11 +151,22 @@ export const UsersList: React.FunctionComponent = () => {
                                 condition: ([user]) => !user?.siteAdmin && !user?.deletedAt,
                             },
                             {
-                                key: 'reset-password',
-                                label: 'Reset password',
-                                icon: mdiLockReset,
-                                onClick: handleResetUserPassword,
-                                condition: ([user]) => !user?.deletedAt,
+                                key: 'delete',
+                                label: 'Delete',
+                                icon: mdiArchive,
+                                iconColor: 'danger',
+                                onClick: handleDeleteUsers,
+                                bulk: true,
+                                condition: users => users.some(user => !user.deletedAt),
+                            },
+                            {
+                                key: 'delete-forever',
+                                label: 'Delete forever',
+                                icon: mdiDelete,
+                                iconColor: 'danger',
+                                labelColor: 'danger',
+                                onClick: handleDeleteUsersForever,
+                                bulk: true,
                             },
                         ]}
                         columns={[
