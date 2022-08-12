@@ -124,7 +124,7 @@ func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.Back
 	}
 	handlerMetrics := newHandlerMetrics(observationContext)
 	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, handlerMetrics.handler)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), JobCooldownDuration, th, handlerMetrics.handler)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error
