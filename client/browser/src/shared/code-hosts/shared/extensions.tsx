@@ -67,25 +67,27 @@ export const renderCommandPalette = ({
     render,
     ...props
 }: RenderCommandPaletteProps) => (mount: HTMLElement): void => {
-    render(
-        <ShortcutProvider>
-            <CommandListPopoverButton
-                {...props}
-                popoverClassName={classNames('command-list-popover', props.popoverClassName)}
-                popoverInnerClassName={props.popoverInnerClassName}
-                menu={ContributableMenu.CommandPalette}
-                extensionsController={extensionsController}
-                location={history.location}
-            />
-            <Notifications
-                extensionsController={extensionsController}
-                notificationItemStyleProps={{
-                    notificationItemClassNames: props.notificationClassNames,
-                }}
-            />
-        </ShortcutProvider>,
-        mount
-    )
+    if (extensionsController !== null) {
+        render(
+            <ShortcutProvider>
+                <CommandListPopoverButton
+                    {...props}
+                    popoverClassName={classNames('command-list-popover', props.popoverClassName)}
+                    popoverInnerClassName={props.popoverInnerClassName}
+                    menu={ContributableMenu.CommandPalette}
+                    extensionsController={extensionsController}
+                    location={history.location}
+                />
+                <Notifications
+                    extensionsController={extensionsController}
+                    notificationItemStyleProps={{
+                        notificationItemClassNames: props.notificationClassNames,
+                    }}
+                />
+            </ShortcutProvider>,
+            mount
+        )
+    }
 }
 
 export const renderGlobalDebug = ({

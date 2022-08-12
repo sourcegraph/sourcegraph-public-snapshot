@@ -24,7 +24,7 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { haveInitialExtensionsLoaded } from '../api/features'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { getContributedActionItems } from '../contributions/contributions'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
@@ -67,7 +67,7 @@ export interface CommandListClassProps {
 
 export interface CommandListProps
     extends CommandListClassProps,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
+        RequiredExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps {
     /** The menu whose commands to display. */
@@ -147,20 +147,17 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
     }
 
     public componentDidMount(): void {
-        const { extensionsController } = this.props
-        if (extensionsController !== null) {
-            this.subscriptions.add(
-                // Don't listen for subscriptions until all initial extensions have loaded (to prevent UI jitter)
-                haveInitialExtensionsLoaded(extensionsController.extHostAPI)
-                    .pipe(
-                        filter(haveLoaded => haveLoaded),
-                        switchMap(() => getContributions(extensionsController.extHostAPI))
-                    )
-                    .subscribe(contributions => {
-                        this.setState({ contributions })
-                    })
-            )
-        }
+        this.subscriptions.add(
+            // Don't listen for subscriptions until all initial extensions have loaded (to prevent UI jitter)
+            haveInitialExtensionsLoaded(this.props.extensionsController.extHostAPI)
+                .pipe(
+                    filter(haveLoaded => haveLoaded),
+                    switchMap(() => getContributions(this.props.extensionsController.extHostAPI))
+                )
+                .subscribe(contributions => {
+                    this.setState({ contributions })
+                })
+        )
 
         this.subscriptions.add(
             this.props.platformContext.settings.subscribe(settingsCascade => this.setState({ settingsCascade }))
@@ -178,8 +175,6 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
     }
 
     public render(): JSX.Element | null {
-        const { extensionsController } = this.props
-
         if (!this.state.contributions) {
             return (
                 <EmptyCommandListContainer className={styles.commandList}>
@@ -235,30 +230,24 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                                     )}
                                     key={item.action.id}
                                 >
-                                    {extensionsController !== null ? (
-                                        <ActionItem
-                                            {...this.props}
-                                            extensionsController={extensionsController}
-                                            className={classNames(
-                                                this.props.actionItemClassName,
-                                                index === selectedIndex && this.props.selectedActionItemClassName
-                                            )}
-                                            {...item}
-                                            ref={index === selectedIndex ? this.setSelectedItem : undefined}
-                                            title={
-                                                <HighlightedMatches
-                                                    text={[
-                                                        item.action.category,
-                                                        item.action.title || item.action.command,
-                                                    ]
-                                                        .filter(Boolean)
-                                                        .join(': ')}
-                                                    pattern={query}
-                                                />
-                                            }
-                                            onDidExecute={this.onActionDidExecute}
-                                        />
-                                    ) : null}
+                                    <ActionItem
+                                        {...this.props}
+                                        className={classNames(
+                                            this.props.actionItemClassName,
+                                            index === selectedIndex && this.props.selectedActionItemClassName
+                                        )}
+                                        {...item}
+                                        ref={index === selectedIndex ? this.setSelectedItem : undefined}
+                                        title={
+                                            <HighlightedMatches
+                                                text={[item.action.category, item.action.title || item.action.command]
+                                                    .filter(Boolean)
+                                                    .join(': ')}
+                                                pattern={query}
+                                            />
+                                        }
+                                        onDidExecute={this.onActionDidExecute}
+                                    />
                                 </li>
                             ))
                         ) : query.length > 0 ? (
