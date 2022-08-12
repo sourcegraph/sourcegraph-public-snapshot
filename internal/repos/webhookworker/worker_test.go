@@ -77,7 +77,7 @@ func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID 
 		return nil, err
 	}
 
-	jobs, err := doScanWebhookBuildJobs(rows, nil)
+	jobs, err := scanWebhookBuildJobs(rows, nil)
 	if err != nil {
 		return nil, err
 	}
