@@ -3569,6 +3569,9 @@ type MockWorkerStore struct {
 	// MaxDurationInQueueFunc is an instance of a mock function object
 	// controlling the behavior of the method MaxDurationInQueue.
 	MaxDurationInQueueFunc *WorkerStoreMaxDurationInQueueFunc
+	// ProcessingJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method ProcessingJobs.
+	ProcessingJobsFunc *WorkerStoreProcessingJobsFunc
 	// QueuedCountFunc is an instance of a mock function object controlling
 	// the behavior of the method QueuedCount.
 	QueuedCountFunc *WorkerStoreQueuedCountFunc
@@ -3632,6 +3635,11 @@ func NewMockWorkerStore() *MockWorkerStore {
 		},
 		MaxDurationInQueueFunc: &WorkerStoreMaxDurationInQueueFunc{
 			defaultHook: func(context.Context) (r0 time.Duration, r1 error) {
+				return
+			},
+		},
+		ProcessingJobsFunc: &WorkerStoreProcessingJobsFunc{
+			defaultHook: func(context.Context, store.ProcessingJobsOptions) (r0 []workerutil.Record, r1 int64, r2 error) {
 				return
 			},
 		},
@@ -3712,6 +3720,11 @@ func NewStrictMockWorkerStore() *MockWorkerStore {
 				panic("unexpected invocation of MockWorkerStore.MaxDurationInQueue")
 			},
 		},
+		ProcessingJobsFunc: &WorkerStoreProcessingJobsFunc{
+			defaultHook: func(context.Context, store.ProcessingJobsOptions) ([]workerutil.Record, int64, error) {
+				panic("unexpected invocation of MockWorkerStore.ProcessingJobs")
+			},
+		},
 		QueuedCountFunc: &WorkerStoreQueuedCountFunc{
 			defaultHook: func(context.Context, bool) (int, error) {
 				panic("unexpected invocation of MockWorkerStore.QueuedCount")
@@ -3771,6 +3784,9 @@ func NewMockWorkerStoreFrom(i store.Store) *MockWorkerStore {
 		},
 		MaxDurationInQueueFunc: &WorkerStoreMaxDurationInQueueFunc{
 			defaultHook: i.MaxDurationInQueue,
+		},
+		ProcessingJobsFunc: &WorkerStoreProcessingJobsFunc{
+			defaultHook: i.ProcessingJobs,
 		},
 		QueuedCountFunc: &WorkerStoreQueuedCountFunc{
 			defaultHook: i.QueuedCount,
@@ -4785,6 +4801,117 @@ func (c WorkerStoreMaxDurationInQueueFuncCall) Args() []interface{} {
 // invocation.
 func (c WorkerStoreMaxDurationInQueueFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// WorkerStoreProcessingJobsFunc describes the behavior when the
+// ProcessingJobs method of the parent MockWorkerStore instance is invoked.
+type WorkerStoreProcessingJobsFunc struct {
+	defaultHook func(context.Context, store.ProcessingJobsOptions) ([]workerutil.Record, int64, error)
+	hooks       []func(context.Context, store.ProcessingJobsOptions) ([]workerutil.Record, int64, error)
+	history     []WorkerStoreProcessingJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// ProcessingJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockWorkerStore) ProcessingJobs(v0 context.Context, v1 store.ProcessingJobsOptions) ([]workerutil.Record, int64, error) {
+	r0, r1, r2 := m.ProcessingJobsFunc.nextHook()(v0, v1)
+	m.ProcessingJobsFunc.appendCall(WorkerStoreProcessingJobsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the ProcessingJobs
+// method of the parent MockWorkerStore instance is invoked and the hook
+// queue is empty.
+func (f *WorkerStoreProcessingJobsFunc) SetDefaultHook(hook func(context.Context, store.ProcessingJobsOptions) ([]workerutil.Record, int64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ProcessingJobs method of the parent MockWorkerStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *WorkerStoreProcessingJobsFunc) PushHook(hook func(context.Context, store.ProcessingJobsOptions) ([]workerutil.Record, int64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkerStoreProcessingJobsFunc) SetDefaultReturn(r0 []workerutil.Record, r1 int64, r2 error) {
+	f.SetDefaultHook(func(context.Context, store.ProcessingJobsOptions) ([]workerutil.Record, int64, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkerStoreProcessingJobsFunc) PushReturn(r0 []workerutil.Record, r1 int64, r2 error) {
+	f.PushHook(func(context.Context, store.ProcessingJobsOptions) ([]workerutil.Record, int64, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *WorkerStoreProcessingJobsFunc) nextHook() func(context.Context, store.ProcessingJobsOptions) ([]workerutil.Record, int64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkerStoreProcessingJobsFunc) appendCall(r0 WorkerStoreProcessingJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkerStoreProcessingJobsFuncCall objects
+// describing the invocations of this function.
+func (f *WorkerStoreProcessingJobsFunc) History() []WorkerStoreProcessingJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkerStoreProcessingJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkerStoreProcessingJobsFuncCall is an object that describes an
+// invocation of method ProcessingJobs on an instance of MockWorkerStore.
+type WorkerStoreProcessingJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.ProcessingJobsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []workerutil.Record
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int64
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkerStoreProcessingJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkerStoreProcessingJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // WorkerStoreQueuedCountFunc describes the behavior when the QueuedCount

@@ -11,6 +11,7 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -1111,4 +1112,70 @@ func TestStoreCanceledJobs(t *testing.T) {
 	}
 
 	require.ElementsMatch(t, toCancel, []int{3}, "invalid set of jobs returned")
+}
+
+func TestStoreProcessingJobs(t *testing.T) {
+	ctx := context.Background()
+	db := setupStoreTest(t)
+
+	_, err := db.ExecContext(ctx, `
+		INSERT INTO workerutil_test (id, state, worker_hostname, cancel)
+		VALUES
+			-- not processing
+			(1, 'queued', 'worker1', false),
+			-- this should be returned
+			(2, 'processing', 'worker1', false),
+			-- this should also be returned, regardless of the cancellation state
+			(3, 'processing', 'worker1', true),
+			-- other worker
+			(4, 'processing', 'worker2', true)
+	`)
+	require.NoError(t, err)
+
+	store := testStore(db, defaultTestStoreOptions(nil))
+
+	wantTwo := &TestRecord{ID: 2, State: "processing"}
+	wantThree := &TestRecord{ID: 3, State: "processing"}
+
+	t.Run("no results", func(t *testing.T) {
+		have, cursor, err := store.ProcessingJobs(ctx, ProcessingJobsOptions{
+			WorkerHostname: "does-not-exist",
+		})
+		assert.NoError(t, err)
+		assert.Zero(t, cursor)
+		assert.Empty(t, have)
+	})
+
+	t.Run("no pagination", func(t *testing.T) {
+		have, cursor, err := store.ProcessingJobs(ctx, ProcessingJobsOptions{
+			WorkerHostname: "worker1",
+		})
+		assert.NoError(t, err)
+		assert.Zero(t, cursor)
+		assert.Equal(t, []workerutil.Record{wantTwo, wantThree}, have)
+	})
+
+	t.Run("pagination", func(t *testing.T) {
+		opts := ProcessingJobsOptions{
+			Limit:          1,
+			WorkerHostname: "worker1",
+		}
+
+		have, cursor, err := store.ProcessingJobs(ctx, opts)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 2, cursor)
+		assert.Equal(t, []workerutil.Record{wantTwo}, have)
+
+		opts.Cursor = cursor
+		have, cursor, err = store.ProcessingJobs(ctx, opts)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 3, cursor)
+		assert.Equal(t, []workerutil.Record{wantThree}, have)
+
+		opts.Cursor = cursor
+		have, cursor, err = store.ProcessingJobs(ctx, opts)
+		assert.NoError(t, err)
+		assert.Zero(t, cursor)
+		assert.Empty(t, have)
+	})
 }

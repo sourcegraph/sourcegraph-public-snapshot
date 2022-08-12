@@ -79,6 +79,29 @@ func (o *MarkFinalOptions) ToSQLConds(formatQuery func(query string, args ...any
 	return conds
 }
 
+type ProcessingJobsOptions struct {
+	// Cursor, if set, provides the cursor for the next page of results. This is
+	// ignored if Limit is zero.
+	Cursor int64
+	// Limit, if set, enforces a limit on the number of jobs that will be
+	// returned.
+	Limit int64
+	// WorkerHostname, if set, enforces worker_hostname to be set to a specific
+	// value.
+	WorkerHostname string
+}
+
+func (o *ProcessingJobsOptions) ToSQLConds(formatQuery func(query string, args ...any) *sqlf.Query) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if o.Cursor != 0 && o.Limit != 0 {
+		conds = append(conds, formatQuery("{id} > %s", o.Cursor))
+	}
+	if o.WorkerHostname != "" {
+		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
+	}
+	return conds
+}
+
 // ErrExecutionLogEntryNotUpdated is retured by AddExecutionLogEntry and UpdateExecutionLogEntry, when
 // the log entry was not updated.
 var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated")
@@ -147,6 +170,9 @@ type Store interface {
 	// CanceledJobs returns all the jobs that are to be canceled. To cancel a running job, the `cancel` field is set
 	// to true. These jobs will be found eventually and then canceled. They will end up in canceled state.
 	CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error)
+
+	// ProcessingJobs returns all jobs that are currently processing.
+	ProcessingJobs(ctx context.Context, options ProcessingJobsOptions) (records []workerutil.Record, cursor int64, err error)
 }
 
 type ExecutionLogEntry workerutil.ExecutionLogEntry
@@ -749,6 +775,50 @@ WHERE
 ORDER BY
 	{id} ASC
 `
+
+func (s *store) ProcessingJobs(ctx context.Context, options ProcessingJobsOptions) (records []workerutil.Record, cursor int64, err error) {
+	var limit *sqlf.Query
+	if options.Limit != 0 {
+		limit = sqlf.Sprintf("LIMIT %s", options.Limit)
+	} else {
+		limit = sqlf.Sprintf("")
+	}
+
+	conds := append(
+		[]*sqlf.Query{s.formatQuery("{state} = 'processing'")},
+		options.ToSQLConds(s.formatQuery)...,
+	)
+
+	records, err = s.options.Scan(s.Query(ctx, s.formatQuery(
+		processingJobsQuery,
+		sqlf.Join(s.options.ColumnExpressions, ","),
+		quote(s.options.TableName),
+		sqlf.Join(conds, "AND"),
+		limit,
+	)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if options.Limit != 0 && len(records) > 0 {
+		cursor = int64(records[len(records)-1].RecordID())
+	}
+
+	return
+}
+
+const processingJobsQuery = `
+-- source: internal/workerutil/store.go:ProcessingJobs
+SELECT
+	%s
+FROM
+	%s
+WHERE
+	%s
+ORDER BY
+	{id} ASC
+%s -- optional LIMIT clause
+	`
 
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 // the next dequeue of this record can be performed.

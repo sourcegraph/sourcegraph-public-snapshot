@@ -20,6 +20,7 @@ type operations struct {
 	resetStalled            *observation.Operation
 	updateExecutionLogEntry *observation.Operation
 	canceledJobs            *observation.Operation
+	processingJobs          *observation.Operation
 }
 
 func newOperations(storeName string, observationContext *observation.Context) *operations {
@@ -51,5 +52,6 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 		resetStalled:            op("ResetStalled"),
 		updateExecutionLogEntry: op("UpdateExecutionLogEntry"),
 		canceledJobs:            op("CanceledJobs"),
+		processingJobs:          op("ProcessingJobs"),
 	}
 }
