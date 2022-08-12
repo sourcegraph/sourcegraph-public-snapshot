@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -508,29 +507,4 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	}
 
 	return nil
-}
-
-func scanFirstBatchSpecWorkspaceExecutionJob(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspaceExecutionJob, bool, error) {
-	jobs, err := scanBatchSpecWorkspaceExecutionJobs(rows, err)
-	if err != nil || len(jobs) == 0 {
-		return nil, false, err
-	}
-	return jobs[0], true, nil
-}
-
-func scanBatchSpecWorkspaceExecutionJobs(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpecWorkspaceExecutionJob, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
-
-	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
-		var j btypes.BatchSpecWorkspaceExecutionJob
-		if err = ScanBatchSpecWorkspaceExecutionJob(&j, sc); err != nil {
-			return err
-		}
-		jobs = append(jobs, &j)
-		return nil
-	})
 }
