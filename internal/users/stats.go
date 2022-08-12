@@ -30,31 +30,29 @@ type UsersStats struct {
 }
 
 func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, []*sqlf.Query, error) {
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	tables := []*sqlf.Query{sqlf.Sprintf(`users`)}
+	preConds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	postConds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if s.Filters.Query != nil && *s.Filters.Query != "" {
 		query := "%" + *s.Filters.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+		preConds = append(preConds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
 	}
 	if s.Filters.SiteAdmin != nil {
-		conds = append(conds, sqlf.Sprintf("site_admin = %s", *s.Filters.SiteAdmin))
+		preConds = append(preConds, sqlf.Sprintf("site_admin = %s", *s.Filters.SiteAdmin))
 	}
 	if s.Filters.Username != nil {
-		conds = append(conds, sqlf.Sprintf("username ILIKE %s", "%"+*s.Filters.Username+"%"))
+		preConds = append(preConds, sqlf.Sprintf("username ILIKE %s", "%"+*s.Filters.Username+"%"))
 	}
 	if s.Filters.Email != nil {
-		tables = append(tables, sqlf.Sprintf("LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true"))
-		conds = append(conds, sqlf.Sprintf("email ILIKE %s", "%"+*s.Filters.Email+"%"))
+		preConds = append(preConds, sqlf.Sprintf("email ILIKE %s", "%"+*s.Filters.Email+"%"))
 	}
 	if s.Filters.LastActivePeriod != nil && *s.Filters.LastActivePeriod != "ALL" {
 		lastActiveStartTime, err := makeLastActiveStartTime(*s.Filters.LastActivePeriod)
 		if err != nil {
 			return nil, nil, err
 		}
-		tables = append(tables, sqlf.Sprintf("LEFT JOIN event_logs events ON events.user_id = users.id"))
-		conds = append(conds, sqlf.Sprintf("events.timestamp >= %s", lastActiveStartTime))
+		postConds = append(preConds, sqlf.Sprintf("last_active_at >= %s", lastActiveStartTime))
 	}
-	return tables, conds, nil
+	return preConds, postConds, nil
 }
 
 func makeLastActiveStartTime(lastActivePeriod string) (time.Time, error) {
@@ -71,15 +69,37 @@ func makeLastActiveStartTime(lastActivePeriod string) (time.Time, error) {
 	}
 }
 
+var (
+	statsSubQuery = `
+	WITH stats AS (
+		SELECT
+			users.id,
+			users.username,
+			display_name,
+			(SELECT email FROM user_emails WHERE user_id = users.id AND is_primary = true LIMIT 1) AS email,
+			users.created_at,
+			(SELECT timestamp FROM event_logs WHERE user_id = users.id ORDER BY timestamp DESC LIMIT 1) AS last_active_at,
+			users.deleted_at,
+			users.site_admin,
+			(SELECT COUNT(id) FROM event_logs WHERE user_id = users.id) AS events_count
+		FROM
+			users
+			LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true
+		WHERE %s
+	)
+	%s
+	`
+)
+
 func (s *UsersStats) TotalCount(ctx context.Context) (float64, error) {
 	var totalCount float64
 
-	tables, conds, err := s.makeQueryParameters()
+	preConds, postConds, err := s.makeQueryParameters()
 	if err != nil {
 		return 0, err
 	}
 
-	query := sqlf.Sprintf(`SELECT COUNT(DISTINCT users.id) FROM %s WHERE %s`, sqlf.Join(tables, " "), sqlf.Join(conds, "AND"))
+	query := sqlf.Sprintf(statsSubQuery, sqlf.Join(preConds, "AND"), sqlf.Sprintf(`SELECT COUNT(DISTINCT id) FROM stats WHERE %s`, sqlf.Join(postConds, "AND")))
 	if err := s.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&totalCount); err != nil {
 		return 0, err
 	}
@@ -117,35 +137,17 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 		limit = *filters.First
 	}
 
-	_, conds, err := s.makeQueryParameters()
+	preConds, postConds, err := s.makeQueryParameters()
 	if err != nil {
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(`
-	SELECT
-		users.id,
-		users.username,
-		emails.email,
-		users.created_at,
-		MAX(events.timestamp) AS last_active_at,
-		users.deleted_at,
-		users.site_admin,
-		COUNT(events.*) AS events_count
-	FROM
-		users
-		LEFT JOIN event_logs events ON events.user_id = users.id
-		LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true
+	query := sqlf.Sprintf(statsSubQuery, sqlf.Join(preConds, "AND"), sqlf.Sprintf(`
+	SELECT id, username, email, created_at, last_active_at, deleted_at, site_admin, events_count FROM stats
 	WHERE %s
-	GROUP BY
-		users.id,
-		users.username,
-		emails.email,
-		users.created_at,
-		users.deleted_at,
-		users.site_admin
 	ORDER BY %s
-	LIMIT %s`, sqlf.Join(conds, "AND"), orderBy, limit)
+	LIMIT %s
+	`, sqlf.Join(postConds, "AND"), orderBy, limit))
 
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
@@ -174,13 +176,13 @@ func toUsersField(orderBy string) (string, error) {
 	case "USERNAME":
 		return "username", nil
 	case "EMAIL":
-		return "emails.email", nil
+		return "email", nil
 	case "CREATED_AT":
-		return "users.created_at", nil
+		return "created_at", nil
 	case "LAST_ACTIVE_AT":
 		return "last_active_at", nil
 	case "DELETED_AT":
-		return "users.deleted_at", nil
+		return "deleted_at", nil
 	case "EVENTS_COUNT":
 		return "events_count", nil
 	case "SITE_ADMIN":
