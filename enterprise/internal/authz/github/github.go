@@ -46,6 +46,7 @@ type ProviderOptions struct {
 
 	BaseToken      string
 	GroupsCacheTTL time.Duration
+	IsApp          bool
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {

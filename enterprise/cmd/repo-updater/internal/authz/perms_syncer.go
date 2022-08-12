@@ -1060,6 +1060,20 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 				ServiceID:   provider.ServiceID(),
 				AccountIDs:  accountIDs,
 			})
+
+			if provider.ServiceType() == extsvc.TypeGitHub {
+				linkedAccountIDsToUserIDs, err := s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
+					ServiceType: "githubApp",
+					ServiceID:   provider.ServiceID(),
+					AccountIDs:  accountIDs,
+				})
+				if err != nil {
+					for k, v := range linkedAccountIDsToUserIDs {
+						accountIDsToUserIDs[k] = v
+					}
+				}
+			}
+
 			if err != nil {
 				return errors.Wrap(err, "get user IDs by external accounts")
 			}
