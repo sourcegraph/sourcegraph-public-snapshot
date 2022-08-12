@@ -5,7 +5,7 @@
 
     tbody {
         tr {
-            border-bottom: 1px solid var(--gray-03);
+            border-bottom: 1px solid var(--card-border-color);
         }
     }
 }
@@ -21,7 +21,7 @@
     }
 
     &.sortable {
-        height: 28px;
+        height: 1.75rem;
         cursor: pointer;
         justify-content: space-between;
     }
@@ -41,24 +41,32 @@
             fill: var(--gray-05);
         }
     }
+
+    &.selection-header {
+        height: 1.25rem;
+
+        input {
+            margin-left: -1rem !important;
+        }
+    }
 }
 
 .sortable-icons {
     margin-left: 0.5rem;
     margin-right: -1rem;
     svg {
-        fill: var(--gray-03);
-        width: 36px;
-        height: 36px;
+        fill: var(--card-border-color);
+        width: 2.25rem;
+        height: 2.25rem;
     }
 }
 
 .sort-asc-icon {
-    margin-top: -16px;
+    margin-top: -1rem;
 }
 
 .sort-desc-icon {
-    margin-top: -24px;
+    margin-top: -1.5rem;
 }
 
 .cell {
@@ -78,7 +86,7 @@
 }
 
 .selection-td {
-    width: 30px;
+    width: 1.875rem;
 }
 
 .actions-arrow-icon {

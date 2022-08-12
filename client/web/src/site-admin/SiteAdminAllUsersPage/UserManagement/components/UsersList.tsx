@@ -67,7 +67,7 @@ export const UsersList: React.FunctionComponent = () => {
     const users = (data || previousData)?.site.users
     return (
         <div className="position-relative">
-            <div className="mb-2 mt-4 pt-4 d-flex justify-content-between align-items-center text-nowrap">
+            <div className="mb-4 mt-4 pt-4 d-flex justify-content-between align-items-center text-nowrap">
                 <H2>Users</H2>
                 <div className="d-flex w-75">
                     <HorizontalSelect<SiteUsersLastActivePeriod>
@@ -251,9 +251,9 @@ export const UsersList: React.FunctionComponent = () => {
 
 function RenderUsernameAndEmail({ username, email }: SiteUser): JSX.Element {
     return (
-        <div className="d-flex flex-column p-2">
-            <Text className={classNames(styles.linkColor, 'mb-0')}>{username}</Text>
-            <Text className="mb-0">{email}</Text>
+        <div className={classNames('d-flex flex-column p-2', styles.usernameColumn)}>
+            <Text className={classNames(styles.linkColor, 'mb-0 text-truncate')}>{username}</Text>
+            <Text className="mb-0 text-truncate">{email}</Text>
         </div>
     )
 }

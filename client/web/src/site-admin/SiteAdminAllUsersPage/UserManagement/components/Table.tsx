@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
 import { mdiMenuUp, mdiMenuDown, mdiArrowRightTop, mdiArrowRightBottom, mdiChevronDown, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
@@ -52,7 +52,7 @@ interface TableProps<T> {
     getRowId: (data: T) => string
     sortBy?: {
         key: string
-        descending?: boolean
+        descending: boolean
     }
     onSortByChange?: (newOderBy: NonNullable<TableProps<T>['sortBy']>) => void
 }
@@ -67,7 +67,14 @@ export function Table<T>({
     onSortByChange,
     selectable = false,
 }: TableProps<T>): JSX.Element {
+    const [allSelected, setAllSelected] = useState(false)
     const [selection, setSelection] = useState<T[]>([])
+
+    useEffect(() => {
+        if (allSelected) {
+            setSelection(data)
+        }
+    }, [allSelected, data])
 
     const onRowSelectionChange = useCallback(
         (row: T, selected: boolean): void => {
@@ -75,6 +82,10 @@ export function Table<T>({
                 ...selection.filter(selectedRow => getRowId(selectedRow) !== getRowId(row)),
                 ...(selected ? [row] : []),
             ])
+
+            if (!selected) {
+                setAllSelected(false)
+            }
         },
         [getRowId]
     )
@@ -115,7 +126,22 @@ export function Table<T>({
                     <tr>
                         {selectable && (
                             <th>
-                                <div className={styles.header} />
+                                <div className={classNames(styles.header, styles.selectionHeader)}>
+                                    <Checkbox
+                                        aria-labelledby="Select all checkbox"
+                                        className="m-0"
+                                        checked={allSelected}
+                                        onChange={event => {
+                                            if (event.target.checked) {
+                                                setAllSelected(true)
+                                                setSelection(data)
+                                            } else {
+                                                setAllSelected(false)
+                                                setSelection([] as T[])
+                                            }
+                                        }}
+                                    />
+                                </div>
                             </th>
                         )}
                         {memoizedColumns.map(column => {
@@ -131,6 +157,7 @@ export function Table<T>({
                                 <th key={key} onClick={column.sortable ? handleSort : undefined}>
                                     <div
                                         className={classNames(
+                                            'text-nowrap',
                                             styles.header,
                                             styles.sortable,
                                             align === 'right' && styles.alignRight,
