@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -619,7 +620,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
-				cred := &btypes.SiteCredential{}
+				cred := &btypes.SiteCredential{Credential: btypes.NewUnencryptedCredential(nil)}
 				cred.SetAuthenticator(ctx, siteToken)
 				return cred, nil
 			})
@@ -679,7 +680,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
-				cred := &btypes.SiteCredential{}
+				cred := &btypes.SiteCredential{Credential: btypes.NewUnencryptedCredential(nil)}
 				cred.SetAuthenticator(ctx, siteToken)
 				return cred, nil
 			})

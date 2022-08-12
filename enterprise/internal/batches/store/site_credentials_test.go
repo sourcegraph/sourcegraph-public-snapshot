@@ -8,6 +8,7 @@ import (
 
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
@@ -20,10 +21,6 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 		extsvc.TypeGitHub,
 		extsvc.TypeGitLab,
 	}
-
-	// TODO(batch-changes-site-credential-encryption): remove after migration is
-	// complete, since all fields should be exported again.
-	diffOpts := []cmp.Option{cmp.AllowUnexported(btypes.SiteCredential{})}
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(credentials); i++ {
@@ -59,7 +56,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want, diffOpts...); diff != "" {
+			if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -76,7 +73,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want, diffOpts...); diff != "" {
+			if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -108,7 +105,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 				t.Fatalf("listed %d site credentials, want: %d", len(have), len(want))
 			}
 
-			if diff := cmp.Diff(have, want, diffOpts...); diff != "" {
+			if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -137,7 +134,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 						t.Fatalf("listed %d site credentials, want: %d", len(have), len(want))
 					}
 
-					if diff := cmp.Diff(have, want, diffOpts...); diff != "" {
+					if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
 						t.Fatal(diff)
 					}
 				}
@@ -168,14 +165,15 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 					ID: cred.ID,
 				}); err != nil {
 					t.Errorf("error retrieving credential: %+v", err)
-				} else if diff := cmp.Diff(have, cred, diffOpts...); diff != "" {
+				} else if diff := cmp.Diff(have, cred, et.CompareEncryptable); diff != "" {
 					t.Errorf("unexpected difference in credentials (-have +want):\n%s", diff)
 				}
 			}
 		})
 		t.Run("NotFound", func(t *testing.T) {
 			cred := &btypes.SiteCredential{
-				ID: 0xdeadbeef,
+				ID:         0xdeadbeef,
+				Credential: btypes.NewUnencryptedCredential(nil),
 			}
 			if err := s.UpdateSiteCredential(ctx, cred); err == nil {
 				t.Errorf("unexpected nil error")
