@@ -1,5 +1,5 @@
-import { combineLatest, ReplaySubject } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { combineLatest, ReplaySubject, of } from 'rxjs'
+import { map, switchMap } from 'rxjs/operators'
 
 import { asError, LocalStorageSubject } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
@@ -148,7 +148,7 @@ export function createPlatformContext(
             : new ExtensionStorageSubject('sideloadedExtensionURL', null),
         getStaticExtensions: () =>
             shouldUseInlineExtensions(requestGraphQL).pipe(
-                map(shouldUseInline => (shouldUseInline ? getInlineExtensions() : undefined))
+                switchMap(shouldUseInline => (shouldUseInline ? getInlineExtensions() : of(undefined)))
             ),
     }
     return context

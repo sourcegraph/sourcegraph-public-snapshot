@@ -1,5 +1,5 @@
 import { Remote, proxy } from 'comlink'
-import { Subscription, from, Observable, Subject } from 'rxjs'
+import { Subscription, from, Observable, Subject, of } from 'rxjs'
 import { publishReplay, refCount, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
@@ -167,7 +167,7 @@ export const initMainThreadAPI = (
                         .pipe(
                             switchMap(staticExtensions =>
                                 staticExtensions
-                                    ? staticExtensions.pipe(publishReplay(1), refCount())
+                                    ? of(staticExtensions).pipe(publishReplay(1), refCount())
                                     : getEnabledExtensions(platformContext)
                             )
                         )

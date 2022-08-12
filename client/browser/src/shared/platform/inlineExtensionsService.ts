@@ -1,5 +1,5 @@
-import { Subscribable, Observable, from } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { Observable, from } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { checkOk, isErrorGraphQLResult, gql } from '@sourcegraph/http-client'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
@@ -48,8 +48,7 @@ export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['reque
                 return DEFAULT_ENABLE_LEGACY_EXTENSIONS
             }
         }),
-        map(enableLegacyExtensions => !enableLegacyExtensions && isExtension),
-        tap(enableLegacyExtensions => console.log({ enableLegacyExtensions }))
+        map(enableLegacyExtensions => !enableLegacyExtensions && isExtension)
     )
 
 /**
@@ -64,7 +63,7 @@ function getURLsForInlineExtension(extensionID: string): { manifestURL: string; 
     }
 }
 
-export function getInlineExtensions(): Subscribable<ExecutableExtension[]> {
+export function getInlineExtensions(): Observable<ExecutableExtension[]> {
     const promises: Promise<ExecutableExtension>[] = []
 
     for (const extensionID of extensions) {
