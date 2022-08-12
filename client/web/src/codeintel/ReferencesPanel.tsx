@@ -328,7 +328,6 @@ export const ReferencesList: React.FunctionComponent<
     // '?jumpToFirst=true' causes the panel to select the first reference and
     // open it in code blob on right.
     const onBlobNav = (url: string): void => {
-        console.log('on blob nav')
         // If we're going to navigate inside the same file in the same repo we
         // can optimistically jump to that position in the code blob.
         if (activeLocation !== undefined) {
@@ -619,7 +618,6 @@ const SideBlob: React.FunctionComponent<
         () =>
             history.listen((location, method) => {
                 if (useCodeMirror && (location.state as any)?.syncToPanel !== false) {
-                    console.log('sync to panel')
                     switch (method) {
                         case 'PUSH':
                             panelHistory.push(location)
