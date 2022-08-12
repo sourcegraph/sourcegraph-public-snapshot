@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/google/zoekt/stream"
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -596,25 +595,23 @@ func (r *Resolver) filterRepoHasFileContent(
 				q := searchzoekt.QueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
 				q = zoektquery.NewAnd(&zoektquery.BranchesRepos{List: indexed.BranchRepos()}, q)
 
+				repos, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Minimal: true})
+				if err != nil {
+					return err
+				}
+
 				foundRevs := Set[repoAndRev]{}
-				onMatch := func(res *zoekt.SearchResult) {
-					for _, file := range res.Files {
-						// Reverse lookup the inputRev from the returned branches
-						inputRevs := indexed.RepoRevs[api.RepoID(int32(file.RepositoryID))].Revs
-						for _, branch := range file.Branches {
-							for _, inputRev := range inputRevs {
-								if branch == inputRev || (branch == "HEAD" && inputRev == "") {
-									foundRevs.Add(repoAndRev{id: api.RepoID(file.RepositoryID), rev: inputRev})
-								}
+				for repoID, repo := range repos.Minimal {
+					inputRevs := indexed.RepoRevs[api.RepoID(repoID)].Revs
+					for _, branch := range repo.Branches {
+						for _, inputRev := range inputRevs {
+							if branch.Name == inputRev || (branch.Name == "HEAD" && inputRev == "") {
+								foundRevs.Add(repoAndRev{id: api.RepoID(repoID), rev: inputRev})
 							}
 						}
 					}
 				}
 
-				err := r.zoekt.StreamSearch(ctx, q, &zoekt.SearchOptions{ShardMaxMatchCount: 1}, stream.SenderFunc(onMatch))
-				if err != nil {
-					return err
-				}
 				if i == 0 {
 					revsMatchingAllPredicates = foundRevs
 				} else {
