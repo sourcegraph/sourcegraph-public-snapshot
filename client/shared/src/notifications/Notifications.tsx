@@ -10,7 +10,7 @@ import { asError } from '@sourcegraph/common'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 
 import { Notification } from './notification'
 import { NotificationItem, NotificationItemProps } from './NotificationItem'
@@ -18,7 +18,7 @@ import { NotificationItem, NotificationItemProps } from './NotificationItem'
 import styles from './Notifications.module.scss'
 
 export interface NotificationsProps
-    extends ExtensionsControllerProps,
+    extends RequiredExtensionsControllerProps,
         Pick<NotificationItemProps, 'notificationItemStyleProps'> {}
 
 interface NotificationsState {
@@ -47,21 +47,15 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     private notificationsReference = React.createRef<HTMLDivElement>()
 
     public componentDidMount(): void {
-        const { extensionsController } = this.props
-
-        if (extensionsController === null) {
-            return
-        }
-
         // Subscribe to plain notifications
         this.subscriptions.add(
-            from(extensionsController.extHostAPI)
+            from(this.props.extensionsController.extHostAPI)
                 .pipe(
                     switchMap(extensionHostAPI =>
                         merge(
                             wrapRemoteObservable(extensionHostAPI.getPlainNotifications()),
                             // Subscribe to command error notifications (also plain)
-                            extensionsController.commandErrors
+                            this.props.extensionsController.commandErrors
                         )
                     ),
                     map(notification => ({ ...notification, id: uniqueId('n') }))
@@ -77,7 +71,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
         // plain notifications because the emissions of the progress notification observable
         // have to be proxied as well
         this.subscriptions.add(
-            from(extensionsController.extHostAPI)
+            from(this.props.extensionsController.extHostAPI)
                 .pipe(mergeMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getProgressNotifications())))
                 .subscribe(progressNotification => {
                     // Progress notifications are remote, so property access is asynchronous
@@ -142,7 +136,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
 
         // Register command to focus notifications.
         this.subscriptions.add(
-            extensionsController.registerCommand({
+            this.props.extensionsController.registerCommand({
                 command: 'focusNotifications',
                 run: () => {
                     const notificationsElement = this.notificationsReference.current
@@ -155,7 +149,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
         )
         this.subscriptions.add(
             syncRemoteSubscription(
-                extensionsController.extHostAPI.then(extensionHostAPI =>
+                this.props.extensionsController.extHostAPI.then(extensionHostAPI =>
                     extensionHostAPI.registerContributions({
                         menus: {
                             commandPalette: [
@@ -179,12 +173,8 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     }
 
     public componentDidUpdate(): void {
-        const { extensionsController } = this.props
-        if (extensionsController === null) {
-            return
-        }
         // Update context to show/hide "Focus notifications" command.
-        extensionsController.extHostAPI
+        this.props.extensionsController.extHostAPI
             .then(extensionHostAPI =>
                 extensionHostAPI.updateContext({
                     [HAS_NOTIFICATIONS_CONTEXT_KEY]: this.state.notifications.length > 0,
