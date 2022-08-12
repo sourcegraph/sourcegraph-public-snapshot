@@ -10,7 +10,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import extensions from '../../../code-intel-extensions.json'
 import { isExtension } from '../context'
 
-const DEFAULT_ENABLE_LEGACY_EXTENSIONS = false // Should be changed to false after Sourcegraph 4.0 release
+const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false after Sourcegraph 4.0 release
 
 /**
  * Determine if inline extensions should be loaded.
