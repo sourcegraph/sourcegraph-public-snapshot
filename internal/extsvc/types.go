@@ -12,6 +12,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -41,8 +42,26 @@ type AccountSpec struct {
 // AccountData contains data that can be freely updated in the user external account after it
 // has been created. See the GraphQL API's corresponding fields for documentation.
 type AccountData struct {
-	AuthData *json.RawMessage
-	Data     *json.RawMessage
+	AuthData *EncryptableData
+	Data     *EncryptableData
+}
+
+type EncryptableData = encryption.JSONEncryptable[any]
+
+func NewUnencryptedData(value json.RawMessage) *EncryptableData {
+	return NewUnencryptedDataWithKey(value, nil)
+}
+
+func NewUnencryptedDataWithKey(value json.RawMessage, key encryption.Key) *EncryptableData {
+	return &EncryptableData{Encryptable: encryption.NewUnencryptedWithKey(string(value), key)}
+}
+
+func NewEncryptedData(cipher, keyID string, key encryption.Key) *EncryptableData {
+	if cipher == "" && keyID == "" {
+		return nil
+	}
+
+	return &EncryptableData{Encryptable: encryption.NewEncrypted(cipher, keyID, key)}
 }
 
 // Repository contains necessary information to identify an external repository on the code host.

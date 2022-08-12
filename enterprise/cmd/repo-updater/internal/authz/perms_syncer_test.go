@@ -1186,8 +1186,8 @@ func TestPermsSyncer_maybeRefreshGitLabOAuthTokenFromAccount(t *testing.T) {
 				expiry))
 			data := json.RawMessage(`{}`)
 			accountData := extsvc.AccountData{
-				AuthData: &authData,
-				Data:     &data,
+				AuthData: extsvc.NewUnencryptedData(authData),
+				Data:     extsvc.NewUnencryptedData(data),
 			}
 
 			extAccount := &extsvc.Account{

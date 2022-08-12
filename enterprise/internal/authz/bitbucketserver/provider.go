@@ -114,7 +114,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 			AccountID:   strconv.Itoa(bitbucketUser.ID),
 		},
 		AccountData: extsvc.AccountData{
-			Data: (*json.RawMessage)(&accountData),
+			Data: extsvc.NewUnencryptedData(accountData),
 		},
 	}, nil
 }
@@ -139,7 +139,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	var user bitbucketserver.User
-	if err := json.Unmarshal(*account.Data, &user); err != nil {
+	if err := account.Data.DecryptedInto(ctx, &user); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 

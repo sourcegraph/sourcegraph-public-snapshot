@@ -292,7 +292,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 		return nil
 	}
 
-	_, tok, err := gitlab.GetExternalAccountData(&acct.AccountData)
+	_, tok, err := gitlab.GetExternalAccountData(ctx, &acct.AccountData)
 	if err != nil {
 		return errors.Wrap(err, "get external account data")
 	} else if tok == nil {
@@ -313,7 +313,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 			success := err == nil
 			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
 		}()
-		acct.AccountData.SetAuthData(refreshedToken)
+		acct.AccountData.AuthData.Set(refreshedToken)
 		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
 		if err != nil {
 			return errors.Wrap(err, "save refreshed token")
