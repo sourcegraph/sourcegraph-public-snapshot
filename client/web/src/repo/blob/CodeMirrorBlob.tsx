@@ -25,7 +25,7 @@ import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
+import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -83,14 +83,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // Reference panel specific props
         disableStatusBar,
         disableDecorations,
-        disableHovercards,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
-    const blobIsLoading = useBlobIsLoading(blobInfo, location.pathname)
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
@@ -161,7 +159,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 extensionsController,
                 disableStatusBar,
                 disableDecorations,
-                disableHovercards,
             }),
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
@@ -230,23 +227,24 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     // Update selected lines when URL changes
     useEffect(() => {
-        if (editor && !blobIsLoading) {
+        if (editor) {
             selectLines(editor, position.line ? position : null)
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [position, blobIsLoading])
+    }, [position])
 
     // Update pinned hovercard range
     useEffect(() => {
-        if (editor && !blobIsLoading) {
+        if (editor && (!hasPin || (position.line && isValidLineRange(position, editor.state.doc)))) {
+            // Only update range if position is valid inside the document.
             updatePinnedRangeField(editor, hasPin ? position : null)
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [position, hasPin, blobIsLoading])
+    }, [position, hasPin])
 
     return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
 }
@@ -257,18 +255,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
  */
 function urlIsPinned(search: string): boolean {
     return new URLSearchParams(search).get('popover') === 'pinned'
-}
-
-/**
- * Because the location changes before new blob info is available we often apply
- * updates to the old document, which can be problematic or throw errors. This
- * helper hook keeps track of which path is set when the blob info updates
- * and compares it against the current path.
- */
-function useBlobIsLoading(blobInfo: BlobInfo, pathname: string): boolean {
-    // pathname is intentionally ignored to make this functionality work
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    return pathname !== useMemo(() => pathname, [blobInfo])
 }
 
 /**

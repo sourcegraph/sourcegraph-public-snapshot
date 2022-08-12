@@ -69,14 +69,12 @@ export function sourcegraphExtensions({
     extensionsController,
     disableStatusBar,
     disableDecorations,
-    disableHovercards,
 }: {
     blobInfo: BlobInfo
     initialSelection: LineOrPositionOrRange
     extensionsController: ExtensionsControllerProps['extensionsController']
     disableStatusBar?: boolean
     disableDecorations?: boolean
-    disableHovercards?: boolean
 }): Extension {
     const subscriptions = new Subscription()
 
@@ -136,7 +134,7 @@ export function sourcegraphExtensions({
         })),
         // This needs to come before document highlights so that the hovered
         // token is highlighted differently
-        disableHovercards ? [] : hovercardDataSource(contextObservable),
+        hovercardDataSource(contextObservable),
         documentHighlightsDataSource(contextObservable),
         disableDecorations ? [] : textDocumentDecorations(contextObservable),
         ViewPlugin.define(() => new SelectionManager(contextObservable)),
