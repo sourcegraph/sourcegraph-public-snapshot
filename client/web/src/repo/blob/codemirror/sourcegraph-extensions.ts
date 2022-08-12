@@ -381,73 +381,81 @@ function hovercardDataSource(): Extension {
  * capabilities of CodeMirror. It only attaches a container DOM element to the
  * editor's DOM and renders itself it that container.
  */
-const statusBar = ViewPlugin.fromClass(
-    class {
-        private container: HTMLDivElement
-        private reactRoot: Root
-        private subscription: Subscription
-        private nextProps = new Subject<BlobProps>()
+const statusBar: Extension = [
+    // Ensures that the status bar doesn't cover any content
+    EditorView.theme({
+        '.cm-content': {
+            paddingBottom: 'calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap))',
+        },
+    }),
+    ViewPlugin.fromClass(
+        class {
+            private container: HTMLDivElement
+            private reactRoot: Root
+            private subscription: Subscription
+            private nextProps = new Subject<BlobProps>()
 
-        constructor(private readonly view: EditorView) {
-            this.container = document.createElement('div')
-            this.reactRoot = createRoot(this.container)
-            const contextUpdates = this.view.state.field(sgExtensionsContextField).contextObservable
+            constructor(private readonly view: EditorView) {
+                this.container = document.createElement('div')
+                this.reactRoot = createRoot(this.container)
+                const contextUpdates = this.view.state.field(sgExtensionsContextField).contextObservable
 
-            const getStatusBarItems = (): Observable<'loading' | StatusBarItemWithKey[]> =>
-                contextUpdates.pipe(
-                    switchMap(context => {
-                        if (!context) {
-                            return of('loading' as const)
-                        }
+                const getStatusBarItems = (): Observable<'loading' | StatusBarItemWithKey[]> =>
+                    contextUpdates.pipe(
+                        switchMap(context => {
+                            if (!context) {
+                                return of('loading' as const)
+                            }
 
-                        return wrapRemoteObservable(context.extensionHostAPI.getStatusBarItems(context.viewerId))
-                    })
-                )
-
-            this.subscription = combineLatest([
-                contextUpdates,
-                this.nextProps.pipe(
-                    distinctUntilChanged(
-                        (previous, next) => previous.location === next.location && previous.history === next.history
-                    ),
-                    startWith(view.state.facet(blobPropsFacet))
-                ),
-            ]).subscribe(([context, props]) => {
-                this.reactRoot.render(
-                    React.createElement(
-                        Container,
-                        { history: props.history },
-                        React.createElement(StatusBar, {
-                            getStatusBarItems,
-                            extensionsController: context.extensionsController,
-                            uri: toURIWithPath(context.blobInfo),
-                            location: props.location,
-                            className: blobStyles.blobStatusBarBody,
-                            statusBarRef: () => {},
-                            hideWhileInitializing: true,
-                            isBlobPage: true,
+                            return wrapRemoteObservable(context.extensionHostAPI.getStatusBarItems(context.viewerId))
                         })
                     )
-                )
-            })
 
-            this.view.dom.append(this.container)
+                this.subscription = combineLatest([
+                    contextUpdates,
+                    this.nextProps.pipe(
+                        distinctUntilChanged(
+                            (previous, next) => previous.location === next.location && previous.history === next.history
+                        ),
+                        startWith(view.state.facet(blobPropsFacet))
+                    ),
+                ]).subscribe(([context, props]) => {
+                    this.reactRoot.render(
+                        React.createElement(
+                            Container,
+                            { history: props.history },
+                            React.createElement(StatusBar, {
+                                getStatusBarItems,
+                                extensionsController: context.extensionsController,
+                                uri: toURIWithPath(context.blobInfo),
+                                location: props.location,
+                                className: blobStyles.blobStatusBarBody,
+                                statusBarRef: () => {},
+                                hideWhileInitializing: true,
+                                isBlobPage: true,
+                            })
+                        )
+                    )
+                })
+
+                this.view.dom.append(this.container)
+            }
+
+            public update(update: ViewUpdate): void {
+                this.nextProps.next(update.state.facet(blobPropsFacet))
+            }
+
+            public destroy(): void {
+                this.subscription.unsubscribe()
+                this.container.remove()
+
+                // setTimeout seems necessary to prevent React from complaining that the
+                // root is synchronously unmounted while rendering is in progress
+                setTimeout(() => this.reactRoot.unmount(), 0)
+            }
         }
-
-        public update(update: ViewUpdate): void {
-            this.nextProps.next(update.state.facet(blobPropsFacet))
-        }
-
-        public destroy(): void {
-            this.subscription.unsubscribe()
-            this.container.remove()
-
-            // setTimeout seems necessary to prevent React from complaining that the
-            // root is synchronously unmounted while rendering is in progress
-            setTimeout(() => this.reactRoot.unmount(), 0)
-        }
-    }
-)
+    ),
+]
 
 const warmupReferences = ViewPlugin.fromClass(
     class {
