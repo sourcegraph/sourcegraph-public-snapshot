@@ -140,10 +140,9 @@ export function sourcegraphExtensions({
         documentHighlightsDataSource(contextObservable),
         disableDecorations ? [] : textDocumentDecorations(contextObservable),
         ViewPlugin.define(() => new SelectionManager(contextObservable)),
-        disableStatusBar ? [] : [
-            ViewPlugin.define(view => new StatusBarManager(view, contextObservable)),
-            bottomPadding,
-        ],
+        disableStatusBar
+            ? []
+            : [ViewPlugin.define(view => new StatusBarManager(view, contextObservable)), bottomPadding],
         ViewPlugin.define(() => new WarmupReferencesManager(contextObservable)),
     ]
 }
