@@ -26,7 +26,7 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 
 func TestRefreshToken_ExternalServices(t *testing.T) {
 	ctx := context.Background()
-	ctxOauth := oauthutil.OauthContext{}
+	ctxOauth := oauthutil.OAuthContext{}
 	db := NewMockDB()
 
 	externalServices := NewMockExternalServiceStore()
@@ -96,7 +96,7 @@ func TestRefreshToken_ExternalServices(t *testing.T) {
 
 func TestRefreshToken_ExternalAccounts(t *testing.T) {
 	ctx := context.Background()
-	ctxOauth := oauthutil.OauthContext{}
+	ctxOauth := oauthutil.OAuthContext{}
 	db := NewMockDB()
 
 	externalAccounts := NewMockUserExternalAccountsStore()

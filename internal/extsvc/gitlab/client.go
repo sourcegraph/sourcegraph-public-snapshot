@@ -232,17 +232,17 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 
 // do is the default method for making API requests and will prepare the correct
 // base path.
-var MockGetOauthContext func() *oauthutil.OauthContext
+var MockGetOAuthContext func() *oauthutil.OAuthContext
 
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	oauthContext := getOauthContext()
+	oauthContext := getOAuthContext()
 	return c.doWithBaseURL(ctx, oauthContext, req, result)
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is used for authentication,
 // it will try to refresh the token and retry the same request when the token has expired.
-func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OauthContext, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAuthContext, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var responseStatus string
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
@@ -357,7 +357,7 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
 
-	oauthContext := getOauthContext()
+	oauthContext := getOAuthContext()
 	_, _, err = c.doWithBaseURL(ctx, oauthContext, req, &v)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting oauth scopes")
@@ -445,9 +445,9 @@ func (e ProjectNotFoundError) Error() string {
 
 func (e ProjectNotFoundError) NotFound() bool { return true }
 
-func getOauthContext() *oauthutil.OauthContext {
-	if MockGetOauthContext != nil {
-		return MockGetOauthContext()
+func getOAuthContext() *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
 	}
 
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
@@ -455,7 +455,7 @@ func getOauthContext() *oauthutil.OauthContext {
 			p := authProvider.Gitlab
 
 			glURL := strings.TrimSuffix(p.Url, "/")
-			return &oauthutil.OauthContext{
+			return &oauthutil.OAuthContext{
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
 				Endpoint: oauth2.Endpoint{

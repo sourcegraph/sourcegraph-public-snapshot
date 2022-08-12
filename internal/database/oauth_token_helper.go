@@ -24,7 +24,7 @@ type RefreshTokenHelperForExternalService struct {
 	OauthRefreshToken string
 }
 
-func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (token string, err error) {
+func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token string, err error) {
 	refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
 
 	defer func() {
@@ -46,7 +46,7 @@ func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context,
 	return refreshedToken.AccessToken, nil
 }
 
-func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (token string, err error) {
+func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token string, err error) {
 	defer func() {
 		success := err == nil
 		gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()

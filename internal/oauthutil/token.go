@@ -109,7 +109,7 @@ const (
 // body parameters.
 //
 // If AuthStyleInParams is true, the provided values will be encoded in the POST body.
-func newTokenRequest(oauthCtx OauthContext, refreshToken string, authStyle AuthStyle) (*http.Request, error) {
+func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*http.Request, error) {
 	v := url.Values{}
 	if authStyle == AuthStyleInParams {
 		v.Set("client_id", oauthCtx.ClientID)
@@ -130,7 +130,7 @@ func newTokenRequest(oauthCtx OauthContext, refreshToken string, authStyle AuthS
 	return req, nil
 }
 
-func RetrieveToken(doer httpcli.Doer, oauthCtx OauthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
+func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
 	req, err := newTokenRequest(oauthCtx, refreshToken, authStyle)
 	if err != nil {
 		return nil, err

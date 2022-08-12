@@ -98,7 +98,7 @@ func TestClient_doWithBaseURL(t *testing.T) {
 
 	ctx := context.Background()
 
-	mockOauthContext := &oauthutil.OauthContext{
+	mockOauthContext := &oauthutil.OAuthContext{
 		ClientID:     "client_id",
 		ClientSecret: "client_secret",
 		Endpoint: oauth2.Endpoint{
@@ -108,7 +108,7 @@ func TestClient_doWithBaseURL(t *testing.T) {
 		Scopes: []string{"read_user"},
 	}
 
-	provider := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OauthContext) (string, error) {
+	provider := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (string, error) {
 		return "refreshed-token", nil
 	})
 

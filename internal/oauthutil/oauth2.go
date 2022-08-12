@@ -17,8 +17,8 @@ import (
 
 type Endpoint = oauth2.Endpoint
 
-// OauthContext contains the configuration used in the requests to get a new token.
-type OauthContext struct {
+// OAuthContext contains the configuration used in the requests to get a new token.
+type OAuthContext struct {
 	// ClientID is the application's ID.
 	ClientID string
 	// ClientSecret is the application's secret.
@@ -59,12 +59,12 @@ func getOAuthErrorDetails(body []byte) error {
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.
-type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext) (string, error)
+type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthContext) (string, error)
 
 // DoRequest is a function that uses the Doer interface to make HTTP requests and to handle "401 Unauthorized" errors.
 // When the 401 error is due to a token being expired, it will use the TokenRefresher function to update the token.
 // If the token is updated successfully, a new request will be made. Only one retry is allowed.
-func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx OauthContext) (code int, header http.Header, body []byte, err error) {
+func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx OAuthContext) (code int, header http.Header, body []byte, err error) {
 	for i := 0; i < 2; i++ {
 		if auther != nil {
 			if err := auther.Authenticate(req); err != nil {
