@@ -9,6 +9,8 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { requestGraphQL } from '../../backend/graphql'
 import { SearchHistoryQueryResult, SearchHistoryQueryVariables } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
+import { Completion, insertCompletionText } from '@codemirror/autocomplete'
+import { EditorView } from '@codemirror/view'
 
 interface RecentSearch {
     count: number
@@ -40,9 +42,11 @@ const SEARCH_HISTORY_QUERY = gql`
 export function searchQueryHistorySource({
     userId,
     selectedSearchContext,
+    onSelection,
 }: {
     userId: string
     selectedSearchContext?: string
+    onSelection: (index: number) => void
 }): StandardSuggestionSource {
     return async (_context, tokens) => {
         if (tokens.length > 0) {
@@ -73,42 +77,60 @@ export function searchQueryHistorySource({
                 return null
             }
 
+            const createApplyCompletion = (index: number) => (
+                view: EditorView,
+                completion: Completion,
+                from: number,
+                to: number
+            ) => {
+                onSelection(index)
+                view.dispatch(insertCompletionText(view.state, completion.label, from, to))
+            }
+
             return {
                 from: 0,
                 filter: false,
                 options: searches
-                    .map(search => {
-                        let query = search.searchText
+                    .map(
+                        (search, index): Completion => {
+                            let query = search.searchText
 
-                        {
-                            const result = scanSearchQuery(search.searchText)
-                            if (result.type === 'success') {
-                                query = stringHuman(
-                                    result.term.filter(term => {
-                                        switch (term.type) {
-                                            case 'filter':
-                                                if (
-                                                    term.field.value === 'context' &&
-                                                    term.value?.value === selectedSearchContext
-                                                ) {
-                                                    return false
-                                                }
-                                                return true
-                                            default:
-                                                return true
-                                        }
-                                    })
-                                )
+                            {
+                                const result = scanSearchQuery(search.searchText)
+                                if (result.type === 'success') {
+                                    query = stringHuman(
+                                        result.term.filter(term => {
+                                            switch (term.type) {
+                                                case 'filter':
+                                                    if (
+                                                        term.field.value === 'context' &&
+                                                        term.value?.value === selectedSearchContext
+                                                    ) {
+                                                        return false
+                                                    }
+                                                    return true
+                                                default:
+                                                    return true
+                                            }
+                                        })
+                                    )
+                                }
+                                // TODO: filter out invalid searches
                             }
-                            // TODO: filter out invalid searches
-                        }
 
-                        return {
-                            label: query,
-                            type: 'searchhistory',
+                            return {
+                                label: query,
+                                type: 'searchhistory',
+                            }
                         }
-                    })
-                    .filter(item => item.label.trim() !== ''),
+                    )
+                    .filter(item => item.label.trim() !== '')
+                    .map((item, index) => {
+                        // This is here not in the .map call above so we can use
+                        // the correct index after filtering out empty entries
+                        item.apply = createApplyCompletion(index)
+                        return item
+                    }),
             }
         } catch {
             return null
