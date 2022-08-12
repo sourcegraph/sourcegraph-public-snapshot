@@ -187,7 +187,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 },
                 false
             ),
-        [fetchHighlightedFileLineRanges, result.commit, result.path, result.repository]
+        [fetchHighlightedFileLineRanges, result]
     )
 
     const fetchHighlightedFileMatchLineRanges = React.useCallback(
@@ -275,7 +275,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 })
             )
         },
-        [result.type, result.symbols, fetchFileRangeMatches, optimizeHighlighting, telemetryService]
+        [result, fetchFileRangeMatches, optimizeHighlighting, telemetryService]
     )
 
     const fetchUnhighlightedSymbolMatchLineRanges = React.useCallback(
@@ -306,7 +306,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 )
             )
         },
-        [result.type, result.symbols, fetchFileRangeMatches, optimizeHighlighting]
+        [result, fetchFileRangeMatches, optimizeHighlighting]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
