@@ -500,55 +500,50 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     useObservable(
         useMemo(
             () =>
-                combineLatest([
-                    blobInfoChanges,
-                    // Use the initial position when the document is opened.
-                    // Don't want to create new viewers on position change
-                    locationPositions.pipe(first()),
-                    extensionsController !== null ? from(extensionsController.extHostAPI) : of(null),
-                    settingsChanges,
-                ]).pipe(
-                    concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
-                        const uri = toURIWithPath(blobInfo)
+                extensionsController !== null
+                    ? combineLatest([
+                          blobInfoChanges,
+                          // Use the initial position when the document is opened.
+                          // Don't want to create new viewers on position change
+                          locationPositions.pipe(first()),
+                          from(extensionsController.extHostAPI),
+                          settingsChanges,
+                      ]).pipe(
+                          concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
+                              const uri = toURIWithPath(blobInfo)
+                              return from(
+                                  Promise.all([
+                                      // This call should be made before adding viewer, but since
+                                      // messages to web worker are handled in order, we can use Promise.all
+                                      extensionHostAPI.addTextDocumentIfNotExists({
+                                          uri,
+                                          languageId: blobInfo.mode,
+                                          text: blobInfo.content,
+                                      }),
+                                      extensionHostAPI.addViewerIfNotExists({
+                                          type: 'CodeEditor' as const,
+                                          resource: uri,
+                                          selections: lprToSelectionsZeroIndexed(initialPosition),
+                                          isActive: true,
+                                      }),
+                                  ])
+                              ).pipe(map(([, viewerId]) => ({ viewerId, blobInfo, extensionHostAPI })))
+                          }),
+                          tap(({ viewerId, blobInfo, extensionHostAPI }) => {
+                              const subscriptions = new Subscription()
 
-                        return from(
-                            Promise.all(
-                                extensionHostAPI !== null
-                                    ? [
-                                          // This call should be made before adding viewer, but since
-                                          // messages to web worker are handled in order, we can use Promise.all
-                                          extensionHostAPI.addTextDocumentIfNotExists({
-                                              uri,
-                                              languageId: blobInfo.mode,
-                                              text: blobInfo.content,
-                                          }),
-                                          extensionHostAPI.addViewerIfNotExists({
-                                              type: 'CodeEditor' as const,
-                                              resource: uri,
-                                              selections: lprToSelectionsZeroIndexed(initialPosition),
-                                              isActive: true,
-                                          }),
-                                      ]
-                                    : []
-                            )
-                        ).pipe(map(([, viewerId]) => ({ viewerId, blobInfo, extensionHostAPI })))
-                    }),
-                    tap(({ viewerId, blobInfo, extensionHostAPI }) => {
-                        const subscriptions = new Subscription()
+                              // Cleanup on navigation between/away from viewers
+                              subscriptions.add(() => {
+                                  extensionHostAPI
+                                      .removeViewer(viewerId)
+                                      .catch(error => console.error('Error removing viewer from extension host', error))
+                              })
 
-                        if (extensionHostAPI !== null && viewerId !== undefined) {
-                            // Cleanup on navigation between/away from viewers
-                            subscriptions.add(() => {
-                                extensionHostAPI
-                                    .removeViewer(viewerId)
-                                    .catch(error => console.error('Error removing viewer from extension host', error))
-                            })
-
-                            viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
-                        }
-                    }),
-                    mapTo(undefined)
-                ),
+                              viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
+                          }),
+                          mapTo(undefined)
+                      )
+                    : EMPTY,
             [blobInfoChanges, locationPositions, extensionsController, settingsChanges, viewerUpdates]
         )
     )
