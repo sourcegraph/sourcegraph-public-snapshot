@@ -23,7 +23,7 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 	}
 
 	return &siteUsersResolver{
-		&users.UsersStats{DB: s.db, Cache: false, Filters: users.UsersStatsFilters{
+		&users.UsersStats{DB: s.db, Filters: users.UsersStatsFilters{
 			Query:            args.Query,
 			SiteAdmin:        args.SiteAdmin,
 			Username:         args.Username,
@@ -64,7 +64,9 @@ func (s *siteUserResolver) ID(ctx context.Context) graphql.ID { return MarshalUs
 
 func (s *siteUserResolver) Username(ctx context.Context) string { return s.user.Username }
 
-func (s *siteUserResolver) Email(ctx context.Context) *string { return s.user.Email }
+func (s *siteUserResolver) DisplayName(ctx context.Context) *string { return s.user.DisplayName }
+
+func (s *siteUserResolver) Email(ctx context.Context) *string { return s.user.PrimaryEmail }
 
 func (s *siteUserResolver) CreatedAt(ctx context.Context) string {
 	return s.user.CreatedAt.Format(time.RFC3339)

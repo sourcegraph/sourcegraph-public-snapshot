@@ -1,11 +1,7 @@
 package users
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
-	"encoding/csv"
-	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -24,35 +20,33 @@ type UsersStatsFilters struct {
 }
 
 type UsersStats struct {
-	Cache   bool // TODO: implement caching
 	DB      database.DB
 	Filters UsersStatsFilters
 }
 
-func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, []*sqlf.Query, error) {
-	preConds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	postConds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if s.Filters.Query != nil && *s.Filters.Query != "" {
 		query := "%" + *s.Filters.Query + "%"
-		preConds = append(preConds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
 	}
 	if s.Filters.SiteAdmin != nil {
-		preConds = append(preConds, sqlf.Sprintf("site_admin = %s", *s.Filters.SiteAdmin))
+		conds = append(conds, sqlf.Sprintf("site_admin = %s", *s.Filters.SiteAdmin))
 	}
 	if s.Filters.Username != nil {
-		preConds = append(preConds, sqlf.Sprintf("username ILIKE %s", "%"+*s.Filters.Username+"%"))
+		conds = append(conds, sqlf.Sprintf("username ILIKE %s", "%"+*s.Filters.Username+"%"))
 	}
 	if s.Filters.Email != nil {
-		preConds = append(preConds, sqlf.Sprintf("email ILIKE %s", "%"+*s.Filters.Email+"%"))
+		conds = append(conds, sqlf.Sprintf("primary_email ILIKE %s", "%"+*s.Filters.Email+"%"))
 	}
 	if s.Filters.LastActivePeriod != nil && *s.Filters.LastActivePeriod != "ALL" {
 		lastActiveStartTime, err := makeLastActiveStartTime(*s.Filters.LastActivePeriod)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		postConds = append(preConds, sqlf.Sprintf("last_active_at >= %s", lastActiveStartTime))
+		conds = append(conds, sqlf.Sprintf("last_active_at >= %s", lastActiveStartTime))
 	}
-	return preConds, postConds, nil
+	return conds, nil
 }
 
 func makeLastActiveStartTime(lastActivePeriod string) (time.Time, error) {
@@ -71,21 +65,20 @@ func makeLastActiveStartTime(lastActivePeriod string) (time.Time, error) {
 
 var (
 	statsSubQuery = `
-	WITH stats AS (
+	WITH aggregated_stats AS (
 		SELECT
-			users.id,
+			users.id AS id,
 			users.username,
-			display_name,
-			(SELECT email FROM user_emails WHERE user_id = users.id AND is_primary = true LIMIT 1) AS email,
+			users.display_name,
+			emails.email primary_email,
 			users.created_at,
-			(SELECT timestamp FROM event_logs WHERE user_id = users.id ORDER BY timestamp DESC LIMIT 1) AS last_active_at,
+			stats.user_last_active_at AS last_active_at,
 			users.deleted_at,
 			users.site_admin,
-			(SELECT COUNT(id) FROM event_logs WHERE user_id = users.id) AS events_count
-		FROM
-			users
+			stats.user_events_count AS events_count
+		FROM users
+			LEFT JOIN aggregated_user_statistics stats ON stats.user_id = users.id
 			LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true
-		WHERE %s
 	)
 	%s
 	`
@@ -94,12 +87,12 @@ var (
 func (s *UsersStats) TotalCount(ctx context.Context) (float64, error) {
 	var totalCount float64
 
-	preConds, postConds, err := s.makeQueryParameters()
+	conds, err := s.makeQueryParameters()
 	if err != nil {
 		return 0, err
 	}
 
-	query := sqlf.Sprintf(statsSubQuery, sqlf.Join(preConds, "AND"), sqlf.Sprintf(`SELECT COUNT(DISTINCT id) FROM stats WHERE %s`, sqlf.Join(postConds, "AND")))
+	query := sqlf.Sprintf(statsSubQuery, sqlf.Sprintf(`SELECT COUNT(id) FROM aggregated_stats WHERE %s`, sqlf.Join(conds, "AND")))
 	if err := s.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&totalCount); err != nil {
 		return 0, err
 	}
@@ -137,17 +130,13 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 		limit = *filters.First
 	}
 
-	preConds, postConds, err := s.makeQueryParameters()
+	conds, err := s.makeQueryParameters()
 	if err != nil {
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(statsSubQuery, sqlf.Join(preConds, "AND"), sqlf.Sprintf(`
-	SELECT id, username, email, created_at, last_active_at, deleted_at, site_admin, events_count FROM stats
-	WHERE %s
-	ORDER BY %s
-	LIMIT %s
-	`, sqlf.Join(postConds, "AND"), orderBy, limit))
+	query := sqlf.Sprintf(statsSubQuery, sqlf.Sprintf(`
+	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s LIMIT %s`, sqlf.Join(conds, "AND"), orderBy, limit))
 
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
@@ -161,7 +150,7 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 	for rows.Next() {
 		var node UserStatItem
 
-		if err := rows.Scan(&node.Id, &node.Username, &node.Email, &node.CreatedAt, &node.LastActiveAt, &node.DeletedAt, &node.SiteAdmin, &node.EventsCount); err != nil {
+		if err := rows.Scan(&node.Id, &node.Username, &node.DisplayName, &node.PrimaryEmail, &node.CreatedAt, &node.LastActiveAt, &node.DeletedAt, &node.SiteAdmin, &node.EventsCount); err != nil {
 			return nil, err
 		}
 
@@ -176,7 +165,7 @@ func toUsersField(orderBy string) (string, error) {
 	case "USERNAME":
 		return "username", nil
 	case "EMAIL":
-		return "email", nil
+		return "primary_email", nil
 	case "CREATED_AT":
 		return "created_at", nil
 	case "LAST_ACTIVE_AT":
@@ -195,68 +184,11 @@ func toUsersField(orderBy string) (string, error) {
 type UserStatItem struct {
 	Id           int32
 	Username     string
-	Email        *string
+	DisplayName  *string
+	PrimaryEmail *string
 	CreatedAt    time.Time
 	LastActiveAt *time.Time
 	DeletedAt    *time.Time
 	SiteAdmin    bool
 	EventsCount  float64
-}
-
-// GetArchive generates and returns a usage statistics ZIP archive containing the CSV
-// files defined in RFC 145, or an error in case of failure.
-func (s *UsersStats) GetArchive(ctx context.Context) ([]byte, error) {
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
-
-	file, err := zw.Create("UsersStats.csv")
-	if err != nil {
-		return nil, err
-	}
-
-	writer := csv.NewWriter(file)
-
-	record := []string{
-		"user_id",
-		"created_at",
-		"events_count",
-		"last_active_at",
-		"deleted_at",
-	}
-
-	if err := writer.Write(record); err != nil {
-		return nil, err
-	}
-
-	users, err := s.ListUsers(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, user := range users {
-		record[0] = strconv.FormatUint(uint64(user.Id), 10)
-		record[1] = user.CreatedAt.Format(time.RFC3339)
-		record[2] = strconv.FormatInt(int64(user.EventsCount), 10)
-		if user.LastActiveAt == nil {
-			record[3] = "NULL"
-		} else {
-			record[3] = user.LastActiveAt.Format(time.RFC3339)
-		}
-		if user.DeletedAt == nil {
-			record[4] = "NULL"
-		} else {
-			record[4] = user.DeletedAt.Format(time.RFC3339)
-		}
-		if err := writer.Write(record); err != nil {
-			return nil, err
-		}
-	}
-
-	writer.Flush()
-
-	if err := zw.Close(); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }
