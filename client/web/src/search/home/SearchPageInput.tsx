@@ -84,7 +84,10 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                           userId: props.authenticatedUser.id,
                           selectedSearchContext: props.selectedSearchContextSpec,
                           onSelection: index => {
-                              props.telemetryService.log('SearchHistoryAutcompleteSuggestionClicked', { index })
+                              props.telemetryService.log('SearchSuggestionItemClicked', {
+                                  type: 'SearchHistory',
+                                  index,
+                              })
                           },
                       }),
                   ]
