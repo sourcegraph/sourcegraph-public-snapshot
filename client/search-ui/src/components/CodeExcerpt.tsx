@@ -12,6 +12,7 @@ import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Repo } from '@sourcegraph/shared/src/util/url'
@@ -25,7 +26,7 @@ export interface FetchFileParameters {
     filePath: string
     disableTimeout?: boolean
     ranges: GQL.IHighlightLineRange[]
-    formatOnly: boolean
+    format: HighlightResponseFormat
 }
 
 interface Props extends Repo {
@@ -42,7 +43,7 @@ interface Props extends Repo {
     fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
     /** A function to fetch the range of lines this code excerpt will display. It will be provided
      * the same start and end lines properties that were provided as component props */
-    fetchUnhighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
+    fetchUnhighlightedFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 
     viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
@@ -139,9 +140,8 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     // Get the unhighlighted blob lines
     useEffect(() => {
         let subscription: Subscription | undefined
-        if (isVisible) {
-            const observable = blobLines ? of(blobLines) : fetchUnhighlightedFileRangeLines(startLine, endLine)
-            subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
+        if (isVisible && fetchUnhighlightedFileRangeLines) {
+            subscription = fetchUnhighlightedFileRangeLines(startLine, endLine).subscribe(blobLinesOrError => {
                 setUnhighlightedBlobLinesOrError(blobLinesOrError)
             })
         }

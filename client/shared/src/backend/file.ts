@@ -32,14 +32,14 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                         $filePath: String!
                         $disableTimeout: Boolean!
                         $ranges: [HighlightLineRange!]!
-                        $formatOnly: Boolean!
+                        $format: HighlightResponseFormat!
                     ) {
                         repository(name: $repoName) {
                             commit(rev: $commitID) {
                                 file(path: $filePath) {
                                     isDirectory
                                     richHTML
-                                    highlight(disableTimeout: $disableTimeout, formatOnly: $formatOnly) {
+                                    highlight(disableTimeout: $disableTimeout, format: $format) {
                                         aborted
                                         lineRanges(ranges: $ranges)
                                     }
@@ -51,7 +51,6 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                 variables: {
                     ...context,
                     disableTimeout: Boolean(context.disableTimeout),
-                    formatOnly: Boolean(context.formatOnly),
                 },
                 mightContainPrivateInfo: true,
             })
@@ -71,5 +70,5 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
         makeRepoURI(context) +
         `?disableTimeout=${String(context.disableTimeout)}&ranges=${context.ranges
             .map(range => `${range.startLine}:${range.endLine}`)
-            .join(',')}&formatOnly=${Boolean(context.formatOnly)}`
+            .join(',')}&format=${context.format}`
 )

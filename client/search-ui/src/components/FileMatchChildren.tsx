@@ -18,7 +18,7 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { HighlightResponseFormat, IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
@@ -149,26 +149,41 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
-    // fetch (instead of the entire file.)
+    /**
+     * If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
+     * fetch (instead of the entire file.)
+     */
     const optimizeHighlighting =
         props.settingsCascade.final &&
         !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures &&
-        props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
+        props.settingsCascade.final.experimentalFeatures?.enableFastResultLoading
+    /**
+     * If lazyFileResultSYntaxHighlighting is enabled, we fetch plaintext
+     * line ranges _alongside_ the typical highlighted line ranges.
+     */
+    const enableLazyFileResultSyntaxHighlighting =
+        props.settingsCascade.final &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
 
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
     const fetchFileRangeMatches = useCallback(
-        (args: { highlighted: boolean; ranges: IHighlightLineRange[] }): Observable<string[][]> =>
+        ({
+            format = HighlightResponseFormat.HTML_HIGHLIGHT,
+            ranges,
+        }: {
+            format?: HighlightResponseFormat
+            ranges: IHighlightLineRange[]
+        }): Observable<string[][]> =>
             fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
                     commitID: result.commit || '',
                     filePath: result.path,
                     disableTimeout: false,
-                    formatOnly: !args.highlighted,
-                    ranges: args.ranges,
+                    format,
+                    ranges,
                 },
                 false
             ),
@@ -179,7 +194,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         (startLine: number, endLine: number) => {
             const startTime = Date.now()
             return fetchFileRangeMatches({
-                highlighted: true,
                 ranges: optimizeHighlighting
                     ? grouped.map(
                           (group): IHighlightLineRange => ({
@@ -208,7 +222,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     const fetchUnhighlightedFileMatchLineRanges = React.useCallback(
         (startLine: number, endLine: number) =>
             fetchFileRangeMatches({
-                highlighted: false,
+                format: HighlightResponseFormat.HTML_PLAINTEXT,
                 ranges: optimizeHighlighting
                     ? grouped.map(
                           (group): IHighlightLineRange => ({
@@ -235,7 +249,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
             const startTime = Date.now()
             return fetchFileRangeMatches({
-                highlighted: true,
                 ranges: optimizeHighlighting
                     ? result.symbols.map(
                           (symbol): IHighlightLineRange => ({
@@ -272,7 +285,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             }
 
             return fetchFileRangeMatches({
-                highlighted: false,
+                format: HighlightResponseFormat.HTML_PLAINTEXT,
                 ranges: optimizeHighlighting
                     ? result.symbols.map(
                           (symbol): IHighlightLineRange => ({
@@ -422,7 +435,11 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                             startLine={symbol.line - 1}
                             endLine={symbol.line}
                             fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
-                            fetchUnhighlightedFileRangeLines={fetchUnhighlightedSymbolMatchLineRanges}
+                            fetchUnhighlightedFileRangeLines={
+                                enableLazyFileResultSyntaxHighlighting
+                                    ? fetchUnhighlightedSymbolMatchLineRanges
+                                    : undefined
+                            }
                             viewerUpdates={viewerUpdates}
                             hoverifier={props.hoverifier}
                             onCopy={logEventOnCopy}
@@ -464,7 +481,11 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
-                                    fetchUnhighlightedFileRangeLines={fetchUnhighlightedFileMatchLineRanges}
+                                    fetchUnhighlightedFileRangeLines={
+                                        enableLazyFileResultSyntaxHighlighting
+                                            ? fetchUnhighlightedFileMatchLineRanges
+                                            : undefined
+                                    }
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}
                                     hoverifier={props.hoverifier}
