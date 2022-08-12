@@ -16,7 +16,7 @@ import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 
 import { blameDecorationType, BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
-import { blobPropsFacet, hideCaret } from './codemirror'
+import { blobPropsFacet } from './codemirror'
 import {
     enableExtensionsDecorationsColumnView as enableColumnView,
     showTextDocumentDecorations,
@@ -28,9 +28,14 @@ import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
 
 const staticExtensions: Extension = [
-    // Using EditorState.readOnly instead of EditorView.editable allows us to
-    // focus the editor and placing a text cursor
     EditorState.readOnly.of(true),
+    EditorView.editable.of(false),
+    EditorView.contentAttributes.of({
+        // This is required to make the blob view focusable and to make
+        // triggering the in-document search (see below) work when Mod-f is
+        // pressed
+        tabindex: '0',
+    }),
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
@@ -50,7 +55,6 @@ const staticExtensions: Extension = [
     // *focusable* but read-only (see EditorState.readOnly above).
     search({ top: true }),
     keymap.of(searchKeymap),
-    hideCaret,
 ]
 
 // Compartments are used to reconfigure some parts of the editor withoug
