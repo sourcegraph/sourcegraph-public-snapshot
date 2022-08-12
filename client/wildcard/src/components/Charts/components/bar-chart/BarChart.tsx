@@ -4,6 +4,7 @@ import { scaleBand, scaleLinear } from '@visx/scale'
 import { ScaleBand } from 'd3-scale'
 import { noop } from 'lodash'
 
+import { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core/components/SvgRoot'
 import { CategoricalLikeChart } from '../../types'
 
@@ -19,6 +20,7 @@ interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVG
     pixelsPerYTick?: number
     pixelsPerXTick?: number
     maxAngleXTick?: number
+    getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
     getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
 }
@@ -33,6 +35,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         maxAngleXTick,
         stacked = false,
         getDatumHover,
+        getScaleXTicks,
         getTruncatedXTick,
         getDatumName,
         getDatumValue,
@@ -82,6 +85,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                 pixelsPerTick={pixelsPerXTick}
                 maxRotateAngle={maxAngleXTick}
                 getTruncatedTick={getTruncatedXTick}
+                getScaleTicks={getScaleXTicks}
             />
 
             <SvgContent<ScaleBand<string>, any>>

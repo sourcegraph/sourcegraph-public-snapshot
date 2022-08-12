@@ -26,7 +26,7 @@ import { createRectangle, EMPTY_RECTANGLE, Rectangle } from '../../../Popover'
 
 import { AxisBottom, AxisLeft } from './axis/Axis'
 import { getMaxTickWidth, Tick, TickProps } from './axis/Tick'
-import { getXScaleTicks } from './axis/tick-formatters'
+import { GetScaleTicksOptions, getXScaleTicks } from './axis/tick-formatters'
 
 const DEFAULT_PADDING = { top: 16, right: 36, bottom: 0, left: 0 }
 
@@ -151,6 +151,7 @@ interface SvgAxisBottomProps<Tick> {
     pixelsPerTick?: number
     maxRotateAngle?: number
     getTruncatedTick?: (formattedTick: string) => string
+    getScaleTicks?: <T>(options: GetScaleTicksOptions) => T[]
 }
 
 export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): ReactElement {
@@ -159,6 +160,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
         maxRotateAngle = 45,
         tickFormat = defaultToString,
         getTruncatedTick = defaultTruncatedTick,
+        getScaleTicks = getXScaleTicks,
     } = props
     const { content, xScale, setPadding } = useContext(SVGRootContext)
 
@@ -169,7 +171,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
     })
 
     const [, upperRangeBound] = xScale.range() as [number, number]
-    const ticks = getXScaleTicks<Tick>({ scale: xScale, space: content.width, pixelsPerTick })
+    const ticks = getScaleTicks<Tick>({ scale: xScale, space: content.width, pixelsPerTick })
 
     const maxWidth = useMemo(() => {
         const axisGroup = axisGroupRef.current
