@@ -147,7 +147,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				})
 
 				if err != nil {
-					fmt.Println("ERROR: ", err)
+					log15.Warn("Error while saving associated user installation", "error", err)
 				}
 			}
 

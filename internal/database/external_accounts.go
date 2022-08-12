@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -56,6 +57,9 @@ type UserExternalAccountsStore interface {
 
 	// Delete deletes a user external account.
 	Delete(ctx context.Context, id int32) error
+
+	// DeleteList deletes a list of user external accounts.
+	DeleteList(ctx context.Context, ids []int32) error
 
 	// ExecResult performs a query without returning any rows, but includes the
 	// result of the execution.
@@ -328,6 +332,20 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error 
 	if nrows == 0 {
 		return userExternalAccountNotFoundError{[]any{id}}
 	}
+	return nil
+}
+
+// DeleteList marks a list of user external accounts as deleted.
+func (s *userExternalAccountsStore) DeleteList(ctx context.Context, ids []int32) error {
+	idStrings := []string{}
+	for _, id := range ids {
+		idStrings = append(idStrings, strconv.Itoa(int(id)))
+	}
+	_, err := s.Handle().ExecContext(ctx, fmt.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE id IN (%s)", strings.Join(idStrings, ", ")))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
