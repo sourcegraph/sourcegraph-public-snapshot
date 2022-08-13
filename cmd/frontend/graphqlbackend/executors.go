@@ -5,44 +5,61 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
-func (r *schemaResolver) Executors(ctx context.Context, args *struct {
+type ExecutorsResolver interface {
+	Executors(context.Context, *ExecutorsArgs) (ExecutorConnectionResolver, error)
+	AreExecutorsConfigured() bool
+	NodeResolvers() map[string]NodeByIDFunc
+}
+
+type ExecutorsArgs struct {
 	Query  *string
 	Active *bool
 	First  *int32
 	After  *string
-}) (*gql.ExecutorPaginatedResolver, error) {
-	// 🚨 SECURITY: Only site-admins may view executor details
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
+}
 
-	executors, err := r.CodeIntelResolver.ExecutorResolver().Executors(ctx, args.Query, args.Active, args.First, args.After)
-	if err != nil {
-		return nil, err
-	}
+type ExecutorConnectionResolver interface {
+	Nodes() []ExecutorResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
+}
 
-	return executors, nil
+type ExecutorResolver interface {
+	ID() graphql.ID
+	Hostname() string
+	QueueName() string
+	Active() bool
+	Os() string
+	Architecture() string
+	DockerVersion() string
+	ExecutorVersion() string
+	GitVersion() string
+	IgniteVersion() string
+	SrcCliVersion() string
+	FirstSeenAt() DateTime
+	LastSeenAt() DateTime
+	ActiveJobs(context.Context, ExecutorActiveJobArgs) (ExecutorJobConnectionResolver, error)
+}
+
+type ExecutorActiveJobArgs struct {
+	First *int32
+	After *string
+}
+
+type ExecutorJobConnectionResolver interface {
+	Nodes() []ExecutorJobResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
+}
+
+type ExecutorJobResolver interface {
+	ToLSIFIndex() (LSIFIndexResolver, error)
 }
 
 func (r *schemaResolver) AreExecutorsConfigured() bool {
 	return conf.Get().ExecutorsAccessToken != ""
-}
-
-func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID, r *schemaResolver) (*gql.ExecutorResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
-		return nil, err
-	}
-
-	executor, err := r.CodeIntelResolver.ExecutorResolver().Executor(ctx, gqlID)
-	if err != nil {
-		return nil, err
-	}
-
-	return executor, nil
 }

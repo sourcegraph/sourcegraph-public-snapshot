@@ -10,10 +10,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	executorsresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/services/executors"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -42,12 +44,13 @@ func newBatchSpecWorkspaceResolver(ctx context.Context, store *store.Store, work
 
 func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec, repo *types.Repo) graphqlbackend.BatchSpecWorkspaceResolver {
 	return &batchSpecWorkspaceResolver{
-		store:        store,
-		workspace:    workspace,
-		execution:    execution,
-		batchSpec:    batchSpec,
-		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
+		store:             store,
+		workspace:         workspace,
+		execution:         execution,
+		batchSpec:         batchSpec,
+		repo:              repo,
+		executorsResolver: executorsresolvers.NewExecutorsResolver(conf.DefaultClient(), store.DatabaseDB(), nil),
+		repoResolver:      graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
 	}
 }
 
@@ -57,8 +60,9 @@ type batchSpecWorkspaceResolver struct {
 	execution *btypes.BatchSpecWorkspaceExecutionJob
 	batchSpec *batcheslib.BatchSpec
 
-	repo         *types.Repo
-	repoResolver *graphqlbackend.RepositoryResolver
+	repo              *types.Repo
+	executorsResolver graphqlbackend.ExecutorsResolver
+	repoResolver      *graphqlbackend.RepositoryResolver
 
 	changesetSpecs     []*btypes.ChangesetSpec
 	changesetSpecsOnce sync.Once
@@ -424,7 +428,7 @@ func (r *batchSpecWorkspaceResolver) PlaceInGlobalQueue() *int32 {
 	return &i32
 }
 
-func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.ExecutorResolver, error) {
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (graphqlbackend.ExecutorResolver, error) {
 	if r.execution == nil {
 		return nil, nil
 	}
@@ -436,12 +440,17 @@ func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.Executo
 		return nil, nil
 	}
 
-	executor, err := gql.New(r.store.DatabaseDB()).ExecutorByHostname(ctx, r.execution.WorkerHostname)
+	// Go get the actual executor.
+	svc := executors.New(r.store.DatabaseDB())
+	executor, exists, err := svc.GetByHostname(ctx, r.execution.WorkerHostname)
 	if err != nil {
 		return nil, err
 	}
+	if !exists {
+		return nil, errors.New("cannot find executor")
+	}
 
-	return executor, nil
+	return executorsresolvers.NewExecutorResolver(executor), nil
 }
 
 type batchSpecWorkspaceStagesResolver struct {

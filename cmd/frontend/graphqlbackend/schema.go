@@ -40,6 +40,10 @@ var authzSchema string
 //go:embed compute.graphql
 var computeSchema string
 
+// executorsSchema is the Executors raw GraphQL schema.
+//go:embed executors.graphql
+var executorsSchema string
+
 // searchContextsSchema is the Search Contexts raw graqhql schema.
 //go:embed search_contexts.graphql
 var searchContextsSchema string

@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -274,8 +273,8 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
-	n, ok := r.Node.(*executor.ExecutorResolver)
+func (r *NodeResolver) ToExecutor() (ExecutorResolver, bool) {
+	n, ok := r.Node.(ExecutorResolver)
 	return n, ok
 }
 

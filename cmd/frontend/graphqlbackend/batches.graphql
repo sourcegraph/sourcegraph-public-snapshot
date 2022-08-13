@@ -3504,3 +3504,7 @@ input ChangesetSpecPublicationStateInput {
     """
     publicationState: PublishedValue!
 }
+
+# type BatchSpecWorkspaceExecutionJob implements Node {
+#     workspace: BatchSpecWorkspace!
+# }

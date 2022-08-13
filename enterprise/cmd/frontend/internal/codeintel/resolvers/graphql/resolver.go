@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -72,10 +71,6 @@ func (r *frankenResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return r.ConfigurationPolicyByID(ctx, id)
 		},
 	}
-}
-
-func (r *Resolver) ExecutorResolver() executor.Resolver {
-	return r.resolver.ExecutorResolver()
 }
 
 func (r *Resolver) CodeNavResolver() resolvers.CodeNavResolver {

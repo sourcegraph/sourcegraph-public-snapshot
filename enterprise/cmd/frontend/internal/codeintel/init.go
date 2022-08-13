@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	executorgraphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -30,7 +29,6 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, codenavCtx)
-	executorResolver := executorgraphql.New(db)
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
@@ -40,7 +38,6 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		services.indexEnqueuer,
 		symbols.DefaultClient,
 		codenavResolver,
-		executorResolver,
 	)
 
 	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}

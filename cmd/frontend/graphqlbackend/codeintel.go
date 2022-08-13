@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -24,7 +23,6 @@ type CodeIntelResolver interface {
 	RequestedLanguageSupport(ctx context.Context) ([]string, error)
 
 	AutoindexingServiceResolver
-	ExecutorResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
 }
@@ -37,10 +35,6 @@ type AutoindexingServiceResolver interface {
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
-}
-
-type ExecutorResolver interface {
-	ExecutorResolver() executor.Resolver
 }
 
 type CodeNavResolver interface {

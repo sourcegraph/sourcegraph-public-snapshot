@@ -9,7 +9,6 @@ import (
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	symbolsClient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -57,7 +56,6 @@ type Resolver interface {
 	RequestLanguageSupport(ctx context.Context, userID int, language string) error
 	RequestedLanguageSupport(ctx context.Context, userID int) ([]string, error)
 
-	ExecutorResolver() executor.Resolver
 	CodeNavResolver() CodeNavResolver
 }
 
@@ -69,13 +67,12 @@ type RepositorySummary struct {
 }
 
 type resolver struct {
-	dbStore          DBStore
-	lsifStore        LSIFStore
-	gitserverClient  GitserverClient
-	policyMatcher    *policies.Matcher
-	indexEnqueuer    IndexEnqueuer
-	executorResolver executor.Resolver
-	symbolsClient    *symbolsClient.Client
+	dbStore         DBStore
+	lsifStore       LSIFStore
+	gitserverClient GitserverClient
+	policyMatcher   *policies.Matcher
+	indexEnqueuer   IndexEnqueuer
+	symbolsClient   *symbolsClient.Client
 
 	codenavResolver CodeNavResolver
 }
@@ -89,9 +86,8 @@ func NewResolver(
 	indexEnqueuer IndexEnqueuer,
 	symbolsClient *symbolsClient.Client,
 	codenavResolver CodeNavResolver,
-	executorResolver executor.Resolver,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, codenavResolver, executorResolver)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, codenavResolver)
 }
 
 func newResolver(
@@ -102,26 +98,20 @@ func newResolver(
 	indexEnqueuer IndexEnqueuer,
 	symbolsClient *symbolsClient.Client,
 	codenavResolver CodeNavResolver,
-	executorResolver executor.Resolver,
 ) *resolver {
 	return &resolver{
-		dbStore:          dbStore,
-		lsifStore:        lsifStore,
-		gitserverClient:  gitserverClient,
-		policyMatcher:    policyMatcher,
-		indexEnqueuer:    indexEnqueuer,
-		symbolsClient:    symbolsClient,
-		executorResolver: executorResolver,
-		codenavResolver:  codenavResolver,
+		dbStore:         dbStore,
+		lsifStore:       lsifStore,
+		gitserverClient: gitserverClient,
+		policyMatcher:   policyMatcher,
+		indexEnqueuer:   indexEnqueuer,
+		symbolsClient:   symbolsClient,
+		codenavResolver: codenavResolver,
 	}
 }
 
 func (r *resolver) CodeNavResolver() CodeNavResolver {
 	return r.codenavResolver
-}
-
-func (r *resolver) ExecutorResolver() executor.Resolver {
-	return r.executorResolver
 }
 
 func (r *resolver) GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error) {

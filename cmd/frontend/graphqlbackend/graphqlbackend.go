@@ -362,6 +362,7 @@ func NewSchema(
 	orgRepositoryResolver OrgRepositoryResolver,
 	notebooks NotebooksResolver,
 	compute ComputeResolver,
+	executors ExecutorsResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -457,6 +458,16 @@ func NewSchema(
 		schemas = append(schemas, computeSchema)
 	}
 
+	if executors != nil {
+		EnterpriseResolvers.executorsResolver = executors
+		resolver.ExecutorsResolver = executors
+		schemas = append(schemas, executorsSchema)
+		// Register NodeByID handlers.
+		for kind, res := range executors.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -489,6 +500,7 @@ type schemaResolver struct {
 	SearchContextsResolver
 	OrgRepositoryResolver
 	NotebooksResolver
+	ExecutorsResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -543,9 +555,6 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 		"WebhookLog": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return webhookLogByID(ctx, db, id)
 		},
-		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return executorByID(ctx, db, id, r)
-		},
 		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return externalServiceSyncJobByID(ctx, db, id)
 		},
@@ -567,6 +576,7 @@ var EnterpriseResolvers = struct {
 	searchContextsResolver SearchContextsResolver
 	orgRepositoryResolver  OrgRepositoryResolver
 	notebooksResolver      NotebooksResolver
+	executorsResolver      ExecutorsResolver
 }{}
 
 // DEPRECATED
