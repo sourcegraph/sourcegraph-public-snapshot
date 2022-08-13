@@ -183,8 +183,12 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
-// indexable repos which could include private user added repos.
+// ListIndexable calls database.IndexableRepos.List, with tracing. It lists
+// ALL indexable repos which could include private user added repos. It only
+// lists cloned repositories.
+//
+// The intended call site for this is the logic which assigns repositories to
+// zoekt shards.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
@@ -200,7 +204,10 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	}
 
 	trueP := true
-	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{Index: &trueP})
+	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
+		Index:      &trueP,
+		OnlyCloned: true,
+	})
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
