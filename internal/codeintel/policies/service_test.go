@@ -1,4 +1,4 @@
-package resolvers
+package policies
 
 import (
 	"context"
@@ -8,40 +8,40 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestRetentionPolicyOverview(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockLSIFStore := NewMockLSIFStore()
+func TestGetRetentionPolicyOverview(t *testing.T) {
+	mockStore := NewMockStore()
+	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
-	mockCodeNavResolver := NewMockCodeNavResolver()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, mockCodeNavResolver, nil)
+	svc := newService(mockStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	mockClock := glock.NewMockClock()
 
 	cases := []struct {
 		name            string
 		expectedMatches int
-		upload          dbstore.Upload
-		mockPolicies    []RetentionPolicyMatchCandidate
+		upload          shared.Upload
+		mockPolicies    []shared.RetentionPolicyMatchCandidate
 		refDescriptions map[string][]gitdomain.RefDescription
 	}{
 		{
 			name:            "basic single upload match",
 			expectedMatches: 1,
-			upload: dbstore.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Hour * 23),
 			},
-			mockPolicies: []RetentionPolicyMatchCandidate{
+			mockPolicies: []shared.RetentionPolicyMatchCandidate{
 				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+					ConfigurationPolicy: &shared.ConfigurationPolicy{
 						RetentionDuration:         timePtr(time.Hour * 24),
 						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTag,
+						Type:                      shared.GitObjectTypeTag,
 						Pattern:                   "*",
 					},
 					Matched: true,
@@ -60,16 +60,16 @@ func TestRetentionPolicyOverview(t *testing.T) {
 		{
 			name:            "matching but expired",
 			expectedMatches: 0,
-			upload: dbstore.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Hour * 25),
 			},
-			mockPolicies: []RetentionPolicyMatchCandidate{
+			mockPolicies: []shared.RetentionPolicyMatchCandidate{
 				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+					ConfigurationPolicy: &shared.ConfigurationPolicy{
 						RetentionDuration:         timePtr(time.Hour * 24),
 						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTag,
+						Type:                      shared.GitObjectTypeTag,
 						Pattern:                   "*",
 					},
 					Matched: false,
@@ -88,11 +88,11 @@ func TestRetentionPolicyOverview(t *testing.T) {
 		{
 			name:            "tip of default branch match",
 			expectedMatches: 1,
-			upload: dbstore.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Hour * 25),
 			},
-			mockPolicies: []RetentionPolicyMatchCandidate{
+			mockPolicies: []shared.RetentionPolicyMatchCandidate{
 				{
 					ConfigurationPolicy: nil,
 					Matched:             true,
@@ -111,25 +111,25 @@ func TestRetentionPolicyOverview(t *testing.T) {
 		{
 			name:            "direct match (1 of 2 policies)",
 			expectedMatches: 1,
-			upload: dbstore.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Minute),
 			},
-			mockPolicies: []RetentionPolicyMatchCandidate{
+			mockPolicies: []shared.RetentionPolicyMatchCandidate{
 				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+					ConfigurationPolicy: &shared.ConfigurationPolicy{
 						RetentionDuration:         timePtr(time.Hour * 24),
 						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTag,
+						Type:                      shared.GitObjectTypeTag,
 						Pattern:                   "*",
 					},
 					Matched: true,
 				},
 				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+					ConfigurationPolicy: &shared.ConfigurationPolicy{
 						RetentionDuration:         timePtr(time.Hour * 24),
 						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTree,
+						Type:                      shared.GitObjectTypeTree,
 						Pattern:                   "*",
 					},
 					Matched: false,
@@ -148,16 +148,16 @@ func TestRetentionPolicyOverview(t *testing.T) {
 		{
 			name:            "direct match (ignore visible)",
 			expectedMatches: 1,
-			upload: dbstore.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef1",
 				UploadedAt: mockClock.Now().Add(-time.Minute),
 			},
-			mockPolicies: []RetentionPolicyMatchCandidate{
+			mockPolicies: []shared.RetentionPolicyMatchCandidate{
 				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+					ConfigurationPolicy: &shared.ConfigurationPolicy{
 						RetentionDuration:         timePtr(time.Hour * 24),
 						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTag,
+						Type:                      shared.GitObjectTypeTag,
 						Pattern:                   "*",
 					},
 					Matched: true,
@@ -185,11 +185,11 @@ func TestRetentionPolicyOverview(t *testing.T) {
 	for _, c := range cases {
 		t.Run("PolicyOverview "+c.name, func(t *testing.T) {
 			expectedPolicyCandidates, mockedStorePolicies := mockConfigurationPolicies(c.mockPolicies)
-			mockDBStore.GetConfigurationPoliciesFunc.PushReturn(mockedStorePolicies, len(mockedStorePolicies), nil)
+			mockStore.GetConfigurationPoliciesFunc.PushReturn(mockedStorePolicies, len(mockedStorePolicies), nil)
 
 			mockGitserverClient.RefDescriptionsFunc.PushReturn(c.refDescriptions, nil)
 
-			matches, _, err := resolver.RetentionPolicyOverview(context.Background(), c.upload, false, 10, 0, "", mockClock.Now())
+			matches, _, err := svc.GetRetentionPolicyOverview(context.Background(), c.upload, false, 10, 0, "", mockClock.Now())
 			if err != nil {
 				t.Fatalf("unexpected error resolving retention policy overview: %v", err)
 			}
@@ -213,12 +213,11 @@ func TestRetentionPolicyOverview(t *testing.T) {
 }
 
 func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockLSIFStore := NewMockLSIFStore()
+	mockStore := NewMockStore()
+	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
-	mockCodeNavResolver := NewMockCodeNavResolver()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, mockCodeNavResolver, nil)
+	svc := newService(mockStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	mockClock := glock.NewMockClock()
 
@@ -228,8 +227,8 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 
 	cases := []struct {
 		name            string
-		upload          dbstore.Upload
-		mockPolicies    []RetentionPolicyMatchCandidate
+		upload          shared.Upload
+		mockPolicies    []shared.RetentionPolicyMatchCandidate
 		visibleCommits  []string
 		refDescriptions map[string][]gitdomain.RefDescription
 		expectedMatches int
@@ -237,17 +236,17 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 		{
 			name:            "basic single visibility",
 			expectedMatches: 1,
-			upload: dbstore.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Minute * 24),
 			},
 			visibleCommits: []string{"deadbeef1"},
-			mockPolicies: []RetentionPolicyMatchCandidate{
+			mockPolicies: []shared.RetentionPolicyMatchCandidate{
 				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+					ConfigurationPolicy: &shared.ConfigurationPolicy{
 						RetentionDuration:         timePtr(time.Hour * 24),
 						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTag,
+						Type:                      shared.GitObjectTypeTag,
 						Pattern:                   "*",
 					},
 					ProtectingCommits: []string{"deadbeef1"},
@@ -268,11 +267,11 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 			name:            "visibile to tip of default branch",
 			expectedMatches: 1,
 			visibleCommits:  []string{"deadbeef0", "deadbeef1"},
-			upload: dbstore.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Hour * 24),
 			},
-			mockPolicies: []RetentionPolicyMatchCandidate{
+			mockPolicies: []shared.RetentionPolicyMatchCandidate{
 				{
 					ConfigurationPolicy: nil,
 					ProtectingCommits:   []string{"deadbeef1"},
@@ -294,12 +293,12 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 	for _, c := range cases {
 		t.Run("ByVisibility "+c.name, func(t *testing.T) {
 			expectedPolicyCandidates, mockedStorePolicies := mockConfigurationPolicies(c.mockPolicies)
-			mockDBStore.GetConfigurationPoliciesFunc.PushReturn(mockedStorePolicies, len(mockedStorePolicies), nil)
-			mockDBStore.CommitsVisibleToUploadFunc.PushReturn(c.visibleCommits, nil, nil)
+			mockStore.GetConfigurationPoliciesFunc.PushReturn(mockedStorePolicies, len(mockedStorePolicies), nil)
+			mockUploadSvc.GetCommitsVisibleToUploadFunc.PushReturn(c.visibleCommits, nil, nil)
 
 			mockGitserverClient.RefDescriptionsFunc.PushReturn(c.refDescriptions, nil)
 
-			matches, _, err := resolver.RetentionPolicyOverview(context.Background(), c.upload, false, 10, 0, "", mockClock.Now())
+			matches, _, err := svc.GetRetentionPolicyOverview(context.Background(), c.upload, false, 10, 0, "", mockClock.Now())
 			if err != nil {
 				t.Fatalf("unexpected error resolving retention policy overview: %v", err)
 			}
@@ -326,7 +325,7 @@ func timePtr(t time.Duration) *time.Duration {
 	return &t
 }
 
-func mockConfigurationPolicies(policies []RetentionPolicyMatchCandidate) (mockedCandidates []RetentionPolicyMatchCandidate, mockedPolicies []dbstore.ConfigurationPolicy) {
+func mockConfigurationPolicies(policies []shared.RetentionPolicyMatchCandidate) (mockedCandidates []shared.RetentionPolicyMatchCandidate, mockedPolicies []shared.ConfigurationPolicy) {
 	for i, policy := range policies {
 		if policy.ConfigurationPolicy != nil {
 			policy.ID = i + 1

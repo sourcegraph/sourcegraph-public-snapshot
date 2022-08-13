@@ -187,7 +187,6 @@ func TestImplementationsRemote(t *testing.T) {
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	// remoteUploads := storeDumpToSymbolDump(dumps)
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(remoteUploads, nil)
 
 	referenceUploads := []uploadsShared.Dump{
@@ -358,8 +357,6 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	// definitionUploads := storeDumpToSymbolDump(definitionDumps)
-	// mockCodeNavResolver.GetUploadsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
 
 	referenceUploads := []uploadsShared.Dump{
