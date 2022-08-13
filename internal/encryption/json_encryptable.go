@@ -59,8 +59,8 @@ func (e *JSONEncryptable[T]) Set(value T) error {
 	}
 	str := string(serialized)
 
-	e.Lock()
-	defer e.Unlock()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 
 	e.decryptedValue = &str
 	e.encryptedValue = nil

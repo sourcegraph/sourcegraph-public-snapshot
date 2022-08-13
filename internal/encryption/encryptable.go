@@ -8,8 +8,7 @@ import (
 )
 
 type Encryptable struct {
-	sync.Mutex
-
+	mutex          sync.Mutex
 	decryptedValue *string
 	encryptedValue *EncryptedValue
 	key            Key
@@ -39,8 +38,8 @@ func NewEncrypted(cipher, keyID string, key Key) *Encryptable {
 }
 
 func (e *Encryptable) Decrypted(ctx context.Context) (string, error) {
-	e.Lock()
-	defer e.Unlock()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 
 	return e.decrypted(ctx)
 }
@@ -67,8 +66,8 @@ func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, e
 		return "", "", err
 	}
 
-	e.Lock()
-	defer e.Unlock()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 
 	if e.encryptedValue != nil {
 		return e.encryptedValue.Cipher, e.encryptedValue.KeyID, nil
@@ -87,15 +86,15 @@ func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, e
 }
 
 func (e *Encryptable) Set(value string) {
-	e.Lock()
+	e.mutex.Lock()
 	e.decryptedValue = &value
 	e.encryptedValue = nil
-	e.Unlock()
+	e.mutex.Unlock()
 }
 
 func (e *Encryptable) SetKey(ctx context.Context, key Key) error {
-	e.Lock()
-	defer e.Unlock()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 
 	if e.key == key {
 		return nil
