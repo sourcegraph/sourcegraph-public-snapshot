@@ -9,9 +9,14 @@ import (
 
 type Encryptable struct {
 	mutex          sync.Mutex
-	decryptedValue *string
+	decryptedValue *decryptedValue
 	encryptedValue *EncryptedValue
 	key            Key
+}
+
+type decryptedValue struct {
+	value string
+	err   error
 }
 
 type EncryptedValue struct {
@@ -25,7 +30,7 @@ func NewUnencrypted(value string) *Encryptable {
 
 func NewUnencryptedWithKey(value string, key Key) *Encryptable {
 	return &Encryptable{
-		decryptedValue: &value,
+		decryptedValue: &decryptedValue{value, nil},
 		key:            key,
 	}
 }
@@ -46,19 +51,15 @@ func (e *Encryptable) Decrypted(ctx context.Context) (string, error) {
 
 func (e *Encryptable) decrypted(ctx context.Context) (string, error) {
 	if e.decryptedValue != nil {
-		return *e.decryptedValue, nil
+		return e.decryptedValue.value, e.decryptedValue.err
 	}
 	if e.encryptedValue == nil {
 		return "", errors.New("no encrypted value")
 	}
 
 	value, err := MaybeDecrypt(ctx, e.key, e.encryptedValue.Cipher, e.encryptedValue.KeyID)
-	if err != nil {
-		return "", err
-	}
-
-	e.decryptedValue = &value
-	return value, nil
+	e.decryptedValue = &decryptedValue{value, err}
+	return value, err
 }
 
 func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, error) {
@@ -76,7 +77,7 @@ func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, e
 		return "", "", errors.New("nothing to encrypt")
 	}
 
-	cipher, keyID, err := MaybeEncrypt(ctx, e.key, *e.decryptedValue)
+	cipher, keyID, err := MaybeEncrypt(ctx, e.key, e.decryptedValue.value)
 	if err != nil {
 		return "", "", err
 	}
@@ -87,7 +88,7 @@ func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, e
 
 func (e *Encryptable) Set(value string) {
 	e.mutex.Lock()
-	e.decryptedValue = &value
+	e.decryptedValue = &decryptedValue{value, nil}
 	e.encryptedValue = nil
 	e.mutex.Unlock()
 }

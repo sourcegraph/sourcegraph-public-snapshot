@@ -57,12 +57,11 @@ func (e *JSONEncryptable[T]) Set(value T) error {
 	if err != nil {
 		return err
 	}
-	str := string(serialized)
 
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	e.decryptedValue = &str
+	e.decryptedValue = &decryptedValue{string(serialized), nil}
 	e.encryptedValue = nil
 	return nil
 }
