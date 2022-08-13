@@ -61,7 +61,7 @@ func (e *JSONEncryptable[T]) Set(value T) error {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	e.decryptedValue = &decryptedValue{string(serialized), nil}
-	e.encryptedValue = nil
+	e.decrypted = &decryptedValue{string(serialized), nil}
+	e.encrypted = nil
 	return nil
 }
