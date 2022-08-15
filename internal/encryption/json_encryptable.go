@@ -49,22 +49,6 @@ func (e *JSONEncryptable[T]) Decrypt(ctx context.Context) (value T, _ error) {
 	return value, nil
 }
 
-// DecryptInto decrypts the underlying value and updates the given value. This method may make an external
-// API call to decrypt the underlying encrypted value, but will memoize the result so that subsequent calls
-// will be cheap.
-func (e *JSONEncryptable[T]) DecryptInto(ctx context.Context, value T) error {
-	serialized, err := e.Encryptable.Decrypt(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal([]byte(serialized), &value); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Set updates the underlying value.
 func (e *JSONEncryptable[T]) Set(value T) error {
 	serialized, err := json.Marshal(value)
@@ -77,5 +61,21 @@ func (e *JSONEncryptable[T]) Set(value T) error {
 
 	e.decrypted = &decryptedValue{string(serialized), nil}
 	e.encrypted = nil
+	return nil
+}
+
+// DecryptJSON decrypts the encryptable value and updates the given value. This method may make an external
+// API call to decrypt the underlying encrypted value, but will memoize the result so that subsequent calls
+// will be cheap.
+func DecryptJSON[T any](ctx context.Context, e *JSONEncryptable[any], value T) error {
+	serialized, err := e.Encryptable.Decrypt(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal([]byte(serialized), &value); err != nil {
+		return err
+	}
+
 	return nil
 }

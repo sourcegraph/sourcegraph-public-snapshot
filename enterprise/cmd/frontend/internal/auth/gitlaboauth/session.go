@@ -61,7 +61,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	signupAllowed := s.allowSignup == nil || *s.allowSignup
 
 	var data extsvc.AccountData
-	gitlab.SetExternalAccountData(&data, gUser, token)
+	if err := gitlab.SetExternalAccountData(&data, gUser, token); err != nil {
+		return nil, "", err
+	}
 
 	// Unlike with GitHub, we can *only* use the primary email to resolve the user's identity,
 	// because the GitLab API does not return whether an email has been verified. The user's primary
