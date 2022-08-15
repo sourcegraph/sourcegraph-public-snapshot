@@ -2,16 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
+import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
+import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
 import {
-    AggregationUIMode,
-    FetchFileParameters,
-    SearchAggregationResult,
-    SearchSidebar,
-    SidebarButtonStrip,
     StreamingProgress,
     StreamingSearchResultsList,
     useAggregationUIMode,
@@ -35,12 +31,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import {
-    buildSearchURLQueryFromQueryState,
-    useExperimentalFeatures,
-    useNavbarQueryState,
-    useNotepad,
-} from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { DidYouMean } from '../suggestion/DidYouMean'
@@ -49,7 +40,7 @@ import { LuckySearch, luckySearchEvent } from '../suggestion/LuckySearch'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
-import { getRevisions } from './sidebar/Revisions'
+import { SearchFiltersSidebar } from './sidebar/SearchFiltersSidebar'
 
 import styles from './StreamingSearchResults.module.scss'
 
@@ -84,6 +75,7 @@ export const StreamingSearchResults: React.FunctionComponent<
         extensionsController,
     } = props
 
+    const history = useHistory()
     // Feature flags
     // Log lucky search events. To be removed at latest by 12/2022.
     const [luckySearchEnabled] = useFeatureFlag('ab-lucky-search')
@@ -96,6 +88,9 @@ export const StreamingSearchResults: React.FunctionComponent<
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
+    const liveQuery = useNavbarQueryState(state => state.queryState.query)
+    const setQueryState = useNavbarQueryState(state => state.setQueryState)
+    const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
     const [aggregationUIMode] = useAggregationUIMode()
 
     // Local state
@@ -245,6 +240,25 @@ export const StreamingSearchResults: React.FunctionComponent<
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
 
+    // Reset expanded state when new search is started
+    useEffect(() => {
+        setAllExpanded(false)
+    }, [location.search])
+
+    const handleSidebarSearchSubmit = useCallback(
+        (updates: QueryUpdate[]) =>
+            submitQuerySearch(
+                {
+                    activation: props.activation,
+                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    history,
+                    source: 'filter',
+                },
+                updates
+            ),
+        [submitQuerySearch, props.activation, props.selectedSearchContextSpec, history]
+    )
+
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
@@ -282,19 +296,21 @@ export const StreamingSearchResults: React.FunctionComponent<
                 patternType={patternType}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 filters={results?.filters}
-                getRevisions={getRevisions}
-                prefixContent={
-                    <GettingStartedTour
-                        className="mb-1"
-                        isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        telemetryService={props.telemetryService}
-                        isAuthenticated={!!props.authenticatedUser}
-                    />
-                }
-                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
+                onNavbarQueryChange={setQueryState}
+                onSearchSubmit={handleSidebarSearchSubmit}
+                prefixContent={useMemo(
+                    () => (
+                        <GettingStartedTour
+                            className="mb-1"
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            telemetryService={props.telemetryService}
+                            isAuthenticated={!!props.authenticatedUser}
+                        />
+                    ),
+                    [props.isSourcegraphDotCom, props.telemetryService, props.authenticatedUser]
+                )}
             />
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
