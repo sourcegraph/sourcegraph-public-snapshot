@@ -460,6 +460,14 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				t.Fatalf("Wanted has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
 			}
 
+			// Adding it another service with the same kind and owner should fail
+			if test.externalService.NamespaceUserID != 0 || test.externalService.NamespaceOrgID != 0 {
+				err := db.ExternalServices().Create(ctx, confGet, test.externalService)
+				if err == nil {
+					t.Fatal("Should not be able to create two services of same kind with same owner")
+				}
+			}
+
 			err = db.ExternalServices().Delete(ctx, test.externalService.ID)
 			if err != nil {
 				t.Fatal(err)

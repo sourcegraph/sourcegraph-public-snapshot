@@ -5773,6 +5773,10 @@ type Site implements SettingsSubject {
         When omitted does NOT apply and returns for all period available.
         """
         lastActivePeriod: SiteUsersLastActivePeriod
+        """
+        Returns either deleted or not deleted users. Returns all users when omitted.
+        """
+        deleted: Boolean
     ): SiteUsers!
 
     """
@@ -6379,6 +6383,10 @@ type SiteUser {
     """
     email: String
     """
+    User's display name
+    """
+    displayName: String
+    """
     The datetime when user was created in the system.
     """
     createdAt: String!
@@ -6435,6 +6443,7 @@ enum SiteUserOrderBy {
 SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
 """
 enum SiteUsersLastActivePeriod {
+    ALL
     TODAY
     THIS_WEEK
     THIS_MONTH

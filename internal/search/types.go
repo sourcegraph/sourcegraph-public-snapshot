@@ -345,6 +345,9 @@ func (f *Features) String() string {
 	return flagMap.String()
 }
 
+// RepoOptions is the source of truth for the options a user specified
+// in their search query that affect which repos should be searched.
+// When adding fields to this struct, be sure to update IsGlobal().
 type RepoOptions struct {
 	RepoFilters         []string
 	MinusRepoFilters    []string
