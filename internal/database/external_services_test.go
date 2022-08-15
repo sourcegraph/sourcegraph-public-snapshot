@@ -232,40 +232,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr:         `field "rateLimit" is not allowed in a user-added external service`,
 		},
 		{
-			name:            "duplicate kinds not allowed for user owned services",
-			kind:            extsvc.KindGitHub,
-			config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			namespaceUserID: 1,
-			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{
-					{
-						ID:          1,
-						Kind:        extsvc.KindGitHub,
-						DisplayName: "GITHUB 1",
-						Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-					},
-				}, nil
-			},
-			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
-		},
-		{
-			name:           "duplicate kinds not allowed for org owned services",
-			kind:           extsvc.KindGitHub,
-			config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			namespaceOrgID: 1,
-			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{
-					{
-						ID:          1,
-						Kind:        extsvc.KindGitHub,
-						DisplayName: "GITHUB 1",
-						Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-					},
-				}, nil
-			},
-			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
-		},
-		{
 			name:    "1 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
