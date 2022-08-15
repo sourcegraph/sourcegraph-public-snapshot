@@ -231,40 +231,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr:         `field "rateLimit" is not allowed in a user-added external service`,
 		},
 		{
-			name:            "duplicate kinds not allowed for user owned services",
-			kind:            extsvc.KindGitHub,
-			config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			namespaceUserID: 1,
-			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{
-					{
-						ID:          1,
-						Kind:        extsvc.KindGitHub,
-						DisplayName: "GITHUB 1",
-						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-					},
-				}, nil
-			},
-			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
-		},
-		{
-			name:           "duplicate kinds not allowed for org owned services",
-			kind:           extsvc.KindGitHub,
-			config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			namespaceOrgID: 1,
-			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{
-					{
-						ID:          1,
-						Kind:        extsvc.KindGitHub,
-						DisplayName: "GITHUB 1",
-						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-					},
-				}, nil
-			},
-			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
-		},
-		{
 			name:    "1 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
@@ -457,6 +423,14 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				t.Fatal("has_webhooks must not be null")
 			} else if *got.HasWebhooks != test.wantHasWebhooks {
 				t.Fatalf("Wanted has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
+			}
+
+			// Adding it another service with the same kind and owner should fail
+			if test.externalService.NamespaceUserID != 0 || test.externalService.NamespaceOrgID != 0 {
+				err := db.ExternalServices().Create(ctx, confGet, test.externalService)
+				if err == nil {
+					t.Fatal("Should not be able to create two services of same kind with same owner")
+				}
 			}
 
 			err = db.ExternalServices().Delete(ctx, test.externalService.ID)
