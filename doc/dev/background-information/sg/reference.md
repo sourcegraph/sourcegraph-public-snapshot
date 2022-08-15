@@ -851,12 +851,14 @@ Operations relating to Sourcegraph telemetry.
 
 Edit the usage data allow list.
 
+
+Utility that will generate SQL to add and remove events from the usage data allow list.
+https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
+
+Events are keyed by event name and passed in as additional arguments to the add and remove subcommands.
+
+
 ```sh
-$ Utility that will generate SQL to add and remove events from the usage data allow list.
-$ https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
-
-$ Events are keyed by event name and passed in as additional arguments to the add and remove subcommands.
-
 # Generate SQL to add events from the allow list
 $ sg telemetry allowlist add EVENT_ONE EVENT_TWO
 
