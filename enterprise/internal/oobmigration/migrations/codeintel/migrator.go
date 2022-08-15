@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // migrator is a code-intelligence-specific out-of-band migration runner. This migrator can
@@ -107,7 +106,7 @@ type scanner interface {
 	Scan(dest ...any) error
 }
 
-func newMigrator(store *basestore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
+func newMigrator(store *basestore.Store, driver migrationDriver, options migratorOptions) *migrator {
 	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
 	temporaryTableFieldNames := make([]string, 0, len(options.fields))
 	temporaryTableFieldSpecs := make([]*sqlf.Query, 0, len(options.fields))
@@ -143,13 +142,8 @@ func newMigrator(store *basestore.Store, driver migrationDriver, options migrato
 	}
 }
 
-func (m *migrator) ID() int {
-	return m.driver.ID()
-}
-
-func (m *migrator) Interval() time.Duration {
-	return m.driver.Interval()
-}
+func (m *migrator) ID() int                 { return m.driver.ID() }
+func (m *migrator) Interval() time.Duration { return m.driver.Interval() }
 
 // Progress returns the ratio between the number of upload records that have been completely
 // migrated over the total number of upload records. A record is migrated if its schema version

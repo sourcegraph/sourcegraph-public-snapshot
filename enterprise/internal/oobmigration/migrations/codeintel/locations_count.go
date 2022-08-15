@@ -5,8 +5,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
+
+func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize int) *migrator {
+	return newLocationsCountMigrator(store, 4, time.Second, "lsif_data_definitions", batchSize)
+}
+
+func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize int) *migrator {
+	return newLocationsCountMigrator(store, 5, time.Second, "lsif_data_references", batchSize)
+}
 
 type locationsCountMigrator struct {
 	id         int
@@ -14,18 +21,10 @@ type locationsCountMigrator struct {
 	serializer *lsifstore.Serializer
 }
 
-func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize int) oobmigration.Migrator {
-	return newLocationsCountMigrator(store, 4, time.Second, "lsif_data_definitions", batchSize)
-}
-
-func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize int) oobmigration.Migrator {
-	return newLocationsCountMigrator(store, 5, time.Second, "lsif_data_references", batchSize)
-}
-
 // newLocationsCountMigrator creates a new Migrator instance that reads records from
 // the given table with a schema version of 1 and populates that record's (new) num_locations
 // column. Updated records will have a schema version of 2.
-func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Duration, tableName string, batchSize int) oobmigration.Migrator {
+func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Duration, tableName string, batchSize int) *migrator {
 	driver := &locationsCountMigrator{
 		id:         id,
 		interval:   interval,

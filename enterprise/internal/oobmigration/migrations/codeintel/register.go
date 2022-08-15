@@ -28,11 +28,11 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 	store := lsifStore.Store
 
 	for _, m := range []TaggedMigrator{
-		NewDiagnosticsCountMigrator(store, config.DiagnosticsCountMigrationBatchSize).(TaggedMigrator),
-		NewDefinitionLocationsCountMigrator(store, config.DefinitionsCountMigrationBatchSize).(TaggedMigrator),
-		NewReferencesLocationsCountMigrator(store, config.ReferencesCountMigrationBatchSize).(TaggedMigrator),
-		NewDocumentColumnSplitMigrator(store, config.DocumentColumnSplitMigrationBatchSize).(TaggedMigrator),
-		NewAPIDocsSearchMigrator().(TaggedMigrator),
+		NewDiagnosticsCountMigrator(store, config.DiagnosticsCountMigrationBatchSize),
+		NewDefinitionLocationsCountMigrator(store, config.DefinitionsCountMigrationBatchSize),
+		NewReferencesLocationsCountMigrator(store, config.ReferencesCountMigrationBatchSize),
+		NewDocumentColumnSplitMigrator(store, config.DocumentColumnSplitMigrationBatchSize),
+		NewAPIDocsSearchMigrator(),
 	} {
 		if err := outOfBandMigrationRunner.Register(m.ID(), m, oobmigration.MigratorOptions{Interval: m.Interval()}); err != nil {
 			return err

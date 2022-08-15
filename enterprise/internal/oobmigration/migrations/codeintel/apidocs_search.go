@@ -3,13 +3,11 @@ package codeintel
 import (
 	"context"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 type apiDocsSearchMigrator struct{}
 
-func NewAPIDocsSearchMigrator() oobmigration.Migrator {
+func NewAPIDocsSearchMigrator() TaggedMigrator {
 	return &apiDocsSearchMigrator{}
 }
 
