@@ -185,7 +185,15 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	orgStore := m.postgresDB.Orgs()
 
 	defer func() {
-		jobStoreTx.UpdateRuns(ctx, job.UserId, job.OrgId, job.Runs+1)
+		var cond *sqlf.Query
+		if job.UserId != nil {
+			cond = sqlf.Sprintf("user_id = %s", *job.UserId)
+		} else if job.OrgId != nil {
+			cond = sqlf.Sprintf("org_id = %s", *job.OrgId)
+		} else {
+			cond = sqlf.Sprintf("global IS TRUE")
+		}
+		jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s`, job.Runs+1, cond))
 	}()
 
 	if job.UserId != nil {
