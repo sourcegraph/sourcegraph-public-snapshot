@@ -74,21 +74,26 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 }
 
 func queueSizeMetricJob(db database.DB) goroutine.BackgroundRoutine {
-	gauge := promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Name:      "telemetry_job_queue_size",
-		Help:      "Current number of events waiting to be scraped.",
-	})
 	job := &queueSizeJob{
-		db:        db,
-		sizeGauge: gauge,
+		db: db,
+		sizeGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: "src",
+			Name:      "telemetry_job_queue_size_total",
+			Help:      "Current number of events waiting to be scraped.",
+		}),
+		throughputGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: "src",
+			Name:      "telemetry_job_max_throughput",
+			Help:      "Currently configured maximum throughput per second.",
+		}),
 	}
 	return goroutine.NewPeriodicGoroutine(context.Background(), time.Minute*5, job)
 }
 
 type queueSizeJob struct {
-	db        database.DB
-	sizeGauge prometheus.Gauge
+	db              database.DB
+	sizeGauge       prometheus.Gauge
+	throughputGauge prometheus.Gauge
 }
 
 func (j *queueSizeJob) Handle(ctx context.Context) error {
@@ -105,6 +110,10 @@ func (j *queueSizeJob) Handle(ctx context.Context) error {
 	}
 	j.sizeGauge.Set(float64(val))
 
+	batchSize := getBatchSize()
+	throughput := float64(batchSize) / float64(JobCooldownDuration/time.Second)
+	j.throughputGauge.Set(throughput)
+
 	return nil
 }
 
@@ -115,7 +124,7 @@ func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.Back
 	}
 	handlerMetrics := newHandlerMetrics(observationContext)
 	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, handlerMetrics.handler)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), JobCooldownDuration, th, handlerMetrics.handler)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error
@@ -172,6 +181,7 @@ func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEm
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
 
 const MaxEventsCountDefault = 1000
+const JobCooldownDuration = time.Second * 60
 
 func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	if !isEnabled() {
