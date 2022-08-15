@@ -842,6 +842,78 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
+## sg telemetry
+
+Operations relating to Sourcegraph telemetry.
+
+
+### sg telemetry allowlist
+
+Edit the usage data allow list.
+
+
+Utility that will generate SQL to add and remove events from the usage data allow list.
+https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
+
+Events are keyed by event name and passed in as additional arguments to the add and remove subcommands.
+
+
+```sh
+# Generate SQL to add events from the allow list
+$ sg telemetry allowlist add EVENT_ONE EVENT_TWO
+
+# Generate SQL to remove events from the allow list
+$ sg telemetry allowlist remove EVENT_ONE EVENT_TWO
+
+# Automatically generate migration files associated with the allow list modification
+$ sg telemetry allowlist add --migration EVENT_ONE EVENT_TWO
+
+# Provide a specific migration name for the migration files
+$ sg telemetry allowlist add --migration --name my_migration_name EVENT_ONE EVENT_TWO
+```
+
+#### sg telemetry allowlist add
+
+Generate the SQL required to add events to the allow list.
+
+```sh
+# Generate SQL to add events from the allow list
+$ sg telemetry allowlist add EVENT_ONE EVENT_TWO
+
+# Automatically generate migration files associated with the allow list modification
+$ sg telemetry allowlist add --migration EVENT_ONE EVENT_TWO
+
+# Provide a specific migration name for the migration files
+$ sg telemetry allowlist add --migration --name my_migration_name EVENT_ONE EVENT_TWO
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--migration`: Create migration files with the generated SQL.
+* `--name="<value>"`: Specifies the name of the resulting migration. (default: sg_telemetry_allowlist)
+
+#### sg telemetry allowlist remove
+
+Generate the SQL required to remove events from the allow list.
+
+```sh
+# Generate SQL to add events from the allow list
+$ sg telemetry allowlist remove EVENT_ONE EVENT_TWO
+
+# Automatically generate migration files associated with the allow list modification
+$ sg telemetry allowlist remove --migration EVENT_ONE EVENT_TWO
+
+# Provide a specific migration name for the migration files
+$ sg telemetry allowlist remove --migration --name my_migration_name EVENT_ONE EVENT_TWO
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--migration`: Create migration files with the generated SQL.
+* `--name="<value>"`: Specifies the name of the resulting migration. (default: sg_telemetry_allowlist)
+
 ## sg doctor
 
 DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph.

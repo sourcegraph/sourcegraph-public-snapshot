@@ -30,6 +30,7 @@ type Upload struct {
 	NumParts          int
 	UploadedParts     []int
 	UploadSize        *int64
+	UncompressedSize  *int64
 	Rank              *int
 	AssociatedIndexID *int
 }

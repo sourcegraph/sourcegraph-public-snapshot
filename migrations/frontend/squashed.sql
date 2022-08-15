@@ -555,6 +555,14 @@ CREATE SEQUENCE access_tokens_id_seq
 
 ALTER SEQUENCE access_tokens_id_seq OWNED BY access_tokens.id;
 
+CREATE TABLE aggregated_user_statistics (
+    user_id bigint NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    user_last_active_at timestamp with time zone,
+    user_events_count bigint
+);
+
 CREATE TABLE batch_changes (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -2029,6 +2037,7 @@ CREATE TABLE lsif_uploads (
     indexer_version text,
     queued_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
+    uncompressed_size bigint,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2421,7 +2430,8 @@ CREATE VIEW lsif_uploads_with_repository_name AS
     u.associated_index_id,
     u.expired,
     u.last_retention_scan_at,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.uncompressed_size
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
@@ -3332,6 +3342,9 @@ ALTER TABLE ONLY access_tokens
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_value_sha256_key UNIQUE (value_sha256);
 
+ALTER TABLE ONLY aggregated_user_statistics
+    ADD CONSTRAINT aggregated_user_statistics_pkey PRIMARY KEY (user_id);
+
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_pkey PRIMARY KEY (id);
 
@@ -4014,6 +4027,9 @@ ALTER TABLE ONLY access_tokens
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY aggregated_user_statistics
+    ADD CONSTRAINT aggregated_user_statistics_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE;

@@ -22,6 +22,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.aggregated_user_statistics"
+```
+       Column        |           Type           | Collation | Nullable | Default 
+---------------------+--------------------------+-----------+----------+---------
+ user_id             | bigint                   |           | not null | 
+ created_at          | timestamp with time zone |           | not null | now()
+ updated_at          | timestamp with time zone |           | not null | now()
+ user_last_active_at | timestamp with time zone |           |          | 
+ user_events_count   | bigint                   |           |          | 
+Indexes:
+    "aggregated_user_statistics_pkey" PRIMARY KEY, btree (user_id)
+Foreign-key constraints:
+    "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
 # Table "public.batch_changes"
 ```
       Column       |           Type           | Collation | Nullable |                  Default                  
@@ -1803,6 +1819,7 @@ Stores the retention policy of code intellience data for a repository.
  indexer_version        | text                     |           |          | 
  queued_at              | timestamp with time zone |           |          | 
  cancel                 | boolean                  |           | not null | false
+ uncompressed_size      | bigint                   |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2779,6 +2796,7 @@ Check constraints:
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
+    TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -3134,7 +3152,8 @@ Foreign-key constraints:
     u.associated_index_id,
     u.expired,
     u.last_retention_scan_at,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.uncompressed_size
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
