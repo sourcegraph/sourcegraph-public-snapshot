@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -20,7 +21,7 @@ func TestLocationsCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
-	migrator := newLocationsCountMigrator(store, "lsif_data_definitions", 250)
+	migrator := newLocationsCountMigrator(store, 10, time.Second, "lsif_data_definitions", 250)
 	serializer := lsifstore.NewSerializer()
 
 	assertProgress := func(expectedProgress float64) {

@@ -1,28 +1,34 @@
 package migration
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 type locationsCountMigrator struct {
+	id         int
+	interval   time.Duration
 	serializer *lsifstore.Serializer
 }
 
 func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize int) oobmigration.Migrator {
-	return newLocationsCountMigrator(store, "lsif_data_definitions", batchSize)
+	return newLocationsCountMigrator(store, 4, time.Second, "lsif_data_definitions", batchSize)
 }
 
 func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize int) oobmigration.Migrator {
-	return newLocationsCountMigrator(store, "lsif_data_references", batchSize)
+	return newLocationsCountMigrator(store, 5, time.Second, "lsif_data_references", batchSize)
 }
 
 // newLocationsCountMigrator creates a new Migrator instance that reads records from
 // the given table with a schema version of 1 and populates that record's (new) num_locations
 // column. Updated records will have a schema version of 2.
-func newLocationsCountMigrator(store *basestore.Store, tableName string, batchSize int) oobmigration.Migrator {
+func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Duration, tableName string, batchSize int) oobmigration.Migrator {
 	driver := &locationsCountMigrator{
+		id:         id,
+		interval:   interval,
 		serializer: lsifstore.NewSerializer(),
 	}
 
@@ -38,6 +44,9 @@ func newLocationsCountMigrator(store *basestore.Store, tableName string, batchSi
 		},
 	})
 }
+
+func (m *locationsCountMigrator) ID() int                 { return m.id }
+func (m *locationsCountMigrator) Interval() time.Duration { return m.interval }
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.

@@ -1,6 +1,8 @@
 package migration
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -29,6 +31,9 @@ func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize int) oobmigra
 		},
 	})
 }
+
+func (m *diagnosticsCountMigrator) ID() int                 { return 1 }
+func (m *diagnosticsCountMigrator) Interval() time.Duration { return time.Second }
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.

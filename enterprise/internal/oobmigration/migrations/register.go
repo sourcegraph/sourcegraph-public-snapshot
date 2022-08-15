@@ -10,12 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
+type TaggedMigrator interface {
+	oobmigration.Migrator
+
+	ID() int
+	Interval() time.Duration
+}
+
 func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	migrations := []interface {
-		oobmigration.Migrator
-		ID() int
-		Interval() time.Duration
-	}{
+	migrations := []TaggedMigrator{
 		NewSubscriptionAccountNumberMigrator(db),
 		NewLicenseKeyFieldsMigrator(db),
 	}

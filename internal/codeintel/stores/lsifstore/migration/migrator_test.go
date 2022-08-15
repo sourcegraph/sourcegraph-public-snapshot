@@ -3,6 +3,7 @@ package migration
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
@@ -120,6 +121,9 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 }
 
 type testMigrationDriver struct{}
+
+func (m *testMigrationDriver) ID() int                 { return 10 }
+func (m *testMigrationDriver) Interval() time.Duration { return time.Second }
 
 func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
 	var a, b, c int

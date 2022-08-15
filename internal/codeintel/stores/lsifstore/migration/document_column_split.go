@@ -1,6 +1,8 @@
 package migration
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -34,6 +36,9 @@ func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize int) oobmi
 		},
 	})
 }
+
+func (m *documentColumnSplitMigrator) ID() int                 { return 7 }
+func (m *documentColumnSplitMigrator) Interval() time.Duration { return time.Second }
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.

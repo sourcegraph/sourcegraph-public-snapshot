@@ -1,11 +1,20 @@
 package codeintel
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	lsifmigrations "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
+
+type TaggedMigrator interface {
+	oobmigration.Migrator
+
+	ID() int
+	Interval() time.Duration
+}
 
 // RegisterMigrations registers all code intel related out-of-band migration instances that should run for the current version of Sourcegraph.
 func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
@@ -19,44 +28,16 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 	}
 	store := lsifStore.Store
 
-	if err := outOfBandMigrationRunner.Register(
-		lsifmigrations.DiagnosticsCountMigrationID, // 1
-		lsifmigrations.NewDiagnosticsCountMigrator(store, config.DiagnosticsCountMigrationBatchSize),
-		oobmigration.MigratorOptions{Interval: config.DiagnosticsCountMigrationBatchInterval},
-	); err != nil {
-		return err
-	}
-
-	if err := outOfBandMigrationRunner.Register(
-		lsifmigrations.DefinitionsCountMigrationID, // 4
-		lsifmigrations.NewDefinitionLocationsCountMigrator(store, config.DefinitionsCountMigrationBatchSize),
-		oobmigration.MigratorOptions{Interval: config.DefinitionsCountMigrationBatchInterval},
-	); err != nil {
-		return err
-	}
-
-	if err := outOfBandMigrationRunner.Register(
-		lsifmigrations.ReferencesCountMigrationID, // 5
-		lsifmigrations.NewReferencesLocationsCountMigrator(store, config.ReferencesCountMigrationBatchSize),
-		oobmigration.MigratorOptions{Interval: config.ReferencesCountMigrationBatchInterval},
-	); err != nil {
-		return err
-	}
-
-	if err := outOfBandMigrationRunner.Register(
-		lsifmigrations.DocumentColumnSplitMigrationID, // 7
-		lsifmigrations.NewDocumentColumnSplitMigrator(store, config.DocumentColumnSplitMigrationBatchSize),
-		oobmigration.MigratorOptions{Interval: config.DocumentColumnSplitMigrationBatchInterval},
-	); err != nil {
-		return err
-	}
-
-	if err := outOfBandMigrationRunner.Register(
-		lsifmigrations.APIDocsSearchMigrationID, // 12
-		lsifmigrations.NewAPIDocsSearchMigrator(config.APIDocsSearchMigrationBatchSize),
-		oobmigration.MigratorOptions{Interval: config.APIDocsSearchMigrationBatchInterval},
-	); err != nil {
-		return err
+	for _, m := range []TaggedMigrator{
+		lsifmigrations.NewDiagnosticsCountMigrator(store, config.DiagnosticsCountMigrationBatchSize).(TaggedMigrator),
+		lsifmigrations.NewDefinitionLocationsCountMigrator(store, config.DefinitionsCountMigrationBatchSize).(TaggedMigrator),
+		lsifmigrations.NewReferencesLocationsCountMigrator(store, config.ReferencesCountMigrationBatchSize).(TaggedMigrator),
+		lsifmigrations.NewDocumentColumnSplitMigrator(store, config.DocumentColumnSplitMigrationBatchSize).(TaggedMigrator),
+		lsifmigrations.NewAPIDocsSearchMigrator(config.APIDocsSearchMigrationBatchSize).(TaggedMigrator),
+	} {
+		if err := outOfBandMigrationRunner.Register(m.ID(), m, oobmigration.MigratorOptions{Interval: m.Interval()}); err != nil {
+			return err
+		}
 	}
 
 	return nil

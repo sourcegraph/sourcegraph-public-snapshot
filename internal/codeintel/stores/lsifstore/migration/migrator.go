@@ -2,6 +2,7 @@ package migration
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -82,6 +83,9 @@ type fieldSpec struct {
 }
 
 type migrationDriver interface {
+	ID() int
+	Interval() time.Duration
+
 	// MigrateRowUp determines which fields to update for the given row. The scanner will receive
 	// the values of the primary keys plus any additional non-updateOnly fields supplied via the
 	// migrator's fields option. Implementations must return the same number of values as the set
@@ -137,6 +141,14 @@ func newMigrator(store *basestore.Store, driver migrationDriver, options migrato
 		updateConditions:         updateConditions,
 		updateAssignments:        updateAssignments,
 	}
+}
+
+func (m *migrator) ID() int {
+	return m.driver.ID()
+}
+
+func (m *migrator) Interval() time.Duration {
+	return m.driver.Interval()
 }
 
 // Progress returns the ratio between the number of upload records that have been completely
