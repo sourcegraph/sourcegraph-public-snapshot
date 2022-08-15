@@ -1,4 +1,4 @@
-package migration
+package codeintel
 
 import (
 	"time"

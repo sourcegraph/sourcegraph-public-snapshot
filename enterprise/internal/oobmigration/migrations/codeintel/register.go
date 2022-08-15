@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	lsifmigrations "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -29,11 +28,11 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 	store := lsifStore.Store
 
 	for _, m := range []TaggedMigrator{
-		lsifmigrations.NewDiagnosticsCountMigrator(store, config.DiagnosticsCountMigrationBatchSize).(TaggedMigrator),
-		lsifmigrations.NewDefinitionLocationsCountMigrator(store, config.DefinitionsCountMigrationBatchSize).(TaggedMigrator),
-		lsifmigrations.NewReferencesLocationsCountMigrator(store, config.ReferencesCountMigrationBatchSize).(TaggedMigrator),
-		lsifmigrations.NewDocumentColumnSplitMigrator(store, config.DocumentColumnSplitMigrationBatchSize).(TaggedMigrator),
-		lsifmigrations.NewAPIDocsSearchMigrator().(TaggedMigrator),
+		NewDiagnosticsCountMigrator(store, config.DiagnosticsCountMigrationBatchSize).(TaggedMigrator),
+		NewDefinitionLocationsCountMigrator(store, config.DefinitionsCountMigrationBatchSize).(TaggedMigrator),
+		NewReferencesLocationsCountMigrator(store, config.ReferencesCountMigrationBatchSize).(TaggedMigrator),
+		NewDocumentColumnSplitMigrator(store, config.DocumentColumnSplitMigrationBatchSize).(TaggedMigrator),
+		NewAPIDocsSearchMigrator().(TaggedMigrator),
 	} {
 		if err := outOfBandMigrationRunner.Register(m.ID(), m, oobmigration.MigratorOptions{Interval: m.Interval()}); err != nil {
 			return err

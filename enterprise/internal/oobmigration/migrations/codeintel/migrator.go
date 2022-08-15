@@ -1,4 +1,4 @@
-package migration
+package codeintel
 
 import (
 	"context"
@@ -169,7 +169,7 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 }
 
 const migratorProgressQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:Progress
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END FROM
 	(SELECT COUNT(*) as count FROM %s_schema_versions WHERE min_schema_version >= %s) c1,
 	(SELECT COUNT(*) as count FROM %s_schema_versions) c2
@@ -242,7 +242,7 @@ func (m *migrator) run(ctx context.Context, sourceVersion, targetVersion int, dr
 }
 
 const runUpdateBoundsQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:run
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:run
 WITH
 	current_bounds AS (
 		-- Find the current bounds by scanning the data rows for the
@@ -307,7 +307,7 @@ func (m *migrator) selectAndLockDump(ctx context.Context, tx *basestore.Store, s
 }
 
 const selectAndLockDumpQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndLockDump
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:selectAndLockDump
 SELECT dump_id
 FROM %s_schema_versions
 WHERE
@@ -354,7 +354,7 @@ func (m *migrator) processRows(ctx context.Context, tx *basestore.Store, dumpID,
 }
 
 const processRowsQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:processRows
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:processRows
 SELECT %s FROM %s WHERE dump_id = %s AND schema_version = %s LIMIT %s
 `
 
@@ -402,11 +402,11 @@ func (m *migrator) updateBatch(ctx context.Context, tx *basestore.Store, dumpID,
 }
 
 const updateBatchTemporaryTableQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:updateBatch
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:updateBatch
 CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
 `
 
 const updateBatchUpdateQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:updateBatch
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:updateBatch
 UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE dump_id = %s AND %s
 `
