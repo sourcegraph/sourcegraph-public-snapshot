@@ -26,7 +26,7 @@ Examples:
 	}
 	var (
 		nameFlag        = flagSet.String("name", "", `The new organization's name. (required)`)
-		displayNameFlag = flagSet.String("display-name", "", `The new organization's display name.`)
+		displayNameFlag = flagSet.String("display-name", "", `The new organization's display name. Defaults to organization name if unspecified.`)
 		apiFlags        = api.NewFlags(flagSet)
 	)
 
@@ -41,7 +41,7 @@ Examples:
   $name: String!,
   $displayName: String!,
 ) {
-  createOrg(
+  createOrganization(
     name: $name,
     displayName: $displayName,
   ) {
