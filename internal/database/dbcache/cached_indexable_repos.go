@@ -119,7 +119,10 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool
 		return repos, nil
 	}
 
-	opts := database.ListIndexableReposOptions{}
+	opts := database.ListIndexableReposOptions{
+		// Zoekt can only index a repo which has been cloned.
+		CloneStatus: types.CloneStatusCloned,
+	}
 	if !onlyPublic {
 		opts.IncludePrivate = true
 	}
