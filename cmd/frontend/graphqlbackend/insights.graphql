@@ -1220,3 +1220,100 @@ type SearchInsightLivePreviewSeries {
     """
     label: String!
 }
+
+extend type Query {
+    """
+    Returns infomation about aggregate the potential results of a search query.
+    """
+    searchQueryAggregate(query: String!, patternType: SearchPatternType!): SearchQueryAggregate
+}
+
+"""
+Supported aggregtation modes for search aggregations
+"""
+enum SearchAggregationMode {
+    REPO
+    PATH
+    AUTHOR
+    CAPTURE_GROUP
+}
+
+"""
+Information about search aggregations
+"""
+type SearchQueryAggregate {
+    """
+    A list of the possible aggregation modes and if they are available
+    """
+    modeAvailability: [AggregationModeAvailability!]!
+
+    """
+    A result of aggregating a search query.
+    """
+    aggregations(mode: SearchAggregationMode = REPO): SearchAggregationResult
+}
+
+"""
+Information regarding the availablity of a SearchAggregationMode
+"""
+type AggregationModeAvailability {
+    """
+    The SearchAggregationMode
+    """
+    mode: SearchAggregationMode!
+    """
+    Boolean indiciating if the mode is available
+    """
+    available: Boolean!
+    """
+    If the mode is unavailable the reason why
+    """
+    unavailableReason: String
+}
+
+"""
+Information regarding the availablity of a SearchAggregationMode
+"""
+type SearchAggregationModeResult {
+    """
+    A list of individual aggregation values
+    """
+    values: [AggregationValues!]!
+    """
+    A count to capture the number of results that were not included in a named aggregation values
+    """
+    overflowCount: Int
+}
+
+"""
+Information regarding the availablity of a SearchAggregationMode
+"""
+type AggregationValues {
+    """
+    A label associated with the Aggregation for example a Repo name or Author name
+    """
+    label: String!
+    """
+    The number serach results associated with this
+    """
+    count: Int!
+    """
+    A modified search query that would filter the orginal query to just these values
+    """
+    query: String
+}
+
+"""
+Defines how the data series is generated.
+"""
+union SearchAggregationResult = SearchAggregationModeResult | SearchAggregationNotAvailable
+
+"""
+Indicates that a search aggregation is not available
+"""
+type SearchAggregationNotAvailable {
+    """
+    The reason a search aggregation is not available
+    """
+    reason: String!
+}

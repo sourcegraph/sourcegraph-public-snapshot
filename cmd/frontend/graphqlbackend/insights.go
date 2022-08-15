@@ -23,6 +23,7 @@ type InsightsResolver interface {
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
 	SearchQueryInsights(ctx context.Context, args SearchQueryInsightsArgs) (SearchQueryInsightsResult, error)
+	SearchQueryAggregate(ctx context.Context, args SearchQueryArgs) (SearchQueryAggregateResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -466,7 +467,56 @@ type SearchQueryInsightsArgs struct {
 	PatternType string `json:"patternType"`
 }
 
+type SearchQueryArgs struct {
+	Query       string `json:"query"`
+	PatternType string `json:"patternType"`
+}
+
 type SearchQueryInsightsResult interface {
 	ToSearchQueryInsights() (SearchQueryInsightsResolver, bool)
 	ToSearchQueryInsightsNotAvailable() (SearchQueryInsightsNotAvailable, bool)
+}
+
+type SearchQueryAggregateResolver interface {
+	ModeAvailability(ctx context.Context) []AggregationModeAvailabilityResolver
+	Aggregations(ctx context.Context, args AggregationsArgs) (SearchAggregationResultResolver, error)
+}
+
+type AggregationModeAvailabilityResolver interface {
+	Mode() SearchAggregationMode
+	Available() (bool, error)
+	UnavailableReason() (*string, error)
+}
+
+type SearchAggregationMode string
+
+const (
+	REPO_AGGREGATION_MODE          SearchAggregationMode = "REPO"
+	FILE_AGGREGATION_MODE          SearchAggregationMode = "FILE"
+	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
+	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
+)
+
+type SearchAggregationModeResultResolver interface {
+	Values() ([]AggregationValues, error)
+	OverflowCount() (*int32, error)
+}
+
+type AggregationValues interface {
+	Label() string
+	Count() int32
+	Query() (*string, error)
+}
+
+type SearchAggregationNotAvailable interface {
+	Reason() string
+}
+
+type SearchAggregationResultResolver interface {
+	ToSearchAggregationModeResult() (SearchAggregationModeResultResolver, bool)
+	ToSearchAggregationNotAvailable() (SearchAggregationNotAvailable, bool)
+}
+
+type AggregationsArgs struct {
+	Mode SearchAggregationMode `json:"mode"`
 }
