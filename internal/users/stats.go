@@ -30,7 +30,7 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if s.Filters.Query != nil && *s.Filters.Query != "" {
 		query := "%" + *s.Filters.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s OR primary_email ILIKE %s)", query, query, query))
 	}
 	if s.Filters.SiteAdmin != nil {
 		conds = append(conds, sqlf.Sprintf("site_admin = %s", *s.Filters.SiteAdmin))

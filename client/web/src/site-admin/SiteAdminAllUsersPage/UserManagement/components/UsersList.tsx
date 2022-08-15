@@ -89,7 +89,7 @@ export const UsersList: React.FunctionComponent = () => {
                         <Text as="label">Search users</Text>
                         <Input
                             className="flex-1 ml-2"
-                            placeholder="Search username or name"
+                            placeholder="Search username, display name, email"
                             value={searchText}
                             onChange={event => setSearchText(event.target.value)}
                         />
