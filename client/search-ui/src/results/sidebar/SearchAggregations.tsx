@@ -1,6 +1,5 @@
 import { FC, useCallback, useMemo } from 'react'
 
-import { gql, useQuery } from '@apollo/client'
 import { mdiArrowExpand, mdiPlus } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 import { getTicks } from '@visx/scale'
@@ -9,17 +8,9 @@ import { useHistory, useLocation } from 'react-router'
 
 import { ButtonGroup, Button, Icon, BarChart } from '@sourcegraph/wildcard'
 
-import { IsCodeInsightsEnabledResult } from '../../graphql-operations'
-
 import { LANGUAGE_USAGE_DATA, LanguageUsageDatum } from './search-aggregation-mock-data'
 
 import styles from './SearchAggregations.module.scss'
-
-const IS_CODE_INSIGHTS_ENABLED_QUERY = gql`
-    query IsCodeInsightsEnabled {
-        enterpriseLicenseHasFeature(feature: "code-insights")
-    }
-`
 
 interface URLStateOptions<State> {
     urlKey: string
@@ -64,7 +55,7 @@ enum AggregationModes {
     CaptureGroups = 'groups',
 }
 
-const AGGREGATION_MODE_URL_KEY = 'aggregation_mode'
+const AGGREGATION_MODE_URL_KEY = 'groupBy'
 
 const aggregationModeDeserializer = (serializedValue: string | null): AggregationModes => {
     switch (serializedValue) {
@@ -146,9 +137,6 @@ const getTruncationFormatter = (aggregationMode: AggregationModes): ((tick: stri
 interface SearchAggregationsProps {}
 
 export const SearchAggregations: FC<SearchAggregationsProps> = props => {
-    const { data } = useQuery<IsCodeInsightsEnabledResult>(IS_CODE_INSIGHTS_ENABLED_QUERY, {
-        fetchPolicy: 'cache-first',
-    })
     const [aggregationMode, setAggregationMode] = useSyncedWithURLState({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
@@ -224,11 +212,9 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                     <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
                 </Button>
 
-                {data?.enterpriseLicenseHasFeature && (
-                    <Button variant="secondary" outline={true} size="sm">
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Save insight
-                    </Button>
-                )}
+                <Button variant="secondary" outline={true} size="sm">
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Save insight
+                </Button>
             </footer>
         </article>
     )
