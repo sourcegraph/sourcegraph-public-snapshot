@@ -71,7 +71,7 @@
     {
       "type": "file",
       "sources": ["ignite-state"],
-      "destination": "/var/lib/firecracker"
+      "destination": "/var/lib/firecracker/"
     },
     {
       "type": "shell",
