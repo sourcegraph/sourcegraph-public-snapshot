@@ -36,7 +36,7 @@ func (b *Build) authorName() string {
 	return b.Author.Name
 }
 
-func (b *Build) authorEmail string {
+func (b *Build) authorEmail() string {
 	if b.Author == nil {
 		return ""
 	}
