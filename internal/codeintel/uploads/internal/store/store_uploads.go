@@ -377,20 +377,20 @@ func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err err
 		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
-	tx, err := s.db.Transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() { err = tx.db.Done(err) }()
 
 	// Before deleting the record, ensure that we decrease the number of existant references
 	// to all of this upload's dependencies. This also selects a new upload to canonically provide
 	// the same package as the deleted upload, if such an upload exists.
-	if _, err := s.UpdateUploadsReferenceCounts(ctx, ids, shared.DependencyReferenceCountUpdateTypeRemove); err != nil {
+	if _, err := tx.UpdateUploadsReferenceCounts(ctx, ids, shared.DependencyReferenceCountUpdateTypeRemove); err != nil {
 		return err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(hardDeleteUploadsByIDsQuery, sqlf.Join(idQueries, ", "))); err != nil {
+	if err := tx.db.Exec(ctx, sqlf.Sprintf(hardDeleteUploadsByIDsQuery, sqlf.Join(idQueries, ", "))); err != nil {
 		return err
 	}
 
@@ -577,12 +577,6 @@ func (s *store) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dep
 		return 0, nil
 	}
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	idArray := pq.Array(ids)
 
 	excludeCondition := sqlf.Sprintf("TRUE")
@@ -590,7 +584,7 @@ func (s *store) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dep
 		excludeCondition = sqlf.Sprintf("NOT (u.id = ANY (%s))", idArray)
 	}
 
-	result, err := tx.ExecResult(ctx, sqlf.Sprintf(
+	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(
 		updateUploadsReferenceCountsQuery,
 		idArray,
 		idArray,
