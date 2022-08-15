@@ -88,9 +88,10 @@ func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, e
 
 func (e *Encryptable) Set(value string) {
 	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
 	e.decrypted = &decryptedValue{value, nil}
 	e.encrypted = nil
-	e.mutex.Unlock()
 }
 
 func (e *Encryptable) SetKey(ctx context.Context, key Key) error {
