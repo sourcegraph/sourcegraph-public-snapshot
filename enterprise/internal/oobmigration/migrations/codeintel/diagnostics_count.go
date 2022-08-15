@@ -1,20 +1,21 @@
-package migration
+package codeintel
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type diagnosticsCountMigrator struct {
-	serializer *lsifstore.Serializer
+	serializer *serializer
 }
 
 // NewDiagnosticsCountMigrator creates a new Migrator instance that reads records from
 // the lsif_data_documents table with a schema version of 1 and populates that record's
 // (new) num_diagnostics column. Updated records will have a schema version of 2.
-func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigration.Migrator {
+func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize int) *migrator {
 	driver := &diagnosticsCountMigrator{
-		serializer: lsifstore.NewSerializer(),
+		serializer: newSerializer(),
 	}
 
 	return newMigrator(store, driver, migratorOptions{
@@ -28,6 +29,9 @@ func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigra
 		},
 	})
 }
+
+func (m *diagnosticsCountMigrator) ID() int                 { return 1 }
+func (m *diagnosticsCountMigrator) Interval() time.Duration { return time.Second }
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.

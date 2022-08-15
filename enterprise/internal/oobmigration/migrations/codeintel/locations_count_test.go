@@ -1,30 +1,26 @@
-package migration
+package codeintel
 
 import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-func TestDiagnosticsCountMigrator(t *testing.T) {
+func TestLocationsCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := lsifstore.NewStore(db, conf.DefaultClient(), &observation.TestContext)
-	migrator := NewDiagnosticsCountMigrator(store, 250)
-	serializer := lsifstore.NewSerializer()
+	store := basestore.NewWithHandle(db.Handle())
+	migrator := newLocationsCountMigrator(store, 10, time.Second, "lsif_data_definitions", 250)
+	serializer := newSerializer()
 
 	assertProgress := func(expectedProgress float64) {
 		if progress, err := migrator.Progress(context.Background()); err != nil {
@@ -35,7 +31,7 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 	}
 
 	assertCounts := func(expectedCounts []int) {
-		query := sqlf.Sprintf(`SELECT num_diagnostics FROM lsif_data_documents ORDER BY path`)
+		query := sqlf.Sprintf(`SELECT num_locations FROM lsif_data_definitions ORDER BY scheme, identifier`)
 
 		if counts, err := basestore.ScanInts(store.Query(context.Background(), query)); err != nil {
 			t.Fatalf("unexpected error querying num diagnostics: %s", err)
@@ -46,23 +42,22 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 
 	n := 500
 	expectedCounts := make([]int, 0, n)
-	diagnostics := make([]precise.DiagnosticData, 0, n)
+	locations := make([]LocationData, 0, n)
 
 	for i := 0; i < n; i++ {
 		expectedCounts = append(expectedCounts, i+1)
-		diagnostics = append(diagnostics, precise.DiagnosticData{Code: fmt.Sprintf("c%d", i)})
+		locations = append(locations, LocationData{URI: fmt.Sprintf("file://%d", i)})
 
-		data, err := serializer.MarshalLegacyDocumentData(precise.DocumentData{
-			Diagnostics: diagnostics,
-		})
+		data, err := serializer.MarshalLocations(locations)
 		if err != nil {
-			t.Fatalf("unexpected error serializing document data: %s", err)
+			t.Fatalf("unexpected error serializing locations: %s", err)
 		}
 
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
-			"INSERT INTO lsif_data_documents (dump_id, path, data, schema_version, num_diagnostics) VALUES (%s, %s, %s, 1, 0)",
+			"INSERT INTO lsif_data_definitions (dump_id, scheme, identifier, data, schema_version, num_locations) VALUES (%s, %s, %s, %s, 1, 0)",
 			42+i/(n/2), // 50% id=42, 50% id=43
-			fmt.Sprintf("p%04d", i),
+			fmt.Sprintf("s%04d", i),
+			fmt.Sprintf("i%04d", i),
 			data,
 		)); err != nil {
 			t.Fatalf("unexpected error inserting row: %s", err)

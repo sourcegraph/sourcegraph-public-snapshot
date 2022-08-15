@@ -1,21 +1,22 @@
-package migration
+package codeintel
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type documentColumnSplitMigrator struct {
-	serializer *lsifstore.Serializer
+	serializer *serializer
 }
 
 // NewDocumentColumnSplitMigrator creates a new Migrator instance that reads records from
 // the lsif_data_documents table with a schema version of 2 and unsets the payload in favor
 // of populating the new ranges, hovers, monikers, packages, and diagnostics columns. Updated
 // records will have a schema version of 3.
-func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmigration.Migrator {
+func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize int) *migrator {
 	driver := &documentColumnSplitMigrator{
-		serializer: lsifstore.NewSerializer(),
+		serializer: newSerializer(),
 	}
 
 	return newMigrator(store, driver, migratorOptions{
@@ -33,6 +34,9 @@ func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmi
 		},
 	})
 }
+
+func (m *documentColumnSplitMigrator) ID() int                 { return 7 }
+func (m *documentColumnSplitMigrator) Interval() time.Duration { return time.Second }
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
@@ -76,7 +80,7 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]any, erro
 func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
 	var path string
 	var rawData []byte
-	var encoded lsifstore.MarshalledDocumentData
+	var encoded MarshalledDocumentData
 
 	if err := scanner.Scan(
 		&path,
