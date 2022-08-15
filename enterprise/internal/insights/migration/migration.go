@@ -29,8 +29,10 @@ const (
 )
 
 type migrator struct {
-	insightsDB dbutil.DB
-	postgresDB database.DB
+	frontendStore *basestore.Store
+	insightsStore *basestore.Store
+	insightsDB    dbutil.DB
+	postgresDB    database.DB
 
 	settingsMigrationJobsStore *store.DBSettingsMigrationJobsStore
 	settingsStore              database.SettingsStore
@@ -42,6 +44,8 @@ type migrator struct {
 
 func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
+		frontendStore:              basestore.NewWithHandle(postgresDB.Handle()),
+		insightsStore:              basestore.NewWithHandle(insightsDB.Handle()),
 		insightsDB:                 insightsDB,
 		postgresDB:                 postgresDB,
 		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(postgresDB),
