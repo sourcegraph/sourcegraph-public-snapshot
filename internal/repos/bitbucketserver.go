@@ -275,6 +275,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			repos, err := s.client.ProjectRepos(ctx, q)
 			if err != nil {
 				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q)}
+				return
 			}
 
 			ch <- batch{repos: repos}

@@ -79,7 +79,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
 	github.com/grafana-tools/sdk v0.0.0-20220203092117-edae16afa87b
-	github.com/grafana/regexp v0.0.0-20220304095617-2e8d9baf4ac2
+	github.com/grafana/regexp v0.0.0-20220304100321-149c8afcd6cb
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/graphql-go/graphql v0.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79

@@ -10,6 +10,8 @@ import {
     gutterLineClass,
 } from '@codemirror/view'
 
+import { isValidLineRange } from './utils'
+
 /**
  * Represents the currently selected line range. null means no lines are
  * selected. Line numbers are 1-based.
@@ -31,9 +33,6 @@ const setEndLine = StateEffect.define<number>()
 export const selectedLines = StateField.define<SelectedLineRange>({
     create() {
         return null
-    },
-    compare(previous, next): boolean {
-        return previous?.line === next?.line && previous?.endLine === next?.endLine
     },
     update(value, transaction) {
         for (const effect of transaction.effects) {
@@ -228,7 +227,9 @@ export function selectableLineNumbers(config: {
  * Set selected lines (e.g. from the URL).
  */
 export function selectLines(view: EditorView, newRange: SelectedLineRange): void {
-    view.dispatch({ effects: setSelectedLines.of(newRange) })
+    view.dispatch({
+        effects: setSelectedLines.of(newRange && isValidLineRange(newRange, view.state.doc) ? newRange : null),
+    })
 }
 
 /**

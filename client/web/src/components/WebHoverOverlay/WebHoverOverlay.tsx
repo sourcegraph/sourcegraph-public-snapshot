@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { fromEvent } from 'rxjs'
+import { fromEvent, Observable } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -30,6 +30,11 @@ export interface WebHoverOverlayProps
         HoverThresholdProps,
         SettingsCascadeProps {
     hoveredTokenElement?: HTMLElement
+    /**
+     * If the hovered token doesn't have a corresponding DOM element, this prop
+     * can be used to trigger the "click to go to definition" functionality.
+     */
+    hoveredTokenClick?: Observable<unknown>
     nav?: (url: string) => void
 }
 
@@ -74,6 +79,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
         }
 
         const token = props.hoveredTokenElement
+        const click = props.hoveredTokenClick ?? (token ? fromEvent(token, 'click') : null)
 
         const definitionAction =
             Array.isArray(props.actionsOrError) &&
@@ -89,16 +95,18 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
         }
         const url = urlForClientCommandOpen(action.action, props.location.hash)
 
-        if (!token || !url || !props.nav) {
+        if (!click || !url || !props.nav) {
             return
         }
 
         const nav = props.nav
 
-        const oldCursor = token.style.cursor
-        token.style.cursor = 'pointer'
+        const oldCursor = token?.style.cursor
+        if (token) {
+            token.style.cursor = 'pointer'
+        }
 
-        const subscription = fromEvent(token, 'click')
+        const subscription = click
             .pipe(
                 tap(() => {
                     const selection = window.getSelection()
@@ -110,7 +118,11 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
                     props.telemetryService.log(`${actionType}HoverOverlay.click`)
                     nav(url)
                 }),
-                finalize(() => (token.style.cursor = oldCursor))
+                finalize(() => {
+                    if (token && oldCursor) {
+                        token.style.cursor = oldCursor
+                    }
+                })
             )
             .subscribe()
 
@@ -118,6 +130,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
     }, [
         props.actionsOrError,
         props.hoveredTokenElement,
+        props.hoveredTokenClick,
         props.location.hash,
         props.nav,
         props.telemetryService,
@@ -143,7 +156,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
 
 WebHoverOverlay.displayName = 'WebHoverOverlay'
 
-const getClickToGoToDefinition = (settingsCascade: SettingsCascadeOrError<Settings>): boolean => {
+export const getClickToGoToDefinition = (settingsCascade: SettingsCascadeOrError<Settings>): boolean => {
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
         const value = settingsCascade.final['codeIntelligence.clickToGoToDefinition'] as boolean
         return value ?? true
