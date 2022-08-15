@@ -49,11 +49,7 @@ type AccountData struct {
 type EncryptableData = encryption.JSONEncryptable[any]
 
 func NewUnencryptedData(value json.RawMessage) *EncryptableData {
-	return NewUnencryptedDataWithKey(value, nil)
-}
-
-func NewUnencryptedDataWithKey(value json.RawMessage, key encryption.Key) *EncryptableData {
-	return &EncryptableData{Encryptable: encryption.NewUnencryptedWithKey(string(value), key)}
+	return &EncryptableData{Encryptable: encryption.NewUnencrypted(string(value))}
 }
 
 func NewEncryptedData(cipher, keyID string, key encryption.Key) *EncryptableData {
