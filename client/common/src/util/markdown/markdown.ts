@@ -162,6 +162,32 @@ export const renderMarkdown = (
                     'flex-basis': ALL_VALUES_ALLOWED,
                 },
             },
+            transformTags: {
+                object: function (tagName, attribs) {
+                    var data = attribs['data'].split('base64,')
+
+                    if (data.length > 0) {
+                        var obj = data[1]
+                        var content = sanitize(window.atob(obj), {
+                            allowedTags: sanitize.defaults.allowedTags.concat(['svg', 'xmlns', 'path', 'picture']),
+                            allowedAttributes: false,
+                        })
+
+                        return {
+                            tagName: tagName,
+                            attribs: {
+                                type: 'image/svg+xml',
+                                data: 'data:image/svg+xml;base64,' + window.btoa(content),
+                            },
+                        }
+                    } else {
+                        return {
+                            tagName: tagName,
+                            attribs: attribs,
+                        }
+                    }
+                },
+            },
         }
         if (options.allowDataUriLinksAndDownloads) {
             sanitizeOptions.allowedAttributes.a = [...sanitizeOptions.allowedAttributes.a, 'download']
