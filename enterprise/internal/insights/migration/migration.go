@@ -101,6 +101,20 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	return nil
 }
 
+type SettingsMigrationJob struct {
+	UserId             *int
+	OrgId              *int
+	Global             bool
+	MigratedInsights   int
+	MigratedDashboards int
+	Runs               int
+}
+
+var scanJobs = basestore.NewSliceScanner[SettingsMigrationJob](func(s dbutil.Scanner) (j SettingsMigrationJob, _ error) {
+	err := s.Scan(&j.UserId, &j.OrgId, &j.Global, &j.MigratedInsights, &j.MigratedDashboards, &j.Runs)
+	return j, err
+})
+
 func (m *migrator) performBatchMigration(ctx context.Context, jobType store.SettingsMigrationJobType) (bool, error) {
 	// This transaction will allow us to lock the jobs rows while working on them.
 	jobStoreTx, err := m.settingsMigrationJobsStore.Transact(ctx)
@@ -128,7 +142,21 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 		return true, nil
 	}
 
-	jobs, err := jobStoreTx.GetNextSettingsMigrationJobs(ctx, jobType)
+	jobs, err := scanJobs(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+	SELECT
+		user_id,
+		org_id,
+		(CASE WHEN global IS NULL THEN FALSE ELSE TRUE END) AS global,
+		migrated_insights,
+		migrated_dashboards,
+		runs
+	FROM insights_settings_migration_jobs
+	WHERE
+		%s AND
+		completed_at IS NULL
+	LIMIT 100
+	FOR UPDATE SKIP LOCKED
+	`, cond)))
 	if err != nil {
 		return false, err
 	}
@@ -138,7 +166,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 
 	var errs error
 	for _, job := range jobs {
-		err := m.performMigrationForRow(ctx, jobStoreTx, *job)
+		err := m.performMigrationForRow(ctx, jobStoreTx, job)
 		if err != nil {
 			errs = errors.Append(errs, err)
 		}
@@ -148,7 +176,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 	return false, errs
 }
 
-func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store.DBSettingsMigrationJobsStore, job store.SettingsMigrationJob) error {
+func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store.DBSettingsMigrationJobsStore, job SettingsMigrationJob) error {
 	var subject api.SettingsSubject
 	var migrationContext migrationContext
 	var subjectName string
