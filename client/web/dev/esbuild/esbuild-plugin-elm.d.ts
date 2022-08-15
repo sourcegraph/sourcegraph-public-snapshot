@@ -1,2 +1,13 @@
-// TODO: actually define some types to suppress warning: Unsafe call of an `any` typed value.
-declare module 'esbuild-plugin-elm'
+declare module 'esbuild-plugin-elm' {
+    function ElmPlugin(config: ElmPluginConfig): esbuild.Plugin;
+
+  export default ElmPlugin;
+}
+
+interface ElmPluginConfig {
+    debug?: boolean
+    optimize?: boolean
+    pathToElm?: string
+    clearOnWatch?: boolean
+    cwd?: string
+}
