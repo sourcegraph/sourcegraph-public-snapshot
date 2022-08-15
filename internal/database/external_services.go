@@ -632,14 +632,6 @@ INSERT INTO external_services
 RETURNING id
 `
 
-func (e *externalServiceStore) maybeEncrypt(ctx context.Context, data string) (string, string, error) {
-	return encryption.MaybeEncrypt(ctx, e.getEncryptionKey(), data)
-}
-
-func (e *externalServiceStore) maybeDecrypt(ctx context.Context, data, keyIdent string) (string, error) {
-	return encryption.MaybeDecrypt(ctx, e.getEncryptionKey(), data, keyIdent)
-}
-
 func (e *externalServiceStore) getEncryptionKey() encryption.Key {
 	if e.key != nil {
 		return e.key

@@ -16,16 +16,12 @@ type JSONEncryptable[T any] struct {
 
 // NewUnencryptedJSON creates a new JSON encryptable from the given value.
 func NewUnencryptedJSON[T any](value T) (*JSONEncryptable[T], error) {
-	return NewUnencryptedJSONWithKey(value, nil)
-}
-
-func NewUnencryptedJSONWithKey[T any](value T, key Key) (*JSONEncryptable[T], error) {
 	serialized, err := json.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
 
-	return &JSONEncryptable[T]{Encryptable: NewUnencryptedWithKey(string(serialized), key)}, nil
+	return &JSONEncryptable[T]{Encryptable: NewUnencrypted(string(serialized))}, nil
 }
 
 // NewEncryptedJSON creates a new JSON encryptable an encrypted value and a relevant encryption key.
