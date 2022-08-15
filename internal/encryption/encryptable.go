@@ -7,6 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Encryptable wraps a value and an encryption key and handles lazily encrypting and
+// decrypting that value. This struct should be used in all places where a value is
+// encrypted at-rest to maintain a consistent handling of data with security concerns.
+//
+// This struct should always be passed by reference.
 type Encryptable struct {
 	mutex     sync.Mutex
 	decrypted *decryptedValue
@@ -19,11 +24,14 @@ type decryptedValue struct {
 	err   error
 }
 
+// EncryptedValue wraps an encrypted value and serialized metadata about that key that
+// encrypted it.
 type EncryptedValue struct {
 	Cipher string
 	KeyID  string
 }
 
+// NewUnencrypted creates a new encryptable from a plaintext value.
 func NewUnencrypted(value string) *Encryptable {
 	return NewUnencryptedWithKey(value, nil)
 }
@@ -35,6 +43,7 @@ func NewUnencryptedWithKey(value string, key Key) *Encryptable {
 	}
 }
 
+// NewEncrypted creates a new encryptable from an encrypted value and a relevant encryption key.
 func NewEncrypted(cipher, keyID string, key Key) *Encryptable {
 	return &Encryptable{
 		encrypted: &EncryptedValue{cipher, keyID},
@@ -42,14 +51,17 @@ func NewEncrypted(cipher, keyID string, key Key) *Encryptable {
 	}
 }
 
-func (e *Encryptable) Decrypted(ctx context.Context) (string, error) {
+// Decrypt returns the underlying plaintext value. This method may make an external API call to
+// decrypt the underlying encrypted value, but will memoize the result so that subsequent calls
+// will be cheap.
+func (e *Encryptable) Decrypt(ctx context.Context) (string, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	return e.decryptedLocked(ctx)
+	return e.decryptLocked(ctx)
 }
 
-func (e *Encryptable) decryptedLocked(ctx context.Context) (string, error) {
+func (e *Encryptable) decryptLocked(ctx context.Context) (string, error) {
 	if e.decrypted != nil {
 		return e.decrypted.value, e.decrypted.err
 	}
@@ -62,7 +74,10 @@ func (e *Encryptable) decryptedLocked(ctx context.Context) (string, error) {
 	return value, err
 }
 
-func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, error) {
+// Encrypt returns the underlying encrypted value. This method may make an external API call to
+// encrypt the underlying plaintext value, but will memoize the result so that subsequent calls
+// will be cheap.
+func (e *Encryptable) Encrypt(ctx context.Context, key Key) (string, string, error) {
 	if err := e.SetKey(ctx, key); err != nil {
 		return "", "", err
 	}
@@ -86,6 +101,7 @@ func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, e
 	return cipher, keyID, err
 }
 
+// Set updates the underlying plaintext value.
 func (e *Encryptable) Set(value string) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -94,6 +110,8 @@ func (e *Encryptable) Set(value string) {
 	e.encrypted = nil
 }
 
+// SetKey updates the encryption key used with the encrypted value. This method may trigger an
+// external API call to decrypt the current value.
 func (e *Encryptable) SetKey(ctx context.Context, key Key) error {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -102,7 +120,7 @@ func (e *Encryptable) SetKey(ctx context.Context, key Key) error {
 		return nil
 	}
 
-	if _, err := e.decryptedLocked(ctx); err != nil {
+	if _, err := e.decryptLocked(ctx); err != nil {
 		return err
 	}
 
