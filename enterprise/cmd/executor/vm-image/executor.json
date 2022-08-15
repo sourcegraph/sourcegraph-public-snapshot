@@ -71,7 +71,11 @@
     {
       "type": "file",
       "sources": ["ignite-state"],
-      "destination": "/var/lib/firecracker/"
+      "destination": "/tmp/firecracker/"
+    },
+    {
+      "type": "shell",
+      "inline": ["sudo -E bash -c 'mkdir -p /var/lib/firecracker && mv /tmp/firecracker /var/lib/firecracker'"]
     },
     {
       "type": "shell",
