@@ -3,6 +3,8 @@ package types
 import (
 	"net/http"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
 type WebhookLog struct {
@@ -10,8 +12,8 @@ type WebhookLog struct {
 	ReceivedAt        time.Time
 	ExternalServiceID *int64
 	StatusCode        int
-	Request           WebhookLogMessage
-	Response          WebhookLogMessage
+	Request           *EncryptableWebhookLogMessage
+	Response          *EncryptableWebhookLogMessage
 }
 
 type WebhookLogMessage struct {
@@ -20,4 +22,15 @@ type WebhookLogMessage struct {
 	Method  string `json:",omitempty"`
 	URL     string `json:",omitempty"`
 	Version string `json:",omitempty"`
+}
+
+type EncryptableWebhookLogMessage = encryption.JSONEncryptable[WebhookLogMessage]
+
+func NewUnencryptedWebhookLogMessage(value WebhookLogMessage) *EncryptableWebhookLogMessage {
+	message, _ := encryption.NewUnencryptedJSON(value)
+	return message
+}
+
+func NewEncryptedWebhookLogMessage(cipher, keyID string, key encryption.Key) *EncryptableWebhookLogMessage {
+	return encryption.NewEncryptedJSON[WebhookLogMessage](cipher, keyID, key)
 }
