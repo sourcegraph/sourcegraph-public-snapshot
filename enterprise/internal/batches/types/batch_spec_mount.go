@@ -10,6 +10,7 @@ type BatchSpecMount struct {
 	FileName string
 	Path     string
 	Size     int64
+	Modified time.Time
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

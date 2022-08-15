@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	sglog "github.com/sourcegraph/log"
@@ -149,6 +150,15 @@ func (h *MountHandler) upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MountHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec, index int) error {
+	modtime := r.Form.Get(fmt.Sprintf("filemod_%d", index))
+	if modtime == "" {
+		return errors.New("missing file modification time")
+	}
+	modified, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", modtime)
+	if err != nil {
+		return err
+	}
+
 	f, headers, err := r.FormFile(fmt.Sprintf("file_%d", index))
 	if err != nil {
 		return err
@@ -165,6 +175,7 @@ func (h *MountHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec, index
 		FileName:    headers.Filename,
 		Path:        filePath,
 		Size:        headers.Size,
+		Modified:    modified,
 	}); err != nil {
 		return err
 	}

@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,10 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 	batchSpecMarshalledID := "ZG9lcy1ub3QtbWF0dGVyOiIxMjMi"
 	batchSpecMountRandID := "987"
 	batchSpecMountMarshalledID := "ZG9lcy1ub3QtbWF0dGVyOiI5ODci"
+
+	modifiedTimeString := "2022-08-15 19:30:25.410972423 +0000 UTC"
+	modifiedTime, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", modifiedTimeString)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name       string
@@ -119,7 +124,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/batches/mount/%s", batchSpecMarshalledID),
 			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!"})
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
 			mockInvokes: func() {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
@@ -127,7 +132,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 					Once()
 				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Modified: modifiedTime}).
 					Return(nil).
 					Once()
 			},
@@ -140,8 +145,8 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			path:       fmt.Sprintf("/batches/mount/%s", batchSpecMarshalledID),
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(
-					file{name: "hello.txt", path: "foo/bar", content: "Hello!"},
-					file{name: "world.txt", path: "faz/baz", content: "World!"},
+					file{name: "hello.txt", path: "foo/bar", content: "Hello!", modified: modifiedTimeString},
+					file{name: "world.txt", path: "faz/baz", content: "World!", modified: modifiedTimeString},
 				)
 			},
 			mockInvokes: func() {
@@ -150,11 +155,11 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 					Once()
 				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 6}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 6, Modified: modifiedTime}).
 					Return(nil).
 					Once()
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "world.txt", Path: "faz/baz", Size: 6}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "world.txt", Path: "faz/baz", Size: 6, Modified: modifiedTime}).
 					Return(nil).
 					Once()
 			},
@@ -166,7 +171,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/batches/mount/%s", "foo"),
 			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!"})
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: "batch spec id is malformed: illegal base64 data at input byte 0\n",
@@ -217,7 +222,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/batches/mount/%s", batchSpecMarshalledID),
 			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!"})
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
 			mockInvokes: func() {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
@@ -226,6 +231,26 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: "failed to lookup batch spec: failed to find batch spec\n",
+		},
+		{
+			name:       "Upload file missing filemod",
+			isExecutor: true,
+			method:     http.MethodPost,
+			path:       fmt.Sprintf("/batches/mount/%s", batchSpecMarshalledID),
+			requestBody: func() (io.Reader, string) {
+				body := &bytes.Buffer{}
+				w := multipart.NewWriter(body)
+				w.WriteField("count", "1")
+				w.Close()
+				return body, w.FormDataContentType()
+			},
+			mockInvokes: func() {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
+					Once()
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: "failed to upload file: missing file modification time\n",
 		},
 		{
 			name:       "Upload file missing file",
@@ -253,7 +278,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/batches/mount/%s", batchSpecMarshalledID),
 			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!"})
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
 			mockInvokes: func() {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
@@ -270,7 +295,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			method:     http.MethodPost,
 			path:       fmt.Sprintf("/batches/mount/%s", batchSpecMarshalledID),
 			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!"})
+				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
 			mockInvokes: func() {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
@@ -278,7 +303,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 					Once()
 				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Modified: modifiedTime}).
 					Return(errors.New("failed to insert batch spec mount")).
 					Once()
 			},
@@ -333,6 +358,7 @@ func multipartRequestBody(files ...file) (io.Reader, string) {
 	w.WriteField("count", strconv.Itoa(len(files)))
 
 	for i, f := range files {
+		w.WriteField(fmt.Sprintf("filemod_%d", i), f.modified)
 		w.WriteField(fmt.Sprintf("filepath_%d", i), f.path)
 		part, _ := w.CreateFormFile(fmt.Sprintf("file_%d", i), f.name)
 		io.WriteString(part, f.content)
@@ -342,9 +368,10 @@ func multipartRequestBody(files ...file) (io.Reader, string) {
 }
 
 type file struct {
-	name    string
-	path    string
-	content string
+	name     string
+	path     string
+	content  string
+	modified string
 }
 
 type mockBatchesStore struct {

@@ -21,6 +21,7 @@ var batchSpecMountColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_spec_mounts.filename"),
 	sqlf.Sprintf("batch_spec_mounts.path"),
 	sqlf.Sprintf("batch_spec_mounts.size"),
+	sqlf.Sprintf("batch_spec_mounts.modified"),
 	sqlf.Sprintf("batch_spec_mounts.created_at"),
 	sqlf.Sprintf("batch_spec_mounts.updated_at"),
 }
@@ -31,6 +32,7 @@ var batchSpecMountInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("filename"),
 	sqlf.Sprintf("path"),
 	sqlf.Sprintf("size"),
+	sqlf.Sprintf("modified"),
 	sqlf.Sprintf("updated_at"),
 }
 
@@ -72,6 +74,7 @@ func (s *Store) upsertBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query
 		m.FileName,
 		m.Path,
 		m.Size,
+		m.Modified,
 		m.UpdatedAt,
 		sqlf.Join(batchSpecMountConflictTarget, ", "),
 		sqlf.Join(batchSpecMountInsertColumns, ", "),
@@ -80,6 +83,7 @@ func (s *Store) upsertBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query
 		m.FileName,
 		m.Path,
 		m.Size,
+		m.Modified,
 		m.UpdatedAt,
 		sqlf.Join(batchSpecMountColumns, ", "),
 	), nil
@@ -88,10 +92,10 @@ func (s *Store) upsertBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query
 var upsertBatchSpecMountQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_mounts.go:UpsertBatchSpecMount
 INSERT INTO batch_spec_mounts (%s)
-VALUES (%s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (%s) WHERE TRUE
 DO UPDATE SET
-(%s) = (%s, %s, %s, %s, %s, %s)
+(%s) = (%s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 func (s *Store) CreateBatchSpecMount(ctx context.Context, mount *btypes.BatchSpecMount) (err error) {
@@ -127,6 +131,7 @@ func (s *Store) createBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query
 		m.FileName,
 		m.Path,
 		m.Size,
+		m.Modified,
 		m.CreatedAt,
 		m.UpdatedAt,
 		sqlf.Join(batchSpecMountColumns, ", "),
@@ -136,7 +141,7 @@ func (s *Store) createBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query
 var createBatchSpecMountQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_mounts.go:CreateBatchSpecMount
 INSERT INTO batch_spec_mounts (%s)
-VALUES (%s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 func (s *Store) UpdateBatchSpecMount(ctx context.Context, mount *btypes.BatchSpecMount) (err error) {
@@ -162,6 +167,7 @@ func (s *Store) updateBatchSpecMountQuery(m *btypes.BatchSpecMount) *sqlf.Query 
 		m.FileName,
 		m.Path,
 		m.Size,
+		m.Modified,
 		m.CreatedAt,
 		m.UpdatedAt,
 		m.ID,
@@ -172,7 +178,7 @@ func (s *Store) updateBatchSpecMountQuery(m *btypes.BatchSpecMount) *sqlf.Query 
 var updateBatchSpecMountQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_mounts.go:UpdateBatchSpecMount
 UPDATE batch_spec_mounts
-SET (%s) = (%s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s`
 
@@ -396,6 +402,7 @@ func scanBatchSpecMount(m *btypes.BatchSpecMount, s dbutil.Scanner) error {
 		&m.FileName,
 		&m.Path,
 		&m.Size,
+		&m.Modified,
 		&m.CreatedAt,
 		&m.UpdatedAt,
 	)
