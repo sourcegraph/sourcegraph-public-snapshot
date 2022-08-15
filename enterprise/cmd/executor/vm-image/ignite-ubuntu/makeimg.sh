@@ -35,21 +35,17 @@ EOF
     --privileged \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${TEMP_DATA_DIR}/script.sh:/script.sh:ro" \
-    -v "${TEMP_DATA_DIR}/out:/var/lib/firecracker" \
+    -v "$1:/var/lib/firecracker" \
     --cap-add=CAP_MKNOD \
     --entrypoint /bin/sh \
     docker \
     -- /script.sh
-
-  imageID="$(ls "${TEMP_DATA_DIR}"/out/image)"
-  mv "${TEMP_DATA_DIR}/out/image/${imageID}/image.ext4" "$1/image.ext4"
-  mv "${TEMP_DATA_DIR}/out/image/${imageID}/metadata.json" "$1/metadata.json"
 else
+  mkdir -p /var/lib/firecracker
+  mv /var/lib/firecracker /var/lib/firecracker.bak
   curl -fL https://github.com/weaveworks/ignite/releases/download/v0.10.0/ignite-amd64 --output "${TEMP_DATA_DIR}/ignite"
   chmod +x "${TEMP_DATA_DIR}/ignite"
   "${TEMP_DATA_DIR}/ignite" image import --runtime docker sourcegraph/ignite-ubuntu:insiders
-
-  imageID="$(ls /var/lib/firecracker/image)"
-  mv "/var/lib/firecracker/image/${imageID}/image.ext4" "$1/image.ext4"
-  mv "/var/lib/firecracker/image/${imageID}/metadata.json" "$1/metadata.json"
+  mv "/var/lib/firecracker" "$1"
+  mv /var/lib/firecracker.bak /var/lib/firecracker
 fi
