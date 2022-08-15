@@ -46,7 +46,7 @@ func newProgressSimple(bars []*ProgressBar, o *Output, opts *ProgressOpts) *prog
 	}
 
 	if opts != nil && opts.NoSpinner {
-		if p.Output.opts.Verbose {
+		if p.Output.verbose {
 			writeBars(p.Output, p.bars)
 		}
 		return p
@@ -59,7 +59,7 @@ func newProgressSimple(bars []*ProgressBar, o *Output, opts *ProgressOpts) *prog
 		for {
 			select {
 			case <-ticker.C:
-				if p.Output.opts.Verbose {
+				if p.Output.verbose {
 					writeBars(p.Output, p.bars)
 				}
 

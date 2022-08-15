@@ -10,8 +10,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log/logtest"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,8 +20,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	cs := make([]*btypes.BatchChange, 0, 4)
+func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	cs := make([]*btypes.BatchChange, 0, 5)
+
+	logger := logtest.Scoped(t)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(cs); i++ {
@@ -39,10 +42,20 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			}
 
 			if i != 0 {
-				// The very first batch change is a draft, the rest are not
+				// The very first batch change is a draft, the rest are not.
 				c.CreatorID = int32(i) + 50
 				c.LastAppliedAt = clock.Now()
 				c.LastApplierID = int32(i) + 99
+			}
+
+			// the fifth batch change is a closed batch change that wasn't applied.
+			// it shouldn't show up in the draft batch change list, it should instead
+			// show up in the closed batch change list.
+			if i == 5 {
+				c.ClosedAt = clock.Now()
+				c.LastAppliedAt = time.Time{}
+				c.LastApplierID = 0
+				c.CreatorID = 0
 			}
 
 			if i%2 == 0 {
@@ -97,7 +110,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		t.Run("ChangesetID", func(t *testing.T) {
-			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
 			})
 
@@ -112,28 +125,28 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		t.Run("RepoID", func(t *testing.T) {
-			repoStore := database.ReposWith(s)
-			esStore := database.ExternalServicesWith(s)
+			repoStore := database.ReposWith(logger, s)
+			esStore := database.ExternalServicesWith(logger, s)
 
-			repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-			repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-			repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo1 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo2 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo3 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 			if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
 				t.Fatal(err)
 			}
 
 			// 1 batch change + changeset is associated with the first repo
-			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo1.ID,
 				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
 			})
 
 			// 2 batch changes, each with 1 changeset, are associated with the second repo
-			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo2.ID,
 				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
 			})
-			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo2.ID,
 				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[1].ID}},
 			})
@@ -242,7 +255,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	t.Run("List", func(t *testing.T) {
 		t.Run("By ChangesetID", func(t *testing.T) {
 			for i := 1; i <= len(cs); i++ {
-				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[i-1].ID}},
 				})
 				opts := ListBatchChangesOpts{ChangesetID: changeset.ID}
@@ -268,28 +281,28 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		t.Run("By RepoID", func(t *testing.T) {
-			repoStore := database.ReposWith(s)
-			esStore := database.ExternalServicesWith(s)
+			repoStore := database.ReposWith(logger, s)
+			esStore := database.ExternalServicesWith(logger, s)
 
-			repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-			repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-			repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo1 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo2 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo3 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 			if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
 				t.Fatal(err)
 			}
 
 			// 1 batch change + changeset is associated with the first repo
-			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo1.ID,
 				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
 			})
 
 			// 2 batch changes, each with 1 changeset, are associated with the second repo
-			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo2.ID,
 				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
 			})
-			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo2.ID,
 				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[1].ID}},
 			})
@@ -442,7 +455,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}
 
 		draftAndClosed := []*btypes.BatchChange{}
-		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:2]...)
+		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:3]...)
 		draftAndClosed = append(draftAndClosed, reversedBatchChanges[len(reversedBatchChanges)-1:]...)
 
 		multiFilterTests := []struct {
@@ -681,11 +694,11 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	})
 
 	t.Run("GetBatchChangeDiffStat", func(t *testing.T) {
-		userID := ct.CreateTestUser(t, s.DatabaseDB(), false).ID
+		userID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := database.ReposWith(s)
-		esStore := database.ExternalServicesWith(s)
-		repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		repoStore := database.ReposWith(logger, s)
+		esStore := database.ExternalServicesWith(logger, s)
+		repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo.Private = true
 		if err := repoStore.Create(ctx, repo); err != nil {
 			t.Fatal(err)
@@ -693,7 +706,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		batchChangeID := cs[0].ID
 		var testDiffStatCount int32 = 10
-		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
 			DiffStatAdded:   testDiffStatCount,
@@ -719,7 +732,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}
 
 		// Now revoke repo access, and check that we don't see it in the diff stat anymore.
-		ct.MockRepoPermissions(t, s.DatabaseDB(), 0, repo.ID)
+		bt.MockRepoPermissions(t, s.DatabaseDB(), 0, repo.ID)
 		{
 			want := &diff.Stat{
 				Added:   0,
@@ -739,13 +752,13 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	})
 
 	t.Run("GetRepoDiffStat", func(t *testing.T) {
-		userID := ct.CreateTestUser(t, s.DatabaseDB(), false).ID
+		userID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := database.ReposWith(s)
-		esStore := database.ExternalServicesWith(s)
-		repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-		repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		repoStore := database.ReposWith(logger, s)
+		esStore := database.ExternalServicesWith(logger, s)
+		repo1 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+		repo2 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+		repo3 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 		if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
 			t.Fatal(err)
 		}
@@ -755,14 +768,14 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		var testDiffStatCount2 int32 = 20
 
 		// two changesets on the first repo
-		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo1.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount1,
 			DiffStatChanged: testDiffStatCount1,
 			DiffStatDeleted: testDiffStatCount1,
 		})
-		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo1.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
@@ -771,7 +784,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		// one changeset on the second repo
-		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo2.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
@@ -828,7 +841,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}
 
 		// Now revoke repo1 access, and check that we don't get a diff stat for it anymore.
-		ct.MockRepoPermissions(t, s.DatabaseDB(), 0, repo1.ID)
+		bt.MockRepoPermissions(t, s.DatabaseDB(), 0, repo1.ID)
 		{
 			want := &diff.Stat{
 				Added:   0,
@@ -865,9 +878,11 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	})
 }
 
-func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	orgID := ct.InsertTestOrg(t, s.DatabaseDB(), "user-delete-cascades")
-	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	orgID := bt.InsertTestOrg(t, s.DatabaseDB(), "user-delete-cascades")
+	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+
+	logger := logtest.Scoped(t)
 
 	t.Run("User delete", func(t *testing.T) {
 		// Set up two batch changes and specs: one in the user's namespace (which
@@ -914,7 +929,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		}
 
 		// Now we soft-delete the user.
-		if err := database.UsersWith(s).Delete(ctx, user.ID); err != nil {
+		if err := database.UsersWith(logger, s).Delete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -949,7 +964,9 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 
 			// Both batch specs should still be in place, at least until we add
 			// a foreign key constraint to batch_specs.namespace_user_id.
-			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{})
+			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -961,7 +978,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		testBatchChangeIsGone()
 
 		// Now we hard-delete the user.
-		if err := database.UsersWith(s).HardDelete(ctx, user.ID); err != nil {
+		if err := database.UsersWith(logger, s).HardDelete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 

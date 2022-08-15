@@ -1,13 +1,9 @@
 import { boolean, select } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
 import { Action, DropdownButton, Props } from './DropdownButton'
-
-const { add } = storiesOf('web/batches/DropdownButton', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const onTrigger = async (onDone: () => void) => onDone()
@@ -51,17 +47,34 @@ const commonKnobs: () => Pick<Props, 'disabled' | 'dropdownMenuPosition'> = () =
     ),
 })
 
-add('No actions', () => <WebStory>{() => <DropdownButton actions={[]} {...commonKnobs()} />}</WebStory>)
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('Single action', () => <WebStory>{() => <DropdownButton actions={[action]} {...commonKnobs()} />}</WebStory>)
+const config: Meta = {
+    title: 'web/batches/DropdownButton',
+    decorators: [decorator],
+}
 
-add('Multiple actions without default', () => (
+export default config
+
+export const NoActions: Story = () => <WebStory>{() => <DropdownButton actions={[]} {...commonKnobs()} />}</WebStory>
+
+NoActions.storyName = 'No actions'
+
+export const SingleAction: Story = () => (
+    <WebStory>{() => <DropdownButton actions={[action]} {...commonKnobs()} />}</WebStory>
+)
+
+SingleAction.storyName = 'Single action'
+
+export const MultipleActionsWithoutDefault: Story = () => (
     <WebStory>
         {() => <DropdownButton actions={[action, disabledAction, experimentalAction]} {...commonKnobs()} />}
     </WebStory>
-))
+)
 
-add('Multiple actions with default', () => (
+MultipleActionsWithoutDefault.storyName = 'Multiple actions without default'
+
+export const MultipleActionsWithDefault: Story = () => (
     <WebStory>
         {() => (
             <DropdownButton
@@ -71,4 +84,6 @@ add('Multiple actions with default', () => (
             />
         )}
     </WebStory>
-))
+)
+
+MultipleActionsWithDefault.storyName = 'Multiple actions with default'

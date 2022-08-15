@@ -154,6 +154,9 @@ Stores queries that were unsuccessful or otherwise flagged as incomplete or inco
  generated_from_capture_groups | boolean                     |           | not null | false
  generation_method             | text                        |           | not null | 
  just_in_time                  | boolean                     |           | not null | false
+ group_by                      | text                        |           |          | 
+ backfill_attempts             | integer                     |           | not null | 0
+ needs_migration               | boolean                     |           |          | 
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)
@@ -189,18 +192,21 @@ Data series that comprise code insights.
 
 # Table "public.insight_view"
 ```
-              Column               |          Type          | Collation | Nullable |                 Default                  
------------------------------------+------------------------+-----------+----------+------------------------------------------
- id                                | integer                |           | not null | nextval('insight_view_id_seq'::regclass)
- title                             | text                   |           |          | 
- description                       | text                   |           |          | 
- unique_id                         | text                   |           | not null | 
- default_filter_include_repo_regex | text                   |           |          | 
- default_filter_exclude_repo_regex | text                   |           |          | 
- other_threshold                   | double precision       |           |          | 
- presentation_type                 | presentation_type_enum |           | not null | 'LINE'::presentation_type_enum
- is_frozen                         | boolean                |           | not null | false
- default_filter_search_contexts    | text[]                 |           |          | 
+              Column               |            Type            | Collation | Nullable |                 Default                  
+-----------------------------------+----------------------------+-----------+----------+------------------------------------------
+ id                                | integer                    |           | not null | nextval('insight_view_id_seq'::regclass)
+ title                             | text                       |           |          | 
+ description                       | text                       |           |          | 
+ unique_id                         | text                       |           | not null | 
+ default_filter_include_repo_regex | text                       |           |          | 
+ default_filter_exclude_repo_regex | text                       |           |          | 
+ other_threshold                   | double precision           |           |          | 
+ presentation_type                 | presentation_type_enum     |           | not null | 'LINE'::presentation_type_enum
+ is_frozen                         | boolean                    |           | not null | false
+ default_filter_search_contexts    | text[]                     |           |          | 
+ series_sort_mode                  | series_sort_mode_enum      |           |          | 
+ series_sort_direction             | series_sort_direction_enum |           |          | 
+ series_limit                      | integer                    |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)
@@ -313,6 +319,7 @@ Records arbitrary metadata about events. Stored in a separate table as it is oft
  finished_at                   | timestamp with time zone |           |          | 
  success                       | boolean                  |           |          | 
  error_message                 | text                     |           |          | 
+ backfilled                    | boolean                  |           | not null | false
 Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
 
@@ -414,6 +421,17 @@ Stores ephemeral snapshot data of insight recordings.
 
 - LINE
 - PIE
+
+# Type series_sort_direction_enum
+
+- ASC
+- DESC
+
+# Type series_sort_mode_enum
+
+- RESULT_COUNT
+- LEXICOGRAPHICAL
+- DATE_ADDED
 
 # Type time_unit
 

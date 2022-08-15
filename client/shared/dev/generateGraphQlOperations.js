@@ -11,6 +11,7 @@ const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const SEARCH_FOLDER = path.resolve(ROOT_FOLDER, './client/search')
 const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
+const JETBRAINS_FOLDER = path.resolve(ROOT_FOLDER, './client/jetbrains')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
 const SHARED_DOCUMENTS_GLOB = [
@@ -35,6 +36,8 @@ const SEARCH_DOCUMENTS_GLOB = [`${SEARCH_FOLDER}/src/**/*.{ts,tsx}`]
 
 const VSCODE_DOCUMENTS_GLOB = [`${VSCODE_FOLDER}/src/**/*.{ts,tsx}`]
 
+const JETBRAINS_DOCUMENTS_GLOB = [`${JETBRAINS_FOLDER}/webview/src/**/*.{ts,tsx}`]
+
 // Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
 const ALL_DOCUMENTS_GLOB = [
   ...new Set([
@@ -43,6 +46,7 @@ const ALL_DOCUMENTS_GLOB = [
     ...BROWSER_DOCUMENTS_GLOB,
     ...SEARCH_DOCUMENTS_GLOB,
     ...VSCODE_DOCUMENTS_GLOB,
+    ...JETBRAINS_DOCUMENTS_GLOB,
   ]),
 ]
 
@@ -139,6 +143,17 @@ async function generateGraphQlOperations() {
             noExport: false,
             enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'VSCodeGraphQlOperations',
+          },
+          plugins: SHARED_PLUGINS,
+        },
+
+        [path.join(JETBRAINS_FOLDER, './webview/src/graphql-operations.ts')]: {
+          documents: JETBRAINS_DOCUMENTS_GLOB,
+          config: {
+            onlyOperationTypes: true,
+            noExport: false,
+            enumValues: '@sourcegraph/shared/src/graphql-operations',
+            interfaceNameForOperations: 'JetBrainsGraphQlOperations',
           },
           plugins: SHARED_PLUGINS,
         },

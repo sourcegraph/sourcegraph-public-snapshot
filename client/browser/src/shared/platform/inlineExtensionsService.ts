@@ -5,6 +5,7 @@ import { checkOk } from '@sourcegraph/http-client'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 
+import extensions from '../../../code-intel-extensions.json'
 import { isExtension } from '../context'
 
 /**
@@ -18,28 +19,32 @@ export const shouldUseInlineExtensions = (): boolean => isExtension && isFirefox
 /**
  * Get the manifest URL and script URL for a Sourcegraph extension which is inline (bundled with the browser add-on).
  */
-function getURLsForInlineExtension(extensionName: string): { manifestURL: string; scriptURL: string } {
+function getURLsForInlineExtension(extensionID: string): { manifestURL: string; scriptURL: string } {
+    const kebabCaseExtensionID = extensionID.replace(/^sourcegraph\//, 'sourcegraph-')
+
     return {
-        manifestURL: browser.extension.getURL(`extensions/${extensionName}/package.json`),
-        scriptURL: browser.extension.getURL(`extensions/${extensionName}/extension.js`),
+        manifestURL: browser.extension.getURL(`extensions/${kebabCaseExtensionID}/package.json`),
+        scriptURL: browser.extension.getURL(`extensions/${kebabCaseExtensionID}/extension.js`),
     }
 }
 
 export function getInlineExtensions(): Subscribable<ExecutableExtension[]> {
-    const extensionName = 'template'
-    const { manifestURL, scriptURL } = getURLsForInlineExtension('template')
-    const requestPromise = fetch(manifestURL)
-        .then(response => checkOk(response).json())
-        .then(
-            (manifest: ExtensionManifest) =>
-                [
-                    {
-                        id: `sourcegraph/${extensionName}`,
+    const promises: Promise<ExecutableExtension>[] = []
+
+    for (const extensionID of extensions) {
+        const { manifestURL, scriptURL } = getURLsForInlineExtension(extensionID)
+        promises.push(
+            fetch(manifestURL)
+                .then(response => checkOk(response).json())
+                .then(
+                    (manifest: ExtensionManifest): ExecutableExtension => ({
+                        id: extensionID,
                         manifest,
                         scriptURL,
-                    },
-                ] as ExecutableExtension[]
+                    })
+                )
         )
+    }
 
-    return from(requestPromise)
+    return from(Promise.all(promises))
 }

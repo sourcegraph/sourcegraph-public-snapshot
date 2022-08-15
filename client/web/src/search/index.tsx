@@ -4,7 +4,10 @@ import { Observable } from 'rxjs'
 import { replaceRange } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
+import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
 /**
@@ -27,14 +30,16 @@ export function parseSearchURLQuery(query: string): string | undefined {
 export function parseSearchURLPatternType(query: string): SearchPatternType | undefined {
     const searchParameters = new URLSearchParams(query)
     const patternType = searchParameters.get('patternType')
-    if (
-        patternType !== SearchPatternType.literal &&
-        patternType !== SearchPatternType.regexp &&
-        patternType !== SearchPatternType.structural
-    ) {
-        return undefined
+    switch (patternType) {
+        case SearchPatternType.literal:
+        case SearchPatternType.standard:
+        case SearchPatternType.regexp:
+        case SearchPatternType.structural:
+        case SearchPatternType.lucky:
+        case SearchPatternType.keyword:
+            return patternType
     }
-    return patternType
+    return undefined
 }
 
 function searchURLIsCaseSensitive(query: string): boolean {
@@ -67,21 +72,28 @@ export function parseSearchURL(
     urlSearchQuery: string,
     { appendCaseFilter = false }: { appendCaseFilter?: boolean } = {}
 ): ParsedSearchURL {
-    let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
-    let patternType = parseSearchURLPatternType(urlSearchQuery)
+    let queryInput = parseSearchURLQuery(urlSearchQuery) || ''
+    let patternTypeInput = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
 
-    const globalPatternType = findFilter(finalQuery, 'patterntype', FilterKind.Global)
+    const globalPatternType = findFilter(queryInput, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        finalQuery = replaceRange(finalQuery, globalPatternType.range)
-        patternType = globalPatternType.value.value as SearchPatternType
+        queryInput = replaceRange(queryInput, globalPatternType.range)
+        patternTypeInput = globalPatternType.value.value as SearchPatternType
     }
 
-    const globalCase = findFilter(finalQuery, 'case', FilterKind.Global)
+    let query = queryInput
+    const { queryInput: newQuery, patternTypeInput: patternType } = literalSearchCompatibility({
+        queryInput,
+        patternTypeInput: patternTypeInput || SearchPatternType.standard,
+    })
+    query = newQuery
+
+    const globalCase = findFilter(query, 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
-        finalQuery = replaceRange(finalQuery, globalCase.range)
+        query = replaceRange(query, globalCase.range)
 
         if (discreteValueAliases.yes.includes(globalCase.value.value)) {
             caseSensitive = true
@@ -92,11 +104,11 @@ export function parseSearchURL(
 
     if (appendCaseFilter) {
         // Invariant: If case:value was in the query, it is erased at this point. Add case:yes if needed.
-        finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
+        query = caseSensitive ? `${query} case:yes` : query
     }
 
     return {
-        query: finalQuery,
+        query,
         patternType,
         caseSensitive,
     }
@@ -125,6 +137,45 @@ export function quoteIfNeeded(string: string): string {
         return JSON.stringify(string)
     }
     return string
+}
+
+interface QueryCompatibility {
+    queryInput: string
+    patternTypeInput: SearchPatternType
+}
+
+export function literalSearchCompatibility({ queryInput, patternTypeInput }: QueryCompatibility): QueryCompatibility {
+    if (patternTypeInput !== SearchPatternType.literal) {
+        return { queryInput, patternTypeInput }
+    }
+    const tokens = scanSearchQuery(queryInput, false, SearchPatternType.standard)
+    if (tokens.type === 'error') {
+        return { queryInput, patternTypeInput }
+    }
+
+    if (!tokens.term.find(token => token.type === 'pattern' && token.delimited)) {
+        // If no /.../ pattern exists in this literal search, just return the query as-is.
+        return { queryInput, patternTypeInput: SearchPatternType.standard }
+    }
+
+    const newQueryInput = stringHuman(
+        tokens.term.map(token =>
+            token.type === 'pattern' && token.delimited
+                ? {
+                      type: 'filter',
+                      range: { start: 0, end: 0 },
+                      field: createLiteral('content', { start: 0, end: 0 }, false),
+                      value: createLiteral(`/${token.value}/`, { start: 0, end: 0 }, true),
+                      negated: false /** if `NOT` was used on this pattern, it's already preserved */,
+                  }
+                : token
+        )
+    )
+
+    return {
+        queryInput: newQueryInput,
+        patternTypeInput: SearchPatternType.standard,
+    }
 }
 
 export interface HomePanelsProps {

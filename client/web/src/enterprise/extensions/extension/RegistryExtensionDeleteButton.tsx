@@ -1,8 +1,7 @@
 import * as React from 'react'
 
+import { mdiDelete, mdiAlert } from '@mdi/js'
 import { upperFirst } from 'lodash'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -81,11 +80,16 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                     title={this.props.compact ? 'Delete extension' : ''}
                     variant="danger"
                 >
-                    <Icon as={DeleteIcon} /> {!this.props.compact && 'Delete extension'}
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> {!this.props.compact && 'Delete extension'}
                 </Button>
                 {isErrorLike(this.state.deletionOrError) && (
-                    <Button disabled={true} title={upperFirst(this.state.deletionOrError.message)} variant="danger">
-                        <Icon as={WarningIcon} />
+                    <Button
+                        aria-label={upperFirst(this.state.deletionOrError.message)}
+                        disabled={true}
+                        title={upperFirst(this.state.deletionOrError.message)}
+                        variant="danger"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiAlert} />
                     </Button>
                 )}
             </ButtonGroup>

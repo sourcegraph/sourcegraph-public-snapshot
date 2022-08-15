@@ -69,14 +69,25 @@ function highlightNodeHelper(
             case Node.TEXT_NODE: {
                 const nodeText = child.textContent!
 
+                // Unpack the string to be sliced into an array of code points before doing the slice.
+                // This allows match range highlighting to continue to work when Unicode characters (such as emojis)
+                // are present in a matched line.
+                const unicodeAwareSlice = (text: string, start: number, end: number): string =>
+                    [...text].slice(start, end).join('')
+
                 // Split the text node into a range before the highlight, a range overlapping with
                 // the highlight, and a range after the highlight. These ranges can be zero-length
-                const preHighlightedRange = nodeText.slice(0, Math.max(0, start - currentOffset))
-                const highlightedRange = nodeText.slice(
+                const preHighlightedRange = unicodeAwareSlice(nodeText, 0, Math.max(0, start - currentOffset))
+                const highlightedRange = unicodeAwareSlice(
+                    nodeText,
                     Math.max(0, start - currentOffset),
                     start - currentOffset + length
                 )
-                const postHighlightedRange = nodeText.slice(start - currentOffset + length)
+                const postHighlightedRange = unicodeAwareSlice(
+                    nodeText,
+                    start - currentOffset + length,
+                    nodeText.length + 1
+                )
 
                 // Create new nodes for each of the ranges with length > 0
                 const newNodes: Node[] = []
@@ -131,13 +142,14 @@ function highlightNodeHelper(
                     currentNode.insertBefore(newNode, currentNode.childNodes[index] || currentNode.firstChild)
                 }
 
-                currentOffset += nodeText.length
-                charsHighlighted += highlightedRange.length
-                if (highlightedRange.length > 0 && postHighlightedRange.length > 0) {
+                // Count highlighted characters in terms of code points, not bytes
+                currentOffset += [...nodeText].length
+                charsHighlighted += [...highlightedRange].length
+                if ([...highlightedRange].length > 0 && [...postHighlightedRange].length > 0) {
                     return {
                         highlightingCompleted: true,
-                        charsConsumed: nodeText.length,
-                        charsHighlighted: highlightedRange.length,
+                        charsConsumed: [...nodeText].length,
+                        charsHighlighted: [...highlightedRange].length,
                     }
                 }
 

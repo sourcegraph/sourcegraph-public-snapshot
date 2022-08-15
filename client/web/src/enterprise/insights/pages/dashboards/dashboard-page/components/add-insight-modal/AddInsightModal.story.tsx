@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../components/WebStory'
@@ -11,13 +11,19 @@ import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardTy
 
 import { AddInsightModal } from './AddInsightModal'
 
-const { add } = storiesOf('web/insights/AddInsightModal', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/insights/AddInsightModal',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
         },
-    })
+    },
+}
+
+export default config
 
 const dashboard: CustomInsightDashboard = {
     type: InsightsDashboardType.Custom,
@@ -56,7 +62,7 @@ const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
     getDashboardOwners: () => of([]),
 }
 
-add('AddInsightModal', () => {
+export const AddInsightModalStory: Story = () => {
     const [open, setOpen] = useState<boolean>(true)
 
     return (
@@ -64,4 +70,6 @@ add('AddInsightModal', () => {
             {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
         </CodeInsightsBackendStoryMock>
     )
-})
+}
+
+AddInsightModalStory.storyName = 'AddInsightModal'

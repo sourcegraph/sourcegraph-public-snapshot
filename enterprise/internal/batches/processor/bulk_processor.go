@@ -112,9 +112,16 @@ func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChangesetJob) e
 	if !ok {
 		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobCommentPayload{}, job.Payload)
 	}
+
+	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
+	if err != nil {
+		return errors.Wrap(err, "loading remote repo")
+	}
+
 	cs := &sources.Changeset{
 		Changeset:  b.ch,
 		TargetRepo: b.repo,
+		RemoteRepo: remoteRepo,
 	}
 	return b.css.CreateComment(ctx, cs, typedPayload.Message)
 }
@@ -161,9 +168,15 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobMergePayload{}, job.Payload)
 	}
 
+	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
+	if err != nil {
+		return errors.Wrap(err, "loading remote repo")
+	}
+
 	cs := &sources.Changeset{
 		Changeset:  b.ch,
 		TargetRepo: b.repo,
+		RemoteRepo: remoteRepo,
 	}
 	if err := b.css.MergeChangeset(ctx, cs, typedPayload.Squash); err != nil {
 		return err
@@ -190,9 +203,15 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 }
 
 func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
+	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
+	if err != nil {
+		return errors.Wrap(err, "loading remote repo")
+	}
+
 	cs := &sources.Changeset{
 		Changeset:  b.ch,
 		TargetRepo: b.repo,
+		RemoteRepo: remoteRepo,
 	}
 	if err := b.css.CloseChangeset(ctx, cs); err != nil {
 		return err

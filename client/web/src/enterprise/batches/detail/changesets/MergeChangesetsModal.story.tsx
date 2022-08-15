@@ -1,21 +1,26 @@
 import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
+import { Story, Meta, DecoratorFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { MergeChangesetsModal } from './MergeChangesetsModal'
 
-const { add } = storiesOf('web/batches/details/MergeChangesetsModal', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/details/MergeChangesetsModal',
+    decorators: [decorator],
+}
+
+export default config
 
 const mergeChangesets = () => {
     action('MergeChangesets')
     return Promise.resolve()
 }
 
-add('Confirmation', () => (
+export const Confirmation: Story = () => (
     <WebStory>
         {props => (
             <MergeChangesetsModal
@@ -28,4 +33,4 @@ add('Confirmation', () => (
             />
         )}
     </WebStory>
-))
+)

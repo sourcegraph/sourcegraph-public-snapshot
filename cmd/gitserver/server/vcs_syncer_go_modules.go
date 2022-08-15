@@ -8,8 +8,11 @@ import (
 	"os"
 	"path"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"golang.org/x/mod/module"
 	modzip "golang.org/x/mod/zip"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -24,14 +27,15 @@ func NewGoModulesSyncer(
 	svc *dependencies.Service,
 	client *gomodproxy.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseGoDependency("sourcegraph.com/placeholder@v0.0.0")
+	placeholder, err := reposource.ParseGoVersionedPackage("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
 
-	return &vcsDependenciesSyncer{
+	return &vcsPackagesSyncer{
+		logger:      log.Scoped("GoModulesSyncer", "sync Go modules"),
 		typ:         "go_modules",
-		scheme:      dependencies.GoModulesScheme,
+		scheme:      dependencies.GoPackagesScheme,
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Dependencies,
@@ -43,29 +47,29 @@ type goModulesSyncer struct {
 	client *gomodproxy.Client
 }
 
-func (goModulesSyncer) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParseGoDependency(dep)
+func (s goModulesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseGoVersionedPackage(string(name) + "@" + version)
 }
 
-func (goModulesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (goModulesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseGoVersionedPackage(dep)
+}
+
+func (goModulesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return reposource.ParseGoDependencyFromName(name)
+}
+
+func (goModulesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromRepoName(repoName)
 }
 
-func (s *goModulesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	mod, err := s.client.GetVersion(ctx, name, version)
-	if err != nil {
-		return nil, err
-	}
-	return reposource.NewGoDependency(*mod), nil
-}
-
-func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
+func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
 	zipBytes, err := s.client.GetZip(ctx, dep.PackageSyntax(), dep.PackageVersion())
 	if err != nil {
 		return errors.Wrap(err, "get zip")
 	}
 
-	mod := dep.(*reposource.GoDependency).Module
+	mod := dep.(*reposource.GoVersionedPackage).Module
 	if err = unzip(mod, zipBytes, dir); err != nil {
 		return errors.Wrap(err, "failed to unzip go module")
 	}

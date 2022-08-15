@@ -6,15 +6,17 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // InitStore initializes and returns a *store.Store instance.
@@ -23,8 +25,9 @@ func InitStore() (*store.Store, error) {
 }
 
 var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
+	logger := log.Scoped("store.batches", "batches store")
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("store.batches", "batches store"),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -34,7 +37,7 @@ var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
 		return nil, err
 	}
 
-	return store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey), nil
+	return store.New(database.NewDB(logger, db), observationContext, keyring.Default().BatchChangesCredentialKey), nil
 })
 
 // InitReconcilerWorkerStore initializes and returns a dbworker.Store instance for the reconciler worker.
@@ -77,12 +80,12 @@ var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (dbworkers
 	return store.NewBulkOperationWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
 })
 
-// InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a store.BatchSpecWorkspaceExecutionWorkerStore instance for the batch spec workspace execution worker.
-func InitBatchSpecWorkspaceExecutionWorkerStore() (store.BatchSpecWorkspaceExecutionWorkerStore, error) {
+// InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a dbworkerstore.Store instance for the batch spec workspace execution worker.
+func InitBatchSpecWorkspaceExecutionWorkerStore() (dbworkerstore.Store, error) {
 	return initBatchSpecWorkspaceExecutionWorkerStore.Init()
 }
 
-var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (store.BatchSpecWorkspaceExecutionWorkerStore, error) {
+var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.execution", "the batch spec workspace execution worker store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, H3 } from '@sourcegraph/wildcard'
 
 import { deleteExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -74,9 +74,9 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<
             aria-describedby={`description--remove-${serviceName}-code-host`}
             onDismiss={onDidCancel}
         >
-            <Typography.H3 id={`heading--remove-${serviceName}-code-host`} className="text-danger mb-4">
+            <H3 id={`heading--remove-${serviceName}-code-host`} className="text-danger mb-4">
                 Remove connection with {serviceName}?
-            </Typography.H3>
+            </H3>
             <Form onSubmit={onConnectionRemove}>
                 <div id={`description--remove-${serviceName}-code-host`} className="form-group mb-4">
                     {getWarningMessage(serviceName, orgName, repoCount)}

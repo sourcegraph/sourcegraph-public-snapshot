@@ -1,12 +1,12 @@
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Link, Typography } from '@sourcegraph/wildcard'
+import { Alert, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -16,7 +16,6 @@ import { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
 import { getReturnTo } from './SignInSignUpCommon'
 import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
@@ -32,7 +31,6 @@ interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
     context: Pick<SourcegraphContext, 'authProviders'>
     telemetryService: TelemetryService
-    onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
     setSelectedSearchContextSpec: (spec: string) => void
 }
 
@@ -57,7 +55,6 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
     authenticatedUser: user,
     context,
     telemetryService,
-    onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
 }) => {
     const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting(
@@ -67,11 +64,11 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
 
     const isOAuthCall = useRef(false)
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const debug = new URLSearchParams(location.search).get('debug')
 
-    const goToSearch = (): void => history.push(getReturnTo(location))
+    const goToSearch = (): void => navigate(getReturnTo(location))
 
     useEffect(() => {
         eventLogger.logViewEvent(getPostSignUpEvent())
@@ -143,8 +140,8 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
                                     </Alert>
                                 )}
-                                <Typography.H2>Get started with Sourcegraph</Typography.H2>
-                                <p className="text-muted pb-3">Follow these steps to set up your account</p>
+                                <H2>Get started with Sourcegraph</H2>
+                                <Text className="text-muted pb-3">Follow these steps to set up your account</Text>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">
                                 <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={3}>
@@ -172,8 +169,8 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         </StepPanel>
                                         <StepPanel>
                                             <div className={classNames('mt-3', styles.container)}>
-                                                <Typography.H3>Add repositories</Typography.H3>
-                                                <p className="text-muted mb-4">
+                                                <H3>Add repositories</H3>
+                                                <Text className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
                                                     We’ll sync and index these repositories so you can search your code
                                                     all in one place.
@@ -185,7 +182,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                                         {' '}
                                                         Learn more
                                                     </Link>
-                                                </p>
+                                                </Text>
                                                 <SelectAffiliatedRepos
                                                     authenticatedUser={user}
                                                     onRepoSelectionModeChange={setRepoSelectionMode}
@@ -201,9 +198,6 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                                 className={styles.container}
                                                 user={user}
                                                 repoSelectionMode={repoSelectionMode}
-                                                onUserExternalServicesOrRepositoriesUpdate={
-                                                    onUserExternalServicesOrRepositoriesUpdate
-                                                }
                                                 setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                                                 onError={onError}
                                                 onFinish={finishWelcomeFlow}

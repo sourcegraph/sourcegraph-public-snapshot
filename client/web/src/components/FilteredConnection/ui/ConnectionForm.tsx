@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useAutoFocus } from '@sourcegraph/wildcard'
+import { useAutoFocus, Input } from '@sourcegraph/wildcard'
 
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
 
@@ -25,6 +25,9 @@ export interface ConnectionFormProps {
 
     /** Value of the <input> element */
     inputValue?: string
+
+    /** aria-label for the <input> element */
+    inputAriaLabel?: string
 
     /** Called when the <input> element value changes */
     onInputChange?: React.ChangeEventHandler<HTMLInputElement>
@@ -60,6 +63,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             formClassName,
             inputClassName,
             inputPlaceholder,
+            inputAriaLabel,
             inputValue,
             onInputChange,
             autoFocus,
@@ -82,11 +86,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
 
         return (
             <Form
-                className={classNames(
-                    'w-100 d-inline-flex justify-content-between flex-row',
-                    !compact && styles.noncompact,
-                    formClassName
-                )}
+                className={classNames(styles.form, !compact && styles.noncompact, formClassName)}
                 onSubmit={handleSubmit}
             >
                 {filters && onValueSelect && values && (
@@ -95,8 +95,8 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                     </FilterControl>
                 )}
                 {!hideSearch && (
-                    <input
-                        className={classNames('form-control', inputClassName)}
+                    <Input
+                        className={classNames(styles.input, inputClassName)}
                         type="search"
                         placeholder={inputPlaceholder}
                         name="query"
@@ -108,6 +108,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                         autoCapitalize="off"
                         ref={mergedReference}
                         spellCheck={false}
+                        aria-label={inputAriaLabel}
                     />
                 )}
             </Form>

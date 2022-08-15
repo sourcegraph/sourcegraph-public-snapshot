@@ -4,7 +4,7 @@ import * as H from 'history'
 
 import { Connection } from './ConnectionType'
 import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './ui'
-import { hasID, hasNextPage } from './utils'
+import { hasID, hasNextPage, hasDisplayName } from './utils'
 
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
@@ -82,6 +82,9 @@ export interface ConnectionNodesDisplayProps {
     compact?: boolean
 
     withCenteredSummary?: boolean
+
+    /** A function that generates an aria label given a node display name */
+    ariaLabelFunction?: (displayName: string) => string
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
@@ -117,6 +120,7 @@ export const getTotalCount = <N,>({ totalCount, nodes, pageInfo }: Connection<N>
 export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     nodeComponent: NodeComponent,
     nodeComponentProps,
+    ariaLabelFunction,
     listComponent = 'ul',
     listClassName,
     summaryClassName,
@@ -157,7 +161,12 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     )
 
     const nodes = connection.nodes.map((node, index) => (
-        <NodeComponent key={hasID(node) ? node.id : index} node={node} {...nodeComponentProps!} />
+        <NodeComponent
+            key={hasID(node) ? node.id : index}
+            node={node}
+            ariaLabel={hasDisplayName(node) && ariaLabelFunction?.(node.displayName)}
+            {...nodeComponentProps!}
+        />
     ))
 
     return (

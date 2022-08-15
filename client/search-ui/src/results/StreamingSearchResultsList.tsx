@@ -4,19 +4,16 @@ import classNames from 'classnames'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult } from '@sourcegraph/search-ui'
+import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileSearchResult } from '@sourcegraph/shared/src/components/FileSearchResult'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -32,6 +29,8 @@ import {
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { luckySearchClickedEvent } from '../util/events'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
@@ -69,6 +68,11 @@ export interface StreamingSearchResultsListProps
      * Classname to be applied to the container of a search result.
      */
     resultClassName?: string
+
+    /**
+     * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
+     */
+    luckySearchEnabled?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -92,6 +96,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
+    luckySearchEnabled,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -103,8 +108,27 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
             // This data ends up in Prometheus and is not part of the ping payload.
             telemetryService.log('search.ranking.result-clicked', { index, type })
+
+            // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
+            if (luckySearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
+                telemetryService.log('SearchResultClickedAutoNone')
+            }
+
+            if (
+                luckySearchEnabled &&
+                results?.alert?.kind === 'lucky-search-queries' &&
+                results?.alert?.title &&
+                results.alert.proposedQueries
+            ) {
+                const event = luckySearchClickedEvent(
+                    results.alert.title,
+                    results.alert.proposedQueries.map(entry => entry.description || '')
+                )
+
+                telemetryService.log(event)
+            }
         },
-        [telemetryService]
+        [telemetryService, results, luckySearchEnabled]
     )
 
     const renderResult = useCallback(
@@ -115,6 +139,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 case 'symbol':
                     return (
                         <FileSearchResult
+                            index={index}
                             location={location}
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
@@ -130,27 +155,29 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             hoverifier={hoverifier}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
                 case 'commit':
                     return (
                         <CommitSearchResult
-                            icon={SourceCommitIcon}
+                            index={index}
                             result={result}
-                            repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
                 case 'repo':
                     return (
                         <RepoSearchResult
+                            index={index}
                             result={result}
-                            repoName={result.repository}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
+                            as="li"
                         />
                     )
             }
@@ -158,7 +185,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         [
             location,
             telemetryService,
-            logSearchResultClicked,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
@@ -167,6 +193,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             hoverifier,
             openMatchesInNewTab,
             resultClassName,
+            logSearchResultClicked,
         ]
     )
 
@@ -184,7 +211,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 </div>
             </div>
             <VirtualList<SearchMatch>
-                className="mt-2"
+                as="ol"
+                aria-label="Search results"
+                className={classNames('mt-2 mb-0', styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
                 items={results?.results || []}
@@ -214,7 +243,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 }
 
 function itemKey(item: SearchMatch): string {
-    if (item.type === 'content' || item.type === 'symbol') {
+    if (item.type === 'content') {
+        const lineStart = item.lineMatches.length > 0 ? item.lineMatches[0].lineNumber : 0
+        return `file:${getMatchUrl(item)}:${lineStart}`
+    }
+    if (item.type === 'symbol') {
         return `file:${getMatchUrl(item)}`
     }
     return getMatchUrl(item)

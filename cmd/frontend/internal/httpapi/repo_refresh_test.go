@@ -12,7 +12,7 @@ import (
 )
 
 func TestRepoRefresh(t *testing.T) {
-	c := newTest()
+	c := newTest(t)
 
 	enqueueRepoUpdateCount := map[api.RepoName]int{}
 	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {

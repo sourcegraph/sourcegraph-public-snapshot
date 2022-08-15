@@ -160,7 +160,7 @@ describe('EmailAction', () => {
     })
 
     describe('Send test email', () => {
-        const mockedVars: SendTestEmailVariables = {
+        const mockedVariables: SendTestEmailVariables = {
             namespace: props.authenticatedUser.id,
             description: props.monitorName,
             email: {
@@ -187,7 +187,7 @@ describe('EmailAction', () => {
             const mockedResponse: MockedResponse<SendTestEmailResult> = {
                 request: {
                     query: SEND_TEST_EMAIL,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 result: { data: { triggerTestEmailAction: { alwaysNil: null } } },
             }
@@ -217,7 +217,7 @@ describe('EmailAction', () => {
             const mockedResponse: MockedResponse<SendTestEmailResult> = {
                 request: {
                     query: SEND_TEST_EMAIL,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 error: new Error('An error occurred'),
             }

@@ -7,17 +7,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type CodeIntelResolver interface {
-	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
-	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
-	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
-	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
-
-	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitBlobCodeIntelSupportResolver, error)
 	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitTreeCodeIntelSupportResolver, error)
@@ -48,12 +43,16 @@ type ExecutorResolver interface {
 	ExecutorResolver() executor.Resolver
 }
 
+type CodeNavResolver interface {
+	CodeNavResolver() codenav.Resolver
+}
+
 type UploadsServiceResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
-	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
 	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
 	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 }
 type PoliciesServiceResolver interface {
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
@@ -73,6 +72,7 @@ type LSIFUploadsQueryArgs struct {
 	DependencyOf    *graphql.ID
 	DependentOf     *graphql.ID
 	After           *string
+	IncludeDeleted  *bool
 }
 
 type LSIFRepositoryUploadsQueryArgs struct {
@@ -90,6 +90,7 @@ type LSIFUploadRetentionPolicyMatchesArgs struct {
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
@@ -104,6 +105,7 @@ type LSIFUploadResolver interface {
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
+	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -121,6 +123,26 @@ type LSIFUploadDocumentPathsConnectionResolver interface {
 	TotalCount(ctx context.Context) (*int32, error)
 }
 
+type LSIFUploadsAuditLogsResolver interface {
+	LogTimestamp() DateTime
+	UploadDeletedAt() *DateTime
+	Reason() *string
+	ChangedColumns() []AuditLogColumnChange
+	UploadID() graphql.ID
+	InputCommit() string
+	InputRoot() string
+	InputIndexer() string
+	UploadedAt() DateTime
+	Operation() string
+	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
+}
+
+type AuditLogColumnChange interface {
+	Column() string
+	Old() *string
+	New() *string
+}
+
 type LSIFIndexesQueryArgs struct {
 	graphqlutil.ConnectionArgs
 	Query *string
@@ -136,6 +158,7 @@ type LSIFRepositoryIndexesQueryArgs struct {
 type LSIFIndexResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	InputIndexer() string
 	Indexer() CodeIntelIndexerResolver

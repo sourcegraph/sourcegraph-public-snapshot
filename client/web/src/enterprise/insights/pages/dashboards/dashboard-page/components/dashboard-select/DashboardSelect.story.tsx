@@ -1,19 +1,25 @@
 import { useState } from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../components/WebStory'
 import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core/types'
 
 import { DashboardSelect } from './DashboardSelect'
 
-const { add } = storiesOf('web/insights/DashboardSelect', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/insights/DashboardSelect',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
         },
-    })
+    },
+}
+
+export default config
 
 const DASHBOARDS: InsightDashboard[] = [
     {
@@ -60,8 +66,10 @@ const DASHBOARDS: InsightDashboard[] = [
     },
 ]
 
-add('DashboardSelect', () => {
+export const DashboardSelectStory: Story = () => {
     const [value, setValue] = useState<string>()
 
     return <DashboardSelect value={value} dashboards={DASHBOARDS} onSelect={dashboard => setValue(dashboard.id)} />
-})
+}
+
+DashboardSelectStory.storyName = 'DashboardSelect'

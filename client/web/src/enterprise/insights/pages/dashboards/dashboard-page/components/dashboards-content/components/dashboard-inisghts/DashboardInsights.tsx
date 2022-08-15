@@ -3,6 +3,7 @@ import React, { useContext, useMemo } from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../../../../../../../../stores'
 import { SmartInsightsViewGrid, InsightContext } from '../../../../../../../components'
 import { CodeInsightsBackendContext, InsightDashboard } from '../../../../../../../core'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
@@ -18,9 +19,17 @@ export const DashboardInsights: React.FunctionComponent<React.PropsWithChildren<
     const { telemetryService, currentDashboard, dashboards, className, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
+    const { codeInsightsCompute = false } = useExperimentalFeatures()
 
     const insights = useObservable(
-        useMemo(() => getInsights({ dashboardId: currentDashboard.id }), [getInsights, currentDashboard.id])
+        useMemo(
+            () =>
+                getInsights({
+                    dashboardId: currentDashboard.id,
+                    withCompute: codeInsightsCompute,
+                }),
+            [getInsights, codeInsightsCompute, currentDashboard.id]
+        )
     )
 
     const insightContextValue = useMemo(() => ({ currentDashboard, dashboards }), [currentDashboard, dashboards])

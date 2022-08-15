@@ -53,7 +53,7 @@ export const queryExecutors = (
     { query, active, first, after }: GQL.IExecutorsOnQueryArguments,
     client: ApolloClient<object>
 ): Observable<ExecutorConnection> => {
-    const vars: ExecutorsVariables = {
+    const variables: ExecutorsVariables = {
         query: query ?? null,
         active: active ?? null,
         first: first ?? null,
@@ -63,7 +63,7 @@ export const queryExecutors = (
     return from(
         client.query<ExecutorsResult>({
             query: getDocumentNode(EXECUTORS),
-            variables: vars,
+            variables,
         })
     ).pipe(
         map(({ data }) => data),

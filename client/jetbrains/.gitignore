@@ -35,3 +35,6 @@ fabric.properties
 
 # JavaScript resources
 src/main/resources/dist/*
+
+# VSCode langserver artifacts
+/bin/

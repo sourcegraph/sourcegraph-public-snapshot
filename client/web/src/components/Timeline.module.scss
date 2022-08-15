@@ -1,30 +1,36 @@
-.executor-task-details {
-    border-left: 4px solid var(--border-color);
-    margin-left: 1.5rem;
-    margin-top: -1rem;
-    margin-bottom: -1rem;
-    padding-left: 2rem;
-    padding-top: 1rem;
-    padding-bottom: 2rem;
+.details {
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    border-left: 0.25rem solid var(--border-color);
+    margin: -1rem 1rem;
+    padding: 1rem 0 2rem 2rem;
+
+    &:last-child {
+        padding-bottom: 1rem;
+    }
 }
 
-.executor-task-icon {
+.icon {
     border-radius: 50%;
     width: 2.25rem;
     height: 2.25rem;
     color: #ffffff;
     padding-top: 0.375rem;
+    margin: 0.5rem 0.5rem 0.5rem 0;
+    isolation: isolate;
 
     svg {
         display: block;
         margin: 0 auto;
+
+        --icon-inline-size: 1.5rem;
     }
 }
 
-.executor-task-separator {
+.separator {
     height: 2.25rem;
-    border-left: 4px solid var(--border-color);
-    margin-left: 1.5rem;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    border-left: 0.25rem solid var(--border-color);
+    margin-left: 1rem;
     margin-top: -1rem;
     margin-bottom: -1rem;
 }

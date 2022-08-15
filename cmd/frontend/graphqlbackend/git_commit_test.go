@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestGitCommitResolver(t *testing.T) {
@@ -60,11 +59,11 @@ func TestGitCommitResolver(t *testing.T) {
 	})
 
 	t.Run("Lazy loading", func(t *testing.T) {
-		git.Mocks.GetCommit = func(api.CommitID) (*gitdomain.Commit, error) {
+		gitserver.Mocks.GetCommit = func(api.CommitID) (*gitdomain.Commit, error) {
 			return commit, nil
 		}
 		t.Cleanup(func() {
-			git.Mocks.GetCommit = nil
+			gitserver.Mocks.GetCommit = nil
 		})
 
 		for _, tc := range []struct {
@@ -156,7 +155,6 @@ func TestGitCommitFileNames(t *testing.T) {
 	}
 	defer func() {
 		backend.Mocks = backend.MockServices{}
-		git.ResetMocks()
 		gitserver.ResetMocks()
 	}()
 

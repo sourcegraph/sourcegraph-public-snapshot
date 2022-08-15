@@ -4,9 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -28,6 +29,7 @@ type CachedLocationResolver struct {
 	sync.RWMutex
 	children map[api.RepoID]*cachedRepositoryResolver
 	db       database.DB
+	logger   log.Logger
 }
 
 type cachedRepositoryResolver struct {
@@ -45,6 +47,7 @@ type cachedCommitResolver struct {
 // NewCachedLocationResolver creates a location resolver with an empty cache.
 func NewCachedLocationResolver(db database.DB) *CachedLocationResolver {
 	return &CachedLocationResolver{
+		logger:   log.Scoped("CachedLocationResolver", ""),
 		db:       db,
 		children: map[api.RepoID]*cachedRepositoryResolver{},
 	}
@@ -201,7 +204,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 // repo that has since been deleted. This method must be called only when constructing a resolver to
 // populate the cache.
 func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*gql.RepositoryResolver, error) {
-	repo, err := backend.NewRepos(r.db).Get(ctx, id)
+	repo, err := backend.NewRepos(r.logger, r.db).Get(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -241,7 +244,7 @@ func (r *CachedLocationResolver) resolvePath(commitResolver *gql.GitCommitResolv
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
 // resulting list may be smaller than the input list as any locations with a commit not known by
 // gitserver will be skipped.
-func resolveLocations(ctx context.Context, locationResolver *CachedLocationResolver, locations []resolvers.AdjustedLocation) ([]gql.LocationResolver, error) {
+func resolveLocations(ctx context.Context, locationResolver *CachedLocationResolver, locations []AdjustedLocation) ([]gql.LocationResolver, error) {
 	resolvedLocations := make([]gql.LocationResolver, 0, len(locations))
 	for i := range locations {
 		resolver, err := resolveLocation(ctx, locationResolver, locations[i])
@@ -260,7 +263,7 @@ func resolveLocations(ctx context.Context, locationResolver *CachedLocationResol
 
 // resolveLocation creates a LocationResolver for the given adjusted location. This function may return a
 // nil resolver if the location's commit is not known by gitserver.
-func resolveLocation(ctx context.Context, locationResolver *CachedLocationResolver, location resolvers.AdjustedLocation) (gql.LocationResolver, error) {
+func resolveLocation(ctx context.Context, locationResolver *CachedLocationResolver, location AdjustedLocation) (gql.LocationResolver, error) {
 	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.AdjustedCommit, location.Path)
 	if err != nil || treeResolver == nil {
 		return nil, err

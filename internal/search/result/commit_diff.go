@@ -2,6 +2,7 @@ package result
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,10 +27,7 @@ func (cd *CommitDiffMatch) RepoName() types.MinimalRepo {
 // path when the associated file is modified. When it is created or removed, it
 // returns the path of the associated file being created or removed.
 func (cm *CommitDiffMatch) Path() string {
-	var nonEmptyPath string
-	if cm.OrigName == "/dev/null" {
-		nonEmptyPath = cm.NewName
-	}
+	nonEmptyPath := cm.NewName
 	if cm.NewName == "/dev/null" {
 		nonEmptyPath = cm.OrigName
 	}
@@ -114,6 +112,30 @@ func (cm *CommitDiffMatch) Select(path filter.SelectPath) Match {
 
 func (cm *CommitDiffMatch) searchResultMarker() {}
 
+// FormatDiffFiles inverts ParseDiffString
+func FormatDiffFiles(res []DiffFile) string {
+	var buf strings.Builder
+	for _, diffFile := range res {
+		buf.WriteString(diffFile.OrigName)
+		buf.WriteByte(' ')
+		buf.WriteString(diffFile.NewName)
+		buf.WriteByte('\n')
+		for _, hunk := range diffFile.Hunks {
+			fmt.Fprintf(&buf, "@@ -%d,%d +%d,%d @@", hunk.OldStart, hunk.OldCount, hunk.NewStart, hunk.NewCount)
+			if hunk.Header != "" {
+				// Only add a space before the header if the header is non-empty
+				fmt.Fprintf(&buf, " %s", hunk.Header)
+			}
+			buf.WriteByte('\n')
+			for _, line := range hunk.Lines {
+				buf.WriteString(line)
+				buf.WriteByte('\n')
+			}
+		}
+	}
+	return buf.String()
+}
+
 func ParseDiffString(diff string) (res []DiffFile, err error) {
 	const (
 		INIT = iota
@@ -123,7 +145,17 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 
 	state := INIT
 	var currentDiff DiffFile
+	finishDiff := func() {
+		res = append(res, currentDiff)
+		currentDiff = DiffFile{}
+	}
+
 	var currentHunk Hunk
+	finishHunk := func() {
+		currentDiff.Hunks = append(currentDiff.Hunks, currentHunk)
+		currentHunk = Hunk{}
+	}
+
 	for _, line := range strings.Split(diff, "\n") {
 		if len(line) == 0 {
 			continue
@@ -140,12 +172,12 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 			case '-', '+', ' ':
 				currentHunk.Lines = append(currentHunk.Lines, line)
 			case '@':
-				currentDiff.Hunks = append(currentDiff.Hunks, currentHunk)
-				currentHunk = Hunk{}
+				finishHunk()
 				currentHunk.OldStart, currentHunk.OldCount, currentHunk.NewStart, currentHunk.NewCount, currentHunk.Header, err = parseHunkHeader(line)
 				state = IN_HUNK
 			default:
-				res = append(res, currentDiff)
+				finishHunk()
+				finishDiff()
 				currentDiff.OrigName, currentDiff.NewName, err = splitDiffFiles(line)
 				state = IN_DIFF
 			}
@@ -154,6 +186,8 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 			return nil, err
 		}
 	}
+	finishHunk()
+	finishDiff()
 
 	return res, nil
 }

@@ -1,7 +1,7 @@
 # Sourcegraph browser extension
 
 The [open-source](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser) Sourcegraph
-browser extension adds code intelligence to files and diffs on GitHub, GitHub
+browser extension adds code navigation to files and diffs on GitHub, GitHub
 Enterprise, GitLab, Phabricator, Bitbucket Server and Bitbucket Data Center.
 
 <p>
@@ -27,17 +27,17 @@ Enterprise, GitLab, Phabricator, Bitbucket Server and Bitbucket Data Center.
 <video class="theme-dark-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.webm" type="video/webm">
   <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.mp4" type="video/mp4">
-  <p>Sourcegraph browser extension adds code intelligence to your code host</p>
+  <p>Sourcegraph browser extension adds code navigation to your code host</p>
 </video>
 <video class="theme-light-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.webm" type="video/webm">
   <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.mp4" type="video/mp4">
-  <p>Sourcegraph browser extension adds code intelligence to your code host</p>
+  <p>Sourcegraph browser extension adds code navigation to your code host</p>
 </video>
 
 ## Features
 
-### Code intelligence
+### Code navigation
 
 When you hover your mouse over code in files, diffs, pull requests, etc., the Sourcegraph extension displays a tooltip with:
 
@@ -117,7 +117,7 @@ Follow these instructions:
 
 The most common problem is:
 
-### No code intelligence or buttons ("View repository", "View file", etc.) are displayed on the code host
+### No code navigation or buttons ("View repository", "View file", etc.) are displayed on the code host
 
 ![Browser extension not working on code host](https://sourcegraphstatic.com/BrowserExtensionNotWorkingCodeHost.gif)
 
@@ -171,7 +171,7 @@ If you see this error displayed beneath the Url field of the sourcegraph extensi
 
 ## Privacy
 
-Sourcegraph integrations will only connect to Sourcegraph.com as required to provide code intelligence or other functionality on public code. As a result, no private code, private repository names, usernames, or any other specific data is sent to Sourcegraph.com.
+Sourcegraph integrations will only connect to Sourcegraph.com as required to provide code navigation or other functionality on public code. As a result, no private code, private repository names, usernames, or any other specific data is sent to Sourcegraph.com.
 
 If connected to a **private, self-hosted Sourcegraph instance**, Sourcegraph integrations never send any logs, pings, usage statistics, or telemetry to Sourcegraph.com. They will send notifications of usage to that private Sourcegraph instance only. This allows the site admins to see usage statistics.
 

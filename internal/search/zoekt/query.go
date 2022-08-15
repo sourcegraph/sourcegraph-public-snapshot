@@ -1,6 +1,8 @@
 package zoekt
 
 import (
+	"regexp/syntax"
+
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 
@@ -9,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	zoekt "github.com/google/zoekt/query"
+	zoekt "github.com/sourcegraph/zoekt/query"
 )
 
 func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Features, typ search.IndexedRequestType) (q zoekt.Q, err error) {
@@ -34,7 +36,6 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
 
 	var and []zoekt.Q
 	if q != nil {
@@ -59,25 +60,12 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		and = append(and, &zoekt.Not{Child: q})
 	}
 
-	// For conditionals that happen on a repo we can use type:repo queries. eg
-	// (type:repo file:foo) (type:repo file:bar) will match all repos which
-	// contain a filename matching "foo" and a filename matchinb "bar".
-	//
-	// Note: (type:repo file:foo file:bar) will only find repos with a
-	// filename containing both "foo" and "bar".
-	for _, i := range filesReposMustInclude {
-		q, err := FileRe(i, isCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoekt.Type{Type: zoekt.TypeRepo, Child: q})
+	var repoHasFilters []zoekt.Q
+	for _, filter := range b.RepoHasFileContent() {
+		repoHasFilters = append(repoHasFilters, QueryForFileContentArgs(filter, isCaseSensitive))
 	}
-	for _, i := range filesReposMustExclude {
-		q, err := FileRe(i, isCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoekt.Not{Child: &zoekt.Type{Type: zoekt.TypeRepo, Child: q}})
+	if len(repoHasFilters) > 0 {
+		and = append(and, zoekt.NewAnd(repoHasFilters...))
 	}
 
 	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
@@ -98,6 +86,25 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	}
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
+}
+
+func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoekt.Q {
+	var children []zoekt.Q
+	if opt.Path != "" {
+		re, _ := syntax.Parse(opt.Path, 0)
+		children = append(children, &zoekt.Regexp{Regexp: re, FileName: true, CaseSensitive: caseSensitive})
+	}
+	if opt.Content != "" {
+		re, _ := syntax.Parse(opt.Content, 0)
+		children = append(children, &zoekt.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
+	}
+	q := zoekt.NewAnd(children...)
+	q = &zoekt.Type{Type: zoekt.TypeRepo, Child: q}
+	if opt.Negated {
+		q = &zoekt.Not{Child: q}
+	}
+	q = zoekt.Simplify(q)
+	return q
 }
 
 func toZoektPattern(

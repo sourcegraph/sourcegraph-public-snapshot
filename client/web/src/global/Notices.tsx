@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -9,6 +9,7 @@ import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/s
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import styles from './Notices.module.scss'
 
@@ -79,6 +80,53 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         <div className={classNames(styles.notices, className)}>
             {notices.map((notice, index) => (
                 <NoticeAlert key={index} testId="notice-alert" className={alertClassName} notice={notice} />
+            ))}
+        </div>
+    )
+}
+
+interface VerifyEmailNoticesProps {
+    className?: string
+    /** Apply this class name to each notice (alongside .alert). */
+    alertClassName?: string
+    emails: string[]
+    settingsURL: string
+}
+
+/**
+ * Displays notices from settings for a specific location.
+ */
+export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps> = ({
+    className,
+    alertClassName,
+    emails,
+    settingsURL,
+}) => {
+    const [isEmailVerificationAlertEnabled, status] = useFeatureFlag('ab-email-verification-alert')
+
+    const notices: Notice[] = useMemo(() => {
+        if (status !== 'loaded' || !isEmailVerificationAlertEnabled) {
+            return []
+        }
+        return emails.map(
+            (email): Notice => ({
+                message: `Please, <a href="${settingsURL}/emails">verify your email</a> <strong>${email
+                    .split('@')
+                    .join('\\@')}</strong>`,
+                location: 'top',
+                dismissible: false,
+            })
+        )
+    }, [emails, isEmailVerificationAlertEnabled, settingsURL, status])
+
+    if (notices.length === 0) {
+        return null
+    }
+
+    return (
+        <div className={classNames(styles.notices, className)}>
+            {notices.map(notice => (
+                <NoticeAlert key={notice.message} testId="notice-alert" className={alertClassName} notice={notice} />
             ))}
         </div>
     )

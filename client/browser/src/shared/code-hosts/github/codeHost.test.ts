@@ -86,7 +86,7 @@ describe('github/codeHost', () => {
             beforeAll(() => {
                 jsdom.reconfigure({
                     url:
-                        'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/shared/code-hosts/code_intelligence.tsx',
+                        'https://github.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx',
                 })
             })
             it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {
@@ -96,7 +96,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                            revision: 'master',
+                            revision: 'main',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -107,7 +107,7 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12#tab=references'
+                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@main/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12#tab=references'
                 )
             })
 
@@ -118,7 +118,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'ghe.sgdev.org/sourcegraph/sourcegraph',
-                            revision: 'master',
+                            revision: 'main',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -128,7 +128,7 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12'
+                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@main/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12'
                 )
             })
             it('returns an URL to a blob on the same code host if possible', () => {
@@ -138,7 +138,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                            revision: 'master',
+                            revision: 'main',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -148,7 +148,7 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/shared/code-hosts/code_intelligence.tsx#L5:12'
+                    'https://github.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx#L5:12'
                 )
             })
         })

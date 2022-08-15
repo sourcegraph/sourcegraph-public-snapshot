@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Alert, Text } from '@sourcegraph/wildcard'
 
 import { usePreviewRepositoryFilter } from '../hooks/usePreviewRepositoryFilter'
 
@@ -27,7 +27,7 @@ export const RepositoryPreview: FunctionComponent<React.PropsWithChildren<Reposi
             ) : (
                 preview && (
                     <>
-                        <p>
+                        <Text>
                             <small>
                                 {preview.repositoryNames.length === 0
                                     ? 'Configuration policy does not match any known repositories.'
@@ -37,13 +37,13 @@ export const RepositoryPreview: FunctionComponent<React.PropsWithChildren<Reposi
                                     ? `Configuration policy will be applied to ${preview.totalCount} repositories (showing ${preview.repositoryNames.length} below).`
                                     : `Configuration policy will be applied to the following ${preview.repositoryNames.length} repositories.`}
                             </small>
-                        </p>
+                        </Text>
 
                         <div>
                             {preview.repositoryNames.length === 0 ? (
                                 <div className="mt-2 pt-2">
                                     <div className={styles.empty}>
-                                        <p className="text-monospace">N/A</p>
+                                        <Text className="text-monospace">N/A</Text>
                                     </div>
                                 </div>
                             ) : (
@@ -51,10 +51,10 @@ export const RepositoryPreview: FunctionComponent<React.PropsWithChildren<Reposi
                                     <div className="mt-2 pt-2">
                                         <div className={classNames('bg-dark text-light p-2', styles.container)}>
                                             {preview.repositoryNames.map(name => (
-                                                <p key={`${name}`} className="text-monospace p-0 m-0">
+                                                <Text key={`${name}`} className="text-monospace p-0 m-0">
                                                     <span className="search-filter-keyword">repo:</span>
                                                     <span>{name}</span>
-                                                </p>
+                                                </Text>
                                             ))}
                                         </div>
                                     </div>

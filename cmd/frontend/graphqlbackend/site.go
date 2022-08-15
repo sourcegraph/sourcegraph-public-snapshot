@@ -81,7 +81,7 @@ func (r *siteResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := database.Settings(r.db).GetLatest(ctx, r.settingsSubject())
+	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
-	siteConfig, err := conf.RedactSecrets(globals.ConfigurationServerFrontendOnly.Raw())
+	siteConfig, err := conf.RedactSecrets(conf.Raw())
 	return JSONCString(siteConfig.Site), err
 }
 
@@ -174,7 +174,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, errors.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
 	}
 
-	prev := globals.ConfigurationServerFrontendOnly.Raw()
+	prev := conf.Raw()
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
 		return false, errors.Errorf("error unredacting secrets: %s", err)

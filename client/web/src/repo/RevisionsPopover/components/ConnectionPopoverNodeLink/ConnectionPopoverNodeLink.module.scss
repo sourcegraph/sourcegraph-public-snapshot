@@ -21,8 +21,7 @@
     align-items: center;
     color: inherit;
 
-    &:hover,
-    &:focus {
+    &:hover {
         color: var(--light-text);
         text-decoration: none;
     }

@@ -106,7 +106,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<
         )
     }
 
-    // If the repository does not exist, communicate that to explain why e.g. code intelligence does not work
+    // If the repository does not exist, communicate that to explain why e.g. code navigation does not work
     if (!repoExistsOrError) {
         if (isDefaultSourcegraphUrl(sourcegraphURL) && privateRepository && userSettingsURL) {
             return <ConfigureSourcegraphButton {...commonProps} codeHostType={codeHostType} href={userSettingsURL} />
@@ -152,7 +152,7 @@ export const ConfigureSourcegraphButton: React.FunctionComponent<
         href={commonProps.href || new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
         onClick={onConfigureSourcegraphClick}
         label="Configure Sourcegraph"
-        title="Set up Sourcegraph for search and code intelligence on private repositories"
-        ariaLabel="Set up Sourcegraph for search and code intelligence on private repositories"
+        title="Set up Sourcegraph for search and code navigation on private repositories"
+        ariaLabel="Set up Sourcegraph for search and code navigation on private repositories"
     />
 )

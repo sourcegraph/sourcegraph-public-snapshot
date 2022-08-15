@@ -54,6 +54,10 @@ var NpmPackagesSchemaJSON string
 //go:embed python-packages.schema.json
 var PythonPackagesSchemaJSON string
 
+// RustPackagesSchemaJSON is the content of the file "python-packages.schema.json".
+//go:embed rust-packages.schema.json
+var RustPackagesSchemaJSON string
+
 // OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
 //go:embed other_external_service.schema.json
 var OtherExternalServiceSchemaJSON string

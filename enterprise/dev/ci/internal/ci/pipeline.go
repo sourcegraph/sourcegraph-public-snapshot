@@ -64,8 +64,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
-	if c.RunType.Is(runtype.ReleaseBranch) {
+	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
+		// When we are building a release, we do not want to cache the client bundle.
+		//
+		// This is a defensive measure, as caching the client bundle is tricky when it comes to invalidating it.
+		// This makes sure that we're running integration tests on a fresh bundle and, the image
+		// that 99% of our customers are using is exactly the same as the other deployments.
+		env["SERVER_NO_CLIENT_BUNDLE_CACHE"] = "true"
 	}
 
 	// Build options for pipeline operations that spawn more build steps
@@ -77,7 +83,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.39.0"
+	const minimumUpgradeableVersion = "3.42.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -87,6 +93,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case runtype.PullRequest:
+		// First, we set up core test operations that apply both to PRs and to other run
+		// types such as main.
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
+			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
+			ClientLintOnlyChangedFiles: false,
+		}))
+
+		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
@@ -99,18 +115,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(prPreview())
 			}
 		}
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
-			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
-			ClientLintOnlyChangedFiles: false,
-		}))
+		if c.Diff.Has(changed.DockerImages) {
+			// Build and scan docker images
+			testBuilds := operations.NewNamedSet("Test builds")
+			scanBuilds := operations.NewNamedSet("Scan test builds")
+			for _, image := range images.SourcegraphDockerImages {
+				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
+				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
+			}
+			ops.Merge(testBuilds)
+			ops.Merge(scanBuilds)
+		}
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage("server", c.Version, c.candidateImageTag(), false),
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// always include very backend-oriented changes in this set of tests
@@ -137,7 +159,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addVsceIntegrationTests,
 			wait,
-			addVsceReleaseSteps(buildOptions))
+			addVsceReleaseSteps)
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
@@ -154,7 +176,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addVsceIntegrationTests)
+			// addVsceIntegrationTests,
+		)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
@@ -168,10 +191,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+		}))
 		// Publish images after everything is done
 		ops.Append(
 			wait,
@@ -187,22 +212,23 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
 			wait,
 			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
 
 	case runtype.ExecutorPatchNoTest:
 		ops = operations.NewSet(
-			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version))
+			buildExecutor(c, c.MessageFlags.SkipHashCompare),
+			publishExecutor(c, c.MessageFlags.SkipHashCompare),
+			buildExecutorDockerMirror(c),
+			publishExecutorDockerMirror(c),
+		)
 
 	default:
 		// Slow async pipeline
@@ -212,14 +238,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			// Only upload sourcemaps for the "frontend" image, on the Main branch build
+			uploadSourcemaps := false
+			if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
+				uploadSourcemaps = true
+			}
+			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
 		}
 		// Executor VM image
-		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch)
-		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch) {
-			imageBuildOps.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(buildExecutorDockerMirror(c.Version))
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease)
+		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
+			imageBuildOps.Append(buildExecutor(c, skipHashCompare))
+			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				imageBuildOps.Append(buildExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(imageBuildOps)
@@ -235,6 +266,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 		}))
 
 		// Integration tests
@@ -259,10 +291,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
-		if c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch) {
-			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				publishOps.Append(publishExecutorDockerMirror(c.Version))
+		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
+			publishOps.Append(publishExecutor(c, skipHashCompare))
+			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(publishOps)
@@ -275,8 +307,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
-		Env: env,
-
+		Env:   env,
+		Steps: []any{},
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,

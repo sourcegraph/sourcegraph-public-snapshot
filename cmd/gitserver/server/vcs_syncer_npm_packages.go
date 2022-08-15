@@ -7,8 +7,10 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -25,12 +27,13 @@ func NewNpmPackagesSyncer(
 	svc *dependencies.Service,
 	client npm.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseNpmDependency("@sourcegraph/placeholder@1.0.0")
+	placeholder, err := reposource.ParseNpmVersionedPackage("@sourcegraph/placeholder@1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
 
-	return &vcsDependenciesSyncer{
+	return &vcsPackagesSyncer{
+		logger:      log.Scoped("NPMPackagesSyncer", "sync NPM packages"),
 		typ:         "npm_packages",
 		scheme:      dependencies.NpmPackagesScheme,
 		placeholder: placeholder,
@@ -45,42 +48,69 @@ type npmPackagesSyncer struct {
 	client npm.Client
 }
 
-func (npmPackagesSyncer) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParseNpmDependency(dep)
+var _ packagesSource = &npmPackagesSyncer{}
+var _ packagesDownloadSource = &npmPackagesSyncer{}
+
+func (npmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseNpmVersionedPackage(string(name) + "@" + version)
 }
 
-func (npmPackagesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (npmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseNpmVersionedPackage(dep)
+}
+
+func (s *npmPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return s.ParsePackageFromRepoName(api.RepoName("npm/" + strings.TrimPrefix(string(name), "@")))
+}
+func (npmPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	pkg, err := reposource.ParseNpmPackageFromRepoURL(repoName)
 	if err != nil {
 		return nil, err
 	}
-	return &reposource.NpmDependency{NpmPackage: pkg}, nil
+	return &reposource.NpmVersionedPackage{NpmPackageName: pkg}, nil
 }
 
-func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	dep, err := reposource.ParseNpmDependency(name + "@" + version)
+func (s npmPackagesSyncer) GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error) {
+	dep, err := reposource.ParseNpmVersionedPackage(string(name) + "@")
 	if err != nil {
 		return nil, err
 	}
 
-	info, err := s.client.GetDependencyInfo(ctx, dep)
+	err = s.updateTarballURL(ctx, dep)
 	if err != nil {
 		return nil, err
 	}
 
-	dep.TarballURL = info.Dist.TarballURL
 	return dep, nil
 }
 
-func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	tgz, err := npm.FetchSources(ctx, s.client, dep.(*reposource.NpmDependency))
+// updateTarballURL sends a GET request to find the URL to download the tarball of this package, and
+// sets the `NpmVersionedPackage.TarballURL` field accordingly.
+func (s *npmPackagesSyncer) updateTarballURL(ctx context.Context, dep *reposource.NpmVersionedPackage) error {
+	f, err := s.client.GetDependencyInfo(ctx, dep)
+	if err != nil {
+		return err
+	}
+	dep.TarballURL = f.Dist.TarballURL
+	return nil
+}
+
+func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	npmDep := dep.(*reposource.NpmVersionedPackage)
+	if npmDep.TarballURL == "" {
+		err := s.updateTarballURL(ctx, npmDep)
+		if err != nil {
+			return err
+		}
+	}
+	tgz, err := npm.FetchSources(ctx, s.client, npmDep)
 	if err != nil {
 		return errors.Wrap(err, "fetch tarball")
 	}
 	defer tgz.Close()
 
 	if err = decompressTgz(tgz, dir); err != nil {
-		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep.PackageManagerSyntax())
+		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep)
 	}
 
 	return nil
@@ -91,18 +121,22 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 // Additionally, if all the files in the tarball have paths of the form
 // dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
 func decompressTgz(tgz io.Reader, destination string) error {
+	logger := log.Scoped("decompressTgz", "Decompress a tarball at tgzPath, putting the files under destination.")
 	err := unpack.Tgz(tgz, destination, unpack.Opts{
 		SkipInvalid: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 
 			const sizeLimit = 15 * 1024 * 1024
+
+			slogger := logger.With(
+				log.String("path", file.Name()),
+				log.Int64("size", size),
+				log.Int("limit", sizeLimit),
+			)
+
 			if size >= sizeLimit {
-				log15.Warn("skipping large file in npm package",
-					"path", file.Name(),
-					"size", size,
-					"limit", sizeLimit,
-				)
+				slogger.Warn("skipping large file in npm package")
 				return false
 			}
 

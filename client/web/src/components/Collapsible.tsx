@@ -1,8 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -23,7 +22,7 @@ interface Props {
      * Optional children that appear below the title bar that can be expanded/collapsed. If present,
      * a button that expands or collapses the children will be shown.
      */
-    children?: React.ReactFragment
+    children?: React.ReactNode
 
     /**
      * Whether the children are expanded and visible by default.
@@ -51,7 +50,7 @@ interface Props {
  * Collapsible is an element with a title that is always displayed and children that are displayed
  * only when expanded.
  */
-export const Collapsible: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const Collapsible: React.FunctionComponent<Props> = ({
     title,
     detail,
     children,
@@ -99,11 +98,7 @@ export const Collapsible: React.FunctionComponent<React.PropsWithChildren<Props>
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
-                    {isExpanded ? (
-                        <Icon aria-label="Close section" as={ChevronDownIcon} />
-                    ) : (
-                        <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                    )}
+                    <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
                 </Button>
                 {!titleAtStart && titleNode}
             </div>

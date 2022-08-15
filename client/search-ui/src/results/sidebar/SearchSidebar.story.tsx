@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 // We need to import `create` to make a mock store just for this story.
 // eslint-disable-next-line no-restricted-imports
 import create from 'zustand'
@@ -19,19 +19,24 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
-const { add } = storiesOf('search-ui/results/sidebar/SearchSidebar', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
+const config: Meta = {
+    title: 'search-ui/results/sidebar/SearchSidebar',
+    parameters: {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
+        },
+        chromatic: { viewports: [544, 577, 993], disableSnapshot: false },
     },
-    chromatic: { viewports: [544, 577, 993], disableSnapshot: false },
-})
+}
+
+export default config
 
 const mockUseQueryState = create<SearchQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
-    searchPatternType: SearchPatternType.literal,
+    searchPatternType: SearchPatternType.standard,
     searchQueryFromURL: '',
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
@@ -45,7 +50,7 @@ const mockUseQueryState = create<SearchQueryState>((set, get) => ({
 
 const defaultProps: SearchSidebarProps = {
     caseSensitive: false,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -137,16 +142,16 @@ const filters: Filter[] = [
         kind: 'file',
     },
 
-    ...['typescript', 'javascript', 'c++', 'c', 'c#', 'python', 'ruby', 'haskell', 'java'].map(lang => ({
-        label: `lang:${lang}`,
-        value: `lang:${lang}`,
+    ...['TypeScript', 'JavaScript', 'C++', 'C', 'C#', 'Python', 'Ruby', 'Haskell', 'Java'].map(lang => ({
+        label: lang,
+        value: `lang:${lang.toLowerCase()}`,
         count: 10,
         limitHit: true,
-        kind: 'lang',
+        kind: 'lang' as Filter['kind'],
     })),
 ]
 
-add('empty sidebar', () => (
+export const EmptySidebar: Story = () => (
     <BrandedStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
@@ -154,9 +159,11 @@ add('empty sidebar', () => (
             </SearchQueryStateStoreProvider>
         )}
     </BrandedStory>
-))
+)
 
-add('with everything', () => (
+EmptySidebar.storyName = 'empty sidebar'
+
+export const WithEverything: Story = () => (
     <BrandedStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
@@ -168,4 +175,6 @@ add('with everything', () => (
             </SearchQueryStateStoreProvider>
         )}
     </BrandedStory>
-))
+)
+
+WithEverything.storyName = 'with everything'

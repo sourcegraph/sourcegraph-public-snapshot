@@ -12,6 +12,21 @@
       ]
     },
     {
+      "Name": "series_sort_direction_enum",
+      "Labels": [
+        "ASC",
+        "DESC"
+      ]
+    },
+    {
+      "Name": "series_sort_mode_enum",
+      "Labels": [
+        "RESULT_COUNT",
+        "LEXICOGRAPHICAL",
+        "DATE_ADDED"
+      ]
+    },
+    {
       "Name": "time_unit",
       "Labels": [
         "HOUR",
@@ -752,6 +767,19 @@
       "Comment": "Data series that comprise code insights.",
       "Columns": [
         {
+          "Name": "backfill_attempts",
+          "Index": 19,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "backfill_queued_at",
           "Index": 9,
           "TypeName": "timestamp without time zone",
@@ -817,6 +845,19 @@
           "Comment": "Specifies the execution method for how this series is generated. This helps the system understand how to generate the time series data."
         },
         {
+          "Name": "group_by",
+          "Index": 18,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -861,6 +902,19 @@
           "TypeName": "timestamp without time zone",
           "IsNullable": true,
           "Default": "(CURRENT_TIMESTAMP - '10 years'::interval)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "needs_migration",
+          "Index": 20,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -1125,6 +1179,45 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The basic presentation type for the insight view. (e.g Line, Pie, etc.)"
+        },
+        {
+          "Name": "series_limit",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_sort_direction",
+          "Index": 12,
+          "TypeName": "series_sort_direction_enum",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_sort_mode",
+          "Index": 11,
+          "TypeName": "series_sort_mode_enum",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         },
         {
           "Name": "title",
@@ -1468,6 +1561,19 @@
       "Name": "migration_logs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "backfilled",
+          "Index": 10,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "error_message",
           "Index": 9,

@@ -1,5 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
@@ -52,11 +52,17 @@ export const DEMO_HUNKS: FileDiffHunkFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/diffs/FileDiffHunks', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('One diff unified hunk', () => (
+const config: Meta = {
+    title: 'web/diffs/FileDiffHunks',
+    decorators: [decorator],
+    includeStories: ['OneDiffUnifiedHunk', 'OneDiffSplitHunk'],
+}
+
+export default config
+
+export const OneDiffUnifiedHunk: Story = () => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
@@ -70,9 +76,11 @@ add('One diff unified hunk', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('One diff split hunk', () => (
+OneDiffUnifiedHunk.storyName = 'One diff unified hunk'
+
+export const OneDiffSplitHunk: Story = () => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
@@ -86,4 +94,6 @@ add('One diff split hunk', () => (
             />
         )}
     </WebStory>
-))
+)
+
+OneDiffSplitHunk.storyName = 'One diff split hunk'

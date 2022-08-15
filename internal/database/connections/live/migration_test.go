@@ -7,6 +7,8 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -47,10 +49,11 @@ func getSchema(name string) (*schemas.Schema, bool) {
 func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 	t.Helper()
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := dbtest.NewRawDB(t)
+	db := dbtest.NewRawDB(logger, t)
 	storeFactory := newStoreFactory(&observation.TestContext)
-	migrationRunner := runnerFromDB(storeFactory, db, schema)
+	migrationRunner := runnerFromDB(logger, storeFactory, db, schema)
 	all := schema.Definitions.All()
 
 	t.Run("up", func(t *testing.T) {
@@ -115,25 +118,14 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema) {
 	t.Helper()
 
-	ctx := context.Background()
-	db := dbtest.NewRawDB(t)
-	storeFactory := newStoreFactory(&observation.TestContext)
-	migrationRunner := runnerFromDB(storeFactory, db, schema)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	all := schema.Definitions.All()
 
 	t.Run("idempotent up", func(t *testing.T) {
 		for _, definition := range all {
-			options := runner.Options{
-				Operations: []runner.MigrationOperation{
-					{
-						SchemaName:     name,
-						Type:           runner.MigrationOperationTypeTargetedUp,
-						TargetVersions: []int{definition.ID},
-					},
-				},
-			}
-			if err := migrationRunner.Run(ctx, options); err != nil {
-				t.Fatalf("failed to perform upgrade to version %d: %s", definition.ID, err)
+			if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+				t.Errorf("failed to perform upgrade of migration %d: %s", definition.ID, err)
 			}
 
 			if definition.NonIdempotent {
@@ -152,17 +144,8 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 		for i := len(all) - 1; i >= 0; i-- {
 			definition := all[i]
 
-			options := runner.Options{
-				Operations: []runner.MigrationOperation{
-					{
-						SchemaName:     name,
-						Type:           runner.MigrationOperationTypeTargetedDown,
-						TargetVersions: definition.Parents,
-					},
-				},
-			}
-			if err := migrationRunner.Run(ctx, options); err != nil {
-				t.Fatalf("failed to perform downgrade to versions %v: %s", definition.Parents, err)
+			if _, err := db.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+				t.Errorf("failed to perform downgrade of migration %d: %s", definition.ID, err)
 			}
 
 			if definition.NonIdempotent {

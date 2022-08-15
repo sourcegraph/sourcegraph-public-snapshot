@@ -74,6 +74,15 @@ select:file lang:TypeScript
 select:file lang:JavaScript
 ```
 
+### Pinned vs Unpinned Docker Base Images
+Track how many unpinned images exist relative to pinned images
+```sgquery
+^FROM (\w+\/)?\w+:latest($|\s) file:Dockerfile patternType:regexp 
+```
+```sgquery
+^FROM (\w+\/)?\w+:latest@sha file:Dockerfile patternType:regexp 
+```
+
 ## Migration
 
 

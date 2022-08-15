@@ -2,6 +2,7 @@
 package types
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -74,6 +75,8 @@ type Repo struct {
 	Metadata any
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
 	Blocked *RepoBlock `json:",omitempty"`
+	// KeyValuePairs is the set of key-value pairs associated with the repo
+	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
@@ -96,6 +99,8 @@ type SearchedRepo struct {
 	Stars int
 	// LastFetched is the time of the last fetch of new commits from the code host.
 	LastFetched *time.Time
+	// A set of key-value pairs associated with the repo
+	KeyValuePairs map[string]*string
 }
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
@@ -149,50 +154,121 @@ func (r *Repo) IsBlocked() error {
 	return nil
 }
 
-// Update updates Repo r with the fields from the given newer Repo n,
-// returning true if modified.
-func (r *Repo) Update(n *Repo) (modified bool) {
+// RepoModified is a bitfield that tracks which fields were modified while
+// syncing a repository.
+type RepoModified uint64
+
+const (
+	RepoUnmodified   RepoModified = 0
+	RepoModifiedName              = 1 << iota
+	RepoModifiedURI
+	RepoModifiedDescription
+	RepoModifiedExternalRepo
+	RepoModifiedArchived
+	RepoModifiedFork
+	RepoModifiedPrivate
+	RepoModifiedStars
+	RepoModifiedMetadata
+	RepoModifiedSources
+)
+
+func (m RepoModified) String() string {
+	if m == RepoUnmodified {
+		return "repo unmodified"
+	}
+
+	modifications := []string{}
+	if m&RepoModifiedName == RepoModifiedName {
+		modifications = append(modifications, "name")
+	}
+	if m&RepoModifiedURI == RepoModifiedURI {
+		modifications = append(modifications, "uri")
+	}
+	if m&RepoModifiedDescription == RepoModifiedDescription {
+		modifications = append(modifications, "description")
+	}
+	if m&RepoModifiedExternalRepo == RepoModifiedExternalRepo {
+		modifications = append(modifications, "external repo")
+	}
+	if m&RepoModifiedArchived == RepoModifiedArchived {
+		modifications = append(modifications, "archived")
+	}
+	if m&RepoModifiedFork == RepoModifiedFork {
+		modifications = append(modifications, "fork")
+	}
+	if m&RepoModifiedPrivate == RepoModifiedPrivate {
+		modifications = append(modifications, "private")
+	}
+	if m&RepoModifiedStars == RepoModifiedStars {
+		modifications = append(modifications, "stars")
+	}
+	if m&RepoModifiedMetadata == RepoModifiedMetadata {
+		modifications = append(modifications, "metadata")
+	}
+	if m&RepoModifiedSources == RepoModifiedSources {
+		modifications = append(modifications, "sources")
+	}
+	if m&RepoUnmodified == RepoUnmodified {
+		modifications = append(modifications, "unmodified")
+	}
+
+	return "repo modifications: " + strings.Join(modifications, ", ")
+}
+
+// Update updates Repo r with the fields from the given newer Repo n, returning
+// RepoUnmodified (0) if no fields were modified, and a non-zero value if one
+// or more fields were modified.
+func (r *Repo) Update(n *Repo) (modified RepoModified) {
 	if !r.Name.Equal(n.Name) {
-		r.Name, modified = n.Name, true
+		r.Name = n.Name
+		modified |= RepoModifiedName
 	}
 
 	if r.URI != n.URI {
-		r.URI, modified = n.URI, true
+		r.URI = n.URI
+		modified |= RepoModifiedURI
 	}
 
 	if r.Description != n.Description {
-		r.Description, modified = n.Description, true
+		r.Description = n.Description
+		modified |= RepoModifiedDescription
 	}
 
 	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
 		!r.ExternalRepo.Equal(&n.ExternalRepo) {
-		r.ExternalRepo, modified = n.ExternalRepo, true
+		r.ExternalRepo = n.ExternalRepo
+		modified |= RepoModifiedExternalRepo
 	}
 
 	if r.Archived != n.Archived {
-		r.Archived, modified = n.Archived, true
+		r.Archived = n.Archived
+		modified |= RepoModifiedArchived
 	}
 
 	if r.Fork != n.Fork {
-		r.Fork, modified = n.Fork, true
+		r.Fork = n.Fork
+		modified |= RepoModifiedFork
 	}
 
 	if r.Private != n.Private {
-		r.Private, modified = n.Private, true
+		r.Private = n.Private
+		modified |= RepoModifiedPrivate
 	}
 
 	if r.Stars != n.Stars {
-		r.Stars, modified = n.Stars, true
+		r.Stars = n.Stars
+		modified |= RepoModifiedStars
 	}
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata, modified = n.Metadata, true
+		r.Metadata = n.Metadata
+		modified |= RepoModifiedMetadata
 	}
 
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
 			r.Sources[urn] = info
-			modified = true
+			modified |= RepoModifiedSources
 		}
 	}
 
@@ -479,7 +555,7 @@ type ExternalService struct {
 	ID              int64
 	Kind            string
 	DisplayName     string
-	Config          string
+	Config          *extsvc.EncryptableConfig
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	DeletedAt       time.Time
@@ -493,11 +569,21 @@ type ExternalService struct {
 	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
+type ExternalServiceRepo struct {
+	ExternalServiceID int64      `json:"externalServiceID"`
+	RepoID            api.RepoID `json:"repoID"`
+	CloneURL          string     `json:"cloneURL"`
+	UserID            int32      `json:"userID"`
+	OrgID             int32      `json:"orgID"`
+	CreatedAt         time.Time  `json:"createdAt"`
+}
+
 // ExternalServiceSyncJob represents an sync job for an external service
 type ExternalServiceSyncJob struct {
 	ID                int64
 	State             string
 	FailureMessage    string
+	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
@@ -520,9 +606,9 @@ func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && 
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
-func (e *ExternalService) Update(n *ExternalService) (modified bool) {
+func (e *ExternalService) Update(ctx context.Context, n *ExternalService) (modified bool, _ error) {
 	if e.ID != n.ID {
-		return false
+		return false, nil
 	}
 
 	if !strings.EqualFold(e.Kind, n.Kind) {
@@ -533,8 +619,18 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.DisplayName, modified = n.DisplayName, true
 	}
 
-	if e.Config != n.Config {
-		e.Config, modified = n.Config, true
+	eConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	nConfig, err := n.Config.Decrypt(ctx)
+	if err != nil {
+		return false, err
+	}
+	if eConfig != nConfig {
+		e.Config.Set(nConfig)
+		modified = true
 	}
 
 	if !e.UpdatedAt.Equal(n.UpdatedAt) {
@@ -545,12 +641,12 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.DeletedAt, modified = n.DeletedAt, true
 	}
 
-	return modified
+	return modified, nil
 }
 
 // Configuration returns the external service config.
-func (e *ExternalService) Configuration() (cfg any, _ error) {
-	return extsvc.ParseConfig(e.Kind, e.Config)
+func (e *ExternalService) Configuration(ctx context.Context) (cfg any, _ error) {
+	return extsvc.ParseEncryptableConfig(ctx, e.Kind, e.Config)
 }
 
 // Clone returns a clone of the given external service.
@@ -577,12 +673,17 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-func (e *ExternalService) ToAPIService() api.ExternalService {
+func (e *ExternalService) ToAPIService(ctx context.Context) (api.ExternalService, error) {
+	rawConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return api.ExternalService{}, err
+	}
+
 	return api.ExternalService{
 		ID:              e.ID,
 		Kind:            e.Kind,
 		DisplayName:     e.DisplayName,
-		Config:          e.Config,
+		Config:          rawConfig,
 		CreatedAt:       e.CreatedAt,
 		UpdatedAt:       e.UpdatedAt,
 		DeletedAt:       e.DeletedAt,
@@ -592,7 +693,7 @@ func (e *ExternalService) ToAPIService() api.ExternalService {
 		NamespaceOrgID:  e.NamespaceOrgID,
 		Unrestricted:    e.Unrestricted,
 		CloudDefault:    e.CloudDefault,
-	}
+	}, nil
 }
 
 // ExternalServices is a utility type with convenience methods for operating on
@@ -1131,20 +1232,21 @@ type SearchAggregatedEvent struct {
 }
 
 type SurveyResponse struct {
-	ID        int32
-	UserID    *int32
-	Email     *string
-	Score     int32
-	Reason    *string
-	Better    *string
-	CreatedAt time.Time
+	ID           int32
+	UserID       *int32
+	Email        *string
+	Score        int32
+	Reason       *string
+	Better       *string
+	OtherUseCase *string
+	CreatedAt    time.Time
 }
 
 type Event struct {
 	ID              int32
 	Name            string
 	URL             string
-	UserID          *int32
+	UserID          int32
 	AnonymousUserID string
 	Argument        string
 	Source          string
@@ -1229,30 +1331,6 @@ type CodeHostIntegrationUsageInboundTrafficToWeb struct {
 	TotalCount   int32
 }
 
-// UserAndEventCount represents the number of events triggered in a given
-// time frame per user and overall.
-type UserAndEventCount struct {
-	UserCount  int32
-	EventCount int32
-}
-
-// FileAndSearchPageUserAndEventCounts represents the number of events triggered
-// on the "search result" and "file" pages in a given time frame.
-type FileAndSearchPageUserAndEventCounts struct {
-	StartTime             time.Time
-	DisplayedOnFilePage   UserAndEventCount
-	DisplayedOnSearchPage UserAndEventCount
-	ClickedOnFilePage     UserAndEventCount
-	ClickedOnSearchPage   UserAndEventCount
-}
-
-// CTAUsage represents the total number of CTAs displayed and clicked
-// on the "search result" and "file" pages over the current month.
-type CTAUsage struct {
-	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
-	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
-}
-
 // SavedSearches represents the total number of saved searches, users
 // using saved searches, and usage of saved searches.
 type SavedSearches struct {
@@ -1334,25 +1412,31 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
-	WeeklyInsightsPageViews                 *int32
-	WeeklyInsightsGetStartedPageViews       *int32
-	WeeklyInsightsUniquePageViews           *int32
-	WeeklyInsightsGetStartedUniquePageViews *int32
-	WeeklyInsightConfigureClick             *int32
-	WeeklyInsightAddMoreClick               *int32
-	WeekStart                               time.Time
-	WeeklyInsightCreators                   *int32
-	WeeklyFirstTimeInsightCreators          *int32
-	WeeklyAggregatedUsage                   []AggregatedPingStats
-	WeeklyGetStartedTabClickByTab           []InsightGetStartedTabClickPing
-	WeeklyGetStartedTabMoreClickByTab       []InsightGetStartedTabClickPing
-	InsightTimeIntervals                    []InsightTimeIntervalPing
-	InsightOrgVisible                       []OrgVisibleInsightPing
-	InsightTotalCounts                      InsightTotalCounts
-	TotalOrgsWithDashboard                  *int32
-	TotalDashboardCount                     *int32
-	InsightsPerDashboard                    InsightsPerDashboardPing
+	WeeklyUsageStatisticsByInsight               []*InsightUsageStatistics
+	WeeklyInsightsPageViews                      *int32
+	WeeklyStandaloneInsightPageViews             *int32
+	WeeklyStandaloneDashboardClicks              *int32
+	WeeklyStandaloneEditClicks                   *int32
+	WeeklyInsightsGetStartedPageViews            *int32
+	WeeklyInsightsUniquePageViews                *int32
+	WeeklyInsightsGetStartedUniquePageViews      *int32
+	WeeklyStandaloneInsightUniquePageViews       *int32
+	WeeklyStandaloneInsightUniqueDashboardClicks *int32
+	WeeklyStandaloneInsightUniqueEditClicks      *int32
+	WeeklyInsightConfigureClick                  *int32
+	WeeklyInsightAddMoreClick                    *int32
+	WeekStart                                    time.Time
+	WeeklyInsightCreators                        *int32
+	WeeklyFirstTimeInsightCreators               *int32
+	WeeklyAggregatedUsage                        []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab                []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab            []InsightGetStartedTabClickPing
+	InsightTimeIntervals                         []InsightTimeIntervalPing
+	InsightOrgVisible                            []OrgVisibleInsightPing
+	InsightTotalCounts                           InsightTotalCounts
+	TotalOrgsWithDashboard                       *int32
+	TotalDashboardCount                          *int32
+	InsightsPerDashboard                         InsightsPerDashboardPing
 }
 
 type CodeInsightsCriticalTelemetry struct {
@@ -1368,6 +1452,7 @@ type InsightUsageStatistics struct {
 	Hovers           *int32
 	UICustomizations *int32
 	DataPointClicks  *int32
+	FiltersChange    *int32
 }
 
 type PingName string
@@ -1430,7 +1515,36 @@ type CodeMonitoringUsageStatistics struct {
 	CreateCodeMonitorPageViewsWithTriggerQuery    *int32
 	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
 	ManageCodeMonitorPageViews                    *int32
-	CodeMonitorEmailLinkClicks                    *int32
+	CodeMonitorEmailLinkClicked                   *int32
+	ExampleMonitorClicked                         *int32
+	GettingStartedPageViewed                      *int32
+	CreateFormSubmitted                           *int32
+	ManageFormSubmitted                           *int32
+	ManageDeleteSubmitted                         *int32
+	LogsPageViewed                                *int32
+	EmailActionsTriggered                         *int32
+	EmailActionsErrored                           *int32
+	EmailActionsTriggeredUniqueUsers              *int32
+	EmailActionsEnabled                           *int32
+	EmailActionsEnabledUniqueUsers                *int32
+	SlackActionsTriggered                         *int32
+	SlackActionsErrored                           *int32
+	SlackActionsTriggeredUniqueUsers              *int32
+	SlackActionsEnabled                           *int32
+	SlackActionsEnabledUniqueUsers                *int32
+	WebhookActionsTriggered                       *int32
+	WebhookActionsErrored                         *int32
+	WebhookActionsTriggeredUniqueUsers            *int32
+	WebhookActionsEnabled                         *int32
+	WebhookActionsEnabledUniqueUsers              *int32
+	MonitorsEnabled                               *int32
+	MonitorsEnabledUniqueUsers                    *int32
+	MonitorsEnabledLastRunErrored                 *int32
+	ReposMonitored                                *int32
+	TriggerRuns                                   *int32
+	TriggerRunsErrored                            *int32
+	P50TriggerRunTimeSeconds                      *float32
+	P90TriggerRunTimeSeconds                      *float32
 }
 
 type NotebooksUsageStatistics struct {

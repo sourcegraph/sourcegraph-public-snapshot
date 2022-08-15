@@ -2,7 +2,8 @@
 # This runs a published or local server image for testing and development purposes.
 
 IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
-URL=${URL:-"http://localhost:7080"}
+PORT=${PORT:-"7080"}
+URL="http://localhost:$PORT"
 DATA=${DATA:-"/tmp/sourcegraph-data"}
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
@@ -14,16 +15,16 @@ fi
 
 # shellcheck disable=SC2153
 case "$CLEAN" in
-  "true")
-    clean=y
-    ;;
-  "false")
-    clean=n
-    ;;
-  *)
-    echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-    read -r clean
-    ;;
+"true")
+  clean=y
+  ;;
+"false")
+  clean=n
+  ;;
+*)
+  echo -n "Do you want to delete $DATA and start clean? [Y/n] "
+  read -r clean
+  ;;
 esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
@@ -31,12 +32,12 @@ if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
   rm -rf "$DATA"
 fi
 
-echo "--- Starting server ${IMAGE}"
+echo "--- Starting server ${IMAGE} on port ${PORT}"
 docker run "$@" \
-  --publish 7080:7080 \
+  --publish "$PORT":7080 \
   -e SRC_LOG_LEVEL=dbug \
   -e DEBUG=t \
-  -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS \
+  -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"

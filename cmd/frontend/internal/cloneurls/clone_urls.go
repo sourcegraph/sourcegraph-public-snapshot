@@ -31,7 +31,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 	}
 
 	// Fast path for repos we already have in our database
-	name, err := db.Repos().GetFirstRepoNamesByCloneURL(ctx, cloneURL)
+	name, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, cloneURL)
 	if err != nil {
 		return "", err
 	}
@@ -107,7 +107,7 @@ func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.Ext
 	span.SetTag("ExternalService.ID", svc.ID)
 	span.SetTag("ExternalService.Kind", svc.Kind)
 
-	cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {
 		return "", errors.Wrap(err, "parse config")
 	}

@@ -3,11 +3,13 @@ import * as React from 'react'
 import { uniqueId } from 'lodash'
 import { from, merge, Subscription } from 'rxjs'
 import { delay, map, mergeMap, switchMap, takeWhile } from 'rxjs/operators'
+import { tabbable } from 'tabbable'
 
 import { asError } from '@sourcegraph/common'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { NotificationType } from '../api/extension/extensionHostApi'
+import { syncRemoteSubscription } from '../api/util'
 import { ExtensionsControllerProps } from '../extensions/controller'
 
 import { Notification } from './notification'
@@ -24,6 +26,8 @@ interface NotificationsState {
     notifications: (Notification & { id: string })[]
 }
 
+const HAS_NOTIFICATIONS_CONTEXT_KEY = 'hasNotifications'
+
 /**
  * A notifications center that displays global, non-modal messages.
  */
@@ -39,6 +43,8 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     }
 
     private subscriptions = new Subscription()
+
+    private notificationsReference = React.createRef<HTMLDivElement>()
 
     public componentDidMount(): void {
         // Subscribe to plain notifications
@@ -127,6 +133,54 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
                         })
                 })
         )
+
+        // Register command to focus notifications.
+        this.subscriptions.add(
+            this.props.extensionsController.registerCommand({
+                command: 'focusNotifications',
+                run: () => {
+                    const notificationsElement = this.notificationsReference.current
+                    if (notificationsElement) {
+                        tabbable(notificationsElement)[0]?.focus()
+                    }
+                    return Promise.resolve()
+                },
+            })
+        )
+        this.subscriptions.add(
+            syncRemoteSubscription(
+                this.props.extensionsController.extHostAPI.then(extensionHostAPI =>
+                    extensionHostAPI.registerContributions({
+                        menus: {
+                            commandPalette: [
+                                {
+                                    action: 'focusNotifications',
+                                    when: HAS_NOTIFICATIONS_CONTEXT_KEY,
+                                },
+                            ],
+                        },
+                        actions: [
+                            {
+                                id: 'focusNotifications',
+                                title: 'Focus notifications',
+                                command: 'focusNotifications',
+                            },
+                        ],
+                    })
+                )
+            )
+        )
+    }
+
+    public componentDidUpdate(): void {
+        // Update context to show/hide "Focus notifications" command.
+        this.props.extensionsController.extHostAPI
+            .then(extensionHostAPI =>
+                extensionHostAPI.updateContext({
+                    [HAS_NOTIFICATIONS_CONTEXT_KEY]: this.state.notifications.length > 0,
+                })
+            )
+            .catch(error => console.error('Error updating context for notifications', error))
     }
 
     public componentWillUnmount(): void {
@@ -135,7 +189,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
 
     public render(): JSX.Element | null {
         return (
-            <div className={styles.sourcegraphNotifications}>
+            <div className={styles.sourcegraphNotifications} ref={this.notificationsReference}>
                 {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
                     <NotificationItem
                         key={notification.id}

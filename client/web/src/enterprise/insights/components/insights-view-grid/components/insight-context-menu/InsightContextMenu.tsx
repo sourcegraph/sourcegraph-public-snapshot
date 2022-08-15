@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 
+import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
 import {
     Link,
@@ -14,11 +14,13 @@ import {
     MenuList,
     Position,
     Checkbox,
+    Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
-import { useUiFeatures } from '../../../../hooks/use-ui-features'
+import { useUiFeatures } from '../../../../hooks'
 import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
 import { ShareLinkModal } from '../../../modals/ShareLinkModal/ShareLinkModal'
 
@@ -73,9 +75,13 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                             aria-label="Insight options"
                             outline={true}
                         >
-                            <DotsVerticalIcon
+                            <Icon
                                 className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
-                                size={16}
+                                svgPath={mdiDotsVertical}
+                                inline={false}
+                                aria-hidden={true}
+                                height={16}
+                                width={16}
                             />
                         </MenuButton>
                         <MenuList position={Position.bottomEnd} data-testid={`context-menu.${insightID}`}>
@@ -122,20 +128,23 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                             )}
 
                             {currentDashboard && (
-                                <MenuItem
-                                    data-testid="insight-context-remove-from-dashboard-button"
-                                    onSelect={() => setShowRemoveConfirm(true)}
-                                    disabled={withinVirtualDashboard}
-                                    data-tooltip={
+                                <Tooltip
+                                    content={
                                         withinVirtualDashboard
                                             ? "Removing insight isn't available for the All insights dashboard"
                                             : undefined
                                     }
-                                    data-placement="left"
-                                    className={styles.item}
+                                    placement="left"
                                 >
-                                    Remove from this dashboard
-                                </MenuItem>
+                                    <MenuItem
+                                        data-testid="insight-context-remove-from-dashboard-button"
+                                        onSelect={() => setShowRemoveConfirm(true)}
+                                        disabled={withinVirtualDashboard}
+                                        className={styles.item}
+                                    >
+                                        Remove from this dashboard
+                                    </MenuItem>
+                                </Tooltip>
                             )}
 
                             <MenuDivider />

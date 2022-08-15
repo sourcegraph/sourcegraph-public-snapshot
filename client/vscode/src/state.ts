@@ -7,42 +7,10 @@ import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/
 
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 
-// State management in the Sourcegraph VS Code extension
-// -----
-// This extension runs code in 4 (and counting) different execution contexts.
-// Coordinating state between these contexts is a difficult task.
-// So, instead of managing shared state in each context, we maintain
-// one state machine in the "Core" context (see './extension.ts' for architecure diagram).
-// All contexts listen for state updates and emit events on which the state
-// machine may transition.
-// For example:
-// - Commands from VS Code extension core
-// - The first submitted search in a session will cause the state machine
-//    to transition from the `search-home` state to the `search-results` state.
-//    This new state will be reflected in both the search sidebar and search panel UIs
-//
-
-// We represent a hierarchical state machine in a "flat" manner to reduce code complexity
-// and because our state machine is simple enough to not necessitate bringing in a library.
-// So,
-//   ┌───►home
-//   │
-// - search
-//   │
-//   └───►results
-// - remote-browsing
-// - idle
-// - context-invalidated
-// becomes:
-// - [search-home, search-results, remote-browsing, idle, context-invalidated]
-
-// Example user flow state transitions:
-// - User clicks on Sourcegraph logo in VS Code sidebar.
-// - Extension activates with initial state of `search-home`
-// - User submits search -> state === `search-results`
-// - User clicks on a search result, which opens a file -> state === `remote-browsing`
-// - User copies some code, then focuses an editor for a local file -> state === `idle`
-
+/**
+ * One state machine that lives in Core
+ * See CONTRIBUTING docs to learn how state management works in this extension
+ */
 export interface VSCEStateMachine {
     state: VSCEState
     /**

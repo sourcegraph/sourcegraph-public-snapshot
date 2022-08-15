@@ -1,0 +1,14 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.root {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    word-break: break-all;
+}
+
+.xs-hide {
+    @media (--xs-breakpoint-down) {
+        display: none;
+    }
+}

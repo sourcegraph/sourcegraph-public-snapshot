@@ -25,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
@@ -83,7 +85,7 @@ func TestResolverTo(t *testing.T) {
 		&FileMatchResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: db},
+		&RepositoryResolver{db: db, logger: logtest.Scoped(t)},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&settingsSubject{},
@@ -153,15 +155,18 @@ func TestAffiliatedRepositories(t *testing.T) {
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "github",
+				Config:      extsvc.NewEmptyConfig(),
 			},
 			{
 				ID:          2,
 				Kind:        extsvc.KindGitLab,
 				DisplayName: "gitlab",
+				Config:      extsvc.NewEmptyConfig(),
 			},
 			{
-				ID:   3,
-				Kind: extsvc.KindBitbucketCloud, // unsupported, should be ignored
+				ID:     3,
+				Kind:   extsvc.KindBitbucketCloud, // unsupported, should be ignored
+				Config: extsvc.NewEmptyConfig(),
 			},
 		},
 		nil,
@@ -173,12 +178,14 @@ func TestAffiliatedRepositories(t *testing.T) {
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "github",
+				Config:      extsvc.NewEmptyConfig(),
 			}, nil
 		case 2:
 			return &types.ExternalService{
 				ID:          2,
 				Kind:        extsvc.KindGitLab,
 				DisplayName: "gitlab",
+				Config:      extsvc.NewEmptyConfig(),
 			}, nil
 		}
 		return nil, nil

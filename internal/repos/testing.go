@@ -12,7 +12,7 @@ import (
 // NewFakeSourcer returns a Sourcer which always returns the given error and source,
 // ignoring the given external services.
 func NewFakeSourcer(err error, src Source) Sourcer {
-	return func(svc *types.ExternalService) (Source, error) {
+	return func(ctc context.Context, svc *types.ExternalService) (Source, error) {
 		if err != nil {
 			return nil, &SourceError{Err: err, ExtSvc: svc}
 		}

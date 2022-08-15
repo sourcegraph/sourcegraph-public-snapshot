@@ -7,14 +7,14 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // customDockerfileLinters runs custom Sourcegraph Dockerfile linters
-func customDockerfileLinters() lint.Runner {
-	return func(ctx context.Context, _ *repo.State) *lint.Report {
+func customDockerfileLinters() *linter {
+	return runCheck("Sourcegraph Dockerfile linters", func(ctx context.Context, out *std.Output, args *repo.State) error {
 		var combinedErrors error
 		for _, dir := range []string{
 			"docker-images",
@@ -52,15 +52,6 @@ func customDockerfileLinters() lint.Runner {
 				combinedErrors = errors.Append(combinedErrors, err)
 			}
 		}
-		return &lint.Report{
-			Header: "Sourcegraph Dockerfile linters",
-			Output: func() string {
-				if combinedErrors != nil {
-					return strings.TrimSpace(combinedErrors.Error())
-				}
-				return ""
-			}(),
-			Err: combinedErrors,
-		}
-	}
+		return combinedErrors
+	})
 }

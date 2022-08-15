@@ -4,7 +4,18 @@ import { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from 
 
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
-export type FeatureFlagName = 'open-beta-enabled' | 'quick-start-tour-for-authenticated-users' | 'new-repo-page'
+export type FeatureFlagName =
+    | 'open-beta-enabled'
+    | 'quick-start-tour-for-authenticated-users'
+    | 'new-repo-page'
+    | 'insight-polling-enabled'
+    | 'ab-visitor-tour-with-notebooks'
+    | 'ab-email-verification-alert'
+    | 'contrast-compliant-syntax-highlighting'
+    | 'admin-analytics-disabled'
+    | 'admin-analytics-cache-disabled'
+    | 'ab-lucky-search' // To be removed at latest by 12/2022.
+    | 'user-management'
 
 interface OrgFlagOverride {
     orgID: string

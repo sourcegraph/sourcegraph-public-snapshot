@@ -15,10 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
@@ -36,54 +34,6 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
 
-func (c *internalClient) SettingsGetForSubject(
-	ctx context.Context,
-	subject api.SettingsSubject,
-) (parsed *schema.Settings, settings *api.Settings, err error) {
-	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
-	if err == nil {
-		err = jsonc.Unmarshal(settings.Contents, &parsed)
-	}
-	return parsed, settings, err
-}
-
-var MockOrgsListUsers func(orgID int32) (users []int32, err error)
-
-func (c *internalClient) OrgsListUsers(ctx context.Context, orgID int32) (users []int32, err error) {
-	if MockOrgsListUsers != nil {
-		return MockOrgsListUsers(orgID)
-	}
-	err = c.postInternal(ctx, "orgs/list-users", orgID, &users)
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
-func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (orgID *int32, err error) {
-	err = c.postInternal(ctx, "orgs/get-by-name", orgName, &orgID)
-	if err != nil {
-		return nil, err
-	}
-	return orgID, nil
-}
-
-func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {
-	err = c.postInternal(ctx, "users/get-by-username", username, &user)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (email *string, err error) {
-	err = c.postInternal(ctx, "user-emails/get-email", userID, &email)
-	if err != nil {
-		return nil, err
-	}
-	return email, nil
-}
-
 // TODO(slimsag): In the future, once we're no longer using environment
 // variables to build ExternalURL, remove this in favor of services just reading it
 // directly from the configuration file.
@@ -96,15 +46,6 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return externalURL, nil
-}
-
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, err error) {
-	err = c.postInternal(ctx, "can-send-email", nil, &canSendEmail)
-	if err != nil {
-		return false, err
-	}
-	return canSendEmail, nil
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
@@ -124,23 +65,6 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	return cfg, err
 }
 
-func (c *internalClient) ReposGetByName(ctx context.Context, repoName api.RepoName) (*api.Repo, error) {
-	var repo api.Repo
-	err := c.postInternal(ctx, "repos/"+string(repoName), nil, &repo)
-	if err != nil {
-		return nil, err
-	}
-	return &repo, nil
-}
-
-func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo api.RepoName, callsign, url string) error {
-	return c.postInternal(ctx, "phabricator/repo-create", api.PhabricatorRepoCreateRequest{
-		RepoName: repo,
-		Callsign: callsign,
-		URL:      url,
-	}, nil)
-}
-
 var MockExternalServiceConfigs func(kind string, result any) error
 
 // ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
@@ -152,15 +76,6 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 	return c.postInternal(ctx, "external-services/configs", api.ExternalServiceConfigsRequest{
 		Kind: kind,
 	}, &result)
-}
-
-// ExternalServicesList returns all external services of the given kind.
-func (c *internalClient) ExternalServicesList(
-	ctx context.Context,
-	opts api.ExternalServicesListRequest,
-) ([]*api.ExternalService, error) {
-	var extsvcs []*api.ExternalService
-	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 
 func (c *internalClient) LogTelemetry(ctx context.Context, reqBody any) error {

@@ -7,6 +7,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -15,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // migrator configures an out of band migration runner process to execute in the background.
@@ -44,7 +46,7 @@ func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine
 	if err != nil {
 		return nil, err
 	}
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "migrator routines"),
@@ -52,6 +54,10 @@ func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
+
+	if outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
+		return nil, errors.Wrap(err, "failed to synchronized out of band migration metadata")
+	}
 
 	if err := m.registerMigrators(db, outOfBandMigrationRunner); err != nil {
 		return nil, err

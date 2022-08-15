@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -305,6 +307,7 @@ func sessionCookie(r *http.Request) string {
 }
 
 func TestRecoverFromInvalidCookieValue(t *testing.T) {
+	logger := logtest.Scoped(t)
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -326,7 +329,7 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 	})
 	w := httptest.NewRecorder()
 
-	CookieMiddleware(database.NewDB(nil), http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
+	CookieMiddleware(database.NewDB(logger, nil), http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
 
 	// Want the request to succeed and clear the bad cookie.
 	resp := w.Result()

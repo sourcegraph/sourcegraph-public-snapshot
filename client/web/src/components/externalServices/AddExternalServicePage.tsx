@@ -6,7 +6,7 @@ import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert, Typography } from '@sourcegraph/wildcard'
+import { Alert, H2, H3, H4 } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -98,9 +98,9 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
     }, [afterCreateRoute, createdExternalService, history])
 
     return (
-        <div className="mt-3">
+        <>
             <PageTitle title="Add repositories" />
-            <Typography.H2>Add repositories</Typography.H2>
+            <H2>Add repositories</H2>
             {createdExternalService?.warning ? (
                 <div>
                     <div className="mb-3">
@@ -112,16 +112,16 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         />
                     </div>
                     <Alert variant="warning">
-                        <Typography.H4>Warning</Typography.H4>
+                        <H4>Warning</H4>
                         <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
                     </Alert>
                 </div>
             ) : (
-                <div>
+                <>
                     <div className="mb-3">
                         <ExternalServiceCard {...externalService} />
                     </div>
-                    <Typography.H3>Instructions:</Typography.H3>
+                    <H3>Instructions:</H3>
                     <div className="mb-4">{externalService.instructions}</div>
                     <ExternalServiceForm
                         history={history}
@@ -137,8 +137,8 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         loading={isCreating === true}
                         autoFocus={autoFocusForm}
                     />
-                </div>
+                </>
             )}
-        </div>
+        </>
     )
 }

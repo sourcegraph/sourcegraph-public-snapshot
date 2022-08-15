@@ -72,6 +72,9 @@ func mainErr(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	sort.Slice(uploads, func(i, j int) bool {
+		return uploads[i].id < uploads[j].id
+	})
 
 	if err := monitor(ctx, repoNames, uploads); err != nil {
 		return err

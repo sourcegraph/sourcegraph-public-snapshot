@@ -1,2 +1,0 @@
-definition local1
-definition local2 references local1

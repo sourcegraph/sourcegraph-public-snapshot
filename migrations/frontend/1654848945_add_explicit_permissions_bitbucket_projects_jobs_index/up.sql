@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS explicit_permissions_bitbucket_projects_jobs_project_key_external_service_id_state_idx ON explicit_permissions_bitbucket_projects_jobs (project_key, external_service_id, state);

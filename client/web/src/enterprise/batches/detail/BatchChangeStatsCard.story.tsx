@@ -1,15 +1,20 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeState } from '../../../graphql-operations'
 
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 
-const { add } = storiesOf('web/batches/BatchChangeStatsCard', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('draft', () => (
+const config: Meta = {
+    title: 'web/batches/BatchChangeStatsCard',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Draft: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -32,9 +37,9 @@ add('draft', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('open', () => (
+export const Open: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -57,9 +62,9 @@ add('open', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('open and complete', () => (
+export const OpenAndComplete: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -82,9 +87,11 @@ add('open and complete', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('closed', () => (
+OpenAndComplete.storyName = 'open and complete'
+
+export const Closed: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -107,4 +114,4 @@ add('closed', () => (
             />
         )}
     </WebStory>
-))
+)

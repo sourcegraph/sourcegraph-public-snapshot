@@ -43,6 +43,7 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/rust":       true,
 	"sourcegraph/scala":      true,
 	"sourcegraph/shell":      true,
+	"sourcegraph/starlark":   true,
 	"sourcegraph/swift":      true,
 	"sourcegraph/tcl":        true,
 	"sourcegraph/thrift":     true,

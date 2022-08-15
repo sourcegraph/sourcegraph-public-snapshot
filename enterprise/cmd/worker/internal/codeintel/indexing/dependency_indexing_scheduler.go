@@ -7,18 +7,20 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const requeueBackoff = time.Second * 30
@@ -32,22 +34,22 @@ func NewDependencyIndexingScheduler(
 	dbStore DBStore,
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
+	gitserverRepoStore GitserverRepoStore,
 	repoUpdaterClient RepoUpdaterClient,
-	gitserverClient GitserverClient,
-	enqueuer IndexEnqueuer,
+	enqueuer *autoindexing.Service,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	workerMetrics workerutil.WorkerMetrics,
 ) *workerutil.Worker {
-	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
-		dbStore:       dbStore,
-		extsvcStore:   externalServiceStore,
-		indexEnqueuer: enqueuer,
-		workerStore:   workerStore,
-		repoUpdater:   repoUpdaterClient,
-		gitserver:     gitserverClient,
+		dbStore:            dbStore,
+		extsvcStore:        externalServiceStore,
+		gitserverRepoStore: gitserverRepoStore,
+		indexEnqueuer:      enqueuer,
+		workerStore:        workerStore,
+		repoUpdater:        repoUpdaterClient,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
@@ -60,12 +62,12 @@ func NewDependencyIndexingScheduler(
 }
 
 type dependencyIndexingSchedulerHandler struct {
-	dbStore       DBStore
-	indexEnqueuer IndexEnqueuer
-	extsvcStore   ExternalServiceStore
-	workerStore   dbworkerstore.Store
-	repoUpdater   RepoUpdaterClient
-	gitserver     GitserverClient
+	dbStore            DBStore
+	indexEnqueuer      IndexEnqueuer
+	extsvcStore        ExternalServiceStore
+	gitserverRepoStore GitserverRepoStore
+	workerStore        dbworkerstore.Store
+	repoUpdater        RepoUpdaterClient
 }
 
 var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
@@ -139,7 +141,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 			Version: packageReference.Package.Version,
 		}
 
-		repoName, _, ok := enqueuer.InferRepositoryAndRevision(pkg)
+		repoName, _, ok := autoindexing.InferRepositoryAndRevision(pkg)
 		if !ok {
 			continue
 		}
@@ -159,15 +161,15 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 	}
 
-	results, err := h.gitserver.RepoInfo(ctx, repoNames...)
+	results, err := h.gitserverRepoStore.GetByNames(ctx, repoNames...)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.RepoInfo")
 	}
 
-	for repo, info := range results {
-		if !info.Cloned && !info.CloneInProgress { // if the repository doesnt exist
-			delete(repoToPackages, repo)
-		} else if info.CloneInProgress { // we can't enqueue if still cloning
+	for repoName, info := range results {
+		if info.CloneStatus != types.CloneStatusCloned && info.CloneStatus != types.CloneStatusCloning { // if the repository doesnt exist
+			delete(repoToPackages, repoName)
+		} else if info.CloneStatus == types.CloneStatusCloning { // we can't enqueue if still cloning
 			return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(requeueBackoff))
 		}
 	}

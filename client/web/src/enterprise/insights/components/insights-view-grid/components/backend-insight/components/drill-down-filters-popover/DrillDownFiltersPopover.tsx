@@ -1,9 +1,9 @@
 import React, { DOMAttributes, useRef, useState } from 'react'
 
+import { mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
-import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
 import { InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
@@ -69,6 +69,12 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         }
     }
 
+    const handleCreateInsight = (values: DrillDownInsightCreationFormValues): void => {
+        setStep(DrillDownFiltersStep.Filters)
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        onInsightCreate(values)
+    }
+
     return (
         <Popover isOpen={isOpen} anchor={anchor} onOpenChange={event => onVisibilityChange(event.isOpen)}>
             <PopoverTrigger
@@ -77,12 +83,19 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                 variant="icon"
                 type="button"
                 aria-label={isFiltered ? 'Active filters' : 'Filters'}
-                className={classNames('btn-icon p-1', styles.filterButton, {
+                className={classNames('p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}
             >
-                <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
+                <Icon
+                    className={styles.filterIcon}
+                    svgPath={mdiFilterOutline}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1rem"
+                    width="1rem"
+                />
             </PopoverTrigger>
 
             <PopoverContent
@@ -106,7 +119,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
 
                 {step === DrillDownFiltersStep.ViewCreation && (
                     <DrillDownInsightCreationForm
-                        onCreateInsight={onInsightCreate}
+                        onCreateInsight={handleCreateInsight}
                         onCancel={() => setStep(DrillDownFiltersStep.Filters)}
                     />
                 )}

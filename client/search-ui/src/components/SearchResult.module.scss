@@ -11,6 +11,11 @@
     padding: 0.25rem 0;
     position: relative;
 
+    :global(.core-workflow-improvements-enabled) & {
+        border: none !important;
+        border-top: none !important;
+    }
+
     &-clickable {
         cursor: pointer;
     }
@@ -82,10 +87,32 @@
     align-items: center;
     flex-grow: 1;
     min-width: 0;
+    flex-wrap: wrap;
+}
+
+.title-inner {
+    overflow-wrap: anywhere;
 }
 
 .commit-oid {
     background: var(--code-bg);
     display: inline-block;
     padding: 0.25rem;
+}
+
+.muted-repo-file-link {
+    color: var(--text-muted);
+
+    a {
+        color: var(--text-muted);
+
+        &:hover {
+            color: var(--text-muted);
+        }
+    }
+}
+
+.symbols {
+    border: none !important;
+    padding: 0 !important;
 }

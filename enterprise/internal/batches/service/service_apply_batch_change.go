@@ -54,6 +54,8 @@ func (s *Service) ApplyBatchChange(
 	ctx, _, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	// TODO move license check logic from resolver to here
+
 	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		RandID: opts.BatchSpecRandID,
 	})
@@ -106,7 +108,7 @@ func (s *Service) ApplyBatchChange(
 	}
 	defer func() { err = tx.Done(err) }()
 
-	l := locker.NewWithDB(nil, "batches_apply").With(tx)
+	l := locker.NewWith(tx, "batches_apply")
 	locked, err := l.LockInTransaction(ctx, int32(batchChange.ID), false)
 	if err != nil {
 		return nil, err

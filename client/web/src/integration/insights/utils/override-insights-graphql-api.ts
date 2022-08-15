@@ -122,6 +122,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 session: { canSignOut: true },
                 viewerCanAdminister: true,
                 searchable: true,
+                emails: [],
             },
         }),
         ...overrides,

@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,7 +18,7 @@ var _ graphqlbackend.InsightSeriesQueryStatusResolver = &insightSeriesQueryStatu
 
 func (r *Resolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend.UpdateInsightSeriesArgs) (graphqlbackend.InsightSeriesMetadataPayloadResolver, error) {
 	actr := actor.FromContext(ctx)
-	if err := backend.CheckUserIsSiteAdmin(ctx, database.NewDB(r.postgresDB), actr.UID); err != nil {
+	if err := backend.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +41,7 @@ func (r *Resolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend
 
 func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbackend.InsightSeriesQueryStatusResolver, error) {
 	actr := actor.FromContext(ctx)
-	if err := backend.CheckUserIsSiteAdmin(ctx, database.NewDB(r.postgresDB), actr.UID); err != nil {
+	if err := backend.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
 

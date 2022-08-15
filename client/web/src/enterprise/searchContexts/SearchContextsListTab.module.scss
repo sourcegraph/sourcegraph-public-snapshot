@@ -1,13 +1,23 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .auto-defined-search-contexts {
     display: grid;
     gap: 1rem;
 
     &--repeat-2 {
         grid-template-columns: repeat(2, 1fr);
+
+        @media (--xs-breakpoint-down) {
+            grid-template-columns: repeat(1, 1fr);
+        }
     }
 
     &--repeat-3 {
         grid-template-columns: repeat(3, 1fr);
+
+        @media (--xs-breakpoint-down) {
+            grid-template-columns: repeat(1, 1fr);
+        }
     }
 }
 
@@ -15,6 +25,17 @@
     cursor: default;
 }
 
+.filters-form {
+    @media (--xs-breakpoint-down) {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
 .filter-input {
     max-width: 30%;
+
+    @media (--xs-breakpoint-down) {
+        max-width: 100%;
+    }
 }

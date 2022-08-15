@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H3 } from '@sourcegraph/wildcard'
 
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
@@ -18,9 +18,9 @@ export const HiddenExternalChangesetInfoCell: React.FunctionComponent<
 > = ({ node, className }) => (
     <div className={classNames('d-flex flex-column', className)}>
         <div className="m-0 mb-2">
-            <Typography.H3 className="m-0 d-inline">
+            <H3 className="m-0 d-inline">
                 <span className="text-muted">Changeset in a private repository</span>
-            </Typography.H3>
+            </H3>
         </div>
         <div>
             <ChangesetLastSynced changeset={node} viewerCanAdminister={false} />

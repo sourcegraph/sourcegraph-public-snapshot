@@ -22,9 +22,10 @@ func TestGenerateExceptionIssue(t *testing.T) {
 	protectedPayload.PullRequest.Base = RefPayload{Ref: "release"}
 
 	tests := []struct {
-		name    string
-		payload EventPayload
-		result  checkResult
+		name              string
+		payload           EventPayload
+		result            checkResult
+		additionalContext string
 
 		wantAssignees    []string
 		wantLabels       []string
@@ -75,11 +76,19 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
 		wantBodyContains: []string{"\"release\" is protected"},
+	}, {
+		name:              "reviewed, planned but protected",
+		payload:           protectedPayload,
+		additionalContext: "please use preprod branch",
+		result:            checkResult{ProtectedBranch: true},
+		wantAssignees:     []string{"robert"},
+		wantLabels:        []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
+		wantBodyContains:  []string{"please use preprod branch"},
 	},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := generateExceptionIssue(&tt.payload, &tt.result)
+			got := generateExceptionIssue(&tt.payload, &tt.result, tt.additionalContext)
 			t.Log(got.GetTitle(), "\n", got.GetBody())
 			assert.Equal(t, tt.wantAssignees, got.GetAssignees())
 			assert.Equal(t, tt.wantLabels, got.GetLabels())

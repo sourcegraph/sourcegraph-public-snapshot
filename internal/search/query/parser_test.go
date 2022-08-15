@@ -246,6 +246,16 @@ func TestScanPredicate(t *testing.T) {
 		Result:       `{"field":"r","value":"contains.file(sup)","negated":false}`,
 		ResultLabels: "IsPredicate",
 	}).Equal(t, test(`r:contains.file(sup)`))
+
+	autogold.Want("Repo has key value pair", value{
+		Result:       `{"field":"r","value":"has(key:value)","negated":false}`,
+		ResultLabels: "IsPredicate",
+	}).Equal(t, test(`r:has(key:value)`))
+
+	autogold.Want("Repo has tag", value{
+		Result:       `{"field":"r","value":"has.tag(tag)","negated":false}`,
+		ResultLabels: "IsPredicate",
+	}).Equal(t, test(`r:has.tag(tag)`))
 }
 
 func TestScanField(t *testing.T) {
@@ -291,7 +301,7 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 	if parser.balanced != 0 {
 		return nil, errors.New("unbalanced expression: unmatched closing parenthesis )")
 	}
-	return newOperator(nodes, And), nil
+	return NewOperator(nodes, And), nil
 }
 
 func TestParse(t *testing.T) {
@@ -608,7 +618,7 @@ func TestMatchUnaryKeyword(t *testing.T) {
 
 func TestParseAndOrLiteral(t *testing.T) {
 	test := func(input string) string {
-		result, err := Parse(input, SearchTypeLiteralDefault)
+		result, err := Parse(input, SearchTypeLiteral)
 		if err != nil {
 			return fmt.Sprintf("ERROR: %s", err.Error())
 		}
@@ -743,8 +753,27 @@ func Test_newOperator(t *testing.T) {
 			q, err := ParseRegexp(tc.query)
 			require.NoError(t, err)
 
-			got := newOperator(q, And)
+			got := NewOperator(q, And)
 			tc.want.Equal(t, Q(got).String())
 		})
 	}
+}
+
+func TestParseStandard(t *testing.T) {
+	test := func(input string) string {
+		result, err := Parse(input, SearchTypeStandard)
+		if err != nil {
+			return err.Error()
+		}
+		json, _ := PrettyJSON(result)
+		return json
+	}
+
+	t.Run("patterns are literal and slash-delimited patterns /.../ are regexp", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("anjou /saumur/")))
+	})
+
+	t.Run("quoted patterns are still literal", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`"veneto"`)))
+	})
 }

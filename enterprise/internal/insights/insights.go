@@ -2,12 +2,12 @@ package insights
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -32,8 +32,8 @@ func IsEnabled() bool {
 		return false
 	}
 	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments unless explicity
-		// allowed, (for example by backend integration tests.)
+		// Code insights is not supported in single-container Docker demo deployments unless
+		// explicity allowed, (for example by backend integration tests.)
 		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
 			return true
 		}
@@ -65,7 +65,7 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 // database migrations before returning. It is safe to call from multiple services/containers (in
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
-func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
+func InitializeCodeInsightsDB(app string) (edb.InsightsDB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsDSN
 	})
@@ -74,20 +74,21 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	return db, nil
+	return edb.NewInsightsDB(db), nil
 }
 
 func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	var insightsMigrator oobmigration.Migrator
 	if !IsEnabled() {
-		return nil
+		// This allows this migration to be "complete" even when insights is not enabled.
+		insightsMigrator = migration.NewMigratorNoOp()
+	} else {
+		insightsDB, err := InitializeCodeInsightsDB("worker-oobmigrator")
+		if err != nil {
+			return err
+		}
+		insightsMigrator = migration.NewMigrator(insightsDB, db)
 	}
-
-	insightsDB, err := InitializeCodeInsightsDB("worker-oobmigrator")
-	if err != nil {
-		return err
-	}
-
-	insightsMigrator := migration.NewMigrator(insightsDB, db)
 
 	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
 	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {

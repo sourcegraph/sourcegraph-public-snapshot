@@ -1,15 +1,15 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { RouteComponentProps, useHistory, useLocation } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, Link, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, H3, Text, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -79,6 +79,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfiguration'), [telemetryService])
 
     const history = useHistory()
+    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryPoliciesCallback = useCallback(
@@ -90,26 +91,24 @@ export const CodeIntelConfigurationPage: FunctionComponent<
 
     return (
         <>
-            <PageTitle title="Precise code intelligence configuration" />
+            <PageTitle title="Code graph data configuration" />
             <CodeIntelConfigurationPageHeader>
                 <PageHeader
                     headingElement="h2"
                     path={[
                         {
-                            text: <>Precise code intelligence configuration</>,
+                            text: <>Code graph data configuration</>,
                         },
                     ]}
                     description={`Rules that control data retention${
                         indexingEnabled ? ' and auto-indexing' : ''
-                    } behavior for precise code intelligence.`}
+                    } behavior for code graph data.`}
                     className="mb-3"
                 />
                 {authenticatedUser?.siteAdmin && <PolicyListActions history={history} />}
             </CodeIntelConfigurationPageHeader>
 
-            {history.location.state && (
-                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
-            )}
+            {location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
             <Container>
                 <FilteredConnection<CodeIntelligenceConfigurationPolicyFields, {}>
                     listComponent="div"
@@ -149,7 +148,7 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
 
         <div className={classNames(styles.name, 'd-flex flex-column')}>
             <div className="m-0">
-                <Typography.H3 className="m-0 d-block d-md-inline">{policy.name}</Typography.H3>
+                <H3 className="m-0 d-block d-md-inline">{policy.name}</H3>
             </div>
 
             <div>
@@ -186,16 +185,16 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
 
                 <div>
                     {indexingEnabled && !policy.retentionEnabled && !policy.indexingEnabled ? (
-                        <p className="text-muted mt-2">Data retention and auto-indexing disabled.</p>
+                        <Text className="text-muted mt-2">Data retention and auto-indexing disabled.</Text>
                     ) : (
                         <>
-                            <p className="mt-2">
+                            <Text className="mt-2">
                                 <RetentionPolicyDescription policy={policy} />
-                            </p>
+                            </Text>
                             {indexingEnabled && (
-                                <p className="mt-2">
+                                <Text className="mt-2">
                                     <IndexingPolicyDescription policy={policy} />
-                                </p>
+                                </Text>
                             )}
                         </>
                     )}
@@ -203,10 +202,8 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
             </div>
         </div>
 
-        <span className={classNames(styles.button, 'd-none d-md-inline')}>
-            <Link to={`./configuration/${policy.id}`} className="p-0">
-                <ChevronRightIcon />
-            </Link>
-        </span>
+        <Link to={`./configuration/${policy.id}`} className="p-0">
+            <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
+        </Link>
     </>
 )

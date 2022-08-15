@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
-import BrainIcon from 'mdi-react/BrainIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -96,18 +96,19 @@ export const CodeIntelligenceBadgeMenu: React.FunctionComponent<
     const dotStyle = showDotError ? styles.braindotError : showDotAttention ? styles.braindotAttention : ''
 
     return (
-        <Menu className="btn-icon">
+        <Menu>
             <>
                 <MenuButton
                     className={classNames('text-decoration-none', styles.braindot, dotStyle)}
                     onClick={() => setBadgeUsed(true)}
+                    aria-label="Code graph"
                 >
-                    <Icon as={BrainIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiBrain} />
                 </MenuButton>
 
                 <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isStorybook}>
                     <MenuHeader>
-                        Code intelligence{' '}
+                        Code graph{' '}
                         {isNew && (
                             <Badge variant="info" className="text-uppercase mx-2">
                                 NEW

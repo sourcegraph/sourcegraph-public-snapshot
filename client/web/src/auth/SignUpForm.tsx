@@ -1,10 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiHelpCircleOutline, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import cookies from 'js-cookie'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -17,12 +15,13 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Checkbox, Label, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial } from '../util/features'
+import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
@@ -47,50 +46,20 @@ interface SignUpFormProps {
     onSignUp: (args: SignUpArguments) => Promise<void>
 
     buttonLabel?: string
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
+    context: Pick<
+        SourcegraphContext,
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'experimentalFeatures'
+        | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
+    >
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
     experimental?: boolean
 }
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
-
-export function getPasswordRequirements(
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
-): string {
-    let requirements = ''
-    const passwordPolicyReference = context.experimentalFeatures.passwordPolicy
-
-    if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
-        console.log('Using enhanced password policy.')
-
-        if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
-            requirements +=
-                'Your password must include at least ' + String(passwordPolicyReference.minimumLength) + ' characters'
-        }
-        if (
-            passwordPolicyReference.numberOfSpecialCharacters &&
-            passwordPolicyReference.numberOfSpecialCharacters > 0
-        ) {
-            requirements += ', ' + String(passwordPolicyReference.numberOfSpecialCharacters) + ' special characters'
-        }
-        if (
-            passwordPolicyReference.requireAtLeastOneNumber &&
-            passwordPolicyReference.requireAtLeastOneNumber === true
-        ) {
-            requirements += ', at least one number'
-        }
-        if (
-            passwordPolicyReference.requireUpperandLowerCase &&
-            passwordPolicyReference.requireUpperandLowerCase === true
-        ) {
-            requirements += ', at least one uppercase letter'
-        }
-    } else {
-        requirements += 'At least 12 characters'
-    }
-    return requirements
-}
 
 /**
  * The form for creating an account
@@ -203,14 +172,14 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                     emailInputReference={emailInputReference}
                 />
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Label
                         htmlFor="username"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': usernameState.kind === 'INVALID',
                         })}
                     >
                         Username
-                    </label>
+                    </Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(usernameState))}
                         loading={usernameState.kind === 'LOADING'}
@@ -223,23 +192,24 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             disabled={loading}
                             placeholder=" "
                             inputRef={usernameInputReference}
+                            aria-describedby="username-input-invalid-feedback"
                         />
                     </LoaderInput>
                     {usernameState.kind === 'INVALID' && (
-                        <small className="invalid-feedback" role="alert">
+                        <small className="invalid-feedback" id="username-input-invalid-feedback" role="alert">
                             {usernameState.reason}
                         </small>
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Label
                         htmlFor="password"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': passwordState.kind === 'INVALID',
                         })}
                     >
                         Password
-                    </label>
+                    </Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(passwordState))}
                         loading={passwordState.kind === 'LOADING'}
@@ -251,25 +221,22 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             required={true}
                             disabled={loading}
                             autoComplete="new-password"
-                            minLength={
-                                context.experimentalFeatures.passwordPolicy?.enabled !== undefined &&
-                                context.experimentalFeatures.passwordPolicy.enabled &&
-                                context.experimentalFeatures.passwordPolicy?.minimumLength !== undefined
-                                    ? context.experimentalFeatures.passwordPolicy.minimumLength
-                                    : 12
-                            }
+                            minLength={context.authMinPasswordLength}
                             placeholder=" "
                             onInvalid={preventDefault}
                             inputRef={passwordInputReference}
                             formNoValidate={true}
+                            aria-describedby="password-input-invalid-feedback password-requirements"
                         />
                     </LoaderInput>
                     {passwordState.kind === 'INVALID' && (
-                        <small className="invalid-feedback" role="alert">
+                        <small className="invalid-feedback" id="password-input-invalid-feedback" role="alert">
                             {passwordState.reason}
                         </small>
                     )}
-                    <small className="form-help text-muted">{getPasswordRequirements(context)}</small>
+                    <small className="form-help text-muted" id="password-requirements">
+                        {getPasswordRequirements(context)}
+                    </small>
                 </div>
                 {!experimental && enterpriseTrial && (
                     <div className="form-group">
@@ -280,9 +247,10 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                 <>
                                     Try Sourcegraph Enterprise free for
                                     <span className="text-nowrap">
+                                        {' '}
                                         30 days{' '}
                                         <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
-                                            <Icon as={HelpCircleOutlineIcon} />
+                                            <Icon aria-label="See Sourcegraph pricing" svgPath={mdiHelpCircleOutline} />
                                         </Link>
                                     </span>
                                 </>
@@ -296,8 +264,8 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className="btn-block"
                         variant="primary"
+                        display="block"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (
@@ -309,15 +277,15 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             <div className="mb-2" key={index}>
                                 <Button
                                     href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                    className="btn-block"
+                                    display="block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                     variant="secondary"
                                     as="a"
                                 >
                                     {provider.serviceType === 'github' ? (
-                                        <Icon as={GithubIcon} />
+                                        <Icon aria-hidden={true} svgPath={mdiGithub} />
                                     ) : provider.serviceType === 'gitlab' ? (
-                                        <Icon as={GitlabIcon} />
+                                        <Icon aria-hidden={true} svgPath={mdiGitlab} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </Button>
@@ -327,7 +295,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 )}
 
                 {!experimental && (
-                    <p className="mt-3 mb-0">
+                    <Text className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our{' '}
                             <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
@@ -339,7 +307,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             </Link>
                             .
                         </small>
-                    </p>
+                    </Text>
                 )}
             </form>
         </>
@@ -364,68 +332,4 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
         }),
         catchError(() => of('Unknown error validating username'))
     )
-}
-
-function validatePassword(
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>,
-    password: string
-): string | undefined {
-    if (context.experimentalFeatures.passwordPolicy?.enabled) {
-        if (
-            context.experimentalFeatures.passwordPolicy.minimumLength &&
-            password.length < context.experimentalFeatures.passwordPolicy.minimumLength
-        ) {
-            return (
-                'Password must be greater than ' +
-                String(context.experimentalFeatures.passwordPolicy.minimumLength) +
-                ' characters.'
-            )
-        }
-        if (
-            context.experimentalFeatures.passwordPolicy?.numberOfSpecialCharacters &&
-            context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters > 0
-        ) {
-            const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
-            // This must be kept in sync with the security.go checks
-            const count = (password.match(specialCharacters) || []).length
-            if (
-                context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters &&
-                count < context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters
-            ) {
-                return (
-                    'Password must contain ' +
-                    String(context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters) +
-                    ' special character(s).'
-                )
-            }
-        }
-
-        if (
-            context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber &&
-            context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber
-        ) {
-            const validRequireAtLeastOneNumber = /\d+/
-            if (password.match(validRequireAtLeastOneNumber) === null) {
-                return 'Password must contain at least one number.'
-            }
-        }
-
-        if (
-            context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase &&
-            context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase
-        ) {
-            const validUseUpperCase = new RegExp('[A-Z]+')
-            if (!validUseUpperCase.test(password)) {
-                return 'Password must contain at least one uppercase letter.'
-            }
-        }
-
-        return undefined
-    }
-
-    if (password.length < 12) {
-        return 'Password must be at least 12 characters.'
-    }
-
-    return undefined
 }

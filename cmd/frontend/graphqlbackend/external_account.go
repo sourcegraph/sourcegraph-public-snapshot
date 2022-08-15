@@ -77,7 +77,12 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	}
 
 	if r.account.Data != nil {
-		return &JSONValue{r.account.Data}, nil
+		raw, err := r.account.Data.Decrypt(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return &JSONValue{raw}, nil
 	}
 	return nil, nil
 }

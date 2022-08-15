@@ -9,13 +9,17 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetConfigurationPolicies(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
@@ -34,15 +38,15 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(101, 42,   'policy 1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(102, 42,   'policy 2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
-			(103, 43,   'policy 3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(104, NULL, 'policy 4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
-			(105, NULL, 'policy 5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(106, NULL, 'policy 6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false),
-			(107, NULL, 'policy 7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false),
-			(108, NULL, 'policy 8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false),
-			(109, NULL, 'policy 9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false)
+			(101, 42,   'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
+			(102, 42,   'policy  2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
+			(103, 43,   'policy  3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
+			(104, NULL, 'policy  4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
+			(105, NULL, 'policy  5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
+			(106, NULL, 'policy  6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false),
+			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false),
+			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false),
+			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -147,7 +151,8 @@ func TestGetConfigurationPolicies(t *testing.T) {
 }
 
 func TestGetConfigurationPolicyByID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
@@ -222,7 +227,8 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 }
 
 func TestGetConfigurationPolicyByIDUnknownID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	_, ok, err := store.GetConfigurationPolicyByID(context.Background(), 15)
@@ -235,7 +241,8 @@ func TestGetConfigurationPolicyByIDUnknownID(t *testing.T) {
 }
 
 func TestCreateConfigurationPolicy(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -282,7 +289,8 @@ func TestCreateConfigurationPolicy(t *testing.T) {
 }
 
 func TestUpdateConfigurationPolicy(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -344,7 +352,8 @@ func TestUpdateConfigurationPolicy(t *testing.T) {
 }
 
 func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -375,7 +384,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 	}
 
 	// Mark configuration policy as protected (no other way to do so outside of migrations)
-	if _, err := db.Exec("UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
 		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
 	}
 
@@ -453,7 +462,8 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 }
 
 func TestDeleteConfigurationPolicyByID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -496,7 +506,8 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 }
 
 func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -526,7 +537,7 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	}
 
 	// Mark configuration policy as protected (no other way to do so outside of migrations)
-	if _, err := db.Exec("UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
 		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
 	}
 
@@ -544,7 +555,8 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 }
 
 func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 

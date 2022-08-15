@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -175,7 +174,7 @@ type Client struct {
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
-	rateLimiter      *rate.Limiter // Our internal rate limiter
+	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -373,9 +372,6 @@ func HTTPErrorCode(err error) int {
 	return 0
 }
 
-// ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
-var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
-
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
@@ -383,6 +379,9 @@ func IsNotFound(err error) bool {
 		errors.Is(err, ErrMergeRequestNotFound) ||
 		HTTPErrorCode(err) == http.StatusNotFound
 }
+
+// ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
+var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
 
 // ErrProjectNotFound is when the requested GitLab project is not found.
 var ErrProjectNotFound = &ProjectNotFoundError{}
@@ -400,3 +399,18 @@ func (e ProjectNotFoundError) Error() string {
 }
 
 func (e ProjectNotFoundError) NotFound() bool { return true }
+
+// ProjectArchivedError is returned when a request cannot be performed due to the
+// GitLab project being archived.
+type ProjectArchivedError struct{ Name string }
+
+func (ProjectArchivedError) Archived() bool { return true }
+
+func (e ProjectArchivedError) Error() string {
+	if e.Name == "" {
+		return "GitLab project is archived"
+	}
+	return fmt.Sprintf("GitLab project %q is archived", e.Name)
+}
+
+func (ProjectArchivedError) NonRetryable() bool { return true }

@@ -1,14 +1,14 @@
 # Auto-indexing configuration reference
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-This document details the expected contents of [explicit index job configuration](../how-to/configure_auto_indexing.md#explicit-index-job-configuration) for a particular repository. Depending on how this configuration is supplied, it may be encoded as YAML or JSON.
+This document details the expected contents of [explicit index job configuration](../how-to/configure_auto_indexing.md#explicit-index-job-configuration) for a particular repository. Depending on how this configuration is supplied, it may be encoded as JSON.
 
 ## Keys
 
@@ -86,15 +86,15 @@ An ordered sequence of commands to execute within a container running the config
 
 #### [`indexer_args`](#index-job-indexer-args)
 
-An ordered sequence of arguments that make up the indexing command. The indexing command is passed directly into the target container via `docker exec`. This step is expected to produce a precise code intelligence index artifact (as described by the `root` and `outfile` fields, described below).
+An ordered sequence of arguments that make up the indexing command. The indexing command is passed directly into the target container via `docker exec`. This step is expected to produce a code graph index artifact (as described by the `root` and `outfile` fields, described below).
 
 #### [`root`](#index-job-root)
 
-The working directory within the Docker container where the provided local steps and indexer commands are executed. This working directory is relative to the root of the target repository. An empty value (the default) indicates the root of the repository. This is also the directory relative to the path where the precise code intelligence index artifact is produced.
+The working directory within the Docker container where the provided local steps and indexer commands are executed. This working directory is relative to the root of the target repository. An empty value (the default) indicates the root of the repository. This is also the directory relative to the path where the code graph index artifact is produced.
 
 #### [`outfile`](#index-job-outfile)
 
-The path to the precise code intelligence index artifact produced by the indexer, which is uploaded to the target Sourcegraph instance via [`src` CLI](../../cli/index.md) after the index step has completed successfully. This path is relative to the index job `root` (defined above). If not supplied, the value is assumed to be `dump.lsif` (which is the default artifact name of many indexers).
+The path to the code graph index artifact produced by the indexer, which is uploaded to the target Sourcegraph instance via [`src` CLI](../../cli/index.md) after the index step has completed successfully. This path is relative to the index job `root` (defined above). If not supplied, the value is assumed to be `dump.lsif` (which is the default artifact name of many indexers).
 
 Supply this argument when the target indexer produces a differently named artifact. Alternatively, some indexers provide flags to change the artifact name; in which case `dump.lsif` can be supplied there and a value for this key can be omitted.
 
@@ -116,23 +116,21 @@ indexer_args:
 root: dev/sg
 ```
 
-The following example uses the Docker image `sourcegraph/lsif-node` pinned at the tag `autoindex`. This index configuration will run `npm install` followed by the TypeScript indexer `lsif-tsc` in the `editors/code` directory. In this job, both commands run in the same workspace, but are invoked in different Docker containers. Both containers happen to be based on the same image, but that's not necessary.
+The following example uses the Docker image `sourcegraph/scip-typescript` pinned at the tag `autoindex`. This index configuration will run `npm install` followed by the TypeScript indexer `scip-typescript` in the `editors/code` directory. In this job, both commands run in the same workspace, but are invoked in different Docker containers. Both containers happen to be based on the same image, but that's not necessary.
 
 ```yaml
 steps:
-  - image: sourcegraph/lsif-node:autoindex
+  - image: sourcegraph/scip-typescript:autoindex
     commands:
       - npm install
     root: editors/code
 
-# sourcegraph/lsif-node does not define a Docker entrypoint, so we need 
+# sourcegraph/scip-typescript does not define a Docker entrypoint, so we need
 # to indicate which binary to invoke (along with any additional arguments).
-# Here, -p and . are passed to the underlying TypeScript language analyzer.
-indexer: sourcegraph/lsif-node:autoiondex
+indexer: sourcegraph/scip-typescript:autoiondex
 indexer_args:
-    - lsif-tsc
-    - -p
-    - .
+    - scip-typescript
+    - index
 
 root: editors/code
 ```
@@ -155,7 +153,7 @@ indexer_args:
   - lsif-clang
   - compile_commands.json
 
-# Ensure lsif-clang generates the file expected by src lsif upload.
+# Ensure lsif-clang generates the file expected by src code-intel upload.
 outfile: dump.lsif
 ```
 

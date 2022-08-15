@@ -44,6 +44,13 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 	// Scan for first build with a meaningful state
 	var firstFailedBuildIndex int
 	for i, b := range builds {
+		if isBuildScheduled(b) {
+			// a Scheduled build should not be considered as part of the set that determines whether
+			// main is locked.
+			// An exmaple of a scheduled build is the nightly release healthcheck build at:
+			// https://buildkite.com/sourcegraph/sourcegraph/settings/schedules/d0b2e4ea-e2df-4fb5-b90e-db88fddb1b76
+			continue
+		}
 		if isBuildPassed(b) {
 			fmt.Printf("most recent finished build %d passed\n", *b.Number)
 			results.Action, err = branch.Unlock(ctx)
@@ -101,6 +108,10 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 		return nil, errors.Newf("lockBranch: %w", err)
 	}
 	return
+}
+
+func isBuildScheduled(build buildkite.Build) bool {
+	return build.Source != nil && *build.Source == "scheduled"
 }
 
 func isBuildPassed(build buildkite.Build) bool {

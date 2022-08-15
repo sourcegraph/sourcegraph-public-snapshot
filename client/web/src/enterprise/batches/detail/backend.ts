@@ -103,9 +103,18 @@ const batchChangeFragment = gql`
         url
         name
         namespace {
+            __typename
             id
             namespaceName
             url
+            ... on User {
+                displayName
+                username
+            }
+            ... on Org {
+                displayName
+                name
+            }
         }
         description
 
@@ -147,6 +156,7 @@ const batchChangeFragment = gql`
         currentSpec {
             id
             originalInput
+            source
             supersedingBatchSpec {
                 createdAt
                 applyURL

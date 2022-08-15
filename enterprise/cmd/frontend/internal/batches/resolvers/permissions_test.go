@@ -9,12 +9,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -37,14 +40,15 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	ct.MockRSAKeygen(t)
+	bt.MockRSAKeygen(t)
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	key := et.TestKey{}
 
 	cstore := store.New(db, &observation.TestContext, key)
 	sr := New(cstore)
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,11 +62,11 @@ func TestPermissionLevels(t *testing.T) {
 	ctx := context.Background()
 
 	// Global test data that we reuse in every test
-	adminID := ct.CreateTestUser(t, db, true).ID
-	userID := ct.CreateTestUser(t, db, false).ID
+	adminID := bt.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -127,7 +131,7 @@ func TestPermissionLevels(t *testing.T) {
 		// We're using the service method here since it also creates a resolution job
 		svc := service.New(s)
 		spec, err := svc.CreateBatchSpecFromRaw(userCtx, service.CreateBatchSpecFromRawOpts{
-			RawSpec:         ct.TestRawBatchSpecYAML,
+			RawSpec:         bt.TestRawBatchSpecYAML,
 			NamespaceUserID: userID,
 		})
 		if err != nil {
@@ -172,7 +176,10 @@ func TestPermissionLevels(t *testing.T) {
 	cleanUpBatchSpecs := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		batchChanges, next, err := s.ListBatchSpecs(ctx, store.ListBatchSpecsOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
+		batchChanges, next, err := s.ListBatchSpecs(ctx, store.ListBatchSpecsOpts{
+			LimitOpts:                   store.LimitOpts{Limit: 1000},
+			IncludeLocallyExecutedSpecs: true,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -438,6 +445,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var graphqlID graphql.ID
 					if tc.user != 0 {
+						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
 						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
@@ -599,6 +607,7 @@ func TestPermissionLevels(t *testing.T) {
 					},
 				},
 			}
+
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
@@ -608,10 +617,19 @@ func TestPermissionLevels(t *testing.T) {
 						expectedIDs[graphqlID] = true
 					}
 
-					query := `query { batchSpecs() { totalCount, nodes { id } } }`
+					input := map[string]any{
+						"includeLocallyExecutedSpecs": true,
+					}
+
+					query := `
+query($includeLocallyExecutedSpecs: Boolean) {
+	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) {
+		totalCount, nodes { id }
+	}
+}`
 
 					var res struct{ BatchSpecs apitest.BatchSpecConnection }
-					apitest.MustExec(actorCtx, t, s, nil, &res, query)
+					apitest.MustExec(actorCtx, t, s, input, &res, query)
 
 					if have, want := res.BatchSpecs.TotalCount, len(tc.wantBatchSpecs); have != want {
 						t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
@@ -679,6 +697,101 @@ func TestPermissionLevels(t *testing.T) {
 						if have, want := res.Node.ID, graphqlID; have != want {
 							t.Fatalf("invalid node returned, wanted ID=%q, have=%q", want, have)
 						}
+					}
+				})
+			}
+		})
+
+		t.Run("CheckBatchChangesCredential", func(t *testing.T) {
+			service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+				return nil
+			}
+			t.Cleanup(func() {
+				service.Mocks.Reset()
+			})
+
+			tests := []struct {
+				name        string
+				currentUser int32
+				user        int32
+				wantErr     bool
+			}{
+				{
+					name:        "site-admin viewing other user",
+					currentUser: adminID,
+					user:        userID,
+					wantErr:     false,
+				},
+				{
+					name:        "non-site-admin viewing other's credential",
+					currentUser: userID,
+					user:        adminID,
+					wantErr:     true,
+				},
+				{
+					name:        "non-site-admin viewing own credential",
+					currentUser: userID,
+					user:        userID,
+					wantErr:     false,
+				},
+
+				{
+					name:        "site-admin viewing site-credential",
+					currentUser: adminID,
+					user:        0,
+					wantErr:     false,
+				},
+				{
+					name:        "non-site-admin viewing site-credential",
+					currentUser: userID,
+					user:        0,
+					wantErr:     true,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					pruneUserCredentials(t, db, key)
+					pruneSiteCredentials(t, cstore)
+
+					var graphqlID graphql.ID
+					if tc.user != 0 {
+						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
+						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+							Domain:              database.UserCredentialDomainBatches,
+							ExternalServiceID:   "https://github.com/",
+							ExternalServiceType: extsvc.TypeGitHub,
+							UserID:              tc.user,
+						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						if err != nil {
+							t.Fatal(err)
+						}
+						graphqlID = marshalBatchChangesCredentialID(cred.ID, false)
+					} else {
+						cred := &btypes.SiteCredential{
+							ExternalServiceID:   "https://github.com/",
+							ExternalServiceType: extsvc.TypeGitHub,
+						}
+						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
+							t.Fatal(err)
+						}
+						graphqlID = marshalBatchChangesCredentialID(cred.ID, true)
+					}
+
+					var res struct {
+						CheckBatchChangesCredential apitest.EmptyResponse
+					}
+
+					input := map[string]any{"id": graphqlID}
+					query := `query($id: ID!) { checkBatchChangesCredential(batchChangesCredential: $id) { alwaysNil } }`
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					errors := apitest.Exec(actorCtx, t, s, input, &res, query)
+					if !tc.wantErr {
+						assert.Len(t, errors, 0)
+					} else if tc.wantErr {
+						assert.Len(t, errors, 1)
 					}
 				})
 			}
@@ -805,20 +918,20 @@ func TestPermissionLevels(t *testing.T) {
 							cleanUpBatchChanges(t, cstore)
 
 							batchSpecRandID, batchSpecID := createBatchSpec(t, cstore, tc.batchChangeAuthor)
-							batchChagneID := createBatchChange(t, cstore, "test-batch-change", tc.batchChangeAuthor, batchSpecID)
+							batchChangeID := createBatchChange(t, cstore, "test-batch-change", tc.batchChangeAuthor, batchSpecID)
 
 							// We add the changeset to the batch change. It doesn't
 							// matter for the addChangesetsToBatchChange mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
-							changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChagneID}}
+							changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}}
 							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
 
 							mutation := m.mutationFunc(
 								string(graphqlbackend.MarshalUserID(tc.batchChangeAuthor)),
-								string(marshalBatchChangeID(batchChagneID)),
+								string(marshalBatchChangeID(batchChangeID)),
 								string(marshalChangesetID(changeset.ID)),
 								string(marshalBatchSpecRandID(batchSpecRandID)),
 							)
@@ -834,17 +947,17 @@ func TestPermissionLevels(t *testing.T) {
 	t.Run("spec mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
-			mutationFunc func(userID string) string
+			mutationFunc func(userID, bcID string) string
 		}{
 			{
 				name: "createChangesetSpec",
-				mutationFunc: func(_ string) string {
+				mutationFunc: func(_, _ string) string {
 					return `mutation { createChangesetSpec(changesetSpec: "{}") { type } }`
 				},
 			},
 			{
 				name: "createBatchSpec",
-				mutationFunc: func(userID string) string {
+				mutationFunc: func(userID, _ string) string {
 					return fmt.Sprintf(`
 					mutation {
 						createBatchSpec(namespace: %q, batchSpec: "{}", changesetSpecs: []) {
@@ -855,13 +968,13 @@ func TestPermissionLevels(t *testing.T) {
 			},
 			{
 				name: "createBatchSpecFromRaw",
-				mutationFunc: func(userID string) string {
+				mutationFunc: func(userID string, bcID string) string {
 					return fmt.Sprintf(`
 					mutation {
-						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing") {
+						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing", batchChange: %q) {
 							id
 						}
-					}`, userID)
+					}`, userID, bcID)
 				},
 			},
 		}
@@ -878,10 +991,16 @@ func TestPermissionLevels(t *testing.T) {
 					{name: "site-admin", currentUser: adminID, wantAuthErr: false},
 				}
 
+				const batchChangeIDKind = "BatchChange"
+
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpBatchChanges(t, cstore)
 
+						_, bsID := createBatchSpec(t, cstore, userID)
+						bcID := createBatchChange(t, cstore, "testing", userID, bsID)
+
+						batchChangeID := string(marshalBatchChangeID(bcID))
 						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
 						if tc.currentUser == 0 {
 							// If we don't have a currentUser we try to create
@@ -889,7 +1008,7 @@ func TestPermissionLevels(t *testing.T) {
 							// purposes of this test.
 							namespaceID = string(graphqlbackend.MarshalUserID(userID))
 						}
-						mutation := m.mutationFunc(namespaceID)
+						mutation := m.mutationFunc(namespaceID, batchChangeID)
 
 						assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, false, false, tc.wantAuthErr)
 					})
@@ -1087,7 +1206,7 @@ func TestPermissionLevels(t *testing.T) {
 					name:        "non-site-admin for other user",
 					currentUser: userID,
 					user:        adminID,
-					wantAuthErr: true,
+					wantAuthErr: false, // not an auth error because it's simply invisible, and therefore not found
 				},
 				{
 					name:        "non-site-admin for self",
@@ -1117,6 +1236,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var batchChangesCredentialID graphql.ID
 					if tc.user != 0 {
+						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
 						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
@@ -1159,11 +1279,13 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: bstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1174,10 +1296,10 @@ func TestRepositoryPermissions(t *testing.T) {
 	mockBackendCommits(t, testRev)
 
 	// Global test data that we reuse in every test
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
-	repoStore := database.ReposWith(bstore)
-	esStore := database.ExternalServicesWith(bstore)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)
@@ -1272,7 +1394,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesets[0].RepoID
 		accessibleRepo := changesets[1].RepoID
-		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
+		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangeset
@@ -1371,7 +1493,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesetSpecs[0].RepoID
 		accessibleRepo := changesetSpecs[1].RepoID
-		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
+		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangesetSpec.
@@ -1447,7 +1569,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we set permissions and filter out the repository of one workspace.
 		filteredRepo := workspaces[0].RepoID
 		accessibleRepo := workspaces[1].RepoID
-		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
+		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenBatchSpecWorkspace.

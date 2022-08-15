@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import {
@@ -15,12 +15,22 @@ import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from '
 import { CodeIntelligenceBadgeContentProps } from './CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './CodeIntelligenceBadgeMenu'
 
+const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/codeintel/enterprise/CodeIntelligenceBadgeMenu',
+    decorators: [decorator],
+}
+
+export default config
+
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
+    tags: [],
     inputRoot: 'web/',
-    inputIndexer: 'lsif-typescript',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    inputIndexer: 'scip-typescript',
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     failure: null,
     isLatestForRepo: false,
     startedAt: null,
@@ -40,6 +50,7 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
         },
     },
     associatedIndex: null,
+    auditLogs: [],
 }
 
 const executionLogPrototype: ExecutionLogEntryFields = {
@@ -54,9 +65,10 @@ const executionLogPrototype: ExecutionLogEntryFields = {
 const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
     __typename: 'LSIFIndex',
     inputCommit: '',
+    tags: [],
     inputRoot: 'web/',
-    inputIndexer: 'lsif-typescript',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    inputIndexer: 'scip-typescript',
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     failure: null,
     startedAt: null,
     finishedAt: null,
@@ -93,7 +105,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
 
 const completedUpload = {
     root: 'lib/',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     uploads: [
         {
             ...uploadPrototype,
@@ -107,7 +119,7 @@ const completedUpload = {
 
 const failingUpload = {
     root: 'client/',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     uploads: [
         {
             ...uploadPrototype,
@@ -133,7 +145,7 @@ const failingUpload = {
 
 const failingIndex = {
     root: 'client/',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     indexes: [
         {
             ...indexPrototype,
@@ -183,8 +195,8 @@ const multiplePreciseSupport = [
         supportLevel: PreciseSupportLevel.NATIVE,
         indexers: [
             {
-                name: 'lsif-typescript',
-                url: 'https://github.com/sourcegraph/lsif-typescript',
+                name: 'scip-typescript',
+                url: 'https://github.com/sourcegraph/scip-typescript',
             },
             {
                 // Note: not shown
@@ -246,37 +258,43 @@ const defaultProps: CodeIntelligenceBadgeContentProps = {
         { loading: false },
     ],
 }
-const { add } = storiesOf('web/codeintel/enterprise/CodeIntelligenceBadgeMenu', module).addDecorator(story => (
-    <WebStory>{() => story()}</WebStory>
-))
 
 const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaultProps => ({
     ...defaultProps,
     useCodeIntelStatus: () => ({ data: { ...emptyPayload, ...payload }, loading: false }),
 })
 
-add('Unsupported', () => <CodeIntelligenceBadgeMenu {...defaultProps} />)
+export const Unsupported: Story = () => <CodeIntelligenceBadgeMenu {...defaultProps} />
+export const Unavailable: Story = () => <CodeIntelligenceBadgeMenu {...withPayload({ searchBasedSupport })} />
 
-add('Unavailable', () => <CodeIntelligenceBadgeMenu {...withPayload({ searchBasedSupport })} />)
-
-add('Multiple projects', () => (
+export const MultipleProjects: Story = () => (
     <CodeIntelligenceBadgeMenu {...withPayload({ preciseSupport: multiplePreciseSupport })} />
-))
+)
 
-add('Multiple projects, one enabled', () => (
+MultipleProjects.storyName = 'Multiple projects'
+
+export const MultipleProjectsOneEnabled: Story = () => (
     <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
-))
+)
 
-add('Processing error', () => (
+MultipleProjectsOneEnabled.storyName = 'Multiple projects, one enabled'
+
+export const ProcessingError: Story = () => (
     <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />
-))
+)
 
-add('Indexing error', () => (
+ProcessingError.storyName = 'Processing error'
+
+export const IndexingError: Story = () => (
     <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
-))
+)
 
-add('Multiple errors', () => (
+IndexingError.storyName = 'Indexing error'
+
+export const MultipleErrors: Story = () => (
     <CodeIntelligenceBadgeMenu
         {...withPayload({ recentUploads: [completedUpload, failingUpload], recentIndexes: [failingIndex] })}
     />
-))
+)
+
+MultipleErrors.storyName = 'Multiple errors'

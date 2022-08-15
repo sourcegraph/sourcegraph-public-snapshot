@@ -12,6 +12,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "homePanelsComputeSuggestions": {
+          "type": "boolean",
+          "default": false,
+          "deprecated": false,
+          "description": "Enable the home panels compute suggestions feature."
+        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
           "type": "boolean",
@@ -112,7 +118,7 @@
           }
         },
         "showOnboardingTour": {
-          "description": "Enables the onboarding tour.",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": true,
           "!go": {
@@ -138,7 +144,7 @@
         "showEnterpriseHomePanels": {
           "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": {
             "pointer": true
           }
@@ -217,7 +223,7 @@
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -297,7 +303,7 @@
         "editor": {
           "description": "Specifies which (code) editor to use for query and text input",
           "type": "string",
-          "default": "monaco",
+          "default": "codemirror6",
           "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true
@@ -305,6 +311,54 @@
         },
         "goCodeCheckerTemplates": {
           "description": "Shows a panel with code insights templates for go code checker results.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableExtensionsDecorationsColumnView": {
+          "description": "If extension supports column view show its decorations in a separate column in the blob view.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "extensionsAsCoreFeatures": {
+          "description": "Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeInsightsCompute": {
+          "description": "Enables Compute powered Code Insights",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableCodeMirrorFileView": {
+          "description": "Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableLazyBlobSyntaxHighlighting": {
+          "description": "Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "applySearchQuerySuggestionOnEnter": {
+          "description": "This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -411,9 +465,9 @@
       "default": 1
     },
     "search.defaultPatternType": {
-      "description": "The default pattern type (literal or regexp) that search queries will be intepreted as.",
+      "description": "The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.",
       "type": "string",
-      "pattern": "literal|regexp"
+      "pattern": "standard|literal|regexp|lucky"
     },
     "search.defaultCaseSensitive": {
       "description": "Whether query patterns are treated case sensitively. Patterns are case insensitive by default.",
@@ -467,6 +521,7 @@
         "title": "Notice",
         "type": "object",
         "required": ["message", "location"],
+        "additionalProperties": false,
         "properties": {
           "message": {
             "description": "The message to display. Markdown formatting is supported.",

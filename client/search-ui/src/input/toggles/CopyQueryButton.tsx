@@ -1,20 +1,19 @@
 import React, { useCallback, useRef, useEffect } from 'react'
 
+import { mdiClipboardOutline } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import { Shortcut } from '@slimsag/react-shortcuts'
-import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import ClipboardOutlineIcon from 'mdi-react/ClipboardOutlineIcon'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Button, Icon, TooltipController, useEventObservable } from '@sourcegraph/wildcard'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Button, Icon, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
     className?: string
     isMacPlatform: boolean
-    keyboardShortcutForFullCopy: KeyboardShortcut
 }
 
 /**
@@ -36,28 +35,30 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
                 clicks.pipe(
                     tap(copyFullQuery),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => TooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyFullQuery]
         )
     )
 
+    const fullCopyShortcut = useKeyboardShortcut('copyFullQuery')
+
     const copyFullQueryTooltip = `Copy full query\n${props.isMacPlatform ? '⌘' : 'Ctrl'}+⇧+C`
     return (
         <>
-            <Button
-                className={classNames('btn-icon', props.className)}
-                variant="icon"
-                size="sm"
-                data-tooltip={copied ? 'Copied!' : copyFullQueryTooltip}
-                aria-label={copied ? 'Copied!' : copyFullQueryTooltip}
-                aria-live="polite"
-                onClick={nextClick}
-            >
-                <Icon as={ClipboardOutlineIcon} />
-            </Button>
-            {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (
+            {copied && <VisuallyHidden aria-live="polite">Copied!</VisuallyHidden>}
+            <Tooltip content={copied ? 'Copied!' : copyFullQueryTooltip}>
+                <Button
+                    className={props.className}
+                    variant="icon"
+                    size="sm"
+                    aria-label={copyFullQueryTooltip}
+                    onClick={nextClick}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiClipboardOutline} />
+                </Button>
+            </Tooltip>
+            {fullCopyShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={copyFullQuery} allowDefault={false} ignoreInput={true} />
             ))}
         </>

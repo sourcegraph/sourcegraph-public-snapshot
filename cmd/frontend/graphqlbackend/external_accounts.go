@@ -121,7 +121,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	if err != nil {
 		return nil, err
 	}
-	account, err := database.ExternalAccounts(r.db).Get(ctx, id)
+	account, err := r.db.UserExternalAccounts().Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	if err := database.ExternalAccounts(r.db).Delete(ctx, account.ID); err != nil {
+	if err := r.db.UserExternalAccounts().Delete(ctx, account.ID); err != nil {
 		return nil, err
 	}
 

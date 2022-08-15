@@ -235,9 +235,26 @@ const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
     const tokens: DecoratedToken[] = []
+
+    if (pattern.delimited) {
+        tokens.push({
+            type: 'metaRegexp',
+            range: { start: pattern.range.start, end: pattern.range.start + 1 },
+            value: '/',
+            kind: MetaRegexpKind.Delimited,
+        })
+        tokens.push({
+            type: 'metaRegexp',
+            range: { start: pattern.range.end - 1, end: pattern.range.end },
+            value: '/',
+            kind: MetaRegexpKind.Delimited,
+        })
+    }
+
+    const offset = pattern.delimited ? pattern.range.start + 1 : pattern.range.start
+
     try {
         const ast = new RegExpParser().parsePattern(pattern.value)
-        const offset = pattern.range.start
         visitRegExpAST(ast, {
             onAlternativeEnter(node: Alternative) {
                 // regexpp doesn't tell us where a '|' operator is. We infer it by visiting any
@@ -924,20 +941,53 @@ const decorateContainsBody = (body: string, offset: number): DecoratedToken[] | 
 }
 
 /**
+ * Attempts to decorate `repo:has(key:value)` syntax. Fails if
+ * the body contains unsupported syntax.
+ */
+const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+    const matches = body.match(/([^:]+):([^:]+)/)
+    if (!matches) {
+        return undefined
+    }
+    console.log(matches)
+
+    return [
+        {
+            type: 'literal',
+            value: matches[1],
+            range: { start: offset, end: offset + matches[1].length },
+            quoted: false,
+        },
+        {
+            type: 'metaFilterSeparator',
+            range: { start: offset + matches[1].length, end: offset + matches[1].length + 1 },
+            value: ':',
+        },
+        {
+            type: 'literal',
+            value: matches[1],
+            range: { start: offset + matches[1].length + 1, end: offset + matches[1].length + 1 + matches[2].length },
+            quoted: false,
+        },
+    ]
+}
+
+/**
  * Decorates the body part of predicate syntax `name(body)`.
  */
 const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (path.join('.')) {
-        case 'contains':
-            // eslint-disable-next-line no-case-declarations
+        case 'contains': {
             const result = decorateContainsBody(body, offset)
             if (result !== undefined) {
                 return result
             }
             break
+        }
         case 'contains.file':
         case 'contains.content':
+        case 'has.description':
             return mapRegexpMetaSucceed({
                 type: 'pattern',
                 range: { start: offset, end: body.length },
@@ -954,6 +1004,22 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 value: body,
                 kind: PatternKind.Regexp,
             })
+        case 'has': {
+            const result = decorateRepoHasBody(body, offset)
+            if (result !== undefined) {
+                return result
+            }
+            break
+        }
+        case 'has.tag':
+            return [
+                {
+                    type: 'literal',
+                    range: { start: offset, end: offset + body.length },
+                    value: body,
+                    quoted: false,
+                },
+            ]
     }
     decorated.push({
         type: 'literal',
@@ -1027,7 +1093,7 @@ export const decorate = (token: Token): DecoratedToken[] => {
         case 'filter': {
             decorated.push({
                 type: 'field',
-                range: { start: token.field.range.start, end: token.field.range.end - 1 },
+                range: { start: token.field.range.start, end: token.field.range.end },
                 value: token.field.value,
             })
             decorated.push({
@@ -1069,6 +1135,149 @@ export const decorate = (token: Token): DecoratedToken[] => {
             decorated.push(token)
     }
     return decorated
+}
+
+const tokenKindToCSSName: Record<MetaRevisionKind | MetaRegexpKind | MetaPredicateKind | MetaStructuralKind, string> = {
+    Separator: 'separator',
+    IncludeGlobMarker: 'include-glob-marker',
+    ExcludeGlobMarker: 'exclude-glob-marker',
+    CommitHash: 'commit-hash',
+    Label: 'label',
+    ReferencePath: 'reference-path',
+    Wildcard: 'wildcard',
+    Assertion: 'assertion',
+    Alternative: 'alternative',
+    Delimited: 'delimited',
+    EscapedCharacter: 'escaped-character',
+    CharacterSet: 'character-set',
+    CharacterClass: 'character-class',
+    CharacterClassRange: 'character-class-range',
+    CharacterClassRangeHyphen: 'character-class-range-hyphen',
+    CharacterClassMember: 'character-class-member',
+    LazyQuantifier: 'lazy-quantifier',
+    RangeQuantifier: 'range-quantifier',
+    NameAccess: 'name-access',
+    Dot: 'dot',
+    Parenthesis: 'parenthesis',
+    Hole: 'hole',
+    RegexpHole: 'regexp-hole',
+    Variable: 'variable',
+    RegexpSeparator: 'regexp-separator',
+}
+
+/**
+ * Returns the standard global CSS class name used for higlighting this token.
+ * These classes are defined in global-styles/code.css
+ */
+export const toCSSClassName = (token: DecoratedToken): string => {
+    switch (token.type) {
+        case 'field':
+            return 'search-filter-keyword'
+        case 'keyword':
+        case 'openingParen':
+        case 'closingParen':
+        case 'metaRepoRevisionSeparator':
+        case 'metaContextPrefix':
+            return 'search-keyword'
+        case 'metaFilterSeparator':
+            return 'search-filter-separator'
+        case 'metaPath':
+            return 'search-path-separator'
+
+        case 'metaRevision': {
+            return `search-revision-${tokenKindToCSSName[token.kind]}`
+        }
+
+        case 'metaRegexp': {
+            return `search-regexp-meta-${tokenKindToCSSName[token.kind]}`
+        }
+
+        case 'metaPredicate': {
+            return `search-predicate-${tokenKindToCSSName[token.kind]}`
+        }
+
+        case 'metaStructural': {
+            return `search-structural-${tokenKindToCSSName[token.kind]}`
+        }
+
+        default:
+            return 'search-query-text'
+    }
+}
+
+interface Decoration {
+    value: string
+    key: number
+    className: string
+}
+
+export function toDecoration(query: string, token: DecoratedToken): Decoration {
+    const className = toCSSClassName(token)
+
+    switch (token.type) {
+        case 'keyword':
+        case 'field':
+        case 'metaPath':
+        case 'metaRevision':
+        case 'metaRegexp':
+        case 'metaStructural':
+            return {
+                value: token.value,
+                key: token.range.start,
+                className,
+            }
+        case 'openingParen':
+            return {
+                value: '(',
+                key: token.range.start,
+                className,
+            }
+        case 'closingParen':
+            return {
+                value: ')',
+                key: token.range.start,
+                className,
+            }
+
+        case 'metaFilterSeparator':
+            return {
+                value: ':',
+                key: token.range.start,
+                className,
+            }
+        case 'metaRepoRevisionSeparator':
+        case 'metaContextPrefix':
+            return {
+                value: '@',
+                key: token.range.start,
+                className,
+            }
+
+        case 'metaPredicate': {
+            let value = ''
+            switch (token.kind) {
+                case 'NameAccess':
+                    value = query.slice(token.range.start, token.range.end)
+                    break
+                case 'Dot':
+                    value = '.'
+                    break
+                case 'Parenthesis':
+                    value = query.slice(token.range.start, token.range.end)
+                    break
+            }
+            return {
+                value,
+                key: token.range.start,
+                className,
+            }
+        }
+    }
+    return {
+        value: query.slice(token.range.start, token.range.end),
+        key: token.range.start,
+        className,
+    }
 }
 
 const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {

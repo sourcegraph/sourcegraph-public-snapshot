@@ -1,3 +1,4 @@
+import { fetchEventSource } from '@microsoft/fetch-event-source'
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
@@ -9,9 +10,13 @@ import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
-// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
-// and will therefore default to V1.
-export const LATEST_VERSION = 'V2'
+// The version is set based on the release tag of the instance.
+// History:
+// V3 - default to standard interpretation (RFC 675): Interpret patterns enclosed by /.../ as regular expressions. Interpret patterns literally otherwise.
+// V2 - default to interpreting patterns literally only.
+// V1 - default to interpreting patterns as regular expressions.
+// None - Anything before 3.9.0 will not pass a version parameter and defaults to V1.
+export const LATEST_VERSION = 'V3'
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
 export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
@@ -72,6 +77,7 @@ export interface Location {
 }
 
 interface LineMatch {
+    line: string
     lineNumber: number
     offsetAndLengths: number[][]
     aggregableBadges?: AggregableBadge[]
@@ -93,6 +99,7 @@ export interface MatchedSymbol {
     name: string
     containerName: string
     kind: SymbolKind
+    line: number
 }
 
 type MarkdownText = string
@@ -115,6 +122,7 @@ export interface CommitMatch {
     repoLastFetched?: string
 
     content: MarkdownText
+    // Array of [line, character, length] triplets
     ranges: number[][]
 }
 
@@ -128,6 +136,7 @@ export interface RepositoryMatch {
     archived?: boolean
     private?: boolean
     branches?: string[]
+    descriptionMatches?: Range[]
 }
 
 /**
@@ -210,12 +219,15 @@ export interface Filter {
     label: string
     count: number
     limitHit: boolean
-    kind: string
+    kind: 'file' | 'repo' | 'lang' | 'utility'
 }
+
+export type AlertKind = 'lucky-search-queries'
 
 interface Alert {
     title: string
     description?: string | null
+    kind?: AlertKind | null
     proposedQueries: ProposedQuery[] | null
 }
 
@@ -410,6 +422,7 @@ export interface StreamSearchOptions {
     sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
+    displayLimit?: number
 }
 
 function initiateSearchStream(
@@ -421,6 +434,7 @@ function initiateSearchStream(
         trace,
         decorationKinds,
         decorationContextLines,
+        displayLimit = 1500,
         sourcegraphURL = '',
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
@@ -435,7 +449,7 @@ function initiateSearchStream(
             ['dl', '0'],
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
-            ['display', '1500'],
+            ['display', displayLimit.toString()],
         ]
         if (trace) {
             parameters.push(['trace', trace])
@@ -541,4 +555,25 @@ export function isSearchMatchOfType<T extends SearchMatch['type']>(
     type: T
 ): (match: SearchMatch) => match is SearchMatchOfType<T> {
     return (match): match is SearchMatchOfType<T> => match.type === type
+}
+
+// Call the compute endpoint with the given query
+const computeStreamUrl = '/.api/compute/stream'
+export function streamComputeQuery(query: string): Observable<string[]> {
+    const allData: string[] = []
+    return new Observable<string[]>(observer => {
+        fetchEventSource(`${computeStreamUrl}?q=${encodeURIComponent(query)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'Sourcegraph',
+            },
+            onmessage(event) {
+                allData.push(event.data)
+                observer.next(allData)
+            },
+        }).then(
+            () => observer.complete(),
+            error => observer.error(error)
+        )
+    })
 }

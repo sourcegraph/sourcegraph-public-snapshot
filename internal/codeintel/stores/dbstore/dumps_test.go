@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -16,7 +18,8 @@ import (
 )
 
 func TestGetDumpsByIDs(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// Dumps do not exist initially
@@ -58,7 +61,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 		FinishedAt:        &finishedAt,
 		RepositoryID:      50,
 		RepositoryName:    "n-50",
-		Indexer:           "lsif-tsc",
+		Indexer:           "scip-typescript",
 		IndexerVersion:    "1.2.3",
 		AssociatedIndexID: nil,
 	}
@@ -86,7 +89,8 @@ func TestGetDumpsByIDs(t *testing.T) {
 }
 
 func TestFindClosestDumps(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -151,7 +155,8 @@ func TestFindClosestDumps(t *testing.T) {
 }
 
 func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -210,7 +215,8 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 }
 
 func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -262,7 +268,8 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 }
 
 func TestFindClosestDumpsDistinctRoots(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -311,7 +318,8 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 }
 
 func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -325,23 +333,23 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	// | UploadID | Commit | Root    | Indexer |
 	// | -------- + ------ + ------- + ------- |
 	// | 1        | 1      | root3/  | lsif-go |
-	// | 2        | 1      | root4/  | lsif-py |
+	// | 2        | 1      | root4/  | scip-python |
 	// | 3        | 2      | root1/  | lsif-go |
 	// | 4        | 2      | root2/  | lsif-go |
-	// | 5        | 2      |         | lsif-py | (overwrites root4/ at commit 1)
+	// | 5        | 2      |         | scip-python | (overwrites root4/ at commit 1)
 	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ at commit 2)
-	// | 7        | 4      |         | lsif-py | (overwrites (root) at commit 2)
+	// | 7        | 4      |         | scip-python | (overwrites (root) at commit 2)
 	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
 	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
 
 	uploads := []Upload{
 		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
-		{ID: 2, Commit: makeCommit(1), Indexer: "lsif-py", Root: "root4/"},
+		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
 		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
 		{ID: 4, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root2/"},
-		{ID: 5, Commit: makeCommit(2), Indexer: "lsif-py", Root: ""},
+		{ID: 5, Commit: makeCommit(2), Indexer: "scip-python", Root: ""},
 		{ID: 6, Commit: makeCommit(3), Indexer: "lsif-go", Root: "root1/"},
-		{ID: 7, Commit: makeCommit(4), Indexer: "lsif-py", Root: ""},
+		{ID: 7, Commit: makeCommit(4), Indexer: "scip-python", Root: ""},
 		{ID: 8, Commit: makeCommit(5), Indexer: "lsif-go", Root: "root2/"},
 		{ID: 9, Commit: makeCommit(6), Indexer: "lsif-go", Root: "root1/"},
 	}
@@ -390,7 +398,8 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 }
 
 func TestFindClosestDumpsIndexerName(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -478,7 +487,8 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 }
 
 func TestFindClosestDumpsIntersectingPath(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -521,7 +531,8 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 }
 
 func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -687,11 +698,12 @@ func testPresence(needle int, haystack []int) bool {
 }
 
 func TestDeleteOverlappingDumps(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, sqlDB, Upload{
+	insertUploads(t, db, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -712,11 +724,12 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, sqlDB, Upload{
+	insertUploads(t, db, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -730,7 +743,7 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 	}{
 		{makeCommit(2), "cmd/", "lsif-go"},
 		{makeCommit(1), "cmds/", "lsif-go"},
-		{makeCommit(1), "cmd/", "lsif-tsc"},
+		{makeCommit(1), "cmd/", "scip-typescript"},
 	}
 
 	for _, testCase := range testCases {
@@ -749,11 +762,12 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, sqlDB, Upload{
+	insertUploads(t, db, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",

@@ -122,6 +122,7 @@ export const queryApplyPreviewStats = ({
                     reopen
                     undraft
                     update
+                    reattach
 
                     added
                     modified

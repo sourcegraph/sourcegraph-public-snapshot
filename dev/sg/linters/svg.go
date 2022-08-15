@@ -8,21 +8,21 @@ import (
 
 	"github.com/sourcegraph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func checkSVGCompression() lint.Runner {
+func checkSVGCompression() *linter {
 	const header = "SVG Compression"
 
-	return func(ctx context.Context, s *repo.State) *lint.Report {
+	return runCheck(header, func(ctx context.Context, out *std.Output, state *repo.State) error {
 		const lintDir = "ui/assets/img"
 
-		diff, err := s.GetDiff(filepath.Join(lintDir, "*.svg"))
+		diff, err := state.GetDiff(filepath.Join(lintDir, "*.svg"))
 		if err != nil {
-			return &lint.Report{Header: header, Err: err}
+			return err
 		}
 
 		var errs error
@@ -40,19 +40,13 @@ func checkSVGCompression() lint.Runner {
 			}
 		}
 		if errs != nil {
-			output := fmt.Sprintf("%s\n\nChecked %d files and found SVG optimizations. "+
+			out.Writef("Checked %d files and found SVG optimizations. "+
 				"Please run 'yarn optimize-svg-assets %s' and commit the result.",
-				errs.Error(), len(diff), lintDir)
-			return &lint.Report{
-				Header: header,
-				Output: output,
-				Err:    errs,
-			}
+				len(diff), lintDir)
+			return errs
 		}
 
-		return &lint.Report{
-			Header: header,
-			Output: fmt.Sprintf("SVGs okay! (Checked: %d)", len(diff)),
-		}
-	}
+		out.Verbosef("SVGs okay! (Checked: %d)", len(diff))
+		return nil
+	})
 }

@@ -9,20 +9,23 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/web"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -110,7 +113,7 @@ func TestSearch(t *testing.T) {
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			sr := &schemaResolver{db: db}
+			sr := newSchemaResolver(db)
 			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)
@@ -292,17 +295,23 @@ func TestExactlyOneRepo(t *testing.T) {
 	}
 }
 
-func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int32) *result.FileMatch {
-	var lines []*result.LineMatch
+func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) *result.FileMatch {
+	var hms result.ChunkMatches
 	for _, n := range lineNumbers {
-		lines = append(lines, &result.LineMatch{LineNumber: n})
+		hms = append(hms, result.ChunkMatch{
+			Ranges: []result.Range{{
+				Start: result.Location{Line: n},
+				End:   result.Location{Line: n},
+			}},
+		})
 	}
+
 	return &result.FileMatch{
 		File: result.File{
 			Path: path,
 			Repo: repo,
 		},
-		LineMatches: lines,
+		ChunkMatches: hms,
 	}
 }
 
@@ -332,13 +341,14 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			db: db,
-			SearchInputs: &run.SearchInputs{
+			client: client.NewSearchClient(logtest.Scoped(b), db, z, nil),
+			db:     db,
+			SearchInputs: &search.Inputs{
 				Plan:         plan,
 				Query:        plan.ToQ(),
+				Features:     &search.Features{},
 				UserSettings: &schema.Settings{},
 			},
-			zoekt: z,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
@@ -387,12 +397,8 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 			RepositoryID: uint32(i),
 			Repository:   repoName, // Important: this needs to match a name in `repos`
 			Branches:     []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
+			ChunkMatches: make([]zoekt.ChunkMatch, 1),
+			Checksum:     []byte{0, 1, 2},
 		})
 	}
 	return zoektFileMatches

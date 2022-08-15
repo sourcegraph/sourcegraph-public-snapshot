@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner/testdata"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -78,6 +80,7 @@ func testStoreWithVersion(version int, dirty bool) *MockStore {
 }
 
 func makeTestRunner(t *testing.T, store Store) *Runner {
+	logger := logtest.Scoped(t)
 	testSchemas := makeTestSchemas(t)
 	storeFactories := make(map[string]StoreFactory, len(testSchemas))
 
@@ -87,5 +90,5 @@ func makeTestRunner(t *testing.T, store Store) *Runner {
 		}
 	}
 
-	return NewRunner(storeFactories)
+	return NewRunner(logger, storeFactories)
 }

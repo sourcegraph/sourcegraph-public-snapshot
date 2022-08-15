@@ -1,11 +1,8 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
+import { mdiCodeJson, mdiCog, mdiFolder, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import CodeJsonIcon from 'mdi-react/CodeJsonIcon'
-import FolderIcon from 'mdi-react/FolderIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
@@ -15,7 +12,7 @@ import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -34,6 +31,7 @@ import {
     ButtonGroup,
     Button,
     Badge,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -203,7 +201,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }
 
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
-    // create a new featurFlag named 'new-repo-page' and set its value to true.
+    // create a new featureFlag named 'new-repo-page' and set its value to true.
     // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
     const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
 
@@ -259,10 +257,10 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             <div className="d-flex justify-content-between align-items-center">
                 <div>
                     <PageHeader
-                        path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
+                        path={[{ icon: mdiSourceRepository, text: displayRepoName(repo.name) }]}
                         className="mb-3 test-tree-page-title"
                     />
-                    {repo.description && <p>{repo.description}</p>}
+                    {repo.description && <Text>{repo.description}</Text>}
                 </div>
                 {isNewRepoPageEnabled && (
                     <ButtonGroup>
@@ -275,7 +273,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             as={Link}
                             className="ml-1"
                         >
-                            <Icon as={CodeJsonIcon} /> Search dependencies{' '}
+                            <Icon aria-hidden={true} svgPath={mdiCodeJson} /> Search dependencies{' '}
                             <Badge variant="info" className={classNames('text-uppercase')}>
                                 NEW
                             </Badge>
@@ -289,7 +287,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 as={Link}
                                 className="ml-1"
                             >
-                                <Icon as={BatchChangesIcon} /> Create batch change
+                                <Icon as={BatchChangesIcon} aria-hidden={true} /> Create batch change
                             </Button>
                         )}
 
@@ -302,7 +300,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 className="ml-1"
                                 aria-label="Repository settings"
                             >
-                                <Icon as={SettingsIcon} role="img" aria-hidden={true} />
+                                <Icon aria-hidden={true} svgPath={mdiCog} />
                             </Button>
                         )}
                     </ButtonGroup>
@@ -345,7 +343,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 <RootHeaderSection tree={treeOrError} />
                             ) : (
                                 <PageHeader
-                                    path={[{ icon: FolderIcon, text: filePath }]}
+                                    path={[{ icon: mdiFolder, text: filePath }]}
                                     className="mb-3 mr-2 test-tree-page-title"
                                 />
                             )}

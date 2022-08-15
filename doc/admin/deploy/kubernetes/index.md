@@ -1,7 +1,7 @@
 # Sourcegraph with Kubernetes
 
 <p class="lead">
-Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code intelligence.
+Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code navigation.
 </p>
 
 > NOTE: Sourcegraph recommends [using Helm to deploy Sourcegraph](helm.md) if possible.
@@ -38,7 +38,7 @@ Before starting, we recommend reading the [configuration guide](configure.md#get
 - [Customization](./configure.md#customizations)
 - [Storage class](./configure.md#configure-a-storage-class)
 - [Network Access](./configure.md#configure-network-access)
-- [PostgreSQL Database](./configure.md#sourcegraph-databases)
+- [PostgreSQL Database](./configure.md#configure-external-databases)
 - [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
 - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
@@ -77,7 +77,7 @@ Sourcegraph for Kubernetes is configured using our [`sourcegraph/deploy-sourcegr
   kubectl port-forward svc/sourcegraph-frontend 3080:30080
   ```
 
-- Open http://localhost:3080 in your browser and you will see a setup page. Congratulations, you have Sourcegraph up and running! 🎉 
+- Open http://localhost:3080 in your browser and you will see a setup page. Congratulations, you have Sourcegraph up and running! 🎉
 
 > NOTE: If you previously [set up an `ingress-controller`](./configure.md#ingress-controller-recommended), you can now also access your deployment via the ingress.
 
@@ -87,8 +87,8 @@ Sourcegraph for Kubernetes is configured using our [`sourcegraph/deploy-sourcegr
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
 > necessary ports via an
 > [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
-> mechanism. Note that SG must expose port 443 for outbound traffic to codehosts and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with 
-> Sourcegraph.com. Additionally port 22 may be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your 
+> mechanism. Note that SG must expose port 443 for outbound traffic to codehosts and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with
+> Sourcegraph.com. Additionally port 22 may be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your
 > organization's security requirements.
 
 Follow the instructions linked in the table below to provision a Kubernetes cluster for the
@@ -101,7 +101,7 @@ table.
 |[AWS EC2](https://kubernetes.io/docs/getting-started-guides/aws/)|m5.4xlarge|  100 GB (SSD preferred) |
 |[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/docs/quickstart)|n1-standard-16|100 GB (default)|
 |[Azure](azure.md)|D16 v3|100 GB (SSD preferred)|
-|[Other](https://kubernetes.io/docs/setup/pick-right-solution/)|16 vCPU, 60 GiB memory per node|100 GB (SSD preferred)|
+|[Other](https://kubernetes.io/docs/setup/production-environment/turnkey-solutions/)|16 vCPU, 60 GiB memory per node|100 GB (SSD preferred)|
 
 <span class="virtual-br"></span>
 

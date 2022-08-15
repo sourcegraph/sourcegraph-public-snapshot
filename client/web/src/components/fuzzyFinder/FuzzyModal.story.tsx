@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -39,6 +39,16 @@ const defaultProps = {
     fsm,
     setFsm: () => {},
 }
-const { add } = storiesOf('web/FuzzyFinder', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
 
-add('Ready', () => <FuzzyModal {...defaultProps} />)
+const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/FuzzyFinder',
+    decorators: [decorator],
+}
+
+export default config
+
+export const ReadyStory: Story = () => <FuzzyModal {...defaultProps} />
+
+ReadyStory.storyName = 'Ready'

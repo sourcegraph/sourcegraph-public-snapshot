@@ -15,6 +15,7 @@ interface RevisionsPopoverTabProps extends UseConnectionResult<unknown> {
     onInputChange: (value: string) => void
     query: string
     summary?: JSX.Element
+    inputAriaLabel: string
 }
 
 export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverTabProps>> = ({
@@ -28,6 +29,7 @@ export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildre
     connection,
     hasNextPage,
     fetchMore,
+    inputAriaLabel,
 }) => (
     <ConnectionPopoverContainer>
         <ConnectionPopoverForm
@@ -36,6 +38,7 @@ export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildre
             autoFocus={true}
             inputPlaceholder="Find..."
             compact={true}
+            inputAriaLabel={inputAriaLabel}
         />
         <SummaryContainer compact={true}>{query && summary}</SummaryContainer>
         {error && <ConnectionError errors={[error.message]} compact={true} />}

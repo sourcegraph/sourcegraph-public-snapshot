@@ -27,7 +27,7 @@ func GetArchive(ctx context.Context, db database.DB) ([]byte, error) {
 		return nil, err
 	}
 
-	dates, err := database.Users(db).ListDates(ctx)
+	dates, err := db.Users().ListDates(ctx)
 	if err != nil {
 		return nil, err
 	}

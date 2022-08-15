@@ -158,6 +158,7 @@ type Settings struct {
 }
 
 // ExternalService represents a complete external service record.
+// TODO(eseliger): Remove this post the 3.43 release.
 type ExternalService struct {
 	ID              int64
 	Kind            string

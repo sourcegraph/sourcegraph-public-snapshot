@@ -1,4 +1,4 @@
-import { InsightType } from '../../../../../core/types'
+import { InsightType } from '../../../../../core'
 import {
     ALPINE_VERSIONS_INSIGHT,
     CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT,
@@ -14,12 +14,12 @@ import {
 
 interface SearchInsightExample {
     type: InsightType.SearchBased
-    content: SearchInsightExampleContent
+    content: SearchInsightExampleContent<any>
 }
 
 interface CaptureGroupInsightExample {
     type: InsightType.CaptureGroup
-    content: CaptureGroupExampleContent
+    content: CaptureGroupExampleContent<any>
 }
 
 type Example = (SearchInsightExample | CaptureGroupInsightExample) & {

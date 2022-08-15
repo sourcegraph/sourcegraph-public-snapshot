@@ -7,7 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/services/executors"
 )
 
@@ -21,7 +21,7 @@ type resolver struct {
 	svc executors.Executor
 }
 
-func New(db dbutil.DB) Resolver {
+func New(db database.DB) Resolver {
 	return &resolver{
 		svc: executors.New(db),
 	}

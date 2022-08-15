@@ -2,7 +2,7 @@ import React, { useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { Badge, Typography, useObservable } from '@sourcegraph/wildcard'
+import { Badge, H2, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
@@ -15,6 +15,7 @@ import {
     PreviewActionClose,
     PreviewActionImport,
     PreviewActionPublish,
+    PreviewActionReattach,
     PreviewActionReopen,
     PreviewActionUndraft,
     PreviewActionUpdate,
@@ -57,11 +58,11 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
 
     return (
         <div className="d-flex flex-wrap mb-3 align-items-center">
-            <Typography.H2 className="m-0 align-self-center">
+            <H2 className="m-0 align-self-center">
                 <Badge variant="info" className="text-uppercase mb-0">
                     Preview
                 </Badge>
-            </Typography.H2>
+            </H2>
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
             <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...diffStat} />
             <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-sm-none my-3')} />
@@ -71,6 +72,8 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                     styles.batchChangePreviewStatsBarMetrics,
                     'flex-grow-1 d-flex justify-content-end'
                 )}
+                aria-label="Preview Stats"
+                role="note"
             >
                 <PreviewStatsAdded count={stats.added} />
                 <PreviewStatsRemoved count={stats.removed} />
@@ -89,6 +92,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                 />
                 <PreviewActionImport className={actionClassNames} label={`${stats.import} Import`} />
                 <PreviewActionArchive className={actionClassNames} label={`${stats.archive} Archive`} />
+                <PreviewActionReattach className={actionClassNames} label={`${stats.reattach} Reattach`} />
             </div>
         </div>
     )

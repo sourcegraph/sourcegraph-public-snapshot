@@ -14,6 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -21,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -96,7 +100,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
-		Config:      args.Input.Config,
+		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
 	}
 	if namespaceUserID > 0 {
 		externalService.NamespaceUserID = namespaceUserID
@@ -109,7 +113,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	res := &externalServiceResolver{db: r.db, externalService: externalService}
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
 	if err = backend.SyncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
@@ -145,8 +149,12 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
-	oldConfig := es.Config
+
 	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
+	oldConfig, err := es.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// 🚨 SECURITY: check access to external service
 	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
@@ -172,10 +180,14 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
+	newConfig, err := es.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	res := &externalServiceResolver{db: r.db, externalService: es}
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
 
-	if oldConfig != es.Config {
+	if oldConfig != newConfig {
 		err = backend.SyncExternalService(ctx, es, syncExternalServiceTimeout, r.repoupdaterClient)
 		if err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
@@ -322,7 +334,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
 	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: externalService})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService})
 	}
 	return resolvers, nil
 }
@@ -361,7 +373,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 
 	if count > len(externalServices) {
 		endCursorID := externalServices[len(externalServices)-1].ID
-		return graphqlutil.NextPageCursor(string(marshalExternalServiceID(endCursorID))), nil
+		return graphqlutil.NextPageCursor(string(MarshalExternalServiceID(endCursorID))), nil
 	}
 	return graphqlutil.HasNextPage(false), nil
 }
@@ -379,7 +391,7 @@ func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) [
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: svc})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: svc})
 	}
 	return resolvers
 }
@@ -426,4 +438,38 @@ func reportExternalServiceDuration(startTime time.Time, mutation ExternalService
 	}
 	mutationDuration.With(labels).Observe(duration.Seconds())
 
+}
+
+type syncExternalServiceArgs struct {
+	ID graphql.ID
+}
+
+func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExternalServiceArgs) (*EmptyResponse, error) {
+	start := time.Now()
+	var err error
+	var namespaceUserID, namespaceOrgID int32
+	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
+
+	id, err := UnmarshalExternalServiceID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: check access to external service.
+	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+		return nil, err
+	}
+
+	// Enqueue a sync job for the external service, if none exists yet.
+	rstore := repos.NewStore(r.logger, r.db)
+	if err := rstore.EnqueueSingleSyncJob(ctx, es.ID); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
 }

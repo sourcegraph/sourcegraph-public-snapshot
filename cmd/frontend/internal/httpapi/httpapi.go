@@ -14,6 +14,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -31,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -82,7 +85,7 @@ func NewHandler(
 
 	webhookhandlers.Init(db, &gh)
 	webhookMiddleware := webhooks.NewLogMiddleware(
-		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
 	handlers.GitHubWebhook.Register(&gh)
@@ -93,6 +96,9 @@ func NewHandler(
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(false)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
+
+	ghSync := repos.GitHubWebhookHandler{}
+	ghSync.Register(&gh)
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.Handler)))
@@ -122,7 +128,8 @@ func NewHandler(
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
+func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) http.Handler {
+	logger := sglog.Scoped("InternalHandler", "")
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -134,14 +141,12 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	})
 
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
-	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList(db))))
-	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
 
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
 		db:            db,
-		ListIndexable: backend.NewRepos(db).ListIndexable,
-		RepoStore:     database.Repos(db),
+		ListIndexable: backend.NewRepos(logger, db).ListIndexable,
+		RepoStore:     db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
@@ -152,18 +157,8 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 
-	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName(db))))
-	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
-	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
-	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
-	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername(db))))
-	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail(db))))
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
-	m.Get(apirouter.CanSendEmail).Handler(trace.Route(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
-	m.Get(apirouter.GitExec).Handler(trace.Route(handler(serveGitExec(db))))
-	m.Get(apirouter.GitResolveRevision).Handler(trace.Route(handler(serveGitResolveRevision(db))))
-	m.Get(apirouter.GitTar).Handler(trace.Route(handler(serveGitTar(db))))
 	gitService := &gitServiceHandler{
 		Gitserver: gitserver.NewClient(db),
 	}
@@ -177,6 +172,8 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(true)))
+
+	m.Get(apirouter.Checks).Handler(trace.Route(healthCheckHandler))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -230,7 +227,7 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	}
 	http.Error(w, displayErrBody, status)
 	traceID := trace.ID(r.Context())
-	traceURL := trace.URL(traceID, conf.ExternalURL(), conf.Tracer())
+	traceURL := trace.URL(traceID, conf.DefaultClient())
 
 	if status < 200 || status >= 500 {
 		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceURL, "traceID", traceID)

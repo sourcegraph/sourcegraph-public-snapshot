@@ -18,17 +18,20 @@ describe('Input', () => {
 
         expect(container.firstChild).toMatchInlineSnapshot(`
             <div
-              class="container d-flex"
+              class="container loader-input loaderInput"
             >
               <input
-                class="input form-control with-invalid-icon"
+                class="inputLoading form-control with-invalid-icon"
                 placeholder="loading status input"
                 title="Input loading"
                 type="text"
                 value="Input value"
               />
               <div
-                class="loadingSpinner spinner"
+                aria-label="Loading"
+                aria-live="polite"
+                class="mdi-icon loadingSpinner spinner"
+                role="img"
               />
             </div>
         `)
@@ -56,17 +59,20 @@ describe('Input', () => {
                 Input label
               </div>
               <div
-                class="container d-flex"
+                class="container loader-input loaderInput"
               >
                 <input
-                  class="input form-control with-invalid-icon"
+                  class="inputLoading form-control with-invalid-icon"
                   placeholder="loading status input"
                   title="Input loading"
                   type="text"
                   value="Input value"
                 />
                 <div
-                  class="loadingSpinner spinner"
+                  aria-label="Loading"
+                  aria-live="polite"
+                  class="mdi-icon loadingSpinner spinner"
+                  role="img"
                 />
               </div>
               <small

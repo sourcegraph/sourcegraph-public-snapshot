@@ -2,10 +2,11 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Button, CardBody, Card, Typography } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,
+    ComputeInsightChart,
     LangStatsInsightChart,
     SearchBasedInsightChart,
 } from '../../../../../modals/components/MediaCharts'
@@ -44,10 +45,10 @@ const InsightCardBody: React.FunctionComponent<React.PropsWithChildren<InsightCa
 
     return (
         <CardBody className={classNames(styles.cardBody, className, 'flex-1')}>
-            <Typography.H3 as={Typography.H2} className={styles.cardTitle}>
+            <H3 as={H2} className={styles.cardTitle}>
                 {title}
-            </Typography.H3>
-            <p className="d-flex flex-column text-muted m-0">{children}</p>
+            </H3>
+            <Text className="d-flex flex-column text-muted m-0">{children}</Text>
         </CardBody>
     )
 }
@@ -68,6 +69,18 @@ export const SearchInsightCard: React.FunctionComponent<React.PropsWithChildren<
         </InsightCardBody>
 
         <InsightCardExampleBlock>Tracking architecture, naming, or language migrations.</InsightCardExampleBlock>
+    </InsightCard>
+)
+
+export const ComputeInsightCard: React.FunctionComponent<React.PropsWithChildren<InsightCardProps>> = props => (
+    <InsightCard {...props}>
+        <ComputeInsightChart className={styles.chart} />
+        <InsightCardBody title="Group results" className="mb-3">
+            Insight based on a custom Sourcegraph search query that <b>groups results by</b> repository, path, author or
+            date.
+        </InsightCardBody>
+
+        <InsightCardExampleBlock>Tracking a migration by repository.</InsightCardExampleBlock>
     </InsightCard>
 )
 

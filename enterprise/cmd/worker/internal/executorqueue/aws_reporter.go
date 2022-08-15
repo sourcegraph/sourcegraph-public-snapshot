@@ -16,7 +16,6 @@ import (
 type awsConfig struct {
 	MetricNamespace string
 	Region          string
-	Endpoint        string
 	AccessKeyID     string
 	SecretAccessKey string
 	SessionToken    string
@@ -93,11 +92,14 @@ func makePutMetricDataInput(namespace, queueName, environmentLabel string, count
 func awsClientOptions(ctx context.Context, awsConfig awsConfig) (aws.Config, error) {
 	optFns := []func(*awsconfig.LoadOptions) error{
 		awsconfig.WithRegion(awsConfig.Region),
-		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+	}
+
+	if awsConfig.AccessKeyID != "" {
+		optFns = append(optFns, awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			awsConfig.AccessKeyID,
 			awsConfig.SecretAccessKey,
 			awsConfig.SessionToken,
-		)),
+		)))
 	}
 
 	return awsconfig.LoadDefaultConfig(ctx, optFns...)

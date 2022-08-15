@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H4 } from '@sourcegraph/wildcard'
 
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'
@@ -22,8 +22,8 @@ describe('Alert', () => {
     it.each(ALERT_VARIANTS)("renders variant '%s' correctly", variant => {
         const { container } = render(
             <Alert variant={variant}>
-                <Typography.H4>Too many matching repositories</Typography.H4>
-                Use a 'repo:' or 'repogroup:' filter to narrow your search.
+                <H4>Too many matching repositories</H4>
+                Use a 'repo:' filter to narrow your search.
             </Alert>
         )
         expect(container.firstChild).toMatchSnapshot()

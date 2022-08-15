@@ -10,14 +10,14 @@ import (
 )
 
 func TestDecomposeMavenPath(t *testing.T) {
-	obtained, _ := ParseMavenDependencyFromRepoName("maven/org.hamcrest/hamcrest-core")
+	obtained, _ := ParseMavenPackageFromRepoName("maven/org.hamcrest/hamcrest-core")
 	assert.Equal(t, obtained.GroupID, "org.hamcrest")
 	assert.Equal(t, obtained.ArtifactID, "hamcrest-core")
 	assert.Equal(t, api.RepoName("maven/org.hamcrest/hamcrest-core"), obtained.RepoName())
 }
 
-func parseMavenDependencyOrPanic(t *testing.T, value string) *MavenDependency {
-	dependency, err := ParseMavenDependency(value)
+func parseMavenDependencyOrPanic(t *testing.T, value string) *MavenVersionedPackage {
+	dependency, err := ParseMavenVersionedPackage(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)
 	}
@@ -32,7 +32,7 @@ func TestGreaterThan(t *testing.T) {
 }
 
 func TestMavenDependency_Less(t *testing.T) {
-	dependencies := []*MavenDependency{
+	dependencies := []*MavenVersionedPackage{
 		parseMavenDependencyOrPanic(t, "a:c:1.2.0"),
 		parseMavenDependencyOrPanic(t, "a:b:1.2.0.Final"),
 		parseMavenDependencyOrPanic(t, "a:a:1.2.0"),
@@ -51,7 +51,7 @@ func TestMavenDependency_Less(t *testing.T) {
 
 	have := make([]string, 0, len(dependencies))
 	for _, dep := range dependencies {
-		have = append(have, dep.PackageManagerSyntax())
+		have = append(have, dep.VersionedPackageSyntax())
 	}
 
 	want := []string{

@@ -43,6 +43,6 @@ var reconcilerWorkerStoreOpts = dbworkerstore.Options{
 	MaxNumRetries: reconcilerMaxNumRetries,
 }
 
-func NewReconcilerWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func NewReconcilerWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
 	return dbworkerstore.NewWithMetrics(handle, reconcilerWorkerStoreOpts, observationContext)
 }

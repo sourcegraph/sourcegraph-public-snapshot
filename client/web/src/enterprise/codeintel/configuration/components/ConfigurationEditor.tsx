@@ -6,7 +6,7 @@ import { editor } from 'monaco-editor'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
@@ -40,7 +40,10 @@ export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<Conf
             updateConfigForRepository({
                 variables: { id: repoId, content },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
-            }).then(() => setDirty(false)),
+            }).then(() => {
+                screenReaderAnnounce('Saved successfully')
+                setDirty(false)
+            }),
         [updateConfigForRepository, repoId]
     )
 

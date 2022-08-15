@@ -20,7 +20,8 @@ export const CodeInsightsLandingPageContext = createContext<CodeInsightsLandingP
 })
 
 /**
- * Hook helper for the ping event name generating based on the landing page context.
+ * Hook helper for the ping event's name that is generated based on
+ * the landing page mode.
  */
 export function useLogEventName(originalName: string): string {
     const { mode } = useContext(CodeInsightsLandingPageContext)

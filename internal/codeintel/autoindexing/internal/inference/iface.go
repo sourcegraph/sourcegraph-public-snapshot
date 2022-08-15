@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type SandboxService interface {
@@ -45,5 +44,5 @@ func (s *gitService) ListFiles(ctx context.Context, repo api.RepoName, commit st
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	// Note: the sub-repo perms checker is nil here because all paths were already checked via a previous call to s.ListFiles
-	return git.ArchiveReader(ctx, s.db, nil, repo, opts)
+	return gitserver.NewClient(s.db).ArchiveReader(ctx, nil, repo, opts)
 }

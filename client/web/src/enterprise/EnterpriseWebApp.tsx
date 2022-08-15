@@ -1,7 +1,6 @@
 import React from 'react'
 
 import '../SourcegraphWebApp.scss'
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
@@ -30,8 +29,10 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
     <SourcegraphWebApp
         extensionAreaRoutes={enterpriseExtensionAreaRoutes}
         extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
-        extensionsAreaRoutes={enterpriseExtensionsAreaRoutes}
-        extensionsAreaHeaderActionButtons={enterpriseExtensionsAreaHeaderActionButtons}
+        extensionsAreaRoutes={window.context.enableLegacyExtensions ? enterpriseExtensionsAreaRoutes : undefined}
+        extensionsAreaHeaderActionButtons={
+            window.context.enableLegacyExtensions ? enterpriseExtensionsAreaHeaderActionButtons : undefined
+        }
         siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
         siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
         siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
@@ -47,7 +48,6 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
         repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
         routes={enterpriseRoutes}
-        keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
         codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
         codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}

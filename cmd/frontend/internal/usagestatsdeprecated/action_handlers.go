@@ -167,15 +167,15 @@ var logStageEvent = func(userID int32, event string, isAuthenticated bool) error
 }
 
 // LogEvent logs users events.
-func LogEvent(ctx context.Context, db database.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage, featureFlags featureflag.FlagSet) error {
+func LogEvent(ctx context.Context, db database.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet) error {
 	info := &database.Event{
-		Name:            name,
-		URL:             url,
-		UserID:          uint32(userID),
-		AnonymousUserID: userCookieID,
-		Source:          source,
-		Argument:        argument,
-		FeatureFlags:    featureFlags,
+		Name:             name,
+		URL:              url,
+		UserID:           uint32(userID),
+		AnonymousUserID:  userCookieID,
+		Source:           source,
+		Argument:         argument,
+		EvaluatedFlagSet: evaluatedFlagSet,
 	}
 	return db.EventLogs().Insert(ctx, info)
 }

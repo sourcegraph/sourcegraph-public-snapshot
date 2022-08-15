@@ -5,7 +5,7 @@ import { RenderResult } from '@testing-library/react'
 import { Remote } from 'comlink'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
 import { BehaviorSubject, NEVER, of, Subject, Subscription } from 'rxjs'
-import { filter, take, first } from 'rxjs/operators'
+import { filter, take, first, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
@@ -18,6 +18,7 @@ import { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import { flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
@@ -32,7 +33,7 @@ import { MutationRecordLike } from '../../util/dom'
 import {
     CodeIntelligenceProps,
     createGlobalDebugMount,
-    createOverlayMount,
+    getExistingOrCreateOverlayMount,
     handleCodeHost,
     observeHoverOverlayMountLocation,
     HandleCodeHostOptions,
@@ -80,7 +81,6 @@ const createMockController = (extensionHostAPI: Remote<FlatExtensionHostAPI>): C
 const createMockPlatformContext = (
     partialMocks?: Partial<CodeIntelligenceProps['platformContext']>
 ): CodeIntelligenceProps['platformContext'] => ({
-    forceUpdateTooltip: noop,
     urlToFile: toPrettyBlobURL,
     requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
@@ -129,7 +129,7 @@ describe('codeHost', () => {
 
     describe('createOverlayMount()', () => {
         it('should create the overlay mount', () => {
-            createOverlayMount('some-code-host', document.body)
+            getExistingOrCreateOverlayMount('some-code-host', document.body)
             const mount = document.body.querySelector('.hover-overlay-mount')
             expect(mount).toBeDefined()
             expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host')
@@ -358,7 +358,10 @@ describe('codeHost', () => {
                 const decorationType = extensionAPI.app.createDecorationType()
                 const decorated = (editor: ExtensionCodeEditor): Promise<TextDocumentDecoration[] | null> =>
                     wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
-                        .pipe(first(decorations => !isEmpty(decorations)))
+                        .pipe(
+                            map(flattenDecorations),
+                            first(decorations => !isEmpty(decorations))
+                        )
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added
@@ -387,6 +390,7 @@ describe('codeHost', () => {
                 ])
                 await wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
                     .pipe(
+                        map(flattenDecorations),
                         filter(
                             decorations =>
                                 !!decorations &&
@@ -463,7 +467,10 @@ describe('codeHost', () => {
                 const decorationType = extensionAPI.app.createDecorationType()
                 const decorated = (editor: ExtensionCodeEditor): Promise<TextDocumentDecoration[] | null> =>
                     wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
-                        .pipe(first(decorations => !isEmpty(decorations)))
+                        .pipe(
+                            map(flattenDecorations),
+                            first(decorations => !isEmpty(decorations))
+                        )
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added

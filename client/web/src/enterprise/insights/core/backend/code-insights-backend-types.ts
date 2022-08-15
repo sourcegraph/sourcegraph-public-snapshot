@@ -1,6 +1,8 @@
 import { Duration } from 'date-fns'
 
-import { Series } from '../../../../charts'
+import { Series } from '@sourcegraph/wildcard'
+
+import { GroupByField } from '../../../../graphql-operations'
 import {
     RuntimeInsight,
     InsightDashboard,
@@ -8,8 +10,8 @@ import {
     CaptureGroupInsight,
     LangStatsInsight,
     InsightsDashboardOwner,
-    SearchBackendBasedInsight,
-    SearchRuntimeBasedInsight,
+    SearchBasedInsight,
+    ComputeInsight,
 } from '../types'
 import { InsightContentType } from '../types/insight/common'
 
@@ -19,6 +21,7 @@ export interface CategoricalChartContent<Datum> {
     getDatumName: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink?: (datum: Datum) => string | undefined
+    getCategory?: (datum: Datum) => string | undefined
 }
 
 export interface SeriesChartContent<Datum> {
@@ -69,23 +72,16 @@ export interface FindInsightByNameInput {
     name: string
 }
 
-export type MinimalSearchRuntimeBasedInsightData = Omit<
-    SearchRuntimeBasedInsight,
-    'id' | 'dashboardReferenceCount' | 'isFrozen'
->
-export type MinimalSearchBackendBasedInsightData = Omit<
-    SearchBackendBasedInsight,
-    'id' | 'dashboardReferenceCount' | 'isFrozen'
->
-export type MinimalSearchBasedInsightData = MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData
-
+export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalComputeInsightData = Omit<ComputeInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type CreationInsightInput =
     | MinimalSearchBasedInsightData
     | MinimalCaptureGroupInsightData
     | MinimalLangStatsInsightData
+    | MinimalComputeInsightData
 
 export interface InsightCreateInput {
     insight: CreationInsightInput
@@ -108,6 +104,20 @@ export interface CaptureInsightSettings {
     step: Duration
 }
 
+export interface InsightPreviewSettings {
+    repositories: string[]
+    step: Duration
+    series: SeriesPreviewSettings[]
+}
+
+export interface SeriesPreviewSettings {
+    query: string
+    generatedFromCaptureGroup?: boolean
+    label: string
+    stroke: string
+    groupBy?: GroupByField
+}
+
 export interface AccessibleInsightInfo {
     id: string
     title: string
@@ -115,12 +125,12 @@ export interface AccessibleInsightInfo {
 
 export interface BackendInsightDatum {
     dateTime: Date
-    value: number | null
+    value: number
     link?: string
 }
 
 export interface BackendInsightData {
-    content: SeriesChartContent<any>
+    data: InsightContent<any>
     isFetchingHistoricalData: boolean
 }
 

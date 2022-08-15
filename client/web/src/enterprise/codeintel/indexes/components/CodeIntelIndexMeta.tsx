@@ -4,6 +4,7 @@ import { CardSubtitle, CardText, CardTitle, CardBody, Card } from '@sourcegraph/
 
 import { LsifIndexFields } from '../../../../graphql-operations'
 import { CodeIntelUploadOrIndexCommit } from '../../shared/components/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexCommitTags } from '../../shared/components/CodeIntelUploadOrIndexCommitTags'
 import { CodeIntelUploadOrIndexRepository } from '../../shared/components/CodeIntelUploadOrIndexerRepository'
 import { CodeIntelUploadOrIndexIndexer } from '../../shared/components/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexLastActivity } from '../../shared/components/CodeIntelUploadOrIndexLastActivity'
@@ -31,6 +32,8 @@ export const CodeIntelIndexMeta: FunctionComponent<React.PropsWithChildren<CodeI
             <CardText>
                 Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                 <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
+                {', '}
+                <CodeIntelUploadOrIndexCommitTags tags={node.tags} />{' '}
             </CardText>
         </CardBody>
     </Card>

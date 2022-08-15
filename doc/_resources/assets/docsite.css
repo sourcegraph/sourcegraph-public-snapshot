@@ -287,6 +287,12 @@ body > #sidebar .nav-section ul ul {
     font-size: 90%;
     padding-left: var(--spacing);
 }
+body > #sidebar .nav-section ul ul li.active-subsection {
+    font-weight: bold;
+}
+body > #sidebar .nav-section ul ul li.active-subsection a {
+    color: var(--text-color);
+}
 body > #sidebar .nav-section li.collapse ul {
     display: none;
 }

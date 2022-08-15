@@ -9,14 +9,15 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func testStore(db dbutil.DB, options Options) *store {
+func testStore(db *sql.DB, options Options) *store {
 	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), options, &observation.TestContext)
 }
 
@@ -104,8 +105,9 @@ func testScanFirstRecordRetry(rows *sql.Rows, queryErr error) (v workerutil.Reco
 	return nil, false, nil
 }
 
-func setupStoreTest(t *testing.T) dbutil.DB {
-	db := dbtest.NewDB(t)
+func setupStoreTest(t *testing.T) *sql.DB {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS workerutil_test (
@@ -120,7 +122,8 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 			num_failures      integer NOT NULL default 0,
 			created_at        timestamp with time zone NOT NULL default NOW(),
 			execution_logs    json[],
-			worker_hostname   text NOT NULL default ''
+			worker_hostname   text NOT NULL default '',
+			cancel            boolean NOT NULL default false
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
@@ -139,13 +142,13 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 func defaultTestStoreOptions(clock glock.Clock) Options {
 	return Options{
 		Name:              "test",
-		TableName:         "workerutil_test w",
+		TableName:         "workerutil_test",
 		Scan:              testScanFirstRecord,
-		OrderByExpression: sqlf.Sprintf("w.created_at"),
+		OrderByExpression: sqlf.Sprintf("workerutil_test.created_at"),
 		ColumnExpressions: []*sqlf.Query{
-			sqlf.Sprintf("w.id"),
-			sqlf.Sprintf("w.state"),
-			sqlf.Sprintf("w.execution_logs"),
+			sqlf.Sprintf("workerutil_test.id"),
+			sqlf.Sprintf("workerutil_test.state"),
+			sqlf.Sprintf("workerutil_test.execution_logs"),
 		},
 		AlternateColumnNames: map[string]string{
 			"queued_at": "created_at",

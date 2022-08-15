@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 
+import { mdiHistory } from '@mdi/js'
 import classNames from 'classnames'
-import HistoryIcon from 'mdi-react/HistoryIcon'
 
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangeState, BatchSpecState, Scalars } from '../../../graphql-operations'
 
@@ -103,39 +103,44 @@ const ExecutionStatePill: React.FunctionComponent<
         case BatchSpecState.PROCESSING:
         case BatchSpecState.QUEUED:
             return (
-                <Badge
-                    variant="warning"
-                    className={styles.executionPill}
-                    data-tooltip={`This batch change has a new spec ${
+                <Tooltip
+                    content={`This batch change has a new spec ${
                         latestExecutionState === BatchSpecState.QUEUED
                             ? 'queued for execution'
                             : 'in the process of executing'
                     }.`}
                 >
-                    <HistoryIcon className={styles.executionIcon} />
-                </Badge>
+                    <Badge variant="warning" className={styles.executionPill}>
+                        <Icon
+                            className={styles.executionIcon}
+                            svgPath={mdiHistory}
+                            inline={false}
+                            aria-label={`This batch change has a new spec ${
+                                latestExecutionState === BatchSpecState.QUEUED
+                                    ? 'queued for execution'
+                                    : 'in the process of executing'
+                            }.`}
+                        />
+                    </Badge>
+                </Tooltip>
             )
 
         case BatchSpecState.COMPLETED:
             return (
-                <Badge
-                    variant="primary"
-                    className={styles.executionPill}
-                    data-tooltip="This batch change has a newer batch spec execution that is ready to be applied."
-                >
-                    <HistoryIcon className={styles.executionIcon} />
-                </Badge>
+                <Tooltip content="This batch change has a newer batch spec execution that is ready to be applied.">
+                    <Badge variant="primary" className={styles.executionPill}>
+                        <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
+                    </Badge>
+                </Tooltip>
             )
         case BatchSpecState.FAILED:
         default:
             return (
-                <Badge
-                    variant="danger"
-                    className={styles.executionPill}
-                    data-tooltip="The latest batch spec execution for this batch change failed."
-                >
-                    <HistoryIcon className={styles.executionIcon} />
-                </Badge>
+                <Tooltip content="The latest batch spec execution for this batch change failed.">
+                    <Badge variant="danger" className={styles.executionPill}>
+                        <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
+                    </Badge>
+                </Tooltip>
             )
     }
 }

@@ -8,9 +8,12 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -19,11 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
-	eventRetentionInDays int = 7
+	eventRetentionInDays int = 30
 )
 
 func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
@@ -68,17 +70,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 	deleteLogs := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
-			// Delete logs without search results.
-			err := store.DeleteObsoleteTriggerJobs(ctx)
-			if err != nil {
-				return err
-			}
-			// Delete old logs, even if they have search results.
-			err = store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
-			if err != nil {
-				return err
-			}
-			return nil
+			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 		})
 	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }
@@ -180,11 +172,11 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	query := q.QueryString
-	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}
-	results, searchErr := codemonitors.Search(ctx, r.db, query, m.ID, settings)
+	results, searchErr := codemonitors.Search(ctx, logger, r.db, query, m.ID, settings)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
@@ -292,7 +284,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *edb.ActionJob) error 
 		if rec.NamespaceUserID == nil {
 			return errors.New("nil recipient")
 		}
-		err = SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+		err = SendEmailForNewSearchResult(ctx, database.NewDBWith(log.Scoped("handleEmail", ""), r.CodeMonitorStore), *rec.NamespaceUserID, data)
 		if err != nil {
 			return err
 		}

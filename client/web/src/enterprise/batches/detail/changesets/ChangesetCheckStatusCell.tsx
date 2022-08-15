@@ -1,9 +1,9 @@
 import React from 'react'
 
+import { mdiCheckCircle, mdiCloseCircle, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CloseCircleIcon from 'mdi-react/CloseCircleIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetCheckState } from '../../../../graphql-operations'
 
@@ -34,7 +34,9 @@ export const ChangesetCheckStatusPending: React.FunctionComponent<React.PropsWit
             className
         )}
     >
-        <TimerSandIcon data-tooltip="Check state is pending" />
+        <Tooltip content="Check state is pending">
+            <Icon svgPath={mdiTimerSand} aria-label="Check state is pending" inline={false} />
+        </Tooltip>
         <span className="text-muted">Pending</span>
     </div>
 )
@@ -47,7 +49,9 @@ export const ChangesetCheckStatusPassed: React.FunctionComponent<React.PropsWith
             className
         )}
     >
-        <CheckCircleIcon data-tooltip="All checks complete" />
+        <Tooltip content="All checks complete">
+            <Icon svgPath={mdiCheckCircle} aria-label="All checks complete" inline={false} />
+        </Tooltip>
         <span className="text-muted">Passed</span>
     </div>
 )
@@ -60,7 +64,9 @@ export const ChangesetCheckStatusFailed: React.FunctionComponent<React.PropsWith
             className
         )}
     >
-        <CloseCircleIcon data-tooltip="Some checks failed" />
+        <Tooltip content="Some checks failed">
+            <Icon svgPath={mdiCloseCircle} aria-label="Some checks failed" inline={false} />
+        </Tooltip>
         <span className="text-muted">Failed</span>
     </div>
 )

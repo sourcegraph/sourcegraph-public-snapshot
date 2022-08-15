@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../../../../../../components/WebStory'
@@ -6,15 +6,21 @@ import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } f
 
 import { EmptyInsightDashboard } from './EmptyInsightDashboard'
 
-const { add } = storiesOf('web/insights/EmptyInsightDashboard', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+
+const config: Meta = {
+    title: 'web/insights/EmptyInsightDashboard',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
         },
-    })
+    },
+}
 
-add('EmptyInsightDashboard', () => {
+export default config
+
+export const EmptyInsightDashboardStory: Story = () => {
     const dashboard: InsightDashboard = {
         type: InsightsDashboardType.Custom,
         id: '101',
@@ -24,4 +30,6 @@ add('EmptyInsightDashboard', () => {
     }
 
     return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} />
-})
+}
+
+EmptyInsightDashboardStory.storyName = 'EmptyInsightDashboard'

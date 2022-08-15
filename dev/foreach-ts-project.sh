@@ -24,10 +24,11 @@ DIRS=(
   client/wildcard
   client/template-parser
   client/extension-api
-  client/eslint-plugin-sourcegraph
   client/extension-api-types
   client/storybook
   client/client-api
+  client/jetbrains
+  client/observability
   dev/release
 )
 

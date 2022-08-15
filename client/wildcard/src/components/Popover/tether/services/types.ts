@@ -10,7 +10,7 @@ export interface Tether {
     element: HTMLElement
 
     /** Reference on tooltip tail (marker) HTML element in the DOM. */
-    marker?: HTMLElement | null
+    marker?: MarkerElement | null
 
     /**
      * In case if consumer wants to position not by target but
@@ -56,6 +56,8 @@ export interface Tether {
     overflowToScrollParents?: boolean
     constrainToScrollParents?: boolean
 }
+
+export type MarkerElement = HTMLElement | SVGElement
 
 export interface TetherLayout {
     /** Tooltip target element */

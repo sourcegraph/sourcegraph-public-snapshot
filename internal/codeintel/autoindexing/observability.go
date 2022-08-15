@@ -8,6 +8,7 @@ import (
 )
 
 type operations struct {
+	// Not used yet.
 	delete                      *observation.Operation
 	enqueue                     *observation.Operation
 	get                         *observation.Operation
@@ -15,6 +16,17 @@ type operations struct {
 	infer                       *observation.Operation
 	list                        *observation.Operation
 	updateIndexingConfiguration *observation.Operation
+	inferIndexConfiguration     *observation.Operation // temporary
+	queueIndex                  *observation.Operation // temporary
+	queueIndexForPackage        *observation.Operation // temporary
+
+	// Commits
+	getStaleSourcedCommits *observation.Operation
+	updateSourcedCommits   *observation.Operation
+	deleteSourcedCommits   *observation.Operation
+
+	// Indexes
+	deleteIndexesWithoutRepository *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -34,6 +46,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
+		// Not used yet.
 		delete:                      op("Delete"),
 		enqueue:                     op("Enqueue"),
 		get:                         op("Get"),
@@ -41,5 +54,16 @@ func newOperations(observationContext *observation.Context) *operations {
 		infer:                       op("Infer"),
 		list:                        op("List"),
 		updateIndexingConfiguration: op("UpdateIndexingConfiguration"),
+		inferIndexConfiguration:     op("InferIndexConfiguration"), // temporary
+		queueIndex:                  op("QueueIndex"),              // temporary
+		queueIndexForPackage:        op("QueueIndexForPackage"),    // temporary
+
+		// Commits
+		getStaleSourcedCommits: op("GetStaleSourcedCommits"),
+		updateSourcedCommits:   op("UpdateSourcedCommits"),
+		deleteSourcedCommits:   op("DeleteSourcedCommits"),
+
+		// Indexes
+		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 	}
 }

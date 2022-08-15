@@ -1,13 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, forwardRef } from 'react'
 
+import { mdiChevronDown, mdiChevronUp, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 import H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
-import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 
@@ -32,54 +30,58 @@ interface NavItemProps {
 
 interface NavActionsProps {
     children: React.ReactNode
-}
-
-interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
-    external?: boolean
     className?: string
 }
 
-const useOutsideClickDetector = (
-    reference: React.RefObject<HTMLDivElement>
-): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
-    const [outsideClick, setOutsideClick] = useState(false)
-
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent): void {
-            if (reference.current && !reference.current.contains(event.target as Node | null)) {
-                setOutsideClick(false)
-            }
-        }
-        document.addEventListener('mouseup', handleClickOutside)
-        return () => {
-            document.removeEventListener('mouseup', handleClickOutside)
-        }
-    }, [reference, setOutsideClick])
-
-    return [outsideClick, setOutsideClick]
+export interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
+    external?: boolean
+    className?: string
+    variant?: 'compact'
 }
 
-export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
-    <nav aria-label="Main Menu" className={navBarStyles.navbar}>
-        <Typography.H1 className={navBarStyles.logo}>
-            <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
-                {logo}
-            </RouterLink>
-        </Typography.H1>
-        <hr className={navBarStyles.divider} aria-hidden={true} />
-        {children}
-    </nav>
-)
+const useOnClickDetector = (
+    reference: React.RefObject<HTMLDivElement>
+): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
+    const [onClick, setOnClick] = useState(false)
+
+    useEffect(() => {
+        function handleToggleOpen(): void {
+            if (reference.current) {
+                setOnClick(false)
+            }
+        }
+        document.addEventListener('mouseup', handleToggleOpen)
+        return () => {
+            document.removeEventListener('mouseup', handleToggleOpen)
+        }
+    }, [reference, setOnClick])
+
+    return [onClick, setOnClick]
+}
+
+export const NavBar = forwardRef(
+    ({ children, logo }, reference): JSX.Element => (
+        <nav aria-label="Main Menu" className={navBarStyles.navbar} ref={reference}>
+            <H1 className={navBarStyles.logo}>
+                <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
+                    {logo}
+                </RouterLink>
+            </H1>
+            <hr className={navBarStyles.divider} aria-hidden={true} />
+            {children}
+        </nav>
+    )
+) as ForwardReferenceComponent<'div', NavBarProps>
 
 export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     const menuReference = useRef<HTMLDivElement>(null)
-    const [open, setOpen] = useOutsideClickDetector(menuReference)
+    const [open, setOpen] = useOnClickDetector(menuReference)
 
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
             <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
-                <Icon role="img" as={MenuIcon} aria-hidden={true} />
-                <Icon role="img" as={open ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiMenu} />
+                <Icon svgPath={open ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
             </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>
@@ -90,10 +92,13 @@ export const NavActions: React.FunctionComponent<React.PropsWithChildren<NavActi
     <ul className={navActionStyles.actions}>{children}</ul>
 )
 
-export const NavAction: React.FunctionComponent<React.PropsWithChildren<NavActionsProps>> = ({ children }) => (
+export const NavAction: React.FunctionComponent<React.PropsWithChildren<NavActionsProps>> = ({
+    children,
+    className,
+}) => (
     <>
         {React.Children.map(children, action => (
-            <li className={navActionStyles.action}>{action}</li>
+            <li className={classNames(navActionStyles.action, className)}>{action}</li>
         ))}
     </>
 )
@@ -123,14 +128,16 @@ export const NavLink: React.FunctionComponent<React.PropsWithChildren<NavLinkPro
     children,
     to,
     external,
+    variant,
     className,
 }) => {
     const content = (
         <span className={classNames(navItemStyles.linkContent, className)}>
-            {LinkIcon ? <Icon role="img" className={navItemStyles.icon} as={LinkIcon} aria-hidden={true} /> : null}
+            {LinkIcon ? <Icon className={navItemStyles.icon} as={LinkIcon} aria-hidden={true} /> : null}
             <span
                 className={classNames(navItemStyles.text, {
                     [navItemStyles.iconIncluded]: Icon,
+                    [navItemStyles.isCompact]: variant === 'compact',
                 })}
             >
                 {children}

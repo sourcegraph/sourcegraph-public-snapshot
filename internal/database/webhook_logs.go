@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -33,13 +31,6 @@ type webhookLogStore struct {
 
 var _ WebhookLogStore = &webhookLogStore{}
 
-func WebhookLogs(db dbutil.DB, key encryption.Key) *webhookLogStore {
-	return &webhookLogStore{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
-		key:   key,
-	}
-}
-
 func WebhookLogsWith(other basestore.ShareableStore, key encryption.Key) *webhookLogStore {
 	return &webhookLogStore{
 		Store: basestore.NewWithHandle(other.Handle()),
@@ -55,32 +46,13 @@ func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) err
 		receivedAt = log.ReceivedAt
 	}
 
-	rawRequest, err := json.Marshal(&log.Request)
+	rawRequest, _, err := log.Request.Encrypt(ctx, s.key)
 	if err != nil {
-		return errors.Wrap(err, "marshalling request data")
+		return err
 	}
-
-	rawResponse, err := json.Marshal(&log.Response)
+	rawResponse, keyID, err := log.Response.Encrypt(ctx, s.key)
 	if err != nil {
-		return errors.Wrap(err, "marshalling response data")
-	}
-
-	encKeyID := ""
-	if s.key != nil {
-		encKeyID, err = keyID(ctx, s.key)
-		if err != nil {
-			return errors.Wrap(err, "getting key version")
-		}
-
-		rawRequest, err = s.key.Encrypt(ctx, rawRequest)
-		if err != nil {
-			return errors.Wrap(err, "encrypting request data")
-		}
-
-		rawResponse, err = s.key.Encrypt(ctx, rawResponse)
-		if err != nil {
-			return errors.Wrap(err, "encrypting response data")
-		}
+		return err
 	}
 
 	q := sqlf.Sprintf(
@@ -90,7 +62,7 @@ func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) err
 		log.StatusCode,
 		rawRequest,
 		rawResponse,
-		encKeyID,
+		keyID,
 		sqlf.Join(webhookLogColumns, ", "),
 	)
 
@@ -306,10 +278,8 @@ WHERE
 
 func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.WebhookLog, sc dbutil.Scanner) error {
 	var (
-		encKeyID          string
-		externalServiceID int64 = -1
-		rawRequest              = []byte{}
-		rawResponse             = []byte{}
+		externalServiceID        int64 = -1
+		request, response, keyID string
 	)
 
 	if err := sc.Scan(
@@ -317,9 +287,9 @@ func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.Webhook
 		&log.ReceivedAt,
 		&dbutil.NullInt64{N: &externalServiceID},
 		&log.StatusCode,
-		&rawRequest,
-		&rawResponse,
-		&encKeyID,
+		&request,
+		&response,
+		&keyID,
 	); err != nil {
 		return err
 	}
@@ -328,46 +298,7 @@ func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.Webhook
 		log.ExternalServiceID = &externalServiceID
 	}
 
-	if encKeyID != "" {
-		// The record includes a field indicating the encryption key ID. We
-		// don't really have a way to look up a key by ID right now, so this is
-		// used as a marker of whether we should expect a key or not.
-		storeKeyID, err := keyID(ctx, s.key)
-		if err != nil {
-			return errors.Wrap(err, "retrieving store key ID")
-		}
-
-		if encKeyID != storeKeyID {
-			return errors.New("key mismatch: webhook log is encrypted with a different key to the one in the store")
-		}
-	}
-
-	if err := scanMessage(ctx, s.key, rawRequest, &log.Request); err != nil {
-		return errors.Wrap(err, "scanning request data")
-	}
-	if err := scanMessage(ctx, s.key, rawResponse, &log.Response); err != nil {
-		return errors.Wrap(err, "scanning response data")
-	}
-
-	return nil
-}
-
-func scanMessage(ctx context.Context, key encryption.Key, raw []byte, message *types.WebhookLogMessage) error {
-	var decrypted []byte
-	if key != nil {
-		secret, err := key.Decrypt(ctx, raw)
-		if err != nil {
-			return errors.Wrap(err, "decrypting")
-		}
-
-		decrypted = []byte(secret.Secret())
-	} else {
-		decrypted = raw
-	}
-
-	if err := json.Unmarshal(decrypted, message); err != nil {
-		return errors.Wrap(err, "unmarshalling")
-	}
-
+	log.Request = types.NewEncryptedWebhookLogMessage(request, keyID, s.key)
+	log.Response = types.NewEncryptedWebhookLogMessage(response, keyID, s.key)
 	return nil
 }

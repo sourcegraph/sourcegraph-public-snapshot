@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiMapSearch } from '@mdi/js'
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, H5, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -86,6 +87,7 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
             const passedArguments = {
                 first: args.first ?? null,
                 after: args.after ?? null,
+                includeLocallyExecutedSpecs: false,
             }
             return queryBatchSpecs(passedArguments)
         },
@@ -102,7 +104,7 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
             defaultFirst={20}
             noun="batch spec"
             pluralNoun="batch specs"
-            listClassName={styles.specsGrid}
+            listClassName={classNames(styles.specsGrid, 'test-batches-executions')}
             listComponent="div"
             withCenteredSummary={true}
             headComponent={Header}
@@ -116,17 +118,15 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <span className="d-none d-md-block" />
-        <Typography.H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">State</Typography.H5>
-        <Typography.H5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Batch spec</Typography.H5>
-        <Typography.H5 className="d-none d-md-block text-uppercase text-center text-nowrap">
-            Execution time
-        </Typography.H5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">State</H5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Batch spec</H5>
+        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Execution time</H5>
     </>
 )
 
 const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <MapSearchIcon className="icon" />
+        <Icon className="icon" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <div className="pt-2">No batch specs have been created so far.</div>
     </div>
 )

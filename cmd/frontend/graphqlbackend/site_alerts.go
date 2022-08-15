@@ -11,13 +11,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -91,7 +92,7 @@ func init() {
 		if c.SiteConfig().ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
 		} else if deploy.Type() != deploy.Dev && strings.HasPrefix(c.SiteConfig().ExternalURL, "http://") {
-			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/nginx)"))
+			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/http_https_configuration)"))
 		}
 
 		return problems
@@ -127,7 +128,7 @@ func init() {
 			return nil
 		}
 
-		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+		problems, err := conf.Validate(conf.Raw())
 		if err != nil {
 			return []*Alert{
 				{
@@ -172,6 +173,9 @@ func init() {
 		}
 		return alerts
 	})
+
+	// Warn if customer is using GitLab on a version < 12.0.
+	AlertFuncs = append(AlertFuncs, gitlabVersionAlert)
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
@@ -331,6 +335,50 @@ func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArg
 			pluralize(status.ServicesCritical, "service", "services"))
 		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg}}
 	}
+}
+
+func gitlabVersionAlert(args AlertFuncArgs) []*Alert {
+	// We only show this alert to site admins.
+	if !args.IsSiteAdmin {
+		return nil
+	}
+
+	chvs, err := versions.GetVersions()
+	if err != nil {
+		log15.Warn("Failed to get code host versions for GitLab minimum version alert", "error", err)
+		return nil
+	}
+
+	// NOTE: It's necessary to include a "-0" prerelease suffix on each constraint so that
+	// prereleases of future versions are still considered to satisfy the constraint. See
+	// https://github.com/Masterminds/semver#working-with-prerelease-versions for more.
+	mv, err := semver.NewConstraint(">=12.0.0-0")
+	if err != nil {
+		log15.Warn("Failed to create minimum version constraint for GitLab minimum version alert", "error", err)
+	}
+
+	for _, chv := range chvs {
+		if chv.ExternalServiceKind != extsvc.KindGitLab {
+			continue
+		}
+
+		cv, err := semver.NewVersion(chv.Version)
+		if err != nil {
+			log15.Warn("Failed to parse code host version for GitLab minimum version alert", "error", err, "external_service_kind", chv.ExternalServiceKind)
+			continue
+		}
+
+		if !mv.Check(cv) {
+			log15.Debug("Detected GitLab instance running a version below 12.0.0", "version", chv.Version)
+
+			return []*Alert{{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "Warning: One or more of your code hosts is running a version of GitLab below 12.0. Sourcegraph will no longer support GitLab < 12.0 in the next major version. Please upgrade your GitLab instance(s) before upgrading Sourcegraph to version 4.0.",
+			}}
+		}
+	}
+
+	return nil
 }
 
 func pluralize(v int, singular, plural string) string {

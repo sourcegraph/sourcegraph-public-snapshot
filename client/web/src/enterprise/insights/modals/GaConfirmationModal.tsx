@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, Modal, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, H1, Text } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../core'
 
@@ -48,7 +48,7 @@ export const GaConfirmationModalContent: React.FunctionComponent<
 
     return (
         <>
-            <Typography.H1 className={styles.title}>Thank you for trying Code Insights!</Typography.H1>
+            <H1 className={styles.title}>Thank you for trying Code Insights!</H1>
 
             <div className={styles.mediaHeroWrapper}>
                 <div className={styles.mediaHeroContent}>
@@ -60,19 +60,19 @@ export const GaConfirmationModalContent: React.FunctionComponent<
             </div>
 
             <div className={styles.textContent}>
-                <p>
+                <Text>
                     <b>Your instance is now using the limited access version of Code Insights.</b>
-                </p>
+                </Text>
 
-                <p>
+                <Text>
                     Contact your admin or reach out to us to upgrade your licence for unlimited insights and dashboards.
-                </p>
+                </Text>
 
-                <p>
+                <Text>
                     Questions? Learn more about the{' '}
                     <Link to="/help/code_insights/references/license">Code Insights limited access</Link> or contact us
                     directly.
-                </p>
+                </Text>
             </div>
 
             <footer className={styles.actions}>

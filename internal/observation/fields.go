@@ -4,7 +4,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"go.uber.org/zap"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/log"
 )
 
 func toLogFields(otFields []otlog.Field) []log.Field {

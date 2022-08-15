@@ -62,7 +62,7 @@ func (o Observable) WithNoAlerts(interpretation string) Observable {
 	o.Warning = nil
 	o.Critical = nil
 	o.NoAlert = true
-	o.PossibleSolutions = ""
+	o.NextSteps = ""
 	o.Interpretation = interpretation
 	return o
 }
@@ -78,11 +78,21 @@ func (f ObservableOption) safeApply(observable Observable) Observable {
 	return f(observable)
 }
 
+// and creates a chained ObservableOption that first invokes the receiver,
+// and the the argument on the result of invoking the receiver.
+func (f ObservableOption) and(m ObservableOption) ObservableOption {
+	return func(observable Observable) Observable {
+		return m.safeApply(f.safeApply(observable))
+	}
+}
+
 // WarningOption creates an ObservableOption that overrides this Observable's
 // warning-level alert with the given alert.
-func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
+func WarningOption(a *monitoring.ObservableAlertDefinition, possibleSolution string) ObservableOption {
 	return func(observable Observable) Observable {
-		return observable.WithWarning(a)
+		observable = observable.WithWarning(a)
+		observable.NextSteps = possibleSolution
+		return observable
 	}
 }
 
@@ -91,7 +101,7 @@ func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
 func CriticalOption(a *monitoring.ObservableAlertDefinition, possibleSolution string) ObservableOption {
 	return func(observable Observable) Observable {
 		observable = observable.WithCritical(a)
-		observable.PossibleSolutions = possibleSolution
+		observable.NextSteps = possibleSolution
 		return observable
 	}
 }

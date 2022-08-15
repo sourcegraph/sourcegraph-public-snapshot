@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation, useQuery } from '@apollo/client'
+import { mdiChevronDown, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDown from 'mdi-react/ChevronDownIcon'
-import CogIcon from 'mdi-react/CogIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -19,7 +18,9 @@ import {
     MenuItem,
     Position,
     PageSelector,
-    Typography,
+    H3,
+    Icon,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -105,12 +106,9 @@ const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProp
                     )}
                 >
                     <div className={styles.avatarContainer}>
-                        <UserAvatar
-                            size={36}
-                            className={styles.avatar}
-                            user={member}
-                            data-tooltip={member.displayName || member.username}
-                        />
+                        <Tooltip content={member.displayName || member.username}>
+                            <UserAvatar size={36} className={styles.avatar} user={member} />
+                        </Tooltip>
                     </div>
 
                     <div className="d-flex flex-column">
@@ -135,10 +133,14 @@ const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProp
                                 className={styles.memberMenu}
                                 disabled={loading}
                             >
-                                <CogIcon size={15} />
-                                <span aria-hidden={true}>
-                                    <ChevronDown size={15} />
-                                </span>
+                                <Icon svgPath={mdiCog} inline={false} aria-label="Options" height={15} width={15} />
+                                <Icon
+                                    svgPath={mdiChevronDown}
+                                    inline={false}
+                                    height={15}
+                                    width={15}
+                                    aria-hidden={true}
+                                />
                             </MenuButton>
 
                             <MenuList position={Position.bottomEnd}>
@@ -328,7 +330,7 @@ export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren
                 {authenticatedUser && membersResult && showOnlyYou && isSelf(membersResult.members.nodes[0].id) && (
                     <Container className={styles.onlyYouContainer}>
                         <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                            <Typography.H3>Looks like it’s just you!</Typography.H3>
+                            <H3>Looks like it’s just you!</H3>
                             <div>
                                 <InviteMemberModalHandler
                                     orgName={org.name}

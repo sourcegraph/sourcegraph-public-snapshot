@@ -3,14 +3,22 @@ import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Card, ForwardReferenceComponent, Typography, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Card,
+    ForwardReferenceComponent,
+    H2,
+    H4,
+    LoadingSpinner,
+    LegendItem,
+    LegendList,
+    Series,
+} from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
 
 import styles from './InsightCard.module.scss'
 
-const InsightCard = forwardRef((props, reference) => {
+const InsightCard = forwardRef(function InsightCard(props, reference) {
     const { title, children, className, as = 'section', ...otherProps } = props
 
     return (
@@ -23,8 +31,8 @@ const InsightCard = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'section'>
 
 export interface InsightCardTitleProps {
-    title: string
-    subtitle?: string
+    title: ReactNode
+    subtitle?: ReactNode
 
     /**
      * It's primarily conceived as a slot for card actions (like filter buttons) that render
@@ -33,15 +41,20 @@ export interface InsightCardTitleProps {
     children?: ReactNode
 }
 
-const InsightCardHeader = forwardRef((props, reference) => {
+const InsightCardHeader = forwardRef(function InsightCardHeader(props, reference) {
     const { as: Component = 'header', title, subtitle, className, children, ...attributes } = props
 
     return (
         <Component {...attributes} ref={reference} className={classNames(styles.header, className)}>
             <div className={styles.headerContent}>
-                <Typography.H4 as={Typography.H2} title={title} className={styles.title}>
+                <H4
+                    // We have to cast this element to H2 because having h4 without h3 and h2
+                    // higher in the hierarchy violates a11y rules about headings structure.
+                    as={H2}
+                    className={styles.title}
+                >
                     {title}
-                </Typography.H4>
+                </H4>
 
                 {children && (
                     // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
@@ -86,7 +99,7 @@ const InsightCardLegend: React.FunctionComponent<React.PropsWithChildren<Insight
     return (
         <LegendList {...attributes}>
             {series.map(series => (
-                <LegendItem key={series.id} color={getLineColor(series)} name={series.name} />
+                <LegendItem key={series.id} color={series.color} name={series.name} />
             ))}
         </LegendList>
     )

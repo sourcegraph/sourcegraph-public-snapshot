@@ -1,17 +1,22 @@
 import { useState } from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { ExecutionOptions } from '../BatchSpecContext'
 
 import { RunBatchSpecButton } from './RunBatchSpecButton'
 
-const { add } = storiesOf('web/batches/batch-spec/edit/RunBatchSpecButton', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('disabled', () => {
+const config: Meta = {
+    title: 'web/batches/batch-spec/edit/RunBatchSpecButton',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Disabled: Story = () => {
     const [options, setOptions] = useState<ExecutionOptions>({ runWithoutCache: false })
     return (
         <WebStory>
@@ -26,9 +31,9 @@ add('disabled', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('enabled', () => {
+export const Enabled: Story = () => {
     const [options, setOptions] = useState<ExecutionOptions>({ runWithoutCache: false })
     return (
         <WebStory>
@@ -42,4 +47,4 @@ add('enabled', () => {
             )}
         </WebStory>
     )
-})
+}

@@ -126,8 +126,8 @@ type extensionStore struct {
 var _ ExtensionStore = (*extensionStore)(nil)
 
 // Extensions instantiates and returns a new ExtensionsStore with prepared statements.
-func Extensions(db dbutil.DB) ExtensionStore {
-	return &extensionStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Extensions(db database.DB) ExtensionStore {
+	return &extensionStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 // ExtensionsWith instantiates and returns a new ExtensionsStore using the other store handle.
@@ -411,7 +411,7 @@ ORDER BY %s,
 	for rows.Next() {
 		var t Extension
 		var publisherUserID, publisherOrgID sql.NullInt64
-		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &t.Publisher.NonCanonicalName, &t.NonCanonicalIsWorkInProgress); err != nil {
+		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &dbutil.NullString{S: &t.Publisher.NonCanonicalName}, &t.NonCanonicalIsWorkInProgress); err != nil {
 			return nil, err
 		}
 		t.Publisher.UserID = int32(publisherUserID.Int64)

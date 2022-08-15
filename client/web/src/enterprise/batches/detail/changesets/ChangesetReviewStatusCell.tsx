@@ -1,11 +1,9 @@
 import React from 'react'
 
+import { mdiTimerSand, mdiGateArrowRight, mdiCommentOutline, mdiDelta, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
-import DeltaIcon from 'mdi-react/DeltaIcon'
-import GateArrowRightIcon from 'mdi-react/GateArrowRightIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetReviewState } from '../../../../graphql-operations'
 
@@ -40,7 +38,7 @@ export const ChangesetReviewStatusPending: React.FunctionComponent<React.PropsWi
             className
         )}
     >
-        <TimerSandIcon />
+        <Icon svgPath={mdiTimerSand} inline={false} aria-hidden={true} />
         <span className="text-muted">Pending</span>
     </div>
 )
@@ -53,7 +51,7 @@ export const ChangesetReviewStatusDismissed: React.FunctionComponent<
             className
         )}
     >
-        <GateArrowRightIcon />
+        <Icon svgPath={mdiGateArrowRight} inline={false} aria-hidden={true} />
         <span className="text-muted">Dismissed</span>
     </div>
 )
@@ -66,7 +64,7 @@ export const ChangesetReviewStatusCommented: React.FunctionComponent<
             className
         )}
     >
-        <CommentOutlineIcon />
+        <Icon svgPath={mdiCommentOutline} inline={false} aria-hidden={true} />
         <span className="text-muted">Commented</span>
     </div>
 )
@@ -79,7 +77,7 @@ export const ChangesetReviewStatusChangesRequested: React.FunctionComponent<
             className
         )}
     >
-        <DeltaIcon />
+        <Icon svgPath={mdiDelta} inline={false} aria-hidden={true} />
         <span className="text-muted">Changes requested</span>
     </div>
 )
@@ -92,7 +90,7 @@ export const ChangesetReviewStatusApproved: React.FunctionComponent<
             className
         )}
     >
-        <CheckCircleIcon />
+        <Icon svgPath={mdiCheckCircle} inline={false} aria-hidden={true} />
         <span className="text-muted">Approved</span>
     </div>
 )

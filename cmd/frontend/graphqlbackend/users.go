@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -72,12 +74,12 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 			return
 		}
 
-		r.users, err = database.Users(r.db).List(ctx, &r.opt)
+		r.users, err = r.db.Users().List(ctx, &r.opt)
 		if err != nil {
 			r.err = err
 			return
 		}
-		r.totalCount, r.err = database.Users(r.db).Count(ctx, &r.opt)
+		r.totalCount, r.err = r.db.Users().Count(ctx, &r.opt)
 	})
 	return r.users, r.totalCount, r.err
 }
@@ -104,6 +106,9 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 		l = append(l, &UserResolver{
 			db:   r.db,
 			user: user,
+			logger: log.Scoped("userResolver", "resolves a specific user").With(
+				log.Object("repo",
+					log.String("user", user.Username))),
 		})
 	}
 	return l, nil

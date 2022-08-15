@@ -196,33 +196,27 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
 }) (*savedSearchResolver, error) {
-	var userID, orgID *int32
+	id, err := unmarshalSavedSearchID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	old, err := r.db.SavedSearches().GetByID(ctx, id)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetch old saved search")
+	}
+
 	// 🚨 SECURITY: Make sure the current user has permission to update a saved search for the specified user or org.
-	if args.UserID != nil {
-		u, err := unmarshalSavedSearchID(*args.UserID)
-		if err != nil {
+	if old.Config.UserID != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, *old.Config.UserID); err != nil {
 			return nil, err
 		}
-		userID = &u
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, u); err != nil {
-			return nil, err
-		}
-	} else if args.OrgID != nil {
-		o, err := unmarshalSavedSearchID(*args.OrgID)
-		if err != nil {
-			return nil, err
-		}
-		orgID = &o
-		if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, o); err != nil {
+	} else if old.Config.OrgID != nil {
+		if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, *old.Config.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
 		return nil, errors.New("failed to update saved search: no Org ID or User ID associated with saved search")
-	}
-
-	id, err := unmarshalSavedSearchID(args.ID)
-	if err != nil {
-		return nil, err
 	}
 
 	if !queryHasPatternType(args.Query) {
@@ -235,8 +229,8 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		Query:       args.Query,
 		Notify:      args.NotifyOwner,
 		NotifySlack: args.NotifySlack,
-		UserID:      userID,
-		OrgID:       orgID,
+		UserID:      old.Config.UserID,
+		OrgID:       old.Config.OrgID,
 	})
 	if err != nil {
 		return nil, err

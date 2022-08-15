@@ -10,7 +10,7 @@ export const isBatchChangesExecutionEnabled = (settingsCascade: SettingsCascadeO
     Boolean(
         settingsCascade.final !== null &&
             !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final.experimentalFeatures?.batchChangesExecution
+            settingsCascade.final.experimentalFeatures?.batchChangesExecution !== false
     )
 
 /**

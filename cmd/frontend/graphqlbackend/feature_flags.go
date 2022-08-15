@@ -127,9 +127,18 @@ func (e *EvaluatedFeatureFlagResolver) Value() bool {
 	return e.value
 }
 
-func (r *schemaResolver) ViewerFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
-	f := featureflag.FromContext(ctx)
-	return evaluatedFlagsToResolvers(f)
+func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
+	FlagName string
+}) *bool {
+	flagSet := featureflag.FromContext(ctx)
+	if v, ok := flagSet.GetBool(args.FlagName); ok {
+		return &v
+	}
+	return nil
+}
+
+func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
+	return evaluatedFlagsToResolvers(featureflag.GetEvaluatedFlagSet(ctx))
 }
 
 func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {
@@ -173,6 +182,21 @@ func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) (
 	}
 
 	return overridesToResolvers(r.db, flags), nil
+}
+
+func (r *schemaResolver) FeatureFlag(ctx context.Context, args struct {
+	Name string
+}) (*FeatureFlagResolver, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	ff, err := r.db.FeatureFlags().GetFeatureFlag(ctx, args.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FeatureFlagResolver{r.db, ff}, nil
 }
 
 func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {

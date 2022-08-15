@@ -3,13 +3,14 @@
 set -e
 
 echo "--- yarn in root"
-# mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent
+./dev/ci/yarn-install-with-retry.sh
+
+# Save the absolute path to the script before changing directories.
+abs_yarn="$(pwd)/dev/ci/yarn-install-with-retry.sh"
 
 cd "$1"
 echo "--- yarn"
-# mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent
+"$abs_yarn"
 
 echo "--- test"
 

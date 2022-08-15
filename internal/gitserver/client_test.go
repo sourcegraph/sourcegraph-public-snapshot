@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -22,14 +21,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,37 +38,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestClient_ListCloned(t *testing.T) {
-	addrs := []string{"gitserver-0", "gitserver-1"}
-	cli := gitserver.NewTestClient(
-		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
-			switch r.URL.String() {
-			case "http://gitserver-0/list?cloned":
-				return &http.Response{
-					Body: io.NopCloser(bytes.NewBufferString(`["repo0-a", "repo0-b"]`)),
-				}, nil
-			case "http://gitserver-1/list?cloned":
-				return &http.Response{
-					Body: io.NopCloser(bytes.NewBufferString(`["repo1-a", "repo1-b"]`)),
-				}, nil
-			default:
-				return nil, errors.Errorf("unexpected url: %s", r.URL.String())
-			}
-		}),
-		database.NewMockDB(),
-		addrs,
-	)
-
-	want := []string{"repo0-a", "repo1-a", "repo1-b"}
-	got, err := cli.ListCloned(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	sort.Strings(got)
-	sort.Strings(want)
-	if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-		t.Errorf("mismatch for (-want +got):\n%s", cmp.Diff(want, got))
-	}
+func newMockDB() database.DB {
+	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
+	return db
 }
 
 func TestClient_RequestRepoMigrate(t *testing.T) {
@@ -102,7 +74,7 @@ func TestClient_RequestRepoMigrate(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
-		database.NewMockDB(),
+		newMockDB(),
 		addrs,
 	)
 
@@ -133,7 +105,7 @@ func TestClient_Remove(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
-		database.NewMockDB(),
+		newMockDB(),
 		addrs,
 	)
 
@@ -148,7 +120,7 @@ func TestClient_Remove(t *testing.T) {
 	}
 }
 
-func TestClient_Archive(t *testing.T) {
+func TestClient_ArchiveReader(t *testing.T) {
 	root := gitserver.CreateRepoDir(t)
 
 	tests := map[api.RepoName]struct {
@@ -174,7 +146,9 @@ func TestClient_Archive(t *testing.T) {
 	}
 
 	srv := httptest.NewServer((&server.Server{
+		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
+		DB:       newMockDB(),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			testData := tests[name]
 			if testData.remote != "" {
@@ -190,7 +164,7 @@ func TestClient_Archive(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, newMockDB(), addrs)
 
 	ctx := context.Background()
 	for name, test := range tests {
@@ -201,16 +175,19 @@ func TestClient_Archive(t *testing.T) {
 				}
 			}
 
-			rc, err := cli.Archive(ctx, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
+			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
-
 			if rc == nil {
 				return
 			}
 
-			defer rc.Close()
+			t.Cleanup(func() {
+				if err := rc.Close(); err != nil {
+					t.Fatal(err)
+				}
+			})
 			data, err := io.ReadAll(rc)
 			if err != nil {
 				t.Fatal(err)
@@ -373,7 +350,7 @@ func TestAddrForRepo(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", database.NewMockDB(), tc.repo, gitserver.GitServerAddresses{
+			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", newMockDB(), tc.repo, gitserver.GitServerAddresses{
 				Addresses:     addrs,
 				PinnedServers: pinned,
 			})
@@ -385,197 +362,6 @@ func TestAddrForRepo(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestAddrForRepoFromDB(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	// enable feature flag
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGitserverClientLookupTable: true,
-				// Set the rate at 100% for this test
-				GitserverClientLookupTableRate: 100,
-			},
-		},
-	})
-	defer conf.Mock(nil)
-
-	// enable dotCom mode
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
-
-	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
-	pinned := map[string]string{
-		"github.com/sourcegraph/repo2": "gitserver-1",
-	}
-
-	testCases := []struct {
-		name           string
-		repo           api.RepoName
-		want           string
-		dotComDisabled bool
-		dbNotCalled    bool
-	}{
-		{
-			name: "repo1",
-			repo: api.RepoName("github.com/sourcegraph/repo1"),
-			want: "gitserver-2",
-		},
-		{
-			name: "normalisation",
-			repo: api.RepoName("github.com/sourcegraph/repo1.git"),
-			want: "gitserver-2",
-		},
-		{
-			name: "repo not in the DB",
-			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
-			want: "gitserver-2",
-		},
-		{
-			name:        "pinned repo", // different server address that the hashing function would normally yield
-			repo:        api.RepoName("github.com/sourcegraph/repo2"),
-			want:        "gitserver-1",
-			dbNotCalled: true,
-		},
-		{
-			name:           "repo1",
-			repo:           api.RepoName("github.com/sourcegraph/repo1"),
-			want:           "gitserver-2",
-			dotComDisabled: true,
-			dbNotCalled:    true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.dotComDisabled {
-				envvar.MockSourcegraphDotComMode(false)
-			} else {
-				envvar.MockSourcegraphDotComMode(true)
-			}
-
-			db := database.NewMockDB()
-
-			store := database.NewMockGitserverRepoStore()
-			store.GetByNameFunc.SetDefaultReturn(&types.GitserverRepo{
-				RepoID:        1,
-				ShardID:       "gitserver-1",
-				CloneStatus:   types.CloneStatusNotCloned,
-				RepoSizeBytes: 100,
-			}, nil)
-			db.GitserverReposFunc.SetDefaultReturn(store)
-
-			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", db, tc.repo, gitserver.GitServerAddresses{
-				Addresses:     addrs,
-				PinnedServers: pinned,
-			})
-			if err != nil {
-				t.Fatal("Error during getting gitserver address")
-			}
-			if got != tc.want {
-				t.Fatalf("Want %q, got %q", tc.want, got)
-			}
-			if tc.dbNotCalled && len(db.GitserverReposFunc.History()) > 0 {
-				t.Fatalf("Should not have called the database")
-			} else if !tc.dbNotCalled && len(db.GitserverReposFunc.History()) == 0 {
-				t.Fatalf("Should have called the database")
-			}
-		})
-	}
-}
-
-func TestAddrForRepoFromDBRates(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	gitserver.AddrForRepoCounter = 0
-
-	// enable dotCom mode
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
-
-	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
-	pinned := map[string]string{
-		"github.com/sourcegraph/repo2": "gitserver-1",
-	}
-
-	defer conf.Mock(nil)
-
-	// enable feature flag with 50% rate
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGitserverClientLookupTable: true,
-				GitserverClientLookupTableRate:   50,
-			},
-		},
-	})
-
-	check := func(repo string, dbCalled bool) {
-		t.Helper()
-
-		db := database.NewMockDB()
-		store := database.NewMockGitserverRepoStore()
-		store.GetByNameFunc.SetDefaultReturn(&types.GitserverRepo{
-			RepoID:        1,
-			ShardID:       "gitserver-1",
-			CloneStatus:   types.CloneStatusNotCloned,
-			RepoSizeBytes: 100,
-		}, nil)
-		db.GitserverReposFunc.SetDefaultReturn(store)
-
-		_, err := gitserver.AddrForRepo(context.Background(), "gitserver", db, api.RepoName(repo), gitserver.GitServerAddresses{
-			Addresses:     addrs,
-			PinnedServers: pinned,
-		})
-		if err != nil {
-			t.Fatal("Error during getting gitserver address")
-		}
-		if dbCalled && len(db.GitserverReposFunc.History()) == 0 {
-			t.Fatalf("Should have called the database")
-		} else if !dbCalled && len(db.GitserverReposFunc.History()) > 0 {
-			t.Fatalf("Should not have called the database")
-		}
-	}
-
-	// first request should be served from the hash
-	// Rate: 50%, Counter: 1, Mod: 100 / 50 = 2, Result: 1 % 2 = 1
-	check("github.com/sourcegraph/repo1", false)
-
-	// second request should be served from the DB
-	// Rate: 50%, Counter: 2, Mod: 100 / 50 = 2, Result: 2 % 2 = 0
-	check("github.com/sourcegraph/repo1", true)
-
-	// third request should be served from the hash
-	// Rate: 50%, Counter: 3, Mod: 100 / 50 = 2, Result: 3 % 2 = 1
-	check("github.com/sourcegraph/repo1", false)
-
-	// Let's change the rate to 30%
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGitserverClientLookupTable: true,
-				GitserverClientLookupTableRate:   30,
-			},
-		},
-	})
-
-	// next request should be served from the hash
-	// Rate: 30%, Counter: 4, Mod: 100 / 30 = 3, Result: 4 % 3 = 1
-	check("github.com/sourcegraph/repo1", false)
-
-	// next request should be served from the hash
-	// Rate: 30%, Counter: 5, Mod: 100 / 30 = 3, Result: 5 % 3 = 2
-	check("github.com/sourcegraph/repo1", false)
-
-	// next request should be served from the DB
-	// Rate: 30%, Counter: 6, Mod: 100 / 30 = 3, Result: 6 % 3 = 0
-	check("github.com/sourcegraph/repo1", true)
 }
 
 func TestRendezvousAddrForRepo(t *testing.T) {
@@ -671,7 +457,7 @@ func TestClient_P4Exec(t *testing.T) {
 
 			u, _ := url.Parse(server.URL)
 			addrs := []string{u.Host}
-			cli := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), addrs)
+			cli := gitserver.NewTestClient(&http.Client{}, newMockDB(), addrs)
 
 			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
 			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
@@ -730,7 +516,9 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
 	}}
 
+	db := newMockDB()
 	srv := httptest.NewServer((&server.Server{
+		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			return remote, nil
@@ -738,12 +526,13 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
 			return &server.GitRepoSyncer{}, nil
 		},
+		DB: db,
 	}).Handler())
 	defer srv.Close()
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, db, addrs)
 
 	ctx := context.Background()
 	for _, test := range tests {
@@ -765,7 +554,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 	ctx := context.Background()
-	client := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), []string{"gitserver1", "gitserver2"})
+	client := gitserver.NewTestClient(&http.Client{}, newMockDB(), []string{"gitserver1", "gitserver2"})
 	setPinnedRepos(map[string]string{
 		"repo1": "gitserver2",
 	})
@@ -798,7 +587,7 @@ func setPinnedRepos(pinned map[string]string) {
 
 func TestClient_AddrForRepo_Rendezvous(t *testing.T) {
 	ctx := context.Background()
-	client := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), []string{"gitserver1", "gitserver2"})
+	client := gitserver.NewTestClient(&http.Client{}, newMockDB(), []string{"gitserver1", "gitserver2"})
 
 	tests := []struct {
 		name     string
@@ -865,7 +654,7 @@ func TestClient_BatchLog(t *testing.T) {
 			body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
 			return &http.Response{StatusCode: 200, Body: body}, nil
 		}),
-		database.NewMockDB(),
+		newMockDB(),
 		addrs,
 	)
 

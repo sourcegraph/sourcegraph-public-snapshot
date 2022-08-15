@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -15,12 +16,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
@@ -32,39 +34,6 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
-}
-
-func TestNewRepoCache(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
-	t.Run("GitHub.com", func(t *testing.T) {
-		url, _ := url.Parse("https://www.github.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// github.com caches should:
-		// (1) use githubProxyURL for the prefix hash rather than the given url
-		// (2) have a TTL of 10 minutes
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 600)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
-	t.Run("GitHub Enterprise", func(t *testing.T) {
-		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// GitHub Enterprise caches should:
-		// (1) use the given URL for the prefix hash
-		// (2) have a TTL of 30 seconds
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 30)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -289,7 +258,7 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
-	orgs, err := cli.GetAuthenticatedUserOrgs(ctx)
+	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -716,6 +685,7 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	}
 
 	old := &V3Client{
+		log:    logtest.Scoped(t),
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
@@ -873,5 +843,102 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 
 	if have, want := err, ErrIncompleteResults; want != have {
 		t.Errorf("\nhave: %s\nwant: %s", have, want)
+	}
+}
+
+type testCase struct {
+	repoName    string
+	expectedUrl string
+}
+
+var testCases = map[string]testCase{
+	"github.com": {
+		repoName:    "github.com/sd9/sourcegraph",
+		expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks",
+	},
+	"enterprise": {
+		repoName:    "ghe.sgdev.org/milton/test",
+		expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks",
+	},
+}
+
+func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
+	ctx := context.Background()
+
+	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
+	defer save()
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
+			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+
+			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := client.FindSyncWebhook(ctx, tc.repoName); err != nil {
+				t.Error(`Could not find webhook with "/github-webhooks" endpoint`)
+			}
+
+			deleted, err := client.DeleteSyncWebhook(ctx, tc.repoName, id)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !deleted {
+				t.Fatal("Could not delete created repo")
+			}
+		})
+	}
+}
+
+func TestSyncWebhook_webhookURLBuilderPlain(t *testing.T) {
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			want := tc.expectedUrl
+			have, err := webhookURLBuilder(tc.repoName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("expected: %s, got: %s", want, have)
+			}
+		})
+	}
+}
+
+func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
+	type testCaseWithID struct {
+		repoName    string
+		id          int
+		expectedUrl string
+	}
+
+	testCases := map[string]testCaseWithID{
+		"github.com": {
+			repoName:    "github.com/sd9/sourcegraph",
+			id:          42,
+			expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks/42",
+		},
+		"enterprise": {
+			repoName:    "ghe.sgdev.org/milton/test",
+			id:          69,
+			expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/69",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			want := tc.expectedUrl
+			have, err := webhookURLBuilderWithID(tc.repoName, tc.id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("expected: %s, got: %s", want, have)
+			}
+		})
 	}
 }

@@ -9,7 +9,7 @@ import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, t
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -257,19 +257,26 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                         storageKey={`hierarchical-locations-view-resizable:${group.name}`}
                                         minSize={100}
                                         defaultSize={group.defaultSize}
+                                        ariaLabel="Hierarchical locations sidebar"
                                     >
                                         <div
                                             data-testid="hierarchical-locations-view-list"
                                             className={styles.groupList}
                                         >
-                                            {groups[index].map((group, innerIndex) => (
+                                            {groups[index].map((subordinateGroup, innerIndex) => (
                                                 <HierarchicalLocationsViewButton
                                                     key={innerIndex}
-                                                    groupKey={group.key}
-                                                    groupCount={group.count}
-                                                    isActive={selectedGroups[index] === group.key}
+                                                    groupKey={subordinateGroup.key}
+                                                    groupName={group.name}
+                                                    groupCount={subordinateGroup.count}
+                                                    isActive={selectedGroups[index] === subordinateGroup.key}
                                                     onClick={event =>
-                                                        this.onSelectTree(event, selectedGroups, index, group.key)
+                                                        this.onSelectTree(
+                                                            event,
+                                                            selectedGroups,
+                                                            index,
+                                                            subordinateGroup.key
+                                                        )
                                                     }
                                                 />
                                             ))}

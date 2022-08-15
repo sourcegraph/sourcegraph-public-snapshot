@@ -1,6 +1,6 @@
 # Sourcegraph extension API
 
-[![codecov](https://codecov.io/gh/sourcegraph/extension-api/branch/master/graph/badge.svg?token=SLtdKY3zQx)](https://codecov.io/gh/sourcegraph/sourcegraph/tree/master/packages/extension-api/src)
+[![codecov](https://codecov.io/gh/sourcegraph/extension-api/branch/master/graph/badge.svg?token=SLtdKY3zQx)](https://codecov.io/gh/sourcegraph/sourcegraph/tree/main/packages/extension-api/src)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![sourcegraph: search](https://img.shields.io/badge/sourcegraph-search-brightgreen.svg)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/packages/extension-api)
 

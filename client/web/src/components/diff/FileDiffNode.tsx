@@ -1,15 +1,14 @@
 import React, { useState, useCallback } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import prettyBytes from 'pretty-bytes'
 import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Badge, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -60,7 +59,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
         setRenderDeleted(true)
     }, [])
 
-    let path: React.ReactFragment
+    let path: React.ReactNode
     if (node.newPath && (node.newPath === node.oldPath || !node.oldPath)) {
         path = <span title={node.newPath}>{node.newPath}</span>
     } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
@@ -77,7 +76,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
         path = <span title={node.oldPath!}>{node.oldPath}</span>
     }
 
-    let stat: React.ReactFragment
+    let stat: React.ReactNode
     // If one of the files was binary, display file size change instead of DiffStat.
     if (node.oldFile?.binary || node.newFile?.binary) {
         const sizeChange = (node.newFile?.byteSize ?? 0) - (node.oldFile?.byteSize ?? 0)
@@ -107,7 +106,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         onClick={toggleExpand}
                         size="sm"
                     >
-                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+                        <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} aria-hidden={true} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
@@ -127,24 +126,22 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         )}
                         {stat}
                         {node.mostRelevantFile.__typename === 'GitBlob' ? (
-                            <Link
-                                to={node.mostRelevantFile.url}
-                                data-tooltip="View file at revision"
-                                className="mr-0 ml-2 fw-bold"
-                            >
-                                <strong>{path}</strong>
-                            </Link>
+                            <Tooltip content="View file at revision">
+                                <Link to={node.mostRelevantFile.url} className="mr-0 ml-2 fw-bold">
+                                    <strong>{path}</strong>
+                                </Link>
+                            </Tooltip>
                         ) : (
                             <span className="ml-2">{path}</span>
                         )}
-                        <Link
-                            to={{ ...location, hash: anchor }}
-                            className={classNames('ml-2', styles.headerPath)}
-                            data-tooltip="Pin diff"
-                            aria-label="Pin diff"
-                        >
-                            #
-                        </Link>
+                        <Tooltip content="Pin diff">
+                            <Link
+                                to={createLinkUrl({ ...location, hash: anchor })}
+                                className={classNames('ml-2', styles.headerPath)}
+                            >
+                                #
+                            </Link>
+                        </Tooltip>
                     </div>
                 </div>
                 {expanded &&
@@ -152,7 +149,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         <div className="text-muted m-2">Binary files can't be rendered.</div>
                     ) : !node.newPath && !renderDeleted ? (
                         <div className="text-muted m-2">
-                            <p className="mb-0">Deleted files aren't rendered by default.</p>
+                            <Text className="mb-0">Deleted files aren't rendered by default.</Text>
                             <Button className="m-0 p-0" onClick={onClickToViewDeleted} variant="link">
                                 Click here to view.
                             </Button>

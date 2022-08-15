@@ -12,12 +12,11 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -103,9 +102,11 @@ type tlsConfig struct {
 	SSLCAInfo string
 }
 
-var tlsExternal = conf.Cached(func() any {
+var tlsExternal = conf.Cached[*tlsConfig](func() *tlsConfig {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
+
+	logger := log.Scoped("tlsExternal", "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.")
 
 	if c == nil {
 		return &tlsConfig{}
@@ -121,7 +122,7 @@ var tlsExternal = conf.Cached(func() any {
 		// We don't clean up the file since it has a process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
 		if err != nil {
-			log15.Error("failed to create file holding tls.external.certificates for git", "error", err)
+			logger.Error("failed to create file holding tls.external.certificates for git", log.Error(err))
 		} else {
 			sslCAInfo = p
 		}
@@ -133,12 +134,8 @@ var tlsExternal = conf.Cached(func() any {
 	}
 })
 
-func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	return runWith(ctx, cmd, true, progress)
-}
-
-// runWithRemoteOpts runs the command after applying the remote options.
-// If progress is not nil, all output is written to it in a separate goroutine.
+// runWith runs the command after applying the remote options. If progress is not
+// nil, all output is written to it in a separate goroutine.
 func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
@@ -146,12 +143,14 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		if cmd.Env == nil {
 			cmd.Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+		configureRemoteGitCommand(cmd, tlsExternal())
 	}
 
 	var b interface {
 		Bytes() []byte
 	}
+
+	logger := log.Scoped("runWith", "runWith runs the command after applying the remote options")
 
 	if progress != nil {
 		var pw progressWriter
@@ -162,7 +161,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		cmd.Stderr = mr
 		go func() {
 			if _, err := io.Copy(progress, r); err != nil {
-				log15.Error("error while copying progress", "error", err)
+				logger.Error("error while copying progress", log.Error(err))
 			}
 		}()
 		b = &pw
@@ -396,9 +395,11 @@ var logUnflushableResponseWriterOnce sync.Once
 func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
+	logger := log.Scoped("flushingResponseWriter", "")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
-			log15.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", "type", reflect.TypeOf(w).String())
+			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",
+				log.String("type", reflect.TypeOf(w).String()))
 		})
 		return nil
 	}
@@ -532,23 +533,16 @@ func (w *progressWriter) Bytes() []byte {
 	return w.buf
 }
 
-// mapToLog15Ctx translates a map to log15 context fields.
-func mapToLog15Ctx(m map[string]any) []any {
-	// sort so its stable
-	keys := make([]string, len(m))
-	i := 0
-	for k := range m {
-		keys[i] = k
-		i++
+// mapToLoggerField translates a map to log context fields.
+func mapToLoggerField(m map[string]any) []log.Field {
+	LogFields := []log.Field{}
+
+	for i, v := range m {
+
+		LogFields = append(LogFields, log.String(i, fmt.Sprint(v)))
 	}
-	sort.Strings(keys)
-	ctx := make([]any, len(m)*2)
-	for i, k := range keys {
-		j := i * 2
-		ctx[j] = k
-		ctx[j+1] = m[k]
-	}
-	return ctx
+
+	return LogFields
 }
 
 // isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
@@ -573,13 +567,14 @@ func isPaused(dir string) (string, bool) {
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
 func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
+	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn")
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
 
 		if msg, ok := isPaused(path); ok {
-			log15.Warn("bestEffortWalk paused", "dir", path, "reason", msg)
+			logger.Warn("bestEffortWalk paused", log.String("dir", path), log.String("reason", msg))
 			return filepath.SkipDir
 		}
 

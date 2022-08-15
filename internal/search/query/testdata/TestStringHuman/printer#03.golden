@@ -1,0 +1,4 @@
+{
+  "Input": "not x and y",
+  "Result": "((NOT x) AND y)"
+}

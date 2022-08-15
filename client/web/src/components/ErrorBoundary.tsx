@@ -5,9 +5,9 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 
 import { asError } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Code, Text } from '@sourcegraph/wildcard'
 
-import { DatadogClient, isWebpackChunkError } from '../monitoring'
+import { isWebpackChunkError } from '../monitoring'
 
 import { HeroPage } from './HeroPage'
 
@@ -45,7 +45,7 @@ interface State {
  * Components should handle their own errors (and must not rely on this error boundary). This error
  * boundary is a last resort in case of an unexpected error.
  */
-export class ErrorBoundary extends React.PureComponent<Props, State> {
+export class ErrorBoundary extends React.PureComponent<React.PropsWithChildren<Props>, State> {
     public state: State = {}
 
     public static getDerivedStateFromError(error: any): Pick<State, 'error'> {
@@ -61,8 +61,6 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                 Sentry.captureException(error)
             })
         }
-
-        DatadogClient.addError(error, { errorInfo, originalException: error })
     }
 
     public componentDidUpdate(previousProps: Props): void {
@@ -86,7 +84,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                         title="Reload required"
                         subtitle={
                             <div className="container">
-                                <p>A new version of Sourcegraph is available.</p>
+                                <Text>A new version of Sourcegraph is available.</Text>
                                 <Button onClick={this.onReloadClick} variant="primary">
                                     Reload to update
                                 </Button>
@@ -107,13 +105,13 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                     className={this.props.className}
                     subtitle={
                         <div className="container">
-                            <p>
+                            <Text>
                                 Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it,
                                 contact your site admin or Sourcegraph support.
-                            </p>
-                            <p>
-                                <code className="text-wrap">{this.state.error.message}</code>
-                            </p>
+                            </Text>
+                            <Text>
+                                <Code className="text-wrap">{this.state.error.message}</Code>
+                            </Text>
                             {this.props.extraContext}
                         </div>
                     }

@@ -4,11 +4,14 @@ import { MatchGroup, MatchGroupMatch, MatchItem, PerFileResultRanking, RankingRe
  * ZoektRanking preserves the original relevance that's computed by Zoekt.
  */
 export class ZoektRanking implements PerFileResultRanking {
+    constructor(private maxResults: number) {}
+
+    public collapsedResults(matches: MatchItem[], context: number): RankingResult {
+        return results(matches, this.maxResults, context)
+    }
+
     public expandedResults(matches: MatchItem[], context: number): RankingResult {
         return results(matches, Number.MAX_VALUE, context)
-    }
-    public collapsedResults(matches: MatchItem[], context: number): RankingResult {
-        return results(matches, 5, context)
     }
 }
 
@@ -79,7 +82,6 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
                     line: match.line,
                     character: range.start,
                     highlightLength: range.highlightLength,
-                    isInContext: false,
                 })
             }
         }

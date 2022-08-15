@@ -1,6 +1,7 @@
 import { RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { Text } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
@@ -64,7 +65,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                                     Viewing settings for <strong>{props.user.username}</strong>
                                 </SiteAdminAlert>
                             )}
-                            <p>User settings override global and organization settings.</p>
+                            <Text>User settings override global and organization settings.</Text>
                         </>
                     }
                 />
@@ -135,7 +136,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
-                onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                 telemetryService={props.telemetryService}
             />
         ),

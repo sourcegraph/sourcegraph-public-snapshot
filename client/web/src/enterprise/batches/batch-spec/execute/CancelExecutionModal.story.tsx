@@ -1,21 +1,28 @@
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
+
+import { Text } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { CancelExecutionModal } from './CancelExecutionModal'
 
-const { add } = storiesOf('web/batches/batch-spec/execute', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('CancelExecutionModal', () => (
+const config: Meta = {
+    title: 'web/batches/batch-spec/execute',
+    decorators: [decorator],
+}
+
+export default config
+
+export const CancelExecutionModalStory: Story = () => (
     <WebStory>
         {props => (
             <CancelExecutionModal
                 {...props}
-                modalBody={<p>Are you sure you want to cancel the current execution?</p>}
+                modalBody={<Text>Are you sure you want to cancel the current execution?</Text>}
                 isOpen={true}
                 isLoading={boolean('isLoading', false)}
                 onCancel={noop}
@@ -23,4 +30,6 @@ add('CancelExecutionModal', () => (
             />
         )}
     </WebStory>
-))
+)
+
+CancelExecutionModalStory.storyName = 'CancelExecutionModal'

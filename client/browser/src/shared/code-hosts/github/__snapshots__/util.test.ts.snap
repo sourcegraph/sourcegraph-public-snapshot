@@ -55,7 +55,7 @@ Object {
   "pageType": "blob",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
   "repoName": "sourcegraph/sourcegraph",
-  "revisionAndFilePath": "master/jest.config.base.js",
+  "revisionAndFilePath": "main/jest.config.base.js",
 }
 `;
 
@@ -64,7 +64,7 @@ Object {
   "pageType": "blob",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
   "repoName": "sourcegraph/sourcegraph",
-  "revisionAndFilePath": "master/jest.config.base.js",
+  "revisionAndFilePath": "main/jest.config.base.js",
 }
 `;
 
@@ -82,7 +82,7 @@ Object {
   "pageType": "tree",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
   "repoName": "sourcegraph/sourcegraph",
-  "revisionAndFilePath": "master/client",
+  "revisionAndFilePath": "main/client",
 }
 `;
 

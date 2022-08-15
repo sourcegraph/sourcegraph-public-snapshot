@@ -19,7 +19,7 @@ For a comphrensive deployment guide for each option, check out our in-depth docu
 Our recommended deployment type is [Kubernetes with Helm](../deploy/kubernetes/helm.md). If this is not a viable option, we also support a number of other deployment types which are described in the [Deployment overview](../deploy/index.md).
 
 ### Self-hosted vs. Managed instances
-Regardless of the deployment option you choose, Sourcegraph can be self-hosted locally or with the cloud provider of your choice. We also offer [managed instances](../deploy/managed.md) (we handle deployment, updates, and management of the instance for you). Please [contact us](https://about.sourcegraph.com/contact/sales) if you are interested in learning more about managed instances. 
+Regardless of the deployment option you choose, Sourcegraph can be self-hosted locally or with the cloud provider of your choice. We also offer [managed instances](../../cloud/index.md) (we handle deployment, updates, and management of the instance for you). Please [contact us](https://about.sourcegraph.com/contact/sales) if you are interested in learning more about managed instances. 
 
 
 ## Updating your instance 
@@ -73,5 +73,5 @@ One key component to managing a Sourcegraph instance is having the ability to ob
 ### Viewing instance health and metrics
 Alerts and metrics can be viewed and monitored in Grafana. To access the Grafana dashboard bundled with your Sourcegraph instance, go to **User menu > Site admin > Monitoring**.
 
-We also have an exhaustive [reference guide](../observability/dashboards.md) for understanding the available dashboards, and an [alert solutions guide](../observability/alert_solutions.md) with descriptions and possible solutions for each alert that fires in Grafana. 
+We also have an exhaustive [reference guide](../observability/dashboards.md) for understanding the available dashboards, and an [alert solutions guide](../observability/alerts.md) with descriptions and possible solutions for each alert that fires in Grafana. 
 

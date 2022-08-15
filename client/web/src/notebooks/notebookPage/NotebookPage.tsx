@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiClose, mdiCheckCircle, mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { RouteComponentProps } from 'react-router'
+import { useStickyBox } from 'react-sticky-box'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 
@@ -24,7 +23,8 @@ import {
     ProductStatusBadge,
     Button,
     Icon,
-    Typography,
+    H3,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
@@ -35,8 +35,7 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
 import { NotepadIcon } from '../../search/Notepad'
-import { ThemePreference } from '../../stores/themeState'
-import { useTheme } from '../../theme'
+import { useTheme, ThemePreference } from '../../theme'
 import {
     fetchNotebook as _fetchNotebook,
     updateNotebook as _updateNotebook,
@@ -44,7 +43,7 @@ import {
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
-import { NOTEPAD_ENABLED_EVENT } from '../listPage/NotebooksListPage'
+import { NOTEPAD_ENABLED_EVENT } from '../listPage/NotebooksListPageHeader'
 import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
@@ -63,7 +62,7 @@ interface NotebookPageProps
             StreamingSearchResultsListProps,
             'allExpanded' | 'extensionsController' | 'platformContext' | 'executedQuery'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
@@ -200,10 +199,19 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
         [latestNotebook, notepadCTASeen, notepadEnabled]
     )
 
+    const stickyBox = useStickyBox()
+
     return (
         <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
-            <div className={styles.sideColumn} ref={outlineContainerElement} />
+            <div className={styles.sideColumn}>
+                <div
+                    ref={element => {
+                        outlineContainerElement.current = element
+                        stickyBox(element)
+                    }}
+                />
+            </div>
             <div className={styles.centerColumn}>
                 <div className={styles.content}>
                     {isErrorLike(notebookOrError) && (
@@ -224,20 +232,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                     {isNotebookLoaded(notebookOrError) && (
                         <>
                             <PageHeader
-                                className="mt-2"
-                                path={[
-                                    { to: '/notebooks', icon: BookOutlineIcon, ariaLabel: 'Notebooks' },
-                                    {
-                                        text: (
-                                            <NotebookTitle
-                                                title={notebookOrError.title}
-                                                viewerCanManage={notebookOrError.viewerCanManage}
-                                                onUpdateTitle={onUpdateTitle}
-                                                telemetryService={telemetryService}
-                                            />
-                                        ),
-                                    },
-                                ]}
+                                className="mt-2 px-3"
                                 actions={
                                     <NotebookPageHeaderActions
                                         isSourcegraphDotCom={isSourcegraphDotCom}
@@ -255,8 +250,24 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                         telemetryService={telemetryService}
                                     />
                                 }
-                            />
-                            <small className="d-flex align-items-center mt-2">
+                            >
+                                <PageHeader.Heading as="h2" styleAs="h1">
+                                    <PageHeader.Breadcrumb
+                                        icon={mdiBookOutline}
+                                        to="/notebooks"
+                                        aria-label="Notebooks"
+                                    />
+                                    <PageHeader.Breadcrumb>
+                                        <NotebookTitle
+                                            title={notebookOrError.title}
+                                            viewerCanManage={notebookOrError.viewerCanManage}
+                                            onUpdateTitle={onUpdateTitle}
+                                            telemetryService={telemetryService}
+                                        />
+                                    </PageHeader.Breadcrumb>
+                                </PageHeader.Heading>
+                            </PageHeader>
+                            <small className="d-flex align-items-center mt-2 px-3">
                                 <div className="mr-2">
                                     Created{' '}
                                     {notebookOrError.creator && (
@@ -275,7 +286,9 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                     {isNotebookLoaded(latestNotebook) && (
                                         <>
-                                            <CheckCircleIcon
+                                            <Icon
+                                                aria-hidden={true}
+                                                svgPath={mdiCheckCircle}
                                                 className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                             />
                                             <span>
@@ -292,7 +305,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                 </div>
                             </small>
-                            <hr className="mt-2 mb-3" />
+                            <hr className="mt-2 mb-3 mx-3" />
                         </>
                     )}
                     {isNotebookLoaded(notebookOrError) && (
@@ -347,7 +360,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
     return (
-        <MarketingBlock wrapperClassName={styles.notepadCta}>
+        <MarketingBlock wrapperClassName={classNames(styles.notepadCta, 'd-none d-md-block')}>
             <aside className={styles.notepadCtaContent}>
                 <Button
                     aria-label="Hide"
@@ -356,7 +369,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     size="sm"
                     className={styles.notepadCtaCloseButton}
                 >
-                    <Icon as={CloseIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
                 <img
                     className="flex-shrink-0 mr-3"
@@ -364,19 +377,19 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     alt=""
                 />
                 <div>
-                    <Typography.H3 className="d-inline-block">
+                    <H3 className="d-inline-block">
                         <NotepadIcon /> Enable notepad
-                    </Typography.H3>{' '}
+                    </H3>{' '}
                     <ProductStatusBadge status="beta" />
-                    <p>
+                    <Text>
                         The notepad adds a toolbar to the bottom right of search results and file pages to help you
                         create notebooks from your code navigation activities.
-                    </p>
-                    <p>
+                    </Text>
+                    <Text>
                         <Button variant="primary" onClick={onEnable} size="sm">
                             Enable notepad
                         </Button>
-                    </p>
+                    </Text>
                 </div>
             </aside>
         </MarketingBlock>

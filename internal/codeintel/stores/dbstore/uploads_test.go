@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +24,8 @@ import (
 )
 
 func TestGetUploadByID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -84,7 +87,8 @@ func TestGetUploadByID(t *testing.T) {
 }
 
 func TestGetUploadByIDDeleted(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// Upload does not exist initially
@@ -125,7 +129,8 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 }
 
 func TestGetQueuedUploadRank(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -174,7 +179,8 @@ func TestGetQueuedUploadRank(t *testing.T) {
 }
 
 func TestGetUploadsByIDs(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -226,55 +232,9 @@ func TestGetUploadsByIDs(t *testing.T) {
 	})
 }
 
-func TestDeleteUploadsStuckUploading(t *testing.T) {
-	db := dbtest.NewDB(t)
-	store := testStore(db)
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute * 1)
-	t3 := t1.Add(time.Minute * 2)
-	t4 := t1.Add(time.Minute * 3)
-	t5 := t1.Add(time.Minute * 4)
-
-	insertUploads(t, db,
-		Upload{ID: 1, Commit: makeCommit(1111), UploadedAt: t1, State: "queued"},    // not uploading
-		Upload{ID: 2, Commit: makeCommit(1112), UploadedAt: t2, State: "uploading"}, // deleted
-		Upload{ID: 3, Commit: makeCommit(1113), UploadedAt: t3, State: "uploading"}, // deleted
-		Upload{ID: 4, Commit: makeCommit(1114), UploadedAt: t4, State: "completed"}, // old, not uploading
-		Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // old
-	)
-
-	count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
-	if err != nil {
-		t.Fatalf("unexpected error deleting uploads stuck uploading: %s", err)
-	}
-	if count != 2 {
-		t.Errorf("unexpected count. want=%d have=%d", 2, count)
-	}
-
-	uploads, totalCount, err := store.GetUploads(context.Background(), GetUploadsOptions{Limit: 5})
-	if err != nil {
-		t.Fatalf("unexpected error getting uploads: %s", err)
-	}
-
-	var ids []int
-	for _, upload := range uploads {
-		ids = append(ids, upload.ID)
-	}
-	sort.Ints(ids)
-
-	expectedIDs := []int{1, 4, 5}
-
-	if totalCount != len(expectedIDs) {
-		t.Errorf("unexpected total count. want=%d have=%d", len(expectedIDs), totalCount)
-	}
-	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
-		t.Errorf("unexpected upload ids (-want +got):\n%s", diff)
-	}
-}
-
 func TestGetUploads(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -293,26 +253,48 @@ func TestGetUploads(t *testing.T) {
 
 	insertUploads(t, db,
 		Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
-		Upload{ID: 2, UploadedAt: t2, FinishedAt: &t1, State: "errored", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
+		Upload{ID: 2, UploadedAt: t2, FinishedAt: &t1, State: "errored", FailureMessage: &failureMessage, Indexer: "scip-typescript"},
 		Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
 		Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
-		Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "lsif-tsc"},
+		Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "scip-typescript"},
 		Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		Upload{ID: 7, UploadedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "lsif-tsc"},
-		Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "lsif-tsc"},
+		Upload{ID: 7, UploadedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "scip-typescript"},
+		Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "scip-typescript"},
 		Upload{ID: 9, UploadedAt: t9, State: "queued"},
-		Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-tsc"},
-		Upload{ID: 11, UploadedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-tsc"},
+		Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
+		Upload{ID: 11, UploadedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
 
 		// Deleted duplicates
 		Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, FinishedAt: &t1, Root: "sub1/", State: "deleted"},
-		Upload{ID: 13, UploadedAt: t2, FinishedAt: &t1, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
+		Upload{ID: 13, UploadedAt: t2, FinishedAt: &t1, State: "deleted", FailureMessage: &failureMessage, Indexer: "scip-typescript"},
 		Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, FinishedAt: &t2, Root: "sub2/", State: "deleted"},
 
 		// deleted repo
 		Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted", RepositoryID: 53, RepositoryName: "DELETED-barfoo"},
+
+		// to-be hard deleted
+		Upload{ID: 16, Commit: makeCommit(3333), UploadedAt: t4, FinishedAt: &t3, State: "deleted"},
+		Upload{ID: 17, Commit: makeCommit(3334), UploadedAt: t4, FinishedAt: &t5, State: "deleting"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
+
+	updateUploads(t, db, Upload{
+		ID: 17, State: "deleted",
+	})
+
+	deleteUploads(t, db, 16)
+	deleteUploads(t, db, 17)
+
+	if err := store.Exec(ctx, sqlf.Sprintf(
+		`DELETE FROM lsif_uploads_audit_logs WHERE upload_id = %s
+			AND sequence NOT IN (
+				SELECT MAX(sequence) FROM lsif_uploads_audit_logs
+				WHERE upload_id = %s
+			)`,
+		17, 17),
+	); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 
 	// upload 10 depends on uploads 7 and 8
 	insertPackages(t, store, []shared.Package{
@@ -353,13 +335,13 @@ func TestGetUploads(t *testing.T) {
 		{oldestFirst: true, expectedIDs: []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10, 11}},
 		{state: "completed", expectedIDs: []int{7, 8, 10, 11}},
-		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}}, // searches root
-		{term: "003", expectedIDs: []int{1, 3, 5}},               // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},            // searches commits and failure message
-		{term: "tsc", expectedIDs: []int{2, 5, 7, 8, 10, 11}},    // searches indexer
-		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},         // searches text status
-		{term: "bAr", expectedIDs: []int{4, 6}},                  // search repo names
-		{state: "failed", expectedIDs: []int{2}},                 // treats errored/failed states equivalently
+		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}},     // searches root
+		{term: "003", expectedIDs: []int{1, 3, 5}},                   // searches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},                // searches commits and failure message
+		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // searches indexer
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},             // searches text status
+		{term: "bAr", expectedIDs: []int{4, 6}},                      // search repo names
+		{state: "failed", expectedIDs: []int{2}},                     // treats errored/failed states equivalently
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
 		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10, 11}},
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
@@ -372,12 +354,12 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
-		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
+		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15, 16, 17}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d state=%s term=%s visibleAtTip=%v dependencyOf=%d dependentOf=%d offset=%d",
+			"repositoryID=%d|state='%s'|term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
 			testCase.repositoryID,
 			testCase.state,
 			testCase.term,
@@ -461,7 +443,8 @@ func TestGetUploads(t *testing.T) {
 }
 
 func TestInsertUploadUploading(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -510,7 +493,8 @@ func TestInsertUploadUploading(t *testing.T) {
 }
 
 func TestInsertUploadQueued(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -562,7 +546,8 @@ func TestInsertUploadQueued(t *testing.T) {
 }
 
 func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -618,7 +603,8 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 }
 
 func TestMarkQueued(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -644,7 +630,8 @@ func TestMarkQueued(t *testing.T) {
 }
 
 func TestMarkFailed(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -672,7 +659,8 @@ func TestMarkFailed(t *testing.T) {
 }
 
 func TestAddUploadPart(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -695,11 +683,11 @@ func TestAddUploadPart(t *testing.T) {
 }
 
 func TestDeleteUploadByID(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
-	insertUploads(t, sqlDB,
+	insertUploads(t, db,
 		Upload{ID: 1, RepositoryID: 50},
 	)
 
@@ -733,11 +721,11 @@ func TestDeleteUploadByID(t *testing.T) {
 }
 
 func TestDeleteUploadByIDNotCompleted(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
-	insertUploads(t, sqlDB,
+	insertUploads(t, db,
 		Upload{ID: 1, RepositoryID: 50, State: "uploading"},
 	)
 
@@ -771,7 +759,8 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 }
 
 func TestDeleteUploadByIDMissingRow(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
@@ -781,79 +770,9 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 	}
 }
 
-func TestDeleteUploadsWithoutRepository(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
-	store := testStore(db)
-
-	var uploads []Upload
-	for i := 0; i < 25; i++ {
-		for j := 0; j < 10+i; j++ {
-			uploads = append(uploads, Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
-		}
-	}
-	insertUploads(t, sqlDB, uploads...)
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
-	t3 := t1.Add(-DeletedRepositoryGracePeriod - time.Minute)
-
-	deletions := map[int]time.Time{
-		52: t2, 54: t2, 56: t2, // deleted too recently
-		61: t3, 63: t3, 65: t3, // deleted
-	}
-
-	for repositoryID, deletedAt := range deletions {
-		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
-
-		if _, err := db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("Failed to update repository: %s", err)
-		}
-	}
-
-	deletedCounts, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
-	if err != nil {
-		t.Fatalf("unexpected error deleting uploads: %s", err)
-	}
-
-	expected := map[int]int{
-		61: 21,
-		63: 23,
-		65: 25,
-	}
-	if diff := cmp.Diff(expected, deletedCounts); diff != "" {
-		t.Errorf("unexpected deletedCounts (-want +got):\n%s", diff)
-	}
-
-	var uploadIDs []int
-	for i := range uploads {
-		uploadIDs = append(uploadIDs, i+1)
-	}
-
-	// Ensure records were deleted
-	if states, err := getUploadStates(db, uploadIDs...); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else {
-		deletedStates := 0
-		for _, state := range states {
-			if state == "deleted" {
-				deletedStates++
-			}
-		}
-
-		expected := 0
-		for _, deletedCount := range deletedCounts {
-			expected += deletedCount
-		}
-
-		if deletedStates != expected {
-			t.Errorf("unexpected number of deleted records. want=%d have=%d", expected, deletedStates)
-		}
-	}
-}
-
 func TestHardDeleteUploadByID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -895,7 +814,8 @@ func TestHardDeleteUploadByID(t *testing.T) {
 }
 
 func TestHardDeleteUploadByIDPackageProvider(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -937,7 +857,8 @@ func TestHardDeleteUploadByIDPackageProvider(t *testing.T) {
 }
 
 func TestHardDeleteUploadByIDDuplicatePackageProvider(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -985,7 +906,8 @@ func TestHardDeleteUploadByIDDuplicatePackageProvider(t *testing.T) {
 }
 
 func TestSelectRepositoriesForIndexScan(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
@@ -1020,28 +942,28 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	}
 
 	// Can return null last_index_scan
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 2, now); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 2, now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 20 minutes later, first two repositories are still on cooldown
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 30 minutes later, all repositories are still on cooldown
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 90 minutes later, all repositories are visible
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -1051,7 +973,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	insertRepo(t, db, 54, "r4")
 
 	// 95 minutes later, new repository is not yet visible
-	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*95)); err != nil {
+	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*95)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -1063,7 +985,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	}
 
 	// 100 minutes later, only new repository is visible
-	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*100)); err != nil {
+	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*100)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -1071,7 +993,8 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 }
 
 func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
@@ -1102,7 +1025,7 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 	}
 
 	// Returns nothing when disabled
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, false, nil, 100, now); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, false, nil, 100, now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -1112,28 +1035,106 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 	limit := 2
 
 	// Can return null last_index_scan
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, &limit, 100, now); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, &limit, 100, now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 20 minutes later, first two repositories are still on cooldown
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 30 minutes later, all repositories are still on cooldown
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 90 minutes later, all repositories are visible
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+}
+
+func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testStoreWithoutConfigurationPolicies(t, db)
+
+	now := timeutil.Now()
+	insertRepo(t, db, 50, "r0")
+	insertRepo(t, db, 51, "r1")
+	insertRepo(t, db, 52, "r2")
+	insertRepo(t, db, 53, "r3")
+
+	query := `
+		INSERT INTO lsif_configuration_policies (
+			id,
+			repository_id,
+			name,
+			type,
+			pattern,
+			repository_patterns,
+			retention_enabled,
+			retention_duration_hours,
+			retain_intermediate_commits,
+			indexing_enabled,
+			index_commit_max_age_hours,
+			index_intermediate_commits
+		) VALUES
+			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false)
+	`
+	if _, err := db.ExecContext(context.Background(), query); err != nil {
+		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
+	}
+
+	// Create a new table
+	query = `
+		CREATE TABLE last_incredible_testing_scan (
+			repository_id integer NOT NULL PRIMARY KEY,
+			last_incredible_testing_scan_at timestamp with time zone NOT NULL
+		)
+	`
+
+	if _, err := db.ExecContext(context.Background(), query); err != nil {
+		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
+	}
+
+	tableName := "last_incredible_testing_scan"
+	columnName := "last_incredible_testing_scan_at"
+
+	// Returns at most configured limit
+	limit := 2
+
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), tableName, columnName, time.Hour, true, &limit, 100, now); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 20 minutes later, first two repositories are still on cooldown
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), tableName, columnName, time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 30 minutes later, all repositories are still on cooldown
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), tableName, columnName, time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 90 minutes later, all repositories are visible
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), tableName, columnName, time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -1141,7 +1142,8 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 }
 
 func TestSelectRepositoriesForRetentionScan(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1196,7 +1198,7 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 	}
 
 	// Make repository 5 newly visible
-	if _, err := db.Exec(`UPDATE lsif_uploads SET state = 'completed' WHERE id = 5`); err != nil {
+	if _, err := db.ExecContext(context.Background(), `UPDATE lsif_uploads SET state = 'completed' WHERE id = 5`); err != nil {
 		t.Fatalf("unexpected error updating upload: %s", err)
 	}
 
@@ -1209,7 +1211,8 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 }
 
 func TestUpdateUploadRetention(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1226,7 +1229,7 @@ func TestUpdateUploadRetention(t *testing.T) {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(db.Query(`SELECT COUNT(*) FROM lsif_uploads WHERE expired`))
+	count, _, err := basestore.ScanFirstInt(db.QueryContext(context.Background(), `SELECT COUNT(*) FROM lsif_uploads WHERE expired`))
 	if err != nil {
 		t.Fatalf("unexpected error counting uploads: %s", err)
 	}
@@ -1237,7 +1240,8 @@ func TestUpdateUploadRetention(t *testing.T) {
 }
 
 func TestUpdateReferenceCounts(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1353,90 +1357,9 @@ func TestUpdateReferenceCounts(t *testing.T) {
 	})
 }
 
-func TestSoftDeleteExpiredUploads(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
-	store := testStore(db)
-
-	insertUploads(t, sqlDB,
-		Upload{ID: 50, State: "completed"},
-		Upload{ID: 51, State: "completed"},
-		Upload{ID: 52, State: "completed"},
-		Upload{ID: 53, State: "completed"}, // referenced by 51, 52, 54, 55, 56
-		Upload{ID: 54, State: "completed"}, // referenced by 52
-		Upload{ID: 55, State: "completed"}, // referenced by 51
-		Upload{ID: 56, State: "completed"}, // referenced by 52, 53
-	)
-	insertPackages(t, store, []shared.Package{
-		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
-		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
-		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
-		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
-	})
-	insertPackageReferences(t, store, []shared.PackageReference{
-		// References removed
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-
-		// Remaining references
-		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-	})
-
-	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{51, 52, 53, 54}); err != nil {
-		t.Fatalf("unexpected error marking uploads as expired: %s", err)
-	}
-
-	if _, err := store.UpdateReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, DependencyReferenceCountUpdateTypeAdd); err != nil {
-		t.Fatalf("unexpected error updating reference counts: %s", err)
-	}
-
-	if count, err := store.SoftDeleteExpiredUploads(context.Background()); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
-	} else if count != 2 {
-		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
-	}
-
-	// Ensure records were deleted
-	expectedStates := map[int]string{
-		50: "completed",
-		51: "deleting",
-		52: "deleting",
-		53: "completed",
-		54: "completed",
-		55: "completed",
-		56: "completed",
-	}
-	if states, err := getUploadStates(db, 50, 51, 52, 53, 54, 55, 56); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
-		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
-	}
-
-	// Ensure repository was marked as dirty
-	repositoryIDs, err := store.DirtyRepositories(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
-	}
-
-	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
-	}
-	sort.Ints(keys)
-
-	if len(keys) != 1 || keys[0] != 50 {
-		t.Errorf("expected repository to be marked dirty")
-	}
-}
-
 func TestGetOldestCommitDate(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -1455,7 +1378,7 @@ func TestGetOldestCommitDate(t *testing.T) {
 		Upload{ID: 8, State: "completed", RepositoryID: 51},
 	)
 
-	if _, err := db.Exec("UPDATE lsif_uploads SET committed_at = '-infinity' WHERE id = 3"); err != nil {
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET committed_at = '-infinity' WHERE id = 3"); err != nil {
 		t.Fatalf("unexpected error updating commit date %s", err)
 	}
 
@@ -1494,7 +1417,8 @@ func TestGetOldestCommitDate(t *testing.T) {
 }
 
 func TestUpdateCommitedAt(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -1524,7 +1448,7 @@ func TestUpdateCommitedAt(t *testing.T) {
 		}
 	}
 
-	commitDates, err := basestore.ScanTimes(db.Query("SELECT committed_at FROM lsif_uploads WHERE id IN (1, 2, 4, 6) ORDER BY id"))
+	commitDates, err := basestore.ScanTimes(db.QueryContext(context.Background(), "SELECT committed_at FROM lsif_uploads WHERE id IN (1, 2, 4, 6) ORDER BY id"))
 	if err != nil {
 		t.Fatalf("unexpected error querying commit dates: %s", err)
 	}
@@ -1534,7 +1458,8 @@ func TestUpdateCommitedAt(t *testing.T) {
 }
 
 func TestLastUploadRetentionScanForRepository(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -1565,7 +1490,8 @@ func TestLastUploadRetentionScanForRepository(t *testing.T) {
 }
 
 func TestRecentUploadsSummary(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 	ctx := context.Background()
 

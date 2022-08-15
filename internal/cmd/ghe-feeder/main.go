@@ -20,6 +20,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 var (
@@ -168,7 +170,7 @@ func main() {
 		_ = http.ListenAndServe(":2112", nil)
 	}()
 
-	rateLimiter := rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100)
+	rateLimiter := ratelimit.NewInstrumentedLimiter("GHEFeeder", rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100))
 	pushSem := make(chan struct{}, *numSimultaneousPushes)
 	cloneSem := make(chan struct{}, *numSimultaneousClones)
 

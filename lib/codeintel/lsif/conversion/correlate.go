@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -235,7 +233,7 @@ func correlateEdge(state *wrappedState, element Element) error {
 		}
 		return handler(state, element.ID, payload)
 	default:
-		return ErrUnexpectedPayload
+		return nil
 	}
 }
 
@@ -450,7 +448,6 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 		return malformedDump(id, edge.OutV, "vertex")
 	}
 
-	log15.Debug("Skipping edge from an unsupported vertex")
 	return nil
 }
 

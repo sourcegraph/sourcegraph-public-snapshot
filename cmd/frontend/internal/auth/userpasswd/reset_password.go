@@ -36,7 +36,7 @@ func SendResetPasswordURLEmail(ctx context.Context, email, username string, rese
 }
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
-func HandleResetPasswordInit(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func HandleResetPasswordInit(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
@@ -63,7 +63,7 @@ func HandleResetPasswordInit(db database.DB) func(w http.ResponseWriter, r *http
 			return
 		}
 
-		usr, err := database.Users(db).GetByVerifiedEmail(ctx, formData.Email)
+		usr, err := db.Users().GetByVerifiedEmail(ctx, formData.Email)
 		if err != nil {
 			// 🚨 SECURITY: We don't show an error message when the user is not found
 			// as to not leak the existence of a given e-mail address in the database.
@@ -167,7 +167,7 @@ To set the password for {{.Username}} on Sourcegraph, follow this link:
 })
 
 // HandleResetPasswordCode resets the password if the correct code is provided.
-func HandleResetPasswordCode(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func HandleResetPasswordCode(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return

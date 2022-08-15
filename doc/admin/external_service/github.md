@@ -5,11 +5,24 @@ Site admins can sync Git repositories hosted on [GitHub.com](https://github.com)
 To connect GitHub to Sourcegraph:
 
 1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage repositories > Add repositories**
-    1. *User*: Go to **Settings > Manage repositories**.
+    1. *Site admin*: Go to **Site admin > Manage code hosts**
+    1. *User*: Go to **Settings > Manage code hosts**.
 1. Select **GitHub**.
 1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
+
+In this example, the kubernetes public repository on GitHub is added by selecting **Add a singe repository** and replacing `<owner>/<repository>` with `kubernetes/kubernetes`:
+
+```
+{
+  "url": "https://github.com",
+  "token": "<access token>",
+  "orgs": [],
+  "repos": [
+    "kubernetes/kubernetes"
+  ]
+}
+```
 
 > NOTE: Adding code hosts as a user is currently in private beta.
 
@@ -140,7 +153,7 @@ Done! Sourcegraph will now receive webhook events from GitHub and use them to sy
 
 ## Configuration
 
-GitHub connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
+GitHub connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
 

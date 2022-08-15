@@ -187,7 +187,6 @@ func TestSerializeBasic(t *testing.T) {
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -256,7 +255,6 @@ func TestSerializeFromQuery(t *testing.T) {
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -336,7 +334,6 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -437,7 +434,8 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 				NumRepositoriesWithFreshIndexRecords:  int32Ptr(45),
 			},
 		},
-		SettingsPageViewCount: int32Ptr(1489),
+		SettingsPageViewCount:            int32Ptr(1489),
+		UsersWithRefPanelRedesignEnabled: int32Ptr(46),
 		LanguageRequests: []types.LanguageRequest{
 			{
 				LanguageID:  "frob",
@@ -588,6 +586,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 				}
 			],
 			"settings_page_view_count": 1489,
+			"users_with_ref_panel_redesign_enabled": 46,
 			"language_requests": [
 				{
 					"language_id": "frob",
@@ -610,7 +609,6 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
 		"dependency_versions": null,
 		"extensions_usage": null,
 		"code_insights_usage": null,
@@ -773,6 +771,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 			"num_repositories_with_index_configuration_records": null,
 			"counts_by_language": null,
 			"settings_page_view_count": null,
+			"users_with_ref_panel_redesign_enabled": null,
 			"language_requests": null,
 			"investigation_events": null
 		},
@@ -780,7 +779,6 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
 		"dependency_versions": null,
 		"extensions_usage": null,
 		"code_insights_usage": null,
@@ -864,7 +862,6 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,

@@ -102,13 +102,19 @@ type EventLogStore interface {
 	// entry for each period in the time span.
 	CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error)
 
+	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
+	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
+
 	Insert(ctx context.Context, e *Event) error
 
 	// LatestPing returns the most recently recorded ping event.
-	LatestPing(ctx context.Context) (*types.Event, error)
+	LatestPing(ctx context.Context) (*Event, error)
 
 	// ListAll gets all event logs in descending order of timestamp.
-	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error)
+	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error)
+
+	// ListExportableEvents gets all event logs that are allowed to be exported.
+	ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error)
 
 	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
 
@@ -164,24 +170,31 @@ func SanitizeEventURL(raw string) string {
 
 	// Check if the URL belongs to the current site
 	normalized := u.String()
-	if !strings.HasPrefix(normalized, conf.ExternalURL()) {
-		return ""
+	if strings.HasPrefix(normalized, conf.ExternalURL()) || strings.HasSuffix(u.Host, "sourcegraph.com") {
+		return normalized
 	}
-	return normalized
+	return ""
 }
 
 // Event contains information needed for logging an event.
 type Event struct {
-	Name            string
-	URL             string
-	UserID          uint32
-	AnonymousUserID string
-	Argument        json.RawMessage
-	PublicArgument  json.RawMessage
-	Source          string
-	Timestamp       time.Time
-	FeatureFlags    featureflag.FlagSet
-	CohortID        *string // date in YYYY-MM-DD format
+	ID               int32
+	Name             string
+	URL              string
+	UserID           uint32
+	AnonymousUserID  string
+	Argument         json.RawMessage
+	PublicArgument   json.RawMessage
+	Source           string
+	Version          string
+	Timestamp        time.Time
+	EvaluatedFlagSet featureflag.EvaluatedFlagSet
+	CohortID         *string // date in YYYY-MM-DD format
+	FirstSourceURL   *string
+	LastSourceURL    *string
+	Referrer         *string
+	DeviceID         *string
+	InsertID         *string
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -199,7 +212,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 
 	rowValues := make(chan []any, len(events))
 	for _, event := range events {
-		featureFlags, err := json.Marshal(event.FeatureFlags)
+		featureFlags, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return err
 		}
@@ -219,13 +232,18 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.Timestamp.UTC(),
 			featureFlags,
 			event.CohortID,
+			event.FirstSourceURL,
+			event.LastSourceURL,
+			event.Referrer,
+			event.DeviceID,
+			event.InsertID,
 		}
 	}
 	close(rowValues)
 
 	return batch.InsertValues(
 		ctx,
-		l.Handle().DB(),
+		l.Handle(),
 		"event_logs",
 		batch.MaxNumPostgresParameters,
 		[]string{
@@ -240,24 +258,36 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			"timestamp",
 			"feature_flags",
 			"cohort_id",
+			"first_source_url",
+			"last_source_url",
+			"referrer",
+			"device_id",
+			"insert_id",
 		},
 		rowValues,
 	)
 }
 
-func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Event, error) {
-	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs %s", querySuffix)
+func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*Event, error) {
+	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id, first_source_url, last_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	events := []*types.Event{}
+	events := []*Event{}
 	for rows.Next() {
-		r := types.Event{}
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
+		r := Event{}
+		var rawFlags []byte
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp, &rawFlags, &r.CohortID, &r.FirstSourceURL, &r.LastSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
 		if err != nil {
 			return nil, err
+		}
+		if rawFlags != nil {
+			marshalErr := json.Unmarshal(rawFlags, &r.EvaluatedFlagSet)
+			if marshalErr != nil {
+				return nil, errors.Wrap(marshalErr, "json.Unmarshal")
+			}
 		}
 		events = append(events, &r)
 	}
@@ -277,7 +307,7 @@ type EventLogsListOptions struct {
 	EventName *string
 }
 
-func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error) {
+func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
@@ -288,7 +318,12 @@ func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
-func (l *eventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
+func (l *eventLogStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error) {
+	suffix := "WHERE event_logs.id > %d AND name IN (SELECT event_name FROM event_logs_export_allowlist) ORDER BY event_logs.id LIMIT %d"
+	return l.getBySQL(ctx, sqlf.Sprintf(suffix, after, limit))
+}
+
+func (l *eventLogStore) LatestPing(ctx context.Context) (*Event, error) {
 	rows, err := l.getBySQL(ctx, sqlf.Sprintf(`WHERE name='ping' ORDER BY id DESC LIMIT 1`))
 	if err != nil {
 		return nil, err
@@ -456,6 +491,16 @@ type PercentileValue struct {
 	Values []float64
 }
 
+func (l *eventLogStore) CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error) {
+	count, _, err := basestore.ScanFirstInt(l.Store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM temporary_settings WHERE %s <@ contents`, jsonSettingFragment(setting, value))))
+	return count, err
+}
+
+func jsonSettingFragment(setting string, value any) string {
+	raw, _ := json.Marshal(map[string]any{setting: value})
+	return string(raw)
+}
+
 func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
@@ -569,7 +614,7 @@ func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 }
 
 func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
-	rows, err := l.Handle().DB().QueryContext(ctx, `SELECT user_id
+	rows, err := l.Handle().QueryContext(ctx, `SELECT user_id
 		FROM event_logs
 		WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestamp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestamp)) <= $2
 		GROUP BY user_id`, startDate, endDate)
@@ -593,7 +638,7 @@ func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDa
 }
 
 func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
-	rows, err := l.Handle().DB().QueryContext(ctx, usersUsageCountsQuery)
+	rows, err := l.Handle().QueryContext(ctx, usersUsageCountsQuery)
 	if err != nil {
 		return nil, err
 	}

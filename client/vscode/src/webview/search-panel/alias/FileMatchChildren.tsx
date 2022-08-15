@@ -13,10 +13,13 @@ import {
     isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
+import {
+    LastSyncedIcon,
+    FileMatchChildrenStyles as styles,
+    CodeExcerpt,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import styles from '@sourcegraph/shared/src/components/FileMatchChildren.module.scss'
-import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -26,6 +29,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
+import { Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
@@ -35,8 +39,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
     openInNewTab?: boolean
-    /* Called when the first result has fully loaded. */
-    onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
@@ -153,19 +155,12 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const {
-        result,
-        grouped,
-        fetchHighlightedFileLineRanges,
-        telemetryService,
-        onFirstResultLoad,
-        extensionsController,
-    } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
     const { openFile, openSymbol } = useOpenSearchResultsContext()
 
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) => {
+        (startLine: number, endLine: number) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
@@ -185,9 +180,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 false
             ).pipe(
                 map(lines => {
-                    if (isFirst && onFirstResultLoad) {
-                        onFirstResultLoad()
-                    }
                     telemetryService.log(
                         'search.latencies.frontend.code-load',
                         { durationMs: Date.now() - startTime },
@@ -199,7 +191,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService, onFirstResultLoad]
+        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -291,10 +283,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     onClick={() => openSymbol(symbol.url)}
                 >
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <code>
+                    <Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </code>
+                    </Code>
                 </button>
             ))}
 
@@ -340,7 +332,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                                    isFirst={index === 0}
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}
                                     hoverifier={props.hoverifier}

@@ -1,34 +1,35 @@
 import path from 'path'
 
-import { Options } from '@storybook/core-common'
+import { Options, StorybookConfig } from '@storybook/core-common'
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 
 import {
-    NODE_MODULES_PATH,
-    ROOT_PATH,
+    getBabelLoader,
+    getBasicCSSLoader,
+    getCacheConfig,
     getCSSLoaders,
     getCSSModulesLoader,
-    getCacheConfig,
     getMonacoCSSRule,
     getMonacoTTFRule,
     getMonacoWebpackPlugin,
     getProvidePlugin,
-    getTerserPlugin,
-    getBabelLoader,
-    getBasicCSSLoader,
     getStatoscopePlugin,
+    getTerserPlugin,
+    NODE_MODULES_PATH,
+    ROOT_PATH,
+    STATIC_ASSETS_PATH,
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import {
-    monacoEditorPath,
-    dllPluginConfig,
     dllBundleManifestPath,
+    dllPluginConfig,
+    monacoEditorPath,
     readJsonFile,
     storybookWorkspacePath,
 } from './webpack.config.common'
@@ -38,18 +39,15 @@ const getStoriesGlob = (): string[] => {
         return [path.resolve(ROOT_PATH, ENVIRONMENT_CONFIG.STORIES_GLOB)]
     }
 
-    // Stories in `Chromatic.story.tsx` are guarded by the `isChromatic()` check. It will result in noop in all other environments.
-    const chromaticStoriesGlob = path.resolve(ROOT_PATH, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
-
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard', 'search-ui']
+    const directoriesWithStories = ['branded', 'browser', 'jetbrains/webview', 'shared', 'web', 'wildcard', 'search-ui']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
         path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
 
-    return [...storiesGlobs, chromaticStoriesGlob]
+    return [...storiesGlobs]
 }
 
 const getDllScriptTag = (): string => {
@@ -64,7 +62,16 @@ const getDllScriptTag = (): string => {
     `
 }
 
-const config = {
+const isStoryshotsEnvironment = globalThis.navigator?.userAgent?.match?.('jsdom')
+
+interface Config extends StorybookConfig {
+    // Custom extension until `StorybookConfig` is fixed by adding this field.
+    previewHead: (head: string) => string
+}
+
+const config: Config = {
+    framework: '@storybook/react',
+    staticDirs: [path.resolve(__dirname, '../assets'), STATIC_ASSETS_PATH],
     stories: getStoriesGlob(),
     addons: [
         '@storybook/addon-knobs',
@@ -73,16 +80,41 @@ const config = {
         'storybook-dark-mode',
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
+        '@storybook/addon-docs',
+        {
+            name: '@storybook/addon-storysource',
+            options: {
+                rule: {
+                    test: /\.story\.tsx?$/,
+                },
+                sourceLoaderOptions: {
+                    injectStoryParameters: false,
+                    prettierConfig: { printWidth: 80, singleQuote: false },
+                },
+            },
+        },
     ],
 
     core: {
-        builder: 'webpack5',
+        disableTelemetry: true,
+        builder: {
+            name: 'webpack5',
+            options: {
+                fsCache: true,
+                // Disabled because fast clicking through stories causes unexpected errors.
+                lazyCompilation: false,
+            },
+        },
     },
 
     features: {
         // Explicitly disable the deprecated, not used postCSS support,
         // so no warning is rendered on each start of storybook.
         postcss: false,
+        // Storyshots is not currently compatible with the v7 store.
+        // https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storyshots-compatibility-in-the-v7-store
+        storyStoreV7: !isStoryshotsEnvironment,
+        babelModeV7: !isStoryshotsEnvironment,
     },
 
     typescript: {
@@ -111,6 +143,7 @@ const config = {
             new DefinePlugin({
                 NODE_ENV: JSON.stringify(config.mode),
                 'process.env.NODE_ENV': JSON.stringify(config.mode),
+                'process.env.CHROMATIC': JSON.stringify(ENVIRONMENT_CONFIG.CHROMATIC),
             }),
             getProvidePlugin()
         )
@@ -187,9 +220,26 @@ const config = {
             use: {
                 loader: 'elm-webpack-loader',
                 options: {
-                    cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+                    cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
                     report: 'json',
                     pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
+                },
+            },
+        })
+
+        // Node.js polyfills for JetBrains plugin
+        config.module.rules.push({
+            test: /(?:client\/(?:shared|jetbrains)|node_modules\/https-browserify)\/.*\.(ts|tsx|js|jsx)$/,
+            resolve: {
+                alias: {
+                    path: require.resolve('path-browserify'),
+                },
+                fallback: {
+                    path: require.resolve('path-browserify'),
+                    process: require.resolve('process/browser'),
+                    util: require.resolve('util'),
+                    http: require.resolve('stream-http'),
+                    https: require.resolve('https-browserify'),
                 },
             },
         })

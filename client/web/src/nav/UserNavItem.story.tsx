@@ -8,7 +8,7 @@ import { Meta, Story } from '@storybook/react'
 import { Position } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../components/WebStory'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
@@ -63,7 +63,6 @@ const commonProps = (): UserNavItemProps => ({
     isLightTheme: true,
     onThemePreferenceChange,
     showDotComMarketing: boolean('showDotComMarketing', true),
-    isExtensionAlertAnimating: false,
     codeHostIntegrationMessaging: select(
         'codeHostIntegrationMessaging',
         ['browser-extension', 'native-integration'] as const,
@@ -72,13 +71,12 @@ const commonProps = (): UserNavItemProps => ({
     showRepositorySection: true,
     authenticatedUser,
     position: Position.bottomStart,
+    showKeyboardShortcutsHelp: () => undefined,
 })
 
-const OpenByDefaultWrapper: React.FunctionComponent<
-    React.PropsWithChildren<{
-        children: React.FunctionComponent<React.PropsWithChildren<{ menuButtonRef: React.Ref<HTMLButtonElement> }>>
-    }>
-> = ({ children }) => {
+const OpenByDefaultWrapper: React.FunctionComponent<{
+    children: React.FunctionComponent<React.PropsWithChildren<{ menuButtonRef: React.Ref<HTMLButtonElement> }>>
+}> = ({ children }) => {
     const menuButtonReference = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {

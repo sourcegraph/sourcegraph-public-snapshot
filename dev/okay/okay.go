@@ -12,8 +12,9 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var okayhqAPIEndpoint = "https://app.okayhq.com/api/events/v1"

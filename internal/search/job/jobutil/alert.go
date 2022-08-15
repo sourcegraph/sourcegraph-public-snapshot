@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,7 +17,7 @@ import (
 
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
-func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
+func NewAlertJob(inputs *search.Inputs, child job.Job) job.Job {
 	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
@@ -29,14 +28,13 @@ func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
 }
 
 type alertJob struct {
-	inputs *run.SearchInputs
+	inputs *search.Inputs
 	child  job.Job
 }
 
 func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(j.Tags))
 
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)
@@ -44,9 +42,12 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	jobAlert, err := j.child.Run(ctx, clients, statsObserver)
 
 	ao := searchalert.Observer{
-		Db:           clients.DB,
-		SearchInputs: j.inputs,
-		HasResults:   countingStream.Count() > 0,
+		Logger:     clients.Logger,
+		Db:         clients.DB,
+		Zoekt:      clients.Zoekt,
+		Searcher:   clients.SearcherURLs,
+		Inputs:     j.inputs,
+		HasResults: countingStream.Count() > 0,
 	}
 	if err != nil {
 		ao.Error(ctx, err)
@@ -75,15 +76,33 @@ func (j *alertJob) Name() string {
 	return "AlertJob"
 }
 
-func (j *alertJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", j.inputs.Query),
-		log.String("originalQuery", j.inputs.OriginalQuery),
-		trace.Stringer("patternType", j.inputs.PatternType),
-		log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
-		trace.Stringer("features", j.inputs.Features),
-		trace.Stringer("protocol", j.inputs.Protocol),
+func (j *alertJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			trace.Stringer("features", j.inputs.Features),
+			trace.Stringer("protocol", j.inputs.Protocol),
+			log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", j.inputs.Query),
+			log.String("originalQuery", j.inputs.OriginalQuery),
+			trace.Stringer("patternType", j.inputs.PatternType),
+		)
 	}
+	return res
+}
+
+func (j *alertJob) Children() []job.Describer {
+	return []job.Describer{j.child}
+}
+
+func (j *alertJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *j
+	cp.child = job.Map(j.child, fn)
+	return &cp
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.

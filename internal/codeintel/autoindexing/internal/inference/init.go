@@ -7,12 +7,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -37,7 +39,7 @@ func GetService(db database.DB) *Service {
 		svc = newService(
 			luasandbox.GetService(),
 			NewDefaultGitService(nil, db),
-			rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1),
+			ratelimit.NewInstrumentedLimiter("InferenceService", rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1)),
 			maximumFilesWithContentCount,
 			maximumFileWithContentSizeBytes,
 			observationContext,

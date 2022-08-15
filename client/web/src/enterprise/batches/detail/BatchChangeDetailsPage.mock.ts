@@ -1,5 +1,7 @@
 import { subDays } from 'date-fns'
 
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
+
 import {
     BatchChangeFields,
     BulkOperationState,
@@ -38,8 +40,11 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
     id: 'specid',
     url: '/users/alice/batch-changes/awesome-batch-change',
     namespace: {
+        __typename: 'User',
         id: '1234',
         namespaceName: 'alice',
+        displayName: null,
+        username: 'alice',
         url: '/users/alice',
     },
     viewerCanAdminister: true,
@@ -56,6 +61,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         id: 'specID1',
         originalInput: 'name: awesome-batch-changes\ndescription: somestring',
         supersedingBatchSpec: null,
+        source: BatchSpecSource.REMOTE,
         codeHostsWithoutWebhooks: {
             nodes: [],
             pageInfo: { hasNextPage: false },

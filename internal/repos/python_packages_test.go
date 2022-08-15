@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -11,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestPythonPackageSource_ListRepos(t *testing.T) {
+func TestPythonPackagesSource_ListRepos(t *testing.T) {
 	ctx := context.Background()
 	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
 		{
@@ -36,13 +37,12 @@ func TestPythonPackageSource_ListRepos(t *testing.T) {
 			ID:      4,
 			Scheme:  dependencies.PythonPackagesScheme,
 			Name:    "lofi",
-			Version: "foobar", // Test missing modules are skipped.
-		},
-	})
+			Version: "foobar", // test that we create a repo for this package even if it's missing.
+		}})
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindPythonPackages,
-		Config: marshalJSON(t, &schema.PythonPackagesConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.PythonPackagesConnection{
 			Urls: []string{
 				"https://pypi.org/simple",
 			},
@@ -52,13 +52,13 @@ func TestPythonPackageSource_ListRepos(t *testing.T) {
 				"randio==0.1.1",
 				"pytimeparse==1.1.8",
 			},
-		}),
+		})),
 	}
 
 	cf, save := newClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewPythonPackagesSource(&svc, cf)
+	src, err := NewPythonPackagesSource(ctx, &svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,6 +69,10 @@ func TestPythonPackageSource_ListRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	sort.SliceStable(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
 
 	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
 }

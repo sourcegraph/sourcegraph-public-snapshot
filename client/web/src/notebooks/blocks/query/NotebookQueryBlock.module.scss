@@ -1,5 +1,13 @@
 .block {
     padding: 1rem;
+
+    :global(.is-read-only-notebook) & {
+        padding: 0.25rem 1rem;
+    }
+}
+
+.content {
+    padding: 1rem;
     background-color: var(--body-bg);
 }
 
@@ -10,7 +18,7 @@
     max-height: 25rem;
 }
 
-.query-input-monaco-wrapper {
+.query-input-wrapper {
     border-radius: 0.25rem;
     padding: 0.5rem;
     background-color: var(--color-bg-1);

@@ -1,83 +1,119 @@
 import React from 'react'
 
-import classNames from 'classnames'
+import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
-import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
-import { Icon } from '@sourcegraph/wildcard'
+import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
+import { ContentMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 
+import { InfoDivider } from './InfoDivider'
+import { RepoName } from './RepoName'
+import { SearchResultHeader } from './SearchResultHeader'
+import { SearchResultLayout } from './SearchResultLayout'
+import { SelectableSearchResult } from './SelectableSearchResult'
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
-import { getIdForLine } from './utils'
+import { getResultId } from './utils'
 
 import styles from './FileSearchResult.module.scss'
 
+function renderResultElementsForContentMatch(
+    match: ContentMatch,
+    selectedResult: string | null,
+    selectResult: (resultId: string) => void,
+    openResult: (resultId: string) => void
+): JSX.Element[] {
+    return match.lineMatches.map(line => (
+        <SelectableSearchResult
+            key={getResultId(match, line)}
+            lineOrSymbolMatch={line}
+            match={match}
+            selectedResult={selectedResult}
+            selectResult={selectResult}
+            openResult={openResult}
+        >
+            {isActive => (
+                <SearchResultLayout infoColumn={line.lineNumber + 1} className={styles.code} isActive={isActive}>
+                    <TrimmedCodeLineWithHighlights line={line} />
+                </SearchResultLayout>
+            )}
+        </SelectableSearchResult>
+    ))
+}
+
 interface Props {
-    selectResultFromId: (id: string) => void
+    selectResult: (resultId: string) => void
     selectedResult: null | string
-    result: ContentMatch
+    match: ContentMatch | SymbolMatch
+    openResult: (resultId: string) => void
+}
+
+function renderResultElementsForSymbolMatch(
+    match: SymbolMatch,
+    selectedResult: string | null,
+    selectResult: (resultId: string) => void,
+    openResult: (resultId: string) => void
+): JSX.Element[] {
+    return match.symbols.map(symbol => (
+        <SelectableSearchResult
+            key={getResultId(match, symbol)}
+            lineOrSymbolMatch={symbol}
+            match={match}
+            selectedResult={selectedResult}
+            selectResult={selectResult}
+            openResult={openResult}
+        >
+            {isActive => (
+                <SearchResultLayout className={styles.code} isActive={isActive}>
+                    <SymbolIcon kind={symbol.kind} className="mr-1" />
+                    {symbol.name} {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
+                </SearchResultLayout>
+            )}
+        </SelectableSearchResult>
+    ))
 }
 
 export const FileSearchResult: React.FunctionComponent<Props> = ({
-    result,
+    match,
     selectedResult,
-    selectResultFromId,
+    selectResult,
+    openResult,
 }: Props) => {
-    const lines = result.lineMatches.map(line => {
-        const key = getIdForLine(result, line)
-        const onClick = (): void => selectResultFromId(key)
+    const lines =
+        match.type === 'content'
+            ? renderResultElementsForContentMatch(match, selectedResult, selectResult, openResult)
+            : renderResultElementsForSymbolMatch(match, selectedResult, selectResult, openResult)
 
-        return (
-            // The below element's accessibility is handled via a document level event listener.
-            //
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
-            <div
-                id={`search-result-list-item-${key}`}
-                className={classNames(styles.line, {
-                    [styles.lineActive]: key === selectedResult,
-                })}
-                onMouseDown={preventAll}
-                onClick={onClick}
-                key={key}
-            >
-                <div className={styles.lineCode}>
-                    <TrimmedCodeLineWithHighlights line={line} />
-                </div>
-                <div className={classNames(styles.lineLineNumber, 'text-muted')}>{line.lineNumber + 1}</div>
-            </div>
-        )
-    })
+    const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
-    const repoDisplayName = result.repository
-    const repoAtRevisionURL = '#'
-    const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
+    const onClick = (): void =>
+        lines.length
+            ? selectResult(getResultId(match, match.type === 'content' ? match.lineMatches[0] : match.symbols[0]))
+            : undefined
 
     const title = (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div className={styles.header} onMouseDown={preventAll}>
-            <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
-                <Icon role="img" aria-label="File" className="flex-shrink-0" as={FileDocumentIcon} />
-                <div className={classNames('mx-1', styles.headerDivider)} />
-                <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
-                <RepoFileLink
-                    repoName={result.repository}
-                    repoURL={repoAtRevisionURL}
-                    filePath={result.path}
-                    fileURL={getFileMatchUrl(result)}
-                    repoDisplayName={repoDisplayName}
-                    className={classNames('ml-1', 'flex-shrink-past-contents', 'text-truncate', styles.headerLink)}
-                />
-            </div>
-            {formattedRepositoryStarCount && (
-                <>
-                    <SearchResultStar />
-                    {formattedRepositoryStarCount}
-                </>
-            )}
-        </div>
+        <SearchResultHeader onClick={onClick}>
+            <SearchResultLayout
+                iconColumn={{
+                    icon: match.type === 'content' ? FileDocumentIcon : AlphaSBoxIcon,
+                    repoName: match.repository,
+                }}
+                infoColumn={
+                    formattedRepositoryStarCount && (
+                        <>
+                            <span className={styles.matches}>
+                                {lines.length} {lines.length > 1 ? 'matches' : 'match'}
+                            </span>
+                            <InfoDivider />
+                            <SearchResultStar />
+                            {formattedRepositoryStarCount}
+                        </>
+                    )
+                }
+            >
+                <RepoName repoName={match.repository} suffix={match.path} />
+            </SearchResultLayout>
+        </SearchResultHeader>
     )
 
     return (
@@ -86,9 +122,4 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
             {lines}
         </>
     )
-}
-
-function preventAll(event: React.MouseEvent): void {
-    event.stopPropagation()
-    event.preventDefault()
 }

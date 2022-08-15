@@ -123,7 +123,7 @@ elm-stuff
 /client/extension-api/dist
 
 # Compute Component
-/client/web/src/notebooks/blocks/compute/component/public/dist
+/client/web/src/search/results/components/compute/public/dist
 
 # Direnv
 .envrc
@@ -167,12 +167,14 @@ sitemap_query.db
 .annotate
 .annotate.lock
 annotations/
+.buildevent_file
 
 # Buildkite analytics files
 test-reports/
 
 # go workspace files shouldn't be committed
 go.work
+go.work.sum
 
 # binary
 /sg

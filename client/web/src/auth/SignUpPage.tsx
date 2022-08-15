@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
-import { Redirect, useLocation } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -25,7 +25,13 @@ export interface SignUpPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        'allowSignup' | 'experimentalFeatures' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders'
+        | 'allowSignup'
+        | 'experimentalFeatures'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'xhrHeaders'
+        | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
     >
 }
 
@@ -53,11 +59,11 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     }, [invitedBy, authenticatedUser, context.allowSignup])
 
     if (authenticatedUser) {
-        return <Redirect to={returnTo} />
+        return <Navigate to={returnTo} replace={true} />
     }
 
     if (!context.allowSignup) {
-        return <Redirect to="/sign-in" />
+        return <Navigate to="/sign-in" replace={true} />
     }
 
     let newUserFromEmailInvitation = false
@@ -131,11 +137,13 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 lessPadding={true}
                 body={
                     <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>
-                        {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
+                        {context.sourcegraphDotComMode && (
+                            <Text className="pt-1 pb-2">Start searching public code now</Text>
+                        )}
                         <SignUpForm context={context} onSignUp={handleSignUp} />
-                        <p className="mt-3">
+                        <Text className="mt-3">
                             Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
-                        </p>
+                        </Text>
                     </div>
                 }
             />

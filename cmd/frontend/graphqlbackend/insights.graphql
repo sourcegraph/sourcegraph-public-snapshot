@@ -197,6 +197,7 @@ extend type Query {
         id: ID
         isFrozen: Boolean
         filters: InsightViewFiltersInput
+        seriesDisplayOptions: SeriesDisplayOptionsInput
     ): InsightViewConnection!
 
     """
@@ -208,7 +209,51 @@ extend type Query {
     Generate an ephemeral set of time series for a code insight, generally for the purposes of live preview.
     """
     searchInsightPreview(input: SearchInsightPreviewInput!): [SearchInsightLivePreviewSeries!]!
+
+    """
+    Returns insights based on a search query. This is experimental and should be considered unstable in the API.
+    """
+    searchQueryInsights(
+        """
+        The search query
+        """
+        query: String!
+        """
+        The search pattern type
+        """
+        patternType: SearchPatternType = literal
+    ): SearchQueryInsightsResult
 }
+
+"""
+SearchQueryInsights are Insights that are available based on a search query. This type is experimental and should be considered unstable in the API.
+"""
+type SearchQueryInsights {
+    """
+    30 day percentage change in result count rounded to nearest whole number
+    """
+    thirtyDayPercentChange: Int!
+
+    """
+    insight preview
+    """
+    preview: [SearchInsightLivePreviewSeries!]!
+}
+
+"""
+Indicates that search query insights are not available. This type is experimental and should be considered unstable in the API.
+"""
+type SearchQueryInsightsNotAvailable {
+    """
+    message regrading the unavailablity of search query insights.
+    """
+    message: String!
+}
+
+"""
+Defines search query insights for a specified search query.
+"""
+union SearchQueryInsightsResult = SearchQueryInsights | SearchQueryInsightsNotAvailable
 
 extend type Mutation {
     """
@@ -615,6 +660,83 @@ input InsightViewControlsInput {
     Input for the default filters for an insight.
     """
     filters: InsightViewFiltersInput!
+    """
+    Input for series' sort order.
+    """
+    seriesDisplayOptions: SeriesDisplayOptionsInput!
+}
+
+"""
+Options that affect which series to display for an insight.
+"""
+type SeriesDisplayOptions {
+    """
+    Sort options for the series.
+    """
+    sortOptions: SeriesSortOptions!
+    """
+    Max number of series to return.
+    """
+    limit: Int
+}
+
+"""
+Input type for series display options.
+"""
+input SeriesDisplayOptionsInput {
+    """
+    Sort options for the series.
+    """
+    sortOptions: SeriesSortOptionsInput
+    """
+    Max number of series to return.
+    """
+    limit: Int
+}
+
+"""
+Sort mode for series.
+"""
+enum SeriesSortMode {
+    RESULT_COUNT
+    LEXICOGRAPHICAL
+    DATE_ADDED
+}
+
+"""
+Sort direction for series.
+"""
+enum SeriesSortDirection {
+    ASC
+    DESC
+}
+
+"""
+Series sort options.
+"""
+type SeriesSortOptions {
+    """
+    Sort mode for series.
+    """
+    mode: SeriesSortMode
+    """
+    Sort direction for series.
+    """
+    direction: SeriesSortDirection
+}
+
+"""
+Input type for series sort options.
+"""
+input SeriesSortOptionsInput {
+    """
+    Sort mode for series.
+    """
+    mode: SeriesSortMode!
+    """
+    Sort direction for series.
+    """
+    direction: SeriesSortDirection!
 }
 
 """
@@ -665,6 +787,22 @@ input LineChartSearchInsightDataSeriesInput {
     Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
     """
     generatedFromCaptureGroups: Boolean
+
+    """
+    The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
+    """
+    groupBy: GroupByField
+}
+
+"""
+Fields that can be grouped on for compute powered insights.
+"""
+enum GroupByField {
+    REPO
+    LANG
+    PATH
+    AUTHOR
+    DATE
 }
 
 """
@@ -824,9 +962,24 @@ type InsightView implements Node {
     isFrozen: Boolean!
 
     """
+    The default series display options saved on the insight. This will differ from the applied options if they are overwritten but not saved.
+    """
+    defaultSeriesDisplayOptions: SeriesDisplayOptions!
+
+    """
+    The series display options currently applied to the insight.
+    """
+    appliedSeriesDisplayOptions: SeriesDisplayOptions!
+
+    """
     Dashboards this insight has been added to that the current user has permission to view
     """
     dashboards(first: Int, after: String, id: ID): InsightsDashboardConnection
+
+    """
+    The total number of series on this insight.
+    """
+    seriesCount: Int
 }
 
 """
@@ -900,6 +1053,11 @@ type SearchInsightDataSeriesDefinition {
     for the code insights webapp, and should be considered unstable (planned to be deprecated in a future release).
     """
     isCalculated: Boolean!
+
+    """
+    The field to group results by. (For compute powered insights only.) This field is experimental and should be considered unstable in the API.
+    """
+    groupBy: GroupByField
 }
 
 """
@@ -997,6 +1155,11 @@ input SearchInsightLivePreviewInput {
     Whether or not to generate the timeseries results from the query capture groups.
     """
     generatedFromCaptureGroups: Boolean!
+
+    """
+    Use this field to specify a compute insight. Note: this is experimental and should be considered unstable
+    """
+    groupBy: GroupByField
 }
 
 """
@@ -1036,6 +1199,11 @@ input SearchSeriesPreviewInput {
     Whether or not to generate the timeseries results from the query capture groups.
     """
     generatedFromCaptureGroups: Boolean!
+
+    """
+    Use this field to specify a compute insight. Note: this is experimental and should be considered unstable
+    """
+    groupBy: GroupByField
 }
 
 """

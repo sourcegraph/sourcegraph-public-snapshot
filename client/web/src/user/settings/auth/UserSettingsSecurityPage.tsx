@@ -7,7 +7,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, H3, Input, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -21,6 +21,7 @@ import {
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { getPasswordRequirements } from '../../../util/security'
 import { updatePassword, createPassword } from '../backend'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
@@ -181,43 +182,6 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public getPasswordRequirements(): JSX.Element {
-        let requirements = ''
-        const passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
-
-        if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
-            if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
-                requirements +=
-                    'Your password must include at least ' +
-                    passwordPolicyReference.minimumLength.toString() +
-                    ' characters'
-            }
-            if (
-                passwordPolicyReference.numberOfSpecialCharacters &&
-                passwordPolicyReference.numberOfSpecialCharacters > 0
-            ) {
-                requirements +=
-                    ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
-            }
-            if (
-                passwordPolicyReference.requireAtLeastOneNumber &&
-                passwordPolicyReference.requireAtLeastOneNumber === true
-            ) {
-                requirements += ', at least one number'
-            }
-            if (
-                passwordPolicyReference.requireUpperandLowerCase &&
-                passwordPolicyReference.requireUpperandLowerCase === true
-            ) {
-                requirements += ', at least one uppercase letter'
-            }
-        } else {
-            requirements += 'At least 12 characters.'
-        }
-
-        return <small className="form-help text-muted">{requirements}</small>
-    }
-
     public render(): JSX.Element | null {
         return (
             <>
@@ -279,12 +243,11 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 {this.state.accounts.fetched?.length === 0 && (
                     <>
                         <hr className="my-4" />
-                        <Typography.H3 className="mb-3">Password</Typography.H3>
+                        <H3 className="mb-3">Password</H3>
                         <Container>
                             <Form onSubmit={this.handleSubmit}>
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
-                                <input
-                                    type="text"
+                                <Input
                                     value={this.props.user.username}
                                     name="username"
                                     autoComplete="username"
@@ -293,7 +256,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 />
                                 {this.shouldShowOldPasswordInput() && (
                                     <div className="form-group">
-                                        <label htmlFor="oldPassword">Old password</label>
+                                        <Label htmlFor="oldPassword">Old password</Label>
                                         <PasswordInput
                                             value={this.state.oldPassword}
                                             onChange={this.onOldPasswordFieldChange}
@@ -308,7 +271,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 )}
 
                                 <div className="form-group">
-                                    <label htmlFor="newPassword">New password</label>
+                                    <Label htmlFor="newPassword">New password</Label>
                                     <PasswordInput
                                         value={this.state.newPassword}
                                         onChange={this.onNewPasswordFieldChange}
@@ -316,20 +279,16 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
-                                        minLength={
-                                            window.context.experimentalFeatures.passwordPolicy?.enabled &&
-                                            window.context.experimentalFeatures.passwordPolicy.minimumLength !==
-                                                undefined
-                                                ? window.context.experimentalFeatures.passwordPolicy.minimumLength
-                                                : 12
-                                        }
+                                        minLength={window.context.authMinPasswordLength}
                                         placeholder=" "
                                         autoComplete="new-password"
                                     />
-                                    {this.getPasswordRequirements()}
+                                    <small className="form-help text-muted">
+                                        {getPasswordRequirements(window.context)}
+                                    </small>
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="newPasswordConfirmation">Confirm new password</label>
+                                    <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
                                     <PasswordInput
                                         value={this.state.newPasswordConfirmation}
                                         onChange={this.onNewPasswordConfirmationFieldChange}
@@ -338,13 +297,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
-                                        minLength={
-                                            window.context.experimentalFeatures.passwordPolicy?.enabled &&
-                                            window.context.experimentalFeatures.passwordPolicy.minimumLength !==
-                                                undefined
-                                                ? window.context.experimentalFeatures.passwordPolicy.minimumLength
-                                                : 12
-                                        }
+                                        minLength={window.context.authMinPasswordLength}
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                     />

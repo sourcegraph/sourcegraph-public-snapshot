@@ -2,7 +2,7 @@ import React, { forwardRef, PropsWithChildren, Ref } from 'react'
 
 import classNames from 'classnames'
 
-import { Button, Input, InputProps, Typography } from '@sourcegraph/wildcard'
+import { Button, Input, InputProps, Label } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 
@@ -38,7 +38,7 @@ interface LabelWithResetProps {
 }
 
 export const LabelWithReset: React.FunctionComponent<PropsWithChildren<LabelWithResetProps>> = props => (
-    <Typography.Label className={classNames(styles.label, props.className)}>
+    <Label className={classNames(styles.label, props.className)}>
         <span className={styles.labelText}>
             <TruncatedText>{props.text}</TruncatedText>
 
@@ -54,5 +54,5 @@ export const LabelWithReset: React.FunctionComponent<PropsWithChildren<LabelWith
         </span>
 
         {props.children}
-    </Typography.Label>
+    </Label>
 )

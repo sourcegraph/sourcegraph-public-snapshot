@@ -1,14 +1,19 @@
 import React from 'react'
 
+import {
+    mdiSourceBranch,
+    mdiSourcePull,
+    mdiSourceMerge,
+    mdiDelete,
+    mdiAlertCircle,
+    mdiAutorenew,
+    mdiTimerSand,
+    mdiArchive,
+    mdiLock,
+} from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import AutorenewIcon from 'mdi-react/AutorenewIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
-import SourcePullIcon from 'mdi-react/SourcePullIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+
+import { Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
 
@@ -44,6 +49,8 @@ export const ChangesetStatusCell: React.FunctionComponent<React.PropsWithChildre
             return <ChangesetStatusClosed className={className} />
         case ChangesetState.MERGED:
             return <ChangesetStatusMerged className={className} />
+        case ChangesetState.READONLY:
+            return <ChangesetStatusReadOnly className={className} />
         case ChangesetState.DELETED:
             return <ChangesetStatusDeleted className={className} />
     }
@@ -62,7 +69,7 @@ export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWith
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourceBranchIcon aria-hidden={true} />
+        <Icon svgPath={mdiSourceBranch} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -72,7 +79,7 @@ export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChild
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourcePullIcon className="text-danger" aria-hidden={true} />
+        <Icon className="text-danger" svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -82,7 +89,7 @@ export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChild
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourceMergeIcon className="text-merged" aria-hidden={true} />
+        <Icon className="text-merged" svgPath={mdiSourceMerge} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -92,7 +99,7 @@ export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildre
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourcePullIcon className="text-success" aria-hidden={true} />
+        <Icon className="text-success" svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -102,7 +109,7 @@ export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildr
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourcePullIcon aria-hidden={true} />
+        <Icon svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -112,7 +119,7 @@ export const ChangesetStatusDeleted: React.FunctionComponent<React.PropsWithChil
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <DeleteIcon aria-hidden={true} />
+        <Icon svgPath={mdiDelete} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -122,7 +129,7 @@ export const ChangesetStatusError: React.FunctionComponent<React.PropsWithChildr
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <AlertCircleIcon className="text-danger" aria-hidden={true} />
+        <Icon className="text-danger" svgPath={mdiAlertCircle} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -132,7 +139,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<React.PropsWithChi
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <AutorenewIcon aria-hidden={true} />
+        <Icon svgPath={mdiAutorenew} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -143,7 +150,7 @@ export const ChangesetStatusProcessing: React.FunctionComponent<React.PropsWithC
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <TimerSandIcon aria-hidden={true} />
+        <Icon svgPath={mdiTimerSand} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
@@ -154,7 +161,20 @@ export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChi
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <ArchiveIcon aria-hidden={true} />
+        <Icon svgPath={mdiArchive} inline={false} aria-hidden={true} />
         {label}
     </div>
+)
+
+export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
+    label = <span>Read-only</span>,
+    className,
+    ...props
+}) => (
+    <Tooltip content="This changeset is read-only, and cannot be modified. This is usually caused by the repository being archived.">
+        <div className={classNames(iconClassNames, className)} {...props}>
+            <Icon svgPath={mdiLock} inline={false} aria-hidden={true} />
+            {label}
+        </div>
+    </Tooltip>
 )

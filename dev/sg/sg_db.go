@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -11,8 +10,9 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -29,14 +29,30 @@ var (
 	dbDatabaseNameFlag string
 
 	dbCommand = &cli.Command{
-		Name:     "db",
-		Usage:    "Interact with local Sourcegraph databases for development",
+		Name:  "db",
+		Usage: "Interact with local Sourcegraph databases for development",
+		UsageText: `
+# Reset the Sourcegraph 'frontend' database
+sg db reset-pg
+
+# Reset the 'frontend' and 'codeintel' databases
+sg db reset-pg -db=frontend,codeintel
+
+# Reset all databases ('frontend', 'codeintel', 'codeinsights')
+sg db reset-pg -db=all
+
+# Reset the redis database
+sg db reset-redis
+
+# Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
+sg db add-user -name=foo
+`,
 		Category: CategoryDev,
 		Subcommands: []*cli.Command{
 			{
 				Name:        "reset-pg",
 				Usage:       "Drops, recreates and migrates the specified Sourcegraph database",
-				Description: `Run 'sg db reset-pg' to drop and recreate Sourcegraph databases. If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
+				Description: `If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:        "db",
@@ -45,18 +61,18 @@ var (
 						Destination: &dbDatabaseNameFlag,
 					},
 				},
-				Action: execAdapter(dbResetPGExec),
+				Action: dbResetPGExec,
 			},
 			{
-				Name:        "reset-redis",
-				Usage:       "Drops, recreates and migrates the specified Sourcegraph Redis database",
-				Description: `Run 'sg db reset-redis' to drop and recreate Sourcegraph redis databases.`,
-				Action:      execAdapter(dbResetRedisExec),
+				Name:      "reset-redis",
+				Usage:     "Drops, recreates and migrates the specified Sourcegraph Redis database",
+				UsageText: "sg db reset-redis",
+				Action:    dbResetRedisExec,
 			},
 			{
 				Name:        "add-user",
 				Usage:       "Create an admin sourcegraph user",
-				Description: `Run 'sg db add-user -name bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds`,
+				Description: `Run 'sg db add-user -username bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds`,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "username",
@@ -77,9 +93,10 @@ var (
 
 func dbAddUserAction(cmd *cli.Context) error {
 	ctx := cmd.Context
+	logger := log.Scoped("dbAddUserAction", "")
 
 	// Read the configuration.
-	conf, _ := sgconf.Get(configFile, configOverwriteFile)
+	conf, _ := getConfig()
 	if conf == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
@@ -89,7 +106,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(conn)
+	db := database.NewDB(logger, conn)
 
 	username := cmd.String("username")
 	password := cmd.String("password")
@@ -130,9 +147,9 @@ func dbAddUserAction(cmd *cli.Context) error {
 	return nil
 }
 
-func dbResetRedisExec(ctx context.Context, args []string) error {
+func dbResetRedisExec(ctx *cli.Context) error {
 	// Read the configuration.
-	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	config, _ := getConfig()
 	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
@@ -153,9 +170,9 @@ func dbResetRedisExec(ctx context.Context, args []string) error {
 	return nil
 }
 
-func dbResetPGExec(ctx context.Context, args []string) error {
+func dbResetPGExec(ctx *cli.Context) error {
 	// Read the configuration.
-	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	config, _ := getConfig()
 	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
@@ -179,30 +196,30 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 		}
 	}
 
-	for name, dsn := range dsnMap {
+	std.Out.WriteNoticef("This will reset database(s) %s%s%s. Are you okay with this?",
+		output.StyleOrange, strings.Join(schemaNames, ", "), output.StyleReset)
+	if ok := getBool(); !ok {
+		return NewEmptyExitErr(1)
+	}
+
+	for _, dsn := range dsnMap {
 		var (
 			db  *pgx.Conn
 			err error
 		)
 
-		db, err = pgx.Connect(ctx, dsn)
+		db, err = pgx.Connect(ctx.Context, dsn)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to Postgres database")
 		}
 
-		std.Out.WriteNoticef("This will reset database %s%s%s. Are you okay with this?", output.StyleOrange, name, output.StyleReset)
-		ok := getBool()
-		if !ok {
-			return nil
-		}
-
-		_, err = db.Exec(ctx, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+		_, err = db.Exec(ctx.Context, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
 		if err != nil {
 			std.Out.WriteFailuref("Failed to drop schema 'public': %s", err)
 			return err
 		}
 
-		if err := db.Close(ctx); err != nil {
+		if err := db.Close(ctx.Context); err != nil {
 			return err
 		}
 	}
@@ -210,7 +227,7 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
-	r, err := connections.RunnerFromDSNs(dsnMap, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(log.Scoped("migrations.runner", ""), dsnMap, "sg", storeFactory)
 	if err != nil {
 		return err
 	}
@@ -223,7 +240,12 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 		})
 	}
 
-	return r.Run(ctx, runner.Options{
+	if err := r.Run(ctx.Context, runner.Options{
 		Operations: operations,
-	})
+	}); err != nil {
+		return err
+	}
+
+	std.Out.WriteSuccessf("Database(s) reset!")
+	return nil
 }

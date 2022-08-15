@@ -149,6 +149,7 @@ function commitOIDForGitRevision(revision: GitRefSpecFields): string {
 
 const DiffRenderingNotSupportedAlert: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <Alert className="mb-0" variant="info">
-        Diffs for processing, merged, closed and deleted changesets are currently only available on the code host.
+        Diffs for processing, merged, closed, read-only, and deleted changesets are currently only available on the code
+        host.
     </Alert>
 )

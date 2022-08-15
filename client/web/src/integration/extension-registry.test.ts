@@ -17,7 +17,7 @@ const typescriptRawManifest = JSON.stringify({
     browserslist: [],
     categories: ['Programming languages'],
     contributes: {},
-    description: 'TypeScript/JavaScript code intelligence',
+    description: 'TypeScript/JavaScript code graph',
     devDependencies: {},
     extensionID: 'sourcegraph/typescript',
     main: 'dist/extension.js',
@@ -61,7 +61,7 @@ const registryExtensionNodes: RegistryExtensionFieldsForList[] = [
         name: 'typescript',
         manifest: {
             raw: typescriptRawManifest,
-            description: 'TypeScript/JavaScript code intelligence',
+            description: 'TypeScript/JavaScript code graph',
         },
         createdAt: '2019-01-26T03:39:17Z',
         updatedAt: '2019-01-26T03:39:17Z',
@@ -189,6 +189,7 @@ describe('Extension Registry', () => {
                     session: { canSignOut: true },
                     viewerCanAdminister: true,
                     searchable: true,
+                    emails: [],
                 },
             }),
             RegistryExtensions: () => ({
@@ -276,10 +277,10 @@ describe('Extension Registry', () => {
             overrideGraphQLExtensionRegistry({ enabled: false })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
 
-            await driver.page.waitForSelector('.test-extension-registry-input')
+            await driver.page.waitForSelector('[data-testid=test-extension-registry-input]')
             const request = await testContext.waitForGraphQLRequest(async () => {
                 await driver.replaceText({
-                    selector: '.test-extension-registry-input',
+                    selector: '[data-testid=test-extension-registry-input]',
                     newText: 'sqs',
                     enterTextMethod: 'paste',
                 })

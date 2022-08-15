@@ -35,4 +35,4 @@ After you install it, try it out on any of these public repositories:
 
 Usage with private code on GitHub.com, GitHub Enterprise, GitLab, Bitbucket Server, or Phabricator: https://docs.sourcegraph.com/integration/browser_extension
 
-This extension is open source: https://github.com/sourcegraph/sourcegraph/tree/master/client/browser
+This extension is open source: https://github.com/sourcegraph/sourcegraph/tree/main/client/browser

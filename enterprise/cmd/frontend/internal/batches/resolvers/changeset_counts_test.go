@@ -9,13 +9,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -70,16 +72,17 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	rcache.SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	gitHubToken := os.Getenv("GITHUB_TOKEN")
@@ -89,11 +92,11 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: gitHubToken,
 			Repos: []string{"sourcegraph/sourcegraph"},
-		}),
+		})),
 	}
 
 	err := esStore.Upsert(ctx, githubExtSvc)
@@ -101,7 +104,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatalf("Failed to Upsert external service: %s", err)
 	}
 
-	githubSrc, err := repos.NewGithubSource(db.ExternalServices(), githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(ctx, logger, db.ExternalServices(), githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -116,7 +119,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
+	mockState := bt.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: githubRepo.Name,
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
@@ -179,7 +182,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

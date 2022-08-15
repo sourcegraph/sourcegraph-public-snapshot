@@ -3,19 +3,20 @@ package gitserver
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,6 +34,10 @@ func New(db database.DB, dbStore DBStore, observationContext *observation.Contex
 	}
 }
 
+func (c *Client) DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+	return gitserver.NewClient(c.db).DiffPath(ctx, checker, repo, sourceCommit, targetCommit, path)
+}
+
 // CommitExists determines if the given commit exists in the given repository.
 func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -45,7 +50,7 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	if err != nil {
 		return false, err
 	}
-	return git.CommitExists(ctx, c.db, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	return gitserver.NewClient(c.db).CommitExists(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 }
 
 type RepositoryCommit struct {
@@ -98,7 +103,7 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		originalIndexes = append(originalIndexes, i)
 	}
 
-	exists, err := git.CommitsExist(ctx, c.db, repoCommits, authz.DefaultSubRepoPermsChecker)
+	exists, err := gitserver.NewClient(c.db).CommitsExist(ctx, repoCommits, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +141,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 		return "", false, err
 	}
 
-	return git.Head(ctx, c.db, repo, authz.DefaultSubRepoPermsChecker)
+	return gitserver.NewClient(c.db).Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
 }
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
@@ -154,7 +159,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	}
 
 	db := c.db
-	rev, tm, ok, err := git.CommitDate(ctx, db, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	rev, tm, ok, err := gitserver.NewClient(db).CommitDate(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return rev, tm, ok, nil
 	}
@@ -173,20 +178,6 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	// resolved without error, return the original error as the command had
 	// failed for another reason.
 	return "", time.Time{}, false, errors.Wrap(err, "git.CommitDate")
-}
-
-func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
-	ctx, _, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numRepos", len(repos)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	resp, err := gitserver.NewClient(c.db).RepoInfo(ctx, repos...)
-	if resp == nil {
-		return nil, err
-	}
-
-	return resp.Results, err
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
@@ -239,7 +230,7 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int, pointedA
 		return nil, err
 	}
 
-	return git.RefDescriptions(ctx, c.db, repo, authz.DefaultSubRepoPermsChecker, pointedAt...)
+	return gitserver.NewClient(c.db).RefDescriptions(ctx, repo, authz.DefaultSubRepoPermsChecker, pointedAt...)
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
@@ -259,7 +250,7 @@ func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, br
 		return nil, err
 	}
 
-	return git.CommitsUniqueToBranch(ctx, c.db, repo, branchName, isDefaultBranch, maxAge, authz.DefaultSubRepoPermsChecker)
+	return gitserver.NewClient(c.db).CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge, authz.DefaultSubRepoPermsChecker)
 }
 
 // BranchesContaining returns a map from branch names to branch tip hashes for each branch
@@ -269,7 +260,7 @@ func (c *Client) BranchesContaining(ctx context.Context, db database.DB, reposit
 	if err != nil {
 		return nil, err
 	}
-	return git.BranchesContaining(ctx, db, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	return gitserver.NewClient(db).BranchesContaining(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 }
 
 // DefaultBranchContains tells if the default branch contains the given commit ID.
@@ -317,7 +308,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	}
 
 	db := c.db
-	out, err := git.ReadFile(ctx, db, repo, api.CommitID(commit), file, authz.DefaultSubRepoPermsChecker)
+	out, err := gitserver.NewClient(db).ReadFile(ctx, repo, api.CommitID(commit), file, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return out, nil
 	}
@@ -393,7 +384,7 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 		return false, errors.Wrap(err, "git.ResolveRevision")
 	}
 
-	if _, err := git.Stat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file); err != nil {
+	if _, err := gitserver.NewClient(db).Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
@@ -459,6 +450,19 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 	}
 
 	return commitID, nil
+}
+
+func (c *Client) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
+	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("commitObjs", strings.Join(commitObjs, ",")),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tags, err := gitserver.NewClient(c.db).ListTags(ctx, repo, commitObjs...)
+	if err != nil {
+		return nil, errors.Wrap(err, "git.ListTags")
+	}
+	return tags, nil
 }
 
 // repositoryIDToRepo creates a api.RepoName from a repository identifier.

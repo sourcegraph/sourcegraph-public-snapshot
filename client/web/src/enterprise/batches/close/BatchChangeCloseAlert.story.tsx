@@ -1,20 +1,26 @@
 import { boolean, number } from '@storybook/addon-knobs'
 import { useState } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 
-const { add } = storiesOf('web/batches/close/BatchChangeCloseAlert', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/close/BatchChangeCloseAlert',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+}
 
-add('Has open changesets', () => {
+export default config
+
+export const HasOpenChangesets: Story = () => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     const totalCount = number('totalCount', 10)
     return (
@@ -33,8 +39,11 @@ add('Has open changesets', () => {
             )}
         </WebStory>
     )
-})
-add('No open changesets', () => {
+}
+
+HasOpenChangesets.storyName = 'Has open changesets'
+
+export const NoOpenChangesets: Story = () => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     return (
         <WebStory>
@@ -52,4 +61,6 @@ add('No open changesets', () => {
             )}
         </WebStory>
     )
-})
+}
+
+NoOpenChangesets.storyName = 'No open changesets'

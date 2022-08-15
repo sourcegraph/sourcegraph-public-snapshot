@@ -58,6 +58,6 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
         goToDefinitionURL: new URL('#L5', url.href).href,
         repoName: `${REPO_PATH_PREFIX}/sourcegraph/jsonrpc2`,
         sourcegraphBaseUrl,
-        lineSelector: '.line',
+        getLineSelector: lineNumber => `#LC${lineNumber}`,
     })
 })

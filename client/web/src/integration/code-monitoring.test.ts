@@ -41,7 +41,7 @@ describe('Code monitoring', () => {
                             latestSettings: {
                                 id: 0,
                                 contents: JSON.stringify({
-                                    experimentalFeatures: { showOnboardingTour: true, codeMonitoring: true },
+                                    experimentalFeatures: { codeMonitoring: true },
                                 }),
                             },
                         },
@@ -52,7 +52,7 @@ describe('Code monitoring', () => {
                             latestSettings: {
                                 id: 470,
                                 contents: JSON.stringify({
-                                    experimentalFeatures: { showOnboardingTour: true, codeMonitoring: true },
+                                    experimentalFeatures: { codeMonitoring: true },
                                 }),
                             },
                             settingsURL: '/site-admin/global-settings',
@@ -116,12 +116,12 @@ describe('Code monitoring', () => {
     describe('Code monitoring form advances sequentially', () => {
         it('validates trigger query input', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
-            await driver.page.waitForSelector('.test-name-input')
+            await driver.page.waitForSelector('[data-testid="name-input"]')
 
             await percySnapshotWithVariants(driver.page, 'Code monitoring - Form')
             await accessibilityAudit(driver.page)
 
-            await driver.page.type('.test-name-input', 'test monitor')
+            await driver.page.type('[data-testid="name-input"]', 'test monitor')
 
             await driver.page.waitForSelector('.test-action-button-email')
             assert.strictEqual(
@@ -140,9 +140,6 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-is-invalid')
 
             await driver.page.type('.test-trigger-input', ' type:diff')
-            await driver.page.waitForSelector('.test-is-invalid')
-
-            await driver.page.type('.test-trigger-input', ' repo:test')
             await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             expect(
@@ -152,8 +149,8 @@ describe('Code monitoring', () => {
 
         it('disables the actions area until trigger is complete', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
-            await driver.page.waitForSelector('.test-name-input')
-            await driver.page.type('.test-name-input', 'test monitor')
+            await driver.page.waitForSelector('[data-testid="name-input"]')
+            await driver.page.type('[data-testid="name-input"]', 'test monitor')
 
             await driver.page.waitForSelector('.test-action-button-email')
             assert.strictEqual(
@@ -189,8 +186,8 @@ describe('Code monitoring', () => {
 
         it('disables submitting the code monitor area until trigger and action are complete', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
-            await driver.page.waitForSelector('.test-name-input')
-            await driver.page.type('.test-name-input', 'test monitor')
+            await driver.page.waitForSelector('[data-testid="name-input"]')
+            await driver.page.type('[data-testid="name-input"]', 'test monitor')
 
             await driver.page.waitForSelector('.test-submit-monitor')
             assert.strictEqual(

@@ -1,6 +1,7 @@
 package query
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
@@ -37,6 +38,9 @@ var filenamesFromLanguage = func() map[string][]string {
 		for _, language := range languages {
 			res[language] = append(res[language], filename)
 		}
+	}
+	for _, v := range res {
+		sort.Strings(v)
 	}
 	return res
 }()

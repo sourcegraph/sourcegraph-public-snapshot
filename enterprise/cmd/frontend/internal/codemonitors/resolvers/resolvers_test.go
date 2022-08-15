@@ -11,6 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
@@ -21,12 +23,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCreateCodeMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
+
+	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
 
 	user := insertTestUser(t, db, "cm-user1", true)
 
@@ -98,8 +104,9 @@ func TestCreateCodeMonitor(t *testing.T) {
 }
 
 func TestListCodeMonitors(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
 
 	user := insertTestUser(t, db, "cm-user1", true)
@@ -144,7 +151,8 @@ func TestListCodeMonitors(t *testing.T) {
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	// Setup users and org
 	owner := insertTestUser(t, db, "cm-user1", false)
@@ -204,7 +212,8 @@ func TestIsAllowedToEdit(t *testing.T) {
 }
 
 func TestIsAllowedToCreate(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	// Setup users and org
 	member := insertTestUser(t, db, "cm-user1", false)
@@ -212,7 +221,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 	siteAdmin := insertTestUser(t, db, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin.ID))
-	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
+	org, err := db.Orgs().Create(admContext, "cm-test-org", nil)
 	require.NoError(t, err)
 	addUserToOrg(t, db, member.ID, org.ID)
 
@@ -272,8 +281,10 @@ func graphqlUserID(id int32) graphql.ID {
 func TestQueryMonitor(t *testing.T) {
 	t.Skip("Flake: https://github.com/sourcegraph/sourcegraph/issues/30477")
 
+	logger := logtest.Scoped(t)
+
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -649,8 +660,10 @@ query($userName: String!, $actionCursor: String!){
 func TestEditCodeMonitor(t *testing.T) {
 	t.Skip("Flake: https://github.com/sourcegraph/sourcegraph/issues/30477")
 
+	logger := logtest.Scoped(t)
+
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -1253,14 +1266,17 @@ func TestTriggerTestEmailAction(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	got := background.TemplateDataNewSearchResults{}
-	background.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *background.TemplateDataNewSearchResults) error {
+	background.MockSendEmailForNewSearchResult = func(ctx context.Context, db database.DB, userID int32, data *background.TemplateDataNewSearchResults) error {
 		got = *data
 		return nil
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	r := newTestResolver(t, nil)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	r := newTestResolver(t, db)
 
 	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)
 

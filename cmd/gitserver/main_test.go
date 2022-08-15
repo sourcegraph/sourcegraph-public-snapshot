@@ -10,9 +10,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -30,7 +32,7 @@ import (
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }
@@ -76,12 +78,12 @@ func TestGetRemoteURLFunc_GitHubAppCloud(t *testing.T) {
 		&types.ExternalService{
 			ID:   1,
 			Kind: extsvc.KindGitHub,
-			Config: `
+			Config: extsvc.NewUnencryptedConfig(`
 {
   "url": "https://github.com",
   "githubAppInstallationID": "21994992",
   "repos": []
-}`,
+}`),
 		},
 		nil,
 	)
@@ -170,7 +172,7 @@ func TestGetVCSSyncer(t *testing.T) {
 			ID:          1,
 			Kind:        extsvc.KindPerforce,
 			DisplayName: "test",
-			Config:      `{}`,
+			Config:      extsvc.NewEmptyConfig(),
 		}, nil
 	})
 

@@ -1,9 +1,9 @@
 import * as path from 'path'
 import * as readline from 'readline'
-import { URL } from 'url'
 
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
+import fetch from 'node-fetch'
 
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
@@ -58,18 +58,6 @@ export function getWeekNumber(date: Date): number {
     const firstJan = new Date(date.getFullYear(), 0, 1)
     const day = 86400000
     return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
-}
-
-export function hubSpotFeedbackFormStub(version: string): string {
-    const link = `[this feedback form](${hubSpotFeedbackFormURL(version)})`
-    return `*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out ${link}.*`
-}
-
-function hubSpotFeedbackFormURL(version: string): string {
-    const url = new URL('https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku')
-    url.searchParams.set('update_version', version)
-
-    return url.toString()
 }
 
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
@@ -133,6 +121,44 @@ export function ensureReleaseBranchUpToDate(branch: string): void {
     if (!ensureBranchUpToDate(branch, remoteBranch)) {
         process.exit(1)
     }
+}
+
+// eslint-disable-next-line unicorn/prevent-abbreviations
+export async function ensureSrcCliUpToDate(): Promise<void> {
+    const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json.tag_name)
+
+    let installedTag = execa.sync('src', ['version']).stdout.split('\n')
+    installedTag = installedTag[0].split(':')
+    const trimmedInstalledTag = installedTag[1].trim()
+
+    if (trimmedInstalledTag !== latestTag) {
+        try {
+            console.log('Uprading src-cli to the latest version.')
+            execa.sync('brew', ['upgrade', 'src-cli'])
+        } catch (error) {
+            console.log('Trouble upgrading src-cli:', error)
+            process.exit(1)
+        }
+    }
+}
+
+export async function getLatestTag(owner: string, repo: string): Promise<string> {
+    const latestTag = await fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json[0].name)
+    return latestTag
 }
 
 interface ContainerRegistryCredential {

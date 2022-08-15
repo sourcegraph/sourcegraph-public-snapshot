@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -12,10 +14,11 @@ import (
 // to the user.
 func TestAccessTokens_Create(t *testing.T) {
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	subject, err := Users(db).Create(ctx, NewUser{
+	subject, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u1",
 		Password:              "p1",
@@ -25,7 +28,7 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	creator, err := Users(db).Create(ctx, NewUser{
+	creator, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a2@example.com",
 		Username:              "u2",
 		Password:              "p2",
@@ -87,11 +90,12 @@ func TestAccessTokens_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	subject1, err := Users(db).Create(ctx, NewUser{
+	subject1, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u1",
 		Password:              "p1",
@@ -100,7 +104,7 @@ func TestAccessTokens_List(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	subject2, err := Users(db).Create(ctx, NewUser{
+	subject2, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a2@example.com",
 		Username:              "u2",
 		Password:              "p2",
@@ -166,11 +170,12 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	subject, err := Users(db).Create(ctx, NewUser{
+	subject, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u1",
 		Password:              "p1",
@@ -180,7 +185,7 @@ func TestAccessTokens_Lookup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	creator, err := Users(db).Create(ctx, NewUser{
+	creator, err := db.Users().Create(ctx, NewUser{
 		Email:                 "u2@example.com",
 		Username:              "u2",
 		Password:              "p2",
@@ -235,12 +240,13 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	t.Run("subject", func(t *testing.T) {
-		subject, err := Users(db).Create(ctx, NewUser{
+		subject, err := db.Users().Create(ctx, NewUser{
 			Email:                 "u1@example.com",
 			Username:              "u1",
 			Password:              "p1",
@@ -249,7 +255,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		creator, err := Users(db).Create(ctx, NewUser{
+		creator, err := db.Users().Create(ctx, NewUser{
 			Email:                 "u2@example.com",
 			Username:              "u2",
 			Password:              "p2",
@@ -263,7 +269,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := Users(db).Delete(ctx, subject.ID); err != nil {
+		if err := db.Users().Delete(ctx, subject.ID); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
@@ -276,7 +282,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 	})
 
 	t.Run("creator", func(t *testing.T) {
-		subject, err := Users(db).Create(ctx, NewUser{
+		subject, err := db.Users().Create(ctx, NewUser{
 			Email:                 "u3@example.com",
 			Username:              "u3",
 			Password:              "p3",
@@ -285,7 +291,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		creator, err := Users(db).Create(ctx, NewUser{
+		creator, err := db.Users().Create(ctx, NewUser{
 			Email:                 "u4@example.com",
 			Username:              "u4",
 			Password:              "p4",
@@ -299,7 +305,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := Users(db).Delete(ctx, creator.ID); err != nil {
+		if err := db.Users().Delete(ctx, creator.ID); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {

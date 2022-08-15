@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -29,7 +31,8 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	mockTimeNow(now)
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	_, err := db.ExecContext(context.Background(), `
 		INSERT INTO event_logs
@@ -43,7 +46,6 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 			(6, 'InsightEdit', '{"insightType": "searchInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
 			(7, 'InsightAddition', '{"insightType": "codeStatsInsights"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '8 days'),
 			(8, 'CodeInsightsSearchBasedCreationPageSubmitClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
-
 	`, now)
 	if err != nil {
 		t.Fatal(err)
@@ -70,6 +72,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 			Hovers:           &zeroInt,
 			UICustomizations: &zeroInt,
 			DataPointClicks:  &zeroInt,
+			FiltersChange:    &zeroInt,
 		},
 		{
 			InsightType:      &searchInsightsType,
@@ -79,24 +82,31 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 			Hovers:           &zeroInt,
 			UICustomizations: &zeroInt,
 			DataPointClicks:  &zeroInt,
+			FiltersChange:    &zeroInt,
 		},
 	}
 
 	want := &types.CodeInsightsUsageStatistics{
-		WeeklyUsageStatisticsByInsight:          weeklyUsageStatisticsByInsight,
-		WeeklyInsightsPageViews:                 &twoInt,
-		WeeklyInsightsGetStartedPageViews:       &zeroInt,
-		WeeklyInsightsUniquePageViews:           &oneInt,
-		WeeklyInsightsGetStartedUniquePageViews: &zeroInt,
-		WeeklyInsightConfigureClick:             &zeroInt,
-		WeeklyInsightAddMoreClick:               &zeroInt,
-		WeekStart:                               weekStart,
-		WeeklyInsightCreators:                   &twoInt,
-		WeeklyFirstTimeInsightCreators:          &oneInt,
-		WeeklyGetStartedTabClickByTab:           []types.InsightGetStartedTabClickPing{},
-		WeeklyGetStartedTabMoreClickByTab:       []types.InsightGetStartedTabClickPing{},
-		TotalDashboardCount:                     &zeroInt,
-		TotalOrgsWithDashboard:                  &zeroInt,
+		WeeklyUsageStatisticsByInsight:               weeklyUsageStatisticsByInsight,
+		WeeklyInsightsPageViews:                      &twoInt,
+		WeeklyInsightsGetStartedPageViews:            &zeroInt,
+		WeeklyInsightsUniquePageViews:                &oneInt,
+		WeeklyInsightsGetStartedUniquePageViews:      &zeroInt,
+		WeeklyInsightConfigureClick:                  &zeroInt,
+		WeeklyInsightAddMoreClick:                    &zeroInt,
+		WeekStart:                                    weekStart,
+		WeeklyInsightCreators:                        &twoInt,
+		WeeklyFirstTimeInsightCreators:               &oneInt,
+		WeeklyGetStartedTabClickByTab:                []types.InsightGetStartedTabClickPing{},
+		WeeklyGetStartedTabMoreClickByTab:            []types.InsightGetStartedTabClickPing{},
+		TotalDashboardCount:                          &zeroInt,
+		TotalOrgsWithDashboard:                       &zeroInt,
+		WeeklyStandaloneDashboardClicks:              &zeroInt,
+		WeeklyStandaloneInsightUniqueEditClicks:      &zeroInt,
+		WeeklyStandaloneInsightUniquePageViews:       &zeroInt,
+		WeeklyStandaloneInsightUniqueDashboardClicks: &zeroInt,
+		WeeklyStandaloneInsightPageViews:             &zeroInt,
+		WeeklyStandaloneEditClicks:                   &zeroInt,
 	}
 
 	wantedWeeklyUsage := []types.AggregatedPingStats{
@@ -118,7 +128,8 @@ func TestWithCreationPings(t *testing.T) {
 	ctx := context.Background()
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	user1 := "420657f0-d443-4d16-ac7d-003d8cdc91ef"
 	user2 := "55555555-5555-5555-5555-555555555555"
@@ -185,8 +196,10 @@ func TestFilterSettingJson(t *testing.T) {
 }
 
 func TestGetSearchInsights(t *testing.T) {
+
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	_, err := db.ExecContext(context.Background(), `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
@@ -264,8 +277,10 @@ func TestGetSearchInsights(t *testing.T) {
 }
 
 func TestGetLangStatsInsights(t *testing.T) {
+
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	_, err := db.ExecContext(context.Background(), `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {

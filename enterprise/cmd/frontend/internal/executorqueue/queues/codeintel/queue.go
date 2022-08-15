@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -20,7 +19,7 @@ func QueueOptions(db database.DB, accessToken func() string, observationContext 
 
 	return handler.QueueOptions{
 		Name:              "codeintel",
-		Store:             store.WorkerutilIndexStore(basestore.NewWithDB(db, sql.TxOptions{}), observationContext),
+		Store:             store.WorkerutilIndexStore(basestore.NewWithHandle(db.Handle()), observationContext),
 		RecordTransformer: recordTransformer,
 	}
 }

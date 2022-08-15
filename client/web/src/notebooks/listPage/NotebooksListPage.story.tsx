@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { Observable, of } from 'rxjs'
 
@@ -9,11 +9,19 @@ import { ListNotebooksResult } from '../../graphql-operations'
 
 import { NotebooksListPage } from './NotebooksListPage'
 
-const { add } = storiesOf('web/search/notebooks/listPage/NotebooksListPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({ chromatic: { disableSnapshots: false } })
-
 const now = new Date()
+
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/search/notebooks/listPage/NotebooksListPage',
+    parameters: {
+        chromatic: { disableSnapshots: false },
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
     of({
@@ -56,7 +64,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
         pageInfo: { hasNextPage: false, endCursor: null },
     })
 
-add('default', () => (
+export const Default: Story = () => (
     <WebStory>
         {props => (
             <NotebooksListPage
@@ -67,4 +75,4 @@ add('default', () => (
             />
         )}
     </WebStory>
-))
+)
