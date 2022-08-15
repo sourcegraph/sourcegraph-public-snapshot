@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { mdiLogoutVariant, mdiArchive, mdiDelete, mdiLockReset, mdiClipboardMinus, mdiClipboardPlus } from '@mdi/js'
 import classNames from 'classnames'
-import { format as formatDate } from 'date-fns'
+import { formatDistanceToNowStrict } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
@@ -197,7 +197,7 @@ export const UsersList: React.FunctionComponent = () => {
                                     label: 'Events',
                                     align: 'right',
                                     tooltip:
-                                        '"Events" count is based on event_logs table which stores only last 93 days of logs.',
+                                        '"Events" count is cached and updated every 12 hours. It is based on event logs table and available for the last 93 days.',
                                 },
                                 sortable: true,
                                 align: 'right',
@@ -205,19 +205,22 @@ export const UsersList: React.FunctionComponent = () => {
                             {
                                 key: SiteUserOrderBy.LAST_ACTIVE_AT,
                                 accessor: item =>
-                                    item.lastActiveAt ? formatDate(new Date(item.lastActiveAt), 'dd/mm/yyyy') : '',
+                                    item.lastActiveAt
+                                        ? formatDistanceToNowStrict(new Date(item.lastActiveAt), { addSuffix: true })
+                                        : '',
                                 header: {
                                     label: 'Last Active',
                                     align: 'right',
                                     tooltip:
-                                        '"Last Active" is based on event_logs table which stores only last 93 days of logs.',
+                                        '"Last Active" is cached and updated every 12 hours. It is based on event logs table and available for the last 93 days.',
                                 },
                                 sortable: true,
                                 align: 'right',
                             },
                             {
                                 key: SiteUserOrderBy.CREATED_AT,
-                                accessor: item => formatDate(new Date(item.createdAt), 'dd/mm/yyyy'),
+                                accessor: item =>
+                                    formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true }),
                                 header: { label: 'Created', align: 'right' },
                                 sortable: true,
                                 align: 'right',
@@ -225,7 +228,9 @@ export const UsersList: React.FunctionComponent = () => {
                             {
                                 key: SiteUserOrderBy.DELETED_AT,
                                 accessor: item =>
-                                    item.deletedAt ? formatDate(new Date(item.deletedAt), 'dd/mm/yyyy') : '',
+                                    item.deletedAt
+                                        ? formatDistanceToNowStrict(new Date(item.deletedAt), { addSuffix: true })
+                                        : '',
                                 header: { label: 'Deleted', align: 'right' },
                                 sortable: true,
                                 align: 'right',
