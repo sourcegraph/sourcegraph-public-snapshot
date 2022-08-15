@@ -139,7 +139,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	var user bitbucketserver.User
-	if err := account.Data.DecryptedInto(ctx, &user); err != nil {
+	if err := account.Data.DecryptInto(ctx, &user); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 

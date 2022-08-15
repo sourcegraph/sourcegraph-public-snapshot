@@ -20,6 +20,6 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*Acc
 	}
 
 	var d AccountData
-	err := data.Data.DecryptedInto(ctx, &d)
+	err := data.Data.DecryptInto(ctx, &d)
 	return &d, err
 }

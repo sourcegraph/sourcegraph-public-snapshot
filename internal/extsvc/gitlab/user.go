@@ -14,7 +14,7 @@ import (
 func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
 		var u User
-		if err := data.Data.DecryptedInto(ctx, &u); err != nil {
+		if err := data.Data.DecryptInto(ctx, &u); err != nil {
 			return nil, nil, err
 		}
 
@@ -23,7 +23,7 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 
 	if data.AuthData != nil {
 		var t oauth2.Token
-		if err := data.AuthData.DecryptedInto(ctx, &t); err != nil {
+		if err := data.AuthData.DecryptInto(ctx, &t); err != nil {
 			return nil, nil, err
 		}
 

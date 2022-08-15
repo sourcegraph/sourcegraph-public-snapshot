@@ -389,7 +389,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error listing services: %s", err)
 	}
-	if _, err := svcs[0].Data.Decrypted(ctx); err == nil {
+	if _, err := svcs[0].Data.Decrypt(ctx); err == nil {
 		t.Fatalf("expected error decrypting with a different key")
 	}
 

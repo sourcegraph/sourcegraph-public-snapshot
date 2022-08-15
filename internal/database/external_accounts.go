@@ -133,13 +133,13 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
 	var encryptedAuthData, encryptedAccountData, keyID string
 	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypted(ctx, s.getEncryptionKey())
+		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return 0, err
 		}
 	}
 	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypted(ctx, s.getEncryptionKey())
+		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return 0, err
 		}
@@ -210,13 +210,13 @@ AND deleted_at IS NULL
 
 	var encryptedAuthData, encryptedAccountData, keyID string
 	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypted(ctx, s.getEncryptionKey())
+		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return err
 		}
 	}
 	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypted(ctx, s.getEncryptionKey())
+		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return err
 		}
@@ -275,13 +275,13 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
 	var encryptedAuthData, encryptedAccountData, keyID string
 	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypted(ctx, s.getEncryptionKey())
+		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return err
 		}
 	}
 	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypted(ctx, s.getEncryptionKey())
+		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return err
 		}
