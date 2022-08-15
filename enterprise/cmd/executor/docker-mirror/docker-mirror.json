@@ -62,11 +62,6 @@
   ],
   "provisioners": [
     {
-      "type": "file",
-      "sources": ["builder-sa-key.json"],
-      "destination": "/tmp/"
-    },
-    {
       "type": "shell",
       "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}",
       "script": "install.sh",
