@@ -8,8 +8,7 @@ export const USERS_MANAGEMENT_SUMMARY = gql`
                     userCount
                 }
             }
-            adminUsers: users(siteAdmin: true) {
-                # TODO: exclude deleted users
+            adminUsers: users(siteAdmin: true, deleted: false) {
                 totalCount
             }
             users {
@@ -36,6 +35,7 @@ export const USERS_MANAGEMENT_USERS_LIST = gql`
                 nodes(first: $first, orderBy: $orderBy, descending: $descending) {
                     id
                     username
+                    displayName
                     email
                     siteAdmin
                     eventsCount

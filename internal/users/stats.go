@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -17,6 +18,7 @@ type UsersStatsFilters struct {
 	Username         *string
 	Email            *string
 	LastActivePeriod *string
+	Deleted          *bool
 }
 
 type UsersStats struct {
@@ -28,7 +30,7 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if s.Filters.Query != nil && *s.Filters.Query != "" {
 		query := "%" + *s.Filters.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s OR primary_email ILIKE %s)", query, query, query))
 	}
 	if s.Filters.SiteAdmin != nil {
 		conds = append(conds, sqlf.Sprintf("site_admin = %s", *s.Filters.SiteAdmin))
@@ -38,6 +40,13 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 	}
 	if s.Filters.Email != nil {
 		conds = append(conds, sqlf.Sprintf("primary_email ILIKE %s", "%"+*s.Filters.Email+"%"))
+	}
+	if s.Filters.Deleted != nil {
+		if *s.Filters.Deleted {
+			conds = append(conds, sqlf.Sprintf("deleted_at IS NOT NULL"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+		}
 	}
 	if s.Filters.LastActivePeriod != nil && *s.Filters.LastActivePeriod != "ALL" {
 		lastActiveStartTime, err := makeLastActiveStartTime(*s.Filters.LastActivePeriod)
@@ -64,7 +73,7 @@ func makeLastActiveStartTime(lastActivePeriod string) (time.Time, error) {
 }
 
 var (
-	statsSubQuery = `
+	statsCTEQuery = `
 	WITH aggregated_stats AS (
 		SELECT
 			users.id AS id,
@@ -92,7 +101,9 @@ func (s *UsersStats) TotalCount(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 
-	query := sqlf.Sprintf(statsSubQuery, sqlf.Sprintf(`SELECT COUNT(id) FROM aggregated_stats WHERE %s`, sqlf.Join(conds, "AND")))
+	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`SELECT COUNT(id) FROM aggregated_stats WHERE %s`, sqlf.Join(conds, "AND")))
+	fmt.Println(query.Query(sqlf.PostgresBindVar))
+	fmt.Println(query.Args())
 	if err := s.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&totalCount); err != nil {
 		return 0, err
 	}
@@ -135,7 +146,7 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(statsSubQuery, sqlf.Sprintf(`
+	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`
 	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s LIMIT %s`, sqlf.Join(conds, "AND"), orderBy, limit))
 
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
