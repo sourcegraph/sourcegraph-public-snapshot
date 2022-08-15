@@ -392,11 +392,6 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 					return nil, errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
 				}
 			}
-
-			// Allow only create one external service per kind
-			if err := validateSingleKindPerNamespace(ctx, e, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID, opt.NamespaceOrgID); err != nil {
-				return nil, err
-			}
 		}
 
 		res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
@@ -540,42 +535,6 @@ func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnec
 		err = errors.Append(err, errors.New("depots must be set"))
 	}
 	return err
-}
-
-// validateSingleKindPerNamespace returns an error if the user/org attempts to add more than one external service of the same kind.
-func validateSingleKindPerNamespace(ctx context.Context, e ExternalServiceStore, id int64, kind string, userID int32, orgID int32) error {
-	opt := ExternalServicesListOptions{
-		Kinds: []string{kind},
-		LimitOffset: &LimitOffset{
-			Limit: 500, // The number is randomly chosen
-		},
-	}
-	if userID > 0 {
-		opt.NamespaceUserID = userID
-	} else if orgID > 0 {
-		opt.NamespaceOrgID = orgID
-	}
-	for {
-		svcs, err := e.List(ctx, opt)
-		if err != nil {
-			return errors.Wrap(err, "list")
-		}
-		if len(svcs) == 0 {
-			break // No more results, exiting
-		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
-
-		// Fail if a service already exists that is not the current service
-		for _, svc := range svcs {
-			if svc.ID != id {
-				return errors.Errorf("existing external service, %q, of same kind already added", svc.DisplayName)
-			}
-		}
-		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
-		}
-	}
-	return nil
 }
 
 // upsertAuthorizationToExternalService adds "authorization" field to the
