@@ -52,8 +52,13 @@ func TestWebhookLogStore(t *testing.T) {
 			err = row.Scan(&haveReq, &haveResp)
 			assert.Nil(t, err)
 
-			wantReq, _ := json.Marshal(&log.Request)
-			wantResp, _ := json.Marshal(&log.Response)
+			logRequest, err := log.Request.Decrypt(ctx)
+			assert.Nil(t, err)
+			logResponse, err := log.Response.Decrypt(ctx)
+			assert.Nil(t, err)
+
+			wantReq, _ := json.Marshal(logRequest)
+			wantResp, _ := json.Marshal(logResponse)
 
 			assert.Equal(t, string(wantReq), string(haveReq))
 			assert.Equal(t, string(wantResp), string(haveResp))
@@ -84,8 +89,13 @@ func TestWebhookLogStore(t *testing.T) {
 			err = row.Scan(&haveReq, &haveResp)
 			assert.Nil(t, err)
 
-			wantReq, _ := json.Marshal(&log.Request)
-			wantResp, _ := json.Marshal(&log.Response)
+			logRequest, err := log.Request.Decrypt(ctx)
+			assert.Nil(t, err)
+			logResponse, err := log.Response.Decrypt(ctx)
+			assert.Nil(t, err)
+
+			wantReq, _ := json.Marshal(logRequest)
+			wantResp, _ := json.Marshal(logResponse)
 
 			assert.NotEqual(t, string(wantReq), string(haveReq))
 			assert.NotEqual(t, string(wantResp), string(haveResp))
@@ -98,7 +108,7 @@ func TestWebhookLogStore(t *testing.T) {
 			assert.Nil(t, err)
 			defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-			store := tx.WebhookLogs(&keytesting.BadKey{})
+			store := tx.WebhookLogs(&keytesting.BadKey{Err: errors.New("uh-oh")})
 
 			log := createWebhookLog(0, http.StatusExpectationFailed, time.Now())
 			err = store.Create(ctx, log)
@@ -132,7 +142,11 @@ func TestWebhookLogStore(t *testing.T) {
 
 		t.Run("different key", func(t *testing.T) {
 			store := tx.WebhookLogs(&keytesting.TransparentKey{})
-			_, err := store.GetByID(ctx, log.ID)
+			v, err := store.GetByID(ctx, log.ID)
+			assert.Nil(t, err)
+
+			// error on decode
+			_, err = v.Request.Decrypt(ctx)
 			assert.NotNil(t, err)
 		})
 	})
@@ -303,14 +317,14 @@ func createWebhookLog(externalServiceID int64, statusCode int, receivedAt time.T
 		ReceivedAt:        receivedAt,
 		ExternalServiceID: id,
 		StatusCode:        statusCode,
-		Request: types.WebhookLogMessage{
+		Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 			Header: requestHeader,
 			Body:   []byte("request"),
-		},
-		Response: types.WebhookLogMessage{
+		}),
+		Response: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 			Header: responseHeader,
 			Body:   []byte("response"),
-		},
+		}),
 	}
 }
 
