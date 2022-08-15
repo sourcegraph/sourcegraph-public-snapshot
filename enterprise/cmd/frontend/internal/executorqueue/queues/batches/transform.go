@@ -72,6 +72,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		mounts[i] = apiclient.Mount{
 			FileName: mount.FileName,
 			Path:     mount.Path,
+			Modified: mount.Modified,
 			URL: filepath.Join(
 				"batches/mount",
 				string(relay.MarshalID("BatchSpec", batchSpec.RandID)),
