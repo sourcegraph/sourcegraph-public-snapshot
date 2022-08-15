@@ -52,7 +52,7 @@ describe('scanPredicate', () => {
 describe('resolveAccess', () => {
     test('resolves partial access tree', () => {
         expect(resolveAccess(['repo', 'contains'], PREDICATES)).toMatchInlineSnapshot(
-            '[{"name":"file"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]'
+            '[{"name":"file"},{"name":"path"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]'
         )
     })
 
