@@ -38,6 +38,10 @@ type UserCredential struct {
 
 type EncryptableCredential = encryption.Encryptable
 
+func NewEmptyCredential() *EncryptableCredential {
+	return NewUnencryptedCredential(nil)
+}
+
 func NewUnencryptedCredential(value []byte) *EncryptableCredential {
 	return encryption.NewUnencrypted(string(value))
 }

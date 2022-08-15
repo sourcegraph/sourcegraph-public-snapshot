@@ -579,7 +579,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
 				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
-				cred := &database.UserCredential{Credential: database.NewUnencryptedCredential(nil)}
+				cred := &database.UserCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, userToken)
 				return cred, nil
 			})
