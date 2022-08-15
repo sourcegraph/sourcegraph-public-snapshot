@@ -1,6 +1,10 @@
 package executor
 
-import "github.com/sourcegraph/sourcegraph/internal/workerutil"
+import (
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+)
 
 // Job describes a series of steps to perform within an executor.
 type Job struct {
@@ -85,9 +89,10 @@ type CliStep struct {
 }
 
 type Mount struct {
-	FileName string `json:"fileName"`
-	Path     string `json:"path"`
-	URL      string `json:"url"`
+	FileName string    `json:"fileName"`
+	Path     string    `json:"path"`
+	Modified time.Time `json:"modified"`
+	URL      string    `json:"url"`
 }
 
 type DequeueRequest struct {
