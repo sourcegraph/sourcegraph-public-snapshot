@@ -39,19 +39,6 @@ func (e *JSONEncryptable[T]) Decrypted(ctx context.Context) (value T, _ error) {
 	return value, nil
 }
 
-func (e *JSONEncryptable[T]) DecryptedInto(ctx context.Context, value T) error {
-	serialized, err := e.Encryptable.Decrypted(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal([]byte(serialized), &value); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (e *JSONEncryptable[T]) Set(value T) error {
 	serialized, err := json.Marshal(value)
 	if err != nil {
