@@ -28,7 +28,6 @@ var _ service = (*Service)(nil)
 
 type service interface {
 	// Not in use yet.
-	List(ctx context.Context, opts ListOpts) (uploads []Upload, err error)
 	Get(ctx context.Context, id int) (upload Upload, ok bool, err error)
 	GetBatch(ctx context.Context, ids ...int) (uploads []Upload, err error)
 	Enqueue(ctx context.Context, state UploadState, reader io.Reader) (err error)
@@ -98,17 +97,6 @@ func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc shared.Git
 }
 
 type Upload = shared.Upload
-
-type ListOpts struct {
-	Limit int
-}
-
-func (s *Service) List(ctx context.Context, opts ListOpts) (uploads []Upload, err error) {
-	ctx, _, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.List(ctx, store.ListOpts(opts))
-}
 
 func (s *Service) Get(ctx context.Context, id int) (upload Upload, ok bool, err error) {
 	ctx, _, endObservation := s.operations.get.With(ctx, &err, observation.Args{})
