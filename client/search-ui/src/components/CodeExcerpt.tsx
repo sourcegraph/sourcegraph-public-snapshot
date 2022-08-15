@@ -122,7 +122,9 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     const [highlightedBlobLinesOrError, setHighlightedBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
     const [isVisible, setIsVisible] = useState(false)
 
-    const blobLinesOrError = highlightedBlobLinesOrError || unhighlightedBlobLinesOrError
+    const blobLinesOrError = fetchUnhighlightedFileRangeLines
+        ? highlightedBlobLinesOrError || unhighlightedBlobLinesOrError
+        : highlightedBlobLinesOrError
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
     // used for hoverified events while the React state is used for match highlighting.
