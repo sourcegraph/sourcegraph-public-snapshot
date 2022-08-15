@@ -185,13 +185,13 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		svc = &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-			Config: fmt.Sprintf(`
+			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
   "orgs": []
 }
-`, p.ServiceID, token.AccessToken),
+`, p.ServiceID, token.AccessToken)),
 			NamespaceUserID: actor.UID,
 			CreatedAt:       now,
 			UpdatedAt:       now,
@@ -201,11 +201,17 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 	} else {
 		// We have an existing service, update it
 		svc = services[0]
-		newConfig, err := jsonc.Edit(svc.Config, token.AccessToken, "token")
+
+		rawConfig, err := svc.Config.Decrypt(ctx)
+		if err != nil {
+			return nil, "", err
+		}
+
+		rawConfig, err = jsonc.Edit(rawConfig, token.AccessToken, "token")
 		if err != nil {
 			return nil, "Error updating OAuth token", err
 		}
-		svc.Config = newConfig
+		svc.Config.Set(rawConfig)
 		svc.UpdatedAt = now
 	}
 

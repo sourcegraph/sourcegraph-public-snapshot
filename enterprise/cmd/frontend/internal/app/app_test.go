@@ -135,6 +135,9 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 			assert.Equal(t, extsvc.KindGitHub, svc.Kind)
 			assert.Equal(t, "GitHub (abc-org)", svc.DisplayName)
 
+			cfg, err := svc.Config.Decrypt(ctx)
+			assert.Nil(t, err)
+
 			wantConfig := `
 {
   "url": "https://github.com",
@@ -143,7 +146,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
   "pending": false
 }
 `
-			assert.Equal(t, wantConfig, svc.Config)
+			assert.Equal(t, wantConfig, cfg)
 			return nil
 		})
 
@@ -162,12 +165,12 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 				{
 					Kind:        extsvc.KindGitHub,
 					DisplayName: "GitHub (old)",
-					Config: `
+					Config: extsvc.NewUnencryptedConfig(`
 {
   "url": "https://github.com",
   "repos": []
 }
-`,
+`),
 				},
 			},
 			nil,
@@ -179,6 +182,9 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 			assert.Equal(t, extsvc.KindGitHub, svc.Kind)
 			assert.Equal(t, "GitHub (abc-org)", svc.DisplayName)
 
+			cfg, err := svc.Config.Decrypt(ctx)
+			assert.Nil(t, err)
+
 			wantConfig := `
 {
   "url": "https://github.com",
@@ -187,7 +193,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
   "pending": false
 }
 `
-			assert.Equal(t, wantConfig, svc.Config)
+			assert.Equal(t, wantConfig, cfg)
 			return nil
 		})
 

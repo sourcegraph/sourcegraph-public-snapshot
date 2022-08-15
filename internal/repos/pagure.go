@@ -27,9 +27,13 @@ type PagureSource struct {
 }
 
 // NewPagureSource returns a new PagureSource from the given external service.
-func NewPagureSource(svc *types.ExternalService, cf *httpcli.Factory) (*PagureSource, error) {
+func NewPagureSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*PagureSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.PagureConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 

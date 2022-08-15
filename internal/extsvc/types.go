@@ -1,6 +1,7 @@
 package extsvc
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -59,6 +61,24 @@ type Accounts struct {
 	ServiceType string
 	ServiceID   string
 	AccountIDs  []string
+}
+
+type EncryptableConfig = encryption.Encryptable
+
+func NewEmptyConfig() *EncryptableConfig {
+	return NewUnencryptedConfig("{}")
+}
+
+func NewUnencryptedConfig(value string) *EncryptableConfig {
+	return encryption.NewUnencrypted(value)
+}
+
+func NewEncryptedConfig(cipher, keyID string, key encryption.Key) *EncryptableConfig {
+	if cipher == "" && keyID == "" {
+		return nil
+	}
+
+	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
 // TracingFields returns tracing fields for the opentracing log.
@@ -336,45 +356,70 @@ type RepoID string
 // RepoIDType indicates the type of the RepoID.
 type RepoIDType string
 
+func ParseEncryptableConfig(ctx context.Context, kind string, config *EncryptableConfig) (any, error) {
+	cfg, err := getConfigPrototype(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	rawConfig, err := config.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := jsonc.Unmarshal(rawConfig, &cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
-func ParseConfig(kind, config string) (cfg any, _ error) {
+func ParseConfig(kind, config string) (any, error) {
+	cfg, err := getConfigPrototype(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, jsonc.Unmarshal(config, cfg)
+}
+
+func getConfigPrototype(kind string) (any, error) {
 	switch strings.ToUpper(kind) {
 	case KindAWSCodeCommit:
-		cfg = &schema.AWSCodeCommitConnection{}
+		return &schema.AWSCodeCommitConnection{}, nil
 	case KindBitbucketServer:
-		cfg = &schema.BitbucketServerConnection{}
+		return &schema.BitbucketServerConnection{}, nil
 	case KindBitbucketCloud:
-		cfg = &schema.BitbucketCloudConnection{}
+		return &schema.BitbucketCloudConnection{}, nil
 	case KindGerrit:
-		cfg = &schema.GerritConnection{}
+		return &schema.GerritConnection{}, nil
 	case KindGitHub:
-		cfg = &schema.GitHubConnection{}
+		return &schema.GitHubConnection{}, nil
 	case KindGitLab:
-		cfg = &schema.GitLabConnection{}
+		return &schema.GitLabConnection{}, nil
 	case KindGitolite:
-		cfg = &schema.GitoliteConnection{}
+		return &schema.GitoliteConnection{}, nil
 	case KindPerforce:
-		cfg = &schema.PerforceConnection{}
+		return &schema.PerforceConnection{}, nil
 	case KindPhabricator:
-		cfg = &schema.PhabricatorConnection{}
+		return &schema.PhabricatorConnection{}, nil
 	case KindGoPackages:
-		cfg = &schema.GoModulesConnection{}
+		return &schema.GoModulesConnection{}, nil
 	case KindJVMPackages:
-		cfg = &schema.JVMPackagesConnection{}
+		return &schema.JVMPackagesConnection{}, nil
 	case KindPagure:
-		cfg = &schema.PagureConnection{}
+		return &schema.PagureConnection{}, nil
 	case KindNpmPackages:
-		cfg = &schema.NpmPackagesConnection{}
+		return &schema.NpmPackagesConnection{}, nil
 	case KindPythonPackages:
-		cfg = &schema.PythonPackagesConnection{}
+		return &schema.PythonPackagesConnection{}, nil
 	case KindRustPackages:
-		cfg = &schema.RustPackagesConnection{}
+		return &schema.RustPackagesConnection{}, nil
 	case KindOther:
-		cfg = &schema.OtherExternalServiceConnection{}
+		return &schema.OtherExternalServiceConnection{}, nil
 	default:
 		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}
-	return cfg, jsonc.Unmarshal(config, cfg)
 }
 
 const IDParam = "externalServiceID"
@@ -410,12 +455,26 @@ func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL strin
 	return fmt.Sprintf("%s/.api/%s?%s=%d%s", externalURL, path, IDParam, externalServiceID, extra), nil
 }
 
+func ExtractEncryptableToken(ctx context.Context, config *EncryptableConfig, kind string) (string, error) {
+	parsed, err := ParseEncryptableConfig(ctx, kind, config)
+	if err != nil {
+		return "", errors.Wrap(err, "loading service configuration")
+	}
+
+	return extractToken(parsed, kind)
+}
+
 // ExtractToken attempts to extract the token from the supplied args
 func ExtractToken(config string, kind string) (string, error) {
 	parsed, err := ParseConfig(kind, config)
 	if err != nil {
 		return "", errors.Wrap(err, "loading service configuration")
 	}
+
+	return extractToken(parsed, kind)
+}
+
+func extractToken(parsed any, kind string) (string, error) {
 	switch c := parsed.(type) {
 	case *schema.GitHubConnection:
 		return c.Token, nil
@@ -430,6 +489,20 @@ func ExtractToken(config string, kind string) (string, error) {
 	default:
 		return "", errors.Errorf("unable to extract token for service kind %q", kind)
 	}
+}
+
+func ExtractEncryptableRateLimit(ctx context.Context, config *EncryptableConfig, kind string) (rate.Limit, error) {
+	parsed, err := ParseEncryptableConfig(ctx, kind, config)
+	if err != nil {
+		return rate.Inf, errors.Wrap(err, "loading service configuration")
+	}
+
+	rlc, err := GetLimitFromConfig(kind, parsed)
+	if err != nil {
+		return rate.Inf, err
+	}
+
+	return rlc, nil
 }
 
 // ExtractRateLimit extracts the rate limit from the given args. If rate limiting is not
@@ -576,6 +649,15 @@ type OtherRepoMetadata struct {
 	RelativePath string
 }
 
+func UniqueEncryptableCodeHostIdentifier(ctx context.Context, kind string, config *EncryptableConfig) (string, error) {
+	cfg, err := ParseEncryptableConfig(ctx, kind, config)
+	if err != nil {
+		return "", err
+	}
+
+	return uniqueCodeHostIdentifier(kind, cfg)
+}
+
 // UniqueCodeHostIdentifier returns a string that uniquely identifies the
 // instance of a code host an external service is pointing at.
 //
@@ -594,6 +676,10 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return "", err
 	}
 
+	return uniqueCodeHostIdentifier(kind, cfg)
+}
+
+func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 	var rawURL string
 	switch c := cfg.(type) {
 	case *schema.GitLabConnection:

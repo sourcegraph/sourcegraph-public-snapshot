@@ -61,7 +61,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
 		CreatedAt: timeutil.Now(),
-		Config:    `{"url": "https://github.com", "authorization": {}}`,
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
