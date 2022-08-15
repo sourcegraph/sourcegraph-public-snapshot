@@ -55,7 +55,7 @@ RETURNING
 `
 
 func createSiteCredentialQuery(ctx context.Context, c *btypes.SiteCredential, key encryption.Key) (*sqlf.Query, error) {
-	encryptedCredential, keyID, err := c.Credential.Encrypted(ctx, key)
+	encryptedCredential, keyID, err := c.Credential.Encrypt(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ RETURNING
 `
 
 func (s *Store) updateSiteCredentialQuery(ctx context.Context, c *btypes.SiteCredential, key encryption.Key) (*sqlf.Query, error) {
-	encryptedCredential, keyID, err := c.Credential.Encrypted(ctx, key)
+	encryptedCredential, keyID, err := c.Credential.Encrypt(ctx, key)
 	if err != nil {
 		return nil, err
 	}

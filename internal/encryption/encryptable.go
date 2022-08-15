@@ -38,14 +38,14 @@ func NewEncrypted(cipher, keyID string, key Key) *Encryptable {
 	}
 }
 
-func (e *Encryptable) Decrypted(ctx context.Context) (string, error) {
+func (e *Encryptable) Decrypt(ctx context.Context) (string, error) {
 	e.Lock()
 	defer e.Unlock()
 
-	return e.decrypted(ctx)
+	return e.decryptLocked(ctx)
 }
 
-func (e *Encryptable) decrypted(ctx context.Context) (string, error) {
+func (e *Encryptable) decryptLocked(ctx context.Context) (string, error) {
 	if e.decryptedValue != nil {
 		return *e.decryptedValue, nil
 	}
@@ -62,7 +62,7 @@ func (e *Encryptable) decrypted(ctx context.Context) (string, error) {
 	return value, nil
 }
 
-func (e *Encryptable) Encrypted(ctx context.Context, key Key) (string, string, error) {
+func (e *Encryptable) Encrypt(ctx context.Context, key Key) (string, string, error) {
 	if err := e.SetKey(ctx, key); err != nil {
 		return "", "", err
 	}
@@ -101,7 +101,7 @@ func (e *Encryptable) SetKey(ctx context.Context, key Key) error {
 		return nil
 	}
 
-	if _, err := e.decrypted(ctx); err != nil {
+	if _, err := e.decryptLocked(ctx); err != nil {
 		return err
 	}
 
