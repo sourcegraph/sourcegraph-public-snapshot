@@ -602,7 +602,7 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 		acctIds = append(acctIds, acct.ID)
 	}
 
-	db.UserExternalAccounts().DeleteList(ctx, acctIds)
+	db.UserExternalAccounts().Delete(ctx, acctIds...)
 
 	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
 	require.Equal(t, 0, len(accts))

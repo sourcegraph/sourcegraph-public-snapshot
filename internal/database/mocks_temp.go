@@ -39924,7 +39924,7 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 			},
 		},
 		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
-			defaultHook: func(context.Context, int32) (r0 error) {
+			defaultHook: func(context.Context, ...int32) (r0 error) {
 				return
 			},
 		},
@@ -40022,7 +40022,7 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 			},
 		},
 		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
-			defaultHook: func(context.Context, int32) error {
+			defaultHook: func(context.Context, ...int32) error {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Delete")
 			},
 		},
@@ -40507,16 +40507,16 @@ func (c UserExternalAccountsStoreCreateUserAndSaveFuncCall) Results() []interfac
 // Delete method of the parent MockUserExternalAccountsStore instance is
 // invoked.
 type UserExternalAccountsStoreDeleteFunc struct {
-	defaultHook func(context.Context, int32) error
-	hooks       []func(context.Context, int32) error
+	defaultHook func(context.Context, ...int32) error
+	hooks       []func(context.Context, ...int32) error
 	history     []UserExternalAccountsStoreDeleteFuncCall
 	mutex       sync.Mutex
 }
 
 // Delete delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockUserExternalAccountsStore) Delete(v0 context.Context, v1 int32) error {
-	r0 := m.DeleteFunc.nextHook()(v0, v1)
+func (m *MockUserExternalAccountsStore) Delete(v0 context.Context, v1 ...int32) error {
+	r0 := m.DeleteFunc.nextHook()(v0, v1...)
 	m.DeleteFunc.appendCall(UserExternalAccountsStoreDeleteFuncCall{v0, v1, r0})
 	return r0
 }
@@ -40524,7 +40524,7 @@ func (m *MockUserExternalAccountsStore) Delete(v0 context.Context, v1 int32) err
 // SetDefaultHook sets function that is called when the Delete method of the
 // parent MockUserExternalAccountsStore instance is invoked and the hook
 // queue is empty.
-func (f *UserExternalAccountsStoreDeleteFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+func (f *UserExternalAccountsStoreDeleteFunc) SetDefaultHook(hook func(context.Context, ...int32) error) {
 	f.defaultHook = hook
 }
 
@@ -40533,7 +40533,7 @@ func (f *UserExternalAccountsStoreDeleteFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UserExternalAccountsStoreDeleteFunc) PushHook(hook func(context.Context, int32) error) {
+func (f *UserExternalAccountsStoreDeleteFunc) PushHook(hook func(context.Context, ...int32) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -40542,19 +40542,19 @@ func (f *UserExternalAccountsStoreDeleteFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UserExternalAccountsStoreDeleteFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32) error {
+	f.SetDefaultHook(func(context.Context, ...int32) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UserExternalAccountsStoreDeleteFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32) error {
+	f.PushHook(func(context.Context, ...int32) error {
 		return r0
 	})
 }
 
-func (f *UserExternalAccountsStoreDeleteFunc) nextHook() func(context.Context, int32) error {
+func (f *UserExternalAccountsStoreDeleteFunc) nextHook() func(context.Context, ...int32) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -40591,18 +40591,25 @@ type UserExternalAccountsStoreDeleteFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation.
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
 func (c UserExternalAccountsStoreDeleteFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this

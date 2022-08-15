@@ -56,10 +56,7 @@ type UserExternalAccountsStore interface {
 	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
 
 	// Delete deletes a user external account.
-	Delete(ctx context.Context, id int32) error
-
-	// DeleteList deletes a list of user external accounts.
-	DeleteList(ctx context.Context, ids []int32) error
+	Delete(ctx context.Context, ids ...int32) error
 
 	// ExecResult performs a query without returning any rows, but includes the
 	// result of the execution.
@@ -320,8 +317,12 @@ WHERE id = $1
 	return err
 }
 
-func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	res, err := s.Handle().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) error {
+	idStrings := []string{}
+	for _, id := range ids {
+		idStrings = append(idStrings, strconv.Itoa(int(id)))
+	}
+	res, err := s.Handle().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id IN (%s) AND deleted_at IS NULL", strings.Join(idStrings, ", "))
 	if err != nil {
 		return err
 	}
@@ -330,22 +331,8 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error 
 		return err
 	}
 	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]any{id}}
+		return userExternalAccountNotFoundError{[]any{ids}}
 	}
-	return nil
-}
-
-// DeleteList marks a list of user external accounts as deleted.
-func (s *userExternalAccountsStore) DeleteList(ctx context.Context, ids []int32) error {
-	idStrings := []string{}
-	for _, id := range ids {
-		idStrings = append(idStrings, strconv.Itoa(int(id)))
-	}
-	_, err := s.Handle().ExecContext(ctx, fmt.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE id IN (%s)", strings.Join(idStrings, ", ")))
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
