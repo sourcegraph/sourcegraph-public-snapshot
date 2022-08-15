@@ -7,7 +7,7 @@ This package provides special React components that allow you to build popovers,
 By default `<Popover />` component requires no props if you're using compound Popover components.
 
 ```tsx
-import { Popover, PopoverTrigger, PopoverContent } from '..'
+import { Popover, PopoverTrigger, PopoverContent } from '@sourcegraph/wildcard'
 
 function ComponentWithPopover() {
   return (
@@ -34,7 +34,7 @@ want to take control over this and render the popup by your own logic. For examp
 `PopoverContent` has been submitted, or any other async operation is over.
 
 ```tsx
-import { Popover, PopoverTrigger, PopoverContent } from '..'
+import { Popover, PopoverTrigger, PopoverContent } from '@sourcegraph/wildcard'
 
 function ComponentWithPopover() {
   const [open, setOpen] = useState<boolean>(false)
