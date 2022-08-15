@@ -13,7 +13,7 @@ const jsonTestInput = `
 			"root": "/",
 			"image": "node:12",
 			"commands": [
-				"yarn install --immutable --non-interactive",
+				"yarn install --frozen-lockfile --non-interactive",
 			],
 		}
 	],
@@ -50,7 +50,7 @@ func TestUnmarshalJSON(t *testing.T) {
 			{
 				Root:     "/",
 				Image:    "node:12",
-				Commands: []string{"yarn install --immutable --non-interactive"},
+				Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
 			},
 		},
 		IndexJobs: []IndexJob{

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -578,7 +579,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
 				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
-				cred := &database.UserCredential{}
+				cred := &database.UserCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, userToken)
 				return cred, nil
 			})

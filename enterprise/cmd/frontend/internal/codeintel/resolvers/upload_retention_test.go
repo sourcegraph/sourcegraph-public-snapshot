@@ -9,9 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestRetentionPolicyOverview(t *testing.T) {
@@ -20,7 +18,7 @@ func TestRetentionPolicyOverview(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 	mockCodeNavResolver := NewMockCodeNavResolver()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB(), mockCodeNavResolver)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, mockCodeNavResolver, nil)
 
 	mockClock := glock.NewMockClock()
 
@@ -220,7 +218,7 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 	mockCodeNavResolver := NewMockCodeNavResolver()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB(), mockCodeNavResolver)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, mockCodeNavResolver, nil)
 
 	mockClock := glock.NewMockClock()
 

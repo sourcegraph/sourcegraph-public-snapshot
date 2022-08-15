@@ -89,7 +89,6 @@ Protections:
 	write group Backend * //test-perms/Backend/...	## DO NOT DELETE This is used for backend integration tests
 	=read user alice * -//test-perms/Security/...	## DO NOT DELETE This is used for backend integration tests
 	write group Backend * //test-perms/Security/...
-	list group Everyone * -//...
 	=read group DocSiteDenyPath * -//dax-docsite/cmd/docsite/build.go
 	write group DocSiteWritePath * //dax-docsite/cmd/docsite/build.go
 	list group TestGroup * -//mike-test/...	## edge case testing

@@ -48,7 +48,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		updatedAfter         time.Time
 		wantQuery            string
 		onlyCloudDefault     bool
-		noCachedWebhooks     bool
 		includeDeleted       bool
 		wantArgs             []any
 	}{
@@ -110,11 +109,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery:        "deleted_at IS NULL AND cloud_default = true",
 		},
 		{
-			name:             "has noCachedWebhooks",
-			noCachedWebhooks: true,
-			wantQuery:        "deleted_at IS NULL AND has_webhooks IS NULL",
-		},
-		{
 			name:           "includeDeleted",
 			includeDeleted: true,
 			wantQuery:      "TRUE",
@@ -131,7 +125,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				AfterID:              test.afterID,
 				UpdatedAfter:         test.updatedAfter,
 				OnlyCloudDefault:     test.onlyCloudDefault,
-				NoCachedWebhooks:     test.noCachedWebhooks,
 				IncludeDeleted:       test.includeDeleted,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
@@ -236,40 +229,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			config:          `{"url": "https://github.com", "rateLimit": {}}`,
 			namespaceUserID: 1,
 			wantErr:         `field "rateLimit" is not allowed in a user-added external service`,
-		},
-		{
-			name:            "duplicate kinds not allowed for user owned services",
-			kind:            extsvc.KindGitHub,
-			config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			namespaceUserID: 1,
-			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{
-					{
-						ID:          1,
-						Kind:        extsvc.KindGitHub,
-						DisplayName: "GITHUB 1",
-						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-					},
-				}, nil
-			},
-			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
-		},
-		{
-			name:           "duplicate kinds not allowed for org owned services",
-			kind:           extsvc.KindGitHub,
-			config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			namespaceOrgID: 1,
-			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{
-					{
-						ID:          1,
-						Kind:        extsvc.KindGitHub,
-						DisplayName: "GITHUB 1",
-						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-					},
-				}, nil
-			},
-			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
 		{
 			name:    "1 errors - GitHub.com",
@@ -464,6 +423,14 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				t.Fatal("has_webhooks must not be null")
 			} else if *got.HasWebhooks != test.wantHasWebhooks {
 				t.Fatalf("Wanted has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
+			}
+
+			// Adding it another service with the same kind and owner should fail
+			if test.externalService.NamespaceUserID != 0 || test.externalService.NamespaceOrgID != 0 {
+				err := db.ExternalServices().Create(ctx, confGet, test.externalService)
+				if err == nil {
+					t.Fatal("Should not be able to create two services of same kind with same owner")
+				}
 			}
 
 			err = db.ExternalServices().Delete(ctx, test.externalService.ID)

@@ -266,12 +266,6 @@ type ExternalServicesListOptions struct {
 
 	*LimitOffset
 
-	// When true, only external services without has_webhooks set will be
-	// returned. For use by ExternalServiceWebhookMigrator only.
-	NoCachedWebhooks bool
-	// When true, records will be locked. For use by
-	// ExternalServiceWebhookMigrator only.
-	ForUpdate bool
 	// When true, soft-deleted external services will also be included in the results.
 	IncludeDeleted bool
 }
@@ -309,9 +303,6 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
-	}
-	if o.NoCachedWebhooks {
-		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
@@ -400,11 +391,6 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 				if r.Exists() {
 					return nil, errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
 				}
-			}
-
-			// Allow only create one external service per kind
-			if err := validateSingleKindPerNamespace(ctx, e, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID, opt.NamespaceOrgID); err != nil {
-				return nil, err
 			}
 		}
 
@@ -549,42 +535,6 @@ func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnec
 		err = errors.Append(err, errors.New("depots must be set"))
 	}
 	return err
-}
-
-// validateSingleKindPerNamespace returns an error if the user/org attempts to add more than one external service of the same kind.
-func validateSingleKindPerNamespace(ctx context.Context, e ExternalServiceStore, id int64, kind string, userID int32, orgID int32) error {
-	opt := ExternalServicesListOptions{
-		Kinds: []string{kind},
-		LimitOffset: &LimitOffset{
-			Limit: 500, // The number is randomly chosen
-		},
-	}
-	if userID > 0 {
-		opt.NamespaceUserID = userID
-	} else if orgID > 0 {
-		opt.NamespaceOrgID = orgID
-	}
-	for {
-		svcs, err := e.List(ctx, opt)
-		if err != nil {
-			return errors.Wrap(err, "list")
-		}
-		if len(svcs) == 0 {
-			break // No more results, exiting
-		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
-
-		// Fail if a service already exists that is not the current service
-		for _, svc := range svcs {
-			if svc.ID != id {
-				return errors.Errorf("existing external service, %q, of same kind already added", svc.DisplayName)
-			}
-		}
-		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
-		}
-	}
-	return nil
 }
 
 // upsertAuthorizationToExternalService adds "authorization" field to the
@@ -1276,13 +1226,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		opt.OrderByDirection = "DESC"
 	}
 
-	var forUpdate *sqlf.Query
-	if opt.ForUpdate {
-		forUpdate = sqlf.Sprintf("FOR UPDATE SKIP LOCKED")
-	} else {
-		forUpdate = sqlf.Sprintf("")
-	}
-
 	q := sqlf.Sprintf(`
 		SELECT
 			id,
@@ -1304,11 +1247,9 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
-		%s
 		%s`,
 		sqlf.Join(opt.sqlConditions(), ") AND ("),
 		opt.LimitOffset.SQL(),
-		forUpdate,
 	)
 
 	rows, err := e.Query(ctx, q)

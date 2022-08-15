@@ -50,6 +50,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
+	// Use for empty diff
+	if diff.Has(changed.None) {
+		linterOps.Append(noDiff)
+	}
 
 	ops.Merge(linterOps)
 
@@ -622,6 +626,11 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Cmd("dev/ci/integration/upgrade/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
+}
+
+func noDiff(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":empty_nest: No valid diff found. No tests to run.",
+		bk.Cmd("echo 'No diff found on branch.'"))
 }
 
 func clusterQA(candidateTag string) operations.Operation {

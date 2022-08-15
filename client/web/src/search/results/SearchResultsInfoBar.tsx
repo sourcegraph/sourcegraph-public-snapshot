@@ -35,7 +35,7 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'settings'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
@@ -323,6 +323,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                     {coreWorkflowImprovementsEnabled ? (
                         <SearchActionsMenu
+                            query={props.query}
+                            patternType={props.patternType}
+                            sourcegraphURL={props.platformContext.sourcegraphURL}
                             authenticatedUser={props.authenticatedUser}
                             createActions={createActions}
                             createCodeMonitorAction={createCodeMonitorAction}

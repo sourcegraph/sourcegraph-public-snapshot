@@ -135,15 +135,20 @@ export const useBlameDecorations = (args?: {
     commitID: string
     filePath: string
 }): TextDocumentDecoration[] | undefined => {
+    const { repoName, commitID, filePath } = args ?? {}
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible] = useBlameVisibility()
     const hunks = useObservable(
-        useMemo(() => (extensionsAsCoreFeatures && args && isBlameVisible ? fetchBlame(args) : of(undefined)), [
-            extensionsAsCoreFeatures,
-            isBlameVisible,
-            args,
-        ])
+        useMemo(
+            () =>
+                extensionsAsCoreFeatures && commitID && repoName && filePath && isBlameVisible
+                    ? fetchBlame({ commitID, repoName, filePath }).pipe(
+                          map(hunks => (hunks ? getBlameDecorations(hunks) : undefined))
+                      )
+                    : of(undefined),
+            [extensionsAsCoreFeatures, isBlameVisible, commitID, repoName, filePath]
+        )
     )
 
-    return hunks ? getBlameDecorations(hunks) : undefined
+    return hunks
 }

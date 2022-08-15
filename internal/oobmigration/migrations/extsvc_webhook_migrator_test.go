@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -166,7 +167,8 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		createExternalServices(t, ctx, db)
 
-		m := NewExternalServiceWebhookMigratorWithDB(db)
+		key := et.TestKey{}
+		m := NewExternalServiceWebhookMigratorWithDB(db, key)
 
 		// By default, all the external services should have non-NULL
 		// has_webhooks.
@@ -186,7 +188,8 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		initSvcs := createExternalServices(t, ctx, db)
 		es := db.ExternalServices()
 
-		m := NewExternalServiceWebhookMigratorWithDB(db)
+		key := et.TestKey{}
+		m := NewExternalServiceWebhookMigratorWithDB(db, key)
 		// Ensure that we have to run two Ups.
 		m.BatchSize = len(initSvcs) - 1
 
@@ -200,19 +203,15 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		assert.Nil(t, m.Up(ctx))
 
 		// Do we really have one external service left?
-		after, err := es.List(ctx, database.ExternalServicesListOptions{
-			NoCachedWebhooks: true,
-		})
+		after, err := es.List(ctx, database.ExternalServicesListOptions{})
 		assert.Nil(t, err)
-		assert.EqualValues(t, 1, len(after))
+		assert.Len(t, excludeExternalServicesWithCachedWebhooks(after), 1)
 
 		// Now we'll do the last one.
 		assert.Nil(t, m.Up(ctx))
-		after, err = es.List(ctx, database.ExternalServicesListOptions{
-			NoCachedWebhooks: true,
-		})
+		after, err = es.List(ctx, database.ExternalServicesListOptions{})
 		assert.Nil(t, err)
-		assert.EqualValues(t, 0, len(after))
+		assert.Empty(t, excludeExternalServicesWithCachedWebhooks(after))
 
 		// Finally, let's make sure we have the expected number of each: we
 		// should have three records with has_webhooks = true, and the rest
@@ -234,4 +233,14 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		assert.EqualValues(t, 3, hasWebhooks)
 		assert.EqualValues(t, len(initSvcs)-3, noWebhooks)
 	})
+}
+
+func excludeExternalServicesWithCachedWebhooks(services []*types.ExternalService) []*types.ExternalService {
+	filtered := []*types.ExternalService{}
+	for _, svc := range services {
+		if svc.HasWebhooks == nil {
+			filtered = append(filtered, svc)
+		}
+	}
+	return filtered
 }

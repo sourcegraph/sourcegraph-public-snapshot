@@ -19,7 +19,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "",
 							Image:    "sourcegraph/scip-typescript:autoindex",
-							Commands: []string{"npm install"},
+							Commands: []string{"npm install --ignore-scripts"},
 						},
 					},
 					LocalSteps:  nil,
@@ -42,7 +42,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "",
 							Image:    "sourcegraph/scip-typescript:autoindex",
-							Commands: []string{"yarn"},
+							Commands: []string{"yarn --ignore-engines --ignore-scripts"},
 						},
 					},
 					LocalSteps:  nil,
@@ -140,7 +140,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "foo/bar",
 							Image:    "sourcegraph/scip-typescript:autoindex",
-							Commands: []string{"yarn"},
+							Commands: []string{"yarn --ignore-engines"},
 						},
 					},
 					LocalSteps:  nil,
@@ -159,7 +159,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "foo/bar",
 							Image:    "sourcegraph/scip-typescript:autoindex",
-							Commands: []string{"yarn"},
+							Commands: []string{"yarn --ignore-engines"},
 						},
 						{
 							Root:     "foo/bar/bonk",
@@ -202,7 +202,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "",
 							Image:    "sourcegraph/scip-typescript:autoindex",
-							Commands: []string{"yarn"},
+							Commands: []string{"yarn --ignore-engines"},
 						},
 					},
 					LocalSteps:  nil,

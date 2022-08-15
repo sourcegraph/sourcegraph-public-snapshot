@@ -48,7 +48,7 @@ func TestGetIndexByID(t *testing.T) {
 		DockerSteps: []DockerStep{
 			{
 				Image:    "cimg/node:12.16",
-				Commands: []string{"yarn install --immutable --no-progress"},
+				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 			},
 		},
 		LocalSteps:  []string{"echo hello"},
@@ -380,7 +380,7 @@ func TestInsertIndexes(t *testing.T) {
 			DockerSteps: []DockerStep{
 				{
 					Image:    "cimg/node:12.16",
-					Commands: []string{"yarn install --immutable --no-progress"},
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 				},
 			},
 			LocalSteps:  []string{"echo hello"},
@@ -437,7 +437,7 @@ func TestInsertIndexes(t *testing.T) {
 			DockerSteps: []DockerStep{
 				{
 					Image:    "cimg/node:12.16",
-					Commands: []string{"yarn install --immutable --no-progress"},
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 				},
 			},
 			LocalSteps:  []string{"echo hello"},

@@ -86,7 +86,7 @@ func (codeIntelligence) NewUploadQueueGroup(containerName string) monitoring.Gro
 // src_codeintel_upload_processor_errors_total
 // src_codeintel_upload_processor_handlers
 func (codeIntelligence) NewUploadProcessorGroup(containerName string) monitoring.Group {
-	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
+	group := Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
 			DescriptionRoot: "LSIF uploads",
@@ -105,6 +105,18 @@ func (codeIntelligence) NewUploadProcessorGroup(containerName string) monitoring
 		},
 		Handlers: NoAlertsOption("none"),
 	})
+
+	group.Rows[0] = append(group.Rows[0], monitoring.Observable{
+		Name:           "codeintel_upload_processor_upload_size",
+		Description:    "sum of upload sizes in bytes being processed by each precise code-intel worker instance",
+		Owner:          monitoring.ObservableOwnerCodeIntel,
+		Query:          "sum by(instance) (src_codeintel_upload_processor_upload_size)",
+		NoAlert:        true,
+		Interpretation: "none",
+		Panel:          monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{instance}}"),
+	})
+
+	return group
 }
 
 // src_codeintel_commit_graph_total

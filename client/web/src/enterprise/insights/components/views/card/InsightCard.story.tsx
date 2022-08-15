@@ -3,9 +3,20 @@ import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Menu, MenuButton, MenuItem, MenuList, H2, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
+    H2,
+    Icon,
+    LegendItem,
+    LegendList,
+    ParentSize,
+    Series,
+} from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, ParentSize, Series } from '../../../../../charts'
 import { WebStory } from '../../../../../components/WebStory'
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import { SeriesBasedChartTypes, SeriesChart } from '../chart'
@@ -179,7 +190,7 @@ function InsightCardWithChart() {
             </ParentSize>
             <LegendList className="mt-3">
                 {SERIES.map(line => (
-                    <LegendItem key={line.id} color={getLineColor(line)} name={line.name} />
+                    <LegendItem key={line.id} color={line.color} name={line.name} />
                 ))}
             </LegendList>
         </Card.Root>

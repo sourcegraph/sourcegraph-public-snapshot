@@ -37,6 +37,12 @@ export interface TemporarySettingsSchema {
     'onboarding.quickStartTour': TourListState
     'coreWorkflowImprovements.enabled': boolean
     'characterKeyShortcuts.enabled': boolean
+    'search.homepage.queryExamplesContent': {
+        lastCachedTimestamp: string
+        repositoryName: string
+        filePath: string
+        author: string
+    }
 }
 
 /**

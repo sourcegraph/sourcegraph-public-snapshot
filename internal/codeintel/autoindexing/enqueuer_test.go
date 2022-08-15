@@ -30,7 +30,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 				"root": "/",
 				"image": "node:12",
 				"commands": [
-					"yarn install --immutable --non-interactive",
+					"yarn install --frozen-lockfile --non-interactive",
 				],
 			}
 		],
@@ -97,7 +97,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --immutable --non-interactive"},
+					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
 				},
 				{
 					Image:    "go:latest",
@@ -115,7 +115,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --immutable --non-interactive"},
+					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
 				},
 			},
 			Root:        "web/",
@@ -139,7 +139,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 					"root": "/",
 					"image": "node:12",
 					"commands": [
-						"yarn install --immutable --non-interactive",
+						"yarn install --frozen-lockfile --non-interactive",
 					],
 				}
 			],
@@ -223,7 +223,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --immutable --non-interactive"},
+					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
 				},
 				{
 					Image:    "go:latest",
@@ -241,7 +241,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --immutable --non-interactive"},
+					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
 				},
 			},
 			Root:        "web/",
@@ -260,7 +260,7 @@ shared_steps:
   - root: /
     image: node:12
     commands:
-      - yarn install --immutable --non-interactive
+      - yarn install --frozen-lockfile --non-interactive
 
 index_jobs:
   -
@@ -329,7 +329,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --immutable --non-interactive"},
+					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
 				},
 				{
 					Image:    "go:latest",
@@ -347,7 +347,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --immutable --non-interactive"},
+					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
 				},
 			},
 			Root:        "web/",

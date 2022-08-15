@@ -1166,7 +1166,6 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
-
 	if err != nil {
 		return "", err
 	}

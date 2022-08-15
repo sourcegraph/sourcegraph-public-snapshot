@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/stretchr/testify/require"
 
 	"github.com/RoaringBitmap/roaring"
