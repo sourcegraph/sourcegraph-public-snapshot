@@ -28,6 +28,7 @@ interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
     yScale: ScaleLinear<number, number>
     categories: Category<Datum>[]
 
+    getDatumHover: (datum: Datum) => string
     getDatumName: (datum: Datum) => string
     getDatumValue: (datum: Datum) => number
     getDatumColor: (datum: Datum) => string | undefined
@@ -45,6 +46,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
         left,
         width = 0,
         height = 0,
+        getDatumHover,
         getDatumName,
         getDatumValue,
         getDatumColor,
@@ -102,6 +104,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                         getDatumColor={getDatumColor}
                         getDatumValue={getDatumValue}
                         getDatumName={getDatumName}
+                        getDatumHover={getDatumHover}
                     />
                 </Tooltip>
             )}
