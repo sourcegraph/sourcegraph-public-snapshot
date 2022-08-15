@@ -52,6 +52,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         experimentalNoticePlugin,
         ElmPlugin({
             cwd: path.join(ROOT_PATH, 'client/web/src/search/results/components/compute'),
+            pathToElm: path.join(ROOT_PATH, 'node_modules/.bin/elm'),
         }),
     ],
     define: {
