@@ -321,7 +321,7 @@ func createTestExternalService(ctx context.Context, t *testing.T, now time.Time,
 	service := types.ExternalService{
 		Kind:         extsvc.KindGitHub,
 		DisplayName:  "Github - Test",
-		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		CreatedAt:    now,
 		UpdatedAt:    now,
 		CloudDefault: cloudDefault,

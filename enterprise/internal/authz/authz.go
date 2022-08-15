@@ -87,7 +87,7 @@ func ProvidersFromConfig(
 				continue
 			}
 
-			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 			if err != nil {
 				seriousProblems = append(seriousProblems, fmt.Sprintf("Could not parse config of external service %d: %v", svc.ID, err))
 				continue
@@ -195,6 +195,7 @@ var MockProviderFromExternalService func(siteConfig schema.SiteConfiguration, sv
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
 func ProviderFromExternalService(
+	ctx context.Context,
 	externalServicesStore database.ExternalServiceStore,
 	siteConfig schema.SiteConfiguration,
 	svc *types.ExternalService,
@@ -204,7 +205,7 @@ func ProviderFromExternalService(
 		return MockProviderFromExternalService(siteConfig, svc)
 	}
 
-	cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse config")
 	}

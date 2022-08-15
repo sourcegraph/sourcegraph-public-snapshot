@@ -4,15 +4,22 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	// Run a background job to calculate the has_webhooks field on external service records.
-	webhookMigrator := NewExternalServiceWebhookMigratorWithDB(db)
-	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		return errors.Wrap(err, "failed to run external service webhook job")
+	migrations := []interface {
+		oobmigration.Migrator
+		ID() int
+		Interval() time.Duration
+	}{
+		NewExternalServiceWebhookMigratorWithDB(db, keyring.Default().ExternalServiceKey),
+	}
+	for _, migrator := range migrations {
+		if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: migrator.Interval()}); err != nil {
+			return err
+		}
 	}
 
 	return nil

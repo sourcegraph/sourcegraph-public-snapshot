@@ -11,8 +11,7 @@ import '../../SourcegraphWebApp.scss'
 
 import { GlobalContributions } from '../../contributions'
 import { createPlatformContext } from '../../platform/context'
-import { ThemePreference } from '../../stores/themeState'
-import { useTheme } from '../../theme'
+import { useTheme, ThemePreference } from '../../theme'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 

@@ -11,8 +11,7 @@ import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/sett
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'
-import { ThemePreference } from '../../../../../stores/themeState'
-import { useTheme } from '../../../../../theme'
+import { useTheme, ThemePreference } from '../../../../../theme'
 
 import styles from './MonacoField.module.scss'
 

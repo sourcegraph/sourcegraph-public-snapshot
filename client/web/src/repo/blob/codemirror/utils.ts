@@ -146,3 +146,32 @@ export function distinctWordAtCoords(
         distinctUntilChanged()
     )
 }
+
+/**
+ * Verifies that the provided 1-based range is within the document range.
+ */
+export function isValidLineRange(
+    range: { line: number; character?: number; endLine?: number; endCharacter?: number },
+    textDocument: Text
+): boolean {
+    const { lines } = textDocument
+
+    // Return early if the document doesn't have as many lines
+    if ((range.endLine ?? range.line) > lines) {
+        return false
+    }
+
+    // Verify precise character positions (if present)
+    if (range.character && textDocument.line(range.line).to < range.line + range.character - 1) {
+        return false
+    }
+    if (
+        range.endLine &&
+        range.endCharacter &&
+        textDocument.line(range.endLine).to < range.endLine + range.endCharacter - 1
+    ) {
+        return false
+    }
+
+    return true
+}

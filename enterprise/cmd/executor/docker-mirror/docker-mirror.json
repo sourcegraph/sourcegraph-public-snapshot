@@ -50,6 +50,7 @@
         "max_attempts": "{{user `awsMaxAttempts`}}"
       },
       "shutdown_behavior": "terminate",
+      "ami_regions": ["us-west-1", "us-west-2", "us-east-1", "us-east-2"],
       "tags": {
         "Name": "{{user `name`}}",
         "OS_Version": "Ubuntu",

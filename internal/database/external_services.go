@@ -14,7 +14,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/log"
 
@@ -266,12 +265,6 @@ type ExternalServicesListOptions struct {
 
 	*LimitOffset
 
-	// When true, only external services without has_webhooks set will be
-	// returned. For use by ExternalServiceWebhookMigrator only.
-	NoCachedWebhooks bool
-	// When true, records will be locked. For use by
-	// ExternalServiceWebhookMigrator only.
-	ForUpdate bool
 	// When true, soft-deleted external services will also be included in the results.
 	IncludeDeleted bool
 }
@@ -309,9 +302,6 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
-	}
-	if o.NoCachedWebhooks {
-		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
@@ -400,11 +390,6 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 				if r.Exists() {
 					return nil, errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
 				}
-			}
-
-			// Allow only create one external service per kind
-			if err := validateSingleKindPerNamespace(ctx, e, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID, opt.NamespaceOrgID); err != nil {
-				return nil, err
 			}
 		}
 
@@ -551,42 +536,6 @@ func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnec
 	return err
 }
 
-// validateSingleKindPerNamespace returns an error if the user/org attempts to add more than one external service of the same kind.
-func validateSingleKindPerNamespace(ctx context.Context, e ExternalServiceStore, id int64, kind string, userID int32, orgID int32) error {
-	opt := ExternalServicesListOptions{
-		Kinds: []string{kind},
-		LimitOffset: &LimitOffset{
-			Limit: 500, // The number is randomly chosen
-		},
-	}
-	if userID > 0 {
-		opt.NamespaceUserID = userID
-	} else if orgID > 0 {
-		opt.NamespaceOrgID = orgID
-	}
-	for {
-		svcs, err := e.List(ctx, opt)
-		if err != nil {
-			return errors.Wrap(err, "list")
-		}
-		if len(svcs) == 0 {
-			break // No more results, exiting
-		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
-
-		// Fail if a service already exists that is not the current service
-		for _, svc := range svcs {
-			if svc.ID != id {
-				return errors.Errorf("existing external service, %q, of same kind already added", svc.DisplayName)
-			}
-		}
-		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
-		}
-	}
-	return nil
-}
-
 // upsertAuthorizationToExternalService adds "authorization" field to the
 // external service config when not yet present for GitHub and GitLab.
 func upsertAuthorizationToExternalService(kind, config string) (string, error) {
@@ -609,9 +558,14 @@ func upsertAuthorizationToExternalService(kind, config string) (string, error) {
 }
 
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
+	rawConfig, err := es.Config.Decrypt(ctx)
+	if err != nil {
+		return err
+	}
+
 	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
 		Kind:            es.Kind,
-		Config:          es.Config,
+		Config:          rawConfig,
 		AuthProviders:   confGet().AuthProviders,
 		NamespaceUserID: es.NamespaceUserID,
 		NamespaceOrgID:  es.NamespaceOrgID,
@@ -624,10 +578,12 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	// Cloud, we always want to enforce repository permissions using OAuth to
 	// prevent unexpected resource leaking.
 	if envvar.SourcegraphDotComMode() {
-		es.Config, err = upsertAuthorizationToExternalService(es.Kind, es.Config)
+		rawConfig, err = upsertAuthorizationToExternalService(es.Kind, rawConfig)
 		if err != nil {
 			return err
 		}
+
+		es.Config.Set(rawConfig)
 	}
 
 	es.CreatedAt = timeutil.Now()
@@ -645,7 +601,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	config, keyID, err := e.maybeEncrypt(ctx, es.Config)
+	encryptedConfig, keyID, err := es.Config.Encrypt(ctx, e.getEncryptionKey())
 	if err != nil {
 		return err
 	}
@@ -656,7 +612,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			createExternalServiceQueryFmtstr,
 			es.Kind,
 			es.DisplayName,
-			config,
+			encryptedConfig,
 			keyID,
 			es.CreatedAt,
 			es.UpdatedAt,
@@ -676,14 +632,6 @@ INSERT INTO external_services
 RETURNING id
 `
 
-func (e *externalServiceStore) maybeEncrypt(ctx context.Context, data string) (string, string, error) {
-	return encryption.MaybeEncrypt(ctx, e.getEncryptionKey(), data)
-}
-
-func (e *externalServiceStore) maybeDecrypt(ctx context.Context, data, keyIdent string) (string, error) {
-	return encryption.MaybeDecrypt(ctx, e.getEncryptionKey(), data, keyIdent)
-}
-
 func (e *externalServiceStore) getEncryptionKey() encryption.Key {
 	if e.key != nil {
 		return e.key
@@ -698,17 +646,24 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	}
 
 	for _, s := range svcs {
+		rawConfig, err := s.Config.Decrypt(ctx)
+		if err != nil {
+			return err
+		}
+
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
 		// Cloud, we always want to enforce repository permissions using OAuth to
 		// prevent unexpected resource leaking.
 		if envvar.SourcegraphDotComMode() {
-			s.Config, err = upsertAuthorizationToExternalService(s.Kind, s.Config)
+			rawConfig, err = upsertAuthorizationToExternalService(s.Kind, rawConfig)
 			if err != nil {
 				return err
 			}
+
+			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, s.Config); err != nil {
+		if err := e.recalculateFields(s, rawConfig); err != nil {
 			return err
 		}
 	}
@@ -756,12 +711,12 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 
 	i := 0
 	for rows.Next() {
-		var encryptionKeyID string
+		var encryptedConfig, keyID string
 		err = rows.Scan(
 			&svcs[i].ID,
 			&svcs[i].Kind,
 			&svcs[i].DisplayName,
-			&svcs[i].Config,
+			&encryptedConfig,
 			&svcs[i].CreatedAt,
 			&dbutil.NullTime{Time: &svcs[i].UpdatedAt},
 			&dbutil.NullTime{Time: &svcs[i].DeletedAt},
@@ -771,18 +726,14 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
-			&encryptionKeyID,
+			&keyID,
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 		)
 		if err != nil {
 			return err
 		}
 
-		svcs[i].Config, err = e.maybeDecrypt(ctx, svcs[i].Config, encryptionKeyID)
-		if err != nil {
-			return err
-		}
-
+		svcs[i].Config = extsvc.NewEncryptedConfig(encryptedConfig, keyID, e.getEncryptionKey())
 		i++
 	}
 
@@ -792,7 +743,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
-		config, keyID, err := e.maybeEncrypt(ctx, s.Config)
+		encryptedConfig, keyID, err := s.Config.Encrypt(ctx, e.getEncryptionKey())
 		if err != nil {
 			return nil, err
 		}
@@ -801,7 +752,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.ID,
 			s.Kind,
 			s.DisplayName,
-			config,
+			encryptedConfig,
 			keyID,
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
@@ -890,11 +841,14 @@ type ExternalServiceUpdate struct {
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
 	var (
-		normalized  []byte
-		keyID       string
-		hasWebhooks bool
+		normalized      []byte
+		encryptedConfig string
+		keyID           string
+		hasWebhooks     bool
 	)
 	if update.Config != nil {
+		rawConfig := *update.Config
+
 		// Query to get the kind (which is immutable) so we can validate the new config.
 		externalService, err := e.GetByID(ctx, id)
 		if err != nil {
@@ -902,13 +856,13 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		}
 		newSvc := types.ExternalService{
 			Kind:   externalService.Kind,
-			Config: *update.Config,
+			Config: extsvc.NewUnencryptedConfig(rawConfig),
 		}
-		err = newSvc.UnredactConfig(externalService)
+		err = newSvc.UnredactConfig(ctx, externalService)
 		if err != nil {
 			return errors.Wrapf(err, "error unredacting config")
 		}
-		cfg, err := newSvc.Configuration()
+		cfg, err := newSvc.Configuration(ctx)
 		if err == nil {
 			hasWebhooks = configurationHasWebhooks(cfg)
 		} else {
@@ -918,12 +872,11 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", id))
 			hasWebhooks = false
 		}
-		update.Config = &newSvc.Config
 
 		normalized, err = ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
 			ExternalServiceID: id,
 			Kind:              externalService.Kind,
-			Config:            *update.Config,
+			Config:            rawConfig,
 			AuthProviders:     ps,
 			NamespaceUserID:   externalService.NamespaceUserID,
 			NamespaceOrgID:    externalService.NamespaceOrgID,
@@ -936,19 +889,17 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		// Cloud, we always want to enforce repository permissions using OAuth to
 		// prevent unexpected resource leaking.
 		if envvar.SourcegraphDotComMode() {
-			config, err := upsertAuthorizationToExternalService(externalService.Kind, *update.Config)
+			rawConfig, err = upsertAuthorizationToExternalService(externalService.Kind, rawConfig)
 			if err != nil {
 				return err
 			}
-			update.Config = &config
+			newSvc.Config.Set(rawConfig)
 		}
 
-		var config string
-		config, keyID, err = e.maybeEncrypt(ctx, *update.Config)
+		encryptedConfig, keyID, err = newSvc.Config.Encrypt(ctx, e.getEncryptionKey())
 		if err != nil {
 			return err
 		}
-		update.Config = &config
 	}
 
 	// 4 is the number of fields of the ExternalServiceUpdate
@@ -963,7 +914,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		updates = append(updates,
 			sqlf.Sprintf(
 				"config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s, has_webhooks = %s",
-				update.Config, keyID, unrestricted, hasWebhooks,
+				encryptedConfig, keyID, unrestricted, hasWebhooks,
 			))
 	}
 
@@ -1276,13 +1227,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		opt.OrderByDirection = "DESC"
 	}
 
-	var forUpdate *sqlf.Query
-	if opt.ForUpdate {
-		forUpdate = sqlf.Sprintf("FOR UPDATE SKIP LOCKED")
-	} else {
-		forUpdate = sqlf.Sprintf("")
-	}
-
 	q := sqlf.Sprintf(`
 		SELECT
 			id,
@@ -1304,11 +1248,9 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
-		%s
 		%s`,
 		sqlf.Join(opt.sqlConditions(), ") AND ("),
 		opt.LimitOffset.SQL(),
-		forUpdate,
 	)
 
 	rows, err := e.Query(ctx, q)
@@ -1316,8 +1258,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		return nil, err
 	}
 	defer rows.Close()
-
-	keyIDs := make(map[int64]string)
 
 	var results []*types.ExternalService
 	for rows.Next() {
@@ -1328,6 +1268,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
 			namespaceOrgID  sql.NullInt32
+			encryptedConfig string
 			keyID           string
 			hasWebhooks     sql.NullBool
 			tokenExpiresAt  sql.NullTime
@@ -1336,7 +1277,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			&h.ID,
 			&h.Kind,
 			&h.DisplayName,
-			&h.Config,
+			&encryptedConfig,
 			&keyID,
 			&h.CreatedAt,
 			&h.UpdatedAt,
@@ -1374,33 +1315,11 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		if tokenExpiresAt.Valid {
 			h.TokenExpiresAt = &tokenExpiresAt.Time
 		}
-
-		keyIDs[h.ID] = keyID
+		h.Config = extsvc.NewEncryptedConfig(encryptedConfig, keyID, e.getEncryptionKey())
 
 		results = append(results, &h)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	// Now we may need to decrypt config. Since each decrypt operation could make an
-	// API call we should run them in parallel
-	group, ctx := errgroup.WithContext(ctx)
-	for i := range results {
-		s := results[i]
-		var groupErr error
-		group.Go(func() error {
-			keyID := keyIDs[s.ID]
-			s.Config, groupErr = e.maybeDecrypt(ctx, s.Config, keyID)
-			if groupErr != nil {
-				return groupErr
-			}
-			return nil
-		})
-	}
-
-	err = group.Wait()
-	if err != nil {
 		return nil, err
 	}
 
@@ -1552,7 +1471,7 @@ WHERE EXISTS(
 // calculated depending on the external service configuration, namely
 // `Unrestricted` and `HasWebhooks`.
 func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
-	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(es.Config, "authorization").Exists()
+	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(rawConfig, "authorization").Exists()
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)

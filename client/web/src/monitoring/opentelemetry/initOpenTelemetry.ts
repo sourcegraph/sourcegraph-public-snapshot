@@ -13,6 +13,7 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import isAbsoluteUrl from 'is-absolute-url'
 
 import { ConsoleBatchSpanExporter } from './exporters/consoleBatchSpanExporter'
+import { WindowLoadInstrumentation } from './instrumentations/window-load'
 
 export function initOpenTelemetry(): void {
     const { openTelemetry, externalURL } = window.context
@@ -45,7 +46,10 @@ export function initOpenTelemetry(): void {
 
         registerInstrumentations({
             // Type-casting is required since the `FetchInstrumentation` is wrongly typed internally as `node.js` instrumentation.
-            instrumentations: [(new FetchInstrumentation() as unknown) as InstrumentationOption],
+            instrumentations: [
+                (new FetchInstrumentation() as unknown) as InstrumentationOption,
+                new WindowLoadInstrumentation(),
+            ],
         })
     }
 }

@@ -36,7 +36,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}

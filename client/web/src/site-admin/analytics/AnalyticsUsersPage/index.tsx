@@ -6,10 +6,8 @@ import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
-import { Card, LoadingSpinner, useMatchMedia, Text } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../../charts'
-import { BarChart } from '../../../charts/components/bar-chart/BarChart'
 import { GlobalAlert } from '../../../global/GlobalAlert'
 import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'

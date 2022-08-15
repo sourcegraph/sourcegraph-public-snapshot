@@ -94,25 +94,21 @@ func (p Provider) buildExtsvcAccount(acct gerrit.Account, user *types.User, emai
 			AccountID:   email,
 		},
 		AccountData: extsvc.AccountData{
-			Data: acctData,
+			Data: extsvc.NewUnencryptedData(acctData),
 		},
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}, nil
 }
 
-func marshalAccountData(username, email string, acctID int32) (*json.RawMessage, error) {
-	accountData, err := jsoniter.Marshal(
+func marshalAccountData(username, email string, acctID int32) (json.RawMessage, error) {
+	return jsoniter.Marshal(
 		gerrit.AccountData{
 			Username:  username,
 			Email:     email,
 			AccountID: acctID,
 		},
 	)
-	if err != nil {
-		return nil, err
-	}
-	return (*json.RawMessage)(&accountData), nil
 }
 
 func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {

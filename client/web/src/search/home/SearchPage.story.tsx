@@ -16,7 +16,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { WebStory } from '../../components/WebStory'
 import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { useExperimentalFeatures } from '../../stores'
-import { ThemePreference } from '../../stores/themeState'
+import { ThemePreference } from '../../theme'
 import {
     HOME_PANELS_QUERY,
     RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
