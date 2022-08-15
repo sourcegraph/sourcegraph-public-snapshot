@@ -62,6 +62,7 @@ func main() {
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
 		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-upload-backfiller":      freshcodeintel.NewUploadBackfillerJob(),
 		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
 
 		// temporary

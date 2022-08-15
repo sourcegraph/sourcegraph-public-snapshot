@@ -19,10 +19,6 @@ type Config struct {
 	DocumentColumnSplitMigrationBatchInterval time.Duration
 	APIDocsSearchMigrationBatchSize           int
 	APIDocsSearchMigrationBatchInterval       time.Duration
-	CommittedAtMigrationBatchSize             int
-	CommittedAtMigrationBatchInterval         time.Duration
-	ReferenceCountMigrationBatchSize          int
-	ReferenceCountMigrationBatchInterval      time.Duration
 }
 
 var config = &Config{}
@@ -38,8 +34,4 @@ func init() {
 	config.DocumentColumnSplitMigrationBatchInterval = config.GetInterval("PRECISE_CODE_INTEL_DOCUMENT_COLUMN_SPLIT_MIGRATION_BATCH_INTERVAL", "1s", "The timeout between processing migration batches.")
 	config.APIDocsSearchMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_API_DOCS_SEARCH_MIGRATION_BATCH_SIZE", "1", "The maximum number of bundles to migrate at a time.")
 	config.APIDocsSearchMigrationBatchInterval = config.GetInterval("PRECISE_CODE_INTEL_API_DOCS_SEARCH_MIGRATION_BATCH_INTERVAL", "1s", "The timeout between processing migration batches.")
-	config.CommittedAtMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_COMMITTED_AT_MIGRATION_BATCH_SIZE", "100", "The maximum number of upload records to migrate at a time.")
-	config.CommittedAtMigrationBatchInterval = config.GetInterval("PRECISE_CODE_INTEL_COMMITTED_AT_MIGRATION_BATCH_INTERVAL", "1s", "The timeout between processing migration batches.")
-	config.ReferenceCountMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_REFERENCE_COUNT_MIGRATION_BATCH_SIZE", "100", "The maximum number of upload records to migrate at a time.")
-	config.ReferenceCountMigrationBatchInterval = config.GetInterval("PRECISE_CODE_INTEL_REFERENCE_COUNT_MIGRATION_BATCH_INTERVAL", "1s", "The timeout between processing migration batches.")
 }
