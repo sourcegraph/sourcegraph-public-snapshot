@@ -6383,6 +6383,10 @@ type SiteUser {
     """
     email: String
     """
+    User's display name
+    """
+    displayName: String
+    """
     The datetime when user was created in the system.
     """
     createdAt: String!
