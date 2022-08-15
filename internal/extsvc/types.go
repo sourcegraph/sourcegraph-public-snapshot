@@ -70,11 +70,7 @@ func NewEmptyConfig() *EncryptableConfig {
 }
 
 func NewUnencryptedConfig(value string) *EncryptableConfig {
-	return NewUnencryptedConfigWithKey(value, nil)
-}
-
-func NewUnencryptedConfigWithKey(value string, key encryption.Key) *EncryptableConfig {
-	return encryption.NewUnencryptedWithKey(value, key)
+	return encryption.NewUnencrypted(value)
 }
 
 func NewEncryptedConfig(cipher, keyID string, key encryption.Key) *EncryptableConfig {
