@@ -1269,7 +1269,7 @@ type AggregationModeAvailability {
     """
     If the mode is unavailable the reason why
     """
-    unavailableReason: String
+    reasonUnavailable: String
 }
 
 """
@@ -1277,17 +1277,24 @@ Information regarding the availablity of a SearchAggregationMode
 """
 type SearchAggregationModeResult {
     """
-    A list of individual aggregation values in decreasing order, this list should only be considered exhaustive if otherCount = 0 and limitHit = false
+    A list of individual aggregation values in decreasing order
     """
     values: [AggregationValue!]!
     """
-    A count to capture the number of results that are not included in the list of values returned
+    A count to capture the number of results that are not included in the list of values returned.
+    This includes result counts for both known values that were excluded by the requested limit and result count for
+    unknown values if the result is not exhaustive
     """
-    otherCount: Int
+    otherResultCount: Int
     """
-    Indiciates if the maximum number of tracked values was hit.  If true any individual AggregationValue count should be considered "at least as many"
+    A count to capture the number of aggregation values that are not included in the list of values returned
+    This includes both the count of values excluded by the requested limit and unknown values if the result is not exhaustive
     """
-    limitHit: Boolean
+    otherValueCount: Int
+    """
+    Indiciates if aggregation was exhaustive and all captured values fit within the internally defined maximum allowed tracked values
+    """
+    isExhaustive: Boolean
 }
 
 """

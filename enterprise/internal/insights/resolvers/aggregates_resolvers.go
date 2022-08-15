@@ -56,7 +56,7 @@ func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 	return false, nil
 }
 
-func (r *aggregationModeAvailabilityResolver) UnavailableReason() (*string, error) {
+func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
 	reason := "not implemented"
 	return &reason, nil
 }
@@ -101,10 +101,14 @@ func (r *searchAggregationModeResultResolver) Values() ([]graphqlbackend.Aggrega
 	return nil, errors.New("not implemented")
 }
 
-func (r *searchAggregationModeResultResolver) OtherCount() (*int32, error) {
+func (r *searchAggregationModeResultResolver) OtherResultCount() (*int32, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (r *searchAggregationModeResultResolver) LimitHit() (*bool, error) {
+func (r *searchAggregationModeResultResolver) OtherValueCount() (*int32, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *searchAggregationModeResultResolver) IsExhaustive() (*bool, error) {
 	return nil, errors.New("not implemented")
 }

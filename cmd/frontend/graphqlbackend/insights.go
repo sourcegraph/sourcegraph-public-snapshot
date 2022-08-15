@@ -485,13 +485,14 @@ type SearchQueryAggregateResolver interface {
 type AggregationModeAvailabilityResolver interface {
 	Mode() string //ENUM
 	Available() (bool, error)
-	UnavailableReason() (*string, error)
+	ReasonUnavailable() (*string, error)
 }
 
 type SearchAggregationModeResultResolver interface {
 	Values() ([]AggregationValue, error)
-	OtherCount() (*int32, error)
-	LimitHit() (*bool, error)
+	OtherResultCount() (*int32, error)
+	OtherValueCount() (*int32, error)
+	IsExhaustive() (*bool, error)
 }
 
 type AggregationValue interface {
