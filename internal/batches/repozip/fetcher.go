@@ -336,14 +336,26 @@ func fetchRepositoryFile(ctx context.Context, client HTTPClient, repo RepoRevisi
 		return false, fmt.Errorf("unable to fetch archive (HTTP %d from %s)", resp.StatusCode, req.URL.String())
 	}
 
-	f, err := os.Create(dest)
+	f, err := os.CreateTemp(filepath.Dir(dest), fmt.Sprintf("%s-*.tmp", filepath.Base(dest)))
 	if err != nil {
 		return false, err
 	}
-	defer f.Close()
+	// Make sure we clean up the temp file in case something fails.
+	defer func(path string) { _ = os.Remove(path) }(f.Name())
 
 	if _, err := io.Copy(f, resp.Body); err != nil {
+		// Be a good citizen, attempt to close the file.
+		_ = f.Close()
 		return false, err
+	}
+	if err := f.Close(); err != nil {
+		return false, errors.Wrap(err, "closing temp file")
+	}
+
+	// Atomically create the actual file, so that there are no artifacts left behind
+	// when this process is aborted, network errors occur, or some witchcraft goes on.
+	if err := os.Rename(f.Name(), dest); err != nil {
+		return false, errors.Wrap(err, "renaming temp file")
 	}
 
 	return true, nil
