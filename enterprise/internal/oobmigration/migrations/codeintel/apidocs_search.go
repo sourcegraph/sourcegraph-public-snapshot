@@ -7,7 +7,7 @@ import (
 
 type apiDocsSearchMigrator struct{}
 
-func NewAPIDocsSearchMigrator() TaggedMigrator {
+func NewAPIDocsSearchMigrator() *apiDocsSearchMigrator {
 	return &apiDocsSearchMigrator{}
 }
 
