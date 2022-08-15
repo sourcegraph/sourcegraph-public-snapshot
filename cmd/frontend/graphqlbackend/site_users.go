@@ -16,6 +16,7 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 	Username         *string
 	Email            *string
 	LastActivePeriod *string
+	Deleted          *bool
 }) (*siteUsersResolver, error) {
 	// 🚨 SECURITY: Only site admins can see users.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
@@ -29,6 +30,7 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 			Username:         args.Username,
 			Email:            args.Email,
 			LastActivePeriod: args.LastActivePeriod,
+			Deleted:          args.Deleted,
 		}}}, nil
 }
 
