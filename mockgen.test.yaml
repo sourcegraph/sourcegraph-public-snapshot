@@ -215,7 +215,7 @@
   interfaces:
     - ConfigurationSource
 - filename: internal/search/repos/mocks_test.go
-  path: github.com/google/zoekt
+  path: github.com/sourcegraph/zoekt
   interfaces:
     - Streamer
 - filename: enterprise/cmd/worker/internal/telemetry/mocks_test.go
