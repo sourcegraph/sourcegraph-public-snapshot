@@ -325,7 +325,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 coreWorkflowImprovementsEnabled && result.type === 'symbol' && styles.symbols
             )}
             data-testid="file-match-children"
-            revision={result.commit}
+            revision={result.commit || ''}
             filePath={result.path}
             repoName={result.repository}
             platformContext={props.platformContext}
