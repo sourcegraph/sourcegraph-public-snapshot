@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SearchAggregationMode string
@@ -97,13 +98,13 @@ type searchAggregationModeResultResolver struct {
 }
 
 func (r *searchAggregationModeResultResolver) Values() ([]graphqlbackend.AggregationValue, error) {
-	panic("not implemented") // TODO: Implement
+	return nil, errors.New("not implemented")
 }
 
 func (r *searchAggregationModeResultResolver) OtherCount() (*int32, error) {
-	panic("not implemented") // TODO: Implement
+	return nil, errors.New("not implemented")
 }
 
 func (r *searchAggregationModeResultResolver) LimitHit() (*bool, error) {
-	panic("not implemented") // TODO: Implement
+	return nil, errors.New("not implemented")
 }
