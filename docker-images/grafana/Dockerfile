@@ -51,7 +51,7 @@ RUN apk add --upgrade --no-cache \
     'busybox>=1.32.1' \
     'ncurses-libs>=6.2_p20210109-r1' \
     'ncurses-terminfo-base>=6.2_p20210109-r1' \
-    'libtirpc>=1.3.2-r1'
+    'libtirpc>=1.3.1-r1'
 
 EXPOSE 3370
 USER grafana
