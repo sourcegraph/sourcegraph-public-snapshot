@@ -23,11 +23,7 @@ type SiteCredential struct {
 type EncryptableCredential = encryption.Encryptable
 
 func NewUnencryptedCredential(value []byte) *EncryptableCredential {
-	return NewUnencryptedCredentialWithKey(value, nil)
-}
-
-func NewUnencryptedCredentialWithKey(value []byte, key encryption.Key) *EncryptableCredential {
-	return encryption.NewUnencryptedWithKey(string(value), key)
+	return encryption.NewUnencrypted(string(value))
 }
 
 func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *EncryptableCredential {
