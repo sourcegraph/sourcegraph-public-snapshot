@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestLocationsCountMigrator(t *testing.T) {
@@ -43,11 +42,11 @@ func TestLocationsCountMigrator(t *testing.T) {
 
 	n := 500
 	expectedCounts := make([]int, 0, n)
-	locations := make([]precise.LocationData, 0, n)
+	locations := make([]LocationData, 0, n)
 
 	for i := 0; i < n; i++ {
 		expectedCounts = append(expectedCounts, i+1)
-		locations = append(locations, precise.LocationData{URI: fmt.Sprintf("file://%d", i)})
+		locations = append(locations, LocationData{URI: fmt.Sprintf("file://%d", i)})
 
 		data, err := serializer.MarshalLocations(locations)
 		if err != nil {

@@ -4,54 +4,52 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDocumentData(t *testing.T) {
-	expected := precise.DocumentData{
-		Ranges: map[precise.ID]precise.RangeData{
-			precise.ID("7864"): {
+	expected := DocumentData{
+		Ranges: map[ID]RangeData{
+			ID("7864"): {
 				StartLine:          541,
 				StartCharacter:     10,
 				EndLine:            541,
 				EndCharacter:       12,
-				DefinitionResultID: precise.ID("1266"),
-				ReferenceResultID:  precise.ID("15871"),
-				HoverResultID:      precise.ID("1269"),
+				DefinitionResultID: ID("1266"),
+				ReferenceResultID:  ID("15871"),
+				HoverResultID:      ID("1269"),
 				MonikerIDs:         nil,
 			},
-			precise.ID("8265"): {
+			ID("8265"): {
 				StartLine:          266,
 				StartCharacter:     10,
 				EndLine:            266,
 				EndCharacter:       16,
-				DefinitionResultID: precise.ID("311"),
-				ReferenceResultID:  precise.ID("15500"),
-				HoverResultID:      precise.ID("317"),
-				MonikerIDs:         []precise.ID{precise.ID("314")},
+				DefinitionResultID: ID("311"),
+				ReferenceResultID:  ID("15500"),
+				HoverResultID:      ID("317"),
+				MonikerIDs:         []ID{ID("314")},
 			},
 		},
-		HoverResults: map[precise.ID]string{
-			precise.ID("1269"): "```go\nvar id string\n```",
-			precise.ID("317"):  "```go\ntype Vertex struct\n```\n\n---\n\nVertex contains information of a vertex in the graph.\n\n---\n\n```go\nstruct {\n    Element\n    Label VertexLabel \"json:\\\"label\\\"\"\n}\n```",
+		HoverResults: map[ID]string{
+			ID("1269"): "```go\nvar id string\n```",
+			ID("317"):  "```go\ntype Vertex struct\n```\n\n---\n\nVertex contains information of a vertex in the graph.\n\n---\n\n```go\nstruct {\n    Element\n    Label VertexLabel \"json:\\\"label\\\"\"\n}\n```",
 		},
-		Monikers: map[precise.ID]precise.MonikerData{
-			precise.ID("314"): {
+		Monikers: map[ID]MonikerData{
+			ID("314"): {
 				Kind:                 "export",
 				Scheme:               "gomod",
 				Identifier:           "github.com/sourcegraph/lsif-go/protocol:Vertex",
-				PackageInformationID: precise.ID("213"),
+				PackageInformationID: ID("213"),
 			},
-			precise.ID("2494"): {
+			ID("2494"): {
 				Kind:                 "export",
 				Scheme:               "gomod",
 				Identifier:           "github.com/sourcegraph/lsif-go/protocol:VertexLabel",
-				PackageInformationID: precise.ID("213"),
+				PackageInformationID: ID("213"),
 			},
 		},
-		PackageInformation: map[precise.ID]precise.PackageInformationData{
-			precise.ID("213"): {
+		PackageInformation: map[ID]PackageInformationData{
+			ID("213"): {
 				Name:    "github.com/sourcegraph/lsif-go",
 				Version: "v0.0.0-ad3507cbeb18",
 			},
@@ -95,48 +93,8 @@ func TestDocumentData(t *testing.T) {
 	})
 }
 
-func TestResultChunkData(t *testing.T) {
-	expected := precise.ResultChunkData{
-		DocumentPaths: map[precise.ID]string{
-			precise.ID("4"):   "internal/gomod/module.go",
-			precise.ID("302"): "protocol/protocol.go",
-			precise.ID("305"): "protocol/writer.go",
-		},
-		DocumentIDRangeIDs: map[precise.ID][]precise.DocumentIDRangeID{
-			precise.ID("34"): {
-				{DocumentID: precise.ID("4"), RangeID: precise.ID("31")},
-			},
-			precise.ID("14040"): {
-				{DocumentID: precise.ID("3978"), RangeID: precise.ID("4544")},
-			},
-			precise.ID("14051"): {
-				{DocumentID: precise.ID("3978"), RangeID: precise.ID("4568")},
-				{DocumentID: precise.ID("3978"), RangeID: precise.ID("9224")},
-				{DocumentID: precise.ID("3978"), RangeID: precise.ID("9935")},
-				{DocumentID: precise.ID("3978"), RangeID: precise.ID("9996")},
-			},
-		},
-	}
-
-	serializer := newSerializer()
-
-	recompressed, err := serializer.MarshalResultChunkData(expected)
-	if err != nil {
-		t.Fatalf("unexpected error marshalling result chunk data: %s", err)
-	}
-
-	roundtripActual, err := serializer.UnmarshalResultChunkData(recompressed)
-	if err != nil {
-		t.Fatalf("unexpected error unmarshalling result chunk data: %s", err)
-	}
-
-	if diff := cmp.Diff(expected, roundtripActual); diff != "" {
-		t.Errorf("unexpected document data (-want +got):\n%s", diff)
-	}
-}
-
 func TestLocations(t *testing.T) {
-	expected := []precise.LocationData{
+	expected := []LocationData{
 		{
 			URI:            "internal/index/indexer.go",
 			StartLine:      36,

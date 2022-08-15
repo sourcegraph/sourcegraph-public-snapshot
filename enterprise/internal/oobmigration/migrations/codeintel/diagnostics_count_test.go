@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDiagnosticsCountMigrator(t *testing.T) {
@@ -42,13 +41,13 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 
 	n := 500
 	expectedCounts := make([]int, 0, n)
-	diagnostics := make([]precise.DiagnosticData, 0, n)
+	diagnostics := make([]DiagnosticData, 0, n)
 
 	for i := 0; i < n; i++ {
 		expectedCounts = append(expectedCounts, i+1)
-		diagnostics = append(diagnostics, precise.DiagnosticData{Code: fmt.Sprintf("c%d", i)})
+		diagnostics = append(diagnostics, DiagnosticData{Code: fmt.Sprintf("c%d", i)})
 
-		data, err := serializer.MarshalLegacyDocumentData(precise.DocumentData{
+		data, err := serializer.MarshalLegacyDocumentData(DocumentData{
 			Diagnostics: diagnostics,
 		})
 		if err != nil {
