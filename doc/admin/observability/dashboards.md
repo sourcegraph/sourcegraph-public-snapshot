@@ -15691,6 +15691,62 @@ Query: `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2
 
 <br />
 
+#### zoekt: zoekt_shards_sched
+
+<p class="subtitle">Current number of zoekt scheduler processes in a state</p>
+
+Each ongoing search request starts its life as an interactive query. If it
+takes too long it becomes a batch query. Between state transitions it can be queued.
+
+If you have a high number of batch queries it is a sign there is a large load
+of slow queries. Alternatively your systems are underprovisioned and normal
+search queries are taking too long.
+
+For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type, state) (zoekt_shards_sched)`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_shards_sched_total
+
+<p class="subtitle">Rate of zoekt scheduler process state transitions in the last 5m</p>
+
+Each ongoing search request starts its life as an interactive query. If it
+takes too long it becomes a batch query. Between state transitions it can be queued.
+
+If you have a high number of batch queries it is a sign there is a large load
+of slow queries. Alternatively your systems are underprovisioned and normal
+search queries are taking too long.
+
+For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type, state) (rate(zoekt_shards_sched[5m]))`
+
+</details>
+
+<br />
+
 ### Zoekt: Git fetch durations
 
 #### zoekt: 90th_percentile_successful_git_fetch_durations_5m
