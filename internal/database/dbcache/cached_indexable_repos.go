@@ -45,9 +45,8 @@ func NewIndexableReposLister(logger log.Logger, store database.RepoStore) *Index
 }
 
 type reposCache struct {
-	cacheAllRepos    atomic.Value
-	cachePublicRepos atomic.Value
-	mu               sync.Mutex
+	cacheAllRepos atomic.Value
+	mu            sync.Mutex
 }
 
 // IndexableReposLister holds the list of indexable repos which are cached for
@@ -65,19 +64,7 @@ type IndexableReposLister struct {
 // The values are cached for up to indexableReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.
 func (s *IndexableReposLister) List(ctx context.Context) (results []types.MinimalRepo, err error) {
-	return s.list(ctx, false)
-}
-
-// ListPublic is similar to List except that it only includes public repos.
-func (s *IndexableReposLister) ListPublic(ctx context.Context) (results []types.MinimalRepo, err error) {
-	return s.list(ctx, true)
-}
-
-func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (results []types.MinimalRepo, err error) {
 	cache := &(s.cacheAllRepos)
-	if onlyPublic {
-		cache = &(s.cachePublicRepos)
-	}
 
 	cached, _ := cache.Load().(*cachedRepos)
 	repos, needsUpdate := cached.repos()
@@ -87,7 +74,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 
 	// We don't have any repos yet, fetch them
 	if len(repos) == 0 {
-		return s.refreshCache(ctx, onlyPublic)
+		return s.refreshCache(ctx)
 	}
 
 	// We have existing repos, return the stale data and start background refresh
@@ -95,7 +82,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 		newCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 
-		_, err := s.refreshCache(newCtx, onlyPublic)
+		_, err := s.refreshCache(newCtx)
 		if err != nil {
 			s.logger.Error("Refreshing indexable repos cache", log.Error(err))
 		}
@@ -103,14 +90,11 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 	return repos, nil
 }
 
-func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool) ([]types.MinimalRepo, error) {
+func (s *IndexableReposLister) refreshCache(ctx context.Context) ([]types.MinimalRepo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	cache := &(s.cacheAllRepos)
-	if onlyPublic {
-		cache = &(s.cachePublicRepos)
-	}
 
 	// Check whether another routine already did the work
 	cached, _ := cache.Load().(*cachedRepos)
@@ -121,10 +105,8 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool
 
 	opts := database.ListIndexableReposOptions{
 		// Zoekt can only index a repo which has been cloned.
-		CloneStatus: types.CloneStatusCloned,
-	}
-	if !onlyPublic {
-		opts.IncludePrivate = true
+		CloneStatus:    types.CloneStatusCloned,
+		IncludePrivate: true,
 	}
 	repos, err := s.store.ListIndexableRepos(ctx, opts)
 	if err != nil {
