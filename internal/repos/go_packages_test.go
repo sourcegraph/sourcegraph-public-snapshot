@@ -50,7 +50,7 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 			Dependencies: []string{
 				"github.com/tsenart/vegeta/v12@v12.8.4",
 				"github.com/coreos/go-oidc@v2.2.1+incompatible",
-				"github.com/sourcegraph/zoekt@v0.0.0-20211108135652-f8e8ada171c7",
+				"github.com/google/zoekt@v0.0.0-20211108135652-f8e8ada171c7",
 				"github.com/gorilla/mux@v1.8.0",
 			},
 		}),
