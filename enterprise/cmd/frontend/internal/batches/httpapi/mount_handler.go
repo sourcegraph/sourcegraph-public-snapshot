@@ -149,7 +149,7 @@ func (h *MountHandler) upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MountHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec, index int) error {
-	f, headers, err := r.FormFile(fmt.Sprintf("%s_%d", "file", index))
+	f, headers, err := r.FormFile(fmt.Sprintf("file_%d", index))
 	if err != nil {
 		return err
 	}
