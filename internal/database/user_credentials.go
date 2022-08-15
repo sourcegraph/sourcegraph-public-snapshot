@@ -26,8 +26,6 @@ type UserCredential struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
-	EncryptedCredential []byte
-	EncryptionKeyID     string
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 
@@ -35,13 +33,26 @@ type UserCredential struct {
 	// we should remove the credential and SSHMigrationApplied fields.
 	SSHMigrationApplied bool
 
-	key encryption.Key
+	Credential *EncryptableCredential
 }
 
-// Authenticator decrypts and creates the authenticator associated with the user
-// credential.
+type EncryptableCredential = encryption.Encryptable
+
+func NewEmptyCredential() *EncryptableCredential {
+	return NewUnencryptedCredential(nil)
+}
+
+func NewUnencryptedCredential(value []byte) *EncryptableCredential {
+	return encryption.NewUnencrypted(string(value))
+}
+
+func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *EncryptableCredential {
+	return encryption.NewEncrypted(cipher, keyID, key)
+}
+
+// Authenticator decrypts and creates the authenticator associated with the user credential.
 func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
-	decrypted, err := encryption.MaybeDecrypt(ctx, uc.key, string(uc.EncryptedCredential), uc.EncryptionKeyID)
+	decrypted, err := uc.Credential.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -54,16 +65,18 @@ func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator
 	return a, nil
 }
 
-// SetAuthenticator encrypts and sets the authenticator within the user
-// credential.
+// SetAuthenticator encrypts and sets the authenticator within the user credential.
 func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
-	secret, id, err := EncryptAuthenticator(ctx, uc.key, a)
-	if err != nil {
-		return errors.Wrap(err, "encrypting authenticator")
+	if uc.Credential == nil {
+		uc.Credential = NewUnencryptedCredential(nil)
 	}
 
-	uc.EncryptedCredential = secret
-	uc.EncryptionKeyID = id
+	raw, err := marshalAuthenticator(a)
+	if err != nil {
+		return errors.Wrap(err, "marshalling authenticator")
+	}
+
+	uc.Credential.Set(raw)
 	return nil
 }
 
@@ -164,9 +177,9 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
-	cred := UserCredential{key: s.key}
+	cred := UserCredential{}
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(&cred, row); err != nil {
+	if err := scanUserCredential(&cred, s.key, row); err != nil {
 		return nil, err
 	}
 
@@ -182,6 +195,10 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 	}
 
 	credential.UpdatedAt = timeutil.Now()
+	encryptedCredential, keyID, err := credential.Credential.Encrypt(ctx, s.key)
+	if err != nil {
+		return err
+	}
 
 	q := sqlf.Sprintf(
 		userCredentialsUpdateQueryFmtstr,
@@ -189,8 +206,8 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.UserID,
 		credential.ExternalServiceType,
 		credential.ExternalServiceID,
-		credential.EncryptedCredential,
-		credential.EncryptionKeyID,
+		encryptedCredential,
+		keyID,
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
 		credential.ID,
@@ -199,7 +216,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(credential, row); err != nil {
+	if err := scanUserCredential(credential, s.key, row); err != nil {
 		return err
 	}
 
@@ -245,9 +262,9 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 		authz,
 	)
 
-	cred := UserCredential{key: s.key}
+	cred := UserCredential{}
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
+	if err := scanUserCredential(&cred, s.key, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []any{id}}
 	} else if err != nil {
 		return nil, err
@@ -274,9 +291,9 @@ func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 		authz,
 	)
 
-	cred := UserCredential{key: s.key}
+	cred := UserCredential{}
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
+	if err := scanUserCredential(&cred, s.key, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []any{scope}}
 	} else if err != nil {
 		return nil, err
@@ -354,8 +371,8 @@ func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 
 	var creds []*UserCredential
 	for rows.Next() {
-		cred := UserCredential{key: s.key}
-		if err := scanUserCredential(&cred, rows); err != nil {
+		cred := UserCredential{}
+		if err := scanUserCredential(&cred, s.key, rows); err != nil {
 			return nil, 0, err
 		}
 		creds = append(creds, &cred)
@@ -465,21 +482,28 @@ RETURNING %s
 //
 // s is inspired by the BatchChange scanner type, but also matches sql.Row, which
 // is generally used directly in this module.
-func scanUserCredential(cred *UserCredential, s interface {
+func scanUserCredential(cred *UserCredential, key encryption.Key, s interface {
 	Scan(...any) error
 }) error {
-	return s.Scan(
+	var credential, keyID string
+
+	if err := s.Scan(
 		&cred.ID,
 		&cred.Domain,
 		&cred.UserID,
 		&cred.ExternalServiceType,
 		&cred.ExternalServiceID,
-		&cred.EncryptedCredential,
-		&cred.EncryptionKeyID,
+		&credential,
+		&keyID,
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
 		&cred.SSHMigrationApplied,
-	)
+	); err != nil {
+		return err
+	}
+
+	cred.Credential = NewEncryptedCredential(credential, keyID, key)
+	return nil
 }
 
 var errUserCredentialCreateAuthz = errors.New("current user cannot create a user credential in this scope")
