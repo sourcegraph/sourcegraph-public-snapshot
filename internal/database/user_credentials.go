@@ -48,7 +48,7 @@ func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *Encryptab
 
 // Authenticator decrypts and creates the authenticator associated with the user credential.
 func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
-	decrypted, err := uc.Credential.Decrypted(ctx)
+	decrypted, err := uc.Credential.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 	}
 
 	credential.UpdatedAt = timeutil.Now()
-	encryptedCredential, keyID, err := credential.Credential.Encrypted(ctx, s.key)
+	encryptedCredential, keyID, err := credential.Credential.Encrypt(ctx, s.key)
 	if err != nil {
 		return err
 	}

@@ -26,8 +26,8 @@ func NewEncryptedJSON[T any](cipher, keyID string, key Key) *JSONEncryptable[T] 
 	return &JSONEncryptable[T]{Encryptable: NewEncrypted(cipher, keyID, key)}
 }
 
-func (e *JSONEncryptable[T]) Decrypted(ctx context.Context) (value T, _ error) {
-	serialized, err := e.Encryptable.Decrypted(ctx)
+func (e *JSONEncryptable[T]) Decrypt(ctx context.Context) (value T, _ error) {
+	serialized, err := e.Encryptable.Decrypt(ctx)
 	if err != nil {
 		return value, err
 	}

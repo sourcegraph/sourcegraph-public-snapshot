@@ -134,7 +134,7 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 		if err := uc.SetAuthenticator(ctx, a); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		if _, _, err := uc.Credential.Encrypted(ctx, badKey); err == nil {
+		if _, _, err := uc.Credential.Encrypt(ctx, badKey); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -146,14 +146,14 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				uc := &UserCredential{
-					Credential: NewUnencryptedCredentialWithKey(nil, key),
+					Credential: NewUnencryptedCredential(nil),
 				}
 
 				if err := uc.SetAuthenticator(ctx, a); err != nil {
 					t.Errorf("unexpected error: %v", err)
 				} else {
 					ctx := context.Background()
-					_, keyID, err := uc.Credential.Encrypted(ctx, key)
+					_, keyID, err := uc.Credential.Encrypt(ctx, key)
 					if err != nil {
 						t.Errorf("unexpected error: %v", err)
 					}
