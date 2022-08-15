@@ -19,6 +19,10 @@ import (
 
 // Store provides the interface for uploads storage.
 type Store interface {
+	// Transaction
+	Transact(ctx context.Context) (Store, error)
+	Done(err error) error
+
 	// Not in use yet.
 	List(ctx context.Context, opts ListOpts) (uploads []shared.Upload, err error)
 
@@ -45,6 +49,9 @@ type Store interface {
 	GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, orderedMonikers []precise.QualifiedMonikerData, limit, offset int) (_ shared.PackageReferenceScanner, _ int, err error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
+	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
+	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]shared.SourcedCommits, error)
+	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
 	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
 	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
 	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
@@ -81,6 +88,27 @@ func New(db database.DB, observationContext *observation.Context) Store {
 		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext),
 	}
+}
+
+func (s *store) Transact(ctx context.Context) (Store, error) {
+	return s.transact(ctx)
+}
+
+func (s *store) transact(ctx context.Context) (*store, error) {
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &store{
+		logger:     s.logger,
+		db:         tx,
+		operations: s.operations,
+	}, nil
+}
+
+func (s *store) Done(err error) error {
+	return s.db.Done(err)
 }
 
 // ListOpts specifies options for listing uploads.

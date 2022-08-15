@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	dbmigrations "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore/migration"
 	lsifmigrations "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -14,17 +13,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 		return err
 	}
 
-	dbStore, err := codeintel.InitDBStore()
-	if err != nil {
-		return err
-	}
-
 	lsifStore, err := codeintel.InitLSIFStore()
-	if err != nil {
-		return err
-	}
-
-	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return err
 	}
@@ -65,22 +54,6 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 		lsifmigrations.APIDocsSearchMigrationID, // 12
 		lsifmigrations.NewAPIDocsSearchMigrator(config.APIDocsSearchMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.APIDocsSearchMigrationBatchInterval},
-	); err != nil {
-		return err
-	}
-
-	if err := outOfBandMigrationRunner.Register(
-		dbmigrations.CommittedAtMigrationID, // 8
-		dbmigrations.NewCommittedAtMigrator(dbStore, gitserverClient, config.CommittedAtMigrationBatchSize),
-		oobmigration.MigratorOptions{Interval: config.CommittedAtMigrationBatchInterval},
-	); err != nil {
-		return err
-	}
-
-	if err := outOfBandMigrationRunner.Register(
-		dbmigrations.ReferenceCountMigrationID, // 11
-		dbmigrations.NewReferenceCountMigrator(dbStore, config.ReferenceCountMigrationBatchSize),
-		oobmigration.MigratorOptions{Interval: config.ReferenceCountMigrationBatchInterval},
 	); err != nil {
 		return err
 	}
