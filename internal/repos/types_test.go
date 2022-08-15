@@ -61,12 +61,12 @@ func TestSyncRateLimiters(t *testing.T) {
 		{
 			ID:     1,
 			Kind:   extsvc.KindGitHub,
-			Config: `{}`, // Use default
+			Config: extsvc.NewEmptyConfig(), // Use default
 		},
 		{
 			ID:     2,
 			Kind:   extsvc.KindGitLab,
-			Config: `{ "rateLimit": {"enabled": true, "requestsPerHour": 10} }`,
+			Config: extsvc.NewUnencryptedConfig(`{ "rateLimit": {"enabled": true, "requestsPerHour": 10} }`),
 		},
 	}
 
@@ -176,7 +176,7 @@ func TestGrantedScopes(t *testing.T) {
 	}
 
 	t.Run("Test external service with user namespace", func(t *testing.T) {
-		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceUserID: 123}
+		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: extsvc.NewUnencryptedConfig(`{"token": "abc"}`), NamespaceUserID: 123}
 		// Run twice to use cache
 		for i := 0; i < 2; i++ {
 			have, err := GrantedScopes(ctx, logger, cache, database.NewMockDB(), svc)
@@ -190,7 +190,7 @@ func TestGrantedScopes(t *testing.T) {
 	})
 
 	t.Run("Test external service with org namespace", func(t *testing.T) {
-		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceOrgID: 42}
+		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: extsvc.NewUnencryptedConfig(`{"token": "abc"}`), NamespaceOrgID: 42}
 		// Run twice to use cache
 		for i := 0; i < 2; i++ {
 			have, err := GrantedScopes(ctx, logger, cache, database.NewMockDB(), svc)

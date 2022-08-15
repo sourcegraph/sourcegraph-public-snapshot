@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -308,7 +309,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
-				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "webhooks": [{"org": "org", "secret": "secret"}]}`,
+				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "webhooks": [{"org": "org", "secret": "secret"}]}`),
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
@@ -319,7 +320,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
-				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
@@ -330,7 +331,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #2",
-				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
@@ -341,13 +342,13 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			externalService: &types.ExternalService{
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "GITHUB #3",
-				Config: `
+				Config: extsvc.NewUnencryptedConfig(`
 {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
 	"token": "abc",
 	// "authorization": {}
-}`,
+}`),
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
@@ -358,7 +359,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #4",
-				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
@@ -369,7 +370,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitLab,
 				DisplayName:     "GITLAB #1",
-				Config:          `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
+				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`),
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
@@ -380,7 +381,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			externalService: &types.ExternalService{
 				Kind:           extsvc.KindGitHub,
 				DisplayName:    "GITHUB #4",
-				Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 				NamespaceOrgID: org.ID,
 			},
 			wantUnrestricted: false,
@@ -391,7 +392,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			externalService: &types.ExternalService{
 				Kind:           extsvc.KindGitLab,
 				DisplayName:    "GITLAB #1",
-				Config:         `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
+				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`),
 				NamespaceOrgID: org.ID,
 			},
 			wantUnrestricted: false,
@@ -411,7 +412,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(test.externalService, got); diff != "" {
+			if diff := cmp.Diff(test.externalService, got, et.CompareEncryptable); diff != "" {
 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 
@@ -453,7 +454,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	store := db.ExternalServices()
 	BeforeCreateExternalService = func(ctx context.Context, _ ExternalServiceStore) error {
@@ -483,7 +484,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
@@ -579,10 +580,28 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 			if diff := cmp.Diff(*test.update.DisplayName, got.DisplayName); diff != "" {
 				t.Fatalf("DisplayName mismatch (-want +got):\n%s", diff)
-			} else if diff = cmp.Diff(*test.update.Config, got.Config); diff != "" {
-				t.Fatalf("Config mismatch (-want +got):\n%s", diff)
-			} else if got.UpdatedAt.Equal(es.UpdatedAt) {
-				t.Fatalf("UpdateAt: want to be updated but not")
+			} else {
+				cmpJSON := func(a, b string) string {
+					normalize := func(s string) string {
+						values := map[string]any{}
+						_ = json.Unmarshal([]byte(s), &values)
+						delete(values, "authorization")
+						serialized, _ := json.Marshal(values)
+						return string(serialized)
+					}
+
+					return cmp.Diff(normalize(a), normalize(b))
+				}
+
+				cfg, err := got.Config.Decrypt(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff = cmpJSON(*test.update.Config, cfg); diff != "" {
+					t.Fatalf("Config mismatch (-want +got):\n%s", diff)
+				} else if got.UpdatedAt.Equal(es.UpdatedAt) {
+					t.Fatalf("UpdateAt: want to be updated but not")
+				}
 			}
 
 			if test.wantUnrestricted != got.Unrestricted {
@@ -737,40 +756,52 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := externalServices.Create(ctx, confGet, es)
 	require.NoError(t, err)
 
 	got, err := externalServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
-	exists := gjson.Get(got.Config, "authorization").Exists()
+	cfg, err := got.Config.Decrypt(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	exists := gjson.Get(cfg, "authorization").Exists()
 	assert.True(t, exists, `"authorization" field exists`)
 
 	// Reset Config field and test Upsert method
-	es.Config = `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`
+	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`)
 	err = externalServices.Upsert(ctx, es)
 	require.NoError(t, err)
 
 	got, err = externalServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
-	exists = gjson.Get(got.Config, "authorization").Exists()
+	cfg, err = got.Config.Decrypt(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	exists = gjson.Get(cfg, "authorization").Exists()
 	assert.True(t, exists, `"authorization" field exists`)
 
 	// Reset Config field and test Update method
-	es.Config = `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`
+	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`)
 	err = externalServices.Update(ctx,
 		conf.Get().AuthProviders,
 		es.ID,
 		&ExternalServiceUpdate{
-			Config: &es.Config,
+			Config: &cfg,
 		},
 	)
 	require.NoError(t, err)
 
 	got, err = externalServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
-	exists = gjson.Get(got.Config, "authorization").Exists()
+	cfg, err = got.Config.Decrypt(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	exists = gjson.Get(cfg, "authorization").Exists()
 	assert.True(t, exists, `"authorization" field exists`)
 }
 
@@ -790,7 +821,7 @@ func TestCountRepoCount(t *testing.T) {
 	es1 := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es1)
 	if err != nil {
@@ -841,7 +872,7 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	es1 := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es1)
 	if err != nil {
@@ -851,7 +882,7 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	es2 := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #2",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 	}
 	err = db.ExternalServices().Create(ctx, confGet, es2)
 	if err != nil {
@@ -942,7 +973,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 	extSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	servicesStore := db.ExternalServices()
 	err := servicesStore.Create(ctx, confGet, extSvc)
@@ -1076,7 +1107,7 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
@@ -1120,7 +1151,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 
 	store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
@@ -1132,7 +1163,11 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 
 	// values encrypted should not be readable without the encrypting key
 	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
-	if _, err := noopStore.GetByID(ctx, es.ID); err == nil {
+	svc, err := noopStore.GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatalf("unexpected error querying service: %s", err)
+	}
+	if _, err := svc.Config.Decrypt(ctx); err == nil {
 		t.Fatalf("expected error decrypting with a different key")
 	}
 
@@ -1200,7 +1235,7 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 		svc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: name,
-			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		}
 
 		if u != nil {
@@ -1388,7 +1423,7 @@ func TestGetLastSyncError(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
@@ -1482,19 +1517,19 @@ func TestExternalServicesStore_List(t *testing.T) {
 		{
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     "GITHUB #1",
-			Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 			NamespaceUserID: user.ID,
 			CloudDefault:    true,
 		},
 		{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GITHUB #2",
-			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 		},
 		{
 			Kind:           extsvc.KindGitHub,
 			DisplayName:    "GITHUB #3",
-			Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`,
+			Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`),
 			NamespaceOrgID: org.ID,
 		},
 	}
@@ -1510,7 +1545,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 	deletedES := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #4",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 	}
 	err = db.ExternalServices().Create(ctx, confGet, deletedES)
 	if err != nil {
@@ -1527,7 +1562,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
 
-		if diff := cmp.Diff(ess, got); diff != "" {
+		if diff := cmp.Diff(ess, got, et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
@@ -1540,7 +1575,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		want := []*types.ExternalService(types.ExternalServices(ess).Clone())
 		sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
 
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(want, got, et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
@@ -1553,7 +1588,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		want := []*types.ExternalService(types.ExternalServices(ess).Clone())
 		sort.Slice(want, func(i, j int) bool { return want[i].ID > want[j].ID })
 
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(want, got, et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
@@ -1567,7 +1602,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
 
-		if diff := cmp.Diff(ess[1:2], got); diff != "" {
+		if diff := cmp.Diff(ess[1:2], got, et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
@@ -1582,7 +1617,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 
 		if len(got) != 1 {
 			t.Fatalf("Want 1 external service but got %d", len(ess))
-		} else if diff := cmp.Diff(ess[1], got[0]); diff != "" {
+		} else if diff := cmp.Diff(ess[1], got[0], et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
@@ -1597,7 +1632,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 
 		if len(got) != 1 {
 			t.Fatalf("Want 1 external service but got %d", len(ess))
-		} else if diff := cmp.Diff(ess[0], got[0]); diff != "" {
+		} else if diff := cmp.Diff(ess[0], got[0], et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
@@ -1625,7 +1660,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 
 		if len(got) != 1 {
 			t.Fatalf("Want 1 external service but got %d", len(ess))
-		} else if diff := cmp.Diff(ess[2], got[0]); diff != "" {
+		} else if diff := cmp.Diff(ess[2], got[0], et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
@@ -1723,22 +1758,22 @@ func TestExternalServicesStore_DistinctKinds(t *testing.T) {
 		{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GITHUB #1",
-			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		},
 		{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GITHUB #2",
-			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 		},
 		{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GITLAB #1",
-			Config:      `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`),
 		},
 		{
 			Kind:        extsvc.KindOther,
 			DisplayName: "OTHER #1",
-			Config:      `{"repos": []}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"repos": []}`),
 		},
 	}
 	for _, es := range ess {
@@ -1781,7 +1816,7 @@ func TestExternalServicesStore_Count(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
@@ -1841,8 +1876,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("unexpected HasWebhooks: %v", svc.HasWebhooks)
 		}
 
+		cfg, err := svc.Config.Decrypt(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		// Add webhooks to the config and upsert.
-		svc.Config = `{"webhooks":[{"secret": "secret"}],` + svc.Config[1:]
+		svc.Config.Set(`{"webhooks":[{"secret": "secret"}],` + cfg[1:])
 		if err := tx.Upsert(ctx, svc); err != nil {
 			t.Fatalf("upsert error: %v", err)
 		}
@@ -1899,7 +1939,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		sort.Sort(types.ExternalServices(have))
 
-		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Fatalf("List:\n%s", diff)
 		}
 
@@ -1908,8 +1948,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
+			cfg, err := r.Config.Decrypt(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			r.DisplayName += suffix
-			r.Config = `{"wanted":true,` + r.Config[1:]
+			r.Config.Set(`{"wanted":true,` + cfg[1:])
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
@@ -1924,7 +1969,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		sort.Sort(types.ExternalServices(have))
 
-		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
 
@@ -1942,7 +1987,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		sort.Sort(types.ExternalServices(have))
 
-		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty()); diff != "" {
+		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
 	})
@@ -1975,7 +2020,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
 
 		for _, e := range want {
-			if _, err := noopStore.GetByID(ctx, e.ID); err == nil {
+			svc, err := noopStore.GetByID(ctx, e.ID)
+			if err != nil {
+				t.Fatalf("unexpected error querying service: %s", err)
+			}
+			if _, err := svc.Config.Decrypt(ctx); err == nil {
 				t.Fatalf("expected error decrypting with a different key")
 			}
 		}
@@ -1990,7 +2039,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		sort.Sort(types.ExternalServices(have))
 		sort.Sort(want)
 
-		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Fatalf("List:\n%s", diff)
 		}
 
@@ -1999,8 +2048,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
+			cfg, err := r.Config.Decrypt(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			r.DisplayName += suffix
-			r.Config = `{"wanted":true,` + r.Config[1:]
+			r.Config.Set(`{"wanted":true,` + cfg[1:])
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
@@ -2015,7 +2069,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		sort.Sort(types.ExternalServices(have))
 
-		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
 
@@ -2033,7 +2087,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		sort.Sort(types.ExternalServices(have))
 
-		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty()); diff != "" {
+		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
 	})
@@ -2055,7 +2109,7 @@ func TestExternalServiceStore_GetSyncJobs(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
@@ -2101,7 +2155,7 @@ func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
@@ -2150,7 +2204,7 @@ func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
@@ -2202,7 +2256,7 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 		svc := &types.ExternalService{
 			Kind:         extsvc.KindGitHub,
 			DisplayName:  "Github - Test",
-			Config:       cfg,
+			Config:       extsvc.NewUnencryptedConfig(cfg),
 			CreatedAt:    now,
 			UpdatedAt:    now,
 			CloudDefault: cloudDefault,
@@ -2248,7 +2302,7 @@ func TestExternalServiceStore_SyncDue(t *testing.T) {
 		svc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test",
-			Config:      cfg,
+			Config:      extsvc.NewUnencryptedConfig(cfg),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -2380,7 +2434,7 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
