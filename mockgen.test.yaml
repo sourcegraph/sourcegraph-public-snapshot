@@ -142,10 +142,6 @@
   interfaces:
     - GitserverClient
   package: policies
-- filename: internal/codeintel/stores/dbstore/migration/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore/migration
-  interfaces:
-    - GitServerClient
 - filename: internal/codeintel/codenav/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store
@@ -159,6 +155,14 @@
         - UploadService
         - GitTreeTranslator
         - DBStore
+        - GitserverClient
+- filename: internal/codeintel/uploads/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
+      interfaces:
         - GitserverClient
 - filename: internal/codeintel/uploads/background/cleanup/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup

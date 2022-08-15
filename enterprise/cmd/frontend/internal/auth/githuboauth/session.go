@@ -71,7 +71,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// Try every verified email in succession until the first that succeeds
 	var data extsvc.AccountData
-	githubsvc.SetExternalAccountData(&data, ghUser, token)
+	if err := githubsvc.SetExternalAccountData(&data, ghUser, token); err != nil {
+		return nil, "", err
+	}
 	var (
 		firstSafeErrMsg string
 		firstErr        error
