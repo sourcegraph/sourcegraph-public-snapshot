@@ -377,7 +377,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		syncStore := newMockStore()
 		syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 			if hasCredential {
-				cred := &btypes.SiteCredential{}
+				cred := &btypes.SiteCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "456"})
 				return cred, nil
 			}
@@ -456,7 +456,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
-				cred := &btypes.SiteCredential{}
+				cred := &btypes.SiteCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "456"})
 				return cred, nil
 			})

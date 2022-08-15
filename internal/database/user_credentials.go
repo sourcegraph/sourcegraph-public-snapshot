@@ -71,7 +71,7 @@ func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authentic
 		uc.Credential = NewUnencryptedCredential(nil)
 	}
 
-	raw, err := marshalAuthenticator(a)
+	raw, err := MarshalAuthenticator(a)
 	if err != nil {
 		return errors.Wrap(err, "marshalling authenticator")
 	}
