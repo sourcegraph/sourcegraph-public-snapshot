@@ -350,6 +350,9 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil)
 
 	installations, err := ghClient.GetUserInstallations(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return installations, nil
 }
