@@ -9,7 +9,7 @@ import (
 
 type apiDocsSearchMigrator struct{}
 
-func NewAPIDocsSearchMigrator(_ int) oobmigration.Migrator {
+func NewAPIDocsSearchMigrator() oobmigration.Migrator {
 	return &apiDocsSearchMigrator{}
 }
 

@@ -11,7 +11,6 @@ type Config struct {
 	DefinitionsCountMigrationBatchSize    int
 	ReferencesCountMigrationBatchSize     int
 	DocumentColumnSplitMigrationBatchSize int
-	APIDocsSearchMigrationBatchSize       int
 }
 
 var config = &Config{}
@@ -21,5 +20,4 @@ func init() {
 	config.DefinitionsCountMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_DEFINITIONS_COUNT_MIGRATION_BATCH_SIZE", "1000", "The maximum number of definition records to migrate at once.")
 	config.ReferencesCountMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_REFERENCES_COUNT_MIGRATION_BATCH_SIZE", "1000", "The maximum number of reference records to migrate at a time.")
 	config.DocumentColumnSplitMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_DOCUMENT_COLUMN_SPLIT_MIGRATION_BATCH_SIZE", "100", "The maximum number of document records to migrate at a time.")
-	config.APIDocsSearchMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_API_DOCS_SEARCH_MIGRATION_BATCH_SIZE", "1", "The maximum number of bundles to migrate at a time.")
 }

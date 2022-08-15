@@ -33,7 +33,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 		lsifmigrations.NewDefinitionLocationsCountMigrator(store, config.DefinitionsCountMigrationBatchSize).(TaggedMigrator),
 		lsifmigrations.NewReferencesLocationsCountMigrator(store, config.ReferencesCountMigrationBatchSize).(TaggedMigrator),
 		lsifmigrations.NewDocumentColumnSplitMigrator(store, config.DocumentColumnSplitMigrationBatchSize).(TaggedMigrator),
-		lsifmigrations.NewAPIDocsSearchMigrator(config.APIDocsSearchMigrationBatchSize).(TaggedMigrator),
+		lsifmigrations.NewAPIDocsSearchMigrator().(TaggedMigrator),
 	} {
 		if err := outOfBandMigrationRunner.Register(m.ID(), m, oobmigration.MigratorOptions{Interval: m.Interval()}); err != nil {
 			return err
