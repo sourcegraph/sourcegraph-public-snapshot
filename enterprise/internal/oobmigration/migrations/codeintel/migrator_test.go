@@ -1,24 +1,22 @@
-package migration
+package codeintel
 
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := lsifstore.NewStore(db, conf.DefaultClient(), &observation.TestContext)
+	store := basestore.NewWithHandle(db.Handle())
 	driver := &testMigrationDriver{}
 	migrator := newMigrator(store, driver, migratorOptions{
 		tableName:     "t_test",
@@ -39,7 +37,7 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 		}
 	}
 
-	if err := store.Store.Exec(context.Background(), sqlf.Sprintf(`
+	if err := store.Exec(context.Background(), sqlf.Sprintf(`
 		CREATE TABLE t_test (
 			dump_id        integer not null,
 			a              integer not null,
@@ -52,7 +50,7 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 		t.Fatalf("unexpected error creating data table: %s", err)
 	}
 
-	if err := store.Store.Exec(context.Background(), sqlf.Sprintf(`
+	if err := store.Exec(context.Background(), sqlf.Sprintf(`
 		CREATE TABLE t_test_schema_versions (
 				dump_id            integer primary key not null,
 				min_schema_version integer not null,
@@ -123,6 +121,9 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 }
 
 type testMigrationDriver struct{}
+
+func (m *testMigrationDriver) ID() int                 { return 10 }
+func (m *testMigrationDriver) Interval() time.Duration { return time.Second }
 
 func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
 	var a, b, c int

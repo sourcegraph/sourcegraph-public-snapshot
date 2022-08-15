@@ -1,17 +1,16 @@
-package migration
+package codeintel
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// Migrator is a code-intelligence-specific out-of-band migration runner. This migrator can
+// migrator is a code-intelligence-specific out-of-band migration runner. This migrator can
 // be configured by supplying a different driver instance, which controls the update behavior
 // over every matching row in the migration set.
 //
@@ -40,8 +39,8 @@ import (
 // of migration updates. This requires counting within a small indexed subset of the original
 // table. When checking progress, we can efficiently do a full-table on the much smaller
 // aggregate table.
-type Migrator struct {
-	store                    *lsifstore.Store
+type migrator struct {
+	store                    *basestore.Store
 	driver                   migrationDriver
 	options                  migratorOptions
 	selectionExpressions     []*sqlf.Query // expressions used in select query
@@ -83,6 +82,9 @@ type fieldSpec struct {
 }
 
 type migrationDriver interface {
+	ID() int
+	Interval() time.Duration
+
 	// MigrateRowUp determines which fields to update for the given row. The scanner will receive
 	// the values of the primary keys plus any additional non-updateOnly fields supplied via the
 	// migrator's fields option. Implementations must return the same number of values as the set
@@ -104,7 +106,7 @@ type scanner interface {
 	Scan(dest ...any) error
 }
 
-func newMigrator(store *lsifstore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
+func newMigrator(store *basestore.Store, driver migrationDriver, options migratorOptions) *migrator {
 	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
 	temporaryTableFieldNames := make([]string, 0, len(options.fields))
 	temporaryTableFieldSpecs := make([]*sqlf.Query, 0, len(options.fields))
@@ -128,7 +130,7 @@ func newMigrator(store *lsifstore.Store, driver migrationDriver, options migrato
 		}
 	}
 
-	return &Migrator{
+	return &migrator{
 		store:                    store,
 		driver:                   driver,
 		options:                  options,
@@ -140,10 +142,13 @@ func newMigrator(store *lsifstore.Store, driver migrationDriver, options migrato
 	}
 }
 
+func (m *migrator) ID() int                 { return m.driver.ID() }
+func (m *migrator) Interval() time.Duration { return m.driver.Interval() }
+
 // Progress returns the ratio between the number of upload records that have been completely
 // migrated over the total number of upload records. A record is migrated if its schema version
 // is no less than the target migration version.
-func (m *Migrator) Progress(ctx context.Context) (float64, error) {
+func (m *migrator) Progress(ctx context.Context) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(
 		migratorProgressQuery,
 		sqlf.Sprintf(m.options.tableName),
@@ -158,25 +163,25 @@ func (m *Migrator) Progress(ctx context.Context) (float64, error) {
 }
 
 const migratorProgressQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:Progress
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END FROM
 	(SELECT COUNT(*) as count FROM %s_schema_versions WHERE min_schema_version >= %s) c1,
 	(SELECT COUNT(*) as count FROM %s_schema_versions) c2
 `
 
 // Up runs a batch of the migration.
-func (m *Migrator) Up(ctx context.Context) (err error) {
+func (m *migrator) Up(ctx context.Context) (err error) {
 	return m.run(ctx, m.options.targetVersion-1, m.options.targetVersion, m.driver.MigrateRowUp)
 }
 
 // Down runs a batch of the migration in reverse.
-func (m *Migrator) Down(ctx context.Context) error {
+func (m *migrator) Down(ctx context.Context) error {
 	return m.run(ctx, m.options.targetVersion, m.options.targetVersion-1, m.driver.MigrateRowDown)
 }
 
 // run performs a batch of updates with the given driver function. Records with the given source version
 // will be selected for candidacy, and their version will match the given target version after an update.
-func (m *Migrator) run(ctx context.Context, sourceVersion, targetVersion int, driverFunc driverFunc) (err error) {
+func (m *migrator) run(ctx context.Context, sourceVersion, targetVersion int, driverFunc driverFunc) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -231,7 +236,7 @@ func (m *Migrator) run(ctx context.Context, sourceVersion, targetVersion int, dr
 }
 
 const runUpdateBoundsQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:run
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:run
 WITH
 	current_bounds AS (
 		-- Find the current bounds by scanning the data rows for the
@@ -286,7 +291,7 @@ SELECT
 // Having each batch of updates touch only rows associated with a single dump reduces contention
 // when multiple migrators are running. This method returns the dump identifier and a boolean flag
 // indicating that such a dump could be selected.
-func (m *Migrator) selectAndLockDump(ctx context.Context, tx *lsifstore.Store, sourceVersion int) (_ int, _ bool, err error) {
+func (m *migrator) selectAndLockDump(ctx context.Context, tx *basestore.Store, sourceVersion int) (_ int, _ bool, err error) {
 	return basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		selectAndLockDumpQuery,
 		sqlf.Sprintf(m.options.tableName),
@@ -296,7 +301,7 @@ func (m *Migrator) selectAndLockDump(ctx context.Context, tx *lsifstore.Store, s
 }
 
 const selectAndLockDumpQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndLockDump
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:selectAndLockDump
 SELECT dump_id
 FROM %s_schema_versions
 WHERE
@@ -313,7 +318,7 @@ FOR UPDATE SKIP LOCKED
 // processRows selects a batch of rows from the target table associated with the given dump identifier
 // to  update and calls the given driver func over each row. The driver func returns the set of values
 // that should be used to update that row. These values are fed into a channel usable for batch insert.
-func (m *Migrator) processRows(ctx context.Context, tx *lsifstore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []any, err error) {
+func (m *migrator) processRows(ctx context.Context, tx *basestore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []any, err error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		processRowsQuery,
 		sqlf.Join(m.selectionExpressions, ", "),
@@ -343,7 +348,7 @@ func (m *Migrator) processRows(ctx context.Context, tx *lsifstore.Store, dumpID,
 }
 
 const processRowsQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:processRows
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:processRows
 SELECT %s FROM %s WHERE dump_id = %s AND schema_version = %s LIMIT %s
 `
 
@@ -353,7 +358,7 @@ var temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
 // updateBatch creates a temporary table symmetric to the target table but without any of the read-only
 // fields. Then, the given row values are bulk inserted into the temporary table. Finally, the rows in
 // the temporary table are used to update the target table.
-func (m *Migrator) updateBatch(ctx context.Context, tx *lsifstore.Store, dumpID, targetVersion int, rowValues <-chan []any) error {
+func (m *migrator) updateBatch(ctx context.Context, tx *basestore.Store, dumpID, targetVersion int, rowValues <-chan []any) error {
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		updateBatchTemporaryTableQuery,
 		temporaryTableExpression,
@@ -391,11 +396,11 @@ func (m *Migrator) updateBatch(ctx context.Context, tx *lsifstore.Store, dumpID,
 }
 
 const updateBatchTemporaryTableQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:updateBatch
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:updateBatch
 CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
 `
 
 const updateBatchUpdateQuery = `
--- source: internal/codeintel/stores/lsifstore/migration/migrator.go:updateBatch
+-- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:updateBatch
 UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE dump_id = %s AND %s
 `
