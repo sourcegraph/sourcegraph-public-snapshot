@@ -128,33 +128,6 @@ func TestListIndexableRepos(t *testing.T) {
 				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
 		})
-
-		t.Run("List only public indexable repos", func(t *testing.T) {
-			repos, err := NewIndexableReposLister(logger, db.Repos()).ListPublic(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-			want := []types.MinimalRepo{
-				{
-					ID:    api.RepoID(11),
-					Name:  "github.com/foo/bar11",
-					Stars: 25,
-				},
-				{
-					ID:    api.RepoID(10),
-					Name:  "github.com/foo/bar10",
-					Stars: 5,
-				},
-				{
-					ID:    api.RepoID(14),
-					Name:  "github.com/foo/bar14",
-					Stars: 2,
-				},
-			}
-			if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("mismatch (-want +got):\n%s", diff)
-			}
-		})
 	})
 }
 
