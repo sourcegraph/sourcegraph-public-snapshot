@@ -195,16 +195,6 @@ function install_src_cli() {
   rm -rf src-cli.tar.gz
 }
 
-## Build the ignite-ubuntu image for use in firecracker.
-## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
-function generate_ignite_base_image() {
-  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
-  ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
-  docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
-  # Remove intermediate layers and base image used in ignite-ubuntu.
-  docker system prune --force
-}
-
 ## Loads the required kernel image so it doesn't have to happen on the first VM start.
 function preheat_kernel_image() {
   ignite kernel import --runtime docker "${KERNEL_IMAGE}"
@@ -361,7 +351,6 @@ install_executor
 install_node_exporter
 
 # Service prep and cleanup
-generate_ignite_base_image
 preheat_kernel_image
 configure_ignite
 cleanup

@@ -65,18 +65,13 @@
   "provisioners": [
     {
       "type": "file",
-      "sources": ["builder-sa-key.json"],
-      "destination": "/tmp/"
-    },
-    {
-      "type": "file",
       "sources": ["executor"],
       "destination": "/tmp/"
     },
     {
       "type": "file",
-      "sources": ["ignite-ubuntu"],
-      "destination": "/tmp"
+      "sources": ["ignite-state"],
+      "destination": "/var/lib/firecracker"
     },
     {
       "type": "shell",

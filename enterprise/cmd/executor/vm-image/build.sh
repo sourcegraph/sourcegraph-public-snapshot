@@ -27,6 +27,13 @@ bin_name="$OUTPUT/$(basename $pkg)"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
 popd 1>/dev/null
 
+echo "--- generate ubuntu-ignite image"
+./enterprise/cmd/executor/vm-image/ignite-ubuntu/build.sh
+
+echo "--- export ubuntu-ignite image"
+mkdir "$OUTPUT/ignite-state"
+./enterprise/cmd/executor/vm-image/ignite-ubuntu/makeimg.sh "$OUTPUT/ignite-state"
+
 echo "--- create binary artifacts"
 # Setup new release folder that contains binary, info text.
 mkdir -p "enterprise/cmd/executor/vm-image/artifacts/executor/$(git rev-parse HEAD)"
@@ -55,7 +62,6 @@ cp .tool-versions "$OUTPUT"
 pushd ./enterprise/cmd/executor/vm-image 1>/dev/null
 cp executor.json "$OUTPUT"
 cp install.sh "$OUTPUT"
-cp -R ignite-ubuntu "$OUTPUT"
 popd 1>/dev/null
 
 export NAME
