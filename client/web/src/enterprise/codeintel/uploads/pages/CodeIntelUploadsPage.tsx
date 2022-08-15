@@ -140,7 +140,7 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Code graph data uploads' }]}
-                description={`LSIF indexes uploaded to Sourcegraph from CI or from auto-indexing ${
+                description={`Indexes uploaded to Sourcegraph from CI or from auto-indexing ${
                     repo ? 'for this repository' : 'over all repositories'
                 }.`}
                 className="mb-3"
@@ -153,14 +153,14 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
             )}
 
             {repo && commitGraphMetadata && (
-                <Container className="mb-2">
+                <div className="mb-3">
                     <CommitGraphMetadata
                         stale={commitGraphMetadata.stale}
                         updatedAt={commitGraphMetadata.updatedAt}
                         className="mb-0"
                         now={now}
                     />
-                </Container>
+                </div>
             )}
 
             <Container>

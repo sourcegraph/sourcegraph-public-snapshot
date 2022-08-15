@@ -20,7 +20,7 @@ import {
 
 import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
-import { useUiFeatures } from '../../../../hooks/use-ui-features'
+import { useUiFeatures } from '../../../../hooks'
 import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
 import { ShareLinkModal } from '../../../modals/ShareLinkModal/ShareLinkModal'
 

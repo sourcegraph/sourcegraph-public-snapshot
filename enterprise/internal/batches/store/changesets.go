@@ -58,6 +58,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.publication_state"),
 	sqlf.Sprintf("changesets.ui_publication_state"),
 	sqlf.Sprintf("changesets.reconciler_state"),
+	sqlf.Sprintf("changesets.computed_state"),
 	sqlf.Sprintf("changesets.failure_message"),
 	sqlf.Sprintf("changesets.started_at"),
 	sqlf.Sprintf("changesets.finished_at"),
@@ -519,6 +520,7 @@ type ListChangesetsOpts struct {
 	OnlyArchived         bool
 	IncludeArchived      bool
 	IDs                  []int64
+	States               []btypes.ChangesetState
 	PublicationState     *btypes.ChangesetPublicationState
 	ReconcilerStates     []btypes.ReconcilerState
 	ExternalStates       []btypes.ChangesetExternalState
@@ -599,6 +601,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 			states[i] = sqlf.Sprintf("%s", reconcilerState.ToDB())
 		}
 		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
+	}
+	if len(opts.States) != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.computed_state = ANY(%s)", pq.Array(opts.States)))
 	}
 	if len(opts.ExternalStates) > 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = ANY (%s)", pq.Array(opts.ExternalStates)))
@@ -1166,6 +1171,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&t.PublicationState,
 		&t.UiPublicationState,
 		&reconcilerState,
+		&t.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &t.StartedAt},
 		&dbutil.NullTime{Time: &t.FinishedAt},
@@ -1252,17 +1258,17 @@ const getChangesetStatsFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:GetChangesetsStats
 SELECT
 	COUNT(*) AS total,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'errored') AS retrying,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'failed') AS failed,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'scheduled') AS scheduled,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state NOT IN ('failed', 'errored', 'completed', 'scheduled')) AS processing,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND changesets.reconciler_state = 'completed') AS unpublished,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'CLOSED'  AND NOT %s) AS closed,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'DRAFT'   AND NOT %s) AS draft,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'MERGED'  AND NOT %s) AS merged,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'OPEN'    AND NOT %s) AS open,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'DELETED' AND NOT %s) AS deleted,
-	COUNT(*) FILTER (WHERE %s)                                                      AS archived
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'RETRYING') AS retrying,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'FAILED') AS failed,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'SCHEDULED') AS scheduled,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'PROCESSING') AS processing,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DELETED') AS deleted,
+	COUNT(*) FILTER (WHERE %s) AS archived
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE
@@ -1401,27 +1407,23 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 		sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeIDStr),
 	}
 
-	publishedAndCompleted := sqlf.Sprintf("changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed'")
 	archived := archivedInBatchChange(batchChangeIDStr)
 
 	return sqlf.Sprintf(
 		getChangesetStatsFmtstr,
-		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
+		archived, archived,
+		archived, archived,
+		archived, archived,
+		archived, archived,
+		archived, archived,
 		archived,
 		sqlf.Join(preds, " AND "),
 	)
 }
 
 func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
-	publishedAndCompleted := sqlf.Sprintf("publication_state = 'PUBLISHED' AND reconciler_state = 'completed'")
-
 	return sqlf.Sprintf(
 		getRepoChangesetsStatsFmtstr,
-		publishedAndCompleted, publishedAndCompleted, publishedAndCompleted, publishedAndCompleted,
 		strconv.Itoa(int(repoID)),
 		authzConds,
 	)
@@ -1431,18 +1433,15 @@ const getRepoChangesetsStatsFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:GetRepoChangesetsStats
 SELECT
 	COUNT(*) AS total,
-	COUNT(*) FILTER (WHERE publication_state = 'UNPUBLISHED'
-		AND reconciler_state = 'completed') AS unpublished,
-	COUNT(*) FILTER (WHERE %s AND external_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE %s AND external_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE %s AND external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE %s AND external_state = 'OPEN') AS open
+	COUNT(*) FILTER (WHERE computed_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE computed_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE computed_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE computed_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE computed_state = 'OPEN') AS open
 FROM (
 	SELECT
 		changesets.id,
-		changesets.publication_state,
-		changesets.reconciler_state,
-		changesets.external_state
+		changesets.computed_state
 	FROM
 		changesets
 		INNER JOIN repo ON changesets.repo_id = repo.id

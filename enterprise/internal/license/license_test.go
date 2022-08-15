@@ -104,7 +104,7 @@ func TestInfo_EncodeDecode(t *testing.T) {
 func TestGenerateParseSignedKey(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		want := infoFixture
-		text, err := GenerateSignedKey(want, privateKey)
+		text, _, err := GenerateSignedKey(want, privateKey)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -121,7 +121,7 @@ func TestGenerateParseSignedKey(t *testing.T) {
 
 	t.Run("ignores whitespace", func(t *testing.T) {
 		want := infoFixture
-		text, err := GenerateSignedKey(want, privateKey)
+		text, _, err := GenerateSignedKey(want, privateKey)
 		if err != nil {
 			t.Fatal(err)
 		}

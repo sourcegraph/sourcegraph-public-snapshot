@@ -35,6 +35,9 @@ func Middleware(db database.DB) *auth.Middleware {
 // run cmd/frontend/auth/httpheader/testproxy.go -username=alice` then go to
 // http://localhost:4080. See `-h` for flag help.
 //
+// TESTING: Also see dev/internal/cmd/auth-proxy-http-header for conveniently
+// starting up a proxy for multiple users.
+//
 // 🚨 SECURITY
 func middleware(db database.DB) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

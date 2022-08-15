@@ -18,7 +18,7 @@ import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
@@ -48,7 +48,6 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
-    forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
     requestGraphQL: () => EMPTY,
@@ -119,12 +118,11 @@ const commonProps = () =>
         settingsCascade: NOOP_SETTINGS_CASCADE,
         onThemePreferenceChange: action('onThemePreferenceChange'),
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         setPatternType: action('setPatternType'),
         caseSensitive: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER },
         platformContext: PLATFORM_CONTEXT,
-        keyboardShortcuts: [],
         setCaseSensitivity: action('setCaseSensitivity'),
         activation: undefined,
         isSourcegraphDotCom: true,

@@ -109,11 +109,6 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
         {
-            to: '/site-admin/code-graph/lockfiles',
-            label: 'Lockfiles',
-            condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
-        },
-        {
             to: '/site-admin/code-graph/configuration',
             label: 'Configuration',
         },
@@ -127,8 +122,8 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     codeIntelGroup,
     usersGroup,
     maintenanceGroup,
-    extensionsGroup,
+    window.context.enableLegacyExtensions ? extensionsGroup : undefined,
     batchChangesGroup,
     businessGroup,
     apiConsoleGroup,
-]
+].filter(Boolean) as SiteAdminSideBarGroups

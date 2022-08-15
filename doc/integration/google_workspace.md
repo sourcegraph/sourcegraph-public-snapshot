@@ -2,7 +2,7 @@
 
 > NOTE: Company-wide deployment via Google Workspace is a [paid upgrade](https://about.sourcegraph.com/pricing)
 
-You can install and preconfigure the Sourcegraph Chrome extension for all members of a Google Workspace organization or organizational unit, so that they can get code intelligence on files and diffs.
+You can install and preconfigure the Sourcegraph Chrome extension for all members of a Google Workspace organization or organizational unit, so that they can get code navigation on files and diffs.
 
 By default, the browser extension only has access to github.com. Access to additional sites is granted by the user, on a site-by-site basis.
 
@@ -29,9 +29,9 @@ Using the Google Admin Console, you can [automatically install](https://support.
 
 The Sourcegraph browser extension will then be rolled out to all managed browsers in your organization, preconfigured to point to your self-hosted Sourcegraph instance. The roll-out may take some time.
 
-Users will need to have valid accounts and be signed in to your Sourcegraph instance for the browser extension to provide code intelligence.
+Users will need to have valid accounts and be signed in to your Sourcegraph instance for the browser extension to provide code navigation.
 
-Users may also need to grant additional permissions to the Sourcegraph browser extension in order for it to provide code intelligence on your code host. To check if Sourcegraph is properly configured, navigate to any page on your code host, and click the Sourcegraph icon in the browser toolbar. The popup will prompt you to grant additional permissions if needed:
+Users may also need to grant additional permissions to the Sourcegraph browser extension in order for it to provide code navigation on your code host. To check if Sourcegraph is properly configured, navigate to any page on your code host, and click the Sourcegraph icon in the browser toolbar. The popup will prompt you to grant additional permissions if needed:
 
 ![](img/permissions.png)
 

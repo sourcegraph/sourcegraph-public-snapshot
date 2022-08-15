@@ -28,7 +28,7 @@ interface EmbeddedNotebookPageProps
             | 'authenticatedUser'
             | 'settingsCascade'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     notebookId: string
 }

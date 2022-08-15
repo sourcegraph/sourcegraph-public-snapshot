@@ -62,7 +62,7 @@ func TestRepositoryFetcher(t *testing.T) {
 	})
 }
 
-func consumeParseRequests(t *testing.T, ch <-chan parseRequestOrError) map[string]string {
+func consumeParseRequests(t *testing.T, ch <-chan ParseRequestOrError) map[string]string {
 	parseRequests := map[string]string{}
 	for v := range ch {
 		if v.Err != nil {

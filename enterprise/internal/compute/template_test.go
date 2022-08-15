@@ -63,12 +63,12 @@ func Test_templatize(t *testing.T) {
 	autogold.Want(
 		"basic templatize",
 		"artifcats: {{.Repo}}").
-		Equal(t, templatize("artifcats: $repo"))
+		Equal(t, templatize("artifcats: $repo", &MetaEnvironment{}))
 
 	autogold.Want(
 		"exclude regex var in templatize",
 		"artifcats: {{.Repo}} $1").
-		Equal(t, templatize("artifcats: $repo $1"))
+		Equal(t, templatize("artifcats: $repo $1", &MetaEnvironment{}))
 }
 
 func Test_substituteMetaVariables(t *testing.T) {

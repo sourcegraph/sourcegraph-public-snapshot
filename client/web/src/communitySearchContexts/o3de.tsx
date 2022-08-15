@@ -13,12 +13,12 @@ export const o3de: CommunitySearchContextMetadata = {
     examples: [
         {
             title: 'Search for O3DE gems',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'file:gem.json',
         },
         {
             title: 'Browse diffs for recent code changes',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'type:diff after:"1 week ago"',
         },
     ],

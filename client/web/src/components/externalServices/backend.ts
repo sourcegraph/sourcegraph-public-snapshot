@@ -1,8 +1,9 @@
+import { MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
-import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors, useMutation } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -13,8 +14,6 @@ import {
     AddExternalServiceVariables,
     AddExternalServiceResult,
     ExternalServiceFields,
-    ExternalServiceVariables,
-    ExternalServiceResult,
     DeleteExternalServiceVariables,
     DeleteExternalServiceResult,
     ExternalServicesVariables,
@@ -23,6 +22,11 @@ import {
     SetExternalServiceReposResult,
     AffiliatedRepositoriesVariables,
     AffiliatedRepositoriesResult,
+    SyncExternalServiceResult,
+    SyncExternalServiceVariables,
+    ExternalServiceSyncJobsVariables,
+    ExternalServiceSyncJobConnectionFields,
+    ExternalServiceSyncJobsResult,
 } from '../../graphql-operations'
 
 export const externalServiceFragment = gql`
@@ -77,24 +81,25 @@ export async function addExternalService(
         .toPromise()
 }
 
-export function isExternalService(
-    externalServiceOrError?: ExternalServiceFields | ErrorLike
-): externalServiceOrError is ExternalServiceFields {
-    return !!externalServiceOrError && !isErrorLike(externalServiceOrError)
-}
+export const UPDATE_EXTERNAL_SERVICE = gql`
+    mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
+        updateExternalService(input: $input) {
+            ...ExternalServiceFields
+        }
+    }
+    ${externalServiceFragment}
+`
+
+export const useUpdateExternalService = (
+    onCompleted: (result: UpdateExternalServiceResult) => void
+): MutationTuple<UpdateExternalServiceResult, UpdateExternalServiceVariables> =>
+    useMutation(UPDATE_EXTERNAL_SERVICE, { onCompleted })
 
 export function updateExternalService(
     variables: UpdateExternalServiceVariables
 ): Promise<UpdateExternalServiceResult['updateExternalService']> {
     return requestGraphQL<UpdateExternalServiceResult, UpdateExternalServiceVariables>(
-        gql`
-            mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
-                updateExternalService(input: $input) {
-                    ...ExternalServiceFields
-                }
-            }
-            ${externalServiceFragment}
-        `,
+        UPDATE_EXTERNAL_SERVICE,
         variables
     )
         .pipe(
@@ -119,31 +124,15 @@ export function setExternalServiceRepos(variables: SetExternalServiceReposVariab
         .toPromise()
 }
 
-export function fetchExternalService(id: Scalars['ID']): Observable<ExternalServiceFields> {
-    return requestGraphQL<ExternalServiceResult, ExternalServiceVariables>(
-        gql`
-            query ExternalService($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ...ExternalServiceFields
-                }
-            }
-            ${externalServiceFragment}
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error('External service not found')
-            }
-            if (node.__typename !== 'ExternalService') {
-                throw new Error(`Node is a ${node.__typename}, not a ExternalService`)
-            }
-            return node
-        })
-    )
-}
+export const FETCH_EXTERNAL_SERVICE = gql`
+    query ExternalService($id: ID!) {
+        node(id: $id) {
+            __typename
+            ...ExternalServiceFields
+        }
+    }
+    ${externalServiceFragment}
+`
 
 export function listAffiliatedRepositories(
     args: AffiliatedRepositoriesVariables
@@ -304,6 +293,76 @@ export function queryExternalServicesScope(
                 throw createAggregateError(errors)
             }
             return data.externalServices
+        })
+    )
+}
+
+export const SYNC_EXTERNAL_SERVICE = gql`
+    mutation SyncExternalService($id: ID!) {
+        syncExternalService(id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useSyncExternalService(): MutationTuple<SyncExternalServiceResult, SyncExternalServiceVariables> {
+    return useMutation<SyncExternalServiceResult, SyncExternalServiceVariables>(SYNC_EXTERNAL_SERVICE)
+}
+
+export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
+    query ExternalServiceSyncJobs($first: Int, $externalService: ID!) {
+        node(id: $externalService) {
+            __typename
+            ... on ExternalService {
+                syncJobs(first: $first) {
+                    ...ExternalServiceSyncJobConnectionFields
+                }
+            }
+        }
+    }
+
+    fragment ExternalServiceSyncJobConnectionFields on ExternalServiceSyncJobConnection {
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            ...ExternalServiceSyncJobListFields
+        }
+    }
+
+    fragment ExternalServiceSyncJobListFields on ExternalServiceSyncJob {
+        __typename
+        id
+        state
+        startedAt
+        finishedAt
+        failureMessage
+    }
+`
+
+export function queryExternalServiceSyncJobs(
+    variables: ExternalServiceSyncJobsVariables
+): Observable<ExternalServiceSyncJobConnectionFields> {
+    return requestGraphQL<ExternalServiceSyncJobsResult, ExternalServiceSyncJobsVariables>(
+        EXTERNAL_SERVICE_SYNC_JOBS,
+        variables
+    ).pipe(
+        map(({ data, errors }) => {
+            if (errors) {
+                throw createAggregateError(errors)
+            }
+            if (!data) {
+                throw new Error('No data found')
+            }
+            if (!data.node) {
+                throw new Error('External service not found')
+            }
+            if (data.node.__typename !== 'ExternalService') {
+                throw new Error(`Node is a ${data.node.__typename}, not ExternalService`)
+            }
+            return data.node.syncJobs
         })
     )
 }

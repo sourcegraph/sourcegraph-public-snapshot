@@ -22,7 +22,7 @@ const spanCategoryKey attribute.Key = "sg.span_category"
 // Span provides convenience functions for setting the status of the span.
 func StartSpan(ctx context.Context, spanName string, category string, opts ...trace.SpanStartOption) (context.Context, *Span) {
 	opts = append(opts, trace.WithAttributes(spanCategoryKey.String(category)))
-	ctx, s := otel.GetTracerProvider().Tracer("dev/sg/anaytics").Start(ctx, spanName, opts...)
+	ctx, s := otel.GetTracerProvider().Tracer("dev/sg/analytics").Start(ctx, spanName, opts...)
 	return ctx, &Span{s}
 }
 

@@ -98,7 +98,7 @@ As a first pass,
 we recommend generating occurrences for a subset of declarations
 and checking that the generation works from end-to-end.
 
-In the context of a precise code intel indexer,
+In the context of an indexer,
 this typically involves using a compiler frontend or a language server as a library.
 First, run the compiler pipeline until semantic analysis is completed.
 Next, perform a top-down traversal of ASTs for all files,

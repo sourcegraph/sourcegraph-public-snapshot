@@ -136,7 +136,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		depsSvc := livedependencies.GetService(db, nil)
+		depsSvc := livedependencies.GetService(db)
 		obsLogger := logger.Scoped("ObservedSource", "")
 		src = repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
 	}
@@ -194,7 +194,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
 	}
 
-	go repos.RunPhabricatorRepositorySyncWorker(ctx, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
+	go repos.RunPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
 
 	// git-server repos purging thread
 	var purgeTTL time.Duration
@@ -539,7 +539,7 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 		// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
 		// scheduler
 		opts := database.ListIndexableReposOptions{
-			OnlyUncloned:   true,
+			CloneStatus:    types.CloneStatusNotCloned,
 			IncludePrivate: true,
 		}
 		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {

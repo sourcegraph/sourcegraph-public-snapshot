@@ -44,6 +44,7 @@ import {
     GetLicenseAndUsageInfoResult,
     GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters } from './BatchChangeListFilters'
@@ -308,7 +309,10 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                 <li className="nav-item">
                     <Link
                         to=""
-                        onClick={onSelectGettingStarted}
+                        onClick={event => {
+                            onSelectGettingStarted(event)
+                            eventLogger.log('batch_change_homepage:getting_started:clicked')
+                        }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         role="button"
                         data-testid="test-getting-started-btn"

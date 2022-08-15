@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
-	zoekt "github.com/google/zoekt/query"
+	zoekt "github.com/sourcegraph/zoekt/query"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {

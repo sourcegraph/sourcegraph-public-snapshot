@@ -18,6 +18,7 @@ type UploadService interface {
 	// Uploads
 	GetUploads(ctx context.Context, opts uploadShared.GetUploadsOptions) (uploads []uploadShared.Upload, totalCount int, err error)
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
+	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
 
 	// Commits
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)

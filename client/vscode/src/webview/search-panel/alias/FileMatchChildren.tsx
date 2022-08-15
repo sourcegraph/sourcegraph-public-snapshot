@@ -39,8 +39,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
     openInNewTab?: boolean
-    /* Called when the first result has fully loaded. */
-    onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
@@ -157,19 +155,12 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const {
-        result,
-        grouped,
-        fetchHighlightedFileLineRanges,
-        telemetryService,
-        onFirstResultLoad,
-        extensionsController,
-    } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
     const { openFile, openSymbol } = useOpenSearchResultsContext()
 
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst: boolean, startLine: number, endLine: number) => {
+        (startLine: number, endLine: number) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
@@ -189,9 +180,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 false
             ).pipe(
                 map(lines => {
-                    if (isFirst && onFirstResultLoad) {
-                        onFirstResultLoad()
-                    }
                     telemetryService.log(
                         'search.latencies.frontend.code-load',
                         { durationMs: Date.now() - startTime },
@@ -203,7 +191,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService, onFirstResultLoad]
+        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -344,7 +332,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                                    isFirst={index === 0}
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}
                                     hoverifier={props.hoverifier}

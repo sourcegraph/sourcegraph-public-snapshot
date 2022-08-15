@@ -253,7 +253,11 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 <RepoHeaderActionDropdownToggle aria-label="Repository actions">
                                     <Icon aria-hidden={true} svgPath={mdiDotsVertical} />
                                 </RepoHeaderActionDropdownToggle>
-                                <MenuList position={Position.bottomEnd}>{rightActions.map(a => a.element)}</MenuList>
+                                <MenuList position={Position.bottomEnd}>
+                                    {rightActions.map(a => (
+                                        <React.Fragment key={a.id}>{a.element}</React.Fragment>
+                                    ))}
+                                </MenuList>
                             </Menu>
                         </li>
                     </ul>

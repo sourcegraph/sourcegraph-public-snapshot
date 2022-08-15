@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -111,6 +112,9 @@ var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum n
 // The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
 var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
 
+// Controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB. Defaults to false.
+var removeNonExistingRepos, _ = strconv.ParseBool(env.Get("SRC_REMOVE_NON_EXISTING_REPOS", "false", "controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB"))
+
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -145,6 +149,10 @@ var (
 		Help:    "Duration of gitserver janitor background job",
 		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
 	})
+	nonExistingReposRemoved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_non_existing_repos_removed",
+		Help: "number of non existing repos removed during cleanup",
+	})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -163,7 +171,7 @@ const reposStatsName = "repos-stats.json"
 // 10. Perform sg-maintenance
 // 11. Git prune
 // 12. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos(gitServerAddrs []string) {
+func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
 	defer func() {
@@ -173,14 +181,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
 
 	knownGitServerShard := false
-	for _, addr := range gitServerAddrs {
+	for _, addr := range gitServerAddrs.Addresses {
 		if s.hostnameMatch(addr) {
 			knownGitServerShard = true
 			break
 		}
 	}
 	if !knownGitServerShard {
-		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
+		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs.Addresses))
 	}
 
 	bCtx, bCancel := s.serverContext()
@@ -207,7 +215,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		}
 	}()
 
-	maybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
+	collectSizeAndMaybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
 		name := s.name(dir)
@@ -215,7 +223,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr := addrForKey(name, gitServerAddrs)
+		addr, err := s.addrForRepo(bCtx, name, gitServerAddrs)
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
@@ -268,6 +276,24 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		}
 		reposRemoved.WithLabelValues(reason).Inc()
 		return true, nil
+	}
+
+	maybeRemoveNonExisting := func(dir GitDir) (bool, error) {
+		if !removeNonExistingRepos {
+			return false, nil
+		}
+
+		repo, _ := s.DB.GitserverRepos().GetByName(bCtx, s.name(dir))
+		if repo == nil {
+			err := s.removeRepoDirectory(dir, false)
+			if err == nil {
+				nonExistingReposRemoved.Inc()
+			} else {
+				s.Logger.Warn("failed removing repo that is not in DB", log.String("repo", string(dir)))
+			}
+			return true, err
+		}
+		return false, nil
 	}
 
 	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
@@ -428,9 +454,11 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 	cleanups := []cleanupFn{
 		// Compute the amount of space used by the repo
-		{"compute stats and delete wrong shard repos", maybeDeleteWrongShardRepos},
+		{"compute stats and delete wrong shard repos", collectSizeAndMaybeDeleteWrongShardRepos},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
+		// Remove repo if DB does not contain it anymore
+		{"maybe remove non existing", maybeRemoveNonExisting},
 		// If git is interrupted it can leave lock files lying around. It does not clean
 		// these up, and instead fails commands.
 		{"remove stale locks", removeStaleLocks},
@@ -514,8 +542,6 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		cleanupLogger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	// Repo sizes are set only once during the first janitor run.
-	// There is no need for a second run because all repo sizes will be set until this moment
 	err = s.setRepoSizes(context.Background(), repoToSize)
 	if err != nil {
 		cleanupLogger.Error("setting repo sizes", log.Error(err))
@@ -533,7 +559,8 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 }
 
-// setRepoSizes uses calculated sizes of repos to update database entries of repos with actual sizes
+// setRepoSizes uses calculated sizes of repos to update database entries of repos
+// with actual sizes, but only up to 10,000 in one run.
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
 	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
 
@@ -567,18 +594,19 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	}
 
 	// updating repos
-	err = s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
 	if err != nil {
 		return err
 	}
-	logger.Info("repos had their sizes updated",
-		log.Int("reposToUpdate", len(reposToUpdate)))
+	if updatedRepos > 0 {
+		logger.Info("repos had their sizes updated", log.Int("updatedRepos", updatedRepos))
+	}
 
 	return nil
 }
 
 // fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
-func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]*types.Repo, error) {
+func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]types.MinimalRepo, error) {
 	reposToUpdateNames := make([]string, count)
 	idx := 0
 	// random nature of map traversal yields a different subset of repos every time this function is called
@@ -590,7 +618,7 @@ func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int
 		idx++
 	}
 
-	foundRepos, err := s.DB.Repos().List(ctx, database.ReposListOptions{
+	foundRepos, err := s.DB.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
 		Names:          reposToUpdateNames,
 		LimitOffset:    &database.LimitOffset{Limit: count},
 		IncludeBlocked: true,
@@ -1446,4 +1474,8 @@ func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
 		return true, err
 	}
 	return true, nil
+}
+
+func mockRemoveNonExistingReposConfig(value bool) {
+	removeNonExistingRepos = value
 }

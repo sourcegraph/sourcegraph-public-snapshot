@@ -26,11 +26,11 @@ Remember to run the code-generation step in the go-ctags repository and restart 
 
 **Note**: Because we have not yet updated Zoekt, you will need to ensure that your symbol search and symbol sidebar operations are not on an indexed branch. These paths must hit the _unindexed_ symbols paths in order to hit the code path with updated ctags definitions.
 
-## Code intelligence support
+## Code navigation support
 
-To support precise code intelligence, [write an SCIP indexer](../../code_intelligence/explanations/writing_an_indexer.md). To support search-based code intelligence, ensure a `sourcegraph/{lang}` Sourcegraph extension is published to the official extension registry:
+To support precise code navigation, [write an SCIP indexer](../../code_intelligence/explanations/writing_an_indexer.md). To support search-based code navigation, ensure a `sourcegraph/{lang}` Sourcegraph extension is published to the official extension registry:
 
-0. _Code intelligence extensions are powered by symbol search. If the target language is not supported by symbols, stop and follow the guide above first._
+0. _Code navigation extensions are powered by symbol search. If the target language is not supported by symbols, stop and follow the guide above first._
 1. Add (or update) the target language's configuration in [languages.ts](https://github.com/sourcegraph/code-intel-extensions/blob/e255e3776f213b30f2c073b98e0a959cad67c19c/shared/language-specs/languages.ts#L336). See the definition of [LanguageSpec](https://github.com/sourcegraph/code-intel-extensions/blob/e255e3776f213b30f2c073b98e0a959cad67c19c/shared/language-specs/spec.ts#L7) for an available set of fields. The likely differences will be the characters that make up the identifier, the comment delimiters, and the set of file extensions to search within for definitions and references.
 1. Ensure an [icon](https://github.com/sourcegraph/code-intel-extensions/tree/e255e3776f213b30f2c073b98e0a959cad67c19c/icons) exists for the target language. This ensures that the BuildKite pipeline will generate and publish an extension for the new language definition.
 1. Correlate the language's file extensions and the new Sourcegraph extension by adding entries to the switch in [getModeFromExtension](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a4517f560a1c312e5effd6d3a858b76b56936e0e/-/blob/client/shared/src/languages.ts#L40:10). This enables the providers from the Sourcegraph extension to be registered when a text document with the correlated extensions is opened. The value returned from this function and the `languageId` from the language's configuration should match exactly.

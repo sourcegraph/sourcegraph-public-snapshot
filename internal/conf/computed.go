@@ -171,13 +171,6 @@ func CodeIntelAutoIndexingEnabled() bool {
 	return false
 }
 
-func CodeIntelLockfileIndexingEnabled() bool {
-	if enabled := Get().CodeIntelLockfileIndexingEnabled; enabled != nil {
-		return *enabled
-	}
-	return false
-}
-
 func CodeIntelAutoIndexingAllowGlobalPolicies() bool {
 	if enabled := Get().CodeIntelAutoIndexingAllowGlobalPolicies; enabled != nil {
 		return *enabled
@@ -260,14 +253,6 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
-func DependenciesSearchEnabled() bool {
-	val := ExperimentalFeatures().DependenciesSearch
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
 func ExperimentalFeatures() schema.ExperimentalFeatures {
 	val := Get().ExperimentalFeatures
 	if val == nil {
@@ -292,6 +277,53 @@ func AuthMinPasswordLength() int {
 		return 12
 	}
 	return val
+}
+
+// GenericPasswordPolicy is a generic password policy that defines password requirements.
+type GenericPasswordPolicy struct {
+	Enabled                   bool
+	MinimumLength             int
+	NumberOfSpecialCharacters int
+	RequireAtLeastOneNumber   bool
+	RequireUpperandLowerCase  bool
+}
+
+// AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
+func AuthPasswordPolicy() GenericPasswordPolicy {
+	ml := Get().AuthMinPasswordLength
+
+	if p := Get().AuthPasswordPolicy; p != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   p.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+		}
+	}
+
+	if ep := ExperimentalFeatures().PasswordPolicy; ep != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   ep.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
+		}
+	}
+
+	return GenericPasswordPolicy{
+		Enabled:                   false,
+		MinimumLength:             0,
+		NumberOfSpecialCharacters: 0,
+		RequireAtLeastOneNumber:   false,
+		RequireUpperandLowerCase:  false,
+	}
+}
+
+func PasswordPolicyEnabled() bool {
+	pc := AuthPasswordPolicy()
+	return pc.Enabled
 }
 
 // By default, password reset links are valid for 4 hours.

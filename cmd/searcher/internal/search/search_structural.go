@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -315,7 +315,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil, p.Repo, sender)
+	err = zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, p.Repo, sender)
 	if err != nil {
 		return err
 	}

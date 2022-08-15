@@ -1,19 +1,19 @@
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS p4cli
+FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e AS p4cli
 
 # hadolint ignore=DL3003
-RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4
-RUN mv p4 /usr/local/bin/p4
-RUN chmod +x /usr/local/bin/p4
+RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
+    mv p4 /usr/local/bin/p4 && \
+    chmod +x /usr/local/bin/p4
 
 # Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS p4-fusion
+FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e AS p4-fusion
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
 
 # Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS coursier
+FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e AS coursier
 
 # TODO(code-intel): replace with official streams when musl builds are upstreamed
 RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
@@ -21,7 +21,7 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7
+FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -42,24 +42,20 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 RUN apk add --no-cache --verbose \
     # [NOTE: git-version-min-requirement]
     # We require git 2.34.1 because we use git-repack with flag --write-midx.
-    # We require git 2.35.2 to fix this vulnerability:
-    # https://github.blog/2022-04-12-git-security-vulnerability-announced/
-    'git>=2.35.2' \
+    'git>=2.34.1' \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/main
-
-RUN apk add --no-cache --verbose \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     # You can't just bump the major version since that requires pgupgrade
     # between Sourcegraph releases.
+    && apk add --no-cache --verbose \
     postgresql=~12 \
     postgresql-contrib=~12 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main
-
-RUN apk add --no-cache --verbose \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main  \
+    && apk add --no-cache --verbose \
     'bash>=5.0.17' \
     'redis>=5.0' \
     python2 \
@@ -78,7 +74,7 @@ COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2022-05-08T23-50-31Z
+ENV MINIO_VERSION=RELEASE.2022-08-02T23-59-16Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"

@@ -4,7 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useHistory, useLocation } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -14,6 +14,7 @@ import { BatchSpecByIDResult, BatchSpecByIDVariables } from '../../../graphql-op
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
+import { useBatchChangesLicense } from '../useBatchChangesLicense'
 
 import { BATCH_SPEC_BY_ID, queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContextProvider } from './BatchChangePreviewContext'
@@ -141,6 +142,8 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
+    const { maxUnlicensedChangesets, exceedsLicense } = useBatchChangesLicense()
+
     // If we're loading and haven't received any data yet
     if (loading && !data) {
         return (
@@ -173,14 +176,27 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         diffStat={spec.diffStat!}
                         queryApplyPreviewStats={queryApplyPreviewStats}
                     />
-                    <CreateUpdateBatchChangeAlert
-                        history={history}
-                        specID={spec.id}
-                        toBeArchived={spec.applyPreview.stats.archive}
-                        batchChange={spec.appliesToBatchChange}
-                        viewerCanAdminister={spec.viewerCanAdminister}
-                        telemetryService={telemetryService}
-                    />
+                    {!exceedsLicense(spec.applyPreview.totalCount) && (
+                        <CreateUpdateBatchChangeAlert
+                            history={history}
+                            specID={spec.id}
+                            toBeArchived={spec.applyPreview.stats.archive}
+                            batchChange={spec.appliesToBatchChange}
+                            viewerCanAdminister={spec.viewerCanAdminister}
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                    {exceedsLicense(spec.applyPreview.totalCount) && (
+                        <Alert variant="warning">
+                            <div className="mb-2">
+                                <strong>
+                                    Your license only allows for {maxUnlicensedChangesets} changesets per batch change
+                                </strong>
+                            </div>
+                            Since more than {maxUnlicensedChangesets} changesets are generated, you won't be able to
+                            apply the batch change and actually publish the changesets to the code host.
+                        </Alert>
+                    )}
                     <PreviewList
                         batchSpecID={specID}
                         history={history}

@@ -67,7 +67,7 @@ function passThroughToServer(): React.ReactNode {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = [
+export const routes: readonly LayoutRouteProps<any>[] = ([
     {
         path: PageRoutes.Index,
         render: props =>
@@ -228,10 +228,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.Survey,
         render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
     },
-    {
-        path: PageRoutes.Extensions,
-        render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
-    },
+    window.context.enableLegacyExtensions
+        ? {
+              path: PageRoutes.Extensions,
+              render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
+          }
+        : undefined,
     {
         path: PageRoutes.Help,
         render: passThroughToServer,
@@ -245,4 +247,4 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.RepoContainer,
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
-]
+] as readonly (LayoutRouteProps<any> | undefined)[]).filter(Boolean) as readonly LayoutRouteProps<any>[]

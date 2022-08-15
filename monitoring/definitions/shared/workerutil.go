@@ -59,7 +59,7 @@ func (workerutilConstructor) ErrorRate(options ObservableConstructorOptions) sha
 // Requires a gauge of the format `src_{options.MetricNameRoot}_processor_handlers`
 func (workerutilConstructor) Handlers(options ObservableConstructorOptions) sharedObservable {
 	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(containerName, options.Filters...)
+		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 		by, legendPrefix := makeBy(options.By...)
 
 		return Observable{
@@ -126,7 +126,10 @@ func (workerutilConstructor) NewGroup(containerName string, owner monitoring.Obs
 	if len(row) == 5 {
 		// If we have all 5 metrics, put handlers on a row by itself first,
 		// followed by the standard observation group panels.
-		rows = []monitoring.Row{row[:1], row[1:]}
+		firstRow := monitoring.Row{row[0]}
+		secondRow := make(monitoring.Row, len(row[1:]))
+		copy(secondRow, row[1:])
+		rows = []monitoring.Row{firstRow, secondRow}
 	}
 
 	return monitoring.Group{

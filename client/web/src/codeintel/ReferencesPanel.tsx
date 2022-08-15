@@ -14,7 +14,6 @@ import {
     lprToRange,
     pluralize,
     toPositionOrRangeQueryParameter,
-    toViewStateHash,
 } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -51,7 +50,9 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
+import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
+import { useExperimentalFeatures } from '../stores'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -71,7 +72,7 @@ type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisio
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -208,6 +209,14 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     )
 }
 
+interface BlobMemoryHistoryState {
+    /**
+     * Whether or not to sync this change from the blob history object to the
+     * panel's history object.
+     */
+    syncToPanel?: boolean
+}
+
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
@@ -282,7 +291,7 @@ export const ReferencesList: React.FunctionComponent<
         activeLocation !== undefined && activeLocation.url === location.url
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
-    const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
+    const blobMemoryHistory = useMemo(() => H.createMemoryHistory<BlobMemoryHistoryState>(), [])
 
     // When the token for which we display data changed, we want to reset
     // activeLocation.
@@ -299,7 +308,7 @@ export const ReferencesList: React.FunctionComponent<
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
         if (props.jumpToFirst && definitions.length > 0) {
-            blobMemoryHistory.push(definitions[0].url)
+            blobMemoryHistory.push(definitions[0].url, { syncToPanel: false })
             setActiveLocation(definitions[0])
         }
     }, [blobMemoryHistory, props.jumpToFirst, definitions])
@@ -309,7 +318,7 @@ export const ReferencesList: React.FunctionComponent<
     // highlight the correct line.
     const onReferenceClick = (location: Location | undefined): void => {
         if (location) {
-            blobMemoryHistory.push(location.url)
+            blobMemoryHistory.push(location.url, { syncToPanel: false })
         }
         setActiveLocation(location)
     }
@@ -332,11 +341,11 @@ export const ReferencesList: React.FunctionComponent<
         if (activeLocation !== undefined) {
             const urlToken = tokenFromUrl(url)
             if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
-                blobMemoryHistory.push(url)
+                blobMemoryHistory.push(url, { syncToPanel: false })
             }
         }
 
-        panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
+        panelHistory.push(appendJumpToFirstQueryParameter(url))
     }
 
     const navigateToUrl = (url: string): void => {
@@ -348,17 +357,24 @@ export const ReferencesList: React.FunctionComponent<
     const location = useLocation()
     const initialCollapseState = useMemo((): Record<string, boolean> => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
-        return {
+        const state = {
             references: viewState === 'references',
             definitions: viewState === 'definitions',
             implementations: viewState?.startsWith('implementations_') ?? false,
         }
+        // If the URL doesn't contain tab=<tab>, we open it (likely because the
+        // user clicked on a link in the preview code blob) to show definitions.
+        if (!state.references && !state.definitions && !state.implementations) {
+            state.definitions = true
+        }
+        return state
     }, [location])
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
 
     const isOpen = (id: string): boolean | undefined => collapsed[id]
+
     // But when the input changes, we reset the collapse state
     useEffect(() => {
         setCollapsed(initialCollapseState)
@@ -453,7 +469,7 @@ export const ReferencesList: React.FunctionComponent<
                                 <Button
                                     aria-label="Close"
                                     onClick={() => setActiveLocation(undefined)}
-                                    className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
+                                    className={classNames('p-0', styles.sideBlobCollapseButton)}
                                     size="sm"
                                     data-testid="close-code-view"
                                 >
@@ -481,6 +497,7 @@ export const ReferencesList: React.FunctionComponent<
                         {...props}
                         blobNav={onBlobNav}
                         history={blobMemoryHistory}
+                        panelHistory={panelHistory}
                         location={blobMemoryHistory.location}
                         activeLocation={activeLocation}
                     />
@@ -590,12 +607,38 @@ const SideBlob: React.FunctionComponent<
         ReferencesPanelProps & {
             activeLocation: Location
 
-            location: H.Location
-            history: H.History
+            location: H.Location<BlobMemoryHistoryState>
+            history: H.History<BlobMemoryHistoryState>
             blobNav: (url: string) => void
+            panelHistory: H.History
         }
     >
 > = props => {
+    const { history, panelHistory } = props
+    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
+
+    // When using CodeMirror we have to forward history entries to the panel's
+    // router. That's because the CodeMirror <-> React integration uses its own
+    // Router and so clicks on <Link />s are not caught by the panel's router
+    // context.
+    useEffect(
+        () =>
+            history.listen((location, method) => {
+                if (useCodeMirror && location.state?.syncToPanel !== false) {
+                    switch (method) {
+                        case 'PUSH':
+                            panelHistory.push(location)
+                            break
+                        case 'REPLACE':
+                            panelHistory.replace(location)
+                            break
+                    }
+                }
+            }),
+        [useCodeMirror, history, panelHistory]
+    )
+
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -654,7 +697,7 @@ const SideBlob: React.FunctionComponent<
     }
 
     return (
-        <Blob
+        <BlobComponent
             {...props}
             nav={props.blobNav}
             history={props.history}

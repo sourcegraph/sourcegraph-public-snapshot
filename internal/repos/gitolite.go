@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -30,9 +29,13 @@ type GitoliteSource struct {
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+func NewGitoliteSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitoliteConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
@@ -41,7 +44,8 @@ func NewGitoliteSource(db database.DB, svc *types.ExternalService, cf *httpcli.F
 		// The provided httpcli.Factory is one used for external services - however,
 		// GitoliteSource asks gitserver to communicate to gitolite instead, so we
 		// have to ensure that the actor transport used for internal clients is provided.
-		httpcli.ActorTransportOpt)
+		httpcli.ActorTransportOpt,
+	)
 	if err != nil {
 		return nil, err
 	}

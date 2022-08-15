@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -374,7 +375,7 @@ func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlback
 	}
 
 	for _, recipient := range args.Email.Recipients {
-		if err := sendTestEmail(ctx, recipient, args.Description); err != nil {
+		if err := sendTestEmail(ctx, r.db, recipient, args.Description); err != nil {
 			return nil, err
 		}
 	}
@@ -408,7 +409,7 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {
+func sendTestEmail(ctx context.Context, db database.DB, recipient graphql.ID, description string) error {
 	var (
 		userID int32
 		orgID  int32
@@ -422,7 +423,7 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 		return nil
 	}
 	data := background.NewTestTemplateDataForNewSearchResults(description)
-	return background.SendEmailForNewSearchResult(ctx, userID, data)
+	return background.SendEmailForNewSearchResult(ctx, db, userID, data)
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]graphql.ID, error) {

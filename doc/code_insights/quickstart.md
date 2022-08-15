@@ -4,7 +4,7 @@ Get started and create your first [code insight](index.md) in 5 minutes or less.
 
 ## Introduction
 
-In this guide, you'll create a Sourcegraph code insight that tracks the number of `TODOS` that appear in parts of your codebase.
+In this guide, you'll create a Sourcegraph code insight that tracks the number of `TODOs` that appear in parts of your codebase.
 
 For more information about Code Insights see the [Code Insights](index.md) documentation.
 

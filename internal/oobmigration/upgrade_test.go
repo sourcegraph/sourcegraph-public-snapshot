@@ -17,16 +17,21 @@ func TestScheduleMigrationInterrupts(t *testing.T) {
 
 	for _, testCase := range []struct {
 		name       string
+		from, to   Version
 		migrations []yamlMigration
 		interrupts []MigrationInterrupt
 	}{
 		{
 			name:       "empty",
+			from:       NewVersion(3, 32),
+			to:         NewVersion(3, 44),
 			migrations: []yamlMigration{},
 			interrupts: []MigrationInterrupt{},
 		},
 		{
 			name: "non-overlapping",
+			from: NewVersion(3, 32),
+			to:   NewVersion(3, 44),
 			migrations: []yamlMigration{
 				// 1: [------]
 				// 2: .      . [------]
@@ -49,6 +54,8 @@ func TestScheduleMigrationInterrupts(t *testing.T) {
 		},
 		{
 			name: "overlapping",
+			from: NewVersion(3, 32),
+			to:   NewVersion(3, 44),
 			migrations: []yamlMigration{
 				// 1: [------]
 				// 2: .  [------]
@@ -74,9 +81,36 @@ func TestScheduleMigrationInterrupts(t *testing.T) {
 				{Version: Version{3, 43}, MigrationIDs: []int{6}},
 			},
 		},
+		{
+			name: "partial upgrade (overlapping case)",
+			from: NewVersion(3, 34),
+			to:   NewVersion(3, 41),
+			migrations: []yamlMigration{
+				// 1: [... --] |
+				// 2: [... ----|--]
+				// 3:        . |  . [---------------]
+				// 4:        . |  . .  [---]        .
+				// 5:        . |  . .  .   . [---]  .
+				// 6:        . |  . .  .   . .   .  .
+				//           . |  . .  .   . .   .  .
+				//          34 | 35 36 37 38 39 40 41
+				//             |          **    **
+
+				migration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
+				migration(2 /* introduced = */, 3, 33 /* deprecated = */, 3, 35),
+				migration(3 /* introduced = */, 3, 36 /* deprecated = */, 3, 41),
+				migration(4 /* introduced = */, 3, 37 /* deprecated = */, 3, 38),
+				migration(5 /* introduced = */, 3, 39 /* deprecated = */, 3, 40),
+			},
+			interrupts: []MigrationInterrupt{
+				{Version: Version{3, 35}, MigrationIDs: []int{2}},
+				{Version: Version{3, 38}, MigrationIDs: []int{4}},
+				{Version: Version{3, 40}, MigrationIDs: []int{5}},
+			},
+		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			interrupts, err := scheduleMigrationInterrupts(testCase.migrations)
+			interrupts, err := scheduleMigrationInterrupts(testCase.from, testCase.to, testCase.migrations)
 			if err != nil {
 				t.Fatalf("falied to schedule upgrade: %s", err)
 			}

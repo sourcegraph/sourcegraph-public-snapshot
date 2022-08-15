@@ -30,8 +30,8 @@ import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
-import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
@@ -43,7 +43,7 @@ import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@source
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { createDefaultSuggestions, createUpdateableField, singleLine } from './extensions'
+import { createDefaultSuggestions, singleLine } from './extensions'
 import {
     decoratedTokens,
     queryTokens,
@@ -85,6 +85,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
+    // CodeMirror implementation specific options
+    applySuggestionsOnEnter = false,
+    suggestionSources,
+    defaultSuggestionsShowWhenEmpty = true,
+    showSuggestionsOnFocus = false,
     // Used by the VSCode extension (which doesn't use this component directly,
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
@@ -100,6 +105,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     // run when a prop changes, not the editor).
     const [editor, setEditor] = useState<EditorView | undefined>()
     const editorReference = useRef<EditorView>()
+    const focusSearchBarShortcut = useKeyboardShortcut('focusSearch')
 
     const editorCreated = useCallback(
         (editor: EditorView) => {
@@ -117,8 +123,19 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
                 globbing,
                 isSourcegraphDotCom,
+                applyOnEnter: applySuggestionsOnEnter,
+                additionalSources: suggestionSources,
+                showWhenEmpty: defaultSuggestionsShowWhenEmpty,
             }),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions]
+        [
+            selectedSearchContextSpec,
+            globbing,
+            isSourcegraphDotCom,
+            fetchStreamSuggestions,
+            applySuggestionsOnEnter,
+            suggestionSources,
+            defaultSuggestionsShowWhenEmpty,
+        ]
     )
 
     const extensions = useMemo(() => {
@@ -130,7 +147,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
         if (preventNewLine) {
             // NOTE: If a submit handler is assigned to the query input then the pressing
-            // enter won't insert a line break anyway. In that case, this exnteions ensures
+            // enter won't insert a line break anyway. In that case, this extensions ensures
             // that line breaks are stripped from pasted input.
             extensions.push(singleLine)
         } else {
@@ -145,8 +162,45 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         if (editorOptions?.readOnly) {
             extensions.push(EditorView.editable.of(false))
         }
+
+        if (showSuggestionsOnFocus) {
+            // This is currently used when search history suggestions are
+            // enabled. It looks like CodeMirror doesn't automatically trigger
+            // the autocompletion again when the cursor is at the start of the
+            // input after deleting some characters. This update listener makes
+            // sure that. Since `showSuggestionsOnFocus` is currently only
+            // enabled when we show search history suggestions, we use a single
+            // listener to handle that case too.
+            const TIMEOUT = 1000
+            let timer: number | null = null
+            const clear = (): void => {
+                if (timer !== null) {
+                    clearTimeout(timer)
+                }
+                timer = null
+            }
+
+            extensions.push(
+                EditorView.updateListener.of(update => {
+                    if (update.view.state.doc.length === 0) {
+                        if (update.focusChanged && update.view.hasFocus) {
+                            startCompletion(update.view)
+                        } else if (update.docChanged) {
+                            timer = window.setTimeout(() => {
+                                timer = null
+                                if (update.view.hasFocus) {
+                                    startCompletion(update.view)
+                                }
+                            }, TIMEOUT)
+                        }
+                    } else {
+                        clear()
+                    }
+                })
+            )
+        }
         return extensions
-    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions])
+    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions, showSuggestionsOnFocus])
 
     // Update callback functions via effects. This avoids reconfiguring the
     // whole editor when a callback changes.
@@ -228,7 +282,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 className={className}
                 extensions={extensions}
             />
-            {KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR.keybindings.map((keybinding, index) => (
+            {focusSearchBarShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={globalFocus} />
             ))}
         </>
@@ -385,71 +439,68 @@ const [callbacksField, setCallbacks] = createUpdateableField<
         MonacoQueryInputProps,
         'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected' | 'onHandleFuzzyFinder'
     >
->(
-    callbacks => [
-        Prec.high(
-            keymap.of([
-                {
-                    key: 'Enter',
-                    run: view => {
-                        const { onSubmit } = view.state.field(callbacks)
-                        if (onSubmit) {
-                            // Cancel/close any open completion popovers
-                            closeCompletion(view)
-                            onSubmit()
-                            return true
-                        }
-                        return false
-                    },
-                },
-            ])
-        ),
+>({ onChange: () => {} }, callbacks => [
+    Prec.high(
         keymap.of([
             {
-                key: 'Mod-k',
+                key: 'Enter',
                 run: view => {
-                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
-                    if (onHandleFuzzyFinder) {
-                        onHandleFuzzyFinder(true)
+                    const { onSubmit } = view.state.field(callbacks)
+                    if (onSubmit) {
+                        // Cancel/close any open completion popovers
+                        closeCompletion(view)
+                        onSubmit()
                         return true
                     }
                     return false
                 },
             },
-        ]),
-        EditorView.updateListener.of((update: ViewUpdate) => {
-            const { state, view } = update
-            const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
-
-            if (update.docChanged) {
-                onChange({
-                    query: state.sliceDoc(),
-                    changeSource: QueryChangeSource.userInput,
-                })
-            }
-
-            // The focus and blur event handlers are implemented via state update handlers
-            // because it appears that binding them as DOM event handlers triggers them at
-            // the moment they are bound if the editor is already in that state ((not)
-            // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
-            if (update.focusChanged) {
-                if (view.hasFocus) {
-                    onFocus?.()
-                } else {
-                    closeCompletion(view)
-                    onBlur?.()
+        ])
+    ),
+    keymap.of([
+        {
+            key: 'Mod-k',
+            run: view => {
+                const { onHandleFuzzyFinder } = view.state.field(callbacks)
+                if (onHandleFuzzyFinder) {
+                    onHandleFuzzyFinder(true)
+                    return true
                 }
+                return false
+            },
+        },
+    ]),
+    EditorView.updateListener.of((update: ViewUpdate) => {
+        const { state, view } = update
+        const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
+
+        if (update.docChanged) {
+            onChange({
+                query: state.sliceDoc(),
+                changeSource: QueryChangeSource.userInput,
+            })
+        }
+
+        // The focus and blur event handlers are implemented via state update handlers
+        // because it appears that binding them as DOM event handlers triggers them at
+        // the moment they are bound if the editor is already in that state ((not)
+        // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
+        if (update.focusChanged) {
+            if (view.hasFocus) {
+                onFocus?.()
+            } else {
+                closeCompletion(view)
+                onBlur?.()
             }
-            if (
-                onCompletionItemSelected &&
-                update.transactions.some(transaction => transaction.isUserEvent('input.complete'))
-            ) {
-                onCompletionItemSelected()
-            }
-        }),
-    ],
-    { onChange: () => {} }
-)
+        }
+        if (
+            onCompletionItemSelected &&
+            update.transactions.some(transaction => transaction.isUserEvent('input.complete'))
+        ) {
+            onCompletionItemSelected()
+        }
+    }),
+])
 
 // Defines decorators for syntax highlighting
 const tokenDecorators: { [key: string]: Decoration } = {}

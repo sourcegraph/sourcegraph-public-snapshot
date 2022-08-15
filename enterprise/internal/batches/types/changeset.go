@@ -279,6 +279,9 @@ type Changeset struct {
 	PublicationState   ChangesetPublicationState // "unpublished", "published"
 	UiPublicationState *ChangesetUiPublicationState
 
+	// State is a computed value. Changes to this value will never be persisted to the database.
+	State ChangesetState
+
 	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState  ReconcilerState
 	FailureMessage   *string

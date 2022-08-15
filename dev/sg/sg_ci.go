@@ -14,7 +14,6 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gen2brain/beeep"
 	"github.com/grafana/regexp"
-	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
@@ -24,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -185,7 +185,7 @@ sg ci build --help
 				return err
 			}
 
-			previewCmd := sgrun.Cmd(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+			previewCmd := usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
 				Env(map[string]string{
 					"BUILDKITE_BRANCH":  target.target, // this must be a branch
 					"BUILDKITE_MESSAGE": message,

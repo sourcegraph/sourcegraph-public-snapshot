@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
@@ -134,6 +133,8 @@ func (s *s3Store) readObjectInto(ctx context.Context, w io.Writer, key string, b
 	var bytesRange *string
 	if byteOffset > 0 {
 		bytesRange = aws.String(fmt.Sprintf("bytes=%d-", byteOffset))
+	} else if byteOffset < 0 {
+		bytesRange = aws.String(fmt.Sprintf("bytes=%d", byteOffset))
 	}
 
 	resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
@@ -320,20 +321,16 @@ func (r *countingReader) Read(p []byte) (n int, err error) {
 }
 
 func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) {
-	var credentialsProvider aws.CredentialsProvider
+	optFns := []func(*awsconfig.LoadOptions) error{
+		awsconfig.WithRegion(s3config.Region),
+	}
+
 	if s3config.AccessKeyID != "" {
-		credentialsProvider = credentials.NewStaticCredentialsProvider(
+		optFns = append(optFns, awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			s3config.AccessKeyID,
 			s3config.SecretAccessKey,
 			s3config.SessionToken,
-		)
-	} else {
-		credentialsProvider = ec2rolecreds.New()
-	}
-
-	optFns := []func(*awsconfig.LoadOptions) error{
-		awsconfig.WithRegion(s3config.Region),
-		awsconfig.WithCredentialsProvider(aws.NewCredentialsCache(credentialsProvider)),
+		)))
 	}
 
 	return awsconfig.LoadDefaultConfig(ctx, optFns...)

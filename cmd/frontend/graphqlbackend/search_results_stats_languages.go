@@ -54,7 +54,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 			return
 		}
 		agg := streaming.NewAggregatingStream()
-		_, err = j.Run(ctx, srs.sr.JobClients(), agg)
+		_, err = j.Run(ctx, srs.sr.client.JobClients(), agg)
 		if err != nil {
 			srs.err = err
 			return
@@ -133,7 +133,7 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				_, oid, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repoName.Name)
+				_, oid, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repoName.Name, false)
 				if err != nil {
 					run.Error(err)
 					return

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -34,7 +33,7 @@ func TestServeStream_empty(t *testing.T) {
 	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
 
 	mock := client.NewMockSearchClient()
-	mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{}, nil)
+	mock.PlanFunc.SetDefaultReturn(&search.Inputs{}, nil)
 
 	ts := httptest.NewServer(&streamHandler{
 		logger:              logtest.Scoped(t),
@@ -66,8 +65,8 @@ func TestServeStream_chunkMatches(t *testing.T) {
 	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
 
 	mock := client.NewMockSearchClient()
-	mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
-	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *run.SearchInputs) (*search.Alert, error) {
+	mock.PlanFunc.SetDefaultReturn(&search.Inputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
+	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *search.Inputs) (*search.Alert, error) {
 		s.Send(streaming.SearchEvent{
 			Results: result.Matches{&result.FileMatch{
 				File: result.File{Path: "testpath"},
@@ -187,14 +186,14 @@ func TestDisplayLimit(t *testing.T) {
 
 			mockInput := make(chan streaming.SearchEvent)
 			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Protocol, _ *schema.Settings, _ bool) (*run.SearchInputs, error) {
+			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Protocol, _ *schema.Settings, _ bool) (*search.Inputs, error) {
 				q, err := query.Parse(queryString, query.SearchTypeLiteral)
 				require.NoError(t, err)
-				return &run.SearchInputs{
+				return &search.Inputs{
 					Query: q,
 				}, nil
 			})
-			mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, _ *run.SearchInputs) (*search.Alert, error) {
+			mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, _ *search.Inputs) (*search.Alert, error) {
 				event := <-mockInput
 				stream.Send(event)
 				return nil, nil

@@ -10,7 +10,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
-import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import {
     CheckExecutorsAccessTokenResult,
     CheckExecutorsAccessTokenVariables,
@@ -18,7 +17,6 @@ import {
     GetBatchChangeToEditVariables,
     Scalars,
 } from '../../../../graphql-operations'
-// import { BatchSpecDownloadLink } from '../../BatchSpec'
 import { BatchSpecDownloadLink } from '../../BatchSpec'
 import { EXECUTORS, GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
@@ -27,6 +25,7 @@ import { SearchTemplatesBanner } from '../../create/SearchTemplatesBanner'
 import { useInsightTemplates } from '../../create/useInsightTemplates'
 import { useSearchTemplate } from '../../create/useSearchTemplate'
 import { BatchSpecContextProvider, useBatchSpecContext, BatchSpecContextState } from '../BatchSpecContext'
+import { ActionsMenu, ActionsMenuMode } from '../execute/ActionsMenu'
 import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig, TabKey } from '../TabBar'
@@ -164,12 +163,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
         false
     )
 
-    /**
-     * For managed instances we want to hide the `run server side` button by default. To do this we make use of a
-     * feature flag to ensure Managed Instances.
-     */
-    const [isRunBatchSpecButtonHidden] = useFeatureFlag('hide-run-batch-spec-for-mi', false)
-
     const activeExecutorsActionButtons = (
         <>
             <RunBatchSpecButton
@@ -213,15 +206,9 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 </Button>
             )}
 
-            {!isRunBatchSpecButtonHidden && (
-                <Button
-                    className={styles.downloadLink}
-                    variant="link"
-                    onClick={() => setIsRunServerSideModalOpen(true)}
-                >
-                    or run server-side
-                </Button>
-            )}
+            <Button className={styles.downloadLink} variant="link" onClick={() => setIsRunServerSideModalOpen(true)}>
+                or run server-side
+            </Button>
         </>
     )
 
@@ -259,7 +246,13 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     title={{ to: batchChange.url, text: batchChange.name }}
                     description={batchChange.description ?? undefined}
                 />
-                <ActionButtons>{actionButtons}</ActionButtons>
+                {activeTabKey === 'configuration' ? (
+                    <ActionButtons>
+                        <ActionsMenu defaultMode={ActionsMenuMode.ActionsOnlyClose} />
+                    </ActionButtons>
+                ) : (
+                    <ActionButtons>{actionButtons}</ActionButtons>
+                )}
             </div>
             <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />
 
