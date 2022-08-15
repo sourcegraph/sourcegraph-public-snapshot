@@ -587,6 +587,7 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 
 	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	spec.ServiceID = "xb2"
+	require.NoError(t, err)
 	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
 	require.NoError(t, err)
 	spec.ServiceID = "xb3"
@@ -605,5 +606,6 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 	db.UserExternalAccounts().Delete(ctx, acctIds...)
 
 	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+	require.NoError(t, err)
 	require.Equal(t, 0, len(accts))
 }
