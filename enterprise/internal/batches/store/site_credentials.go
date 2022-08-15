@@ -7,6 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -302,6 +303,6 @@ func scanSiteCredential(c *btypes.SiteCredential, key encryption.Key, sc dbutil.
 		return err
 	}
 
-	c.Credential = btypes.NewEncryptedCredential(encryptedCredential, keyID, key)
+	c.Credential = database.NewEncryptedCredential(encryptedCredential, keyID, key)
 	return nil
 }

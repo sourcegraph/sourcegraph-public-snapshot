@@ -8,6 +8,7 @@ import (
 
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -173,7 +174,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 		t.Run("NotFound", func(t *testing.T) {
 			cred := &btypes.SiteCredential{
 				ID:         0xdeadbeef,
-				Credential: btypes.NewUnencryptedCredential(nil),
+				Credential: database.NewEmptyCredential(),
 			}
 			if err := s.UpdateSiteCredential(ctx, cred); err == nil {
 				t.Errorf("unexpected nil error")

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,17 +16,7 @@ type SiteCredential struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 
-	Credential *EncryptableCredential
-}
-
-type EncryptableCredential = encryption.Encryptable
-
-func NewUnencryptedCredential(value []byte) *EncryptableCredential {
-	return encryption.NewUnencrypted(string(value))
-}
-
-func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *EncryptableCredential {
-	return encryption.NewEncrypted(cipher, keyID, key)
+	Credential *database.EncryptableCredential
 }
 
 // Authenticator decrypts and creates the authenticator associated with the site credential.
@@ -48,7 +37,7 @@ func (sc *SiteCredential) Authenticator(ctx context.Context) (auth.Authenticator
 // SetAuthenticator encrypts and sets the authenticator within the site credential.
 func (sc *SiteCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
 	if sc.Credential == nil {
-		sc.Credential = NewUnencryptedCredential(nil)
+		sc.Credential = database.NewUnencryptedCredential(nil)
 	}
 
 	raw, err := database.MarshalAuthenticator(a)
@@ -56,6 +45,6 @@ func (sc *SiteCredential) SetAuthenticator(ctx context.Context, a auth.Authentic
 		return err
 	}
 
-	sc.Credential = NewUnencryptedCredential([]byte(raw))
+	sc.Credential = database.NewUnencryptedCredential([]byte(raw))
 	return nil
 }
