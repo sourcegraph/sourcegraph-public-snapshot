@@ -10,8 +10,8 @@ import (
 	"context"
 	"sync"
 
-	zoekt "github.com/google/zoekt"
-	query "github.com/google/zoekt/query"
+	zoekt "github.com/sourcegraph/zoekt"
+	query "github.com/sourcegraph/zoekt/query"
 )
 
 // MockStreamer is a mock implementation of the Streamer interface (from the
