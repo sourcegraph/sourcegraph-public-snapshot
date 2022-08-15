@@ -27,7 +27,7 @@ var allowlistCommand = &cli.Command{
 	Name:  "allowlist",
 	Usage: "Edit the usage data allow list",
 	Flags: []cli.Flag{},
-	Description: `
+	UsageText: `
 Utility that will generate SQL to add and remove events from the usage data allow list.
 https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
 
@@ -55,7 +55,7 @@ var addAllowlistCommand = &cli.Command{
 	Name:      "add",
 	ArgsUsage: "[event]",
 	Usage:     "Generate the SQL required to add events to the allow list",
-	Description: `
+	UsageText: `
 # Generate SQL to add events from the allow list
 sg telemetry allowlist add EVENT_ONE EVENT_TWO
 
@@ -76,7 +76,7 @@ var removeAllowlistCommand = &cli.Command{
 	Name:      "remove",
 	ArgsUsage: "[event]",
 	Usage:     "Generate the SQL required to remove events from the allow list",
-	Description: `
+	UsageText: `
 # Generate SQL to add events from the allow list
 sg telemetry allowlist remove EVENT_ONE EVENT_TWO
 
