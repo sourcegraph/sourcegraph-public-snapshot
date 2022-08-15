@@ -3,7 +3,6 @@ package codeintel
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -18,7 +17,7 @@ func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize int) 
 type locationsCountMigrator struct {
 	id         int
 	interval   time.Duration
-	serializer *lsifstore.Serializer
+	serializer *Serializer
 }
 
 // newLocationsCountMigrator creates a new Migrator instance that reads records from
@@ -28,7 +27,7 @@ func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Dur
 	driver := &locationsCountMigrator{
 		id:         id,
 		interval:   interval,
-		serializer: lsifstore.NewSerializer(),
+		serializer: NewSerializer(),
 	}
 
 	return newMigrator(store, driver, migratorOptions{

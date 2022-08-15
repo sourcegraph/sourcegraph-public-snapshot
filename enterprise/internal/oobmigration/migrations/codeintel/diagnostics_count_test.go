@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -21,7 +20,7 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := NewDiagnosticsCountMigrator(store, 250)
-	serializer := lsifstore.NewSerializer()
+	serializer := NewSerializer()
 
 	assertProgress := func(expectedProgress float64) {
 		if progress, err := migrator.Progress(context.Background()); err != nil {

@@ -3,12 +3,11 @@ package codeintel
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type diagnosticsCountMigrator struct {
-	serializer *lsifstore.Serializer
+	serializer *Serializer
 }
 
 // NewDiagnosticsCountMigrator creates a new Migrator instance that reads records from
@@ -16,7 +15,7 @@ type diagnosticsCountMigrator struct {
 // (new) num_diagnostics column. Updated records will have a schema version of 2.
 func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize int) *migrator {
 	driver := &diagnosticsCountMigrator{
-		serializer: lsifstore.NewSerializer(),
+		serializer: NewSerializer(),
 	}
 
 	return newMigrator(store, driver, migratorOptions{

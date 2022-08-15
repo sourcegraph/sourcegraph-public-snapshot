@@ -3,12 +3,11 @@ package codeintel
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type documentColumnSplitMigrator struct {
-	serializer *lsifstore.Serializer
+	serializer *Serializer
 }
 
 // NewDocumentColumnSplitMigrator creates a new Migrator instance that reads records from
@@ -17,7 +16,7 @@ type documentColumnSplitMigrator struct {
 // records will have a schema version of 3.
 func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize int) *migrator {
 	driver := &documentColumnSplitMigrator{
-		serializer: lsifstore.NewSerializer(),
+		serializer: NewSerializer(),
 	}
 
 	return newMigrator(store, driver, migratorOptions{
@@ -81,7 +80,7 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]any, erro
 func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
 	var path string
 	var rawData []byte
-	var encoded lsifstore.MarshalledDocumentData
+	var encoded MarshalledDocumentData
 
 	if err := scanner.Scan(
 		&path,
