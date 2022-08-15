@@ -7,7 +7,7 @@ import (
 )
 
 type diagnosticsCountMigrator struct {
-	serializer *Serializer
+	serializer *serializer
 }
 
 // NewDiagnosticsCountMigrator creates a new Migrator instance that reads records from
@@ -15,7 +15,7 @@ type diagnosticsCountMigrator struct {
 // (new) num_diagnostics column. Updated records will have a schema version of 2.
 func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize int) *migrator {
 	driver := &diagnosticsCountMigrator{
-		serializer: NewSerializer(),
+		serializer: newSerializer(),
 	}
 
 	return newMigrator(store, driver, migratorOptions{

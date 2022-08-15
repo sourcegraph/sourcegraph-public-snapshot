@@ -7,7 +7,7 @@ import (
 )
 
 type documentColumnSplitMigrator struct {
-	serializer *Serializer
+	serializer *serializer
 }
 
 // NewDocumentColumnSplitMigrator creates a new Migrator instance that reads records from
@@ -16,7 +16,7 @@ type documentColumnSplitMigrator struct {
 // records will have a schema version of 3.
 func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize int) *migrator {
 	driver := &documentColumnSplitMigrator{
-		serializer: NewSerializer(),
+		serializer: newSerializer(),
 	}
 
 	return newMigrator(store, driver, migratorOptions{

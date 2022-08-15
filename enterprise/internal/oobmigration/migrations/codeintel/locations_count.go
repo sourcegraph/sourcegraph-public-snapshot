@@ -17,7 +17,7 @@ func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize int) 
 type locationsCountMigrator struct {
 	id         int
 	interval   time.Duration
-	serializer *Serializer
+	serializer *serializer
 }
 
 // newLocationsCountMigrator creates a new Migrator instance that reads records from
@@ -27,7 +27,7 @@ func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Dur
 	driver := &locationsCountMigrator{
 		id:         id,
 		interval:   interval,
-		serializer: NewSerializer(),
+		serializer: newSerializer(),
 	}
 
 	return newMigrator(store, driver, migratorOptions{

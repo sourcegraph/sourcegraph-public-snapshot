@@ -22,7 +22,7 @@ func TestDocumentColumnSplitMigrator(t *testing.T) {
 	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := NewDocumentColumnSplitMigrator(store, 250)
-	serializer := NewSerializer()
+	serializer := newSerializer()
 
 	assertProgress := func(expectedProgress float64) {
 		if progress, err := migrator.Progress(context.Background()); err != nil {
