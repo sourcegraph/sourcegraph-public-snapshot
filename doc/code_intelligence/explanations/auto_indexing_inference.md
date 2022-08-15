@@ -1,8 +1,8 @@
 # Inference of auto-indexing jobs
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -52,14 +52,14 @@ For each directory excluding `node_modules/` directories and their children cont
 indexing_jobs:
   - steps:
       - root: <ancestor(dir)>
-        image: sourcegraph/lsif-node:autoindex
+        image: sourcegraph/scip-typescript:autoindex
         commands:
           # Yarn is used to resolve dependencies in an ancestor directory
           # when lerna.json configuration specifies "yarn" as the npmClient
           # or if the directory contains a yarn.lock file.
           - yarn --ignore-engines
       - root: <ancestor(dir)>
-        image: sourcegraph/lsif-node:autoindex
+        image: sourcegraph/scip-typescript:autoindex
         commands:
           # npm is used to resolve dependencies otherwise.
           - npm install
@@ -72,11 +72,10 @@ indexing_jobs:
       #   - .n-node-version
       - N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl autol
     root: <dir>
-    indexer: sourcegraph/lsif-node:autoindex
+    indexer: sourcegraph/scip-typescript:autoindex
     indexer_args:
-      - lsif-tsc
-      - -p
-      - .
+      - scip-typescript
+      - index
 ```
 
 ## Rust
@@ -95,7 +94,7 @@ indexing_jobs:
 
 ## Java
 
-> NOTE: Inference for languages supported by [scip-java](https://github.com/sourcegraph/scip-java) is currently restricted to Sourcegraph Cloud.
+> NOTE: Inference for languages supported by [scip-java](https://github.com/sourcegraph/scip-java) is currently restricted to Sourcegraph.com.
 
 If the repository contains both a `lsif-java.json` file as well as `*.java`, `*.scala`, or `*.kt` files, the following index job is scheduled.
 

@@ -7,6 +7,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -70,9 +72,10 @@ func TestDeleteOldJobLogs(t *testing.T) {
 }
 
 func TestUpdateTriggerJob(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("handles null results", func(t *testing.T) {
 		ctx := context.Background()
-		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+		db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 		_ = populateCodeMonitorFixtures(t, db)
 		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
 		require.NoError(t, err)
@@ -84,9 +87,10 @@ func TestUpdateTriggerJob(t *testing.T) {
 }
 
 func TestListTriggerJobs(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("handles null results", func(t *testing.T) {
 		ctx := context.Background()
-		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+		db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 		f := populateCodeMonitorFixtures(t, db)
 		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
 		require.NoError(t, err)

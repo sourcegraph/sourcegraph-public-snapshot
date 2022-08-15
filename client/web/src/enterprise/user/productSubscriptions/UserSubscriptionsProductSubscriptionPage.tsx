@@ -10,16 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import {
-    LoadingSpinner,
-    useObservable,
-    Link,
-    CardHeader,
-    CardBody,
-    Card,
-    CardFooter,
-    Typography,
-} from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card, CardFooter, H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
@@ -90,7 +81,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
-                    <Typography.H2>Subscription {productSubscription.name}</Typography.H2>
+                    <H2>Subscription {productSubscription.name}</H2>
                     {(productSubscription.invoiceItem || productSubscription.activeLicense?.info) && (
                         <UserProductSubscriptionStatus
                             subscriptionName={productSubscription.name}

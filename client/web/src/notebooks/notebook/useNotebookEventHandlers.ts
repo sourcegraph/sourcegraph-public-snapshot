@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react'
 
-import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { BlockDirection, BlockProps } from '..'
@@ -8,28 +8,29 @@ import { BlockDirection, BlockProps } from '..'
 import { Notebook } from '.'
 
 interface UseNotebookEventHandlersProps
-    extends Pick<BlockProps, 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock'> {
+    extends Pick<BlockProps, 'isReadOnly' | 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock'> {
     notebook: Notebook
     selectedBlockId: string | null
     commandPaletteInputReference: React.RefObject<HTMLInputElement>
-    setSelectedBlockId: (blockId: string | null) => void
+    selectBlock: (blockId: string | null) => void
 }
 
-export function focusBlock(blockId: string): void {
-    document.querySelector<HTMLDivElement>(`[data-block-id="${blockId}"] .block`)?.focus()
+export function focusBlockElement(blockId: string, isReadOnly: boolean): void {
+    if (!isReadOnly) {
+        document.querySelector<HTMLDivElement>(`[data-block-id="${blockId}"] .block`)?.focus()
+    }
 }
 
 export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isMacPlatform: boolean): boolean {
     return (isMacPlatform && isMetaKey) || (!isMacPlatform && isCtrlKey)
 }
 
-export const isMonacoEditorDescendant = (element: HTMLElement): boolean => element.closest('.monaco-editor') !== null
-
 export function useNotebookEventHandlers({
     notebook,
     selectedBlockId,
     commandPaletteInputReference,
-    setSelectedBlockId,
+    isReadOnly,
+    selectBlock,
     onMoveBlock,
     onRunBlock,
     onDeleteBlock,
@@ -39,23 +40,23 @@ export function useNotebookEventHandlers({
         (id: string, direction: BlockDirection) => {
             const blockId = direction === 'up' ? notebook.getPreviousBlockId(id) : notebook.getNextBlockId(id)
             if (blockId) {
-                setSelectedBlockId(blockId)
-                focusBlock(blockId)
+                selectBlock(blockId)
+                focusBlockElement(blockId, isReadOnly)
             } else if (!blockId && direction === 'down') {
                 commandPaletteInputReference.current?.focus()
             }
         },
-        [notebook, commandPaletteInputReference, setSelectedBlockId]
+        [notebook, commandPaletteInputReference, isReadOnly, selectBlock]
     )
 
-    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+    const isMacPlatform = useMemo(() => isMacPlatformFunc(), [])
 
     useEffect(() => {
         const handleMouseDownUpOrFocusIn = (event: MouseEvent | FocusEvent): void => {
             const target = event.target as HTMLElement | null
             const blockWrapper = target?.closest<HTMLDivElement>('.block-wrapper')
             if (!blockWrapper) {
-                setSelectedBlockId(null)
+                selectBlock(null)
                 return
             }
 
@@ -68,7 +69,7 @@ export function useNotebookEventHandlers({
 
             const blockId = blockWrapper.dataset.blockId
             if (blockId) {
-                setSelectedBlockId(blockId)
+                selectBlock(blockId)
             }
         }
 
@@ -80,17 +81,35 @@ export function useNotebookEventHandlers({
             }
 
             if (!selectedBlockId && event.key === 'ArrowDown') {
-                setSelectedBlockId(notebook.getFirstBlockId())
-            } else if (
-                event.key === 'Escape' &&
-                !isMonacoEditorDescendant(target) &&
-                target.tagName.toLowerCase() !== 'input'
-            ) {
-                setSelectedBlockId(null)
+                selectBlock(notebook.getFirstBlockId())
+            } else if (event.key === 'Escape' && !isInputElement(target)) {
+                selectBlock(null)
             }
 
             if (!selectedBlockId) {
                 return
+            }
+
+            // Focus on the last `menuitem` of the prev block when using `Shift + Tab`
+            // while focusing on selected block element
+            if (
+                document.activeElement ===
+                    document.querySelector<HTMLDivElement>(`[data-block-id="${selectedBlockId}"] .block`) &&
+                event.shiftKey &&
+                event.key === 'Tab'
+            ) {
+                const previousBlockId = notebook.getPreviousBlockId(selectedBlockId)
+
+                if (previousBlockId) {
+                    event.preventDefault()
+
+                    focusBlockElement(previousBlockId, isReadOnly)
+
+                    const menuItems = document.querySelectorAll<HTMLAnchorElement>(
+                        `[data-block-id="${previousBlockId}"] .block-menu [role="menuitem"]`
+                    )
+                    menuItems[menuItems.length - 1]?.focus()
+                }
             }
 
             const isModifierKeyDown = isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)
@@ -128,8 +147,9 @@ export function useNotebookEventHandlers({
     }, [
         notebook,
         selectedBlockId,
+        isReadOnly,
         onMoveBlockSelection,
-        setSelectedBlockId,
+        selectBlock,
         isMacPlatform,
         onMoveBlock,
         onRunBlock,

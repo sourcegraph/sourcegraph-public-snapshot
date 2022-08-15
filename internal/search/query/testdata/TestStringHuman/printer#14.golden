@@ -1,0 +1,4 @@
+{
+  "Input": "-repo:modspeed -file:pogspeed Arizonan not Phoenicians",
+  "Result": "-repo:modspeed -file:pogspeed (Arizonan AND (NOT Phoenicians))"
+}

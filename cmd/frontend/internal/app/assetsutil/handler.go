@@ -55,7 +55,7 @@ func Mount(mux *http.ServeMux) {
 			if isPhabricatorAsset(r.URL.Path) {
 				w.Header().Set("Cache-Control", "max-age=300, public")
 			} else {
-				w.Header().Set("Cache-Control", "immutable, max-age=172800, public")
+				w.Header().Set("Cache-Control", "immutable, max-age=31536000, public")
 			}
 		}
 

@@ -3,7 +3,12 @@ import React from 'react'
 import { throwError } from 'rxjs'
 
 import { CodeInsightsBackend } from './code-insights-backend'
-import { SeriesChartContent, CategoricalChartContent, RepositorySuggestionData } from './code-insights-backend-types'
+import {
+    SeriesChartContent,
+    CategoricalChartContent,
+    RepositorySuggestionData,
+    BackendInsightDatum,
+} from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -18,7 +23,6 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public hasInsights = errorMockMethod('hasInsight')
     public getActiveInsightsCount = errorMockMethod('getNonFrozenInsightsCount')
     public getAccessibleInsightsList = errorMockMethod('getReachableInsights')
-    public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
     public getInsightSubjects = errorMockMethod('getInsightSubjects')
     public getSubjectSettingsById = errorMockMethod('getSubjectSettingsById')
@@ -44,8 +48,8 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getLangStatsInsightContent = (): Promise<CategoricalChartContent<unknown>> =>
         errorMockMethod('getLangStatsInsightContent')().toPromise()
 
-    public getCaptureInsightContent = (): Promise<SeriesChartContent<unknown>> =>
-        errorMockMethod('getCaptureInsightContent')().toPromise()
+    public getInsightPreviewContent = (): Promise<SeriesChartContent<BackendInsightDatum>> =>
+        errorMockMethod('getInsightPreviewContent')().toPromise()
 
     // Repositories API
     public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> =>

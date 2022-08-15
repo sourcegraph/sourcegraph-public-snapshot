@@ -14,11 +14,14 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
@@ -77,6 +80,12 @@ func TestParseIncludePattern(t *testing.T) {
 			exact: []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/sourcegraph-atom"},
 		},
 
+		// Ensure we don't lose foo/.*. In the past we returned exact for bar only.
+		`(^foo/.+$|^bar$)`:     {regexp: `(^foo/.+$|^bar$)`},
+		`^foo/.+$|^bar$`:       {regexp: `^foo/.+$|^bar$`},
+		`((^foo/.+$)|(^bar$))`: {regexp: `((^foo/.+$)|(^bar$))`},
+		`((^foo/.+)|(^bar$))`:  {regexp: `((^foo/.+)|(^bar$))`},
+
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {
 			exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"},
 		},
@@ -95,6 +104,10 @@ func TestParseIncludePattern(t *testing.T) {
 		// Recognize perl character class shorthand syntax.
 		`\s`: {regexp: `\s`},
 	}
+
+	tr, _ := trace.New(context.Background(), "", "")
+	defer tr.Finish()
+
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)
 		if err != nil {
@@ -109,7 +122,7 @@ func TestParseIncludePattern(t *testing.T) {
 		if regexp != want.regexp {
 			t.Errorf("got regexp %q, want %q for %s", regexp, want.regexp, pattern)
 		}
-		if qs, err := parsePattern(pattern, false); err != nil {
+		if qs, err := parsePattern(tr, pattern, false); err != nil {
 			t.Fatal(pattern, err)
 		} else {
 			if testing.Verbose() {
@@ -138,11 +151,12 @@ func TestRepos_Count(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -152,7 +166,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -163,22 +177,22 @@ func TestRepos_Count(t *testing.T) {
 			OrderBy:     []RepoListSort{{Field: RepoListID}},
 			LimitOffset: &LimitOffset{Limit: 1},
 		}
-		if count, err := Repos(db).Count(ctx, opts); err != nil {
+		if count, err := db.Repos().Count(ctx, opts); err != nil {
 			t.Fatal(err)
 		} else if want := 1; count != want {
 			t.Errorf("got %d, want %d", count, want)
 		}
 	})
 
-	repos, err := Repos(db).List(ctx, ReposListOptions{})
+	repos, err := db.Repos().List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Repos(db).Delete(ctx, repos[0].ID); err != nil {
+	if err := db.Repos().Delete(ctx, repos[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -190,7 +204,8 @@ func TestRepos_Delete(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -198,21 +213,21 @@ func TestRepos_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := Repos(db).List(ctx, ReposListOptions{})
+	repos, err := db.Repos().List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Repos(db).Delete(ctx, repos[0].ID); err != nil {
+	if err := db.Repos().Delete(ctx, repos[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -224,11 +239,12 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if _, err := Repos(db).GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := db.Repos().GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo already present")
 		} else {
@@ -240,7 +256,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rp, err := Repos(db).GetByName(ctx, "myrepo")
+	rp, err := db.Repos().GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +275,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rp, err = Repos(db).GetByName(ctx, "myrepo")
+	rp, err = db.Repos().GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +295,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := Repos(db).GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := db.Repos().GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo should be renamed, but still present as myrepo")
 		} else {
@@ -287,7 +303,7 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	rp, err = Repos(db).GetByName(ctx, "myrepo/renamed")
+	rp, err = db.Repos().GetByName(ctx, "myrepo/renamed")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +323,8 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -321,7 +338,7 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			rp, err := Repos(db).GetByName(ctx, name)
+			rp, err := db.Repos().GetByName(ctx, name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -345,7 +362,8 @@ func TestRepos_Create(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -360,7 +378,7 @@ func TestRepos_Create(t *testing.T) {
 	repo2 := typestest.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
 
 	t.Run("no repos should not fail", func(t *testing.T) {
-		if err := Repos(db).Create(ctx); err != nil {
+		if err := db.Repos().Create(ctx); err != nil {
 			t.Fatalf("Create error: %s", err)
 		}
 	})
@@ -368,7 +386,7 @@ func TestRepos_Create(t *testing.T) {
 	t.Run("many repos", func(t *testing.T) {
 		want := typestest.GenerateRepos(7, repo1, repo2)
 
-		if err := Repos(db).Create(ctx, want...); err != nil {
+		if err := db.Repos().Create(ctx, want...); err != nil {
 			t.Fatalf("Create error: %s", err)
 		}
 
@@ -378,7 +396,7 @@ func TestRepos_Create(t *testing.T) {
 			t.Fatalf("Create didn't assign an ID to all repos: %v", noID.Names())
 		}
 
-		have, err := Repos(db).List(ctx, ReposListOptions{})
+		have, err := db.Repos().List(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
@@ -395,7 +413,8 @@ func TestListIndexableRepos(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	reposToAdd := []types.Repo{
 		{
@@ -466,7 +485,7 @@ func TestListIndexableRepos(t *testing.T) {
 		if !cloned {
 			cloneStatus = types.CloneStatusNotCloned
 		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES ($1, $2, 'test');`, r.ID, cloneStatus); err != nil {
+		if _, err := db.ExecContext(ctx, `UPDATE gitserver_repos SET clone_status = $2, shard_id = 'test' WHERE repo_id = $1;`, r.ID, cloneStatus); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -482,7 +501,7 @@ func TestListIndexableRepos(t *testing.T) {
 		},
 		{
 			name: "only uncloned",
-			opts: ListIndexableReposOptions{OnlyUncloned: true},
+			opts: ListIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
 			want: []api.RepoID{1},
 		},
 		{
@@ -500,7 +519,7 @@ func TestListIndexableRepos(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			repos, err := Repos(db).ListIndexableRepos(ctx, tc.opts)
+			repos, err := db.Repos().ListIndexableRepos(ctx, tc.opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -523,7 +542,8 @@ func TestRepoStore_Metadata(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 
@@ -552,11 +572,11 @@ func TestRepoStore_Metadata(t *testing.T) {
 		},
 	}
 
-	r := Repos(db)
+	r := db.Repos()
 	require.NoError(t, r.Create(ctx, repos...))
 
-	d1 := time.Unix(1627945150, 0)
-	d2 := time.Unix(1628945150, 0)
+	d1 := time.Unix(1627945150, 0).UTC()
+	d2 := time.Unix(1628945150, 0).UTC()
 	gitserverRepos := []*types.GitserverRepo{
 		{
 			RepoID:      1,
@@ -571,7 +591,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 	}
 
 	gr := db.GitserverRepos()
-	require.NoError(t, gr.Upsert(ctx, gitserverRepos...))
+	require.NoError(t, gr.Update(ctx, gitserverRepos...))
 
 	expected := []*types.SearchedRepo{
 		{

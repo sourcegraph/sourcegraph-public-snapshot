@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -30,18 +31,27 @@ type SearchType int
 
 const (
 	SearchTypeRegex SearchType = iota
-	SearchTypeLiteralDefault
+	SearchTypeLiteral
 	SearchTypeStructural
+	SearchTypeLucky
+	SearchTypeStandard
+	SearchTypeKeyword
 )
 
 func (s SearchType) String() string {
 	switch s {
+	case SearchTypeStandard:
+		return "standard"
 	case SearchTypeRegex:
 		return "regex"
-	case SearchTypeLiteralDefault:
+	case SearchTypeLiteral:
 		return "literal"
 	case SearchTypeStructural:
 		return "structural"
+	case SearchTypeLucky:
+		return "lucky"
+	case SearchTypeKeyword:
+		return "keyword"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
@@ -186,9 +196,9 @@ func (p Plan) ToQ() Q {
 	nodes := make([]Node, 0, len(p))
 	for _, basic := range p {
 		operands := basic.ToParseTree()
-		nodes = append(nodes, newOperator(operands, And)...)
+		nodes = append(nodes, NewOperator(operands, And)...)
 	}
-	return Q(newOperator(nodes, Or))
+	return Q(NewOperator(nodes, Or))
 }
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic
@@ -314,13 +324,126 @@ type Parameters []Parameter
 // IncludeExcludeValues partitions multiple values of a field into positive
 // (include) and negated (exclude) values.
 func (p Parameters) IncludeExcludeValues(field string) (include, exclude []string) {
-	VisitField(toNodes(p), field, func(v string, negated bool, _ Annotation) {
+	VisitField(toNodes(p), field, func(v string, negated bool, ann Annotation) {
+		if ann.Labels.IsSet(IsPredicate) {
+			// Skip predicates
+			return
+		}
+
 		if negated {
 			exclude = append(exclude, v)
 		} else {
 			include = append(include, v)
 		}
 	})
+	return include, exclude
+}
+
+// RepoHasFileContentArgs represents the args of any of the following predicates:
+// - repo:contains.file(f)
+// - repo:contains.content(c)
+// - repo:contains(file:f content:c)
+// - repohasfile:f
+type RepoHasFileContentArgs struct {
+	// At least one of these strings should be non-empty
+	Path    string // optional
+	Content string // optional
+	Negated bool
+}
+
+func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
+	nodes := toNodes(p)
+	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    v,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.Pattern,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsContentPredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Content: pred.Pattern,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.File,
+			Content: pred.Content,
+			Negated: negated,
+		})
+	})
+
+	return res
+}
+
+func (p Parameters) FileContainsContent() (include []string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
+		if field == FieldFile && (name == "contains" || name == "contains.content") {
+			var pred FileContainsContentPredicate
+			pred.ParseParams(value)
+			include = append(include, pred.Pattern)
+		}
+	})
+	return include
+}
+
+func (p Parameters) RepoContainsCommitAfter() (value string) {
+	nodes := toNodes(p)
+
+	// Look for values of repohascommitafter:
+	value = p.FindValue(FieldRepoHasCommitAfter)
+
+	// Look for values of repo:contains.commit.after()
+	VisitTypedPredicate(nodes, func(pred *RepoContainsCommitAfterPredicate, _ bool) {
+		value = pred.TimeRef
+	})
+
+	return value
+}
+
+type RepoKVPFilter struct {
+	Key     string
+	Value   *string
+	Negated bool
+}
+
+func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKVPPredicate, negated bool) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Value:   &pred.Value,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasTagPredicate, negated bool) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Negated: negated,
+		})
+	})
+
+	return res
+}
+
+func (p Parameters) FileHasOwner() (include, exclude []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate, negated bool) {
+		if negated {
+			exclude = append(exclude, pred.Owner)
+		} else {
+			include = append(include, pred.Owner)
+		}
+	})
+
 	return include, exclude
 }
 
@@ -333,22 +456,12 @@ func (p Parameters) Exists(field string) bool {
 	return found
 }
 
-func (p Parameters) Dependencies() (dependencies []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			dependencies = append(dependencies, value)
-		}
+func (p Parameters) RepoHasDescription() (descriptionPatterns []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasDescriptionPredicate, _ bool) {
+		split := strings.Split(pred.Pattern, " ")
+		descriptionPatterns = append(descriptionPatterns, "(?:"+strings.Join(split, ").*?(?:")+")")
 	})
-	return dependencies
-}
-
-func (p Parameters) Dependents() (dependents []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
-			dependents = append(dependents, value)
-		}
-	})
-	return dependents
+	return descriptionPatterns
 }
 
 func (p Parameters) MaxResults(defaultLimit int) int {

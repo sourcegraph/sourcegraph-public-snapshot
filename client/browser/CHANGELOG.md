@@ -13,13 +13,20 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox 22.7.29.851, Safari v1.14 (22.8.2.1319)
+
+- Fix extensions decorations issue when navigating project files on GitHub: [codecov/sourcegraph-codecov/issues/86](https://github.com/codecov/sourcegraph-codecov/issues/86), [pull/39557](https://github.com/sourcegraph/sourcegraph/pull/39557)
+- Fix command palette style regression on GitHub: [issues/39495](https://github.com/sourcegraph/sourcegraph/issues/39495), [issues/33433](https://github.com/sourcegraph/sourcegraph/issues/33433) [pull/39580](https://github.com/sourcegraph/sourcegraph/pull/39580)
+
+## Chrome & Firefox v22.7.11.926
+
 - Fix Sourcegraph buttons styles on Bitbucket cloud: [issues/32598](https://github.com/sourcegraph/sourcegraph/issues/32598), [pull/33787](https://github.com/sourcegraph/sourcegraph/pull/33787)
 - Fix repo visibility check logic: [issues/29244](https://github.com/sourcegraph/sourcegraph/issues/29244), [pull/33352](https://github.com/sourcegraph/sourcegraph/pull/33352)
 - Add different browser extension icons for development mode builds: [issue/33587](https://github.com/sourcegraph/sourcegraph/issues/33587), [pull/34353](https://github.com/sourcegraph/sourcegraph/pull/34353)
 - Fix git-extras extension blame for selected lines issue on the code hosts: [issues/34700](https://github.com/sourcegraph/sourcegraph/issues/34700), [pull/34698](https://github.com/sourcegraph/sourcegraph/pull/34698)
 - Fix hover-overlay styling issue on GitLab: [issues/35315](https://github.com/sourcegraph/sourcegraph/issues/35315), [pull/35403](https://github.com/sourcegraph/sourcegraph/pull/35403)
 
-## Chrome & Firefox 22.4.7.1712, Safari v1.13
+## Chrome & Firefox v22.4.7.1712, Safari v1.13
 
 - Update banners for not synced private repositories banners when on Sourcegraph Cloud instance and not added repositories when on other instances: [pull/31922](https://github.com/sourcegraph/sourcegraph/pull/31922), [issues/31920](https://github.com/sourcegraph/sourcegraph/issues/31920)
 - Fix style errors in browser console: [pull/32604](https://github.com/sourcegraph/sourcegraph/pull/32604), [issues/32443](https://github.com/sourcegraph/sourcegraph/issues/32443)

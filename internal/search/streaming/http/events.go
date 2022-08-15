@@ -27,7 +27,8 @@ type EventContentMatch struct {
 	Branches        []string         `json:"branches,omitempty"`
 	Commit          string           `json:"commit,omitempty"`
 	Hunks           []DecoratedHunk  `json:"hunks"`
-	LineMatches     []EventLineMatch `json:"lineMatches"`
+	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
+	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -74,6 +75,12 @@ type DecoratedContent struct {
 	HTML      string `json:"html,omitempty"`
 }
 
+type ChunkMatch struct {
+	Content      string   `json:"content"`
+	ContentStart Location `json:"contentStart"`
+	Ranges       []Range  `json:"ranges"`
+}
+
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
 	Line             string     `json:"line"`
@@ -86,15 +93,17 @@ type EventRepoMatch struct {
 	// Type is always RepoMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	RepositoryID    int32      `json:"repositoryID"`
-	Repository      string     `json:"repository"`
-	Branches        []string   `json:"branches,omitempty"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
-	Description     string     `json:"description,omitempty"`
-	Fork            bool       `json:"fork,omitempty"`
-	Archived        bool       `json:"archived,omitempty"`
-	Private         bool       `json:"private,omitempty"`
+	RepositoryID       int32              `json:"repositoryID"`
+	Repository         string             `json:"repository"`
+	Branches           []string           `json:"branches,omitempty"`
+	RepoStars          int                `json:"repoStars,omitempty"`
+	RepoLastFetched    *time.Time         `json:"repoLastFetched,omitempty"`
+	Description        string             `json:"description,omitempty"`
+	DescriptionMatches []Range            `json:"descriptionMatches,omitempty"`
+	Fork               bool               `json:"fork,omitempty"`
+	Archived           bool               `json:"archived,omitempty"`
+	Private            bool               `json:"private,omitempty"`
+	KeyValuePairs      map[string]*string `json:"keyValuePairs,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}
@@ -122,6 +131,7 @@ type Symbol struct {
 	Name          string `json:"name"`
 	ContainerName string `json:"containerName"`
 	Kind          string `json:"kind"`
+	Line          int32  `json:"line"`
 }
 
 // EventCommitMatch is the generic results interface from GQL. There is a lot
@@ -165,6 +175,7 @@ type EventFilter struct {
 type EventAlert struct {
 	Title           string          `json:"title"`
 	Description     string          `json:"description,omitempty"`
+	Kind            string          `json:"kind,omitempty"`
 	ProposedQueries []ProposedQuery `json:"proposedQueries"`
 }
 

@@ -1,13 +1,14 @@
 name: hello-world
 description: Add Hello World to READMEs
 
-# Find all repositories that contain a README.md file.
+# Find the first 100 search results for README files.
+# This could yield less than 100 repos/workspaces if some repos contain multiple READMEs.
 on:
   - repositoriesMatchingQuery: file:README.md count:100
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
+  - run: IFS=$'\n'; echo Hello World | tee -a $(find -name README.md)
     container: ubuntu:18.04
 
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.

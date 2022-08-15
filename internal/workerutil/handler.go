@@ -3,7 +3,7 @@ package workerutil
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/log"
 )
 
 // Handler is the configurable consumer within a worker. Types that conform to this

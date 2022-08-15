@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useMemo } from 'react'
 
+import { mdiPuzzleOutline } from '@mdi/js'
 import classNames from 'classnames'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon } from '@sourcegraph/wildcard'
+import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon, Text } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -96,14 +96,14 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                 )
                             }
                             path={[
-                                { to: '/extensions', icon: PuzzleOutlineIcon, ariaLabel: 'Extensions' },
+                                { to: '/extensions', icon: mdiPuzzleOutline, ariaLabel: 'Extensions' },
                                 { text: publisher },
                                 { text: name },
                             ]}
                             description={
                                 manifest &&
                                 (manifest.description || isWorkInProgress) && (
-                                    <p className="mt-1 mb-0">{manifest.description}</p>
+                                    <Text className="mt-1 mb-0">{manifest.description}</Text>
                                 )
                             }
                             actions={
@@ -216,7 +216,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                     exact={exact}
                                                 >
                                                     <span>
-                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {label}
                                                         </span>

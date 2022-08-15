@@ -1,21 +1,26 @@
 package server
 
 import (
+	"context"
 	"io"
 	"os/exec"
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
 var gitServiceMaxEgressBytesPerSecond = func() int64 {
+	logger := log.Scoped("gitServiceMaxEgressBytesPerSecond", "git service max egress bytes per second")
 	bps, err := strconv.ParseInt(env.Get(
 		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
 		"1000000000",
@@ -24,7 +29,7 @@ var gitServiceMaxEgressBytesPerSecond = func() int64 {
 		64,
 	)
 	if err != nil {
-		log15.Error("gitservice: failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND. defaulting to 1Gbps", "error", err)
+		logger.Error("gitservice: failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND. defaulting to 1Gbps", log.Int64("bps", bps), log.Error(err))
 		bps = 1000 * 1000 * 1000 // 1Gbps
 	}
 	return bps
@@ -52,6 +57,8 @@ func flowrateWriter(w io.Writer) io.Writer {
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {
 	return &gitservice.Handler{
+		Logger: s.Logger.Scoped("gitServiceHandler", "smart Git HTTP transfer protocol"),
+
 		Dir: func(d string) string {
 			return string(s.dir(api.RepoName(d)))
 		},
@@ -61,18 +68,32 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 			cmd.Stdout = flowrateWriter(cmd.Stdout)
 		},
 
-		Trace: func(svc, repo, protocol string) func(error) {
+		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			metricServiceRunning.WithLabelValues(svc).Inc()
+
+			// Log which which actor is accessing the repo.
+			accesslog.Record(ctx, repo, map[string]string{
+				"svc":      svc,
+				"protocol": protocol,
+			})
+
 			return func(err error) {
 				errLabel := strconv.FormatBool(err != nil)
 				metricServiceRunning.WithLabelValues(svc).Dec()
 				metricServiceDuration.WithLabelValues(svc, errLabel).Observe(time.Since(start).Seconds())
 
+				logger := s.Logger.With(
+					log.String("svc", svc),
+					log.String("repo", repo),
+					log.String("protocol", protocol),
+					log.Duration("duration", time.Since(start)),
+				)
+
 				if err != nil {
-					log15.Error("gitservice.ServeHTTP", "svc", svc, "repo", repo, "protocol", protocol, "duration", time.Since(start), "error", err.Error())
+					logger.Error("gitservice.ServeHTTP", log.Error(err))
 				} else if traceLogs {
-					log15.Debug("TRACE gitserver git service", "svc", svc, "repo", repo, "protocol", protocol, "duration", time.Since(start))
+					logger.Debug("TRACE gitserver git service")
 				}
 			}
 		},

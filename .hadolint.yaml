@@ -11,3 +11,5 @@ ignored:
 - DL3018
 # Noisy: Multiple consecutive `RUN` instructions. Consider consolidation.
 - DL3059
+# Noisy: this lint triggers after unrelated changes are made, so @rvantonder decided to suppress it.
+- DL3047

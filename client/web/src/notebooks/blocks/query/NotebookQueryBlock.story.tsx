@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
@@ -16,9 +16,14 @@ import { WebStory } from '../../../components/WebStory'
 
 import { NotebookQueryBlock } from './NotebookQueryBlock'
 
-const { add } = storiesOf('web/search/notebooks/blocks/query/NotebookQueryBlock', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/search/notebooks/blocks/query/NotebookQueryBlock',
+    decorators: [decorator],
+}
+
+export default config
 
 const streamingSearchResult: AggregateStreamingSearchResults = {
     state: 'complete',
@@ -41,7 +46,7 @@ const noopBlockCallbacks = {
     onDuplicateBlock: noop,
 }
 
-add('default', () => (
+export const Default: Story = () => (
     <WebStory>
         {props => (
             <NotebookQueryBlock
@@ -56,7 +61,7 @@ add('default', () => (
                 isOtherBlockSelected={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
-                sourcegraphSearchLanguageId="sourcegraphSearch"
+                globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
@@ -65,9 +70,9 @@ add('default', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('selected', () => (
+export const Selected: Story = () => (
     <WebStory>
         {props => (
             <NotebookQueryBlock
@@ -81,7 +86,7 @@ add('selected', () => (
                 isReadOnly={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
-                sourcegraphSearchLanguageId="sourcegraphSearch"
+                globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
@@ -91,9 +96,9 @@ add('selected', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('read-only selected', () => (
+export const ReadOnlySelected: Story = () => (
     <WebStory>
         {props => (
             <NotebookQueryBlock
@@ -107,7 +112,7 @@ add('read-only selected', () => (
                 isOtherBlockSelected={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
-                sourcegraphSearchLanguageId="sourcegraphSearch"
+                globbing={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
@@ -117,4 +122,6 @@ add('read-only selected', () => (
             />
         )}
     </WebStory>
-))
+)
+
+ReadOnlySelected.storyName = 'read-only selected'

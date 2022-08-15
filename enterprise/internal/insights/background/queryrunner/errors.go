@@ -2,20 +2,39 @@ package queryrunner
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type StreamingError struct {
+type TerminalStreamingError struct {
 	Type     types.GenerationMethod
 	Messages []string
 }
 
-func (e StreamingError) Error() string {
-	if e.Type == types.SearchCompute {
-		return fmt.Sprintf("compute streaming search: errors: %v", e.Messages)
-	}
-	return fmt.Sprintf("streaming search: errors: %v", e.Messages)
+func (e TerminalStreamingError) Error() string {
+	return stringifyStreamingError(e.Messages, e.Type, true)
 }
 
-func (e StreamingError) NonRetryable() bool { return true }
+func (e TerminalStreamingError) NonRetryable() bool { return true }
+
+func stringifyStreamingError(messages []string, streamingType types.GenerationMethod, terminal bool) string {
+	retryable := ""
+	if terminal {
+		retryable = " terminal"
+	}
+	if streamingType == types.SearchCompute {
+		return fmt.Sprintf("compute streaming search:%s errors: %v", retryable, messages)
+	}
+	return fmt.Sprintf("streaming search:%s errors: %v", retryable, messages)
+}
+
+func classifiedError(messages []string, streamingType types.GenerationMethod) error {
+	for _, m := range messages {
+		if strings.Contains(m, "invalid query") {
+			return TerminalStreamingError{Type: streamingType, Messages: messages}
+		}
+	}
+	return errors.Errorf(stringifyStreamingError(messages, streamingType, false))
+}

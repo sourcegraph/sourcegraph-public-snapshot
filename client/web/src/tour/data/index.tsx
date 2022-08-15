@@ -1,9 +1,6 @@
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CursorPointerIcon from 'mdi-react/CursorPointerIcon'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import NotebookIcon from 'mdi-react/NotebookIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import ShieldSearchIcon from 'mdi-react/ShieldSearchIcon'
+import { mdiCheckCircle, mdiMagnify, mdiPuzzleOutline, mdiShieldSearch, mdiNotebook, mdiCursorPointer } from '@mdi/js'
+
+import { Code, Icon } from '@sourcegraph/wildcard'
 
 import { TourLanguage, TourTaskType } from '../components/Tour/types'
 
@@ -207,12 +204,108 @@ export const visitorsTasks: TourTaskType[] = [
 ]
 
 /**
+ * Tour tasks for non-authenticated users
+ */
+export const visitorsTasksWithNotebook: TourTaskType[] = [
+    {
+        dataAttributes: {
+            order: 1,
+        },
+        steps: [
+            {
+                id: 'FindAcrossYourReposNotebook',
+                label: 'Find code across all your repos',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM=',
+                },
+            },
+        ],
+    },
+    {
+        dataAttributes: {
+            order: 2,
+        },
+        steps: [
+            {
+                id: 'SearchAndReviewCommitsNotebook',
+                label: 'Search & review commits',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTI=',
+                },
+            },
+        ],
+    },
+    {
+        dataAttributes: {
+            order: 3,
+        },
+        steps: [
+            {
+                id: 'RefineQueriesByFilteringNotebook',
+                label: 'Refine queries by filtering',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTQ=',
+                },
+            },
+        ],
+    },
+    {
+        dataAttributes: {
+            order: 4,
+        },
+        steps: [
+            {
+                id: 'StructuralSearchBasicsNotebook',
+                label: 'Structural search basics',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6Mzk4',
+                },
+            },
+        ],
+    },
+]
+
+export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
+    title: 'All done!',
+    icon: (
+        <Icon
+            className="text-success"
+            svgPath={mdiCheckCircle}
+            inline={false}
+            aria-hidden={true}
+            height="2.3rem"
+            width="2.3rem"
+        />
+    ),
+    steps: [
+        {
+            id: 'InstallOrSignUp',
+            label: 'Register for a free account',
+            tooltip:
+                'Registration unlocks additional features like IDE integrations, browser extensions, saved searches and more.',
+            action: {
+                type: 'new-tab-link',
+                variant: 'button-primary',
+                value:
+                    'https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
+            },
+            // This is done to mimic user creating an account, and signed in there is a different tour
+            completeAfterEvents: ['non-existing-event'],
+        },
+    ],
+}
+
+/**
  * Tour tasks for authenticated users. Extended/all use-cases.
  */
 export const authenticatedTasks: TourTaskType[] = [
     {
         title: 'Reuse existing code',
-        icon: <MagnifyIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiMagnify} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'ReuseExistingCode',
@@ -239,17 +332,16 @@ export const authenticatedTasks: TourTaskType[] = [
                     <>
                         <strong>Discover code across multiple repositories</strong>
                         <br />
-                        The <code>repo:</code> keyword allows searching in multiple repositories matching a term. Use it
+                        The <Code>repo:</Code> keyword allows searching in multiple repositories matching a term. Use it
                         to reference all of your projects or find open source examples.
                     </>
                 ),
             },
         ],
     },
-
     {
         title: 'Install an IDE extension',
-        icon: <PuzzleOutlineIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiPuzzleOutline} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'InstallIDEExtension',
@@ -264,7 +356,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Find and fix vulnerabilities',
-        icon: <ShieldSearchIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiShieldSearch} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'WatchVideo',
@@ -305,7 +397,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Respond to incidents',
-        icon: <NotebookIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiNotebook} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'Notebook',
@@ -319,7 +411,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Understand a new codebase',
-        icon: <CursorPointerIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiCursorPointer} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'PowerCodeNav',
@@ -360,7 +452,16 @@ export const authenticatedTasks: TourTaskType[] = [
  */
 export const authenticatedExtraTask: TourTaskType = {
     title: 'All done!',
-    icon: <CheckCircleIcon size="2.3rem" className="text-success" />,
+    icon: (
+        <Icon
+            className="text-success"
+            svgPath={mdiCheckCircle}
+            inline={false}
+            aria-hidden={true}
+            height="2.3rem"
+            width="2.3rem"
+        />
+    ),
     steps: [
         {
             id: 'RestartTour',

@@ -1,18 +1,22 @@
-import React from 'react'
+import React, { FC, useMemo } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { useDebounce } from '@sourcegraph/wildcard'
+import { BarChart, ScrollBox, LegendList, LegendItem, Series } from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList } from '../../../../../../../../charts'
-import { ScrollBox } from '../../../../../../../../views/components/view/content/chart-view-content/charts/line/components/scroll-box/ScrollBox'
-import { BackendInsightData } from '../../../../../../core'
+import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
+import { BackendInsightData, InsightContent } from '../../../../../../core'
+import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
 
 import styles from './BackendInsightChart.module.scss'
+
+function getLineColor(series: Series<any>): string {
+    return series.color ?? 'var(--gray-07)'
+}
 
 /**
  * If width of the chart is less than this var width value we should put the legend
@@ -41,21 +45,32 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
+    zeroYAxisMin: boolean
     className?: string
     onDatumClick: () => void
+    seriesToggleState: UseSeriesToggleReturn
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
-    const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
+    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
+    const { ref, width = 0 } = useResizeObserver()
+    const { setHoveredId } = seriesToggleState
 
-    const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+    const isEmptyDataset = useMemo(() => hasNoData(data), [data])
+
+    const hasViewManySeries = isManyKeysInsight(data)
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
-
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
+    const isSeriesLikeInsight = data.type === InsightContentType.Series
 
     return (
-        <div ref={ref} className={classNames(className, styles.chart, { [styles.chartHorizontal]: isHorizontalMode })}>
+        <div
+            ref={ref}
+            className={classNames(className, styles.root, {
+                [styles.rootHorizontal]: isHorizontalMode,
+                [styles.rootWithLegend]: isSeriesLikeInsight,
+            })}
+        >
             {width && (
                 <>
                     <ParentSize
@@ -66,37 +81,94 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         {parent => (
                             <>
                                 <BackendAlertOverlay
-                                    hasNoData={content.series.every(series => series.data.length === 0)}
+                                    hasNoData={isEmptyDataset}
                                     isFetchingHistoricalData={isFetchingHistoricalData}
                                     className={styles.alertOverlay}
                                 />
 
-                                <SeriesChart
-                                    type={SeriesBasedChartTypes.Line}
-                                    width={parent.width}
-                                    height={parent.height}
-                                    locked={locked}
-                                    onDatumClick={onDatumClick}
-                                    {...content}
-                                />
+                                {data.type === InsightContentType.Series ? (
+                                    <SeriesChart
+                                        type={SeriesBasedChartTypes.Line}
+                                        width={parent.width}
+                                        height={parent.height}
+                                        locked={locked}
+                                        className={styles.chart}
+                                        onDatumClick={onDatumClick}
+                                        zeroYAxisMin={zeroYAxisMin}
+                                        seriesToggleState={seriesToggleState}
+                                        {...data.content}
+                                    />
+                                ) : (
+                                    <BarChart width={parent.width} height={parent.height} {...data.content} />
+                                )}
                             </>
                         )}
                     </ParentSize>
 
-                    <ScrollBox className={styles.legendListContainer}>
-                        <LegendList className={styles.legendList}>
-                            {content.series.map(series => (
-                                <LegendItem
-                                    key={series.id as string}
-                                    color={getLineColor(series)}
-                                    name={series.name}
-                                    className={styles.legendListItem}
-                                />
-                            ))}
-                        </LegendList>
-                    </ScrollBox>
+                    {isSeriesLikeInsight && (
+                        <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
+                            <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
+                        </ScrollBox>
+                    )}
                 </>
             )}
         </div>
+    )
+}
+
+const isManyKeysInsight = (data: InsightContent<any>): boolean => {
+    if (data.type === InsightContentType.Series) {
+        return data.content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+    }
+
+    return data.content.data.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+}
+
+const hasNoData = (data: InsightContent<any>): boolean => {
+    if (data.type === InsightContentType.Series) {
+        return data.content.series.every(series => series.data.length === 0)
+    }
+
+    // If all datum have zero matches render no data layout. We need to
+    // handle it explicitly on the frontend since backend returns manually
+    // defined series with empty points in case of no matches for generated
+    // series.
+    return data.content.data.every(datum => datum.value === 0)
+}
+
+interface SeriesLegendsProps {
+    series: Series<any>[]
+    seriesToggleState: UseSeriesToggleReturn
+}
+
+const SeriesLegends: FC<SeriesLegendsProps> = props => {
+    const { series, seriesToggleState } = props
+
+    const { setHoveredId, isSeriesSelected, isSeriesHovered, toggle } = seriesToggleState
+
+    return (
+        <LegendList className={styles.legendList}>
+            {series.map(item => (
+                <LegendItem
+                    key={item.id as string}
+                    color={getLineColor(item)}
+                    name={item.name}
+                    selected={isSeriesSelected(`${item.id}`)}
+                    hovered={isSeriesHovered(`${item.id}`)}
+                    className={classNames(styles.legendListItem, {
+                        [styles.clickable]: series.length > 1,
+                    })}
+                    onClick={() =>
+                        toggle(
+                            `${item.id}`,
+                            series.map(series => `${series.id}`)
+                        )
+                    }
+                    onMouseEnter={() => setHoveredId(`${item.id}`)}
+                    // prevent accidental dragging events
+                    onMouseDown={event => event.stopPropagation()}
+                />
+            ))}
+        </LegendList>
     )
 }

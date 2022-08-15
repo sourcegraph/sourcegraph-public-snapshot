@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
@@ -43,10 +43,10 @@ export const RemoveCredentialModal: React.FunctionComponent<React.PropsWithChild
 
                 {error && <ErrorAlert error={error} />}
 
-                <p>
+                <Text>
                     To create changesets on this code host after removing credentials, you will need to repeat the 'Add
                     credentials' process.
-                </p>
+                </Text>
 
                 {codeHost.requiresSSH && (
                     <CodeHostSshPublicKey

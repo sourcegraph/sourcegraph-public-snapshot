@@ -1,4 +1,4 @@
-import { parse as parseJSONC } from '@sqs/jsonc-parser'
+import { parse as parseJSONC } from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
 
@@ -149,7 +149,26 @@ export function fetchAllOrganizations(args: {
     )
 }
 
+const mirrorRepositoryInfoFieldsFragment = gql`
+    fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
+        cloned
+        cloneInProgress
+        updatedAt
+        lastError
+    }
+`
+
+const externalRepositoryFieldsFragment = gql`
+    fragment ExternalRepositoryFields on ExternalRepository {
+        serviceType
+        serviceID
+    }
+`
+
 const siteAdminRepositoryFieldsFragment = gql`
+    ${mirrorRepositoryInfoFieldsFragment}
+    ${externalRepositoryFieldsFragment}
+
     fragment SiteAdminRepositoryFields on Repository {
         id
         name
@@ -158,13 +177,10 @@ const siteAdminRepositoryFieldsFragment = gql`
         url
         isPrivate
         mirrorInfo {
-            cloned
-            cloneInProgress
-            updatedAt
+            ...MirrorRepositoryInfoFields
         }
         externalRepository {
-            serviceType
-            serviceID
+            ...ExternalRepositoryFields
         }
     }
 `

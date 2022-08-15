@@ -1,5 +1,7 @@
-// This rule is disable to preserve 1-1 mapping between `DecoratedToken` types and classes.
+// This rule needs to be disabled so that we can override CodeMirror's classes
 /* stylelint-disable selector-class-pattern */
+@import 'wildcard/src/global-styles/breakpoints';
+
 .root {
     flex: 1;
     min-width: 0;
@@ -25,11 +27,43 @@
             color: var(--search-query-text-color);
             // Disable default padding
             padding: 0;
+
+            &:global(.focus-visible),
+            &:focus-visible {
+                box-shadow: none;
+            }
+
+            @media (--xs-breakpoint-down) {
+                // Automatically enable line wrapping on small screens.
+                // CodeMirror's own lineWrapping extension does the same
+                // (also see https://codemirror.net/examples/styling/)
+                white-space: pre-wrap; // For IE
+                white-space: break-spaces;
+                word-break: break-word; // For Safari, which doesn't support overflow-wrap: anywhere
+                overflow-wrap: anywhere;
+                flex-shrink: 1;
+            }
         }
 
         :global(.cm-line) {
             // Disable default padding
             padding: 0;
+        }
+
+        :global(.cm-placeholder) {
+            // CodeMirror uses display: inline-block by default, but that causes
+            // Chrome to render a larger cursor if the placeholder holder spans
+            // multiple lines. Firefox doesn't have this problem (but
+            // setting display: inline doesn't seem to have a negative effect
+            // either)
+            display: inline;
+            // Once again, Chrome renders the placeholder differently than
+            // Firefox. CodeMirror sets 'word-break: break-word' (which is
+            // deprecated) and 'overflow-wrap: anywhere' but they don't seem to
+            // have an effect in Chrome (at least not in this instance).
+            // Setting 'word-break: break-all' explicitly makes appearances a
+            // bit better for example queries with long tokens.
+            word-break: break-all;
         }
 
         :global(.cm-tooltip) {
@@ -72,213 +106,126 @@
             padding: 0;
             color: var(--search-query-text-color);
             background-color: var(--color-bg-1);
+            // Default is 50vw
+            max-width: 70vw;
 
-            > ul > li {
-                padding-top: 0.25rem;
-                padding-bottom: 0.25rem;
+            > ul {
+                font-size: var(--code-font-size);
+                font-family: var(--code-font-family);
+                max-height: 15rem;
 
-                &[aria-selected] {
-                    color: var(--search-query-text-color);
-                    background-color: var(--color-bg-2);
+                > li {
+                    align-items: center;
+                    box-sizing: content-box;
+                    padding: 0.25rem 0.375rem;
+                    display: flex;
+                    height: 1.25rem;
 
-                    :global(.theme-dark) & {
-                        background-color: var(--color-bg-3);
+                    svg {
+                        flex-shrink: 0;
+
+                        path {
+                            fill: var(--search-query-text-color);
+                        }
                     }
-                }
 
-                :global(.cm-completionDetail) {
-                    padding-left: 0.25rem;
-                    color: var(--gray-06);
-                }
+                    :global(.cm-completionLabel) {
+                        flex-shrink: 0;
+                    }
 
-                :global(.cm-completionMatchedText) {
-                    // Reset
-                    text-decoration: none;
+                    :global(.cm-completionDetail) {
+                        padding-left: 0.25rem;
+                        color: var(--gray-06);
+                        flex: 1;
+                        min-width: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        font-style: initial;
+                    }
 
-                    // Our style
-                    background-color: var(--mark-bg);
+                    :global(.cm-completionMatchedText) {
+                        // Reset
+                        text-decoration: none;
+
+                        // Our style
+                        color: var(--search-filter-keyword-color);
+                        font-weight: bold;
+                    }
+
+                    .tabStyle {
+                        border: 1px solid var(--text-muted);
+                        border-radius: 0.25rem;
+                        height: 1.25rem;
+                        font-size: 0.65rem;
+                        line-height: 1;
+                        padding: 0.25rem 0.375rem;
+                        margin-left: auto;
+                        color: var(--text-muted);
+                        opacity: 0.75;
+                        display: none;
+                    }
+
+                    &[aria-selected] {
+                        color: var(--search-query-text-color);
+                        background-color: var(--color-bg-2);
+
+                        :global(.theme-dark) & {
+                            background-color: var(--color-bg-3);
+                        }
+
+                        .tabStyle {
+                            display: inline-block;
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-.diagnosticError {
-    background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%206%203'%20enable-background%3D'new%200%200%206%203'%20height%3D'3'%20width%3D'6'%3E%3Cg%20fill%3D'%23e51400'%3E%3Cpolygon%20points%3D'5.5%2C0%202.5%2C3%201.1%2C3%204.1%2C0'%2F%3E%3Cpolygon%20points%3D'4%2C0%206%2C2%206%2C0.6%205.4%2C0'%2F%3E%3Cpolygon%20points%3D'0%2C2%201%2C3%202.4%2C3%200%2C0.6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
-        repeat-x bottom left;
-}
-
-.diagnosticWarning {
-    background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%206%203'%20enable-background%3D'new%200%200%206%203'%20height%3D'3'%20width%3D'6'%3E%3Cg%20fill%3D'%23bf8803'%3E%3Cpolygon%20points%3D'5.5%2C0%202.5%2C3%201.1%2C3%204.1%2C0'%2F%3E%3Cpolygon%20points%3D'4%2C0%206%2C2%206%2C0.6%205.4%2C0'%2F%3E%3Cpolygon%20points%3D'0%2C2%201%2C3%202.4%2C3%200%2C0.6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
-        repeat-x bottom left;
-}
-
+// .placeholder needs to explicilty have the same background color because it
+// appears to be placed outside of .focusedFilter rather than within it.
+.placeholder,
 .focusedFilter {
-    background-color: var(--color-bg-2);
+    background-color: var(--gray-02);
 
     :global(.theme-dark) & {
-        background-color: var(--color-bg-3);
+        background-color: var(--gray-08);
     }
 }
 
-// Search query syntax highlighting
-
-// Base language tokens
-.identifier {
-    color: var(--search-query-text-color);
-}
-.field {
-    color: var(--search-filter-keyword-color);
-}
-.keyword,
-.openingParen,
-.closingParen {
-    color: var(--search-keyword-color);
-}
-.comment {
-    color: var(--oc-orange-9);
+.placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+    pointer-events: none;
 }
 
-// Decorated language tokens
-.metaFilterSeparator {
-    color: var(--oc-gray-6);
-}
-.metaRepoRevisionSeparator {
-    color: var(--search-filter-keyword-color);
-}
-.metaContextPrefix,
-.metaPredicateNameAccess {
-    color: var(--search-keyword-color);
-}
-.metaPredicateDot {
-    color: var(--search-query-text-color);
-}
-.metaPredicateParenthesis {
-    color: var(--oc-orange-9);
-}
-
-// Regexp pattern
-.metaRegexp {
-    &Delimited,
-    &Assertion,
-    &LazyQualifier {
-        color: var(--oc-red-9);
+// Copied and adapted from the Wildcard LoadingSpinner component
+.loading-spinner {
+    :global(.theme-light) & {
+        --loading-spinner-outer-color: var(--gray-05);
+        --loading-spinner-inner-color: var(--gray-08);
+    }
+    :global(.theme-dark) & {
+        --loading-spinner-outer-color: var(--gray-07);
+        --loading-spinner-inner-color: var(--white);
     }
 
-    &EscapedCharacter {
-        color: var(--oc-orange-9);
-    }
-
-    &CharacterSet,
-    &CharacterClass,
-    &CharacterClassRangeHyphen {
-        color: var(--search-keyword-color);
-    }
-
-    &CharacterClassMember,
-    &CharacterClassRange {
-        color: var(--search-query-text-color);
-    }
-
-    &Alternative,
-    &RangeQuantifier {
-        color: var(--oc-cyan-7);
-    }
+    flex-shrink: 0;
+    margin: 0.125rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    animation: loading-spinner-spin 1s linear infinite;
+    border: 2px solid var(--loading-spinner-outer-color, rgba(0, 0, 0, 0.3));
+    border-top: 2px solid var(--loading-spinner-inner-color, rgba(0, 0, 0, 1));
 }
 
-// Structural pattern highlighting
-.metaStructural {
-    &Hole,
-    &RegexpHole {
-        color: var(--oc-red-9);
+@keyframes loading-spinner-spin {
+    0% {
+        transform: rotate(0deg);
     }
-
-    &Variable {
-        color: var(--search-query-text-color);
-    }
-
-    &RegexpSeparator {
-        color: var(--oc-orange-9);
-    }
-}
-
-// Revision highlighting
-.metaRevision {
-    &Separator {
-        color: var(--oc-orange-9);
-    }
-
-    &IncludeGlobMarker,
-    &ExcludeGlobaMarker {
-        color: var(--oc-red-9);
-    }
-
-    &CommitHash,
-    &Label,
-    &ReferencePath {
-        color: var(--search-query-text-color);
-    }
-
-    &Wildcard {
-        color: var(--oc-cyan-7);
-    }
-}
-
-// Path-like highlighting
-.metaPathSeparator {
-    color: var(--oc-gray-6);
-}
-
-:global(.theme-dark) {
-    .comment,
-    .metaPredicateParenthesis {
-        color: var(--oc-orange-4);
-    }
-
-    .metaRegexp {
-        &Delimited,
-        &Assertion,
-        &LazyQualifier {
-            color: var(--oc-red-5);
-        }
-
-        &EscapedCharacter {
-            color: var(--oc-red-3);
-        }
-
-        &CharacterClass {
-            color: var(--oc-grape-4);
-        }
-
-        &Alternative,
-        &RangeQuantifier {
-            color: var(--oc-cyan-4);
-        }
-    }
-
-    .metaStructural {
-        &Hole,
-        &RegexpHole {
-            color: var(--oc-red-5);
-        }
-
-        &RegexpSeparator {
-            color: var(--oc-orange-4);
-        }
-    }
-
-    .metaRevision {
-        &Separator {
-            color: var(--oc-orange-4);
-        }
-
-        &IncludeGlobMarker,
-        &ExcludeGlobaMarker {
-            color: var(--oc-red-5);
-        }
-
-        &Wildcard {
-            color: var(--oc-cyan-4);
-        }
+    100% {
+        transform: rotate(360deg);
     }
 }

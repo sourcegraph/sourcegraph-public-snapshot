@@ -4,6 +4,7 @@ import { fireEvent } from '@testing-library/react'
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { Text } from '@sourcegraph/wildcard'
 
 import {
     TestConnectionQueryFields,
@@ -67,7 +68,7 @@ const TestComponent = () => {
                 ))}
             </ul>
 
-            {connection?.totalCount && <p>Total count: {connection.totalCount}</p>}
+            {connection?.totalCount && <Text>Total count: {connection.totalCount}</Text>}
             {hasNextPage && (
                 <button type="button" onClick={fetchMore}>
                     Fetch more

@@ -115,7 +115,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			name:   "NPM default",
 			config: `{"registry": "https://registry.npmjs.org"}`,
 			kind:   KindNpmPackages,
-			want:   3000.0 / 3600.0,
+			want:   6000.0 / 3600.0,
 		},
 		{
 			name:   "NPM non-default",
@@ -126,7 +126,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:   "Go mod default",
 			config: `{"urls": ["https://example.com"]}`,
-			kind:   KindGoModules,
+			kind:   KindGoPackages,
 			want:   57600.0 / 3600.0,
 		},
 		{
@@ -140,6 +140,12 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			config: `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
 			kind:   KindBitbucketCloud,
 			want:   1.0,
+		},
+		{
+			name:   "Empty JVM config",
+			config: "",
+			kind:   KindJVMPackages,
+			want:   2.0,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -337,8 +343,9 @@ func TestWebhookURL(t *testing.T) {
 	const externalURL = "https://sourcegraph.com"
 
 	t.Run("unknown kind", func(t *testing.T) {
-		_, err := WebhookURL(KindOther, externalServiceID, nil, externalURL)
-		assert.NotNil(t, err)
+		u, err := WebhookURL(KindOther, externalServiceID, nil, externalURL)
+		assert.Nil(t, err)
+		assert.Equal(t, u, "")
 	})
 
 	t.Run("basic kinds", func(t *testing.T) {

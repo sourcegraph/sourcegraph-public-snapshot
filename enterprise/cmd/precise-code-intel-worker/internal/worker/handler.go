@@ -11,6 +11,9 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type handler struct {
@@ -37,6 +39,11 @@ type handler struct {
 	handleOp        *observation.Operation
 	budgetRemaining int64
 	enableBudget    bool
+	// Map of upload ID to uncompressed size. Uploads are deleted before
+	// PostHandle, so we store it here.
+	// Should only contain entries for processing in-progress uploads.
+	uncompressedSizes map[int]uint64
+	uploadSizeGuage   prometheus.Gauge
 }
 
 var (
@@ -82,16 +89,28 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, any,
 }
 
 func (h *handler) PreHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
-	atomic.AddInt64(&h.budgetRemaining, -h.getSize(record))
+	upload := record.(store.Upload)
+
+	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
+	h.uploadSizeGuage.Add(float64(uncompressedSize))
+
+	gzipSize := h.getUploadSize(upload.UploadSize)
+	atomic.AddInt64(&h.budgetRemaining, -gzipSize)
 }
 
 func (h *handler) PostHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
-	atomic.AddInt64(&h.budgetRemaining, +h.getSize(record))
+	upload := record.(store.Upload)
+
+	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
+	h.uploadSizeGuage.Sub(float64(uncompressedSize))
+
+	gzipSize := h.getUploadSize(upload.UploadSize)
+	atomic.AddInt64(&h.budgetRemaining, +gzipSize)
 }
 
-func (h *handler) getSize(record workerutil.Record) int64 {
-	if size := record.(store.Upload).UploadSize; size != nil {
-		return *size
+func (h *handler) getUploadSize(field *int64) int64 {
+	if field != nil {
+		return *field
 	}
 
 	return 0
@@ -100,8 +119,8 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Upload, trace observation.TraceLogger) (requeued bool, err error) {
-	db := database.NewDBWith(h.workerStore)
-	repo, err := backend.NewRepos(db).Get(ctx, api.RepoID(upload.RepositoryID))
+	db := database.NewDBWith(logger, h.workerStore)
+	repo, err := backend.NewRepos(logger, db).Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
 	}
@@ -237,7 +256,7 @@ const requeueDelay = time.Minute
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
 func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := backend.NewRepos(db).ResolveRev(ctx, repo, upload.Commit)
+	_, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, upload.Commit)
 	if err == nil {
 		// commit is resolvable
 		return false, nil

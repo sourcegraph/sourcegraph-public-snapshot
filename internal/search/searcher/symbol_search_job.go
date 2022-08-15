@@ -23,17 +23,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type SymbolSearcherJob struct {
+type SymbolSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 	Limit       int
 }
 
 // Run calls the searcher service to search symbols.
-func (s *SymbolSearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(s.Tags))
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -45,7 +44,7 @@ func (s *SymbolSearcherJob) Run(ctx context.Context, clients job.RuntimeClients,
 		if ctx.Err() != nil {
 			break
 		}
-		if len(repoRevs.RevSpecs()) == 0 {
+		if len(repoRevs.Revs) == 0 {
 			continue
 		}
 		run.Acquire()
@@ -53,7 +52,7 @@ func (s *SymbolSearcherJob) Run(ctx context.Context, clients job.RuntimeClients,
 			defer run.Release()
 
 			matches, err := searchInRepo(ctx, clients.DB, repoRevs, s.PatternInfo, s.Limit)
-			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > s.Limit, false, err)
+			status, limitHit, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
 				Stats: streaming.Stats{
@@ -75,17 +74,26 @@ func (s *SymbolSearcherJob) Run(ctx context.Context, clients job.RuntimeClients,
 	return nil, run.Wait()
 }
 
-func (s *SymbolSearcherJob) Name() string {
-	return "SymbolSearcherJob"
+func (s *SymbolSearchJob) Name() string {
+	return "SearcherSymbolSearchJob"
 }
 
-func (s *SymbolSearcherJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("patternInfo", s.PatternInfo),
-		log.Int("numRepos", len(s.Repos)),
-		log.Int("limit", s.Limit),
+func (s *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
+			log.Int("numRepos", len(s.Repos)),
+			log.Int("limit", s.Limit),
+		)
 	}
+	return res
 }
+
+func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
+func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
@@ -98,7 +106,7 @@ func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.Reposito
 	}()
 	span.SetTag("repo", string(repoRevs.Repo.Name))
 
-	inputRev := repoRevs.RevSpecs()[0]
+	inputRev := repoRevs.Revs[0]
 	span.SetTag("rev", inputRev)
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation

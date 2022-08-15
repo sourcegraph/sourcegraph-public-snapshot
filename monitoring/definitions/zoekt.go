@@ -10,14 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Zoekt() *monitoring.Container {
+func Zoekt() *monitoring.Dashboard {
 	const (
 		indexServerContainerName = "zoekt-indexserver"
 		webserverContainerName   = "zoekt-webserver"
 		bundledContainerName     = "indexed-search"
 	)
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "zoekt",
 		Title:                    "Zoekt",
 		Description:              "Indexes repositories, populates the search index, and responds to indexed search queries.",
@@ -128,14 +128,13 @@ func Zoekt() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "average_resolve_revision_duration",
-							Description:       "average resolve revision duration over 5m",
-							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(15),
-							Critical:          monitoring.Alert().GreaterOrEqual(30),
-							Panel:             monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: "none",
+							Name:        "average_resolve_revision_duration",
+							Description: "average resolve revision duration over 5m",
+							Query:       `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
+							Warning:     monitoring.Alert().GreaterOrEqual(15),
+							Panel:       monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NextSteps:   "none",
 						},
 						{
 							Name:        "get_index_options_error_increase",
@@ -151,7 +150,7 @@ func Zoekt() *monitoring.Container {
 							Critical: monitoring.Alert().GreaterOrEqual(100).For(35 * time.Minute),
 							Panel:    monitoring.Panel().Min(0),
 							Owner:    monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: `
+							NextSteps: `
 								- View error rates on gitserver and frontend to identify root cause.
 								- Rollback frontend/gitserver deployment if due to a bad code change.
 								- View error logs for 'getIndexOptions' via net/trace debug interface. For example click on a 'indexed-search-indexer-' on https://sourcegraph.com/-/debug/. Then click on Traces. Replace sourcegraph.com with your instance address.
@@ -174,13 +173,69 @@ func Zoekt() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "indexed_search_request_errors",
-							Description:       "indexed search request errors every 5m by code",
-							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
-							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
-							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: "none",
+							Name:        "indexed_search_request_errors",
+							Description: "indexed search request errors every 5m by code",
+							Query:       `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
+							Warning:     monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
+							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NextSteps:   "none",
+						},
+					},
+					{
+						{
+							Name:        "zoekt_shards_sched",
+							Description: "current number of zoekt scheduler processes in a state",
+							Query:       "sum by (type, state) (zoekt_shards_sched)",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}} {{state}}",
+									}}
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Each ongoing search request starts its life as an interactive query. If it
+								takes too long it becomes a batch query. Between state transitions it can be queued.
+
+								If you have a high number of batch queries it is a sign there is a large load
+								of slow queries. Alternatively your systems are underprovisioned and normal
+								search queries are taking too long.
+
+								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+							`,
+						},
+						{
+							Name:        "zoekt_shards_sched_total",
+							Description: "rate of zoekt scheduler process state transitions in the last 5m",
+							Query:       "sum by (type, state) (rate(zoekt_shards_sched[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}} {{state}}",
+									}}
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Each ongoing search request starts its life as an interactive query. If it
+								takes too long it becomes a batch query. Between state transitions it can be queued.
+
+								If you have a high number of batch queries it is a sign there is a large load
+								of slow queries. Alternatively your systems are underprovisioned and normal
+								search queries are taking too long.
+
+								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+							`,
 						},
 					},
 				},
@@ -189,7 +244,6 @@ func Zoekt() *monitoring.Container {
 				Title: "Git fetch durations",
 				Rows: []monitoring.Row{
 					{
-
 						{
 							Name:        "90th_percentile_successful_git_fetch_durations_5m",
 							Description: "90th percentile successful git fetch durations over 5m",

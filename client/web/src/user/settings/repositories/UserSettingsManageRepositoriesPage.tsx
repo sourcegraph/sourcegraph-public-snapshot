@@ -19,7 +19,10 @@ import {
     Alert,
     Link,
     Checkbox,
-    Typography,
+    H2,
+    H3,
+    H4,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
@@ -45,7 +48,6 @@ import {
     setUserPublicRepositories,
 } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { externalServiceUserModeFromTags, Owner } from '../cloud-ga'
 
 import {
@@ -59,9 +61,7 @@ import { CheckboxRepositoryNode } from './RepositoryNode'
 
 import styles from './UserSettingsManageRepositoriesPage.module.scss'
 
-interface Props
-    extends TelemetryProps,
-        Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onSyncedPublicRepositoriesUpdate'> {
+interface Props extends TelemetryProps {
     owner: Owner
     routingPrefix: string
 }
@@ -123,19 +123,19 @@ type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <Alert className="my-3" role="alert" key={warning} variant="warning">
-        <Typography.H4 className="align-middle mb-1">{capitalize(warning)}</Typography.H4>
-        <p className="align-middle mb-0">
+        <H4 className="align-middle mb-1">{capitalize(warning)}</H4>
+        <Text className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
-        </p>
+        </Text>
     </Alert>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
     <Alert className="my-3" role="alert" key={error.message} variant="danger">
-        <Typography.H4 className="align-middle mb-1">{capitalize(error.message)}</Typography.H4>
-        <p className="align-middle mb-0">
+        <H4 className="align-middle mb-1">{capitalize(error.message)}</H4>
+        <Text className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
-        </p>
+        </Text>
     </Alert>
 )
 
@@ -165,7 +165,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
     owner,
     routingPrefix,
     telemetryService,
-    onSyncedPublicRepositoriesUpdate,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
@@ -506,7 +505,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
             eventLogger.log('UserSettingsManageRepositoriesSaved', loggerPayload, loggerPayload)
 
             setFetchingRepos('loading')
-            onSyncedPublicRepositoriesUpdate(publicRepos.length)
 
             if (!isOrgOwner) {
                 try {
@@ -559,7 +557,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
             publicRepoState.repos,
             selectionState.radio,
             selectionState.repos,
-            onSyncedPublicRepositoriesUpdate,
             isOrgOwner,
             history,
             routingPrefix,
@@ -599,10 +596,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                         onChange={handleRadioSelect}
                         label={
                             <div className="d-flex flex-column ml-2">
-                                <p className="mb-0">Sync all repositories</p>
-                                <p className="font-weight-normal text-muted">
+                                <Text className="mb-0">Sync all repositories</Text>
+                                <Text className="font-weight-normal text-muted">
                                     Will sync all current and future public and private repositories
-                                </p>
+                                </Text>
                             </div>
                         }
                     />
@@ -619,9 +616,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                     onChange={handleRadioSelect}
                     label={
                         <div className="d-flex flex-column ml-2">
-                            <p className={classNames('mb-0', !hasCodeHosts && styles.textDisabled)}>
+                            <Text className={classNames('mb-0', !hasCodeHosts && styles.textDisabled)}>
                                 Sync selected repositories
-                            </p>
+                            </Text>
                         </div>
                     }
                 />
@@ -634,7 +631,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
     const filterControls: JSX.Element = (
         <Form onSubmit={preventSubmit} className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
-                <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
+                <Text className="text-xl-center text-nowrap mr-2">Code Host:</Text>
                 <Select
                     name="code-host"
                     aria-label="select code host type"
@@ -647,7 +644,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                 </Select>
             </div>
             <FilterInput
-                className="form-control"
                 type="search"
                 placeholder="Filter repositories..."
                 name="query"
@@ -789,10 +785,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
     return (
         <UserSettingReposContainer>
             <PageTitle title="Manage Repositories" />
-            <Typography.H2 className="d-flex mb-2">
+            <H2 className="d-flex mb-2">
                 Manage Repositories <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
-            </Typography.H2>
-            <p className="text-muted">
+            </H2>
+            <Text className="text-muted">
                 Choose repositories to sync with Sourcegraph.
                 <Link
                     to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
@@ -803,18 +799,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                     Learn more about who can see code on Sourcegraph
                 </Link>
                 .
-            </p>
+            </Text>
             <Container>
                 <ul className="list-group">
                     <ListItemContainer key="from-code-hosts">
                         <div>
-                            <Typography.H3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</Typography.H3>
+                            <H3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</H3>
 
-                            <p className="text-muted">
+                            <Text className="text-muted">
                                 Repositories{' '}
                                 {isOrgOwner ? 'that can be synced through' : 'you own or collaborate on from your'}{' '}
                                 <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
-                            </p>
+                            </Text>
 
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
                                 <Alert variant="primary">
@@ -872,11 +868,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                     {window.context.sourcegraphDotComMode && !isOrgOwner && (
                         <ListItemContainer key="add-textarea">
                             <div>
-                                <Typography.H3>Other public repositories</Typography.H3>
-                                <p className="text-muted">Public repositories on GitHub and GitLab</p>
+                                <H3>Other public repositories</H3>
+                                <Text className="text-muted">Public repositories on GitHub and GitLab</Text>
                                 <Checkbox
                                     id="add-public-repos"
-                                    className="mr-2 mt-2"
+                                    className="mr-2 mt-0"
+                                    wrapperClassName="d-flex align-items-center"
                                     label="Sync specific public repositories by URL"
                                     onChange={toggleTextArea}
                                     checked={publicRepoState.enabled}
@@ -884,15 +881,15 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
 
                                 {publicRepoState.enabled && (
                                     <div className="form-group ml-4 mt-3">
-                                        <p className="mb-2">Repositories to sync</p>
+                                        <Text className="mb-2">Repositories to sync</Text>
                                         <TextArea
                                             rows={5}
                                             value={publicRepoState.repos}
                                             onChange={handlePublicReposChanged}
                                         />
-                                        <p className="text-muted mt-2">
+                                        <Text className="text-muted mt-2">
                                             Specify with complete URLs. One repository per line.
-                                        </p>
+                                        </Text>
                                     </div>
                                 )}
                             </div>

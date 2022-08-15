@@ -29,7 +29,7 @@ func TestRepo(t *testing.T, store database.ExternalServiceStore, serviceKind str
 	svc := types.ExternalService{
 		Kind:        serviceKind,
 		DisplayName: serviceKind + " - Test",
-		Config:      `{"url": "https://github.com", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -72,19 +72,19 @@ func CreateTestRepo(t *testing.T, ctx context.Context, db database.DB) (*types.R
 func CreateTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: MarshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 			Url:             "https://github.com",
 			Token:           "SECRETTOKEN",
 			RepositoryQuery: []string{"none"},
 			// This field is needed to enforce permissions
 			Authorization: &schema.GitHubAuthorization{},
-		}),
+		})),
 	}
 
 	confGet := func() *conf.Unified {
@@ -117,16 +117,16 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db database.DB, count in
 func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab",
-		Config: MarshalJSON(t, &schema.GitLabConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
 			Url:   "https://gitlab.com",
 			Token: "SECRETTOKEN",
-		}),
+		})),
 	}
 	if err := esStore.Upsert(ctx, ext); err != nil {
 		t.Fatal(err)
@@ -158,10 +158,10 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db database.DB, count
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
-		Config: MarshalJSON(t, &schema.BitbucketServerConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   "https://bitbucket.sourcegraph.com",
 			Token: "SECRETTOKEN",
-		}),
+		})),
 	}
 
 	return createBbsRepos(t, ctx, db, ext, count, "https://bbs-user:bbs-token@bitbucket.sourcegraph.com/scm")
@@ -173,11 +173,11 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db database.DB,
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub SSH",
-		Config: MarshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 			Url:        "https://github.com",
 			Token:      "SECRETTOKEN",
 			GitURLType: "ssh",
-		}),
+		})),
 	}
 	esStore := db.ExternalServices()
 	if err := esStore.Upsert(ctx, ext); err != nil {
@@ -195,7 +195,7 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db database.DB,
 		rs = append(rs, r)
 	}
 
-	err := database.Repos(db).Create(ctx, rs...)
+	err := db.Repos().Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,11 +208,11 @@ func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db database.DB, co
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server SSH",
-		Config: MarshalJSON(t, &schema.BitbucketServerConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
 			Url:        "https://bitbucket.sgdev.org",
 			Token:      "SECRETTOKEN",
 			GitURLType: "ssh",
-		}),
+		})),
 	}
 
 	return createBbsRepos(t, ctx, db, ext, count, "ssh://git@bitbucket.sgdev.org:7999")
@@ -221,7 +221,7 @@ func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db database.DB, co
 func createBbsRepos(t *testing.T, ctx context.Context, db database.DB, ext *types.ExternalService, count int, cloneBaseURL string) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	if err := esStore.Upsert(ctx, ext); err != nil {
@@ -258,16 +258,16 @@ func createBbsRepos(t *testing.T, ctx context.Context, db database.DB, ext *type
 func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS CodeCommit",
-		Config: MarshalJSON(t, &schema.AWSCodeCommitConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
 			AccessKeyID: "horse-key",
 			Region:      "horse-town",
-		}),
+		})),
 	}
 	if err := esStore.Upsert(ctx, ext); err != nil {
 		t.Fatal(err)

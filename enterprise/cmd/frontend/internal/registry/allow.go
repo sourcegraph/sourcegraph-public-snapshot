@@ -23,24 +23,41 @@ func init() {
 		return false
 	}
 
-	frontendregistry.FilterRemoteExtensions = func(extensions []*registry.Extension) []*registry.Extension {
-		allowedExtensions := getAllowedExtensionsFromSiteConfig()
-		if allowedExtensions == nil {
-			// Default is to allow all extensions.
-			return extensions
+	frontendregistry.IsRemoteExtensionPublisherAllowed = func(p registry.Publisher) bool {
+		if getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() {
+			return isSourcegraphAuthoredExtension(p)
 		}
 
-		allow := make(map[string]any)
-		for _, id := range allowedExtensions {
-			allow[id] = struct{}{}
-		}
+		return true
+	}
+
+	frontendregistry.FilterRemoteExtensions = func(extensions []*registry.Extension) []*registry.Extension {
 		var keep []*registry.Extension
-		for _, x := range extensions {
-			if _, ok := allow[x.ExtensionID]; ok {
-				keep = append(keep, x)
+
+		allowedExtensions := getAllowedExtensionsFromSiteConfig()
+		if allowedExtensions != nil {
+			allow := make(map[string]struct{})
+			for _, id := range allowedExtensions {
+				allow[id] = struct{}{}
 			}
+			for _, x := range extensions {
+				if _, ok := allow[x.ExtensionID]; ok {
+					keep = append(keep, x)
+				}
+			}
+			return keep
 		}
-		return keep
+
+		if getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() {
+			for _, x := range extensions {
+				if isSourcegraphAuthoredExtension(x.Publisher) {
+					keep = append(keep, x)
+				}
+			}
+			return keep
+		}
+
+		return extensions
 	}
 }
 
@@ -55,4 +72,16 @@ func getAllowedExtensionsFromSiteConfig() []string {
 		return c.AllowRemoteExtensions
 	}
 	return nil
+}
+
+func getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() bool {
+	if c := conf.Get().Extensions; c != nil && (c.RemoteRegistry == nil || c.RemoteRegistry == conf.DefaultRemoteRegistry) {
+		return c.AllowOnlySourcegraphAuthoredExtensions
+	}
+
+	return false
+}
+
+func isSourcegraphAuthoredExtension(p registry.Publisher) bool {
+	return p.Name == "sourcegraph"
 }

@@ -7,13 +7,20 @@ import { useFeatureFlag } from './useFeatureFlag'
  * HOC. Renders component when a certain feature flag value equals to a desired value.
  */
 export const withFeatureFlag = <P extends object>(
-    Component: React.ComponentType<React.PropsWithChildren<P>>,
     flagName: FeatureFlagName,
-    flagValue: boolean = true
-) => (props: P): React.ReactElement | null => {
-    const [value] = useFeatureFlag(flagName)
-    if (value !== flagValue) {
-        return null
+    TrueComponent: React.ComponentType<React.PropsWithChildren<P>>,
+    FalseComponent?: React.ComponentType<React.PropsWithChildren<P>> | null
+) =>
+    function WithFeatureFlagHOC(props: P): React.ReactElement | null {
+        const [value, status] = useFeatureFlag(flagName)
+
+        if (status !== 'loaded') {
+            return null
+        }
+
+        if (value === true) {
+            return <TrueComponent {...props} />
+        }
+
+        return FalseComponent ? <FalseComponent {...props} /> : null
     }
-    return <Component {...props} />
-}

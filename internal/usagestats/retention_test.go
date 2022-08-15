@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -23,7 +25,8 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	userCreationDate := time.Date(2020, 10, 26, 0, 0, 0, 0, time.UTC)
 
 	mockTimeNow(eventDate)
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	events := []database.Event{{
 		Name:      "ViewHome",

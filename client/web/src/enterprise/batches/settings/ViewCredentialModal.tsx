@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, H4, Input } from '@sourcegraph/wildcard'
 
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
@@ -28,15 +28,8 @@ export const ViewCredentialModal: React.FunctionComponent<React.PropsWithChildre
                 externalServiceURL={codeHost.externalServiceURL}
             />
 
-            <Typography.H4>Personal access token</Typography.H4>
-            <div className="form-group">
-                <input
-                    type="text"
-                    value="PATs cannot be viewed after entering."
-                    className="form-control"
-                    disabled={true}
-                />
-            </div>
+            <H4>Personal access token</H4>
+            <Input className="form-group" value="PATs cannot be viewed after entering." disabled={true} />
 
             <hr className="mb-3" />
 

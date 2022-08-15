@@ -6,16 +6,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func TestRegistryExtensionReleases(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

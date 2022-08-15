@@ -1,7 +1,9 @@
 import { ReactElement } from 'react'
 
-import CloseIcon from 'mdi-react/CloseIcon'
+import { mdiClose } from '@mdi/js'
 import { components, MultiValueRemoveProps } from 'react-select'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import { MultiSelectOption } from './types'
 
@@ -12,6 +14,6 @@ export const MultiValueRemove = <OptionValue extends unknown = unknown>(
     props: MultiValueRemoveProps<MultiSelectOption<OptionValue>, true>
 ): ReactElement => (
     <components.MultiValueRemove {...props}>
-        <CloseIcon className={styles.removeIcon} />
+        <Icon className={styles.removeIcon} svgPath={mdiClose} inline={false} aria-hidden={true} />
     </components.MultiValueRemove>
 )

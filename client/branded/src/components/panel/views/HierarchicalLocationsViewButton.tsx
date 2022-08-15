@@ -8,6 +8,7 @@ import styles from './HierarchicalLocationsViewButton.module.scss'
 
 interface HierarchicalLocationsViewButtonProps {
     groupKey: string
+    groupName: string
     groupCount: number
     isActive: boolean
     onClick: (event: React.MouseEvent<HTMLElement>) => void
@@ -16,12 +17,13 @@ interface HierarchicalLocationsViewButtonProps {
 export const HierarchicalLocationsViewButton: React.FunctionComponent<
     React.PropsWithChildren<HierarchicalLocationsViewButtonProps>
 > = props => {
-    const { groupKey, groupCount, isActive, onClick } = props
+    const { groupKey, groupName, groupCount, isActive, onClick } = props
 
     return (
         <button
             type="button"
             data-testid="hierarchical-locations-view-button"
+            aria-label={`${groupName === 'repo' ? 'Repository' : 'File path'} ${groupKey}`}
             className={classNames(
                 'list-group-item list-group-item-action',
                 styles.locationButton,

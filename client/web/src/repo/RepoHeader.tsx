@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react'
 
+import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import { noop } from 'lodash'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -11,7 +10,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Menu, MenuItem, MenuList, Position, Icon } from '@sourcegraph/wildcard'
+import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -251,19 +250,12 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                     <ul className="navbar-nav">
                         <li className="nav-item">
                             <Menu>
-                                <RepoHeaderActionDropdownToggle>
-                                    <Icon as={DotsVerticalIcon} />
+                                <RepoHeaderActionDropdownToggle aria-label="Repository actions">
+                                    <Icon aria-hidden={true} svgPath={mdiDotsVertical} />
                                 </RepoHeaderActionDropdownToggle>
                                 <MenuList position={Position.bottomEnd}>
-                                    {rightActions.map((a, index) => (
-                                        <MenuItem
-                                            className="p-0"
-                                            key={a.id || index}
-                                            onSelect={noop}
-                                            onMouseUp={event => event.preventDefault()}
-                                        >
-                                            {a.element}
-                                        </MenuItem>
+                                    {rightActions.map(a => (
+                                        <React.Fragment key={a.id}>{a.element}</React.Fragment>
                                     ))}
                                 </MenuList>
                             </Menu>

@@ -1,10 +1,14 @@
 import cookies, { CookieAttributes } from 'js-cookie'
+import { EMPTY, fromEvent, merge, Observable } from 'rxjs'
+import { catchError, map, publishReplay, refCount, take } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
+import { isErrorLike, isFirefox } from '@sourcegraph/common'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
-import { browserExtensionMessageReceived } from './BrowserExtensionTracker'
+import { observeQuerySelector } from '../util/dom'
+
 import { serverAdmin } from './services/serverAdminWrapper'
 import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
 
@@ -13,6 +17,53 @@ export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
+
+const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
+
+/**
+ * Indicates if the webapp ever receives a message from the user's Sourcegraph browser extension,
+ * either in the form of a DOM marker element, or from a CustomEvent.
+ */
+const browserExtensionMessageReceived: Observable<{ platform?: string; version?: string }> = merge(
+    // If the marker exists, the extension is installed
+    observeQuerySelector({ selector: EXTENSION_MARKER_ID, timeout: 10000 }).pipe(
+        map(extensionMarker => ({
+            platform: (extensionMarker as HTMLElement)?.dataset?.platform,
+            version: (extensionMarker as HTMLElement)?.dataset?.version,
+        })),
+        catchError(() => EMPTY)
+    ),
+    // If not, listen for a registration event
+    fromEvent<CustomEvent<{ platform?: string; version?: string }>>(
+        document,
+        'sourcegraph:browser-extension-registration'
+    ).pipe(
+        take(1),
+        map(({ detail }) => {
+            try {
+                return { platform: detail?.platform, version: detail?.version }
+            } catch (error) {
+                // Temporary to fix issues on Firefox (https://github.com/sourcegraph/sourcegraph/issues/25998)
+                if (
+                    isFirefox() &&
+                    isErrorLike(error) &&
+                    error.message.includes('Permission denied to access property "platform"')
+                ) {
+                    return {
+                        platform: 'firefox-extension',
+                        version: 'unknown due to <<Permission denied to access property "platform">>',
+                    }
+                }
+
+                throw error
+            }
+        })
+    )
+).pipe(
+    // Replay the same latest value for every subscriber
+    publishReplay(1),
+    refCount()
+)
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false

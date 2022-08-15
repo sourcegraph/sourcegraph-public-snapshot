@@ -3,15 +3,19 @@ package background
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewBackgroundJobs(db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
+func NewBackgroundJobs(logger log.Logger, db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
+	logger = logger.Scoped("BackgroundJobs", "code monitors background jobs")
+
 	codeMonitorsStore := db.CodeMonitors()
 
-	triggerMetrics := newMetricsForTriggerQueries()
-	actionMetrics := newActionMetrics()
+	triggerMetrics := newMetricsForTriggerQueries(logger)
+	actionMetrics := newActionMetrics(logger)
 
 	// Create a new context. Each background routine will wrap this with
 	// a cancellable context that is canceled when Stop() is called.

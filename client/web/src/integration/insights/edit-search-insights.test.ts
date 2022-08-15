@@ -5,13 +5,10 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
-import { percySnapshotWithVariants } from '../utils'
+import { createEditorAPI, percySnapshotWithVariants } from '../utils'
 
 import { createJITMigrationToGQLInsightMetadataFixture } from './fixtures/insights-metadata'
-import {
-    MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
-    MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
-} from './fixtures/runtime-insights'
+import { SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE } from './fixtures/runtime-insights'
 import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 interface InsightValues {
@@ -105,9 +102,8 @@ describe('Code insight edit insight page', () => {
                     repoSearch1: { name: 'github.com/sourcegraph/about' },
                 }),
 
-                // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
-                BulkSearch: () => MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
+                // Mocks live preview chart
+                GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
@@ -151,13 +147,10 @@ describe('Code insight edit insight page', () => {
             'test edited series title'
         )
 
-        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
-        await driver.replaceText({
-            selector: '[data-testid="series-form"]:nth-child(1) #monaco-query-input',
-            newText: 'test edited series query',
-            enterTextMethod: 'type',
-            selectMethod: 'keyboard',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="series-form"]:nth-child(1) .test-query-input')
+            await editor.replace('test edited series query')
+        }
 
         await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
 
@@ -174,13 +167,10 @@ describe('Code insight edit insight page', () => {
             'new test series title'
         )
 
-        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(2) #monaco-query-input')
-        await driver.replaceText({
-            selector: '[data-testid="series-form"]:nth-child(2) #monaco-query-input',
-            newText: 'new test series query',
-            enterTextMethod: 'type',
-            selectMethod: 'keyboard',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="series-form"]:nth-child(2) .test-query-input')
+            await editor.replace('new test series query')
+        }
 
         // Change insight Granularity
         await driver.page.type('input[name="stepValue"]', '2')
@@ -242,7 +232,18 @@ describe('Code insight edit insight page', () => {
                     title: 'Test insight title',
                 },
                 viewControls: {
-                    filters: {},
+                    filters: {
+                        excludeRepoRegex: '',
+                        includeRepoRegex: '',
+                        searchContexts: [],
+                    },
+                    seriesDisplayOptions: {
+                        limit: 20,
+                        sortOptions: {
+                            direction: 'DESC',
+                            mode: 'RESULT_COUNT',
+                        },
+                    },
                 },
             },
             id: '001',
@@ -267,9 +268,8 @@ describe('Code insight edit insight page', () => {
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
-                // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
-                BulkSearch: () => MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
+                // Mocks live preview chart
+                GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({

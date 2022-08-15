@@ -1,5 +1,4 @@
-import { createMemoryHistory, createLocation } from 'history'
-import { MemoryRouter } from 'react-router'
+import { Route, Routes } from 'react-router-dom-v5-compat'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
@@ -9,10 +8,6 @@ import { SourcegraphContext } from '../jscontext'
 import { SignInPage } from './SignInPage'
 
 describe('SignInPage', () => {
-    const commonProps = {
-        history: createMemoryHistory(),
-        location: createLocation('/'),
-    }
     const authProviders: SourcegraphContext['authProviders'] = [
         {
             displayName: 'Builtin username-password authentication',
@@ -29,19 +24,24 @@ describe('SignInPage', () => {
     it('renders sign in page (server)', () => {
         expect(
             renderWithBrandedContext(
-                <MemoryRouter>
-                    <SignInPage
-                        {...commonProps}
-                        authenticatedUser={null}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: false,
-                            authProviders,
-                            resetPasswordEnabled: true,
-                            xhrHeaders: {},
-                        }}
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                }}
+                            />
+                        }
                     />
-                </MemoryRouter>
+                </Routes>,
+                { route: '/sign-in' }
             ).asFragment()
         ).toMatchSnapshot()
     })
@@ -49,19 +49,24 @@ describe('SignInPage', () => {
     it('renders sign in page (cloud)', () => {
         expect(
             renderWithBrandedContext(
-                <MemoryRouter>
-                    <SignInPage
-                        {...commonProps}
-                        authenticatedUser={null}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: true,
-                            authProviders,
-                            resetPasswordEnabled: true,
-                            xhrHeaders: {},
-                        }}
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: true,
+                                    authProviders,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                }}
+                            />
+                        }
                     />
-                </MemoryRouter>
+                </Routes>,
+                { route: '/sign-in' }
             ).asFragment()
         ).toMatchSnapshot()
     })
@@ -77,19 +82,24 @@ describe('SignInPage', () => {
 
         expect(
             renderWithBrandedContext(
-                <MemoryRouter>
-                    <SignInPage
-                        {...commonProps}
-                        authenticatedUser={mockUser}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: false,
-                            authProviders,
-                            xhrHeaders: {},
-                            resetPasswordEnabled: true,
-                        }}
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={mockUser}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders,
+                                    xhrHeaders: {},
+                                    resetPasswordEnabled: true,
+                                }}
+                            />
+                        }
                     />
-                </MemoryRouter>
+                </Routes>,
+                { route: '/sign-in' }
             ).asFragment()
         ).toMatchSnapshot()
     })

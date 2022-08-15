@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { RepositoryPopoverFields } from '../../graphql-operations'

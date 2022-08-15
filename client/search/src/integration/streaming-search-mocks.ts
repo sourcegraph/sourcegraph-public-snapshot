@@ -100,13 +100,11 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
                 commit: '2e3569cf60646c9ce4e37a43e5cf698a00cbd41a',
                 lineMatches: [
                     {
+                        line: "test('does not emit items with duplicate IDs', async () => {",
                         lineNumber: 38,
                         offsetAndLengths: [[0, 4]],
                     },
-                    {
-                        lineNumber: 63,
-                        offsetAndLengths: [[0, 4]],
-                    },
+                    { line: "test('five', async () => {", lineNumber: 63, offsetAndLengths: [[0, 4]] },
                 ],
             },
         ],
@@ -346,6 +344,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'Testimonial',
                         containerName: '',
                         kind: 'INTERFACE' as SymbolKind,
+                        line: 22,
                     },
                     {
                         url:
@@ -353,6 +352,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'TestimonialCarousel',
                         containerName: '',
                         kind: 'VARIABLE' as SymbolKind,
+                        line: 36,
                     },
                 ],
             },
@@ -368,6 +368,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'testcases',
                         containerName: '',
                         kind: 'VARIABLE' as SymbolKind,
+                        line: 43,
                     },
                     {
                         url:
@@ -375,6 +376,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'tests',
                         containerName: '',
                         kind: 'CONSTANT' as SymbolKind,
+                        line: 153,
                     },
                 ],
             },
@@ -391,6 +393,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'testcases',
                         containerName: '',
                         kind: 'VARIABLE' as SymbolKind,
+                        line: 15,
                     },
                 ],
             },
@@ -407,6 +410,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'lastIndexedRevOrLatest',
                         containerName: 'SourcegraphGQL.IRepository',
                         kind: 'CLASS' as SymbolKind,
+                        line: 493,
                     },
                     {
                         url:
@@ -414,6 +418,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IUser',
                         kind: 'FUNCTION' as SymbolKind,
+                        line: 1046,
                     },
                     {
                         url:
@@ -421,6 +426,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IConfigurationSubject',
                         kind: 'ENUM' as SymbolKind,
+                        line: 1170,
                     },
                     {
                         url:
@@ -428,6 +434,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IOrg',
                         kind: 'PROPERTY' as SymbolKind,
+                        line: 1317,
                     },
                     {
                         url:
@@ -435,6 +442,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.ISite',
                         kind: 'PROPERTY' as SymbolKind,
+                        line: 4633,
                     },
                 ],
             },

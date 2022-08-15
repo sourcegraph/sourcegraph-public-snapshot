@@ -162,6 +162,21 @@ func TestRedactSecrets(t *testing.T) {
 	assert.Equal(t, want, redacted.Site)
 }
 
+func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
+	const cfgWithoutAuthProviders = `{
+  "executors.accessToken": "%s"
+}`
+	redacted, err := RedactSecrets(
+		conftypes.RawUnified{
+			Site: fmt.Sprintf(cfgWithoutAuthProviders, executorsAccessToken),
+		},
+	)
+	require.NoError(t, err)
+
+	want := fmt.Sprintf(cfgWithoutAuthProviders, "REDACTED")
+	assert.Equal(t, want, redacted.Site)
+}
+
 func TestUnredactSecrets(t *testing.T) {
 	previousSite := getTestSiteWithSecrets(
 		executorsAccessToken,
@@ -178,20 +193,20 @@ func TestUnredactSecrets(t *testing.T) {
 		input := getTestSiteWithRedactedSecrets()
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
-		assert.NotContains(t, unredactedSite, RedactedSecret)
+		assert.NotContains(t, unredactedSite, redactedSecret)
 		assert.Equal(t, previousSite, unredactedSite)
 	})
 
 	t.Run("unredacts secrets AND respects specified edits to secret", func(t *testing.T) {
 		input := getTestSiteWithSecrets(
 			"new"+executorsAccessToken,
-			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
+			redactedSecret, "new"+authGitLabClientSecret, redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
@@ -214,13 +229,13 @@ func TestUnredactSecrets(t *testing.T) {
 		const newEmail = "new_email@example.com"
 		input := getTestSiteWithSecrets(
 			"new"+executorsAccessToken,
-			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
+			redactedSecret, "new"+authGitLabClientSecret, redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
 			newEmail,
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
@@ -243,7 +258,7 @@ func TestUnredactSecrets(t *testing.T) {
 }
 
 func getTestSiteWithRedactedSecrets() string {
-	return getTestSiteWithSecrets(RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret)
+	return getTestSiteWithSecrets(redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret)
 }
 
 func getTestSiteWithSecrets(
@@ -260,8 +275,7 @@ func getTestSiteWithSecrets(
 	if len(optionalEdit) > 0 {
 		email = optionalEdit[0]
 	}
-	return fmt.Sprintf(`
-{
+	return fmt.Sprintf(`{
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "email.address": "%s",
@@ -295,7 +309,7 @@ func getTestSiteWithSecrets(
     }
   ],
   "observability.tracing": {
-    "sampling":"selective"
+    "sampling": "selective"
   },
   "externalService.userMode": "all",
   "email.smtp": {
@@ -312,8 +326,7 @@ func getTestSiteWithSecrets(
     }
   },
   "auth.unlockAccountLinkSigningKey": "%s",
-}
-`,
+}`,
 		email,
 		executorsAccessToken,
 		authOpenIDClientSecret, authGitHubClientSecret, authGitLabClientSecret,

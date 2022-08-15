@@ -2,22 +2,27 @@
 
 exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
 <DocumentFragment>
-  <div
+  <aside
+    aria-label="Search results information"
     class="searchResultsInfoBar"
     data-testid="results-info-bar"
+    role="region"
   >
     <div
       class="row"
     >
       <button
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -27,9 +32,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         </svg>
         Filters
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -59,9 +66,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
             tabindex="0"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -80,17 +89,20 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -102,28 +114,33 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         </li>
       </ul>
     </div>
-  </div>
+  </aside>
 </DocumentFragment>
 `;
 
 exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create monitor from query 1`] = `
 <DocumentFragment>
-  <div
+  <aside
+    aria-label="Search results information"
     class="searchResultsInfoBar"
     data-testid="results-info-bar"
+    role="region"
   >
     <div
       class="row"
     >
       <button
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -133,9 +150,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </svg>
         Filters
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -156,17 +175,20 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="divider"
         />
         <li
-          class="mr-2 navItem"
+          class="mr-2 button navItem"
+          data-state="closed"
         >
           <a
             class="anchorLink btn btnOutlineSecondary btnSm text-decoration-none a11y-ignore create-code-monitor-button"
-            href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Aliteral"
+            href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Astandard"
             tabindex="0"
           >
             <svg
-              class="iconInline mr-1"
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
+              role="img"
               viewBox="0 0 20 20"
               width="20"
               xmlns="http://www.w3.org/2000/svg"
@@ -181,6 +203,34 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           </a>
         </li>
         <li
+          class="mr-2 menu navItem"
+        >
+          <button
+            aria-controls=""
+            aria-haspopup="true"
+            aria-label="Open create actions menu"
+            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            data-reach-menu-button=""
+            id="menu-button-4"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+              />
+            </svg>
+            Create …
+          </button>
+        </li>
+        <li
           class="mr-2 navItem"
         >
           <a
@@ -190,9 +240,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             tabindex="0"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -211,17 +263,20 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -233,28 +288,33 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </li>
       </ul>
     </div>
-  </div>
+  </aside>
 </DocumentFragment>
 `;
 
 exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create monitor from query, user not logged in 1`] = `
 <DocumentFragment>
-  <div
+  <aside
+    aria-label="Search results information"
     class="searchResultsInfoBar"
     data-testid="results-info-bar"
+    role="region"
   >
     <div
       class="row"
     >
       <button
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -264,9 +324,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </svg>
         Filters
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -287,16 +349,19 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="divider"
         />
         <li
-          class="mr-2 navItem"
+          class="mr-2 button navItem"
+          data-state="closed"
         >
           <button
             class="btn btnOutlineSecondary btnSm a11y-ignore create-code-monitor-button"
             type="button"
           >
             <svg
-              class="iconInline mr-1"
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
+              role="img"
               viewBox="0 0 20 20"
               width="20"
               xmlns="http://www.w3.org/2000/svg"
@@ -311,6 +376,34 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           </button>
         </li>
         <li
+          class="mr-2 menu navItem"
+        >
+          <button
+            aria-controls=""
+            aria-haspopup="true"
+            aria-label="Open create actions menu"
+            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            data-reach-menu-button=""
+            id="menu-button-6"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+              />
+            </svg>
+            Create …
+          </button>
+        </li>
+        <li
           class="mr-2 navItem"
         >
           <button
@@ -318,9 +411,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -339,17 +434,20 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -361,28 +459,33 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </li>
       </ul>
     </div>
-  </div>
+  </aside>
 </DocumentFragment>
 `;
 
 exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot create monitor from query 1`] = `
 <DocumentFragment>
-  <div
+  <aside
+    aria-label="Search results information"
     class="searchResultsInfoBar"
     data-testid="results-info-bar"
+    role="region"
   >
     <div
       class="row"
     >
       <button
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -392,9 +495,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         </svg>
         Filters
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -415,20 +520,24 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           class="divider"
         />
         <li
-          class="mr-2 navItem"
-          data-tooltip="Code monitors only support type:diff or type:commit searches."
+          class="mr-2 button navItem"
+          data-state="closed"
         >
           <a
+            aria-disabled="true"
+            aria-label="Code monitors only support type:diff or type:commit searches."
             class="anchorLink btn btnOutlineSecondary btnSm text-decoration-none a11y-ignore create-code-monitor-button disabled"
             disabled=""
             href=""
             role="button"
-            tabindex="-1"
+            tabindex="0"
           >
             <svg
-              class="iconInline mr-1"
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
+              role="img"
               viewBox="0 0 20 20"
               width="20"
               xmlns="http://www.w3.org/2000/svg"
@@ -441,6 +550,34 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             </svg>
             Monitor
           </a>
+        </li>
+        <li
+          class="mr-2 menu navItem"
+        >
+          <button
+            aria-controls=""
+            aria-haspopup="true"
+            aria-label="Open create actions menu"
+            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            data-reach-menu-button=""
+            id="menu-button-2"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+              />
+            </svg>
+            Create …
+          </button>
         </li>
         <li
           class="mr-2 navItem"
@@ -452,9 +589,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             tabindex="0"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -473,17 +612,20 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -495,28 +637,33 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         </li>
       </ul>
     </div>
-  </div>
+  </aside>
 </DocumentFragment>
 `;
 
 exports[`SearchResultsInfoBar unauthenticated user 1`] = `
 <DocumentFragment>
-  <div
+  <aside
+    aria-label="Search results information"
     class="searchResultsInfoBar"
     data-testid="results-info-bar"
+    role="region"
   >
     <div
       class="row"
     >
       <button
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -526,9 +673,11 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         </svg>
         Filters
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -549,16 +698,19 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           class="divider"
         />
         <li
-          class="mr-2 navItem"
+          class="mr-2 button navItem"
+          data-state="closed"
         >
           <button
             class="btn btnOutlineSecondary btnSm a11y-ignore create-code-monitor-button"
             type="button"
           >
             <svg
-              class="iconInline mr-1"
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
+              role="img"
               viewBox="0 0 20 20"
               width="20"
               xmlns="http://www.w3.org/2000/svg"
@@ -573,6 +725,34 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           </button>
         </li>
         <li
+          class="mr-2 menu navItem"
+        >
+          <button
+            aria-controls=""
+            aria-haspopup="true"
+            aria-label="Open create actions menu"
+            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            data-reach-menu-button=""
+            id="menu-button-8"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+              />
+            </svg>
+            Create …
+          </button>
+        </li>
+        <li
           class="mr-2 navItem"
         >
           <button
@@ -580,9 +760,11 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -601,17 +783,20 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -623,6 +808,6 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         </li>
       </ul>
     </div>
-  </div>
+  </aside>
 </DocumentFragment>
 `;

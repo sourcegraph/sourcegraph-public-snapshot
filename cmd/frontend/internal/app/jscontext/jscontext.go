@@ -38,6 +38,14 @@ type authProviderInfo struct {
 	AuthenticationURL string `json:"authenticationURL"`
 }
 
+// GenericPasswordPolicy a generic password policy that holds password requirements
+type authPasswordPolicy struct {
+	Enabled                   bool `json:"enabled"`
+	NumberOfSpecialCharacters int  `json:"numberOfSpecialCharacters"`
+	RequireAtLeastOneNumber   bool `json:"requireAtLeastOneNumber"`
+	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 //
@@ -56,13 +64,14 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	Datadog       schema.RUM `json:"datadog,omitempty"`
-	SentryDSN     *string    `json:"sentryDSN"`
-	SiteID        string     `json:"siteID"`
-	SiteGQLID     string     `json:"siteGQLID"`
-	Debug         bool       `json:"debug"`
-	NeedsSiteInit bool       `json:"needsSiteInit"`
-	EmailEnabled  bool       `json:"emailEnabled"`
+	SentryDSN     *string               `json:"sentryDSN"`
+	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
+
+	SiteID        string `json:"siteID"`
+	SiteGQLID     string `json:"siteGQLID"`
+	Debug         bool   `json:"debug"`
+	NeedsSiteInit bool   `json:"needsSiteInit"`
+	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -83,6 +92,9 @@ type JSContext struct {
 
 	ExternalServicesUserMode string `json:"externalServicesUserMode"`
 
+	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
+	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
+
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
 	Branding *schema.Branding `json:"branding"`
@@ -97,9 +109,13 @@ type JSContext struct {
 
 	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
+	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
+
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
+
+	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -141,15 +157,24 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		}
 	}
 
+	pp := conf.AuthPasswordPolicy()
+
+	var authPasswordPolicy authPasswordPolicy
+	authPasswordPolicy.Enabled = pp.Enabled
+	authPasswordPolicy.NumberOfSpecialCharacters = pp.NumberOfSpecialCharacters
+	authPasswordPolicy.RequireAtLeastOneNumber = pp.RequireAtLeastOneNumber
+	authPasswordPolicy.RequireUpperAndLowerCase = pp.RequireUpperandLowerCase
+
 	var sentryDSN *string
 	siteConfig := conf.Get().SiteConfiguration
+
 	if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
-	var datadogRUM schema.RUM
-	if siteConfig.ObservabilityLogging != nil && siteConfig.ObservabilityLogging.Datadog != nil && siteConfig.ObservabilityLogging.Datadog.RUM != nil {
-		datadogRUM = *siteConfig.ObservabilityLogging.Datadog.RUM
+	var openTelemetry *schema.OpenTelemetry
+	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
+		openTelemetry = clientObservability.OpenTelemetry
 	}
 
 	var githubAppCloudSlug string
@@ -159,22 +184,24 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
+	var enableLegacyExtensions = true
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	return JSContext{
-		ExternalURL:         globals.ExternalURL().String(),
-		XHRHeaders:          headers,
-		UserAgentIsBot:      isBot(req.UserAgent()),
-		AssetsRoot:          assetsutil.URL("").String(),
-		Version:             version.Version(),
-		IsAuthenticatedUser: actor.IsAuthenticated(),
-		Datadog:             datadogRUM,
-		SentryDSN:           sentryDSN,
-		Debug:               env.InsecureDev,
-		SiteID:              siteID,
+		ExternalURL:                globals.ExternalURL().String(),
+		XHRHeaders:                 headers,
+		UserAgentIsBot:             isBot(req.UserAgent()),
+		AssetsRoot:                 assetsutil.URL("").String(),
+		Version:                    version.Version(),
+		IsAuthenticatedUser:        actor.IsAuthenticated(),
+		SentryDSN:                  sentryDSN,
+		OpenTelemetry:              openTelemetry,
+		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
+		Debug:                      env.InsecureDev,
+		SiteID:                     siteID,
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),
 
@@ -201,6 +228,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		AllowSignup: conf.AuthAllowSignup(),
 
+		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
+		AuthPasswordPolicy:    authPasswordPolicy,
+
 		AuthProviders: authProviders,
 
 		Branding: globals.Branding(),
@@ -218,6 +248,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
+
+		EnableLegacyExtensions: enableLegacyExtensions,
 	}
 }
 

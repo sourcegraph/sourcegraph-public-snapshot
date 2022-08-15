@@ -17,13 +17,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestHasRepository(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	testCases := []struct {
@@ -54,7 +58,8 @@ func TestHasRepository(t *testing.T) {
 }
 
 func TestHasCommit(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	testCases := []struct {
@@ -86,7 +91,8 @@ func TestHasCommit(t *testing.T) {
 }
 
 func TestMarkRepositoryAsDirty(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	for _, id := range []int{50, 51, 52} {
@@ -116,7 +122,8 @@ func TestMarkRepositoryAsDirty(t *testing.T) {
 }
 
 func TestMaxStaleAge(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	for _, id := range []int{50, 51, 52} {
@@ -149,7 +156,8 @@ func TestMaxStaleAge(t *testing.T) {
 }
 
 func TestSkipsDeletedRepositories(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "should not be dirty")
@@ -182,7 +190,8 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 }
 
 func TestCommitGraphMetadata(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	if err := store.MarkRepositoryAsDirty(context.Background(), 50); err != nil {
@@ -224,7 +233,8 @@ func TestCommitGraphMetadata(t *testing.T) {
 }
 
 func TestCalculateVisibleUploads(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -282,7 +292,8 @@ func TestCalculateVisibleUploads(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -334,7 +345,8 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -376,7 +388,8 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -390,23 +403,23 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 	// | UploadID | Commit | Root    | Indexer |
 	// | -------- + ------ + ------- + ------- |
 	// | 1        | 1      | root3/  | lsif-go |
-	// | 2        | 1      | root4/  | lsif-py |
+	// | 2        | 1      | root4/  | scip-python |
 	// | 3        | 2      | root1/  | lsif-go |
 	// | 4        | 2      | root2/  | lsif-go |
-	// | 5        | 2      |         | lsif-py | (overwrites root4/ at commit 1)
+	// | 5        | 2      |         | scip-python | (overwrites root4/ at commit 1)
 	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ at commit 2)
-	// | 7        | 4      |         | lsif-py | (overwrites (root) at commit 2)
+	// | 7        | 4      |         | scip-python | (overwrites (root) at commit 2)
 	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
 	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
 
 	uploads := []Upload{
 		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
-		{ID: 2, Commit: makeCommit(1), Indexer: "lsif-py", Root: "root4/"},
+		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
 		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
 		{ID: 4, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root2/"},
-		{ID: 5, Commit: makeCommit(2), Indexer: "lsif-py", Root: ""},
+		{ID: 5, Commit: makeCommit(2), Indexer: "scip-python", Root: ""},
 		{ID: 6, Commit: makeCommit(3), Indexer: "lsif-go", Root: "root1/"},
-		{ID: 7, Commit: makeCommit(4), Indexer: "lsif-py", Root: ""},
+		{ID: 7, Commit: makeCommit(4), Indexer: "scip-python", Root: ""},
 		{ID: 8, Commit: makeCommit(5), Indexer: "lsif-go", Root: "root2/"},
 		{ID: 9, Commit: makeCommit(6), Indexer: "lsif-go", Root: "root1/"},
 	}
@@ -450,7 +463,8 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -505,7 +519,8 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	uploads := []Upload{
@@ -571,7 +586,8 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	uploads := []Upload{
@@ -605,7 +621,8 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 }
 
 func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -697,7 +714,8 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfiguration(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -737,7 +755,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 			3600
 		)
 	`
-	if _, err := db.Exec(retentionConfigurationQuery); err != nil {
+	if _, err := db.ExecContext(context.Background(), retentionConfigurationQuery); err != nil {
 		t.Fatalf("unexpected error inserting retention configuration: %s", err)
 	}
 
@@ -856,7 +874,8 @@ func keysOf(m map[string][]int) (keys []string) {
 //
 
 func BenchmarkCalculateVisibleUploads(b *testing.B) {
-	db := dbtest.NewDB(b)
+	logger := logtest.Scoped(b)
+	db := database.NewDB(logger, dbtest.NewDB(logger, b))
 	store := testStore(db)
 
 	graph, err := readBenchmarkCommitGraph()

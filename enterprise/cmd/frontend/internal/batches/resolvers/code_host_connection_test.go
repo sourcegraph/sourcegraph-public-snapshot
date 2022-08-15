@@ -8,10 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,23 +28,24 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	pruneUserCredentials(t, db, nil)
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
-	ghRepo, _ := ct.CreateTestRepo(t, ctx, db)
-	glRepos, _ := ct.CreateGitlabTestRepos(t, ctx, db, 1)
+	ghRepo, _ := bt.CreateTestRepo(t, ctx, db)
+	glRepos, _ := bt.CreateGitlabTestRepos(t, ctx, db, 1)
 	glRepo := glRepos[0]
-	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, db, 1)
+	bbsRepos, _ := bt.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

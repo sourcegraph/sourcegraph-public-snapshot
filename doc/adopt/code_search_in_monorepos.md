@@ -48,7 +48,7 @@ It might *seem* like staying in a single tool (your editor) means staying in flo
 - 😊 The code search tool can show much more helpful code context, such as [Git blame information after each line](https://sourcegraph.com/extensions/sourcegraph/git-extras), [code coverage overlays](https://sourcegraph.com/extensions/sourcegraph/codecov), runtime info from [Datadog](https://sourcegraph.com/extensions/sourcegraph/datadog-metrics)/[LightStep](https://sourcegraph.com/extensions/sourcegraph/lightstep)/[Sentry](https://sourcegraph.com/extensions/sourcegraph/sentry)/etc., static analysis and lint results from [SonarQube](https://sourcegraph.com/extensions/sourcegraph/sonarqube), and more. You could configure some of these things to display in your editor, but that's cumbersome and they're noisy for the majority of the time when you're writing code.
 - 😊 A code search tool does all the hard work (indexing and analysis) on the server beforehand, so your local machine remains fast and responsive.
 
-    > "The JetBrains IDEs have great search capabilities. However, indexing a large repo is slow and draining on even a powerful MacBook Pro, and that happens every time you switch to another branch."
+    > "The JetBrains IDEs have great search capabilities. However, indexing a large repo is slow and draining on even a powerful MacBook Pro, and some reindexing happens every time you switch to another branch."
 - 😊 If you identify a likely culprit (such as a problematic line of code) via code search, it's easy to get a permalink to that line to add to the bug report.
 
 

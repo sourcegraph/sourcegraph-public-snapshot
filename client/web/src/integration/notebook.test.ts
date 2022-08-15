@@ -142,6 +142,7 @@ const mockSymbolStreamEvents: SearchEvent[] = [
                         url:
                             'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3',
                         kind: SymbolKind.FUNCTION,
+                        line: 1,
                     },
                 ],
             },
@@ -319,9 +320,10 @@ describe('Search Notebook', () => {
         expect(renderedMarkdownText?.trim()).toEqual('Replaced text')
 
         // Edit and run new query block
-        await driver.page.click(`${newQueryBlockSelector} .monaco-editor`)
+        const inputSelector = `${newQueryBlockSelector} [data-testid="notebook-query-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${newQueryBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'repo:test query',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -353,9 +355,10 @@ describe('Search Notebook', () => {
         const fileBlockSelector = blockSelector(blockIds[2])
 
         // Edit new file block
-        await driver.page.click(`${fileBlockSelector} .monaco-editor`)
+        const inputSelector = `${fileBlockSelector} [data-testid="notebook-file-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${fileBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'client/web/file.tsx',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -378,7 +381,7 @@ describe('Search Notebook', () => {
         await driver.page.waitForFunction(
             (fileBlockSelector: string) => {
                 const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
-                return document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent?.includes('#')
+                return document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent?.includes('/')
             },
             {},
             fileBlockSelector
@@ -388,7 +391,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('client/web/index.ts#1-20github.com/sourcegraph/sourcegraph@branch')
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/web/index.ts')
     })
 
     it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
@@ -431,7 +434,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('client/search/src/index.ts#30-32github.com/sourcegraph/sourcegraph@main')
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/search/src/index.ts')
     })
 
     it('Should update the notebook title', async () => {
@@ -601,9 +604,10 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         const symbolBlockSelector = blockSelector(blockIds[2])
 
         // Edit new symbol block
-        await driver.page.click(`${symbolBlockSelector} .monaco-editor`)
+        const inputSelector = `${symbolBlockSelector} [data-testid="notebook-symbol-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${symbolBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'func',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -630,7 +634,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
                 document.querySelector<HTMLDivElement>(symbolBlockSelectedSymbolNameSelector)?.textContent,
             symbolBlockSelectedSymbolNameSelector
         )
-        expect(selectedSymbolName).toEqual('func class')
+        expect(selectedSymbolName).toEqual('func')
     })
 
     it('Should add an empty markdown block through the command palette', async () => {
@@ -710,7 +714,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('client/search/src/index.ts#30-32github.com/sourcegraph/sourcegraph@main')
+        expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/search/src/index.ts')
     })
 
     const getHighlightedOutlineHeading = async () => {
@@ -734,6 +738,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
         // The first "Title 1" heading should be highlighted
+        await driver.page.waitForSelector('[data-id="title-1-id-1"][aria-current="true"]')
         expect(await getHighlightedOutlineHeading()).toEqual('title-1-id-1')
 
         // Click on "Title 2" link in the outline
@@ -743,6 +748,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
 
         // The "Title 2" heading in the outline should be highlighted
+        await driver.page.waitForSelector('[data-id="title-2-id-1"][aria-current="true"]')
         expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
     })
 
@@ -765,12 +771,14 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
 
         // The "Title 2" heading in the outline should be highlighted
+        await driver.page.waitForSelector('[data-id="title-2-id-1"][aria-current="true"]')
         expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
     })
-    it('Notebook explore page should be accessible', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks?tab=explore')
+
+    it('Notebooks list page should be accessible', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks?tab=notebooks')
         await driver.page.waitForSelector('[data-testid="filtered-connection-nodes"]', { visible: true })
-        await percySnapshotWithVariants(driver.page, 'Explore notebooks')
+        await percySnapshotWithVariants(driver.page, 'Notebooks list')
         await accessibilityAudit(driver.page)
     })
 })

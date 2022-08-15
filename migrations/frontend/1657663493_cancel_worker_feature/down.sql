@@ -1,0 +1,13 @@
+ALTER TABLE explicit_permissions_bitbucket_projects_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE external_service_sync_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE gitserver_relocator_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE insights_query_runner_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE lsif_dependency_indexing_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE lsif_dependency_syncing_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE lsif_indexes DROP COLUMN IF EXISTS cancel;
+ALTER TABLE lsif_uploads DROP COLUMN IF EXISTS cancel;
+ALTER TABLE batch_spec_resolution_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE changeset_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE changesets DROP COLUMN IF EXISTS cancel;
+ALTER TABLE cm_action_jobs DROP COLUMN IF EXISTS cancel;
+ALTER TABLE cm_trigger_jobs DROP COLUMN IF EXISTS cancel;

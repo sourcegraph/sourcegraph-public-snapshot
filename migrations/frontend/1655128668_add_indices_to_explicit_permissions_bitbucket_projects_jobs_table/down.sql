@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS explicit_permissions_bitbucket_projects_jobs_queued_at_idx;
+DROP INDEX IF EXISTS explicit_permissions_bitbucket_projects_jobs_state_idx;

@@ -38,7 +38,7 @@ func NewPersonResolver(db database.DB, name, email string, includeUserInfo bool)
 func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	r.once.Do(func() {
 		if r.includeUserInfo && r.email != "" {
-			r.user, r.err = database.Users(r.db).GetByVerifiedEmail(ctx, r.email)
+			r.user, r.err = r.db.Users().GetByVerifiedEmail(ctx, r.email)
 			if errcode.IsNotFound(r.err) {
 				r.err = nil
 			}

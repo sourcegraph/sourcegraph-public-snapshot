@@ -7,7 +7,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { Maybe, OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { IEmptyResponse, IOrganizationInvitation } from '@sourcegraph/shared/src/schema'
-import { Alert, AnchorLink, Button, LoadingSpinner, Link, Typography } from '@sourcegraph/wildcard'
+import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -200,7 +200,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}
                 >
                     <Form className="text-center pr-4 pl-4 pb-4">
-                        <Typography.H2>You've been invited to join the {orgDisplayName} organization</Typography.H2>
+                        <H2>You've been invited to join the {orgDisplayName} organization</H2>
                         <div className="mt-4">
                             <UserAvatar className={classNames('mr-2', styles.userAvatar)} user={sender} size={24} />
                             <span>
@@ -241,7 +241,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
             )}
             {error && (
                 <ModalPage className={classNames(styles.orgInvitationPage, className, 'p-4')}>
-                    <Typography.H3>You've been invited to join an organization.</Typography.H3>
+                    <H3>You've been invited to join an organization.</H3>
                     <Alert variant="danger" className="mt-3">
                         Error: {error}
                     </Alert>

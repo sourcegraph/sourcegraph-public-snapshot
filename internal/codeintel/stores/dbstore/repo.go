@@ -9,7 +9,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -76,73 +75,6 @@ func (s *Store) RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]
 const repoNamesQuery = `
 -- source: internal/codeintel/stores/dbstore/repos.go:RepoNames
 SELECT id, name FROM repo WHERE id = ANY(%s)
-`
-
-// RepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
-// one of the given patterns.
-func (s *Store) RepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
-	ctx, _, endObservation := s.operations.repoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("patterns", strings.Join(patterns, ", ")),
-		log.Int("limit", limit),
-		log.Int("offset", offset),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if len(patterns) == 0 {
-		return nil, 0, nil
-	}
-
-	conds := make([]*sqlf.Query, 0, len(patterns))
-	for _, pattern := range patterns {
-		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", makeWildcardPattern(pattern)))
-	}
-
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(tx.Handle().DB()))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	totalCount, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsCountQuery, sqlf.Join(conds, "OR"), authzConds)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsQuery, sqlf.Join(conds, "OR"), authzConds, limit, offset)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return ids, totalCount, nil
-}
-
-const repoIDsByGlobPatternsCountQuery = `
--- source: internal/codeintel/stores/dbstore/repo.go:RepoIDsByGlobPatterns
-SELECT COUNT(*)
-FROM repo
-WHERE
-	(%s) AND
-	deleted_at IS NULL AND
-	blocked IS NULL AND
-	(%s)
-`
-
-const repoIDsByGlobPatternsQuery = `
--- source: internal/codeintel/stores/dbstore/repo.go:RepoIDsByGlobPatterns
-SELECT id
-FROM repo
-WHERE
-	(%s) AND
-	deleted_at IS NULL AND
-	blocked IS NULL AND
-	(%s)
-ORDER BY stars DESC NULLS LAST, id
-LIMIT %s OFFSET %s
 `
 
 // UpdateReposMatchingPatterns updates the values of the repository pattern lookup table for the

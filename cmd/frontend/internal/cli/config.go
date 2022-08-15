@@ -17,7 +17,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -33,7 +32,7 @@ import (
 )
 
 func printConfigValidation() {
-	messages, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+	messages, err := conf.Validate(conf.Raw())
 	if err != nil {
 		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
 		return
@@ -140,7 +139,7 @@ func overrideGlobalSettings(ctx context.Context, db database.DB) error {
 	if path == "" {
 		return nil
 	}
-	settings := database.Settings(db)
+	settings := db.Settings()
 	update := func(ctx context.Context) error {
 		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
@@ -258,25 +257,53 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 				toAdd[&types.ExternalService{
 					Kind:         key,
 					DisplayName:  fmt.Sprintf("%s #%d", key, i+1),
-					Config:       string(marshaledCfg),
+					Config:       extsvc.NewUnencryptedConfig(string(marshaledCfg)),
 					CloudDefault: cloudDefault,
 				}] = true
 			}
 		}
 		// Now eliminate operations from toAdd/toRemove where the config
 		// file and DB describe an equivalent external service.
-		isEquiv := func(a, b *types.ExternalService) bool {
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config == b.Config
+		isEquiv := func(a, b *types.ExternalService) (bool, error) {
+			aConfig, err := a.Config.Decrypt(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			bConfig, err := b.Config.Decrypt(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig == bConfig, nil
 		}
-		shouldUpdate := func(a, b *types.ExternalService) bool {
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config != b.Config
+		shouldUpdate := func(a, b *types.ExternalService) (bool, error) {
+			aConfig, err := a.Config.Decrypt(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			bConfig, err := b.Config.Decrypt(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig != bConfig, nil
 		}
 		for a := range toAdd {
 			for b := range toRemove {
-				if isEquiv(a, b) { // Nothing changed
+				if ok, err := isEquiv(a, b); err != nil {
+					return err
+				} else if ok {
+					// Nothing changed
 					delete(toAdd, a)
 					delete(toRemove, b)
-				} else if shouldUpdate(a, b) {
+					continue
+				}
+
+				if ok, err := shouldUpdate(a, b); err != nil {
+					return err
+				} else if ok {
 					delete(toAdd, a)
 					delete(toRemove, b)
 					toUpdate[b.ID] = a
@@ -303,7 +330,12 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 		for id, extSvc := range toUpdate {
 			log.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 
-			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config, CloudDefault: &extSvc.CloudDefault}
+			rawConfig, err := extSvc.Config.Decrypt(ctx)
+			if err != nil {
+				return err
+			}
+
+			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig, CloudDefault: &extSvc.CloudDefault}
 			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
 				return errors.Wrap(err, "ExternalServices.Update")
 			}

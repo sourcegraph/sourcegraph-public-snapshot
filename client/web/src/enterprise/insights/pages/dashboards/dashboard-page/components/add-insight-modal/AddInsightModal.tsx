@@ -1,10 +1,10 @@
 import React, { useContext, useMemo } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Modal, H2, Icon } from '@sourcegraph/wildcard'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../core'
@@ -63,12 +63,12 @@ export const AddInsightModal: React.FunctionComponent<React.PropsWithChildren<Ad
         <Modal className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
             <Button variant="icon" className={styles.closeButton} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
-                <CloseIcon />
+                <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
             </Button>
 
-            <Typography.H2 className="mb-3">
+            <H2 className="mb-3">
                 Add insight to <q>{dashboard.title}</q>
-            </Typography.H2>
+            </H2>
 
             {!insights.length && <span>There are no insights for this dashboard.</span>}
 

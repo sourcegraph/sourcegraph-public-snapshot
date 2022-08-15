@@ -4,7 +4,7 @@ Get started and create your first [code insight](index.md) in 5 minutes or less.
 
 ## Introduction
 
-In this guide, you'll create a Sourcegraph code insight that tracks the number of `TODOS` that appear in parts of your codebase.
+In this guide, you'll create a Sourcegraph code insight that tracks the number of `TODOs` that appear in parts of your codebase.
 
 For more information about Code Insights see the [Code Insights](index.md) documentation.
 
@@ -14,8 +14,9 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 
 - You are a Sourcegraph enterprise customer. (Want code insights but aren't enterprise? [Let us know](mailto:feedback@sourcegraph.com).)
 - Your Sourcegraph instance has at least 1 repository. (See "[Quickstart](../index.md#quick-install)" on how to setup a Sourcegraph instance.)
-- You are running Sourcegraph version 3.28 (May 2021 release) or later.
-    - Note: If you're on Sourcegraph version 3.24 or later, you can instead follow [this gist](https://gist.github.com/Joelkw/f0582b164578aabc3ac936dee43f23e0) to create an insight. Due to the early stage of the product, it's more likely you'll run into trouble, though, so we recommend that you either upgrade your Sourcegraph or reach out to your Sourcegraph reps for help.
+- Your Sourcegraph instance is deployed via [Docker Compose](../admin/deploy/docker-compose/index.md) or [Kubernetes](../admin/deploy/kubernetes/index.md). 
+- You are running Sourcegraph version 3.31.1 (August 2021 release) or later.
+    - Note: If you're on Sourcegraph version 3.24 to 3.28, you can instead follow [this gist](https://gist.github.com/Joelkw/f0582b164578aabc3ac936dee43f23e0) to create an insight. Due to the early stage of the product, it's more likely you'll run into trouble, though, so we recommend that you either upgrade your Sourcegraph or reach out to your Sourcegraph reps for help.
 
 ## Enable Code Insights
 

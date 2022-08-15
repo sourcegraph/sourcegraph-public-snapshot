@@ -1,17 +1,22 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 
-const { add } = storiesOf('web/batches/BatchChangeInfoByline', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/BatchChangeInfoByline',
+    decorators: [decorator],
+}
+
+export default config
 
 const THREE_DAYS_AGO = subDays(new Date(), 3).toISOString()
 
-add('Never updated', () => (
+export const NeverUpdated: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeInfoByline
@@ -23,9 +28,11 @@ add('Never updated', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Never updated (SSBC)', () => (
+NeverUpdated.storyName = 'Never updated'
+
+export const NeverUpdatedSSBC: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeInfoByline
@@ -37,9 +44,11 @@ add('Never updated (SSBC)', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Updated (same user)', () => (
+NeverUpdatedSSBC.storyName = 'Never updated (SSBC)'
+
+export const UpdatedSameUser: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeInfoByline
@@ -51,9 +60,11 @@ add('Updated (same user)', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Updated (different users)', () => (
+UpdatedSameUser.storyName = 'Updated (same user)'
+
+export const UpdatedDifferentUser: Story = () => (
     <WebStory>
         {props => (
             <BatchChangeInfoByline
@@ -65,4 +76,6 @@ add('Updated (different users)', () => (
             />
         )}
     </WebStory>
-))
+)
+
+UpdatedDifferentUser.storyName = 'Updated (different users)'

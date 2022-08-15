@@ -334,7 +334,7 @@ const vhdlSpec: LanguageSpec = {
 }
 
 /**
- * The specification of languages for which search-based code intelligence
+ * The specification of languages for which search-based code navigation
  * is supported.
  *
  * The set of languages come from https://madnight.github.io/githut/#/pull_requests/2018/4.
@@ -384,7 +384,9 @@ export const languageSpecs: LanguageSpec[] = [
  * matches is configured with the given identifier an error is thrown.
  */
 export function findLanguageSpec(languageID: string): LanguageSpec {
-    const languageSpec = languageSpecs.find(spec => spec.languageID === languageID)
+    const languageSpec = languageSpecs.find(
+        spec => spec.languageID === languageID || spec.additionalLanguages?.includes(languageID)
+    )
     if (languageSpec) {
         return languageSpec
     }

@@ -1,13 +1,12 @@
 import React, { useCallback, useState } from 'react'
 
 import { useMutation } from '@apollo/client'
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Input, Modal, H3, Icon } from '@sourcegraph/wildcard'
 
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -75,10 +74,10 @@ export const AddMemberToOrgModal: React.FunctionComponent<
             {modalOpened && (
                 <Modal className={styles.modal} onDismiss={onCloseAddUserModal} position="center" aria-label={title}>
                     <div className="d-flex flex-row align-items-end">
-                        <Typography.H3>{title}</Typography.H3>
-                        <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseAddUserModal}>
+                        <H3>{title}</H3>
+                        <Button variant="icon" className={styles.closeButton} onClick={onCloseAddUserModal}>
                             <VisuallyHidden>Close</VisuallyHidden>
-                            <CloseIcon />
+                            <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
                         </Button>
                     </div>
                     {error && <ErrorAlert className={styles.alert} error={error} />}

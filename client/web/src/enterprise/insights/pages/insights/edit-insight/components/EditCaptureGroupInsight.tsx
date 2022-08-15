@@ -1,8 +1,12 @@
 import React, { useMemo } from 'react'
 
-import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { MinimalCaptureGroupInsightData } from '../../../../core/backend/code-insights-backend-types'
-import { CaptureGroupInsight } from '../../../../core/types'
+import {
+    CodeInsightCreationMode,
+    CodeInsightsCreationActions,
+    FORM_ERROR,
+    SubmissionErrors,
+} from '../../../../components'
+import { MinimalCaptureGroupInsightData, CaptureGroupInsight } from '../../../../core'
 import { CaptureGroupFormFields } from '../../creation/capture-group'
 import { CaptureGroupCreationContent } from '../../creation/capture-group/components/CaptureGroupCreationContent'
 import { getSanitizedCaptureGroupInsight } from '../../creation/capture-group/utils/capture-group-insight-sanitizer'
@@ -10,6 +14,8 @@ import { InsightStep } from '../../creation/search-insight'
 
 interface EditCaptureGroupInsightProps {
     insight: CaptureGroupInsight
+    licensed: boolean
+    isEditAvailable: boolean | undefined
     onSubmit: (insight: MinimalCaptureGroupInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
@@ -17,7 +23,7 @@ interface EditCaptureGroupInsightProps {
 export const EditCaptureGroupInsight: React.FunctionComponent<
     React.PropsWithChildren<EditCaptureGroupInsightProps>
 > = props => {
-    const { insight, onSubmit, onCancel } = props
+    const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CaptureGroupFormFields>(
         () => ({
@@ -37,17 +43,32 @@ export const EditCaptureGroupInsight: React.FunctionComponent<
 
         // Preserve backend insight filters since these filters aren't represented
         // in the editing form
-        return onSubmit({ ...sanitizedInsight, filters: insight.filters })
+        return onSubmit({
+            ...sanitizedInsight,
+            filters: insight.filters,
+            seriesDisplayOptions: insight.seriesDisplayOptions,
+        })
     }
 
     return (
         <CaptureGroupCreationContent
-            mode="edit"
+            touched={true}
             initialValues={insightFormValues}
             className="pb-5"
-            insight={insight}
             onSubmit={handleSubmit}
             onCancel={onCancel}
-        />
+        >
+            {form => (
+                <CodeInsightsCreationActions
+                    mode={CodeInsightCreationMode.Edit}
+                    licensed={licensed}
+                    available={isEditAvailable}
+                    submitting={form.submitting}
+                    errors={form.submitErrors?.[FORM_ERROR]}
+                    clear={form.isFormClearActive}
+                    onCancel={onCancel}
+                />
+            )}
+        </CaptureGroupCreationContent>
     )
 }

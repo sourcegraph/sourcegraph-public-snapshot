@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
-import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
@@ -21,6 +21,7 @@ import {
     Tabs,
     Icon,
     Panel,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
@@ -58,6 +59,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
@@ -76,19 +78,24 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
 
     if (!isVisible) {
         return (
-            <Button
-                variant="icon"
-                className={classNames('position-absolute border-top border-bottom border-right mt-4', styles.toggle)}
-                onClick={() => handleSidebarToggle(true)}
-                data-tooltip="Show sidebar"
-            >
-                <Icon as={ChevronDoubleRightIcon} />
-            </Button>
+            <Tooltip content="Show sidebar">
+                <Button
+                    aria-label="Show sidebar"
+                    variant="icon"
+                    className={classNames(
+                        'position-absolute border-top border-bottom border-right mt-4',
+                        styles.toggle
+                    )}
+                    onClick={() => handleSidebarToggle(true)}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
+                </Button>
+            </Tooltip>
         )
     }
 
     return (
-        <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY}>
+        <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY} ariaLabel="File sidebar">
             <div className="d-flex flex-column h-100 w-100">
                 <GettingStartedTour
                     className="mr-3"
@@ -96,31 +103,41 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                     isAuthenticated={!!props.authenticatedUser}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
+                {/* `key` is used to force rerendering the Tabs component when the UI
+                    setting changes. This is necessary to force registering Tabs and
+                    TabPanels properly. */}
                 <Tabs
-                    className="w-100 test-repo-revision-sidebar pr-3 h-25 flex-grow-1"
-                    defaultIndex={persistedTabIndex}
+                    key={`ui-${coreWorkflowImprovementsEnabled}`}
+                    className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
+                    defaultIndex={coreWorkflowImprovementsEnabled ? 0 : persistedTabIndex}
                     onChange={setPersistedTabIndex}
                     lazy={true}
                 >
                     <TabList
                         actions={
-                            <Button
-                                onClick={() => handleSidebarToggle(false)}
-                                className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                title="Hide sidebar"
-                                data-tooltip="Hide sidebar"
-                                data-placement="right"
-                            >
-                                <Icon className={styles.closeIcon} as={ChevronDoubleLeftIcon} />
-                            </Button>
+                            <Tooltip content="Hide sidebar" placement="right">
+                                <Button
+                                    aria-label="Hide sidebar"
+                                    onClick={() => handleSidebarToggle(false)}
+                                    className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                >
+                                    <Icon
+                                        className={styles.closeIcon}
+                                        aria-hidden={true}
+                                        svgPath={mdiChevronDoubleLeft}
+                                    />
+                                </Button>
+                            </Tooltip>
                         }
                     >
                         <Tab data-tab-content="files">
                             <span className="tablist-wrapper--tab-label">Files</span>
                         </Tab>
-                        <Tab data-tab-content="symbols">
-                            <span className="tablist-wrapper--tab-label">Symbols</span>
-                        </Tab>
+                        {!coreWorkflowImprovementsEnabled && (
+                            <Tab data-tab-content="symbols">
+                                <span className="tablist-wrapper--tab-label">Symbols</span>
+                            </Tab>
+                        )}
                     </TabList>
                     <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
                         <TabPanels>
@@ -128,6 +145,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                                 <Tree
                                     key="files"
                                     repoName={props.repoName}
+                                    repoID={props.repoID}
                                     revision={props.revision}
                                     commitID={props.commitID}
                                     history={props.history}
@@ -141,15 +159,17 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                                     telemetryService={props.telemetryService}
                                 />
                             </TabPanel>
-                            <TabPanel>
-                                <RepoRevisionSidebarSymbols
-                                    key="symbols"
-                                    repoID={props.repoID}
-                                    revision={props.revision}
-                                    activePath={props.filePath}
-                                    onHandleSymbolClick={handleSymbolClick}
-                                />
-                            </TabPanel>
+                            {!coreWorkflowImprovementsEnabled && (
+                                <TabPanel>
+                                    <RepoRevisionSidebarSymbols
+                                        key="symbols"
+                                        repoID={props.repoID}
+                                        revision={props.revision}
+                                        activePath={props.filePath}
+                                        onHandleSymbolClick={handleSymbolClick}
+                                    />
+                                </TabPanel>
+                            )}
                         </TabPanels>
                     </div>
                 </Tabs>

@@ -6,12 +6,12 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { SERIES_MOCK_CHART } from '../../../../components/creation-ui-kit'
+import { SERIES_MOCK_CHART } from '../../../../components'
 
 import { SearchInsightCreationPage as SearchInsightCreationPageComponent } from './SearchInsightCreationPage'
 
 const defaultStory: Meta = {
-    title: 'web/insights/creation-ui/SearchInsightCreationPage',
+    title: 'web/insights/creation-ui/search/SearchInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
         chromatic: {

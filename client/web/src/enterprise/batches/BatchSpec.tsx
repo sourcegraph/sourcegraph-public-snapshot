@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react'
 
+import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Icon } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { MonacoBatchSpecEditor } from './batch-spec/edit/editor/MonacoBatchSpecEditor'
 
@@ -29,7 +30,7 @@ export interface BatchSpecProps extends ThemeProps {
     className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<React.PropsWithChildren<BatchSpecProps>> = ({
+export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
     originalInput,
     isLightTheme,
     className,
@@ -63,7 +64,7 @@ interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFie
 export const BatchSpecDownloadLink: React.FunctionComponent<
     React.PropsWithChildren<BatchSpecDownloadLinkProps>
 > = React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
-    return asButton ? (
+    const component = asButton ? (
         <Button
             variant="primary"
             as="a"
@@ -72,7 +73,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             target="_blank"
             rel="noopener noreferrer"
             className={className}
-            data-tooltip={`Download ${getFileName(name)}`}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
         >
             {children}
         </Button>
@@ -81,28 +82,23 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             download={getFileName(name)}
             to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
             className={className}
-            data-tooltip={`Download ${getFileName(name)}`}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
         >
             {children}
         </Link>
     )
+
+    return <Tooltip content={`Download ${getFileName(name)}`}>{component}</Tooltip>
 })
 
 // TODO: Consider merging this component with BatchSpecDownloadLink
 export const BatchSpecDownloadButton: React.FunctionComponent<
-    React.PropsWithChildren<BatchSpecProps & Pick<BatchChangeFields, 'name'>>
+    BatchSpecProps & Pick<BatchChangeFields, 'name'>
 > = React.memo(function BatchSpecDownloadButton(props) {
     return (
-        <Button
-            className="text-right text-nowrap"
-            {...props}
-            variant="secondary"
-            outline={true}
-            as={BatchSpecDownloadLink}
-            asButton={false}
-        >
-            <Icon as={FileDownloadIcon} /> Download YAML
-        </Button>
+        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
+            <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
+        </BatchSpecDownloadLink>
     )
 })
 
@@ -113,9 +109,9 @@ export const BatchSpecMeta: React.FunctionComponent<React.PropsWithChildren<Batc
     lastApplier,
     lastAppliedAt,
 }) => (
-    <p className="mb-2">
+    <Text className="mb-2">
         {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
         {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
         <Timestamp date={lastAppliedAt ?? createdAt} /> by applying the following batch spec:
-    </p>
+    </Text>
 )

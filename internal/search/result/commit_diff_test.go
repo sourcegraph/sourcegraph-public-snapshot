@@ -3,11 +3,12 @@ package result
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/hexops/autogold"
 )
 
-func TestParseDiffString(t *testing.T) {
-	input := `client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss
+const input = `client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss
 @@ -1,2 +1,6 @@ ... +1
 +.badge-wrapper {
 +    font-size: 0.75rem;
@@ -41,9 +42,23 @@ client/web/src/enterprise/codeintel/badge/components/RequestLink.module.scss cli
  }
 `
 
+func TestParseDiffString(t *testing.T) {
 	res, err := ParseDiffString(input)
 	if err != nil {
 		panic(err)
 	}
 	autogold.Equal(t, res)
+
+	formatted := FormatDiffFiles(res)
+	require.Equal(t, input, formatted)
+
+}
+
+func TestCommitDiffMatch(t *testing.T) {
+	res, _ := ParseDiffString(input)
+	commitDiff := &CommitDiffMatch{DiffFile: &res[0]}
+	autogold.Want(
+		"path when modified",
+		"client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss").
+		Equal(t, commitDiff.Path())
 }

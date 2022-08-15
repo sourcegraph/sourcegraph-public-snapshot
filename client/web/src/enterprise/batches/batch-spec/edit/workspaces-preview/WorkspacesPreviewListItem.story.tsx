@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -6,12 +6,16 @@ import { mockPreviewWorkspace } from '../../batch-spec.mock'
 
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
-const { add } = storiesOf(
-    'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreviewListItem',
-    module
-).addDecorator(story => <div className="list-group d-flex flex-column w-100">{story()}</div>)
+const decorator: DecoratorFn = story => <div className="list-group d-flex flex-column w-100">{story()}</div>
 
-add('basic', () => (
+const config: Meta = {
+    title: 'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreviewListItem',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Basic: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -30,9 +34,9 @@ add('basic', () => (
             </>
         )}
     </WebStory>
-))
+)
 
-add('cached', () => (
+export const Cached: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -51,9 +55,9 @@ add('cached', () => (
             </>
         )}
     </WebStory>
-))
+)
 
-add('stale', () => (
+export const Stale: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -72,9 +76,9 @@ add('stale', () => (
             </>
         )}
     </WebStory>
-))
+)
 
-add('read-only', () => (
+export const ReadOnly: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -95,4 +99,6 @@ add('read-only', () => (
             </>
         )}
     </WebStory>
-))
+)
+
+ReadOnly.storyName = 'read-only'

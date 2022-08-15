@@ -25,6 +25,10 @@ type Flags struct {
 	// ProtectedBranch designates a branch name that should always record an exception when a PR is opened
 	// against it. It's primary use case is to discourage PRs againt the release branch on sourcegraph/deploy-sourcegraph-cloud.
 	ProtectedBranch string
+
+	// AdditionalContext contains a paragraph that will be appended at the end of the created exception. It enables
+	// repositories to further explain why an exception has been recorded.
+	AdditionalContext string
 }
 
 func (f *Flags) Parse() {
@@ -34,6 +38,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.IssuesRepoOwner, "issues.repo-owner", "sourcegraph", "owner of repo to create issues in")
 	flag.StringVar(&f.IssuesRepoName, "issues.repo-name", "sec-pr-audit-trail", "name of repo to create issues in")
 	flag.StringVar(&f.ProtectedBranch, "protected-branch", "", "name of branch that if set as the base branch in a PR, will always open an exception")
+	flag.StringVar(&f.AdditionalContext, "additional-context", "", "additional information that will be appended to the recorded exception, if any.")
 	flag.Parse()
 }
 
@@ -131,7 +136,7 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 		return nil
 	}
 
-	issue := generateExceptionIssue(payload, &result)
+	issue := generateExceptionIssue(payload, &result, flags.AdditionalContext)
 
 	log.Printf("Ensuring label for repository %q\n", payload.Repository.FullName)
 	_, _, err := ghc.Issues.CreateLabel(ctx, flags.IssuesRepoName, flags.IssuesRepoName, &github.Label{

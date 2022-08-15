@@ -6,11 +6,12 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -55,7 +56,9 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 var _ AuthValidator = enforceAuthViaGitHub
 
 func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
-	ghClient := github.NewV3Client(log.Scoped("github.v3", "github v3 client"),
+	logger := log.Scoped("uncachedEnforceAuthViaGitHub", "uncached authentication enforcement")
+
+	ghClient := github.NewV3Client(logger,
 		extsvc.URNCodeIntel, githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)
 
 	if author, err := checkGitHubPermissions(ctx, repoName, ghClient); err != nil {

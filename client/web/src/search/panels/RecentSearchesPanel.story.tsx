@@ -1,24 +1,30 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, DecoratorFn, Story } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Typography } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 import { recentSearchesPayload } from './utils'
 
-const { add } = storiesOf('web/search/panels/RecentSearchesPanel', module)
-    .addParameters({
+const decorator: DecoratorFn = story => <div style={{ width: '800px' }}>{story()}</div>
+
+const config: Meta = {
+    title: 'web/search/panels/RecentSearchesPanel',
+    parameters: {
         design: {
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
         chromatic: { viewports: [800], disableSnapshot: false },
-    })
-    .addDecorator(story => <div style={{ width: '800px' }}>{story()}</div>)
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 const emptyRecentSearches = {
     totalCount: 0,
@@ -38,19 +44,21 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('RecentSearchesPanel', () => (
+export const RecentSearchesPanelStory: Story = () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
-                <Typography.H2>Populated</Typography.H2>
+                <H2>Populated</H2>
                 <RecentSearchesPanel {...props} />
 
-                <Typography.H2>Loading</Typography.H2>
+                <H2>Loading</H2>
                 <RecentSearchesPanel {...props} recentSearches={null} />
 
-                <Typography.H2>Empty</Typography.H2>
+                <H2>Empty</H2>
                 <RecentSearchesPanel {...props} recentSearches={{ recentSearchesLogs: emptyRecentSearches }} />
             </div>
         )}
     </WebStory>
-))
+)
+
+RecentSearchesPanelStory.storyName = 'RecentSearchesPanel'

@@ -1,15 +1,15 @@
 import { render } from '@testing-library/react'
 
-import { LoaderInput } from './LoaderInput'
+import { Input } from '@sourcegraph/wildcard'
 
-jest.mock('@sourcegraph/wildcard', () => ({ LoadingSpinner: 'LoadingSpinner' }))
+import { LoaderInput } from './LoaderInput'
 
 describe('LoaderInput', () => {
     it('should render a loading spinner when loading prop is true', () => {
         expect(
             render(
                 <LoaderInput loading={true}>
-                    <input type="text" />
+                    <Input />
                 </LoaderInput>
             ).asFragment()
         ).toMatchSnapshot()
@@ -19,7 +19,7 @@ describe('LoaderInput', () => {
         expect(
             render(
                 <LoaderInput loading={false}>
-                    <input type="text" />
+                    <Input />
                 </LoaderInput>
             ).asFragment()
         ).toMatchSnapshot()

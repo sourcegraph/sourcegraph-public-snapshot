@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -19,7 +21,10 @@ func NewBatchSpecResolutionWorker(
 	workerStore dbworkerstore.Store,
 	observationContext *observation.Context,
 ) *workerutil.Worker {
-	e := &batchSpecWorkspaceCreator{store: s}
+	e := &batchSpecWorkspaceCreator{
+		store:  s,
+		logger: log.Scoped("batch-spec-workspace-creator", "The background worker running workspace resolutions for batch changes"),
+	}
 
 	options := workerutil.WorkerOptions{
 		Name:              "batch_changes_batch_spec_resolution_worker",

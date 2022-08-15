@@ -1,8 +1,8 @@
-/* stylelint-disable-next-line @sourcegraph/no-restricted-imports */
-@import 'bootstrap/scss/type';
-
 :root {
     --monospace-font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --lead-font-size: calc(var(--font-size-base) * 1.25);
+    --hr-margin-y: 0.25rem;
+    --line-height-typography: 1.2;
 }
 
 h1 {
@@ -10,24 +10,28 @@ h1 {
     font-weight: 600;
     letter-spacing: (0.5/26) + em;
     margin: 0 0 1rem;
+    line-height: var(--line-height-typography);
 }
 
 h2 {
     font-size: 1.25rem; // 20px
     font-weight: 600;
     letter-spacing: (0.25/20) + em;
+    line-height: var(--line-height-typography);
 }
 
 h3 {
     font-size: 1rem; // 16px
     font-weight: 600;
     letter-spacing: (0.25/16) + em;
+    line-height: var(--line-height-typography);
 }
 
 h4 {
     font-size: 0.875rem; // 14px
     font-weight: 500;
     letter-spacing: (0.25/14) + em;
+    line-height: var(--line-height-typography);
 }
 
 h5 {
@@ -36,11 +40,13 @@ h5 {
     letter-spacing: (0.5/10) + em;
     text-transform: uppercase;
     margin: 0;
+    line-height: var(--line-height-typography);
 }
 
 h6 {
     font-size: 0.625rem;
     font-weight: 400;
+    line-height: var(--line-height-typography);
 }
 
 %small {
@@ -135,5 +141,42 @@ label.text-uppercase small,
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         padding-right: 0.5em;
         text-align: right;
+    }
+}
+
+hr {
+    margin-top: var(--hr-margin-y);
+    margin-bottom: var(--hr-margin-y);
+    border: 0;
+    border-top: 1px solid var(--border-color);
+}
+
+mark,
+.mark {
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    padding: 0.2em;
+    background-color: var(--mark-bg);
+}
+
+.lead {
+    font-size: var(--lead-font-size);
+    font-weight: 300;
+}
+
+.list-unstyled {
+    padding-left: 0;
+    list-style: none;
+}
+
+.list-inline {
+    padding-left: 0;
+    list-style: none;
+}
+
+.list-inline-item {
+    display: inline-block;
+
+    &:not(:last-child) {
+        margin-right: 0.5rem;
     }
 }

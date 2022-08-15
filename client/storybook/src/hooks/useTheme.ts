@@ -1,6 +1,12 @@
 import { useLayoutEffect, useState } from 'react'
 
-import { useDarkMode } from 'storybook-dark-mode'
+import { useDarkMode as useRegularDarkMode } from 'storybook-dark-mode'
+
+import { isChromatic } from '../utils/isChromatic'
+
+import { useChromaticDarkMode } from './useChromaticTheme'
+
+const useDarkMode = isChromatic() ? useChromaticDarkMode : useRegularDarkMode
 
 /**
  * Gets current theme and updates value when theme changes
@@ -16,17 +22,6 @@ export const useTheme = (): boolean => {
     useLayoutEffect(() => {
         setIsLightTheme(!isDarkMode)
     }, [isDarkMode])
-
-    // This is required for Chromatic to react to theme changes when
-    // taking screenshots. See `create-chromatic-story.tsx` where
-    // this event is dispatched.
-    useLayoutEffect(() => {
-        const listener = ((event: CustomEvent<boolean>): void => {
-            setIsLightTheme(event.detail)
-        }) as EventListener
-        document.body.addEventListener('chromatic-light-theme-toggled', listener)
-        return () => document.body.removeEventListener('chromatic-light-theme-toggled', listener)
-    }, [])
 
     return isLightTheme
 }

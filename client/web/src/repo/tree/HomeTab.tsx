@@ -11,7 +11,17 @@ import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegr
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Badge,
+    useEventObservable,
+    Alert,
+    LoadingSpinner,
+    H2,
+    Text,
+    ButtonLink,
+} from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -96,7 +106,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
-                            html: blob.highlight.html,
+                            html: blob.highlight.html ?? '',
                             repoName: repo.name,
                             revision,
                             commitID,
@@ -156,7 +166,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         <div className="w-100">No commits in this tree.</div>
     ) : (
         <div className="test-tree-page-no-recent-commits w-100">
-            <p className="mb-2">No commits in this tree in the past year.</p>
+            <Text className="mb-2">No commits in this tree in the past year.</Text>
             <div className="float-right">
                 <Button onClick={onShowOlderCommitsClicked} variant="link" size="sm" className="float-right p-0">
                     Show older commits
@@ -175,9 +185,9 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                 </>
             ) : (
                 <>
-                    <p className="mb-2">
+                    <Text className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </p>
+                    </Text>
                     <div className="float-right">
                         <Button
                             onClick={onShowOlderCommitsClicked}
@@ -199,7 +209,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
     const RecentCommits: React.FunctionComponent<React.PropsWithChildren<RecentCommitsProps>> = ({ isSidebar }) => (
         <div className="mb-3">
-            <Typography.H2>Recent commits</Typography.H2>
+            <H2>Recent commits</H2>
             <FilteredConnection<
                 GitCommitFields,
                 Pick<
@@ -246,7 +256,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
             {!richHTML && richHTML !== 'loading' && (
                 <div className="text-center mt-5">
                     <img src="https://i.ibb.co/tztztYB/eric.png" alt="winner" className="mb-3 w-25" />
-                    <Typography.H2>No README available :)</Typography.H2>
+                    <H2>No README available :)</H2>
                 </div>
             )}
             {blobInfoOrError && richHTML && aborted && (
@@ -267,7 +277,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         return (
             <div className="container mw-100">
                 <RecentCommits isSidebar={false} />
-                <Typography.H2 className="mt-5">README.md</Typography.H2>
+                <H2 className="mt-5">README.md</H2>
                 <READMEFile />
             </div>
         )
@@ -286,7 +296,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                         <RecentCommits isSidebar={true} />
                         {/* CODE-INTEL */}
                         <div className="mb-3">
-                            <Typography.H2>Code intel</Typography.H2>
+                            <H2>Code intel</H2>
                             {CodeIntelligenceBadge && (
                                 <CodeIntelligenceBadge
                                     repoName={repo.name}
@@ -298,7 +308,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                         </div>
                         {/* BATCH CHANGES */}
                         <div className="mb-3">
-                            <Typography.H2>Batch changes</Typography.H2>
+                            <H2>Batch changes</H2>
                             {batchChangesEnabled ? (
                                 <HomeTabBatchChangeBadge repoName={repo.name} />
                             ) : (
@@ -313,9 +323,14 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                                         <div className="col">Not available</div>
                                     </div>
                                     <div className="text-right">
-                                        <Link className="btn btn-sm btn-link mr-0 pr-0" to="/help/batch_changes">
+                                        <ButtonLink
+                                            size="sm"
+                                            className="mr-0 pr-0"
+                                            to="/help/batch_changes"
+                                            variant="link"
+                                        >
                                             Learn more
-                                        </Link>
+                                        </ButtonLink>
                                     </div>
                                 </div>
                             )}
@@ -350,9 +365,9 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<
 
     const allBatchChanges = (
         <div className="text-right">
-            <Link className="btn btn-sm btn-link" to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>
+            <ButtonLink size="sm" variant="link" to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>
                 View all batch changes
-            </Link>
+            </ButtonLink>
         </div>
     )
 

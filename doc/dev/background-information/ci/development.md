@@ -71,7 +71,7 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 #### Creating annotations
 
-Annotations get rendered in the Buildkite UI to present the viewer notices about the build.
+Annotations are used to present the viewer notices about the build and they get rendered in the Buildkite UI as well as when one executes `sg ci status`.
 The pipeline generator provides an API for this that, at a high level, works like this:
 
 1. In your script, leave a file in `./annotations`:
@@ -93,6 +93,17 @@ The pipeline generator provides an API for this that, at a high level, works lik
 
 3. That's it!
 
+Linters implemented in `sg` automatically generate annotations with the `sg lint --annotations` flag.
+
+Part of the annotation that gets generated also includes a link to view the job output and, if the build is on the main branch, a link to view the job logs on Grafana.
+
+If you don't include a file extension in the annotation file, then the contents of the file are rendered terminal output.
+An annotation can be rendered as Markdown instead by using the `.md` extension, for example:
+
+```sh
+echo -e "$OUT" >./annotations/docsite.md
+```
+
 For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 
 #### Caching build artefacts
@@ -104,6 +115,15 @@ Cached artefacts are *automatically expired after 30 days* (by an object lifecyc
 ### Observability
 
 > NOTE: Sourcegraph teammates should refer to the [CI incidents playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#scenarios) for help managing issues with [pipeline health](./index.md#pipeline-health).
+
+#### Failure logs
+
+Every failure in the `sourcegraph/sourcegraph` CI pipeline for `main` also [uploads logs using `sg` to Loki](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/upload-build-logs.sh).
+We do not publish data for successful builds or branch builds (for those, you can refer to our [build traces](https://docs.sourcegraph.com/dev/background-information/ci/development#pipeline-command-tracing)).
+
+For a brief overview, check out the [CI dashboard](https://sourcegraph.grafana.net/d/iBBWbxFnk/ci?orgId=1), which is a set of graphs based on the contents of uploaded logs.
+
+Some annotations also have a link "View Grafana logs" which will take one to Grafana cloud with a pre-populated query to view the log output of a failure (if any). For more about querying logs, refer to the handbook page: [Grafana Cloud - CI logs](https://handbook.sourcegraph.com/departments/engineering/dev/tools/observability/cloud/#ci-logs).
 
 #### Pipeline command tracing
 
@@ -164,7 +184,7 @@ For more details about best practices and additional features and capabilities, 
 Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
 In order to provide strong isolation across builds, to prevent a previous build to create any effect on the next one, our agents are stateless jobs.
 
-When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.  
+When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.
 
 This means that our agents are totally **stateless**, exactly like the runners used in GitHub actions.
 
@@ -180,11 +200,16 @@ go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 
 #### Managing secrets
 
-The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. Our CI pipeline must never leak secrets:
+The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. To add a secret:
 
-- to add a secret, use the Secret Manager on Google Cloud and then inject it at deployment time as an environment variable in the CI agents, which will make it available to every step.
-- use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
-- while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
+1. Use Google Cloud Secret manager to add it to [the `sourcegraph-ci` project](https://console.cloud.google.com/security/secret-manager?project=sourcegraph-ci).
+2. Inject it at deployment time as an environment variable in the CI agents via adding it to [the Buildkite GSM configuration](https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/gsm-secrets.tf).
+3. Run `terraform apply` in [the `buildkite/kubernetes/` folder](https://github.com/sourcegraph/infrastructure/tree/main/buildkite/kubernetes). It will make it available to every CI step.
+
+Our CI pipeline must never leak secrets:
+
+1. Use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
+2. While environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
 #### Creating scheduled builds
 
@@ -198,4 +223,4 @@ You can schedule builds with build schedules, which automatically create builds 
 
 ![cron interval](https://user-images.githubusercontent.com/68532117/165358933-a27e4293-a363-4a77-84d7-a3ce67f743d2.png)
 
-> NOTE: You can also inject custom environment variables, for example, to trigger a custom [Run Type](#run-types). 
+> NOTE: You can also inject custom environment variables, for example, to trigger a custom [Run Type](#run-types).

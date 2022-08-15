@@ -1,11 +1,11 @@
 package repos_test
 
 import (
-	"database/sql"
 	"testing"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -24,6 +24,7 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	t.Parallel()
 
 	for _, tc := range []struct {
@@ -51,14 +52,11 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
+		{"WebhookWorker/EnqueueWebhookBuildJob", testEnqueueWebhookBuildJob},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			store := repos.NewStore(database.NewDB(dbtest.NewDB(t)), sql.TxOptions{Isolation: sql.LevelReadCommitted})
+			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			store.SetLogger(lg)
 			store.SetMetrics(repos.NewStoreMetrics())
 			store.SetTracer(trace.Tracer{Tracer: opentracing.GlobalTracer()})
 

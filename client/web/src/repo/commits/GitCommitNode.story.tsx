@@ -1,5 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { Card } from '@sourcegraph/wildcard'
@@ -9,9 +9,15 @@ import { GitCommitFields } from '../../graphql-operations'
 
 import { GitCommitNode } from './GitCommitNode'
 
-const { add } = storiesOf('web/GitCommitNode', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({ disableSnapshot: false })
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/GitCommitNode',
+    parameters: { disableSnapshot: false },
+    decorators: [decorator],
+}
+
+export default config
 
 const gitCommitNode: GitCommitFields = {
     id: 'commit123',
@@ -65,7 +71,7 @@ const gitCommitNode: GitCommitFields = {
         'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.',
 }
 
-add('Full customizable', () => (
+export const FullCustomizable: Story = () => (
     <WebStory>
         {() => (
             <Card>
@@ -80,8 +86,11 @@ add('Full customizable', () => (
             </Card>
         )}
     </WebStory>
-))
-add('Compact', () => (
+)
+
+FullCustomizable.storyName = 'Full customizable'
+
+export const Compact: Story = () => (
     <WebStory>
         {() => (
             <Card>
@@ -95,8 +104,9 @@ add('Compact', () => (
             </Card>
         )}
     </WebStory>
-))
-add('Commit message expanded', () => (
+)
+
+export const CommitMessageExpand: Story = () => (
     <WebStory>
         {() => (
             <Card>
@@ -110,8 +120,11 @@ add('Commit message expanded', () => (
             </Card>
         )}
     </WebStory>
-))
-add('SHA and parent shown', () => (
+)
+
+CommitMessageExpand.storyName = 'Commit message expanded'
+
+export const SHAAndParentShown: Story = () => (
     <WebStory>
         {() => (
             <Card>
@@ -125,8 +138,11 @@ add('SHA and parent shown', () => (
             </Card>
         )}
     </WebStory>
-))
-add('Expand commit message btn hidden', () => (
+)
+
+SHAAndParentShown.storyName = 'SHA and parent shown'
+
+export const ExpandCommitMessageButtonHidden: Story = () => (
     <WebStory>
         {() => (
             <Card>
@@ -140,4 +156,6 @@ add('Expand commit message btn hidden', () => (
             </Card>
         )}
     </WebStory>
-))
+)
+
+ExpandCommitMessageButtonHidden.storyName = 'Expand commit message btn hidden'

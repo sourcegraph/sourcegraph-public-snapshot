@@ -5,7 +5,7 @@ Site admins can link and sync Git repositories on [Gitolite](https://gitolite.co
 To connect Gitolite to Sourcegraph:
 
 1. Set up [git SSH authentication](../repo/auth.md) for your gitolite server.
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Go to **Site admin > Manage code hosts > Add repositories**
 1. Select **Gitolite**.
 1. Configure the connection to Gitolite using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.

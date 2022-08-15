@@ -46,4 +46,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     version: '0.0.0',
     xhrHeaders: {},
     authProviders: [builtinAuthProvider],
+    authMinPasswordLength: 12,
+    enableLegacyExtensions: true,
 })

@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -26,7 +28,7 @@ func TestDeleteLSIFUpload(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	db := database.NewStrictMockDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
@@ -45,7 +47,8 @@ func TestDeleteLSIFUpload(t *testing.T) {
 }
 
 func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
 	mockResolver := resolvermocks.NewMockResolver()
@@ -78,7 +81,8 @@ func TestDeleteLSIFIndex(t *testing.T) {
 }
 
 func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
 	mockResolver := resolvermocks.NewMockResolver()

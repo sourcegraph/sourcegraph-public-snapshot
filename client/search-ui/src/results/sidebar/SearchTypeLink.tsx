@@ -4,17 +4,17 @@ import classNames from 'classnames'
 
 import {
     BuildSearchQueryURLParameters,
-    QueryChangeSource,
     QueryState,
     SearchContextProps,
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
+    EditorHint,
 } from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, createLinkUrl } from '@sourcegraph/wildcard'
 
 import styles from './SearchSidebarSection.module.scss'
 
@@ -32,6 +32,7 @@ export interface SearchTypeLinksProps extends Pick<SearchContextProps, 'selected
 interface SearchTypeLinkProps extends SearchTypeLinksProps {
     type: SearchType
     children: string
+    'data-testid'?: string
 }
 
 /**
@@ -44,6 +45,7 @@ const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchType
     selectedSearchContextSpec,
     children,
     buildSearchURLQueryFromQueryState,
+    'data-testid': dataTestID,
 }) => {
     const builtURLQuery = buildSearchURLQueryFromQueryState({
         query: updateFilter(query, FilterType.type, type as string),
@@ -51,8 +53,12 @@ const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchType
     })
 
     return (
-        <Link to={{ pathname: '/search', search: builtURLQuery }} className={styles.sidebarSectionListItem}>
-            {children}
+        <Link
+            to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}
+            className={styles.sidebarSectionListItem}
+            data-testid={dataTestID}
+        >
+            <span className={styles.sidebarSectionListItemLabel}>{children}</span>
         </Link>
     )
 }
@@ -60,6 +66,7 @@ const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchType
 interface SearchTypeButtonProps {
     children: string
     onClick: () => void
+    'data-testid'?: string
 }
 
 /**
@@ -69,14 +76,16 @@ interface SearchTypeButtonProps {
 const SearchTypeButton: React.FunctionComponent<React.PropsWithChildren<SearchTypeButtonProps>> = ({
     children,
     onClick,
+    'data-testid': dataTestID,
 }) => (
     <Button
         className={classNames(styles.sidebarSectionListItem, styles.sidebarSectionButtonLink, 'flex-1')}
         value={children}
         onClick={onClick}
         variant="link"
+        data-testid={dataTestID}
     >
-        {children}
+        <span className={styles.sidebarSectionListItemLabel}>{children}</span>
     </Button>
 )
 
@@ -107,7 +116,6 @@ const SearchSymbol: React.FunctionComponent<React.PropsWithChildren<Omit<SearchT
 }
 
 const repoExample = createQueryExampleFromString('{regexp-pattern}')
-const repoDependenciesExample = createQueryExampleFromString('deps({})')
 
 export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => {
     function updateQueryWithRepoExample(): void {
@@ -117,26 +125,10 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
             emptyValue: true,
         })
         props.onNavbarQueryChange({
-            changeSource: QueryChangeSource.searchTypes,
             query: updatedQuery.query,
             selectionRange: updatedQuery.placeholderRange,
             revealRange: updatedQuery.filterRange,
-            showSuggestions: true,
-        })
-    }
-
-    function updateQueryWithRepoDependenciesExample(): void {
-        const updatedQuery = updateQueryWithFilterAndExample(props.query, FilterType.repo, repoDependenciesExample, {
-            singular: true,
-            negate: false,
-            emptyValue: false,
-        })
-        props.onNavbarQueryChange({
-            changeSource: QueryChangeSource.searchTypes,
-            query: updatedQuery.query,
-            selectionRange: updatedQuery.placeholderRange,
-            revealRange: updatedQuery.filterRange,
-            showSuggestions: false,
+            hint: EditorHint.ShowSuggestions,
         })
     }
 
@@ -150,11 +142,8 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
     }
 
     return [
-        <SearchTypeButton onClick={updateQueryWithRepoExample} key="repo">
+        <SearchTypeButton onClick={updateQueryWithRepoExample} key="repo" data-testid="search-type-suggest">
             Search repos by org or name
-        </SearchTypeButton>,
-        <SearchTypeButton onClick={updateQueryWithRepoDependenciesExample} key="repo-dependencies">
-            Search repo dependencies
         </SearchTypeButton>,
         <SearchSymbol {...props} key="symbol">
             Find a symbol
@@ -162,7 +151,13 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
         <SearchTypeLinkOrButton {...props} type="diff" key="diff" onClick={() => updateQueryWithType('diff')}>
             Search diffs
         </SearchTypeLinkOrButton>,
-        <SearchTypeLinkOrButton {...props} type="commit" key="commit" onClick={() => updateQueryWithType('commit')}>
+        <SearchTypeLinkOrButton
+            {...props}
+            type="commit"
+            key="commit"
+            onClick={() => updateQueryWithType('commit')}
+            data-testid="search-type-submit"
+        >
             Search commit messages
         </SearchTypeLinkOrButton>,
     ]

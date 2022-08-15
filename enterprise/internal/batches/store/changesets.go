@@ -58,6 +58,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.publication_state"),
 	sqlf.Sprintf("changesets.ui_publication_state"),
 	sqlf.Sprintf("changesets.reconciler_state"),
+	sqlf.Sprintf("changesets.computed_state"),
 	sqlf.Sprintf("changesets.failure_message"),
 	sqlf.Sprintf("changesets.started_at"),
 	sqlf.Sprintf("changesets.finished_at"),
@@ -66,6 +67,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.num_failures"),
 	sqlf.Sprintf("changesets.closing"),
 	sqlf.Sprintf("changesets.syncer_error"),
+	sqlf.Sprintf("changesets.detached_at"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -76,6 +78,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("metadata"),
 	sqlf.Sprintf("batch_change_ids"),
+	sqlf.Sprintf("detached_at"),
 	sqlf.Sprintf("external_id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_branch"),
@@ -159,6 +162,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		c.UpdatedAt,
 		metadata,
 		batchChanges,
+		nullTimeColumn(c.DetachedAt),
 		nullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		nullStringColumn(c.ExternalBranch),
@@ -228,9 +232,9 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 }
 
 var createChangesetQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:CreateChangeset
+-- source: enterprise/internal/batches/store/changesets.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -245,6 +249,7 @@ func (s *Store) DeleteChangeset(ctx context.Context, id int64) (err error) {
 }
 
 var deleteChangesetQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:DeleteChangeset
 DELETE FROM changesets WHERE id = %s
 `
 
@@ -262,7 +267,7 @@ type CountChangesetsOpts struct {
 	PublicationState     *btypes.ChangesetPublicationState
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
-	RepoID               api.RepoID
+	RepoIDs              []api.RepoID
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -270,7 +275,7 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 	ctx, _, endObservation := s.operations.countChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
 	if err != nil {
 		return 0, errors.Wrap(err, "CountChangesets generating authz query conds")
 	}
@@ -278,7 +283,7 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 }
 
 var countChangesetsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:CountChangesets
+-- source: enterprise/internal/batches/store/changesets.go:CountChangesets
 SELECT COUNT(changesets.id)
 FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
@@ -325,8 +330,8 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 	if opts.EnforceAuthz {
 		preds = append(preds, authzConds)
 	}
-	if opts.RepoID != 0 {
-		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
+	if len(opts.RepoIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
 	}
 
 	join := sqlf.Sprintf("")
@@ -389,7 +394,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *bt
 }
 
 var getChangesetsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:GetChangeset
+-- source: enterprise/internal/batches/store/changesets.go:GetChangeset
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
@@ -515,6 +520,7 @@ type ListChangesetsOpts struct {
 	OnlyArchived         bool
 	IncludeArchived      bool
 	IDs                  []int64
+	States               []btypes.ChangesetState
 	PublicationState     *btypes.ChangesetPublicationState
 	ReconcilerStates     []btypes.ReconcilerState
 	ExternalStates       []btypes.ChangesetExternalState
@@ -523,7 +529,7 @@ type ListChangesetsOpts struct {
 	OwnedByBatchChangeID int64
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
-	RepoID               api.RepoID
+	RepoIDs              []api.RepoID
 	BitbucketCloudCommit string
 }
 
@@ -532,7 +538,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	ctx, _, endObservation := s.operations.listChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
 	}
@@ -557,7 +563,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 }
 
 var listChangesetsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:ListChangesets
+-- source: enterprise/internal/batches/store/changesets.go:ListChangesets
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 %s -- optional LEFT JOIN to changeset_specs if required
@@ -596,6 +602,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		}
 		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
 	}
+	if len(opts.States) != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.computed_state = ANY(%s)", pq.Array(opts.States)))
+	}
 	if len(opts.ExternalStates) > 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = ANY (%s)", pq.Array(opts.ExternalStates)))
 	}
@@ -611,8 +620,8 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	if opts.EnforceAuthz {
 		preds = append(preds, authzConds)
 	}
-	if opts.RepoID != 0 {
-		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
+	if len(opts.RepoIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
 	}
 	if len(opts.BitbucketCloudCommit) >= 12 {
 		// Bitbucket Cloud commit hashes in PR objects are generally truncated
@@ -732,7 +741,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -1162,6 +1171,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&t.PublicationState,
 		&t.UiPublicationState,
 		&reconcilerState,
+		&t.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &t.StartedAt},
 		&dbutil.NullTime{Time: &t.FinishedAt},
@@ -1170,6 +1180,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&t.NumFailures,
 		&t.Closing,
 		&dbutil.NullString{S: &syncErrorMessage},
+		&dbutil.NullTime{Time: &t.DetachedAt},
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
@@ -1247,17 +1258,17 @@ const getChangesetStatsFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:GetChangesetsStats
 SELECT
 	COUNT(*) AS total,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'errored') AS retrying,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'failed') AS failed,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'scheduled') AS scheduled,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state NOT IN ('failed', 'errored', 'completed', 'scheduled')) AS processing,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND changesets.reconciler_state = 'completed') AS unpublished,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'CLOSED'  AND NOT %s) AS closed,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'DRAFT'   AND NOT %s) AS draft,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'MERGED'  AND NOT %s) AS merged,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'OPEN'    AND NOT %s) AS open,
-	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'DELETED' AND NOT %s) AS deleted,
-	COUNT(*) FILTER (WHERE %s)                                                      AS archived
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'RETRYING') AS retrying,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'FAILED') AS failed,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'SCHEDULED') AS scheduled,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'PROCESSING') AS processing,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DELETED') AS deleted,
+	COUNT(*) FILTER (WHERE %s) AS archived
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE
@@ -1271,7 +1282,7 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
 	}
@@ -1396,27 +1407,23 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 		sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeIDStr),
 	}
 
-	publishedAndCompleted := sqlf.Sprintf("changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed'")
 	archived := archivedInBatchChange(batchChangeIDStr)
 
 	return sqlf.Sprintf(
 		getChangesetStatsFmtstr,
-		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
+		archived, archived,
+		archived, archived,
+		archived, archived,
+		archived, archived,
+		archived, archived,
 		archived,
 		sqlf.Join(preds, " AND "),
 	)
 }
 
 func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
-	publishedAndCompleted := sqlf.Sprintf("publication_state = 'PUBLISHED' AND reconciler_state = 'completed'")
-
 	return sqlf.Sprintf(
 		getRepoChangesetsStatsFmtstr,
-		publishedAndCompleted, publishedAndCompleted, publishedAndCompleted, publishedAndCompleted,
 		strconv.Itoa(int(repoID)),
 		authzConds,
 	)
@@ -1426,18 +1433,15 @@ const getRepoChangesetsStatsFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:GetRepoChangesetsStats
 SELECT
 	COUNT(*) AS total,
-	COUNT(*) FILTER (WHERE publication_state = 'UNPUBLISHED'
-		AND reconciler_state = 'completed') AS unpublished,
-	COUNT(*) FILTER (WHERE %s AND external_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE %s AND external_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE %s AND external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE %s AND external_state = 'OPEN') AS open
+	COUNT(*) FILTER (WHERE computed_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE computed_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE computed_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE computed_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE computed_state = 'OPEN') AS open
 FROM (
 	SELECT
 		changesets.id,
-		changesets.publication_state,
-		changesets.reconciler_state,
-		changesets.external_state
+		changesets.computed_state
 	FROM
 		changesets
 		INNER JOIN repo ON changesets.repo_id = repo.id
@@ -1466,3 +1470,18 @@ func uiPublicationStateColumn(c *btypes.Changeset) *string {
 	}
 	return uiPublicationState
 }
+
+// CleanDetachedChangesets deletes changesets that have been detached after duration specified.
+func (s *Store) CleanDetachedChangesets(ctx context.Context, retention time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.cleanDetachedChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("Retention", retention.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.Exec(ctx, sqlf.Sprintf(cleanDetachedChangesetsFmtstr, retention/time.Second))
+}
+
+const cleanDetachedChangesetsFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:CleanDetachedChangesets
+DELETE FROM changesets WHERE detached_at < (NOW() - (%s * interval '1 second'));
+`

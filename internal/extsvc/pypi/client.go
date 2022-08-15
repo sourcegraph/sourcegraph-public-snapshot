@@ -36,9 +36,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"golang.org/x/net/html"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -60,7 +59,7 @@ type Client struct {
 	cli  httpcli.Doer
 
 	// Self-imposed rate-limiter. pypi.org does not impose a rate limiting policy.
-	limiter *rate.Limiter
+	limiter *ratelimit.InstrumentedLimiter
 }
 
 func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
@@ -72,8 +71,8 @@ func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
 }
 
 // Project returns the Files of the simple-API /<project>/ endpoint.
-func (c *Client) Project(ctx context.Context, project string) ([]File, error) {
-	data, err := c.get(ctx, normalize(project))
+func (c *Client) Project(ctx context.Context, project reposource.PackageName) ([]File, error) {
+	data, err := c.get(ctx, reposource.PackageName(normalize(string(project))))
 	if err != nil {
 		return nil, errors.Wrap(err, "PyPI")
 	}
@@ -82,7 +81,7 @@ func (c *Client) Project(ctx context.Context, project string) ([]File, error) {
 
 // Version returns the File of a project at a specific version from
 // the simple-API /<project>/ endpoint.
-func (c *Client) Version(ctx context.Context, project, version string) (File, error) {
+func (c *Client) Version(ctx context.Context, project reposource.PackageName, version string) (File, error) {
 	files, err := c.Project(ctx, project)
 	if err != nil {
 		return File{}, err
@@ -272,12 +271,8 @@ OUTER:
 
 // Download downloads a file located at url, respecting the rate limit.
 func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
-	startWait := time.Now()
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
-	}
-	if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-		log15.Warn("PyPI client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -411,20 +406,15 @@ func ToWheel(f File) (*Wheel, error) {
 	}
 }
 
-func (c *Client) get(ctx context.Context, project string) (respBody []byte, err error) {
+func (c *Client) get(ctx context.Context, project reposource.PackageName) (respBody []byte, err error) {
 	var (
 		reqURL *url.URL
 		req    *http.Request
 	)
 
 	for _, baseURL := range c.urls {
-		startWait := time.Now()
 		if err = c.limiter.Wait(ctx); err != nil {
 			return nil, err
-		}
-
-		if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-			log15.Warn("PyPI client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 		}
 
 		reqURL, err = url.Parse(baseURL)
@@ -437,7 +427,7 @@ func (c *Client) get(ctx context.Context, project string) (respBody []byte, err 
 		// canonicalized URL with the trailing slash. PyPI maintainers have been
 		// struggling to handle a piece of software with this User-Agent overloading our
 		// backends with requests resulting in redirects.
-		reqURL.Path = path.Join(reqURL.Path, project) + "/"
+		reqURL.Path = path.Join(reqURL.Path, string(project)) + "/"
 
 		req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
 		if err != nil {

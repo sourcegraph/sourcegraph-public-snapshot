@@ -29,9 +29,12 @@ export function endpointRequestHeadersSetting(): object {
     return readConfiguration().get<object>('requestHeaders') || {}
 }
 
-export async function updateEndpointSetting(newEndpoint: string): Promise<boolean> {
+export async function updateEndpointSetting(newEndpoint: string, newAccessToken?: string): Promise<boolean> {
     const newEndpointURL = removeEndingSlash(newEndpoint)
     try {
+        if (newAccessToken) {
+            await readConfiguration().update('accessToken', newAccessToken, vscode.ConfigurationTarget.Global)
+        }
         await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
         return true
     } catch {

@@ -59,7 +59,7 @@ interface State {
 
 const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
 
-const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
+const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 const MonacoSettingsEditor = React.lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
@@ -209,14 +209,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.monaco = monacoValue
         if (this.monaco) {
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateEditor(editor => {
                         this.editor = editor
                     })
                 )
             )
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateModel(async model => {
                         // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
                         // so this import call will not incur another load.

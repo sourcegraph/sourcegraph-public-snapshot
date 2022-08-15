@@ -2,59 +2,76 @@ package analytics
 
 import (
 	"context"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/run"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/resource"
+	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 
-	"github.com/sourcegraph/sourcegraph/dev/okay"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
-type eventStoreKey struct{}
-
 // WithContext enables analytics in this context.
-func WithContext(ctx context.Context, sgVersion string) context.Context {
-	return context.WithValue(ctx, eventStoreKey{}, &eventStore{
-		sgVersion: sgVersion,
-		events:    make([]*okay.Event, 0, 10),
-	})
+func WithContext(ctx context.Context, sgVersion string) (context.Context, error) {
+	processor, err := newSpanToDiskProcessor(ctx)
+	if err != nil {
+		return ctx, errors.Wrap(err, "disk exporter")
+	}
+
+	// Loose attempt at getting identity - if we fail, just discard
+	identity, _ := run.Cmd(ctx, "git config user.email").StdOut().Run().String()
+
+	// Create a provider with configuration and resource specification
+	provider := oteltracesdk.NewTracerProvider(
+		oteltracesdk.WithResource(newResource(log.Resource{
+			Name:       "sg",
+			Namespace:  "dev",
+			Version:    sgVersion,
+			InstanceID: identity,
+		})),
+		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
+		oteltracesdk.WithSpanProcessor(processor),
+	)
+
+	// Configure OpenTelemetry defaults
+	otel.SetTracerProvider(provider)
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		std.Out.WriteWarningf("opentelemetry: %s", err.Error())
+	}))
+
+	// Create a root span for an execution of sg for all spans to be grouped under
+	var rootSpan *Span
+	ctx, rootSpan = StartSpan(ctx, "sg", "root")
+
+	return context.WithValue(ctx, spansStoreKey{}, &spansStore{
+		rootSpan: rootSpan.Span,
+		provider: provider,
+	}), nil
 }
 
-// getStore retrieves the events store from context if it exists. Callers should check
-// that the store is non-nil before attempting to use it.
-func getStore(ctx context.Context) *eventStore {
-	store, ok := ctx.Value(eventStoreKey{}).(*eventStore)
-	if !ok {
-		return nil
-	}
-	return store
+// newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
+// type.
+func newResource(r log.Resource) *resource.Resource {
+	return resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(r.Name),
+		semconv.ServiceNamespaceKey.String(r.Namespace),
+		semconv.ServiceInstanceIDKey.String(r.InstanceID),
+		semconv.ServiceVersionKey.String(r.Version),
+		attribute.String(sgAnalyticsVersionResourceKey, sgAnalyticsVersion))
 }
 
-// LogEvent tracks an event in the per-run analytics store, if analytics are enabled,
-// in the context of a command.
-//
-// Events can also be provided to indicate that something happened - for example, and
-// error or cancellation. These are treated as metrics with a count of 1.
-func LogEvent(ctx context.Context, name string, labels []string, startedAt time.Time, events ...string) {
-	store := getStore(ctx)
-	if store == nil {
-		return
+func isValidVersion(spans *tracepb.ResourceSpans) bool {
+	for _, attribute := range spans.GetResource().GetAttributes() {
+		if attribute.GetKey() == sgAnalyticsVersionResourceKey {
+			return attribute.Value.GetStringValue() == sgAnalyticsVersion
+		}
 	}
-
-	metrics := map[string]okay.Metric{
-		"duration": okay.Duration(time.Since(startedAt)),
-	}
-	for _, event := range events {
-		metrics[event] = okay.Count(1)
-	}
-
-	store.events = append(store.events, &okay.Event{
-		Name:      name,
-		Labels:    labels,
-		Timestamp: startedAt, // Timestamp as start of event
-		Metrics:   metrics,
-		UniqueKey: []string{"event_id"},
-		Properties: map[string]string{
-			"event_id": uuid.NewString(),
-		},
-	})
+	return false
 }

@@ -68,7 +68,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
     return (
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error]} />}
-            <ConnectionList className="list-group list-group-flush w-100">
+            <ConnectionList className="list-group list-group-flush w-100" aria-label="Workspace results found">
                 {connectionOrCached?.nodes?.map(node => (
                     <WorkspacesPreviewListItem
                         key={node.id}
@@ -82,6 +82,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
             {connectionOrCached && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
+                        centered={true}
                         noSummaryIfAllNodesVisible={true}
                         first={WORKSPACES_PER_PAGE_COUNT}
                         connection={connectionOrCached}
@@ -90,7 +91,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
                         hasNextPage={hasNextPage}
                         emptyElement={<span className="text-muted">No workspaces found</span>}
                     />
-                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                 </SummaryContainer>
             )}
         </ConnectionContainer>

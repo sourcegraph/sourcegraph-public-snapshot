@@ -25,6 +25,7 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 					Query:                      args.Input.Query,
 					Label:                      args.Input.Label,
 					GeneratedFromCaptureGroups: args.Input.GeneratedFromCaptureGroups,
+					GroupBy:                    args.Input.GroupBy,
 				},
 			},
 		},
@@ -55,13 +56,21 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 		var err error
 
 		if seriesArgs.GeneratedFromCaptureGroups {
-			executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, clock)
-			series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
-			if err != nil {
-				return nil, err
+			if seriesArgs.GroupBy != nil {
+				executor := query.NewComputeExecutor(r.postgresDB, clock)
+				series, err = executor.Execute(ctx, seriesArgs.Query, *seriesArgs.GroupBy, repos)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				executor := query.NewCaptureGroupExecutor(r.postgresDB, clock)
+				series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
+				if err != nil {
+					return nil, err
+				}
 			}
 		} else {
-			executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, clock)
+			executor := query.NewStreamingExecutor(r.postgresDB, clock)
 			series, err = executor.Execute(ctx, seriesArgs.Query, seriesArgs.Label, seriesArgs.Label, repos, interval)
 			if err != nil {
 				return nil, err
@@ -70,11 +79,23 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 		generatedSeries = append(generatedSeries, series...)
 	}
 
+	foundData := false
 	for i := range generatedSeries {
+		foundData = foundData || len(generatedSeries[i].Points) > 0
 		resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{series: &generatedSeries[i]})
+	}
+	if !foundData {
+		return nil, errors.Newf("Data for %s not found", pluralize("this repository", "these repositories", len(repos)))
 	}
 
 	return resolvers, nil
+}
+
+func pluralize(singular, plural string, n int) string {
+	if n == 1 {
+		return singular
+	}
+	return plural
 }
 
 type searchInsightLivePreviewSeriesResolver struct {

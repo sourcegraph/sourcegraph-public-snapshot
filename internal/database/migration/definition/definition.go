@@ -28,6 +28,14 @@ type Definitions struct {
 	definitionsMap map[int]Definition
 }
 
+func NewDefinitions(migrationDefinitions []Definition) (*Definitions, error) {
+	if err := reorderDefinitions(migrationDefinitions); err != nil {
+		return nil, errors.Wrap(err, "reorderDefinitions")
+	}
+
+	return newDefinitions(migrationDefinitions), nil
+}
+
 func newDefinitions(migrationDefinitions []Definition) *Definitions {
 	definitionsMap := make(map[int]Definition, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {

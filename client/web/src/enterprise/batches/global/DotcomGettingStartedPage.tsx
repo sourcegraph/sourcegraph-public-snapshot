@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
-import { PageHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Text } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
@@ -39,9 +39,9 @@ const DotcomGettingStartedPageFooter: React.FunctionComponent<React.PropsWithChi
     <div className="d-flex justify-content-between">
         <Card className={classNames(styles.requirementsCard, 'mr-3')}>
             <CardBody>
-                <p>
+                <Text>
                     <strong>Batch Changes requirements</strong>
-                </p>
+                </Text>
                 <ul className={classNames(styles.narrowList, 'mb-0')}>
                     <li>On prem installation</li>
                     <li>Unlicensed users can create 5 changesets per batch change</li>

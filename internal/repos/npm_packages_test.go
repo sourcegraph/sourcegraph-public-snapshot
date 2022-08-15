@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -37,7 +39,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	for _, testCase := range testCases {
 		deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
 			Scheme: dependencies.NpmPackagesScheme,
-			Name:   testCase.pkgName,
+			Name:   reposource.PackageName(testCase.pkgName),
 		})
 		require.Nil(t, err)
 		depStrs := []string{}
@@ -45,7 +47,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				(&reposource.NpmDependency{NpmPackage: pkg, Version: dep.Version}).PackageManagerSyntax(),
+				(&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: dep.Version}).VersionedPackageSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -59,7 +61,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 		for i := 0; i < len(testCase.matches); i++ {
 			deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
 				Scheme: dependencies.NpmPackagesScheme,
-				Name:   testCase.pkgName,
+				Name:   reposource.PackageName(testCase.pkgName),
 				After:  lastID,
 				Limit:  1,
 			})
@@ -67,7 +69,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			require.Equal(t, len(deps), 1)
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NpmDependency{NpmPackage: pkg, Version: deps[0].Version}).PackageManagerSyntax())
+			depStrs = append(depStrs, (&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: deps[0].Version}).VersionedPackageSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -78,8 +80,9 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
 	t.Helper()
-	db := database.NewDB(dbtest.NewDB(t))
-	depsSvc := livedependencies.TestService(db, nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	depsSvc := livedependencies.TestService(db)
 
 	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
 	if err != nil {
@@ -100,7 +103,7 @@ var testDependencies = []string{
 var testDependencyRepos = func() []dependencies.Repo {
 	dependencyRepos := []dependencies.Repo{}
 	for i, depStr := range testDependencies {
-		dep, err := reposource.ParseNpmDependency(depStr)
+		dep, err := reposource.ParseNpmVersionedPackage(depStr)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -122,44 +125,41 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 		{
 			ID:      1,
 			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "react",
-			Version: "18.1.0", // test deduplication with version from config
+			Name:    "@sourcegraph/sourcegraph.proposed",
+			Version: "12.0.0", // test deduplication with version from config
 		},
 		{
 			ID:      2,
 			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "react",
-			Version: "18.0.0", // test deduplication with version from config
+			Name:    "@sourcegraph/sourcegraph.proposed",
+			Version: "12.0.1", // test deduplication with version from config
 		},
 		{
 			ID:      3,
 			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "async",
-			Version: "3.2.3",
+			Name:    "@sourcegraph/web-ext",
+			Version: "3.0.0-fork.1",
 		},
 		{
 			ID:      4,
 			Scheme:  dependencies.NpmPackagesScheme,
 			Name:    "fastq",
-			Version: "0.9.9", // Test missing modules are skipped.
+			Version: "0.9.9", // test missing modules still create a repo.
 		},
 	})
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindNpmPackages,
-		Config: marshalJSON(t, &schema.NpmPackagesConnection{
-			Registry: "https://registry.npmjs.org",
-			Dependencies: []string{
-				"urql@2.2.0",
-				"lodash@4.17.15",
-			},
-		}),
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.NpmPackagesConnection{
+			Registry:     "https://registry.npmjs.org",
+			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
+		})),
 	}
 
 	cf, save := newClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewNpmPackagesSource(&svc, cf)
+	src, err := NewNpmPackagesSource(ctx, &svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -24,6 +24,7 @@ export const settingsAreaRepositoryFragment = gql`
             cloneProgress
             cloned
             updatedAt
+            lastError
             updateSchedule {
                 due
                 index

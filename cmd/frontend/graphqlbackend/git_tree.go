@@ -43,15 +43,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
-	entries, err := gitserver.NewClient(r.db).ReadDir(
-		ctx,
-		r.db,
-		authz.DefaultSubRepoPermsChecker,
-		r.commit.repoResolver.RepoName(),
-		api.CommitID(r.commit.OID()),
-		r.Path(),
-		r.isRecursive || args.Recursive,
-	)
+	entries, err := gitserver.NewClient(r.db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error

@@ -25,7 +25,7 @@ func Init(db database.DB) {
 			} else {
 				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
-					newProvidersList = append(newProvidersList, p)
+					newProvidersList = append(newProvidersList, p.Provider)
 				}
 				providers.Update(PkgName, newProvidersList)
 			}
@@ -33,8 +33,12 @@ func Init(db database.DB) {
 	}()
 }
 
-func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
-	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
+type Provider struct {
+	*schema.GitLabAuthProvider
+	providers.Provider
+}
+
+func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gitlab == nil {
 			continue
@@ -53,10 +57,12 @@ func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps map[schema
 		callbackURL.Path = "/.auth/gitlab/callback"
 
 		provider, providerMessages := parseProvider(db, callbackURL.String(), pr.Gitlab, pr)
+
 		problems = append(problems, conf.NewSiteProblems(providerMessages...)...)
-		if provider != nil {
-			ps[*pr.Gitlab] = provider
-		}
+		ps = append(ps, Provider{
+			GitLabAuthProvider: pr.Gitlab,
+			Provider:           provider,
+		})
 	}
 	return ps, problems
 }

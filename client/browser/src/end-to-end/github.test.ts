@@ -41,8 +41,7 @@ describe('Sourcegraph browser extension on github.com', function () {
         url: 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go',
         repoName: 'github.com/sourcegraph/jsonrpc2',
         sourcegraphBaseUrl,
-        // Not using '.js-file-line' because it breaks the reliance on :nth-child() in testSingleFilePage()
-        lineSelector: '.js-file-line-container tr',
+        getLineSelector: lineNumber => `#LC${lineNumber}`,
         goToDefinitionURL:
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
     })

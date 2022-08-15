@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	sglog "github.com/sourcegraph/log"
 )
 
 // Inserter allows for bulk updates to a single Postgres table.
@@ -135,6 +137,7 @@ func NewInserterWithReturn(
 	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
 	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
 	returningSuffix := makeReturningSuffix(returningColumnNames)
+	logger := sglog.Scoped("Inserter", "")
 
 	return &Inserter{
 		db:                   db,
@@ -147,7 +150,7 @@ func NewInserterWithReturn(
 		onConflictSuffix:     onConflictSuffix,
 		returningSuffix:      returningSuffix,
 		returningScanner:     returningScanner,
-		operations:           getOperations(),
+		operations:           getOperations(logger),
 		commonLogFields: []log.Field{
 			log.String("tableName", tableName),
 			log.String("columnNames", strings.Join(columnNames, ",")),

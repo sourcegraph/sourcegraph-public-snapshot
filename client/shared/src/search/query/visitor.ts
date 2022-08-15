@@ -1,5 +1,5 @@
 import { Node, Operator, Parameter, Pattern, OperatorKind } from './parser'
-import { PatternKind } from './token'
+import { CharacterRange, PatternKind } from './token'
 
 export class Visitor {
     /**
@@ -32,28 +32,28 @@ export class Visitor {
 
     private visitOperator(node: Operator): void {
         if (this._visitors.visitOperator) {
-            this._visitors.visitOperator(node.operands, node.kind)
+            this._visitors.visitOperator(node.operands, node.kind, node.range, node.groupRange)
         }
         this.visit(node.operands)
     }
 
     private visitParameter(node: Parameter): void {
         if (this._visitors.visitParameter) {
-            this._visitors.visitParameter(node.field, node.value, node.negated)
+            this._visitors.visitParameter(node.field, node.value, node.negated, node.range)
         }
     }
 
     private visitPattern(node: Pattern): void {
         if (this._visitors.visitPattern) {
-            this._visitors.visitPattern(node.value, node.kind, node.negated, node.quoted)
+            this._visitors.visitPattern(node.value, node.kind, node.negated, node.quoted, node.range)
         }
     }
 }
 
 export interface Visitors {
-    visitOperator?(operands: Node[], kind: OperatorKind): void
-    visitParameter?(field: string, value: string, negated: boolean): void
-    visitPattern?(value: string, kind: PatternKind, negated: boolean, quoted: boolean): void
+    visitOperator?(operands: Node[], kind: OperatorKind, range: CharacterRange, groupRange?: CharacterRange): void
+    visitParameter?(field: string, value: string, negated: boolean, range: CharacterRange): void
+    visitPattern?(value: string, kind: PatternKind, negated: boolean, quoted: boolean, range: CharacterRange): void
 }
 
 /**

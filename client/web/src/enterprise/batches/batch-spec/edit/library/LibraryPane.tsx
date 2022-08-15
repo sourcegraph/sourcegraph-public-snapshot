@@ -1,19 +1,22 @@
 import React, { useState, useCallback } from 'react'
 
-import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
-import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
+import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
+import { eventLogger } from '../../../../../tracking/eventLogger'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
 
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
+import manyCombySample from './many-comby.batch.yaml'
 import minimalSample from './minimal.batch.yaml'
+import monorepoDynamicSample from './monorepo-dynamic.batch.yaml'
 import { ReplaceSpecModal } from './ReplaceSpecModal'
+import regexSample from './sed.batch.yaml'
 
 import styles from './LibraryPane.module.scss'
 
@@ -22,11 +25,14 @@ interface LibraryItem {
     code: string
 }
 
-const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
+const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
     { name: 'hello world', code: helloWorldSample },
     { name: 'minimal', code: minimalSample },
     { name: 'modify with comby', code: combySample },
     { name: 'update go imports', code: goImportsSample },
+    { name: 'apply a regex', code: regexSample },
+    { name: 'apply many comby patterns', code: manyCombySample },
+    { name: 'monorepo example', code: monorepoDynamicSample },
 ]
 
 const LIBRARY_PANE_DEFAULT_COLLAPSED = 'batch-changes.ssbc-library-pane-default-collapsed'
@@ -53,7 +59,11 @@ type LibraryPaneProps =
 export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({ name, ...props }) => {
     // Remember the last collapsed state of the pane
     const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
-    const [collapsed, setCollapsed] = useState(defaultCollapsed)
+    // Start with the library collapsed by default if the batch spec is read-only, or if
+    // the viewport is sufficiently narrow
+    const [collapsed, setCollapsed] = useState(
+        defaultCollapsed || ('isReadOnly' in props && props.isReadOnly) || window.innerWidth < VIEWPORT_XL
+    )
     const [selectedItem, setSelectedItem] = useState<LibraryItem>()
 
     const [containerStyle, animateContainer] = useSpring(() => ({
@@ -96,7 +106,9 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
 
     const onConfirm = useCallback(() => {
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
+            const templateName = selectedItem.name
             const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
+            eventLogger.log('batch_change_editor:template:loaded', { template: templateName })
             props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
@@ -111,18 +123,23 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                     onConfirm={onConfirm}
                 />
             ) : null}
-            <animated.div style={containerStyle} className="d-flex flex-column mr-3">
+            <animated.div style={containerStyle} className="d-none d-md-flex flex-column mr-3">
                 <div className={styles.header}>
-                    <animated.h4 className="m-0" style={headerStyle}>
-                        Library
-                    </animated.h4>
+                    <animated.div style={headerStyle}>
+                        <H4 as={H3} className="m-0">
+                            Library
+                        </H4>
+                    </animated.div>
                     <div className={styles.collapseButton}>
                         <Button
                             className="p-0"
                             onClick={() => toggleCollapse(!collapsed)}
                             aria-label={collapsed ? 'Expand' : 'Collapse'}
                         >
-                            <Icon as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon} />
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={collapsed ? mdiChevronDoubleRight : mdiChevronDoubleLeft}
+                            />
                         </Button>
                     </div>
                 </div>
@@ -141,9 +158,16 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             </li>
                         ))}
                     </ul>
-                    <p className={styles.lastItem}>
-                        <Link to="https://github.com/sourcegraph/batch-change-examples">View more examples</Link>
-                    </p>
+                    <Text className={styles.lastItem}>
+                        <Link
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            to="https://github.com/sourcegraph/batch-change-examples"
+                            onClick={() => eventLogger.log('batch_change_editor:view_more_examples:clicked')}
+                        >
+                            View more examples <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                        </Link>
+                    </Text>
                 </animated.div>
             </animated.div>
         </>

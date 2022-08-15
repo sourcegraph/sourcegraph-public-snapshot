@@ -6,11 +6,14 @@ import (
 
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestDescribe(t *testing.T) {
-	db := dbtest.NewRawDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	store := testStore(db)
 	ctx := context.Background()
 

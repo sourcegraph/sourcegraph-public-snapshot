@@ -53,3 +53,15 @@ We also include the following non-OpenTelemetry fields:
   "Function": "string",
 }
 ```
+
+## Log sampling
+
+Sourcegraph services that have migrated to the [new internal logging standard](../../dev/how-to/add_logging.md) have log sampling enabled by default.
+The first 100 identical log entries per second will always be output, but thereafter only every 100th identical message will be output.
+
+This behaviour can be configured for each service using the following environment variables:
+
+* `SRC_LOG_SAMPLING_INITIAL`: the number of entries with identical messages to always output per second
+* `SRC_LOG_SAMPLING_THEREAFTER`: the number of entries with identical messages to discard before emitting another one per second, after `SRC_LOG_SAMPLING_INITIAL`.
+
+Setting `SRC_LOG_SAMPLING_INITIAL` to `0` or `-1` will disable log sampling entirely.

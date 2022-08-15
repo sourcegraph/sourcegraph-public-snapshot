@@ -1,10 +1,10 @@
-import React, { useState, useLayoutEffect } from 'react'
+import React, { useState } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { useLocation } from 'react-router'
 
-import { Button, TooltipController, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -18,32 +18,26 @@ export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unk
     const location = useLocation()
     const [copied, setCopied] = useState(false)
 
-    useLayoutEffect(() => {
-        TooltipController.forceUpdate()
-    }, [copied])
-
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault()
         eventLogger.log('CopyFilePath')
         const { repoName, filePath } = parseBrowserRepoURL(location.pathname)
         copy(filePath || repoName) // copy the file path if present; else it's the repo path.
         setCopied(true)
+        screenReaderAnnounce('Path copied to clipboard')
 
         setTimeout(() => {
             setCopied(false)
         }, 1000)
     }
 
+    const label = copied ? 'Copied!' : 'Copy path to clipboard'
+
     return (
-        <Button
-            variant="icon"
-            className="p-2"
-            data-tooltip={copied ? 'Copied!' : 'Copy path to clipboard'}
-            aria-label="Copy path"
-            onClick={onClick}
-            size="sm"
-        >
-            <Icon className={styles.copyIcon} as={ContentCopyIcon} />
-        </Button>
+        <Tooltip content={label}>
+            <Button aria-label="Copy" variant="icon" className="p-2" onClick={onClick} size="sm">
+                <Icon className={styles.copyIcon} aria-hidden={true} svgPath={mdiContentCopy} />
+            </Button>
+        </Tooltip>
     )
 }

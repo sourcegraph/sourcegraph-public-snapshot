@@ -14,6 +14,8 @@ import (
 
 	gh "github.com/google/go-github/v43/github"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -108,7 +110,9 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	t.Parallel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 
@@ -117,12 +121,12 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	extSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:      "https://github.com",
 			Token:    os.Getenv("GITHUB_TOKEN"),
 			Repos:    []string{"sourcegraph/sourcegraph"},
 			Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
-		}),
+		})),
 	}
 
 	err := esStore.Upsert(ctx, extSvc)

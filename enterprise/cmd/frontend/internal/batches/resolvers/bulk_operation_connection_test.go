@@ -8,10 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,20 +26,20 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test", userID)
-	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
 	batchChangeAPIID := marshalBatchChangeID(batchChange.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, db, 3)
-	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
+	changeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:             repos[0].ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
@@ -81,7 +83,7 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

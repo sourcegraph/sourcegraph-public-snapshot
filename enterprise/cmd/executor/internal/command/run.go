@@ -26,7 +26,7 @@ type command struct {
 
 // runCommand invokes the given command on the host machine. The standard output and
 // standard error streams of the invoked command are written to the given logger.
-func runCommand(ctx context.Context, command command, logger *Logger) (err error) {
+func runCommand(ctx context.Context, command command, logger Logger) (err error) {
 	// The context here is used below as a guard against the command finishing before we close
 	// the stdout and stderr pipes. This context may not cancel until after logs for the job
 	// have been flushed, or after the 30m job deadline, so we enforce a cancellation of a
@@ -143,7 +143,7 @@ func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, s
 // forwardedHostEnvVars is a list of environment variable names that are inherited
 // when executing a command on the host. These are commonly required by programs
 // we shell out to, such a docker.
-var forwardedHostEnvVars = []string{"HOME", "PATH", "USER"}
+var forwardedHostEnvVars = []string{"HOME", "PATH", "USER", "DOCKER_HOST"}
 
 func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgroup.Group {
 	eg := &errgroup.Group{}
@@ -156,7 +156,10 @@ func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgr
 		// TODO: Tweak this value as needed.
 		scanner.Buffer(buf, 100*1024*1024)
 		for scanner.Scan() {
-			fmt.Fprintf(logWriter, "%s: %s\n", prefix, scanner.Text())
+			_, err := fmt.Fprintf(logWriter, "%s: %s\n", prefix, scanner.Text())
+			if err != nil {
+				return err
+			}
 		}
 		return scanner.Err()
 	}

@@ -36,7 +36,7 @@ export const queryLsifIndexList = (
     { query, state, first, after }: GQL.ILsifIndexesOnRepositoryArguments,
     client: ApolloClient<object>
 ): Observable<IndexConnection> => {
-    const vars = {
+    const variables = {
         query: query ?? null,
         state: state ?? null,
         first: first ?? null,
@@ -46,7 +46,7 @@ export const queryLsifIndexList = (
     return from(
         client.query<LsifIndexesResult, LsifIndexesVariables>({
             query: getDocumentNode(LSIF_INDEXES),
-            variables: { ...vars },
+            variables: { ...variables },
         })
     ).pipe(
         map(({ data }) => data),

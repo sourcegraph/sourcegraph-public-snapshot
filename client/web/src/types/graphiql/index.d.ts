@@ -87,7 +87,7 @@ declare module 'graphiql' {
         editorTheme?: string
     }
 
-    export default class GraphiQL extends React.Component<Props> {
+    export default class GraphiQL extends React.Component<React.PropsWithChildren<Props>> {
         public static Logo: React.ComponentClass<any>
         public static Toolbar: React.ComponentClass<any>
         public static Button: React.ComponentClass<any>

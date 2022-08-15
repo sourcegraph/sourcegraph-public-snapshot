@@ -2,6 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { Tooltip } from '@sourcegraph/wildcard'
+
 import { useWildcardTheme } from '../../hooks/useWildcardTheme'
 import { Link } from '../Link'
 
@@ -58,18 +60,23 @@ export const Badge: React.FunctionComponent<React.PropsWithChildren<BadgeProps>>
         isBranded && classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill)
 
     const commonProps = {
-        'data-tooltip': tooltip,
         className: classNames(brandedClassName, className),
         ...otherProps,
     }
 
     if (href) {
         return (
-            <Link to={href} rel="noopener" target="_blank" {...commonProps}>
-                {children}
-            </Link>
+            <Tooltip content={tooltip}>
+                <Link to={href} rel="noopener" target="_blank" {...commonProps}>
+                    {children}
+                </Link>
+            </Tooltip>
         )
     }
 
-    return <Component {...commonProps}>{children}</Component>
+    return (
+        <Tooltip content={tooltip}>
+            <Component {...commonProps}>{children}</Component>
+        </Tooltip>
+    )
 }

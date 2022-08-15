@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { Maybe } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ButtonLink, Container, Link, PageHeader, Typography } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, Link, PageHeader, H3 } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -117,7 +117,7 @@ export const OrganizationsListPage: React.FunctionComponent<React.PropsWithChild
             {!hasOrgs && (
                 <Container className={styles.noOrgContainer}>
                     <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                        <Typography.H3 className="mb-1">Start searching with your team on Sourcegraph</Typography.H3>
+                        <H3 className="mb-1">Start searching with your team on Sourcegraph</H3>
                         <div>Level up your team with powerful code search across your organization’s code.</div>
                         <ButtonLink
                             variant="primary"

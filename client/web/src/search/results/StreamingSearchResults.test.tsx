@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createBrowserHistory } from 'history'
 import { BrowserRouter } from 'react-router-dom'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -45,7 +46,7 @@ describe('StreamingSearchResults', () => {
             subjects: null,
             final: null,
         },
-        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER, requestGraphQL: () => EMPTY },
+        platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
@@ -60,11 +61,13 @@ describe('StreamingSearchResults', () => {
     function renderWrapper(component: React.ReactElement<StreamingSearchResultsProps>) {
         return render(
             <BrowserRouter>
-                <MockedTestProvider mocks={revisionsMockResponses}>
-                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                        {component}
-                    </SearchQueryStateStoreProvider>
-                </MockedTestProvider>
+                <CompatRouter>
+                    <MockedTestProvider mocks={revisionsMockResponses}>
+                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                            {component}
+                        </SearchQueryStateStoreProvider>
+                    </MockedTestProvider>
+                </CompatRouter>
             </BrowserRouter>
         )
     }
@@ -99,7 +102,7 @@ describe('StreamingSearchResults', () => {
 
         expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
         expect(receivedOptions).toEqual({
-            version: 'V2',
+            version: 'V3',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             trace: undefined,
@@ -121,7 +124,7 @@ describe('StreamingSearchResults', () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(COLLAPSABLE_SEARCH_RESULT)} />)
 
         expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
-            'data-tooltip',
+            'data-test-tooltip-content',
             'Show more matches on all results'
         )
 
@@ -132,7 +135,7 @@ describe('StreamingSearchResults', () => {
         userEvent.click(screen.getByTestId('search-result-expand-btn'))
 
         expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
-            'data-tooltip',
+            'data-test-tooltip-content',
             'Hide more matches on all results'
         )
 

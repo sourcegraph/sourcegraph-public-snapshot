@@ -1,6 +1,8 @@
 package changed
 
 import (
+	"bytes"
+	"os"
 	"strings"
 )
 
@@ -21,6 +23,7 @@ const (
 	Terraform
 	SVG
 	Shell
+	DockerImages
 
 	// All indicates all changes should be considered included in this diff, except None.
 	All
@@ -70,6 +73,11 @@ func ParseDiff(files []string) (diff Diff) {
 				diff |= Go
 			}
 		}
+		if p == "sg.config.yaml" {
+			// sg config affects generated output and potentially tests and checks that we
+			// run in the future, so we consider this to have affected Go.
+			diff |= Go
+		}
 
 		// Client
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
@@ -96,10 +104,19 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
 			diff |= Docs
 		}
+		// dev/release contains a nodejs script that doesn't have tests but needs to be linted
+		if strings.HasPrefix(p, "dev/release/") {
+			diff |= Docs
+		}
 
-		// Affects Dockerfiles
+		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
-			diff |= Dockerfiles
+			diff |= (Dockerfiles | DockerImages)
+		}
+		// Affects anything in docker-images directories (which implies image build
+		// scripts and/or resources are affected)
+		if strings.HasPrefix(p, "docker-images/") {
+			diff |= DockerImages
 		}
 
 		// Affects executor docker registry mirror
@@ -125,6 +142,18 @@ func ParseDiff(files []string) (diff Diff) {
 		// Affects scripts
 		if strings.HasSuffix(p, ".sh") {
 			diff |= Shell
+		}
+
+		f, err := os.Open(p)
+		if err == nil {
+			defer f.Close()
+			b := make([]byte, 19) // "#!/usr/bin/env bash" = 19 chars
+			_, _ = f.Read(b)
+			if bytes.Compare(b[0:2], []byte("#!")) == 0 && bytes.Contains(b, []byte("bash")) {
+				// If the file starts with a shebang and has "bash" somewhere after, it's most probably
+				// some shell script.
+				diff |= Shell
+			}
 		}
 	}
 	return
@@ -157,6 +186,8 @@ func (d Diff) String() string {
 		return "SVG"
 	case Shell:
 		return "Shell"
+	case DockerImages:
+		return "DockerImages"
 
 	case All:
 		return "All"

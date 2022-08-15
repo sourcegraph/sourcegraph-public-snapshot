@@ -23,7 +23,7 @@ describe('SearchSidebarSection', () => {
     it('should render all items initially', () => {
         render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
-                {getDynamicFilterLinks(filters, onFilterChosen)}
+                {getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchSidebarSection>
         )
 
@@ -35,7 +35,7 @@ describe('SearchSidebarSection', () => {
     it('should filter items based on search', () => {
         render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
-                {getDynamicFilterLinks(filters, onFilterChosen)}
+                {getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchSidebarSection>
         )
 
@@ -47,7 +47,7 @@ describe('SearchSidebarSection', () => {
     it('should clear search when items change', () => {
         const { rerender } = render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
-                {getDynamicFilterLinks(filters, onFilterChosen)}
+                {getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchSidebarSection>
         )
 
@@ -55,7 +55,11 @@ describe('SearchSidebarSection', () => {
 
         rerender(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
-                {getDynamicFilterLinks([filters[0], filters[5], filters[3]], onFilterChosen)}
+                {getDynamicFilterLinks(
+                    [filters[0], filters[5], filters[3]],
+                    ['file', 'lang', 'utility'],
+                    onFilterChosen
+                )}
             </SearchSidebarSection>
         )
 
@@ -67,7 +71,7 @@ describe('SearchSidebarSection', () => {
     it('should not show search if only one item in list', () => {
         render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
-                {getDynamicFilterLinks([filters[2]], onFilterChosen)}
+                {getDynamicFilterLinks([filters[2]], ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchSidebarSection>
         )
 
@@ -79,7 +83,7 @@ describe('SearchSidebarSection', () => {
     it('should not show search if showSearch is false', () => {
         render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters">
-                {getDynamicFilterLinks(filters, onFilterChosen)}
+                {getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchSidebarSection>
         )
 

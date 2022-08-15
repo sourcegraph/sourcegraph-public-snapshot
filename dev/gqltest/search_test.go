@@ -72,6 +72,8 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	addKVPs(t, client)
+
 	t.Run("search contexts", func(t *testing.T) {
 		testSearchContextsCRUD(t, client)
 		testListingSearchContexts(t, client)
@@ -87,15 +89,6 @@ func TestSearch(t *testing.T) {
 	})
 
 	testSearchOther(t)
-
-	// This test runs after all others because its adds a npm external service
-	// which expands the set of repositories in the instance. All previous tests
-	// assume only the repos from gqltest-github-search exist.
-	//
-	// Adding and deleting the dependency repos external services in between all other tests is
-	// flaky since deleting an external service doesn't cancel a running external
-	// service sync job for it.
-	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
@@ -117,10 +110,39 @@ type searchClient interface {
 
 	Repository(repositoryName string) (*gqltestutil.Repository, error)
 	WaitForReposToBeCloned(repos ...string) error
+	WaitForReposToBeClonedWithin(timeout time.Duration, repos ...string) error
 
 	CreateSearchContext(input gqltestutil.CreateSearchContextInput, repositories []gqltestutil.SearchContextRepositoryRevisionsInput) (string, error)
 	GetSearchContext(id string) (*gqltestutil.GetSearchContextResult, error)
 	DeleteSearchContext(id string) error
+}
+
+func addKVPs(t *testing.T, client *gqltestutil.Client) {
+	repo1, err := client.Repository("github.com/sgtest/go-diff")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo2, err := client.Repository("github.com/sgtest/appdash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testVal := "testval"
+	err = client.AddRepoKVP(repo1.ID, "testkey", &testVal)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.AddRepoKVP(repo2.ID, "testkey", &testVal)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.AddRepoKVP(repo2.ID, "testtag", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func testSearchClient(t *testing.T, client searchClient) {
@@ -694,10 +716,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
+			skip       int
 		}{
 			{
 				name:  "Structural, index only, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  "Structural, index only, backcompat, nonzero result",
@@ -711,39 +735,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  `Structural search quotes are interpreted literally`,
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
 			},
-			{
-				name:       `Alert to activate structural search mode for :[...] syntax`,
-				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter`,
-				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "No results",
-					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
-					ProposedQueries: []gqltestutil.ProposedQuery{
-						{
-							Description: "Activate structural search",
-							Query:       `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter patternType:structural`,
-						},
-					},
-				},
-			},
-			{
-				name:       `Alert to activate structural search mode for ... syntax`,
-				query:      `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$`,
-				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "No results",
-					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
-					ProposedQueries: []gqltestutil.ProposedQuery{
-						{
-							Description: "Activate structural search",
-							Query:       `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$ patternType:structural`,
-						},
-					},
-				},
-			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -772,6 +767,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
+			skip       int
 		}{
 			{
 				name:  `And operator, basic`,
@@ -829,10 +825,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load type:file`,
 				zeroResult: true,
 			},
-			{
-				name:  `Escape sequences`,
-				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
-			},
+			// Disabled because it was flaky:
+			// https://buildkite.com/sourcegraph/sourcegraph/builds/161002
+			// {
+			// 	name:  `Escape sequences`,
+			// 	query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
+			// },
 			{
 				name:  `Escaped whitespace sequences with 'and'`,
 				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,
@@ -852,10 +850,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `Literals, not keyword and implicit and inside group`,
 				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  `Literals, not and and keyword inside group`,
 				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  `Dangling right parens, supported via content: filter`,
@@ -951,6 +951,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
+
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -1193,6 +1195,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `repo:contains.commit.after(1 second ago)`,
 				counts: counts{Repo: 0},
 			},
+			{
+				name:   `repo has tag that does not exist`,
+				query:  `repo:has.tag(noexist)`,
+				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo has tag`,
+				query:  `repo:has.tag(testtag)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `repo has kvp that does not exist`,
+				query:  `repo:has(noexist:false)`,
+				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo has kvp`,
+				query:  `repo:has(testkey:testval)`,
+				counts: counts{Repo: 2},
+			},
 		}
 
 		for _, test := range tests {
@@ -1231,11 +1253,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `file:go-diff.go select:repo`,
 				counts: counts{Repo: 1},
 			},
-			{
-				name:   `select file`,
-				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
-				counts: counts{File: 1},
-			},
+			// Temporarily disabled as it can be flaky
+			//{
+			//	name:   `select file`,
+			//	query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
+			//	counts: counts{File: 1},
+			//},
 			{
 				name:   `or statement merges file`,
 				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
@@ -1297,9 +1320,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{File: 1},
 			},
 			{
-				name:   `file contains content predicate type diff`,
-				query:  `type:diff repo:go-diff file:contains(after_success)`, // matches .travis.yml and its 10 commits
-				counts: counts{Commit: 10},
+				name: `file contains content predicate type diff`,
+				// matches .travis.yml and in the last commit that added after_success, but not in previous commits
+				query:  `type:diff repo:go-diff file:contains(after_success)`,
+				counts: counts{Commit: 1},
 			},
 			{
 				name:   `select repo on 'and' operation`,
@@ -1354,201 +1378,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			})
 		}
 	})
-}
-
-func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) {
-	return func(t *testing.T) {
-		t.Helper()
-
-		// We are adding another GitHub external service here to make sure we don't
-		// pollute the other integration tests running earlier.
-		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "gqltest-dependency-search",
-			Config: mustMarshalJSONString(struct {
-				URL                   string   `json:"url"`
-				Token                 string   `json:"token"`
-				Repos                 []string `json:"repos"`
-				RepositoryPathPattern string   `json:"repositoryPathPattern"`
-			}{
-				URL:   "https://ghe.sgdev.org/",
-				Token: *githubToken,
-				Repos: []string{
-					"sgtest/pipenv-hw",
-					"sgtest/poetry-hw",
-				},
-				RepositoryPathPattern: "github.com/{nameWithOwner}",
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindNpmPackages,
-			DisplayName: "gqltest-npm-search",
-			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
-				Registry: "https://registry.npmjs.org",
-				Dependencies: []string{
-					"urql@2.2.0", // We're searching the dependencies of this repo.
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindGoModules,
-			DisplayName: "gqltest-go-search",
-			Config: mustMarshalJSONString(&schema.GoModulesConnection{
-				Urls: []string{"https://proxy.golang.org"},
-				Dependencies: []string{
-					"github.com/oklog/ulid/v2@v2.0.2",
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindPythonPackages,
-			DisplayName: "gqltest-python-search",
-			Config: mustMarshalJSONString(&schema.PythonPackagesConnection{
-				Urls: []string{"https://pypi.org/simple"},
-				Dependencies: []string{
-					"rich == 12.3.0",
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindJVMPackages,
-			DisplayName: "gqltest-jvm-search",
-			Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
-				Maven: &schema.Maven{
-					Dependencies: []string{
-						"com.google.guava:guava:19.0",
-						"com.google.guava:guava:21.0",
-					},
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = client.WaitForReposToBeCloned(
-			"npm/urql",
-			"go/github.com/oklog/ulid/v2",
-			"maven/com.google.guava/guava",
-			"python/rich",
-			"github.com/sgtest/pipenv-hw",
-			"github.com/sgtest/poetry-hw",
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		for _, tc := range []struct {
-			name   string
-			client searchClient
-		}{
-			{"graphql", client},
-			{"stream", streamClient},
-		} {
-			tc := tc
-
-			for _, listDepsTc := range []struct {
-				name  string
-				query string
-				want  []string
-			}{
-				{"repos-npm", `r:deps(^npm/urql$@v2.2.0)`, []string{
-					"/npm/urql/core@v1.9.2",
-					"/npm/wonka@v4.0.7",
-				}},
-				{"repos-go", `r:deps(oklog/ulid)`, []string{
-					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
-				}},
-				{"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
-					"/python/atomicwrites@v1.4.0",
-					"/python/attrs@v21.4.0",
-					"/python/colorama@v0.4.4",
-					"/python/more-itertools@v8.13.0",
-					"/python/packaging@v21.3",
-					"/python/pluggy@v0.13.1",
-					"/python/py@v1.11.0",
-					"/python/pyparsing@v3.0.8",
-					"/python/pytest@v5.4.3",
-					"/python/tqdm@v4.64.0",
-					"/python/wcwidth@v0.2.5",
-				}},
-				{"repos-python-pipenv", `r:deps(^github\.com/sgtest/pipenv-hw$)`, []string{
-					"/python/certifi@v2021.10.8",
-					"/python/charset-normalizer@v2.0.12",
-					"/python/idna@v3.3",
-					"/python/requests@v2.27.1",
-					"/python/urllib3@v1.26.9",
-				}},
-			} {
-				listDepsTc := listDepsTc
-
-				t.Run(tc.name+"/"+listDepsTc.name, func(t *testing.T) {
-					began := time.Now()
-					for {
-						results, err := tc.client.SearchRepositories(listDepsTc.query)
-						require.NoError(t, err)
-
-						var have []string
-						for _, r := range results {
-							have = append(have, r.URL)
-						}
-
-						sort.Strings(have)
-
-						if diff := cmp.Diff(have, listDepsTc.want); diff != "" {
-							if time.Since(began) >= time.Minute {
-								t.Fatalf("missing repositories after 1m: %v", diff)
-							}
-
-							t.Logf("still missing repositories: %v", diff)
-							time.Sleep(time.Second)
-							continue
-						}
-						break
-					}
-				})
-			}
-
-			t.Run(tc.name+"/"+"no-alert", func(t *testing.T) {
-				const query = `r:deps(^npm/urql$@v2.2.0) split`
-				results, err := tc.client.SearchFiles(query)
-
-				require.NoError(t, err)
-				require.NotEmpty(t, results.Results)
-				require.NotZero(t, results.MatchCount)
-				require.Nil(t, results.Alert)
-			})
-
-			t.Run(tc.name+"/"+"alert", func(t *testing.T) {
-				const query = `r:deps(^npm/urqLOL$) split`
-				results, err := tc.client.SearchFiles(query)
-
-				require.NoError(t, err)
-				require.Empty(t, results.Results)
-				require.Zero(t, results.MatchCount)
-				require.Equal(t, results.Alert, &gqltestutil.SearchAlert{
-					Title:       "No dependency repositories found",
-					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nRead more about dependencies search [here](https://docs.sourcegraph.com/code_search/how-to/dependencies_search).",
-				})
-			})
-		}
-	}
 }
 
 // testSearchOther other contains search tests for parts of the GraphQL API

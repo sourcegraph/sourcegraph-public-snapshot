@@ -27,6 +27,13 @@ func (a searchAlertResolver) Description() *string {
 	return &a.alert.Description
 }
 
+func (a searchAlertResolver) Kind() *string {
+	if a.alert.Kind == "" {
+		return nil
+	}
+	return &a.alert.Kind
+}
+
 func (a searchAlertResolver) PrometheusType() string {
 	return a.alert.PrometheusType
 }

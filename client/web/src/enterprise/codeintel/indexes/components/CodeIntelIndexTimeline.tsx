@@ -1,12 +1,10 @@
 import { FunctionComponent, useMemo } from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
-import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import { mdiTimerSand, mdiCheck, mdiAlertCircle, mdiProgressClock } from '@mdi/js'
 
 import { isDefined } from '@sourcegraph/common'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
@@ -26,24 +24,47 @@ export const CodeIntelIndexTimeline: FunctionComponent<React.PropsWithChildren<C
     className,
 }) => {
     const stages = useMemo(
-        () => [
-            { icon: <TimerSandIcon />, text: 'Queued', date: index.queuedAt, className: 'bg-success' },
-            { icon: <CheckIcon />, text: 'Began processing', date: index.startedAt, className: 'bg-success' },
+        () =>
+            [
+                {
+                    icon: <Icon aria-label="Success" svgPath={mdiTimerSand} />,
+                    text: 'Queued',
+                    date: index.queuedAt,
+                    className: 'bg-success',
+                },
+                {
+                    icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
+                    text: 'Began processing',
+                    date: index.startedAt,
+                    className: 'bg-success',
+                },
 
-            indexSetupStage(index, now),
-            indexPreIndexStage(index, now),
-            indexIndexStage(index, now),
-            indexUploadStage(index, now),
-            indexTeardownStage(index, now),
+                indexSetupStage(index, now),
+                indexPreIndexStage(index, now),
+                indexIndexStage(index, now),
+                indexUploadStage(index, now),
+                indexTeardownStage(index, now),
 
-            index.state === LSIFIndexState.COMPLETED
-                ? { icon: <CheckIcon />, text: 'Finished', date: index.finishedAt, className: 'bg-success' }
-                : { icon: <AlertCircleIcon />, text: 'Failed', date: index.finishedAt, className: 'bg-danger' },
-        ],
+                index.state === LSIFIndexState.COMPLETED
+                    ? {
+                          icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
+                          text: 'Finished',
+                          date: index.finishedAt,
+                          className: 'bg-success',
+                      }
+                    : {
+                          icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
+                          text: 'Failed',
+                          date: index.finishedAt,
+                          className: 'bg-danger',
+                      },
+            ]
+                .filter(isDefined)
+                .filter<TimelineStage>((stage): stage is TimelineStage => stage.date !== null),
         [index, now]
     )
 
-    return <Timeline stages={stages.filter(isDefined)} now={now} className={className} />
+    return <Timeline stages={stages} now={now} className={className} />
 }
 
 const indexSetupStage = (index: LsifIndexFields, now?: () => Date): TimelineStage | undefined =>
@@ -127,16 +148,22 @@ const indexTeardownStage = (index: LsifIndexFields, now?: () => Date): TimelineS
 
 const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     value: E | E[]
-): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
+): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expandedByDefault'> => {
     const finished = Array.isArray(value)
         ? value.every(logEntry => logEntry.exitCode !== null)
         : value.exitCode !== null
     const success = Array.isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
     return {
-        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <AlertCircleIcon />,
+        icon: !finished ? (
+            <Icon aria-label="Success" svgPath={mdiProgressClock} />
+        ) : success ? (
+            <Icon aria-label="Success" svgPath={mdiCheck} />
+        ) : (
+            <Icon aria-label="Failed" svgPath={mdiAlertCircle} />
+        ),
         date: Array.isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
-        expanded: !(success || !finished),
+        expandedByDefault: !(success || !finished),
     }
 }

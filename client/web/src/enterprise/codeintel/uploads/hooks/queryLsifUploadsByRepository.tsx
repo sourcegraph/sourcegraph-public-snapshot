@@ -55,14 +55,24 @@ export interface UploadListVariables {
     first?: number | null
     after?: string | null
     query?: string | null
+    includeDeleted?: boolean | null
 }
 
 export const queryLsifUploadsByRepository = (
-    { query, state, isLatestForRepo, dependencyOf, dependentOf, first, after }: GQL.ILsifUploadsOnRepositoryArguments,
+    {
+        query,
+        state,
+        isLatestForRepo,
+        dependencyOf,
+        dependentOf,
+        first,
+        after,
+        includeDeleted,
+    }: GQL.ILsifUploadsOnRepositoryArguments,
     repository: string,
     client: ApolloClient<object>
 ): Observable<LsifUploadConnectionFields> => {
-    const vars: LsifUploadsVariables = {
+    const variables: LsifUploadsVariables = {
         query: query ?? null,
         state: state ?? null,
         isLatestForRepo: isLatestForRepo ?? null,
@@ -70,12 +80,13 @@ export const queryLsifUploadsByRepository = (
         dependentOf: dependentOf ?? null,
         first: first ?? null,
         after: after ?? null,
+        includeDeleted: includeDeleted ?? null,
     }
 
     return from(
         client.query<LsifUploadsForRepoResult, LsifUploadsForRepoVariables>({
             query: getDocumentNode(LSIF_UPLOAD_LIST_BY_REPO_ID),
-            variables: { ...vars, repository },
+            variables: { ...variables, repository },
         })
     ).pipe(
         map(({ data }) => data),

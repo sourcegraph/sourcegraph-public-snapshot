@@ -142,6 +142,15 @@ var IsRemoteExtensionAllowed = func(extensionID string) bool {
 	return true
 }
 
+// IsRemoteExtensionPublisherAllowed reports whether to allow usage of the remote extension created by
+// certain publisher by extension ID.
+//
+// It can be overridden to use custom logic.
+var IsRemoteExtensionPublisherAllowed = func(p registry.Publisher) bool {
+	// By default, all remote extensions are allowed.
+	return true
+}
+
 var mockGetRemoteRegistryExtension func(field, value string) (*registry.Extension, error)
 
 // getRemoteRegistryExtension gets the remote registry extension and rewrites its fields to be from
@@ -171,6 +180,10 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 
 	if x != nil && !IsRemoteExtensionAllowed(x.ExtensionID) {
 		return nil, errors.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
+	}
+
+	if x != nil && !IsRemoteExtensionPublisherAllowed(x.Publisher) {
+		return nil, errors.Errorf("Only extensions authored by Sourcegraph are allowed in this site configuration")
 	}
 
 	return x, err

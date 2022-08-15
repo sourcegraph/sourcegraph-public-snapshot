@@ -31,6 +31,8 @@
 
     &:disabled {
         cursor: not-allowed;
+        // This is needed to properly support Tooltip behavior on disabled buttons
+        pointer-events: none;
     }
 
     &:hover {
@@ -429,17 +431,4 @@
         border-top-left-radius: 0;
         border-top-right-radius: 0;
     }
-}
-
-.container {
-    display: inline-block;
-    position: relative;
-}
-
-.disabled-tooltip {
-    cursor: not-allowed;
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    z-index: 999999;
 }

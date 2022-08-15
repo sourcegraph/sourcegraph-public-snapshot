@@ -5,10 +5,10 @@
     max-width: 20rem;
     background-color: var(--subtle-bg-2);
     border-right: 1px solid var(--border-color);
-    transition: max-width 0.3s ease;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+
+    // Percentage height doesn't work here due to the sticky parent,
+    // so we need to calculate it based on full height without the navbar.
+    min-height: calc(100vh - var(--navbar-height));
 }
 
 .outline-closed {
@@ -93,7 +93,7 @@
 }
 
 .highlight {
-    color: var(--primary);
+    color: var(--body-color);
 }
 
 .highlight-dot {

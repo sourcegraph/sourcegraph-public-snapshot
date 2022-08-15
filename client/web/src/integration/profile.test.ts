@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import { subDays } from 'date-fns'
+
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
@@ -10,6 +12,8 @@ import { UserSettingsAreaUserFields } from '../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
+
+const now = new Date()
 
 const USER: UserSettingsAreaUserFields = {
     __typename: 'User',
@@ -23,7 +27,7 @@ const USER: UserSettingsAreaUserFields = {
     viewerCanChangeUsername: true,
     siteAdmin: true,
     builtinAuth: true,
-    createdAt: '2020-04-10T21:11:42Z',
+    createdAt: subDays(now, 732).toISOString(),
     emails: [{ email: 'test@example.com', verified: true }],
     organizations: { nodes: [] },
     tags: [],
@@ -57,11 +61,11 @@ describe('User profile page', () => {
             UpdateUser: () => ({ updateUser: { ...USER, displayName: 'Test2' } }),
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
+        await driver.page.waitForSelector('[data-testid="user-profile-form-fields"]')
         await percySnapshotWithVariants(driver.page, 'User Profile Settings Page')
         await accessibilityAudit(driver.page)
-        await driver.page.waitForSelector('[data-testid="user-profile-form-fields"]')
         await driver.replaceText({
-            selector: '.test-UserProfileFormFields__displayName',
+            selector: '[data-testid="test-UserProfileFormFields__displayName"]',
             newText: 'Test2',
             selectMethod: 'selectall',
         })

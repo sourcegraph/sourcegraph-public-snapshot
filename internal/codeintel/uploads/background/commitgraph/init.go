@@ -6,6 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewUpdater() goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, &updater{})
+func NewUpdater(uploadSvc UploadService) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, &updater{
+		uploadSvc: uploadSvc,
+	})
 }

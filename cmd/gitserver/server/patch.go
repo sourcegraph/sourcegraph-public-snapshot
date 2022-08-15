@@ -14,7 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -70,7 +70,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if err != nil {
-		log15.Error("Failed to get remote URL", "ref", ref, "err", err)
+		s.Logger.Error("Failed to get remote URL", log.String("ref", ref), log.Error(err))
 		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
 		return http.StatusInternalServerError, resp
 	}
@@ -103,11 +103,19 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
 		t := time.Now()
 		out, err := runWith(ctx, cmd, true, nil)
+
+		logger := s.Logger.With(
+			log.String("prefix", prefix),
+			log.String("command", argsToString(cmd.Args)),
+			log.Duration("duration", time.Since(t)),
+			log.String("output", string(out)),
+		)
+
 		if err != nil {
 			resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: "+reason))
-			log15.Info("command failed", "prefix", prefix, "command", argsToString(cmd.Args), "duration", time.Since(t), "error", err, "output", string(out))
+			logger.Warn("command failed", log.Error(err))
 		} else {
-			log15.Info("command ran successfully", "prefix", prefix, "command", argsToString(cmd.Args), "duration", time.Since(t), "output", string(out))
+			s.Logger.Info("command ran successfully")
 		}
 		return out, err
 	}
@@ -115,7 +123,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if req.UniqueRef {
 		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
 		if err != nil {
-			log15.Error("Failed to get remote refs", "ref", ref, "err", err)
+			s.Logger.Error("Failed to get remote refs", log.String("ref", ref), log.Error(err))
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
 			return http.StatusInternalServerError, resp
 		}
@@ -156,7 +164,11 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
 
 	if out, err := run(cmd, "basing staging on base rev"); err != nil {
-		log15.Error("Failed to base the temporary repo on the base revision.", "ref", ref, "base", req.BaseCommit, "output", string(out))
+		s.Logger.Error("Failed to base the temporary repo on the base revision.",
+			log.String("ref", ref),
+			log.String("base", string(req.BaseCommit)),
+			log.String("output", string(out)),
+		)
 		return http.StatusInternalServerError, resp
 	}
 
@@ -167,7 +179,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Stdin = strings.NewReader(req.Patch)
 
 	if out, err := run(cmd, "applying patch"); err != nil {
-		log15.Error("Failed to apply patch.", "ref", ref, "output", string(out))
+		s.Logger.Error("Failed to apply patch.", log.String("ref", ref), log.String("output", string(out)))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -206,7 +218,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}...)
 
 	if out, err := run(cmd, "committing patch"); err != nil {
-		log15.Error("Failed to commit patch.", "ref", ref, "output", out)
+		s.Logger.Error("Failed to commit patch.", log.String("ref", ref), log.String("output", string(out)))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -280,7 +292,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 
 		if out, err = run(cmd, "pushing ref"); err != nil {
-			log15.Error("Failed to push", "ref", ref, "commit", cmtHash, "output", string(out))
+			s.Logger.Error("Failed to push", log.String("ref", ref), log.String("commit", cmtHash), log.String("output", string(out)))
 			return http.StatusInternalServerError, resp
 		}
 	}
@@ -291,7 +303,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Dir = repoGitDir
 
 	if out, err = run(cmd, "creating ref"); err != nil {
-		log15.Error("Failed to create ref for commit.", "ref", ref, "commit", cmtHash, "output", string(out))
+		s.Logger.Error("Failed to create ref for commit.", log.String("ref", ref), log.String("commit", cmtHash), log.String("output", string(out)))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -300,8 +312,9 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 func cleanUpTmpRepo(path string) {
 	err := os.RemoveAll(path)
+	logger := log.Scoped("cleanUpTmpRepo", "cleans up temp Repo")
 	if err != nil {
-		log15.Info("unable to clean up tmp repo", "path", path, "err", err)
+		logger.Warn("unable to clean up tmp repo", log.String("path", path), log.Error(err))
 	}
 }
 

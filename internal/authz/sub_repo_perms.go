@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/fs"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -28,8 +29,6 @@ type RepoContent struct {
 
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
-//
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms_checker.go
 type SubRepoPermissionChecker interface {
 	// Permissions returns the level of access the provided user has for the requested
 	// content.
@@ -74,8 +73,6 @@ func (*noopPermsChecker) EnabledForRepo(ctx context.Context, repo api.RepoName) 
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
-//
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionsGetter -o mock_sub_repo_perms_getter.go
 type SubRepoPermissionsGetter interface {
 	// GetByUser returns the known sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
@@ -108,8 +105,9 @@ type cachedRules struct {
 }
 
 type compiledRules struct {
-	includes []glob.Glob
-	excludes []glob.Glob
+	includes    []glob.Glob
+	excludes    []glob.Glob
+	dirIncludes []glob.Glob
 }
 
 // NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
@@ -208,7 +206,7 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		// If we make it this far it implies that we have access at the repo level.
 		// Having any empty set of rules here implies that we can access the whole repo.
 		// Repos that support sub-repo permissions will only have an entry in our
-		// repo_permissions table if after all sub-repo permissions have been processed.
+		// repo_permissions table after all sub-repo permissions have been processed.
 		return Read, nil
 	}
 
@@ -222,6 +220,16 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	for _, rule := range rules.includes {
 		if rule.Match(content.Path) {
 			return Read, nil
+		}
+	}
+
+	// We also want to match any directories above paths that we include so that we
+	// can browse down the file hierarchy.
+	if strings.HasSuffix(content.Path, "/") {
+		for _, rule := range rules.dirIncludes {
+			if rule.Match(content.Path) {
+				return Read, nil
+			}
 		}
 	}
 
@@ -260,13 +268,30 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 		}
 		for repo, perms := range repoPerms {
 			includes := make([]glob.Glob, 0, len(perms.PathIncludes))
+			dirIncludes := make([]glob.Glob, 0)
+			dirSeen := make(map[string]struct{})
 			for _, rule := range perms.PathIncludes {
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
 					return nil, errors.Wrap(err, "building include matcher")
 				}
 				includes = append(includes, g)
+
+				// We should include all directories above an include rule
+				dirs := expandDirs(rule)
+				for _, dir := range dirs {
+					if _, ok := dirSeen[dir]; ok {
+						continue
+					}
+					g, err := glob.Compile(dir, '/')
+					if err != nil {
+						return nil, errors.Wrap(err, "building include matcher for dir")
+					}
+					dirIncludes = append(dirIncludes, g)
+					dirSeen[dir] = struct{}{}
+				}
 			}
+
 			excludes := make([]glob.Glob, 0, len(perms.PathExcludes))
 			for _, rule := range perms.PathExcludes {
 				g, err := glob.Compile(rule, '/')
@@ -276,8 +301,9 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 				excludes = append(excludes, g)
 			}
 			toCache.rules[repo] = compiledRules{
-				includes: includes,
-				excludes: excludes,
+				includes:    includes,
+				excludes:    excludes,
+				dirIncludes: dirIncludes,
 			}
 		}
 		toCache.timestamp = s.clock()
@@ -305,6 +331,50 @@ func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID
 
 func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
 	return s.permissionsGetter.RepoSupported(ctx, repo)
+}
+
+// expandDirs will return rules that match all parent directories of the given
+// rule.
+func expandDirs(rule string) []string {
+	dirs := make([]string, 0)
+
+	// We can't support rules that start with a wildcard because we can only
+	// see one level of the tree at a time so we have no way of knowing which path leads
+	// to a file the user is allowed to see.
+	if strings.HasPrefix(rule, "*") {
+		return dirs
+	}
+
+	for {
+		lastSlash := strings.LastIndex(rule, "/")
+		if lastSlash == -1 {
+			break
+		}
+		// Drop anything after the last slash
+		rule = rule[:lastSlash]
+
+		dirs = append(dirs, rule+"/")
+	}
+
+	return dirs
+}
+
+// NewSimpleChecker is exposed for testing and allows creation of a simple
+// checker based on the rules provided. The rules are expected to be in glob
+// format.
+func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (SubRepoPermissionChecker, error) {
+	getter := NewMockSubRepoPermissionsGetter()
+	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
+		return map[api.RepoName]SubRepoPermissions{
+			repo: {
+				PathIncludes: includes,
+				PathExcludes: excludes,
+			},
+		}, nil
+	})
+	getter.RepoSupportedFunc.SetDefaultReturn(true, nil)
+	getter.RepoIdSupportedFunc.SetDefaultReturn(true, nil)
+	return NewSubRepoPermsClient(getter)
 }
 
 // ActorPermissions returns the level of access the given actor has for the requested
@@ -355,8 +425,7 @@ func SubRepoEnabledForRepo(ctx context.Context, checker SubRepoPermissionChecker
 	return checker.EnabledForRepo(ctx, repo)
 }
 
-// CanReadAllPaths returns true if the actor can read all paths.
-func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string) (bool, error) {
+func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string, any bool) (bool, error) {
 	if !SubRepoEnabled(checker) {
 		return true, nil
 	}
@@ -378,12 +447,24 @@ func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, repo
 		if err != nil {
 			return false, err
 		}
-		if !perms.Include(Read) {
+		if !perms.Include(Read) && !any {
 			return false, nil
+		} else if perms.Include(Read) && any {
+			return true, nil
 		}
 	}
 
-	return true, nil
+	return true && !any, nil
+}
+
+// CanReadAllPaths returns true if the actor can read all paths.
+func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string) (bool, error) {
+	return canReadPaths(ctx, checker, repo, paths, false)
+}
+
+// CanReadAnyPath returns true if the actor can read any path in the list of paths.
+func CanReadAnyPath(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string) (bool, error) {
+	return canReadPaths(ctx, checker, repo, paths, true)
 }
 
 // FilterActorPaths will filter the given list of paths for the given actor

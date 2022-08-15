@@ -27,6 +27,7 @@ export const authUser: AuthenticatedUser & { namespaceName: string } = {
     tosAccepted: true,
     searchable: true,
     namespaceName: 'alice',
+    emails: [],
 }
 
 export const org: IOrg = {

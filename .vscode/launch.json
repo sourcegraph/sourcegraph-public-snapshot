@@ -33,6 +33,7 @@
         "--extensionDevelopmentKind=web",
         "--disable-web-security",
       ],
+      "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/client/vscode/dist/webworker/*.js"],
     },
     {

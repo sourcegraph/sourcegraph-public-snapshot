@@ -1,5 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { Story, Meta, DecoratorFn } from '@storybook/react'
 import classNames from 'classnames'
 import { addHours } from 'date-fns'
 import { of } from 'rxjs'
@@ -16,11 +16,18 @@ import { ExternalChangesetNode } from './ExternalChangesetNode'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 
-const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container')}>{story()}</div>
-))
+)
 
-add('All states', () => {
+const config: Meta = {
+    title: 'web/batches/ExternalChangesetNode',
+    decorators: [decorator],
+}
+
+export default config
+
+export const AllStates: Story = () => {
     const now = new Date()
     return (
         <WebStory>
@@ -108,9 +115,11 @@ add('All states', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Unpublished', () => {
+AllStates.storyName = 'All states'
+
+export const Unpublished: Story = () => {
     const now = new Date()
     return (
         <WebStory>
@@ -183,9 +192,9 @@ add('Unpublished', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Importing', () => {
+export const Importing: Story = () => {
     const now = new Date()
     return (
         <WebStory>
@@ -245,9 +254,9 @@ add('Importing', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Importing failed', () => {
+export const ImportingFailed: Story = () => {
     const now = new Date()
     return (
         <WebStory>
@@ -297,9 +306,11 @@ add('Importing failed', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Sync failed', () => {
+ImportingFailed.storyName = 'Importing failed'
+
+export const SyncFailed: Story = () => {
     const now = new Date()
     return (
         <WebStory>
@@ -349,4 +360,6 @@ add('Sync failed', () => {
             )}
         </WebStory>
     )
-})
+}
+
+SyncFailed.storyName = 'Sync failed'

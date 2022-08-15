@@ -8,9 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dghubble/gologin/v2/github"
+	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -25,15 +27,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
-	db          database.DB
-	clientID    string
-	allowSignup bool
-	allowOrgs   []string
+	db           database.DB
+	clientID     string
+	allowSignup  bool
+	allowOrgs    []string
+	allowOrgsMap map[string][]string
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -60,14 +62,18 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
 	}
 
-	// 🚨 SECURITY: Ensure that the user is part of one of the white listed orgs, if any.
-	if !s.verifyUserOrgs(ctx, ghClient) {
-		return nil, "Could not verify user is part of the allowed GitHub organizations.", errors.New("couldn't verify user is part of allowed GitHub organizations")
+	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
+	userBelongsToAllowedOrgsOrTeams := s.verifyUserOrgsAndTeams(ctx, ghClient)
+	if !userBelongsToAllowedOrgsOrTeams {
+		message := "user does not belong to allowed GitHub organizations or teams."
+		return nil, message, errors.New(message)
 	}
 
 	// Try every verified email in succession until the first that succeeds
 	var data extsvc.AccountData
-	githubsvc.SetExternalAccountData(&data, ghUser, token)
+	if err := githubsvc.SetExternalAccountData(&data, ghUser, token); err != nil {
+		return nil, "", err
+	}
 	var (
 		firstSafeErrMsg string
 		firstErr        error
@@ -181,13 +187,13 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		svc = &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-			Config: fmt.Sprintf(`
+			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
   "orgs": []
 }
-`, p.ServiceID, token.AccessToken),
+`, p.ServiceID, token.AccessToken)),
 			NamespaceUserID: actor.UID,
 			CreatedAt:       now,
 			UpdatedAt:       now,
@@ -197,11 +203,17 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 	} else {
 		// We have an existing service, update it
 		svc = services[0]
-		newConfig, err := jsonc.Edit(svc.Config, token.AccessToken, "token")
+
+		rawConfig, err := svc.Config.Decrypt(ctx)
+		if err != nil {
+			return nil, "", err
+		}
+
+		rawConfig, err = jsonc.Edit(rawConfig, token.AccessToken, "token")
 		if err != nil {
 			return nil, "Error updating OAuth token", err
 		}
-		svc.Config = newConfig
+		svc.Config.Set(rawConfig)
 		svc.UpdatedAt = now
 	}
 
@@ -272,26 +284,84 @@ func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verif
 	return verifiedEmails
 }
 
+// verifyUserOrgs checks whether the authenticated user belongs to one of the GitHub orgs
+// listed in auth.provider > allowOrgs configuration
 func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	if len(s.allowOrgs) == 0 {
-		return true
-	}
-
-	userOrgs, err := ghClient.GetAuthenticatedUserOrgs(ctx)
-	if err != nil {
-		log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
-		return false
-	}
-
 	allowed := make(map[string]bool, len(s.allowOrgs))
 	for _, org := range s.allowOrgs {
 		allowed[org] = true
 	}
 
-	for _, org := range userOrgs {
-		if allowed[org.Login] {
-			return true
+	hasNextPage := true
+	var userOrgs []*githubsvc.Org
+	var err error
+	page := 1
+	for hasNextPage {
+		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgsForPage(ctx, page)
+
+		if err != nil {
+			log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
+			return false
 		}
+
+		for _, org := range userOrgs {
+			if allowed[org.Login] {
+				return true
+			}
+		}
+		page++
+	}
+
+	return false
+}
+
+// verifyUserTeams checks whether the authenticated user belongs to one of the GitHub teams listed in the auth.provider > allowOrgsMap configuration
+func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
+	var err error
+	hasNextPage := true
+	allowedTeams := make(map[string]map[string]bool, len(s.allowOrgsMap))
+
+	for org, teams := range s.allowOrgsMap {
+		teamsMap := make(map[string]bool)
+		for _, team := range teams {
+			teamsMap[team] = true
+		}
+
+		allowedTeams[org] = teamsMap
+	}
+
+	for page := 1; hasNextPage; page++ {
+		var githubTeams []*githubsvc.Team
+
+		githubTeams, hasNextPage, _, err = ghClient.GetAuthenticatedUserTeams(ctx, page)
+		if err != nil {
+			log15.Warn("Could not get GitHub authenticated user teams", "error", err)
+			return false
+		}
+
+		for _, ghTeam := range githubTeams {
+			_, ok := allowedTeams[ghTeam.Organization.Login][ghTeam.Name]
+			if ok {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// verifyUserOrgsAndTeams checks if the user belongs to one of the allowed listed orgs or teams provided in the auth.provider configuration.
+func (s *sessionIssuerHelper) verifyUserOrgsAndTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
+	if len(s.allowOrgs) == 0 && len(s.allowOrgsMap) == 0 {
+		return true
+	}
+
+	if len(s.allowOrgs) > 0 && s.verifyUserOrgs(ctx, ghClient) {
+		return true
+	}
+
+	if len(s.allowOrgsMap) > 0 && s.verifyUserTeams(ctx, ghClient) {
+		return true
 	}
 
 	return false

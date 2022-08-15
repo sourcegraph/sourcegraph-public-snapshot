@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from 'react'
 
+import { mdiAlertCircle, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Badge, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Badge, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -130,20 +129,28 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
             )}
             <div className="align-self-center">
                 {serviceConfig.pending ? (
-                    <Icon className="mb-0 mr-2 text-info" as={AlertCircleIcon} />
+                    <Icon className="mb-0 mr-2 text-info" aria-label="Pending" svgPath={mdiAlertCircle} />
                 ) : service?.warning || service?.lastSyncError ? (
-                    <Icon className="mb-0 mr-2 text-warning" as={AlertCircleIcon} />
+                    <Icon
+                        className="mb-0 mr-2 text-warning"
+                        aria-label="Warning or last sync error"
+                        svgPath={mdiAlertCircle}
+                    />
                 ) : service?.id ? (
-                    <Icon className="mb-0 mr-2 text-success" as={CheckCircleIcon} />
+                    <Icon className="mb-0 mr-2 text-success" aria-label="Success" svgPath={mdiCheckCircle} />
                 ) : (
-                    <Icon className={classNames('mb-0 mr-2', styles.iconDashed)} as={CircleDashedIcon} />
+                    <Icon
+                        className={classNames('mb-0 mr-2', styles.iconDashed)}
+                        as={CircleDashedIcon}
+                        aria-hidden={true}
+                    />
                 )}
-                <Icon className="mb-0 mr-1" as={ItemIcon} />
+                <Icon className="mb-0 mr-1" as={ItemIcon} aria-hidden={true} />
             </div>
             <div className="flex-1 align-self-center">
-                <Typography.H3 className="m-0">
+                <H3 className="m-0">
                     {name} {serviceConfig.pending ? <Badge color="secondary">Pending</Badge> : null}
-                </Typography.H3>
+                </H3>
             </div>
             <div className="align-self-center">
                 {/* Show one of: update, updating, connect, connecting buttons */}
@@ -157,13 +164,7 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
                             variant="primary"
                         />
                     ) : loading ? (
-                        <LoaderButton
-                            type="button"
-                            className="btn btn-primary"
-                            loading={true}
-                            disabled={true}
-                            alwaysShowLabel={false}
-                        />
+                        <LoaderButton variant="primary" loading={true} disabled={true} alwaysShowLabel={false} />
                     ) : (
                         <Button onClick={useGitHubApp ? toAuthProvider : connectAction} variant="primary">
                             Connect

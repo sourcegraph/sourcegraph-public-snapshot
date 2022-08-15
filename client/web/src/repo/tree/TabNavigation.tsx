@@ -1,12 +1,6 @@
 import React from 'react'
 
-import AccountIcon from 'mdi-react/AccountIcon'
-import BrainIcon from 'mdi-react/BrainIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import TagIcon from 'mdi-react/TagIcon'
+import { mdiSourceCommit, mdiSourceBranch, mdiTag, mdiHistory, mdiAccount, mdiBrain, mdiCog } from '@mdi/js'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
@@ -32,28 +26,28 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
 }) => (
     <ButtonGroup>
         <Button onClick={() => setCurrentTab('commits')} variant="secondary" outline={true}>
-            <Icon as={SourceCommitIcon} /> Commits
+            <Icon aria-hidden={true} svgPath={mdiSourceCommit} /> Commits
         </Button>
         <Button onClick={() => setCurrentTab('branches')} variant="secondary" outline={true}>
-            <Icon as={SourceBranchIcon} /> Branches
+            <Icon aria-hidden={true} svgPath={mdiSourceBranch} /> Branches
         </Button>
         <Button onClick={() => setCurrentTab('tags')} variant="secondary" outline={true}>
-            <Icon as={TagIcon} /> Tags
+            <Icon aria-hidden={true} svgPath={mdiTag} /> Tags
         </Button>
         <Button onClick={() => setCurrentTab('compare')} variant="secondary" outline={true}>
-            <Icon as={HistoryIcon} /> Compare
+            <Icon aria-hidden={true} svgPath={mdiHistory} /> Compare
         </Button>
         <Button onClick={() => setCurrentTab('contributors')} variant="secondary" outline={true}>
-            <Icon as={AccountIcon} /> Contributors
+            <Icon aria-hidden={true} svgPath={mdiAccount} /> Contributors
         </Button>
         {codeIntelligenceEnabled && (
             <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                to={`/${encodeURIPathComponent(repo.name)}/-/code-graph`}
                 variant="secondary"
                 outline={true}
                 as={Link}
             >
-                <Icon as={BrainIcon} /> Code Intelligence
+                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Graph
             </Button>
         )}
         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
@@ -64,7 +58,7 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
                 outline={true}
                 as={Link}
             >
-                <Icon as={SettingsIcon} /> Settings
+                <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
             </Button>
         )}
     </ButtonGroup>

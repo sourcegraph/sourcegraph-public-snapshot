@@ -5,8 +5,8 @@ Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (Gi
 To connect GitLab to Sourcegraph:
 
 1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage repositories > Add repositories**
-    1. *User*: Go to **Settings > Manage repositories**.
+    1. *Site admin*: Go to **Site admin > Manage code hosts > Add repositories**
+    1. *User*: Go to **Settings > Manage code hosts**.
 1. Select **GitLab**.
 1. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
@@ -16,7 +16,7 @@ To connect GitLab to Sourcegraph:
 ## Supported versions
 
 - GitLab.com
-- GitLab CE/EE (v10.0 and newer)
+- GitLab CE/EE (v12.0 and newer)
 
 ## Repository syncing
 
@@ -64,7 +64,7 @@ If enabled, the default rate is set at 36,000 per hour (10 per second) which can
 
 ## Native integration
 
-To provide out-of-the-box code intelligence and navigation features to your users on GitLab, you will need to [configure your GitLab instance](https://docs.gitlab.com/ee/integration/sourcegraph.html). If you are using an HTTPS connection to GitLab, you will need to [configure HTTPS](https://docs.sourcegraph.com/admin/http_https_configuration) for your Sourcegraph instance.
+To provide out-of-the-box code navigation features to your users on GitLab, you will need to [configure your GitLab instance](https://docs.gitlab.com/ee/integration/sourcegraph.html). If you are using an HTTPS connection to GitLab, you will need to [configure HTTPS](https://docs.sourcegraph.com/admin/http_https_configuration) for your Sourcegraph instance.
 
 The Sourcegraph instance's site admin must [update the `corsOrigin` site config property](../config/site_config.md) to allow the GitLab instance to communicate with the Sourcegraph instance. For example:
 
@@ -116,7 +116,7 @@ Using webhooks is highly recommended when using [batch changes](../../batch_chan
 
 To set up webhooks:
 
-1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the GitLab configuration.
+1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitLab configuration.
 1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"secret": "verylongrandomsecret"}]`
 1. Click **Update repositories**.
 1. Copy the webhook URL displayed below the **Update repositories** button.

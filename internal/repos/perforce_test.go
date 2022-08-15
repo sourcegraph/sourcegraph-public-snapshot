@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -60,12 +59,9 @@ func TestPerforceSource_ListRepos(t *testing.T) {
 		tc := tc
 		tc.name = "PERFORCE-LIST-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindPerforce,
-				Config: marshalJSON(t, tc.conf),
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
 			}
 
 			perforceSrc, err := newPerforceSource(svc, tc.conf)
@@ -92,7 +88,11 @@ func TestPerforceSource_makeRepo(t *testing.T) {
 		"//Engineering/Cloud",
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindPerforce}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindPerforce,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string

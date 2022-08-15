@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -8,9 +8,13 @@ import { SourcegraphContext } from '../jscontext'
 
 import { CloudSignUpPage } from './CloudSignUpPage'
 
-const { add } = storiesOf('web/auth/CloudSignUpPage', module)
+const config: Meta = {
+    title: 'web/auth/CloudSignUpPage',
+}
 
-const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'> = {
+export default config
+
+const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'> = {
     authProviders: [
         {
             serviceType: 'github',
@@ -26,9 +30,10 @@ const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'
         },
     ],
     experimentalFeatures: {},
+    authMinPasswordLength: 0,
 }
 
-add('default', () => (
+export const Default: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -41,9 +46,9 @@ add('default', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('email form', () => (
+export const EmailForm: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -56,9 +61,9 @@ add('email form', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('invalid source', () => (
+export const InvalidSource: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -71,9 +76,9 @@ add('invalid source', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Optimization signup', () => (
+export const OptimizationSignup: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -86,4 +91,4 @@ add('Optimization signup', () => (
             />
         )}
     </WebStory>
-))
+)

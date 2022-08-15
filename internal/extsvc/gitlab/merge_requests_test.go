@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -119,6 +121,23 @@ func TestCreateMergeRequest(t *testing.T) {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 	})
+}
+
+func TestCreateMergeRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+	client := createTestClient(t)
+
+	project := &Project{ProjectCommon: ProjectCommon{ID: 37741563}}
+	opts := CreateMergeRequestOpts{
+		SourceBranch: "branch-without-pr",
+		TargetBranch: "main",
+		Title:        "This MR should never be created",
+		Description:  "This merge request was created by a test against an archived repository, and should therefore not exist.",
+	}
+	mr, err := client.CreateMergeRequest(ctx, project, opts)
+	assert.Nil(t, mr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
 }
 
 func TestGetMergeRequest(t *testing.T) {
@@ -366,6 +385,21 @@ func TestUpdateMergeRequest(t *testing.T) {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 	})
+}
+
+func TestUpdateMergeRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+	client := createTestClient(t)
+
+	project := &Project{ProjectCommon: ProjectCommon{ID: 37741563}}
+	mr := &MergeRequest{IID: 1}
+	opts := UpdateMergeRequestOpts{
+		Title: "This title should never change",
+	}
+	mr, err := client.UpdateMergeRequest(ctx, project, mr, opts)
+	assert.Nil(t, mr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
 }
 
 func TestCreateMergeRequestNote(t *testing.T) {

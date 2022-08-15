@@ -1,21 +1,26 @@
 import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { CreateCommentModal } from './CreateCommentModal'
 
-const { add } = storiesOf('web/batches/details/CreateCommentModal', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/details/CreateCommentModal',
+    decorators: [decorator],
+}
+
+export default config
 
 const createChangesetCommentsAction = () => {
     action('CreateChangesetComments')
     return Promise.resolve()
 }
 
-add('Confirmation', () => (
+export const Confirmation: Story = () => (
     <WebStory>
         {props => (
             <CreateCommentModal
@@ -28,4 +33,4 @@ add('Confirmation', () => (
             />
         )}
     </WebStory>
-))
+)

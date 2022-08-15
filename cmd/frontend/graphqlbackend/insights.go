@@ -22,6 +22,8 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
+	SearchQueryInsights(ctx context.Context, args SearchQueryInsightsArgs) (SearchQueryInsightsResult, error)
+
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -59,6 +61,7 @@ type SearchSeriesPreviewInput struct {
 	Query                      string
 	Label                      string
 	GeneratedFromCaptureGroups bool
+	GroupBy                    *string
 }
 
 type SearchInsightLivePreviewInput struct {
@@ -67,6 +70,7 @@ type SearchInsightLivePreviewInput struct {
 	RepositoryScope            RepositoryScopeInput
 	TimeScope                  TimeScopeInput
 	GeneratedFromCaptureGroups bool
+	GroupBy                    *string
 }
 
 type InsightsArgs struct {
@@ -192,7 +196,10 @@ type InsightViewResolver interface {
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
 	DashboardReferenceCount(ctx context.Context) (int32, error)
 	IsFrozen(ctx context.Context) (bool, error)
+	DefaultSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
+	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
+	SeriesCount(ctx context.Context) (*int32, error)
 }
 
 type InsightDataSeriesDefinition interface {
@@ -222,6 +229,7 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
 	GeneratedFromCaptureGroups() (bool, error)
 	IsCalculated() (bool, error)
+	GroupBy() (*string, error)
 }
 
 type InsightPresentation interface {
@@ -300,6 +308,16 @@ type InsightViewFiltersResolver interface {
 	SearchContexts(ctx context.Context) (*[]string, error)
 }
 
+type InsightViewSeriesDisplayOptionsResolver interface {
+	SortOptions(ctx context.Context) (InsightViewSeriesSortOptionsResolver, error)
+	Limit(ctx context.Context) (*int32, error)
+}
+
+type InsightViewSeriesSortOptionsResolver interface {
+	Mode(ctx context.Context) (*string, error)
+	Direction(ctx context.Context) (*string, error)
+}
+
 type CreateLineChartSearchInsightArgs struct {
 	Input CreateLineChartSearchInsightInput
 }
@@ -350,7 +368,28 @@ type PieChartOptionsInput struct {
 }
 
 type InsightViewControlsInput struct {
-	Filters InsightViewFiltersInput
+	Filters              InsightViewFiltersInput
+	SeriesDisplayOptions SeriesDisplayOptionsInput
+}
+
+type SeriesDisplayOptions struct {
+	SortOptions *SeriesSortOptions
+	Limit       *int32
+}
+
+type SeriesDisplayOptionsInput struct {
+	SortOptions *SeriesSortOptionsInput
+	Limit       *int32
+}
+
+type SeriesSortOptions struct {
+	Mode      *string // enum
+	Direction *string // enum
+}
+
+type SeriesSortOptionsInput struct {
+	Mode      string // enum
+	Direction string // enum
 }
 
 type InsightViewFiltersInput struct {
@@ -366,6 +405,7 @@ type LineChartSearchInsightDataSeriesInput struct {
 	RepositoryScope            RepositoryScopeInput
 	Options                    LineChartDataSeriesOptionsInput
 	GeneratedFromCaptureGroups *bool
+	GroupBy                    *string
 }
 
 type LineChartDataSeriesOptionsInput struct {
@@ -395,11 +435,12 @@ type InsightViewPayloadResolver interface {
 }
 
 type InsightViewQueryArgs struct {
-	First    *int32
-	After    *string
-	Id       *graphql.ID
-	IsFrozen *bool
-	Filters  *InsightViewFiltersInput
+	First                *int32
+	After                *string
+	Id                   *graphql.ID
+	IsFrozen             *bool
+	Filters              *InsightViewFiltersInput
+	SeriesDisplayOptions *SeriesDisplayOptionsInput
 }
 
 type DeleteInsightViewArgs struct {
@@ -409,4 +450,23 @@ type DeleteInsightViewArgs struct {
 type SearchInsightLivePreviewSeriesResolver interface {
 	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
 	Label(ctx context.Context) (string, error)
+}
+
+type SearchQueryInsightsResolver interface {
+	ThirtyDayPercentChange(ctx context.Context) (int32, error)
+	Preview(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
+}
+
+type SearchQueryInsightsNotAvailable interface {
+	Message(ctx context.Context) string
+}
+
+type SearchQueryInsightsArgs struct {
+	Query       string `json:"query"`
+	PatternType string `json:"patternType"`
+}
+
+type SearchQueryInsightsResult interface {
+	ToSearchQueryInsights() (SearchQueryInsightsResolver, bool)
+	ToSearchQueryInsightsNotAvailable() (SearchQueryInsightsNotAvailable, bool)
 }

@@ -10,10 +10,12 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
+	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -25,30 +27,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3189"
 
 // Start runs the worker.
 func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) error {
-	registerMigrations := composeRegisterMigrations(migrators.RegisterOSSMigrations, registerEnterpriseMigrations)
+	registerMigrations := composeRegisterMigrations(migrations.RegisterOSSMigrations, registerEnterpriseMigrations)
 
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
-		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
-		"codeintel-upload-janitor":              codeintel.NewUploadJanitorJob(),
-		"codeintel-upload-expirer":              codeintel.NewUploadExpirerJob(),
-		"codeintel-commitgraph-updater":         codeintel.NewCommitGraphUpdaterJob(),
+		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrations),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
-		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
-		"codeintel-dependencies":                codeintel.NewDependenciesJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
+		"gitserver-metrics":                     gitserver.NewMetricsJob(),
+		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
 	}
 
 	jobs := map[string]job.Job{}
@@ -66,8 +64,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
+	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 

@@ -80,7 +80,7 @@ if err := Some(ctx); err != nil {
 
 As with the `Is` function, the second argument to this function should generally be an error constant.
 
-#### Use of `errors.HasType`
+## Use of `errors.HasType`
 
 Use this function to determine if a given error has a particular type.
 

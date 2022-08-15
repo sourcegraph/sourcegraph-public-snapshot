@@ -1,13 +1,13 @@
 import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { useMutation } from '@apollo/client'
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, ButtonProps, Link, Modal, Icon, Typography } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonProps, Link, Modal, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
@@ -89,10 +89,10 @@ export const InviteMemberModal: React.FunctionComponent<React.PropsWithChildren<
     return (
         <Modal className={styles.modal} onDismiss={dismissWithLogging} position="center" aria-label={title}>
             <div className="d-flex flex-row align-items-end">
-                <Typography.H3>{title}</Typography.H3>
-                <Button className={classNames('btn-icon', styles.closeButton)} onClick={dismissWithLogging}>
+                <H3>{title}</H3>
+                <Button className={styles.closeButton} onClick={dismissWithLogging}>
                     <VisuallyHidden>Close</VisuallyHidden>
-                    <CloseIcon />
+                    <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
                 </Button>
             </div>
             {error && <ErrorAlert className={styles.alert} error={error} />}
@@ -140,8 +140,8 @@ export const InvitedNotification: React.FunctionComponent<React.PropsWithChildre
             <div>They will receive an email shortly. You can also send them this personal invite link:</div>
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} />
+        <Button variant="icon" title="Dismiss" onClick={onDismiss}>
+            <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
 )

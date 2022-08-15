@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import { mdiInformationOutline, mdiChevronDown } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import { animated } from 'react-spring'
 
 import {
@@ -15,9 +14,12 @@ import {
     PopoverContent,
     PopoverTrigger,
     Icon,
-    Typography,
+    H3,
+    Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../../../tracking/eventLogger'
 import { ExecutionOptions } from '../BatchSpecContext'
 
 import styles from './RunBatchSpecButton.module.scss'
@@ -47,28 +49,33 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
         // similarly to a native dropdown selector.
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             <ButtonGroup className="mb-2">
-                <Button
-                    variant="primary"
-                    onClick={execute}
-                    disabled={!!isExecutionDisabled}
-                    data-tooltip={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}
-                >
-                    Run batch spec
-                </Button>
+                <Tooltip content={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}>
+                    <Button
+                        variant="primary"
+                        onClick={() => {
+                            execute()
+                            eventLogger.log('batch_change_editor:run_batch_spec:clicked')
+                        }}
+                        disabled={!!isExecutionDisabled}
+                    >
+                        Run batch spec
+                    </Button>
+                </Tooltip>
                 <PopoverTrigger
                     as={Button}
                     variant="primary"
                     type="button"
                     className={styles.executionOptionsMenuButton}
                 >
-                    <ChevronDownIcon />
+                    <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
                     <VisuallyHidden>Options</VisuallyHidden>
                 </PopoverTrigger>
             </ButtonGroup>
 
             <PopoverContent className={styles.menuList} position={Position.bottomEnd}>
-                <Typography.H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</Typography.H3>
-                <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution.">
+                <H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</H3>
+                {/* TODO: Once the execution mutation honors execution options, this can be removed. */}
+                <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution. Currently, toggling this option also requires updating the workspaces preview.">
                     <Checkbox
                         name="run-without-cache"
                         id="run-without-cache"
@@ -105,10 +112,19 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
     const [infoReference, infoOpen, setInfoOpen, infoStyle] = useAccordion<HTMLParagraphElement>()
 
     const info = props.disabled ? (
-        <Icon className="ml-2" data-tooltip={props.disabledTooltip} tabIndex={0} as={InfoCircleOutlineIcon} />
+        <Tooltip content={props.disabledTooltip}>
+            <Icon
+                aria-label={props.disabledTooltip}
+                className="ml-2"
+                role="button"
+                tabIndex={0}
+                svgPath={mdiInformationOutline}
+            />
+        </Tooltip>
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>
-            <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
+            <Icon aria-hidden={true} svgPath={mdiInformationOutline} />
+
             <VisuallyHidden>More info</VisuallyHidden>
         </Button>
     ) : null
@@ -121,9 +137,9 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
             </div>
             {!props.disabled && props.moreInfo && (
                 <animated.div className={styles.expandedInfo} style={infoStyle}>
-                    <p className="m-0 pb-2" ref={infoReference}>
+                    <Text className="m-0 pb-2" ref={infoReference}>
                         {props.moreInfo}
-                    </p>
+                    </Text>
                 </animated.div>
             )}
         </div>

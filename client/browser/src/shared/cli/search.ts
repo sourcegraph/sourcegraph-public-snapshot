@@ -95,7 +95,7 @@ export class SearchCommand {
 
     private lastSourcegraphUrl = ''
     private settingsTimeoutHandler = 0
-    private defaultPatternType = SearchPatternType.literal
+    private defaultPatternType = SearchPatternType.standard
     private defaultCaseSensitive = false
     private readonly settingsTimeoutDuration = 60 * 60 * 1000 // one hour
 

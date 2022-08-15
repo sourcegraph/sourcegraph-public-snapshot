@@ -18,7 +18,7 @@ import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.m
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
  */
-const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
+const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props<T extends object>
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
@@ -43,7 +43,7 @@ interface Props<T extends object>
      */
     blockNavigationIfDirty?: boolean
 
-    onSave?: (value: string) => void
+    onSave?: (value: string) => Promise<string | void>
     onChange?: (value: string) => void
     onDirtyChange?: (dirty: boolean) => void
     onEditor?: (editor: _monaco.editor.ICodeEditor) => void
@@ -162,10 +162,13 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
         )
     }
 
-    private onSave = (): void => {
+    private onSave = async (): Promise<void> => {
         const value = this.effectiveValue
         if (this.props.onSave) {
-            this.props.onSave(value)
+            const newConfig = await this.props.onSave(value)
+            if (newConfig) {
+                this.setState({ value: newConfig })
+            }
         }
     }
 
@@ -192,9 +195,9 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
     private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
-        if (this.monaco && MonacoSettingsEditor) {
+        if (this.monaco) {
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateEditor(editor => {
                         this.configEditor = editor
                         this.props.onEditor?.(editor)
@@ -202,7 +205,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                 )
             )
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateModel(async model => {
                         // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
                         // so this import call will not incur another load.

@@ -6,31 +6,34 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	srcInputPath = "input.json"
+	srcTempDir   = ".src-tmp"
+	srcRepoDir   = "repository"
+)
+
 type BatchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
-	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) error
 
 	DatabaseDB() database.DB
 }
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
-	// MAYBE: We could create a view in which batch_spec and repo are joined
-	// against the batch_spec_workspace_job so we don't have to load them
-	// separately.
+func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob) (apiclient.Job, error) {
 	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
 		return apiclient.Job{}, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
@@ -41,20 +44,19 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 		return apiclient.Job{}, errors.Wrap(err, "fetching batch spec")
 	}
 
+	// This should never happen. To get some easier debugging when a user sees strange
+	// behavior, we log some additional context.
+	if job.UserID != batchSpec.UserID {
+		logger.Error("bad DB state: batch spec workspace execution job did not have the same user ID as the associated batch spec")
+	}
+
 	// 🚨 SECURITY: Set the actor on the context so we check for permissions
 	// when loading the repository.
-	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
+	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
 
 	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
-	}
-
-	// Create an internal access token that will get cleaned up when the job
-	// finishes.
-	token, err := createAndAttachInternalAccessToken(ctx, s, job.ID, batchSpec.UserID)
-	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "creating internal access token")
 	}
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
@@ -79,93 +81,71 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 		},
 	}
 
-	frontendURL := conf.Get().ExternalURL
-
-	srcEndpoint, err := makeURL(frontendURL, accessToken)
-	if err != nil {
-		return apiclient.Job{}, err
+	// Check if we have a cache result for the workspace, if so, add it to the execution
+	// input.
+	if !batchSpec.NoCache {
+		// Find the cache entry for the _last_ step. src-cli only needs the most
+		// recent cache entry to do its work.
+		latestStepIndex := -1
+		for stepIndex := range workspace.StepCacheResults {
+			if stepIndex > latestStepIndex {
+				latestStepIndex = stepIndex
+			}
+		}
+		if latestStepIndex != -1 {
+			cacheEntry, ok := workspace.StepCacheResult(latestStepIndex)
+			// Technically this should never be not ok, but computers.
+			if ok {
+				executionInput.CachedStepResultFound = true
+				executionInput.CachedStepResult = *cacheEntry.Value
+			}
+		}
 	}
 
-	redactedSrcEndpoint, err := makeURL(frontendURL, "PASSWORD_REMOVED")
-	if err != nil {
-		return apiclient.Job{}, err
-	}
-
-	cliEnv := []string{
-		fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
-		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", token),
-	}
-
+	// Marshal the execution input into JSON and add it to the files passed to
+	// the VM.
 	marshaledInput, err := json.Marshal(executionInput)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
+	files := map[string]string{srcInputPath: string(marshaledInput)}
 
-	files := map[string]string{"input.json": string(marshaledInput)}
-
-	if !batchSpec.NoCache {
-		// Find the cache entry for the _last_ step. src-cli only needs the most
-		// recent cache entry to do its work.
-		latestIndex := -1
-		for idx := range workspace.StepCacheResults {
-			if idx > latestIndex {
-				latestIndex = idx
-			}
-		}
-		if latestIndex != -1 {
-			cacheEntry, _ := workspace.StepCacheResult(latestIndex)
-			serializedCacheEntry, err := json.Marshal(cacheEntry.Value)
-			if err != nil {
-				return apiclient.Job{}, errors.Wrap(err, "serializing cache entry")
-			}
-			// Add file to virtualMachineFiles.
-			files[cacheEntry.Key+`.json`] = string(serializedCacheEntry)
+	// If we only want to fetch the workspace, we add a sparse checkout pattern.
+	sparseCheckout := []string{}
+	if workspace.OnlyFetchWorkspace {
+		sparseCheckout = []string{
+			fmt.Sprintf("%s/*", workspace.Path),
 		}
 	}
 
 	return apiclient.Job{
 		ID:                  int(job.ID),
 		VirtualMachineFiles: files,
+		RepositoryName:      string(repo.Name),
+		RepositoryDirectory: srcRepoDir,
+		Commit:              workspace.Commit,
+		// We only care about the current repos content, so a shallow clone is good enough.
+		// Later we might allow to tweak more git parameters, like submodules and LFS.
+		ShallowClone:   true,
+		SparseCheckout: sparseCheckout,
 		CliSteps: []apiclient.CliStep{
 			{
-				Commands: []string{"batch", "exec", "-f", "input.json"},
-				Dir:      ".",
-				Env:      cliEnv,
+				Commands: []string{
+					"batch",
+					"exec",
+					"-f", srcInputPath,
+					"-repo", srcRepoDir,
+					// Tell src to store tmp files inside the workspace. Src currently
+					// runs on the host and we don't want pollution outside of the workspace.
+					"-tmp", srcTempDir,
+				},
+				Dir: ".",
+				Env: []string{},
 			},
 		},
-		RedactedValues: map[string]string{
-			// 🚨 SECURITY: Catch leak of upload endpoint. This is necessary in addition
-			// to the below in case the username or password contains illegal URL characters,
-			// which are then urlencoded and are not replaceable via byte comparison.
-			srcEndpoint: redactedSrcEndpoint,
-
-			// 🚨 SECURITY: Catch uses of fragments pulled from URL to construct another target
-			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
-			// ship the values to a third party, but not to trust to ensure the values are absent
-			// from the command's stdout or stderr streams.
-			accessToken: "PASSWORD_REMOVED",
-
-			// 🚨 SECURITY: Redact the access token used for src-cli to talk to
-			// Sourcegraph instance.
-			token: "SRC_ACCESS_TOKEN_REMOVED",
-		},
+		// Nothing to redact for now. We want to add secrets here once implemented.
+		RedactedValues: map[string]string{},
 	}, nil
-}
-
-const (
-	accessTokenNote  = "batch-spec-execution"
-	accessTokenScope = "user:all"
-)
-
-func createAndAttachInternalAccessToken(ctx context.Context, s BatchesStore, jobID int64, userID int32) (string, error) {
-	tokenID, token, err := s.DatabaseDB().AccessTokens().CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
-	if err != nil {
-		return "", err
-	}
-	if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, jobID, tokenID); err != nil {
-		return "", err
-	}
-	return token, nil
 }
 
 func makeURL(base, password string) (string, error) {

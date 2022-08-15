@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react'
 
+import { mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 import { partition } from 'lodash'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import { Redirect } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -24,8 +22,6 @@ import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface SignInPageProps {
-    location: H.Location
-    history: H.History
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -36,11 +32,12 @@ interface SignInPageProps {
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
     useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
+    const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
 
     if (props.authenticatedUser) {
-        const returnTo = getReturnTo(props.location)
-        return <Redirect to={returnTo} />
+        const returnTo = getReturnTo(location)
+        return <Navigate to={returnTo} replace={true} />
     }
 
     const [[builtInAuthProvider], thirdPartyAuthProviders] = partition(
@@ -78,18 +75,18 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         <div className="mb-2" key={index}>
                             <Button
                                 href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                className="btn-block"
+                                display="block"
                                 variant="secondary"
                                 as="a"
                             >
                                 {provider.serviceType === 'github' && (
                                     <>
-                                        <Icon as={GithubIcon} />{' '}
+                                        <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
                                     </>
                                 )}
                                 {provider.serviceType === 'gitlab' && (
                                     <>
-                                        <Icon as={GitlabIcon} />{' '}
+                                        <Icon aria-hidden={true} svgPath={mdiGitlab} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}
@@ -98,11 +95,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     ))}
                 </div>
                 {props.context.allowSignup ? (
-                    <p>
+                    <Text>
                         New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
-                    </p>
+                    </Text>
                 ) : (
-                    <p className="text-muted">Need an account? Contact your site admin</p>
+                    <Text className="text-muted">Need an account? Contact your site admin</Text>
                 )}
             </div>
         )
@@ -115,11 +112,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 iconLinkTo={props.context.sourcegraphDotComMode ? '/search' : undefined}
                 iconClassName="bg-transparent"
                 lessPadding={true}
-                title={
-                    props.context.sourcegraphDotComMode
-                        ? 'Sign in to Sourcegraph Cloud'
-                        : 'Sign in to Sourcegraph Server'
-                }
+                title="Sign in to Sourcegraph"
                 body={body}
             />
         </div>

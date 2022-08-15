@@ -49,15 +49,15 @@ func scanDependencySyncingJob(s dbutil.Scanner) (job DependencySyncingJob, err e
 }
 
 var dependencySyncingJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("j.id"),
-	sqlf.Sprintf("j.state"),
-	sqlf.Sprintf("j.failure_message"),
-	sqlf.Sprintf("j.started_at"),
-	sqlf.Sprintf("j.finished_at"),
-	sqlf.Sprintf("j.process_after"),
-	sqlf.Sprintf("j.num_resets"),
-	sqlf.Sprintf("j.num_failures"),
-	sqlf.Sprintf("j.upload_id"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.id"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.state"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.failure_message"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.started_at"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.finished_at"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.process_after"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.num_resets"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.num_failures"),
+	sqlf.Sprintf("lsif_dependency_syncing_jobs.upload_id"),
 }
 
 // scanDependencySyncingJobs scans a slice of dependency syncing jobs from the return value of
@@ -111,17 +111,17 @@ func scanDependencyIndexingJob(s dbutil.Scanner) (job DependencyIndexingJob, err
 }
 
 var dependencyIndexingJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("j.id"),
-	sqlf.Sprintf("j.state"),
-	sqlf.Sprintf("j.failure_message"),
-	sqlf.Sprintf("j.started_at"),
-	sqlf.Sprintf("j.finished_at"),
-	sqlf.Sprintf("j.process_after"),
-	sqlf.Sprintf("j.num_resets"),
-	sqlf.Sprintf("j.num_failures"),
-	sqlf.Sprintf("j.upload_id"),
-	sqlf.Sprintf("j.external_service_kind"),
-	sqlf.Sprintf("j.external_service_sync"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.id"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.state"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.failure_message"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.started_at"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.finished_at"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.process_after"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.num_resets"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.num_failures"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.upload_id"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_kind"),
+	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_sync"),
 }
 
 // scanDependencyIndexingJobs scans a slice of dependency indexing jobs from the return value of

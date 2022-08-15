@@ -1,57 +1,56 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
-import {
-    COMPLETED_BATCH_SPEC,
-    COMPLETED_WITH_ERRORS_BATCH_SPEC,
-    EXECUTING_BATCH_SPEC,
-    FAILED_BATCH_SPEC,
-    mockBatchChange,
-} from '../batch-spec.mock'
+import { EXECUTING_BATCH_SPEC, mockBatchChange } from '../batch-spec.mock'
 import { BatchSpecContextProvider } from '../BatchSpecContext'
 
-import { ActionsMenu } from './ActionsMenu'
+import { ActionsMenu, ActionsMenuMode } from './ActionsMenu'
 
-const { add } = storiesOf('web/batches/batch-spec/execute/ActionsMenu', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('executing', () => (
+const config: Meta = {
+    title: 'web/batches/batch-spec/execute/ActionsMenu',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Preview: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu defaultMode={ActionsMenuMode.Preview} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
-))
+)
 
-add('failed', () => (
+export const Actions: Story = () => (
     <WebStory>
-        {props => (
-            <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={FAILED_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+        {() => (
+            <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
+                <ActionsMenu defaultMode={ActionsMenuMode.Actions} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
-))
+)
 
-add('completed', () => (
+export const ActionsOnlyClose: Story = () => (
     <WebStory>
-        {props => (
-            <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+        {() => (
+            <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
+                <ActionsMenu defaultMode={ActionsMenuMode.ActionsOnlyClose} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
-))
+)
 
-add('completed with errors', () => (
+export const ActionsWithPreview: Story = () => (
     <WebStory>
-        {props => (
-            <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_WITH_ERRORS_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+        {() => (
+            <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
+                <ActionsMenu defaultMode={ActionsMenuMode.ActionsWithPreview} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
-))
+)

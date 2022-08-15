@@ -1,5 +1,5 @@
 import { select } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -12,16 +12,22 @@ import { ExternalServiceKind } from '../../../graphql-operations'
 import { AddCredentialModal } from './AddCredentialModal'
 import { CREATE_BATCH_CHANGES_CREDENTIAL } from './backend'
 
-const { add } = storiesOf('web/batches/settings/AddCredentialModal', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/AddCredentialModal',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             // Delay screenshot taking, so the modal has opened by the time the screenshot is taken.
             delay: 2000,
         },
-    })
+    },
+}
 
-add('Requires SSH - step 1', () => (
+export default config
+
+export const RequiresSSHstep1: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -64,8 +70,11 @@ add('Requires SSH - step 1', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
-add('Requires SSH - step 2', () => (
+)
+
+RequiresSSHstep1.storyName = 'Requires SSH - step 1'
+
+export const RequiresSSHstep2: Story = () => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -85,9 +94,11 @@ add('Requires SSH - step 2', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('GitHub', () => (
+RequiresSSHstep2.storyName = 'Requires SSH - step 2'
+
+export const GitHub: Story = () => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -102,9 +113,11 @@ add('GitHub', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('GitLab', () => (
+GitHub.storyName = 'GitHub'
+
+export const GitLab: Story = () => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -119,9 +132,11 @@ add('GitLab', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Bitbucket Server', () => (
+GitLab.storyName = 'GitLab'
+
+export const BitbucketServer: Story = () => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -136,9 +151,9 @@ add('Bitbucket Server', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('Bitbucket Cloud', () => (
+export const BitbucketCloud: Story = () => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -153,4 +168,4 @@ add('Bitbucket Cloud', () => (
             />
         )}
     </WebStory>
-))
+)

@@ -4,7 +4,7 @@ Site admins can sync Git repositories hosted on [AWS CodeCommit](https://aws.ama
 
 To connect AWS CodeCommit to Sourcegraph:
 
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Go to **Site admin > Manage code hosts > Add repositories**
 1. Select **AWS CodeCommit repositories**.
 1. Configure the connection to AWS CodeCommit using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
@@ -17,7 +17,7 @@ For detailed instructions on how to create the credentials in IAM, see: [Setup f
 
 ## Configuration
 
-AWS CodeCommit connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
+AWS CodeCommit connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/aws_codecommit.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/aws_codecommit) to see rendered content.</div>
 

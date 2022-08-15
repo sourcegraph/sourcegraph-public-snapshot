@@ -6,12 +6,13 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type indexingJob struct{}
@@ -72,18 +72,18 @@ func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
 
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
-	extSvcStore := database.NewDB(db).ExternalServices()
+	databaseDB := database.NewDB(logger, db)
+	extSvcStore := databaseDB.ExternalServices()
+	gitserverRepoStore := databaseDB.GitserverRepos()
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
-	enqueuerDBStoreShim := &enqueuer.DBStoreShim{Store: dbStore}
-	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
+	enqueuerDBStoreShim := &autoindexing.DBStoreShim{Store: dbStore}
 	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
 	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoUpdaterClient, indexingConfigInst.AutoIndexEnqueuerConfig, observationContext)
+	indexEnqueuer := autoindexing.GetService(databaseDB, enqueuerDBStoreShim, gitserverClient, repoUpdaterClient)
 
 	routines := []goroutine.BackgroundRoutine{
-		indexing.NewIndexScheduler(dbStoreShim, policyMatcher, indexEnqueuer, indexingConfigInst.RepositoryProcessDelay, indexingConfigInst.RepositoryBatchSize, indexingConfigInst.PolicyBatchSize, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
-		indexing.NewDependencySyncScheduler(dbStoreShim, dependencySyncStore, extSvcStore, syncMetrics),
-		indexing.NewDependencyIndexingScheduler(dbStoreShim, dependencyIndexingStore, extSvcStore, repoUpdaterClient, gitserverClient, indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
+		indexing.NewDependencySyncScheduler(dbStoreShim, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
+		indexing.NewDependencyIndexingScheduler(dbStoreShim, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
 	}
 
 	return routines, nil

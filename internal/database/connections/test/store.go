@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,8 +60,8 @@ func (s *memoryStore) WithMigrationLog(_ context.Context, _ definition.Definitio
 	return f()
 }
 
-func (s *memoryStore) IndexStatus(_ context.Context, _, _ string) (storetypes.IndexStatus, bool, error) {
-	return storetypes.IndexStatus{}, false, nil
+func (s *memoryStore) IndexStatus(_ context.Context, _, _ string) (shared.IndexStatus, bool, error) {
+	return shared.IndexStatus{}, false, nil
 }
 
 func (s *memoryStore) exec(ctx context.Context, migration definition.Definition, query *sqlf.Query) error {

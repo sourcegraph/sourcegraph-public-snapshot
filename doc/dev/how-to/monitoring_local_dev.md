@@ -102,7 +102,7 @@ This should be sufficient to access the frontend API and the admin console (`/si
 
 #### Docsite
 
-The docsite is used to serve generated monitoring documentation, such as the [alert solutions reference](../../../admin/observability/alert_solutions.md).
+The docsite is used to serve generated monitoring documentation, such as the [alert solutions reference](../../../admin/observability/alerts.md).
 You can spin it up by running:
 
 ```sh

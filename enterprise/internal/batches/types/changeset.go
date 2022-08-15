@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,6 +35,7 @@ const (
 	ChangesetStateClosed      ChangesetState = "CLOSED"
 	ChangesetStateMerged      ChangesetState = "MERGED"
 	ChangesetStateDeleted     ChangesetState = "DELETED"
+	ChangesetStateReadOnly    ChangesetState = "READONLY"
 	ChangesetStateRetrying    ChangesetState = "RETRYING"
 	ChangesetStateFailed      ChangesetState = "FAILED"
 )
@@ -50,6 +51,7 @@ func (s ChangesetState) Valid() bool {
 		ChangesetStateClosed,
 		ChangesetStateMerged,
 		ChangesetStateDeleted,
+		ChangesetStateReadOnly,
 		ChangesetStateRetrying,
 		ChangesetStateFailed:
 		return true
@@ -154,11 +156,12 @@ type ChangesetExternalState string
 
 // ChangesetExternalState constants.
 const (
-	ChangesetExternalStateDraft   ChangesetExternalState = "DRAFT"
-	ChangesetExternalStateOpen    ChangesetExternalState = "OPEN"
-	ChangesetExternalStateClosed  ChangesetExternalState = "CLOSED"
-	ChangesetExternalStateMerged  ChangesetExternalState = "MERGED"
-	ChangesetExternalStateDeleted ChangesetExternalState = "DELETED"
+	ChangesetExternalStateDraft    ChangesetExternalState = "DRAFT"
+	ChangesetExternalStateOpen     ChangesetExternalState = "OPEN"
+	ChangesetExternalStateClosed   ChangesetExternalState = "CLOSED"
+	ChangesetExternalStateMerged   ChangesetExternalState = "MERGED"
+	ChangesetExternalStateDeleted  ChangesetExternalState = "DELETED"
+	ChangesetExternalStateReadOnly ChangesetExternalState = "READONLY"
 )
 
 // Valid returns true if the given ChangesetExternalState is valid.
@@ -168,7 +171,8 @@ func (s ChangesetExternalState) Valid() bool {
 		ChangesetExternalStateDraft,
 		ChangesetExternalStateClosed,
 		ChangesetExternalStateMerged,
-		ChangesetExternalStateDeleted:
+		ChangesetExternalStateDeleted,
+		ChangesetExternalStateReadOnly:
 		return true
 	default:
 		return false
@@ -275,6 +279,9 @@ type Changeset struct {
 	PublicationState   ChangesetPublicationState // "unpublished", "published"
 	UiPublicationState *ChangesetUiPublicationState
 
+	// State is a computed value. Changes to this value will never be persisted to the database.
+	State ChangesetState
+
 	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState  ReconcilerState
 	FailureMessage   *string
@@ -288,6 +295,9 @@ type Changeset struct {
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
+
+	// DetachedAt is the time when the changeset became "detached".
+	DetachedAt time.Time
 }
 
 // RecordID is needed to implement the workerutil.Record interface.
@@ -304,7 +314,8 @@ func (c *Changeset) Clone() *Changeset {
 // Closeable returns whether the Changeset is already closed or merged.
 func (c *Changeset) Closeable() bool {
 	return c.ExternalState != ChangesetExternalStateClosed &&
-		c.ExternalState != ChangesetExternalStateMerged
+		c.ExternalState != ChangesetExternalStateMerged &&
+		c.ExternalState != ChangesetExternalStateReadOnly
 }
 
 // Complete returns whether the Changeset has been published and its
@@ -322,6 +333,9 @@ func (c *Changeset) Unpublished() bool { return c.PublicationState.Unpublished()
 
 // IsImporting returns whether the Changeset is being imported but it's not finished yet.
 func (c *Changeset) IsImporting() bool { return c.Unpublished() && c.CurrentSpecID == 0 }
+
+// IsImported returns whether the Changeset is imported
+func (c *Changeset) IsImported() bool { return c.OwnedByBatchChangeID == 0 }
 
 // SetCurrentSpec sets the CurrentSpecID field and copies the diff stat over from the spec.
 func (c *Changeset) SetCurrentSpec(spec *ChangesetSpec) {
@@ -369,7 +383,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
 		c.ExternalServiceType = extsvc.TypeGitHub
-		c.ExternalBranch = git.EnsureRefPrefix(pr.HeadRefName)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
 
 		if pr.BaseRepository.ID != pr.HeadRepository.ID {
@@ -381,7 +395,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 		c.ExternalServiceType = extsvc.TypeBitbucketServer
-		c.ExternalBranch = git.EnsureRefPrefix(pr.FromRef.ID)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 
 		if pr.FromRef.Repository.ID != pr.ToRef.Repository.ID {
@@ -393,14 +407,14 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
-		c.ExternalBranch = git.EnsureRefPrefix(pr.SourceBranch)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 		c.ExternalForkNamespace = pr.SourceProjectNamespace
 	case *bbcs.AnnotatedPullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.ID, 10)
 		c.ExternalServiceType = extsvc.TypeBitbucketCloud
-		c.ExternalBranch = git.EnsureRefPrefix(pr.Source.Branch.Name)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Source.Branch.Name)
 		c.ExternalUpdatedAt = pr.UpdatedOn
 
 		if pr.Source.Repo.UUID != pr.Destination.Repo.UUID {
@@ -835,6 +849,9 @@ func (c *Changeset) Attach(batchChangeID int64) {
 		}
 	}
 	c.BatchChanges = append(c.BatchChanges, BatchChangeAssoc{BatchChangeID: batchChangeID})
+	if !c.DetachedAt.IsZero() {
+		c.DetachedAt = time.Time{}
+	}
 }
 
 // Detach marks the given batch change as to-be-detached. Returns true, if the

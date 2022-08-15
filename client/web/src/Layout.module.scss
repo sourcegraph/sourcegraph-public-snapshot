@@ -7,7 +7,7 @@
     align-items: center;
 
     // Prevent any internal z-index (heavily used by Bootstrap) from interfering
-    // with global React Portal UI such a Reach modals or Shepherd search onboarding tour.
+    // with global React Portal UI such a Reach modals.
     isolation: isolate;
 }
 

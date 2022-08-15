@@ -1,0 +1,1 @@
+(or (and "repo:primary" "scamaz") (and "repo:secondary" "scamaz"))

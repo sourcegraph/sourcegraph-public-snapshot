@@ -11,8 +11,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/dev/okay"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestMain(m *testing.M) {

@@ -1,20 +1,12 @@
 import React from 'react'
 
+import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-// eslint-disable-next-line no-restricted-imports
-import styles from '@sourcegraph/search-ui/src/components/SearchResult.module.scss'
-import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
+import { SearchResultStyles as styles, LastSyncedIcon, ResultContainer } from '@sourcegraph/search-ui'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
@@ -23,13 +15,16 @@ export interface RepoSearchResultProps {
     repoName: string
     onSelect: () => void
     containerClassName?: string
+    as?: React.ElementType
+    index: number
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
     result,
-    repoName,
     onSelect,
     containerClassName,
+    as,
+    index,
 }) => {
     /**
      * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
@@ -38,26 +33,15 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
      */
     const { openRepo } = useOpenSearchResultsContext()
 
-    const renderTitle = (): JSX.Element => {
-        const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
-        return (
-            <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
-                <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
-                    <button type="button" className="btn btn-text-link" onClick={() => openRepo(result)}>
-                        {displayRepoName(getRepoMatchLabel(result))}
-                    </button>
-                </span>
-                <span className={styles.spacer} />
-                {formattedRepositoryStarCount && (
-                    <>
-                        <SearchResultStar />
-                        {formattedRepositoryStarCount}
-                    </>
-                )}
-            </div>
-        )
-    }
+    const renderTitle = (): JSX.Element => (
+        <div className={styles.title}>
+            <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
+                <button type="button" className="btn btn-text-link" onClick={() => openRepo(result)}>
+                    {displayRepoName(getRepoMatchLabel(result))}
+                </button>
+            </span>
+        </div>
+    )
 
     const renderBody = (): JSX.Element => (
         <div data-testid="search-repo-result">
@@ -73,7 +57,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={SourceForkIcon}
+                                    aria-label="Forked repository"
+                                    svgPath={mdiSourceFork}
                                 />
                             </div>
                             <div>
@@ -87,7 +72,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div>
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                    as={ArchiveIcon}
+                                    aria-label="Archived repository"
+                                    svgPath={mdiArchive}
                                 />
                             </div>
                             <div>
@@ -99,7 +85,11 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         <>
                             <div className={styles.divider} />
                             <div>
-                                <Icon className={classNames('flex-shrink-0 text-muted', styles.icon)} as={LockIcon} />
+                                <Icon
+                                    className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                    aria-label="Private repository"
+                                    svgPath={mdiLock}
+                                />
                             </div>
                             <div>
                                 <small>Private</small>
@@ -123,6 +113,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
 
     return (
         <ResultContainer
+            as={as}
+            index={index}
             icon={SourceRepositoryIcon}
             collapsible={false}
             defaultExpanded={true}
@@ -131,6 +123,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             onResultClicked={onSelect}
             expandedChildren={renderBody()}
             className={containerClassName}
+            repoName={result.repository}
+            repoStars={result.repoStars}
         />
     )
 }

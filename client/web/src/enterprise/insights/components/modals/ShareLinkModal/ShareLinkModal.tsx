@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, Button, Input, LoadingSpinner, Modal, ModalProps, Typography } from '@sourcegraph/wildcard'
+import { Badge, Button, Input, LoadingSpinner, Modal, ModalProps, H3, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { GetSharableInsightInfoResult } from '../../../../../graphql-operations'
 import {
@@ -17,7 +17,7 @@ import {
     isOrganizationOwner,
     isVirtualDashboard,
 } from '../../../core'
-import { useCopyURLHandler } from '../../../hooks/use-copy-url-handler'
+import { useCopyURLHandler } from '../../../hooks'
 
 import { decodeDashboardIds, GET_SHARABLE_INSIGHT_INFO_GQL } from './get-sharable-insight-info'
 
@@ -49,7 +49,7 @@ export const ShareLinkModal: FunctionComponent<ShareLinkModalProps> = props => {
 
     return (
         <Modal className={classNames(styles.container)} {...attributes} isOpen={isOpen} onDismiss={onDismiss}>
-            <Typography.H3>Get shareable link</Typography.H3>
+            <H3>Get shareable link</H3>
 
             <ShareLinkModalContent insight={insight} dashboards={dashboards} />
 
@@ -57,15 +57,16 @@ export const ShareLinkModal: FunctionComponent<ShareLinkModalProps> = props => {
                 value={shareableUrl}
                 className={styles.input}
                 inputSymbol={
-                    <Button
-                        ref={copyButtonReference}
-                        variant="primary"
-                        data-tooltip={isCopied ? 'Link copied' : undefined}
-                        data-placement="bottom"
-                        onClick={handleClick}
-                    >
-                        Copy link
-                    </Button>
+                    <Tooltip content={isCopied ? 'Link copied' : undefined}>
+                        <Button
+                            ref={copyButtonReference}
+                            variant="primary"
+                            data-placement="bottom"
+                            onClick={handleClick}
+                        >
+                            Copy link
+                        </Button>
+                    </Tooltip>
                 }
                 onChange={noop}
             />
@@ -117,22 +118,22 @@ const GlobalContent: FunctionComponent = () => <>Everyone on your Sourcegraph in
 
 const PrivateContent: FunctionComponent = () => (
     <>
-        <p>
+        <Text>
             Only you can see this insight, because it's only on private dashboards. Add this insight to public
             dashboards to share with others.
-        </p>
-        <p>
+        </Text>
+        <Text>
             <em>
                 The “all insights” dashboard shows you all insights available to you regardless of their visibility to
                 others.
             </em>
-        </p>
+        </Text>
     </>
 )
 
 const OrganizationContent: FunctionComponent<{ organizations: string[] }> = ({ organizations }) => (
     <>
-        <p className="mb-2">Only people added to following Organizations can see this insight:</p>
+        <Text className="mb-2">Only people added to the following organizations can see this insight:</Text>
         {organizations.map(organization => (
             <Badge variant="secondary" key={organization} className="mr-2">
                 {organization}

@@ -12,6 +12,8 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -25,14 +27,15 @@ import (
 // TestMiddleware exercises the Middleware with requests that simulate the OAuth 2 login flow on
 // GitLab. This tests the logic between the client-issued HTTP requests and the responses from the
 // various endpoints, but does NOT cover the logic that is contained within `golang.org/x/oauth2`
-// and `github.com/dghubble/gologin/v2` which ensures the correctness of the `/callback` handler.
+// and `github.com/dghubble/gologin` which ensures the correctness of the `/callback` handler.
 func TestMiddleware(t *testing.T) {
+	logger := logtest.Scoped(t)
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
 	const mockUserID = 123
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("got through"))

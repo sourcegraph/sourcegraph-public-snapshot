@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const syncInterval = 24 * time.Hour
@@ -45,9 +46,9 @@ func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 	}
 
 	cf := httpcli.ExternalClientFactory
-	sourcer := repos.NewSourcer(database.NewDB(db), cf)
+	sourcer := repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), database.NewDB(logger, db), cf)
 
-	store := database.NewDB(db).ExternalServices()
+	store := database.NewDB(logger, db).ExternalServices()
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
 		versions, err := loadVersions(ctx, logger, store, sourcer)
 		if err != nil {
@@ -74,7 +75,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 	// we don't send >1 requests to the same instance.
 	unique := make(map[string]*types.ExternalService)
 	for _, svc := range es {
-		ident, err := extsvc.UniqueCodeHostIdentifier(svc.Kind, svc.Config)
+		ident, err := extsvc.UniqueEncryptableCodeHostIdentifier(ctx, svc.Kind, svc.Config)
 		if err != nil {
 			return versions, err
 		}
@@ -86,7 +87,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 	}
 
 	for _, svc := range unique {
-		src, err := sourcer(svc)
+		src, err := sourcer(ctx, svc)
 		if err != nil {
 			return versions, err
 		}

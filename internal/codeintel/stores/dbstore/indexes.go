@@ -140,7 +140,7 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.Store))
 	if err != nil {
 		return Index{}, false, err
 	}
@@ -205,7 +205,7 @@ func (s *Store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []Index, err
 		return nil, nil
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.Store))
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +287,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		conds = append(conds, makeStateCondition(opts.State))
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(tx.Store.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.Store))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -494,54 +494,6 @@ func (s *Store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 const deleteIndexByIDQuery = `
 -- source: internal/codeintel/stores/dbstore/indexes.go:DeleteIndexByID
 DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
-`
-
-// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
-// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
-// that were removed for that repository.
-func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
-	// a similar one on this index, but only for uploads that are completed or visible at tip.
-
-	repositories, err := scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
-	if err != nil {
-		return nil, err
-	}
-
-	count := 0
-	for _, numDeleted := range repositories {
-		count += numDeleted
-	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
-
-	return repositories, nil
-}
-
-const deleteIndexesWithoutRepositoryQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:DeleteIndexesWithoutRepository
-WITH
-candidates AS (
-	SELECT u.id
-	FROM repo r
-	JOIN lsif_indexes u ON u.repository_id = r.id
-	WHERE %s - r.deleted_at >= %s * interval '1 second'
-
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_indexes table.
-	ORDER BY u.id FOR UPDATE
-),
-deleted AS (
-	DELETE FROM lsif_indexes u
-	WHERE id IN (SELECT id FROM candidates)
-	RETURNING u.id, u.repository_id
-)
-SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
 // LastIndexScanForRepository returns the last timestamp, if any, that the repository with the given

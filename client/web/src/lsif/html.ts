@@ -57,18 +57,27 @@ function closeLine(html: HtmlBuilder): void {
     html.closeTag('tr')
 }
 
-function highlightSlice(html: HtmlBuilder, kind: SyntaxKind, slice: string): void {
-    const kindName = SyntaxKind[kind]
-    if (kindName) {
-        html.span(`class="hl-typed-${kindName}"`, slice)
-    } else {
-        html.plaintext(slice)
+function highlightSlice(html: HtmlBuilder, kind: SyntaxKind | undefined, slice: string): void {
+    if (kind) {
+        const kindName = SyntaxKind[kind]
+        if (kindName) {
+            html.span(`class="hl-typed-${kindName}"`, slice)
+            return
+        }
     }
+    html.plaintext(slice)
 }
 
-// Currently assumes that no ranges overlap in the occurences.
+// Currently assumes that no ranges overlap in the occurrences.
 export function render(lsif_json: string, content: string): string {
-    const occurrences = (JSON.parse(lsif_json) as JsonDocument).occurrences.map(occ => new Occurrence(occ))
+    if (!lsif_json.trim()) {
+        return ''
+    }
+
+    const occurrences = (JSON.parse(lsif_json) as JsonDocument).occurrences?.map(occ => new Occurrence(occ))
+    if (!occurrences) {
+        return ''
+    }
 
     // Sort by line, and then by start character.
     occurrences.sort((a, b) => {
@@ -111,7 +120,7 @@ export function render(lsif_json: string, content: string): string {
                 // Move to the next line
                 lineNumber++
 
-                // Handle all the lines that completely owned by this occurence
+                // Handle all the lines that completely owned by this occurrence
                 while (lineNumber < end.line) {
                     line = lines[lineNumber]
 
@@ -122,7 +131,7 @@ export function render(lsif_json: string, content: string): string {
                     lineNumber++
                 }
 
-                // Write as much of the line as the last occurence owns
+                // Write as much of the line as the last occurrence owns
                 line = lines[lineNumber]
 
                 openLine(html, lineNumber)

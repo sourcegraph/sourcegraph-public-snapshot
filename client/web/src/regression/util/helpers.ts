@@ -1,5 +1,4 @@
-import * as jsonc from '@sqs/jsonc-parser'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
+import * as jsonc from 'jsonc-parser'
 import { first } from 'lodash'
 import { throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
@@ -138,10 +137,12 @@ export async function createAuthProvider(
     }
     const editFns = [
         (contents: string) =>
-            jsoncEdit.setProperty(contents, ['auth.providers', -1], authProvider, {
-                eol: '\n',
-                insertSpaces: true,
-                tabSize: 2,
+            jsonc.modify(contents, ['auth.providers', -1], authProvider, {
+                formattingOptions: {
+                    eol: '\n',
+                    insertSpaces: true,
+                    tabSize: 2,
+                },
             }),
     ]
     const { destroy } = await editSiteConfig(gqlClient, ...editFns)
@@ -219,8 +220,8 @@ export async function editGlobalSettings(
 ): Promise<{ destroy: ResourceDestructor; result: string }> {
     const { subjectID, settingsID, contents: origContents } = await getGlobalSettings(gqlClient)
     let newContents = origContents
-    for (const editFn of edits) {
-        newContents = jsonc.applyEdits(newContents, editFn(newContents))
+    for (const editFunc of edits) {
+        newContents = jsonc.applyEdits(newContents, editFunc(newContents))
     }
     await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
     return {
@@ -238,8 +239,8 @@ export async function editSiteConfig(
 ): Promise<{ destroy: ResourceDestructor; result: boolean }> {
     const origConfig = await fetchSiteConfiguration(gqlClient).toPromise()
     let newContents = origConfig.configuration.effectiveContents
-    for (const editFn of edits) {
-        newContents = jsonc.applyEdits(newContents, editFn(newContents))
+    for (const editFunc of edits) {
+        newContents = jsonc.applyEdits(newContents, editFunc(newContents))
     }
     return {
         result: await updateSiteConfiguration(gqlClient, origConfig.configuration.id, newContents).toPromise(),

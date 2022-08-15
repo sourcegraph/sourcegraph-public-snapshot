@@ -1,8 +1,0 @@
-{
-  "private": true,
-  "name": "@sourcegraph/lsif-typed",
-  "version": "0.0.1",
-  "description": "Schema for LSIF typed",
-  "sideEffects": false,
-  "license": "Apache-2.0"
-}

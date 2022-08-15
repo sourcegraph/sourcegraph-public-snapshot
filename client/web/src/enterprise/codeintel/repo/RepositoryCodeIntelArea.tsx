@@ -30,25 +30,25 @@ export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
 export interface CodeIntelAreaRoute extends RouteDescriptor<CodeIntelAreaRouteContext> {}
 
 const CodeIntelUploadsPage = lazyComponent<CodeIntelUploadsPageProps, 'CodeIntelUploadsPage'>(
-    () => import('../../codeintel/uploads/pages/CodeIntelUploadsPage'),
+    () => import('../uploads/pages/CodeIntelUploadsPage'),
     'CodeIntelUploadsPage'
 )
 const CodeIntelUploadPage = lazyComponent<CodeIntelUploadPageProps, 'CodeIntelUploadPage'>(
-    () => import('../../codeintel/uploads/pages/CodeIntelUploadPage'),
+    () => import('../uploads/pages/CodeIntelUploadPage'),
     'CodeIntelUploadPage'
 )
 
 const CodeIntelIndexesPage = lazyComponent<CodeIntelIndexesPageProps, 'CodeIntelIndexesPage'>(
-    () => import('../../codeintel/indexes/pages/CodeIntelIndexesPage'),
+    () => import('../indexes/pages/CodeIntelIndexesPage'),
     'CodeIntelIndexesPage'
 )
 const CodeIntelIndexPage = lazyComponent<CodeIntelIndexPageProps, 'CodeIntelIndexPage'>(
-    () => import('../../codeintel/indexes/pages/CodeIntelIndexPage'),
+    () => import('../indexes/pages/CodeIntelIndexPage'),
     'CodeIntelIndexPage'
 )
 
 const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps, 'CodeIntelConfigurationPage'>(
-    () => import('../../codeintel/configuration/pages/CodeIntelConfigurationPage'),
+    () => import('../configuration/pages/CodeIntelConfigurationPage'),
     'CodeIntelConfigurationPage'
 )
 
@@ -56,23 +56,20 @@ const RepositoryIndexConfigurationPage = lazyComponent<
     CodeIntelRepositoryIndexConfigurationPageProps,
     'CodeIntelRepositoryIndexConfigurationPage'
 >(
-    () => import('../../codeintel/configuration/pages/CodeIntelRepositoryIndexConfigurationPage'),
+    () => import('../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'),
     'CodeIntelRepositoryIndexConfigurationPage'
 )
 
 const CodeIntelConfigurationPolicyPage = lazyComponent<
     CodeIntelConfigurationPolicyPageProps,
     'CodeIntelConfigurationPolicyPage'
->(
-    () => import('../../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
-    'CodeIntelConfigurationPolicyPage'
-)
+>(() => import('../configuration/pages/CodeIntelConfigurationPolicyPage'), 'CodeIntelConfigurationPolicyPage')
 
 export const routes: readonly CodeIntelAreaRoute[] = [
     {
         path: '/',
         exact: true,
-        render: () => <Redirect to="./code-intelligence/uploads" />,
+        render: () => <Redirect to="./code-graph/uploads" />,
     },
     {
         path: '/uploads',
@@ -122,7 +119,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
 )
 
 /**
- * Properties passed to all page components in the repository code intelligence area.
+ * Properties passed to all page components in the repository code navigation area.
  */
 export interface RepositoryCodeIntelAreaPageProps
     extends ThemeProps,
@@ -136,7 +133,7 @@ export interface RepositoryCodeIntelAreaPageProps
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
     {
-        header: { label: 'Code intelligence' },
+        header: { label: 'Code graph' },
         items: [
             {
                 to: '/uploads',
@@ -161,12 +158,12 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
 ]
 
 /**
- * Renders pages related to repository code intelligence.
+ * Renders pages related to repository code graph.
  */
 export const RepositoryCodeIntelArea: React.FunctionComponent<
     React.PropsWithChildren<RepositoryCodeIntelAreaPageProps>
 > = ({ match, useBreadcrumb, ...props }) => {
-    useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Intelligence' }), []))
+    useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Graph' }), []))
 
     return (
         <div className="container d-flex mt-3">

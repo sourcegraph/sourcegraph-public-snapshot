@@ -6,7 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { TipsAndTricks } from './TipsAndTricks'
 
-const mockLogFn = sinon.spy()
+const mockLogFunc = sinon.spy()
 const mockExampleLink = {
     label: 'Negation:',
     trackEventName: 'HomepageExampleNegationClicked',
@@ -25,7 +25,7 @@ const renderTipsAndTricks = (): RenderResult =>
                 title="Tips and Tricks"
                 examples={[mockExampleLink]}
                 moreLink={mockMoreLink}
-                telemetryService={{ ...NOOP_TELEMETRY_SERVICE, log: mockLogFn }}
+                telemetryService={{ ...NOOP_TELEMETRY_SERVICE, log: mockLogFunc }}
             />
         </MemoryRouter>
     )
@@ -34,18 +34,18 @@ describe('TipsAndTricks.tsx', () => {
     afterAll(cleanup)
 
     beforeEach(() => {
-        mockLogFn.resetHistory()
+        mockLogFunc.resetHistory()
     })
 
     test('triggers event log on example link click', () => {
         const { getByText } = renderTipsAndTricks()
         getByText(mockExampleLink.label).querySelector('a')?.click()
-        expect(mockLogFn.withArgs(mockExampleLink.trackEventName).calledOnce).toBeTruthy()
+        expect(mockLogFunc.withArgs(mockExampleLink.trackEventName).calledOnce).toBeTruthy()
     })
 
     test('triggers event log on more link click', () => {
         const { getByText } = renderTipsAndTricks()
         getByText(mockMoreLink.label).click()
-        expect(mockLogFn.withArgs(mockMoreLink.trackEventName).calledOnce).toBeTruthy()
+        expect(mockLogFunc.withArgs(mockMoreLink.trackEventName).calledOnce).toBeTruthy()
     })
 })

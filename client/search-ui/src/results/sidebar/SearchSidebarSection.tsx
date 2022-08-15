@@ -4,34 +4,33 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Typography } from '@sourcegraph/wildcard'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
 import styles from './SearchSidebarSection.module.scss'
 
-export const SearchSidebarSection: React.FunctionComponent<
-    React.PropsWithChildren<{
-        sectionId: string
-        header: string
-        children?: React.ReactElement | React.ReactElement[] | ((filter: string) => React.ReactElement)
-        className?: string
-        showSearch?: boolean // Search only works if children are FilterLink
-        onToggle?: (id: string, open: boolean) => void
-        startCollapsed?: boolean
-        /**
-         * Shown when the built-in search doesn't find any results.
-         */
-        noResultText?: React.ReactElement | string
-        /**
-         * Clear the search input whenever this value changes. This is supposed to
-         * be used together with function children, which use the search input but
-         * handle search on their own.
-         * Defaults to the component's children.
-         */
-        clearSearchOnChange?: {}
-    }>
-> = React.memo(
+export const SearchSidebarSection: React.FunctionComponent<{
+    sectionId: string
+    header: string
+    children?: React.ReactNode | React.ReactNode[] | ((filter: string) => React.ReactNode)
+    className?: string
+    showSearch?: boolean // Search only works if children are FilterLink
+    onToggle?: (id: string, open: boolean) => void
+    startCollapsed?: boolean
+    /**
+     * Shown when the built-in search doesn't find any results.
+     */
+    noResultText?: React.ReactElement | string
+    /**
+     * Clear the search input whenever this value changes. This is supposed to
+     * be used together with function children, which use the search input but
+     * handle search on their own.
+     * Defaults to the component's children.
+     */
+    clearSearchOnChange?: {}
+}> = React.memo(
     ({
         sectionId,
         header,
@@ -43,6 +42,8 @@ export const SearchSidebarSection: React.FunctionComponent<
         noResultText = 'No results',
         clearSearchOnChange = children,
     }) => {
+        const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
         const [filter, setFilter] = useState('')
 
         // Clears the filter whenever clearSearchOnChange changes (defaults to the
@@ -93,7 +94,7 @@ export const SearchSidebarSection: React.FunctionComponent<
 
         const [isOpened, setOpened] = useState(!startCollapsed)
         const handleOpenChange = useCallback(
-            isOpen => {
+            (isOpen: boolean) => {
                 if (onToggle) {
                     onToggle(sectionId, isOpen)
                 }
@@ -104,42 +105,53 @@ export const SearchSidebarSection: React.FunctionComponent<
         )
 
         return visible ? (
-            <div className={classNames(styles.sidebarSection, className)}>
+            <article
+                aria-labelledby={`search-sidebar-section-header-${sectionId}`}
+                className={classNames(styles.sidebarSection, className)}
+            >
                 <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                     <CollapseHeader
                         as={Button}
                         className={styles.sidebarSectionCollapseButton}
-                        aria-label={isOpened ? 'Collapse' : 'Expand'}
+                        aria-label={`${isOpened ? 'Collapse' : 'Expand'} ${header}`}
                         outline={true}
                         variant="secondary"
                     >
-                        <Typography.H5 as={Typography.H2} className="flex-grow-1">
+                        <H5 as={H2} className="flex-grow-1" id={`search-sidebar-section-header-${sectionId}`}>
                             {header}
-                        </Typography.H5>
-                        <Icon className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                        </H5>
+                        <Icon
+                            aria-hidden={true}
+                            className={classNames(!coreWorkflowImprovementsEnabled && 'mr-1')}
+                            as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
+                        />
                     </CollapseHeader>
 
                     <CollapsePanel>
-                        <div className={classNames('pb-4', !searchVisible && 'border-top')}>
+                        <div
+                            className={classNames(
+                                'pb-4',
+                                !searchVisible && !coreWorkflowImprovementsEnabled && 'border-top'
+                            )}
+                        >
                             {searchVisible && (
-                                <input
+                                <Input
                                     type="search"
                                     placeholder="Find..."
                                     aria-label="Find filters"
                                     value={filter}
                                     onChange={event => setFilter(event.currentTarget.value)}
                                     data-testid="sidebar-section-search-box"
-                                    className={classNames(
-                                        'form-control form-control-sm',
-                                        styles.sidebarSectionSearchBox
-                                    )}
+                                    inputClassName={styles.sidebarSectionSearchBox}
+                                    variant="small"
                                 />
                             )}
                             {body}
                         </div>
                     </CollapsePanel>
                 </Collapse>
-            </div>
+            </article>
         ) : null
     }
 )
+SearchSidebarSection.displayName = 'SearchSidebarSection'

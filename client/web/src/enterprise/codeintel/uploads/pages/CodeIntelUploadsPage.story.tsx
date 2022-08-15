@@ -10,9 +10,10 @@ import { CodeIntelUploadsPage, CodeIntelUploadsPageProps } from './CodeIntelUplo
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
+    tags: [],
     inputRoot: 'web/',
-    inputIndexer: 'lsif-tsc',
-    indexer: { name: 'lsif-tsc', url: '' },
+    inputIndexer: 'scip-typescript',
+    indexer: { name: 'scip-typescript', url: '' },
     failure: null,
     isLatestForRepo: false,
     startedAt: null,
@@ -32,18 +33,21 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
         },
     },
     associatedIndex: null,
+    auditLogs: [],
 }
 
 const testUploads: LsifUploadFields[] = [
     {
         ...uploadPrototype,
         id: '6',
+        tags: ['v1', 'v1.0', 'v1.0.0', 'v1.0.1'],
         state: LSIFUploadState.UPLOADING,
         uploadedAt: '2020-06-15T15:25:00+00:00',
     },
     {
         ...uploadPrototype,
         id: '5',
+        tags: ['v1', 'v1.0', 'v1.0.0'],
         state: LSIFUploadState.QUEUED,
         uploadedAt: '2020-06-15T12:20:30+00:00',
         placeInQueue: 1,
@@ -58,6 +62,7 @@ const testUploads: LsifUploadFields[] = [
     {
         ...uploadPrototype,
         id: '3',
+        tags: ['v1', 'v1.0', 'v1.0.0', 'v1.0.1', 'v1', 'v1.0', 'v1.0.0', 'v1.0.1'],
         state: LSIFUploadState.COMPLETED,
         uploadedAt: '2020-06-14T12:20:30+00:00',
         startedAt: '2020-06-14T12:25:30+00:00',

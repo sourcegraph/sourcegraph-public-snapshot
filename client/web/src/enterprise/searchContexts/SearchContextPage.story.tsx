@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
@@ -9,11 +9,17 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchContextPage } from './SearchContextPage'
 
-const { add } = storiesOf('web/enterprise/searchContexts/SearchContextPage', module)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/enterprise/searchContexts/SearchContextPage',
+    decorators: [decorator],
+    parameters: {
         chromatic: { viewports: [1200], disableSnapshot: false },
-    })
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    },
+}
+
+export default config
 
 const repositories: ISearchContextRepositoryRevisions[] = [
     {
@@ -66,82 +72,72 @@ const fetchAutoDefinedContext = (): Observable<ISearchContext> =>
         autoDefined: true,
     })
 
-add(
-    'public context',
-    () => (
-        <WebStory>
-            {webProps => (
-                <SearchContextPage
-                    {...webProps}
-                    fetchSearchContextBySpec={fetchPublicContext}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+export const PublicContext: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextPage
+                {...webProps}
+                fetchSearchContextBySpec={fetchPublicContext}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )}
+    </WebStory>
 )
 
-add(
-    'autodefined context',
-    () => (
-        <WebStory>
-            {webProps => (
-                <SearchContextPage
-                    {...webProps}
-                    fetchSearchContextBySpec={fetchAutoDefinedContext}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+PublicContext.storyName = 'public context'
+
+export const AutodefinedContext: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextPage
+                {...webProps}
+                fetchSearchContextBySpec={fetchAutoDefinedContext}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )}
+    </WebStory>
 )
 
-add(
-    'private context',
-    () => (
-        <WebStory>
-            {webProps => (
-                <SearchContextPage
-                    {...webProps}
-                    fetchSearchContextBySpec={fetchPrivateContext}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+AutodefinedContext.storyName = 'autodefined context'
+
+export const PrivateContext: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextPage
+                {...webProps}
+                fetchSearchContextBySpec={fetchPrivateContext}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )}
+    </WebStory>
 )
 
-add(
-    'loading',
-    () => (
-        <WebStory>
-            {webProps => (
-                <SearchContextPage
-                    {...webProps}
-                    fetchSearchContextBySpec={() => NEVER}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+PrivateContext.storyName = 'private context'
+
+export const Loading: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextPage
+                {...webProps}
+                fetchSearchContextBySpec={() => NEVER}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )}
+    </WebStory>
 )
 
-add(
-    'error',
-    () => (
-        <WebStory>
-            {webProps => (
-                <SearchContextPage
-                    {...webProps}
-                    fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
+Loading.storyName = 'loading'
+
+export const ErrorStory: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextPage
+                {...webProps}
+                fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )}
+    </WebStory>
 )
+
+ErrorStory.storyName = 'error'

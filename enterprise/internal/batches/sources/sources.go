@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"sort"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -42,6 +44,7 @@ var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 
 type SourcerStore interface {
 	DatabaseDB() database.DB
+	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	Repos() database.RepoStore
@@ -65,14 +68,6 @@ type sourcer struct {
 func NewSourcer(cf *httpcli.Factory) Sourcer {
 	return &sourcer{
 		cf,
-	}
-}
-
-// NewFakeSourcer returns a new faked Sourcer to be used for testing Batch Changes.
-func NewFakeSourcer(err error, source ChangesetSource) Sourcer {
-	return &fakeSourcer{
-		err,
-		source,
 	}
 }
 
@@ -108,7 +103,7 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
-	css, err := buildChangesetSource(s.cf, extSvc)
+	css, err := buildChangesetSource(ctx, s.cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -124,7 +119,10 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	return css, nil
 }
 
-func gitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+// GitserverPushConfig creates a push configuration given a repo and an
+// authenticator. This function is only public for testing purposes, and should
+// not be used otherwise.
+func GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -189,6 +187,61 @@ func ToDraftChangesetSource(css ChangesetSource) (DraftChangesetSource, error) {
 	return draftCss, nil
 }
 
+// WithAuthenticatorForChangeset authenticates the given ChangesetSource with a
+// credential appropriate to sync or reconcile the given changeset. If the
+// changeset was created by a batch change, then authentication will be based on
+// the first available option of:
+//
+// 1. The last applying user's credentials.
+// 2. Any available site credential.
+//
+// If the changeset was not created by a batch change, then a site credential
+// will be used.
+func WithAuthenticatorForChangeset(
+	ctx context.Context, tx SourcerStore, css ChangesetSource,
+	ch *btypes.Changeset, repo *types.Repo, allowExternalServiceFallback bool,
+) (ChangesetSource, error) {
+	if ch.OwnedByBatchChangeID != 0 {
+		batchChange, err := loadBatchChange(ctx, tx, ch.OwnedByBatchChangeID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load owning batch change")
+		}
+
+		a, err := WithAuthenticatorForUser(ctx, tx, css, batchChange.LastApplierID, repo)
+		// FIXME: If there's no credential, then we fall back through to
+		// withSiteAuthenticator below, which will ultimately use the external
+		// service configuration credential if no site credential is available.
+		// We want to remove that.
+		if err == ErrMissingCredentials && allowExternalServiceFallback {
+			return css, nil
+		}
+		return a, err
+	}
+
+	// Imported changesets are always allowed to fall back to the global token
+	// at present.
+	return withSiteAuthenticator(ctx, tx, css, repo, true)
+}
+
+type getBatchChanger interface {
+	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
+}
+
+func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes.BatchChange, error) {
+	if id == 0 {
+		return nil, errors.New("changeset has no owning batch change")
+	}
+
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
+	if err != nil && err != store.ErrNoResults {
+		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
+	} else if batchChange == nil {
+		return nil, errors.Errorf("batch change not found: %d", id)
+	}
+
+	return batchChange, nil
+}
+
 // WithAuthenticatorForUser authenticates the given ChangesetSource with a credential
 // usable by the given user with userID. User credentials are preferred, with a
 // fallback to site credentials. If none of these exist, ErrMissingCredentials
@@ -214,10 +267,13 @@ func WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css Changese
 	return nil, ErrMissingCredentials
 }
 
-// WithSiteAuthenticator uses the site credential of the code host of the passed-in repo.
+// withSiteAuthenticator uses the site credential of the code host of the passed-in repo.
 // If no credential is found, the original source is returned and uses the external service
 // config.
-func WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
+func withSiteAuthenticator(
+	ctx context.Context, tx SourcerStore, css ChangesetSource,
+	repo *types.Repo, allowExternalServiceFallback bool,
+) (ChangesetSource, error) {
 	cred, err := loadSiteCredential(ctx, tx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading site credential")
@@ -225,8 +281,11 @@ func WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSo
 	if cred != nil {
 		return css.WithAuthenticator(cred)
 	}
-	// TODO: This should return ErrMissingCredentials.
-	return css, nil
+	if allowExternalServiceFallback {
+		// FIXME: this branch shouldn't exist.
+		return css, nil
+	}
+	return nil, ErrMissingCredentials
 }
 
 // loadExternalService looks up all external services that are connected to the given repo.
@@ -245,7 +304,7 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 	})
 
 	for _, e := range es {
-		cfg, err := e.Configuration()
+		cfg, err := e.Configuration(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -276,16 +335,16 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 
 // buildChangesetSource get an authenticated ChangesetSource for the given repo
 // to load the changeset state from.
-func buildChangesetSource(cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
+func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
 	switch externalService.Kind {
 	case extsvc.KindGitHub:
-		return NewGithubSource(externalService, cf)
+		return NewGithubSource(ctx, externalService, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(externalService, cf)
+		return NewGitLabSource(ctx, externalService, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(externalService, cf)
+		return NewBitbucketServerSource(ctx, externalService, cf)
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(externalService, cf)
+		return NewBitbucketCloudSource(ctx, externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
@@ -382,7 +441,7 @@ func extractCloneURL(ctx context.Context, s database.ExternalServiceStore, repo 
 	for _, svc := range svcs {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
-		cloneURL, err := repos.CloneURL(svc.Kind, svc.Config, repo)
+		cloneURL, err := repos.EncryptableCloneURL(ctx, log.Scoped("CloneURL", ""), svc.Kind, svc.Config, repo)
 		if err != nil {
 			return "", err
 		}
@@ -400,4 +459,44 @@ func extractCloneURL(ctx context.Context, s database.ExternalServiceStore, repo 
 	// // Remove any existing credentials from the clone URL.
 	// parsedU.User = nil
 	return cloneURL.String(), nil
+}
+
+var ErrChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")
+
+// GetRemoteRepo returns the remote that should be pushed to for a given
+// changeset, changeset source, and target repo. The changeset spec may
+// optionally be provided, and is required if the repo will be pushed to.
+func GetRemoteRepo(
+	ctx context.Context,
+	css ChangesetSource,
+	targetRepo *types.Repo,
+	ch *btypes.Changeset,
+	spec *btypes.ChangesetSpec,
+) (*types.Repo, error) {
+	// If the changeset spec doesn't expect a fork _and_ we're not updating a
+	// changeset that was previously created using a fork, then we don't need to
+	// even check if the changeset source is forkable, let alone set up the
+	// remote repo: we can just return the target repo and be done with it.
+	if ch.ExternalForkNamespace == "" && (spec == nil || !spec.IsFork()) {
+		return targetRepo, nil
+	}
+
+	fss, ok := css.(ForkableChangesetSource)
+	if !ok {
+		return nil, ErrChangesetSourceCannotFork
+	}
+
+	if ch.ExternalForkNamespace != "" {
+		// If we're updating an existing changeset, we should push/modify the
+		// same fork, even if the user credential would now fork into a
+		// different namespace.
+		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
+	} else if namespace := spec.GetForkNamespace(); namespace != nil {
+		// If the changeset spec requires a specific fork namespace, then we
+		// should handle that here.
+		return fss.GetNamespaceFork(ctx, targetRepo, *namespace)
+	}
+
+	// Otherwise, we're pushing to a user fork.
+	return fss.GetUserFork(ctx, targetRepo)
 }

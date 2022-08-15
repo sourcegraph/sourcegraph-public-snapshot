@@ -9,10 +9,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,14 +26,15 @@ import (
 )
 
 func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -43,8 +46,8 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	esStore := database.ExternalServicesWith(cstore)
-	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
+	repoStore := database.ReposWith(logger, cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -59,7 +62,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 	changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
 	for i, r := range rs {
 		repoID := graphqlbackend.MarshalRepositoryID(r.ID)
-		s, err := btypes.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, fmt.Sprintf("d34db33f-%d", i)))
+		s, err := btypes.NewChangesetSpecFromRaw(bt.NewRawChangesetSpecGitBranch(repoID, fmt.Sprintf("d34db33f-%d", i)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -74,7 +77,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

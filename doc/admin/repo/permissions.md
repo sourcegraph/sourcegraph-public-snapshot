@@ -4,7 +4,7 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 - [GitHub / GitHub Enterprise](#github)
 - [GitLab](#gitlab)
-- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server)
+- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-bitbucket-data-center)
 - [Unified SSO](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/)
 - [Explicit permissions API](#explicit-permissions-api)
 
@@ -237,7 +237,7 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 <img src="https://imgur.com/1qxEAye.png" width="800">
 
-Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
+Go to your Sourcegraph's *Manage code hosts* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
 
 ```json
 {
@@ -338,6 +338,26 @@ For example, permissions syncs may be scheduled:
 
 When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host - a sync [might not happen immediately](#permissions-sync-duration). Prioritization of permissions sync also happens to, for example, ensure users or repositories with no permissions get processed first.
 
+There are variety of options in the site configuration to tune how the permissions sync requests are scheduled and processed:
+
+```json
+{
+  // Time interval (in seconds) of how often each component picks up authorization changes in external services.
+  "permissions.syncScheduleInterval": 15,
+  // Number of user permissions to schedule for syncing in single scheduler iteration.
+  "permissions.syncOldestUsers": 10,
+  // Number of repo permissions to schedule for syncing in single scheduler iteration.
+  "permissions.syncOldestRepos": 10,
+  // Don't sync a user's permissions if they have synced within the last n seconds.
+  "permissions.syncUsersBackoffSeconds": 60,
+  // Don't sync a repo's permissions if it has synced within the last n seconds.
+  "permissions.syncReposBackoffSeconds": 60,
+  // The maximum number of user-centric permissions syncing jobs that can be spawned concurrently.
+  // Service restart is required to take effect for changes.
+  "permissions.syncUsersMaxConcurrency": 1,
+}
+```
+
 #### Manually scheduling a sync
 
 Permissions syncs are [typically scheduled automatically](#manually-scheduling-a-sync).
@@ -417,7 +437,7 @@ User pending permission is a composite entity comprising:
 - `permission` (access level, e.g. "read")
 - `object_type` (type of what is enumerated in `object_ids_ints` column; for now it is `repos`)
 - `bind_id`
- 
+
 All of which are included as a unique constraint. This entity is addressed in `user_ids_ints` column of [`repo_pending_permissions` table](#repo-pending-permissions) by `id`. Please see [this godoc](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@8e128dd3434b9e548176f8f1148ead3981458db9/-/blob/internal/authz/perms.go?L190-218=) for more information.
 
 Overall, one entry of `user_pending_permissions` table means that _"There is a user with `bind_id` ID of this exact (`service_id`) external code host of this (`service_type`) type with such permissions for this (`object_ids_ints`) set of repos"_.
@@ -428,7 +448,7 @@ Overall, one entry of `user_pending_permissions` table means that _"There is a u
 
 ## Explicit permissions API
 
-Sourcegraph exposes a GraphQL API to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
+Sourcegraph exposes a set of GraphQL APIs to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
 
 To enable the permissions API, add the following to the [site configuration](../config/site_config.md):
 
@@ -441,14 +461,18 @@ To enable the permissions API, add the following to the [site configuration](../
 
 The `bindID` value specifies how to uniquely identify users when setting permissions:
 
-- `email`: You can [set permissions](#settings-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account).
-- `username`: You can [set permissions](#settings-repository-permissions-for-users) for users by specifying their Sourcegraph usernames.
+- `email`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account).
+- `username`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their Sourcegraph usernames.
 
 If the permissions API is enabled, all other repository permissions mechanisms are disabled.
 
-After you enable the permissions API, you must [set permissions](#settings-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
+After you enable the permissions API, you must [set permissions](#setting-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
 
 > NOTE: If you were previously using [background permissions syncing](#background-permissions-syncing), e.g. using [GitHub permissions](#github), then those permissions are used as the initial state after enabling explicit permissions. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
+
+<span class="virtual-br"></span>
+
+> NOTE: If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for some repositories and inherit code host permissions for others. (See [RFC 626: Permissions mechanisms in parallel](https://docs.google.com/document/d/1nWbmfM5clAH4pi_4tEt6zDtqN1-z1DuHlQ7A5KAijf8/edit#) for a design document about future support for this situation.)
 
 ### Setting a repository as unrestricted
 
@@ -458,7 +482,7 @@ For example:
 
 ```graphql
 mutation {
-  setRepositoryPermissionsUnrestricted(repositories: ["A","B","C"], unrestricted: true)
+  setRepositoryPermissionsUnrestricted(repositories: ["<repo ID>", "<repo ID>", "<repo ID>"], unrestricted: true)
 }
 ```
 
@@ -481,7 +505,7 @@ Next, set the list of users allowed to view the repository:
 ```graphql
 mutation {
   setRepositoryPermissionsForUsers(
-    repository: "<repo ID>", 
+    repository: "<repo ID>",
     userPermissions: [
       { bindID: "user@example.com" }
     ]) {
@@ -505,6 +529,100 @@ query {
       name
     }
     totalCount
+  }
+}
+```
+
+<br />
+
+### Bitbucket project based permissions
+
+Sourcegraph supports setting project wide permissions for Bitbucket code host connections.
+
+#### Setting repository permissions for a project
+
+This API lets site admins set the same permissions for all the users across all the repositories under the project.
+
+First, obtain the project key from the Bitbucket code host.
+
+Next, get the code host ID. Visit the **Manage code hosts** page from the site admin panel in the Sourcegraph instance and click on "Edit" for the code host under which the above project is located. Copy the ID from the URL. For example in the URL https://sourcegraph.example.com/site-admin/external-services/RXh0ZXJuYWxTZXJ2aWNlOjMwNjczNg==, the code host ID is `RXh0ZXJuYWxTZXJ2aWNlOjMwNjczNg==`.
+
+Next, set the list of users allowed to access all repositories under the project:
+
+```graphql
+mutation {
+    setRepositoryPermissionsForBitbucketProject(
+        projectKey: "<project key>",
+        codeHost: "<code host ID>",
+        userPermissions: [
+            { bindID: "user@example.com" }
+        ]
+    ) {
+      alwaysNil
+    }
+}
+```
+
+This will return an empty respoinse immediately while also enqueuing a background task to set permissions for all the repositories that belong to the project as identified by the `projectKey` in the API request.
+
+> NOTE: This sets the permissions for all repositories for `projectKey` on Sourcegraph at the time of the API call. If a new repository is added for `projectKey` it will remain hidden until you call `setRepositoryPermissionsForBitbucketProject` again.
+
+#### Querying project permissions task status
+
+To get the state of currently queued or running tasks you can run the following query with a list of project keys (one or more):
+
+```graphql
+query {
+    bitbucketProjectPermissionJobs(projectKeys: ["<project key 1>", "<project key 2>"]) {
+    nodes{
+      InternalJobID,
+      State,
+      FailureMessage,
+      QueuedAt,
+      StartedAt,
+      FinishedAt,
+      ProcessAfter,
+      ExternalServiceID,
+      Permissions{
+        bindID,
+        permission,
+      },
+      Unrestricted,
+    }
+  }
+}
+```
+
+The API also supports filtering against task `status`, which can be one of the following:
+
+- `queued`
+- `canceled`
+- `errored`
+- `failed`
+- `completed`
+
+Additionally, the API supports users to control the number of tasks returned in the output by using the argument `count` upto an upper limit of 500 with a default value of 100.
+
+Here's an example with all the query arguments in the API call:
+
+```graphql
+query {
+    bitbucketProjectPermissionJobs(projectKeys: ["a", "b"], status: "queued", count: 200) {
+    nodes{
+      InternalJobID,
+      State,
+      FailureMessage,
+      QueuedAt,
+      StartedAt,
+      FinishedAt,
+      ProcessAfter,
+      ExternalServiceID,
+      Permissions{
+        bindID,
+        permission,
+      },
+      Unrestricted,
+    }
   }
 }
 ```

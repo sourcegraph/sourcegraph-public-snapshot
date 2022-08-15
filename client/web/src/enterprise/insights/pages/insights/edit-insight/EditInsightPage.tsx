@@ -2,21 +2,24 @@ import React, { useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
-import { Badge, LoadingSpinner, useObservable, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
+import { CodeInsightsPage } from '../../../components'
 import {
     CodeInsightsBackendContext,
     isCaptureGroupInsight,
+    isComputeInsight,
     isLangStatsInsight,
     isSearchBasedInsight,
 } from '../../../core'
+import { useUiFeatures } from '../../../hooks'
 
 import { EditCaptureGroupInsight } from './components/EditCaptureGroupInsight'
+import { EditComputeInsight } from './components/EditComputeInsight'
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
@@ -36,9 +39,14 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
     const { insightID, authenticatedUser } = props
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)
+    const { licensed, insight: insightFeatures } = useUiFeatures()
 
     const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
     const { handleSubmit, handleCancel } = useEditPageHandlers({ id: insight?.id })
+
+    const editPermission = useObservable(
+        useMemo(() => insightFeatures.getEditPermissions(insight), [insightFeatures, insight])
+    )
 
     if (insight === undefined) {
         return <LoadingSpinner inline={false} />
@@ -70,25 +78,53 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
                 className="mb-3"
                 path={[{ icon: CodeInsightsIcon }, { text: 'Edit insight' }]}
                 description={
-                    <p className="text-muted">
+                    <Text className="text-muted">
                         Insights analyze your code based on any search query.{' '}
                         <Link to="/help/code_insights" target="_blank" rel="noopener">
                             Learn more.
                         </Link>
-                    </p>
+                    </Text>
                 }
             />
 
             {isSearchBasedInsight(insight) && (
-                <EditSearchBasedInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
+                <EditSearchBasedInsight
+                    licensed={licensed}
+                    isEditAvailable={editPermission?.available}
+                    insight={insight}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                />
             )}
 
             {isCaptureGroupInsight(insight) && (
-                <EditCaptureGroupInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
+                <EditCaptureGroupInsight
+                    licensed={licensed}
+                    isEditAvailable={editPermission?.available}
+                    insight={insight}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                />
             )}
 
             {isLangStatsInsight(insight) && (
-                <EditLangStatsInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
+                <EditLangStatsInsight
+                    licensed={licensed}
+                    isEditAvailable={editPermission?.available}
+                    insight={insight}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                />
+            )}
+
+            {isComputeInsight(insight) && (
+                <EditComputeInsight
+                    licensed={licensed}
+                    isEditAvailable={editPermission?.available}
+                    insight={insight}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                />
             )}
         </CodeInsightsPage>
     )

@@ -1,86 +1,106 @@
 import React from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CancelIcon from 'mdi-react/CancelIcon'
-import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
-import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
-import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import { mdiTimerSand, mdiLinkVariantRemove, mdiCancel, mdiAlertCircle, mdiContentSave, mdiCheckBold } from '@mdi/js'
+import classNames from 'classnames'
 
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 
 export interface WorkspaceStateIconProps {
     state: BatchSpecWorkspaceState
     cachedResultFound: boolean
+    className?: string
 }
 
 export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren<WorkspaceStateIconProps>> = ({
     state,
     cachedResultFound,
+    className,
 }) => {
     switch (state) {
         case BatchSpecWorkspaceState.PENDING:
             return null
         case BatchSpecWorkspaceState.QUEUED:
             return (
-                <Icon
-                    className="text-muted"
-                    data-tooltip="This workspace is queued for execution."
-                    as={TimerSandIcon}
-                />
+                <Tooltip content="This workspace is queued for execution.">
+                    <Icon
+                        aria-label="This workspace is queued for execution."
+                        className={classNames('text-muted', className)}
+                        svgPath={mdiTimerSand}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.PROCESSING:
             return (
-                <Icon
-                    className="text-muted"
-                    data-tooltip="This workspace is currently executing."
-                    as={LoadingSpinner}
-                />
+                <Tooltip content="This workspace is currently executing.">
+                    <Icon
+                        aria-label="This workspace is currently executing."
+                        className={classNames('text-muted', className)}
+                        as={LoadingSpinner}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.SKIPPED:
-            return <Icon className="text-muted" data-tooltip="This workspace was skipped." as={LinkVariantRemoveIcon} />
+            return (
+                <Tooltip content="This workspace was skipped.">
+                    <Icon
+                        aria-label="This workspace was skipped."
+                        className={classNames('text-muted', className)}
+                        svgPath={mdiLinkVariantRemove}
+                    />
+                </Tooltip>
+            )
         case BatchSpecWorkspaceState.CANCELED:
             return (
-                <Icon
-                    className="text-muted"
-                    data-tooltip="The execution for this workspace was canceled."
-                    as={CancelIcon}
-                />
+                <Tooltip content="The execution for this workspace was canceled.">
+                    <Icon
+                        aria-label="The execution for this workspace was canceled."
+                        className={classNames('text-muted', className)}
+                        svgPath={mdiCancel}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.CANCELING:
             return (
-                <Icon
-                    className="text-muted"
-                    data-tooltip="The execution for this workspace is being canceled."
-                    as={CancelIcon}
-                />
+                <Tooltip content="The execution for this workspace is being canceled.">
+                    <Icon
+                        aria-label="The execution for this workspace is being canceled."
+                        className={classNames('text-muted', className)}
+                        svgPath={mdiCancel}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.FAILED:
             return (
-                <Icon
-                    className="text-danger"
-                    data-tooltip="The execution for this workspace failed."
-                    as={AlertCircleIcon}
-                />
+                <Tooltip content="The execution for this workspace failed.">
+                    <Icon
+                        aria-label="The execution for this workspace failed."
+                        className="text-danger"
+                        svgPath={mdiAlertCircle}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.COMPLETED:
             if (cachedResultFound) {
                 return (
-                    <Icon
-                        className="text-success"
-                        data-tooltip="Cached result found for this workspace."
-                        as={ContentSaveIcon}
-                    />
+                    <Tooltip content="Cached result found for this workspace.">
+                        <Icon
+                            aria-label="Cached result found for this workspace."
+                            className="text-success"
+                            svgPath={mdiContentSave}
+                        />
+                    </Tooltip>
                 )
             }
             return (
-                <Icon
-                    className="text-success"
-                    data-tooltip="Execution for this workspace succeeded."
-                    as={CheckBoldIcon}
-                />
+                <Tooltip content="Execution for this workspace succeeded.">
+                    <Icon
+                        aria-label="Execution for this workspace succeeded."
+                        className="text-success"
+                        svgPath={mdiCheckBold}
+                    />
+                </Tooltip>
             )
     }
 }

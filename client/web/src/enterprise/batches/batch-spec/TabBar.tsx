@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { uniqBy, upperFirst } from 'lodash'
 import { NavLink as RouterLink } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './TabBar.module.scss'
 
@@ -46,7 +46,7 @@ export const TabBar: React.FunctionComponent<React.PropsWithChildren<TabBarProps
     // uniqBy removes duplicates by taking the first item it finds with a given 'name', so we spread the defaults last
     const fullTabsConfig = useMemo<TabsConfig[]>(() => uniqBy([...tabsConfig, ...DEFAULT_TABS], 'key'), [tabsConfig])
     return (
-        <ul className={classNames('nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap', className)}>
+        <ul className={classNames('nav nav-tabs', styles.navList, className)}>
             {fullTabsConfig.map(({ key, isEnabled, disabledTooltip, handler }, index) => {
                 const tabName = getTabName(key, index)
 
@@ -57,14 +57,19 @@ export const TabBar: React.FunctionComponent<React.PropsWithChildren<TabBarProps
                                 {tabName}
                             </span>
                         ) : !isEnabled ? (
-                            <span
-                                aria-disabled="true"
-                                className={classNames('nav-link text-muted', styles.navLinkDisabled, styles.navLink)}
-                                data-tab-content={tabName}
-                                data-tooltip={disabledTooltip}
-                            >
-                                {tabName}
-                            </span>
+                            <Tooltip content={disabledTooltip}>
+                                <span
+                                    aria-disabled="true"
+                                    className={classNames(
+                                        'nav-link text-muted',
+                                        styles.navLinkDisabled,
+                                        styles.navLink
+                                    )}
+                                    data-tab-content={tabName}
+                                >
+                                    {tabName}
+                                </span>
+                            </Tooltip>
                         ) : !handler ? (
                             <span
                                 aria-disabled="true"

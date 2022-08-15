@@ -6,12 +6,12 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func goModGuards() lint.Runner {
+func goModGuards() *linter {
 	const header = "go.mod version guards"
 
 	var maxVersions = map[string]*semver.Version{
@@ -22,58 +22,83 @@ func goModGuards() lint.Runner {
 		"github.com/prometheus/common": semver.MustParse("v0.32.1"),
 	}
 
-	if len(maxVersions) == 0 {
-		return func(ctx context.Context, s *repo.State) *lint.Report {
-			return &lint.Report{Header: header, Output: "No guards currently defined"}
-		}
-	}
+	return &linter{
+		Name: header,
+		Enabled: func(ctx context.Context, args *repo.State) error {
+			if len(maxVersions) == 0 {
+				return errors.New("no version restrictions declared")
+			}
+			return nil
+		},
+		Check: func(ctx context.Context, out *std.Output, state *repo.State) error {
+			diff, err := state.GetDiff("go.mod")
+			if err != nil {
+				return err
+			}
+			if len(diff) == 0 {
+				out.Verbose("No go.mod changes detected!")
+				return nil
+			}
 
-	return func(ctx context.Context, s *repo.State) *lint.Report {
-		diff, err := s.GetDiff("go.mod")
-		if err != nil {
-			return &lint.Report{Header: header, Err: err}
-		}
-		if len(diff) == 0 {
-			return &lint.Report{Header: header, Output: "No go.mod changes detected!"}
-		}
+			failedLibs := map[string]error{}
+			for _, hunk := range diff["go.mod"] {
+				for _, l := range hunk.AddedLines {
+					parts := strings.Split(strings.TrimSpace(l), " ")
+					switch len(parts) {
+					// Dependencies: 'lib v1.2.3'
+					case 2:
+						var (
+							lib     = parts[0]
+							version = parts[1]
+						)
+						if !strings.HasPrefix(version, "v") {
+							continue
+						}
+						if maxVersion := maxVersions[lib]; maxVersion != nil {
+							v, err := semver.NewVersion(version)
+							if err != nil {
+								failedLibs[lib] = errors.Wrapf(err, "invalid version", version)
+								continue
+							}
+							if v.GreaterThan(maxVersion) {
+								failedLibs[lib] = errors.Newf("must not exceed version %s", maxVersion)
+							}
+						}
 
-		var errs error
-		for _, hunk := range diff["go.mod"] {
-			for _, l := range hunk.AddedLines {
-				parts := strings.Split(strings.TrimSpace(l), " ")
-				if len(parts) != 2 {
-					continue
-				}
-				var (
-					lib     = parts[0]
-					version = parts[1]
-				)
-				if !strings.HasPrefix(version, "v") {
-					continue
-				}
-				if maxVersion := maxVersions[lib]; maxVersion != nil {
-					v, err := semver.NewVersion(version)
-					if err != nil {
-						errs = errors.Append(errs, errors.Wrapf(err, "dependency %s has invalid version", lib))
-						continue
-					}
-					if v.GreaterThan(maxVersion) {
-						errs = errors.Append(errs, errors.Newf("dependency %s must not exceed version %s",
-							lib, maxVersion))
+					// Overrides: 'lib => lib v1.2.3'
+					case 4:
+						var (
+							replaced = parts[0]
+							lib      = parts[2]
+							version  = parts[3]
+						)
+						if replaced != lib {
+							continue
+						}
+						if !strings.HasPrefix(version, "v") {
+							continue
+						}
+
+						if maxVersion := maxVersions[lib]; maxVersion != nil {
+							v, err := semver.NewVersion(version)
+							if err != nil {
+								failedLibs[lib] = errors.Wrapf(err, "invalid version", version)
+								continue
+							}
+							if !v.GreaterThan(maxVersion) {
+								// reset error if override enforces a safe verison
+								failedLibs[lib] = nil
+							}
+						}
 					}
 				}
 			}
-		}
 
-		return &lint.Report{
-			Header: header,
-			Output: func() string {
-				if errs != nil {
-					return strings.TrimSpace(errs.Error())
-				}
-				return ""
-			}(),
-			Err: errs,
-		}
+			var errs error
+			for lib, err := range failedLibs {
+				errs = errors.Append(errs, errors.Wrap(err, lib))
+			}
+			return errs
+		},
 	}
 }

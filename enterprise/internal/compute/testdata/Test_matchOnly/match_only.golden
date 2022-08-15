@@ -1,0 +1,9 @@
+{
+  "Input": "nothing",
+  "Result": {
+    "matches": [],
+    "path": "bedge",
+    "repositoryID": 5,
+    "repository": "codehost.com/myorg/myrepo"
+  }
+}

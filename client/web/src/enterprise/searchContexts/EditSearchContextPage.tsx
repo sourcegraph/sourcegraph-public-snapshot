@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { mdiMagnify } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
@@ -75,13 +75,13 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     <PageTitle title="Edit context" />
                     <PageHeader
                         className="mb-3"
                         path={[
                             {
-                                icon: MagnifyIcon,
+                                icon: mdiMagnify,
                                 to: '/search',
                                 ariaLabel: 'Code Search',
                             },

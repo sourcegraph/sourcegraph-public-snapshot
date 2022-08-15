@@ -66,7 +66,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Warning:  monitoring.Alert().GreaterOrEqual(0.05).For(10 * time.Minute),
 				Critical: monitoring.Alert().GreaterOrEqual(0.10).For(15 * time.Minute),
 				Owner:    monitoring.ObservableOwnerDevOps,
-				PossibleSolutions: `
+				NextSteps: `
 					- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 					- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
 				`,

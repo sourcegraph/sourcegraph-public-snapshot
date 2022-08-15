@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/time/rate"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,12 +27,12 @@ type RateLimitSyncer struct {
 	// How many services to fetch in each DB call
 	pageSize int
 	// Rate limit to apply when making DB requests, optional.
-	limiter *rate.Limiter
+	limiter *ratelimit.InstrumentedLimiter
 }
 
 type RateLimitSyncerOpts struct {
 	// The number of external services to fetch while paginating. Optional, will
-	// default to 500
+	// default to 500.
 	PageSize int
 	// We need to rate limit our rate limit syncing (!). This is because when
 	// encryption is enabled on an instance, fetching external services is not free
@@ -41,7 +41,7 @@ type RateLimitSyncerOpts struct {
 	//
 	// If a limiter is supplied we ensure that PageSize is never larger than the
 	// limiters burst size. The limiter is optional.
-	Limiter *rate.Limiter
+	Limiter *ratelimit.InstrumentedLimiter
 }
 
 // NewRateLimitSyncer returns a new syncer
@@ -96,7 +96,7 @@ func (r *RateLimitSyncer) SyncLimitersSince(ctx context.Context, updateAfter tim
 		}
 		cursor.Offset += len(services)
 
-		if err := r.SyncServices(services); err != nil {
+		if err := r.SyncServices(ctx, services); err != nil {
 			return errors.Wrap(err, "syncing services")
 		}
 
@@ -109,9 +109,9 @@ func (r *RateLimitSyncer) SyncLimitersSince(ctx context.Context, updateAfter tim
 
 // SyncServices syncs a know slice of services without fetching them from the
 // database.
-func (r *RateLimitSyncer) SyncServices(services []*types.ExternalService) error {
+func (r *RateLimitSyncer) SyncServices(ctx context.Context, services []*types.ExternalService) error {
 	for _, svc := range services {
-		limit, err := extsvc.ExtractRateLimit(svc.Config, svc.Kind)
+		limit, err := extsvc.ExtractEncryptableRateLimit(ctx, svc.Config, svc.Kind)
 		if err != nil {
 			if errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
 				continue
@@ -136,17 +136,17 @@ type ScopeCache interface {
 //
 // Currently only GitHub and GitLab external services with user or org namespace are supported,
 // other code hosts will simply return an empty slice
-func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *types.ExternalService) ([]string, error) {
+func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db database.DB, svc *types.ExternalService) ([]string, error) {
 	externalServicesStore := db.ExternalServices()
 	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
-	src, err := NewSource(db, svc, nil)
+	src, err := NewSource(ctx, logger.Scoped("Source", ""), db, svc, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating source")
 	}
 	switch v := src.(type) {
-	case *GithubSource:
+	case *GitHubSource:
 		// Cached path
 		token := v.config.Token
 		if token == "" {
@@ -161,7 +161,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *t
 		}
 
 		// Slow path
-		src, err := NewGithubSource(externalServicesStore, svc, nil)
+		src, err := NewGithubSource(ctx, logger.Scoped("GithubSource", ""), externalServicesStore, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}
@@ -190,7 +190,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *t
 		}
 
 		// Slow path
-		src, err := NewGitLabSource(svc, nil)
+		src, err := NewGitLabSource(ctx, logger.Scoped("GitLabSource", ""), db, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}

@@ -1,8 +1,9 @@
 import React from 'react'
 
+import { mdiCloseCircleOutline, mdiPlayCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
-import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
-import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
+
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './ChangesetCloseAction.module.scss'
 
@@ -12,7 +13,13 @@ export const ChangesetCloseActionClose: React.FunctionComponent<React.PropsWithC
     className,
 }) => (
     <div className={classNames(className, iconClassNames, styles.changesetCloseActionCloseFlash)}>
-        <CloseCircleOutlineIcon data-tooltip="This changeset will be closed on the code host when the batch change is closed." />
+        <Tooltip content="This changeset will be closed on the code host when the batch change is closed.">
+            <Icon
+                aria-label="This changeset will be closed on the code host when the batch change is closed."
+                svgPath={mdiCloseCircleOutline}
+                inline={false}
+            />
+        </Tooltip>
         <span className="text-muted">Will close</span>
     </div>
 )
@@ -20,7 +27,13 @@ export const ChangesetCloseActionKept: React.FunctionComponent<React.PropsWithCh
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <PlayCircleOutlineIcon data-tooltip="This changeset will NOT be closed on the code host when the batch change is closed." />
+        <Tooltip content="This changeset will NOT be closed on the code host when the batch change is closed.">
+            <Icon
+                aria-label="This changeset will NOT be closed on the code host when the batch change is closed."
+                svgPath={mdiPlayCircleOutline}
+                inline={false}
+            />
+        </Tooltip>
         <span className="text-muted">Kept open</span>
     </div>
 )

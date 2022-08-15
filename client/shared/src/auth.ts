@@ -32,6 +32,10 @@ export const currentAuthStateQuery = gql`
             tags
             tosAccepted
             searchable
+            emails {
+                email
+                verified
+            }
         }
     }
 `

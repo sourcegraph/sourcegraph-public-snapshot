@@ -6,21 +6,29 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 
 	"github.com/gorilla/mux"
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore executor.Store, queueOptionsMap []QueueOptions, router *mux.Router) {
+func SetupRoutes(executorStore executor.Store, metricsStore metricsstore.DistributedStore, queueOptionsMap []QueueOptions, router *mux.Router) {
 	for _, queueOptions := range queueOptionsMap {
-		h := newHandler(executorStore, queueOptions)
+		h := newHandler(executorStore, metricsStore, queueOptions)
 
 		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(queueOptions.Name))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
@@ -31,7 +39,7 @@ func SetupRoutes(executorStore executor.Store, queueOptionsMap []QueueOptions, r
 			"markErrored":             h.handleMarkErrored,
 			"markFailed":              h.handleMarkFailed,
 			"heartbeat":               h.handleHeartbeat,
-			"canceled":                h.handleCanceled,
+			"canceledJobs":            h.handleCanceledJobs,
 		}
 		for path, handler := range routes {
 			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
@@ -132,17 +140,33 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 			SrcCliVersion:   payload.SrcCliVersion,
 		}
 
+		// Handle metrics in the background, this should not delay the heartbeat response being
+		// delivered. It is critical for keeping jobs alive.
+		go func() {
+			metrics, err := decodeAndLabelMetrics(payload.PrometheusMetrics, payload.ExecutorName)
+			if err != nil {
+				// Just log the error but don't panic. The heartbeat is more important.
+				h.logger.Error("failed to decode metrics and apply labels for executor heartbeat", log.Error(err))
+				return
+			}
+
+			if err := h.metricsStore.Ingest(payload.ExecutorName, metrics); err != nil {
+				// Just log the error but don't panic. The heartbeat is more important.
+				h.logger.Error("failed to ingest metrics for executor heartbeat", log.Error(err))
+			}
+		}()
+
 		unknownIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
 		return http.StatusOK, unknownIDs, err
 	})
 }
 
-// POST /{queueName}/canceled
-func (h *handler) handleCanceled(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.CanceledRequest
+// POST /{queueName}/canceledJobs
+func (h *handler) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
+	var payload apiclient.CanceledJobsRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName)
+		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
 		return http.StatusOK, canceledIDs, err
 	})
 }
@@ -183,4 +207,53 @@ func (h *handler) wrapHandler(w http.ResponseWriter, r *http.Request, payload an
 	if status != http.StatusNoContent {
 		_, _ = io.Copy(w, bytes.NewReader(data))
 	}
+}
+
+// decodeAndLabelMetrics decodes the text serialized prometheus metrics dump and then
+// applies common labels.
+func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFamily, error) {
+	data := []*dto.MetricFamily{}
+
+	dec := expfmt.NewDecoder(strings.NewReader(encodedMetrics), expfmt.FmtText)
+	for {
+		var mf dto.MetricFamily
+		if err := dec.Decode(&mf); err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, errors.Wrap(err, "decoding metric family")
+		}
+
+		// Attach the extra labels.
+		metricLabelInstance := "sg_instance"
+		metricLabelJob := "sg_job"
+		executorJob := "sourcegraph-executors"
+		registryJob := "sourcegraph-executors-registry"
+		for _, m := range mf.Metric {
+			var metricLabelInstanceValue string
+			for _, l := range m.Label {
+				if *l.Name == metricLabelInstance {
+					metricLabelInstanceValue = l.GetValue()
+					break
+				}
+			}
+			// if sg_instance not set, set it as the executor name sent in the heartbeat.
+			// this is done for the executor's own and it's node_exporter metrics, executors
+			// set sg_instance for metrics scraped from the registry+registry's node_exporter
+			if metricLabelInstanceValue == "" {
+				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
+			}
+
+			if metricLabelInstanceValue == "docker-registry" {
+				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &registryJob})
+			} else {
+				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &executorJob})
+			}
+		}
+
+		data = append(data, &mf)
+	}
+
+	return data, nil
 }

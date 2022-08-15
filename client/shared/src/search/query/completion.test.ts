@@ -1,7 +1,7 @@
 import { SymbolKind } from '../../graphql-operations'
 import { isSearchMatchOfType, SearchMatch } from '../stream'
 
-import { FetchSuggestions, getCompletionItems, repositoryCompletionItemKind } from './completion'
+import { FetchSuggestions, getCompletionItems } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
@@ -42,6 +42,7 @@ describe('getCompletionItems()', () => {
                                     name: 'RepoRoutes',
                                     url: '',
                                     containerName: '',
+                                    line: 1,
                                 },
                             ],
                         },
@@ -72,7 +73,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -105,6 +105,7 @@ describe('getCompletionItems()', () => {
                                     name: 'RepoRoutes',
                                     containerName: '',
                                     url: '',
+                                    line: 1,
                                 },
                             ],
                         },
@@ -135,7 +136,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -176,7 +176,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -216,7 +215,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -256,7 +254,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -325,26 +322,6 @@ describe('getCompletionItems()', () => {
         ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
     })
 
-    test('inserts valid suggestion when completing repo:deps predicate', async () => {
-        expect(
-            (
-                await getCompletionItems(
-                    getToken('repo:deps(sourcegraph', 0),
-                    { column: 21 },
-                    createFetcher([
-                        {
-                            type: 'repo',
-                            repository: 'github.com/sourcegraph/jsonrpc2.go',
-                        },
-                    ]),
-                    {}
-                )
-            )?.suggestions
-                .filter(({ kind }) => kind === repositoryCompletionItemKind)
-                .map(({ insertText }) => insertText)
-        ).toStrictEqual(['deps(^github\\.com/sourcegraph/jsonrpc2\\.go$) '])
-    })
-
     test('sets current filter value as filterText', async () => {
         expect(
             (
@@ -408,6 +385,7 @@ describe('getCompletionItems()', () => {
               "dependencies(\${1}) ",
               "revdeps(\${1}) ",
               "dependents(\${1}) ",
+              "has.description(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -432,7 +410,8 @@ describe('getCompletionItems()', () => {
               "deps(\${1}) ",
               "dependencies(\${1}) ",
               "revdeps(\${1}) ",
-              "dependents(\${1}) "
+              "dependents(\${1}) ",
+              "has.description(\${1}) "
             ]
         `)
     })

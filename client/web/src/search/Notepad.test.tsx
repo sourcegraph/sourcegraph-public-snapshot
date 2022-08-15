@@ -12,7 +12,7 @@ import { addNotepadEntry, NotepadEntry } from '../stores/notepad'
 
 import { NotepadContainer, NotepadProps } from './Notepad'
 
-describe('Search Stack', () => {
+describe('Notepad', () => {
     const renderNotepad = (props?: Partial<NotepadProps>, enabled = true): RenderWithBrandedContextResult =>
         renderWithBrandedContext(
             <MockTemporarySettings settings={{ 'search.notepad.enabled': enabled }}>
@@ -21,13 +21,29 @@ describe('Search Stack', () => {
         )
 
     function open() {
-        userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
+        userEvent.click(screen.getByRole('button', { name: /Open Notepad/ }))
     }
+
+    // Notepad is hidden by default on small screens. jest-dom has no concept of
+    // screen size, so this needs to be explicitly overriden to ensure that the
+    // component renders.
+    window.matchMedia = sinon.spy(
+        (media: string): MediaQueryList => ({
+            matches: true,
+            media,
+            addListener: () => {},
+            removeListener: () => {},
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => false,
+            onchange: null,
+        })
+    )
 
     afterEach(cleanup)
 
     const mockEntries: NotepadEntry[] = [
-        { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
+        { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.standard },
         { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
     ]
 
@@ -43,7 +59,7 @@ describe('Search Stack', () => {
 
             renderNotepad()
 
-            expect(screen.queryByRole('button', { name: 'Open Notepad' })).toBeInTheDocument()
+            expect(screen.queryByRole('button', { name: /Open Notepad/ })).toBeInTheDocument()
         })
     })
 
@@ -56,7 +72,7 @@ describe('Search Stack', () => {
                 addableEntry: mockEntries[0],
             })
             renderNotepad()
-            userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
+            userEvent.click(screen.getByRole('button', { name: /Open Notepad/ }))
 
             userEvent.click(screen.getByRole('button', { name: 'Restore last session' }))
             expect(useNotepadState.getState().entries).toEqual(mockEntries)
@@ -72,7 +88,7 @@ describe('Search Stack', () => {
                         type: 'search',
                         query: 'TODO',
                         caseSensitive: false,
-                        patternType: SearchPatternType.literal,
+                        patternType: SearchPatternType.standard,
                     },
                     { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
                 ],
@@ -82,10 +98,10 @@ describe('Search Stack', () => {
         it('opens and closes', () => {
             renderNotepad()
 
-            userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
-            userEvent.click(screen.getByRole('button', { name: 'Close Notepad' }))
+            userEvent.click(screen.getByRole('button', { name: /Open Notepad/ }))
+            userEvent.click(screen.getByRole('button', { name: /Close Notepad/ }))
 
-            expect(screen.queryByRole('button', { name: 'Open Notepad' })).toBeInTheDocument()
+            expect(screen.queryByRole('button', { name: /Open Notepad/ })).toBeInTheDocument()
         })
 
         it('redirects to notes', () => {
@@ -96,7 +112,7 @@ describe('Search Stack', () => {
 
             // Entries are in reverse order
             expect(entryLinks[0]).toHaveAttribute('href', '/test@master/-/blob/path/to/file')
-            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=literal')
+            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=standard')
         })
 
         it('creates notebooks', () => {
@@ -147,7 +163,7 @@ describe('Search Stack', () => {
                         type: 'search',
                         query: 'TODO',
                         caseSensitive: false,
-                        patternType: SearchPatternType.literal,
+                        patternType: SearchPatternType.standard,
                     },
                     { id: 2, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
                     {
@@ -155,14 +171,14 @@ describe('Search Stack', () => {
                         type: 'search',
                         query: 'another query',
                         caseSensitive: true,
-                        patternType: SearchPatternType.literal,
+                        patternType: SearchPatternType.standard,
                     },
                     {
                         id: 4,
                         type: 'search',
                         query: 'yet another query',
                         caseSensitive: true,
-                        patternType: SearchPatternType.literal,
+                        patternType: SearchPatternType.standard,
                     },
                 ],
             })
@@ -454,7 +470,7 @@ describe('Search Stack', () => {
             act(() => {
                 addNotepadEntry({
                     type: 'search',
-                    patternType: SearchPatternType.literal,
+                    patternType: SearchPatternType.standard,
                     query: 'new TODO',
                     caseSensitive: false,
                 })

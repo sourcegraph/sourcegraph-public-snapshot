@@ -1,11 +1,9 @@
 import { Observable } from 'rxjs'
 
-import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
+import { Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
 
 import {
     AssignInsightsToDashboardInput,
-    BackendInsightData,
-    CaptureInsightSettings,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
@@ -24,6 +22,8 @@ import {
     SeriesChartContent,
     UiFeaturesConfig,
     InsightContent,
+    InsightPreviewSettings,
+    BackendInsightDatum,
 } from './code-insights-backend-types'
 
 /**
@@ -64,7 +64,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (input: { dashboardId: string }) => Observable<Insight[]>
+    getInsights: (input: { dashboardId: string; withCompute: boolean }) => Observable<Insight[]>
 
     getAccessibleInsightsList: () => Observable<AccessibleInsightInfo[]>
 
@@ -89,11 +89,6 @@ export interface CodeInsightsBackend {
     removeInsightFromDashboard: (input: RemoveInsightFromDashboardInput) => Observable<unknown>
 
     /**
-     * Returns backend insight (via gql API handler)
-     */
-    getBackendInsightData: (insight: BackendInsight) => Observable<BackendInsightData>
-
-    /**
      * Returns extension like built-in insight that is fetched via frontend
      * network utils to Sourcegraph search API.
      */
@@ -109,7 +104,7 @@ export interface CodeInsightsBackend {
      */
     getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
 
-    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<SeriesChartContent<unknown>>
+    getInsightPreviewContent: (input: InsightPreviewSettings) => Promise<SeriesChartContent<BackendInsightDatum>>
 
     /**
      * Returns a list of suggestions for the repositories' field in the insight creation UI.

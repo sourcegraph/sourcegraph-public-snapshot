@@ -32,6 +32,9 @@ export interface Settings {
             enabled: boolean
             forNerds?: boolean
         }
+        enableExtensionsDecorationsColumnView?: boolean
+        extensionsAsCoreFeatures?: boolean
+        enableLegacyExtensions?: boolean
     }
     [key: string]: any
 

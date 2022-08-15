@@ -1,0 +1,32 @@
+.scores {
+    display: inline-block;
+}
+
+.rating-radio {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+    pointer-events: none;
+}
+
+.rating-btn {
+    width: 2.5rem;
+    height: 2rem;
+    padding: 0.25rem;
+    margin: 0 0.125rem;
+    cursor: pointer;
+}
+
+.rating-btn:first-of-type {
+    margin-left: 0;
+}
+
+.rating-btn:last-of-type {
+    margin-right: 0;
+}
+
+.rating-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+}

@@ -1,15 +1,15 @@
-import React, { memo, useCallback, useEffect, useState } from 'react'
+import React, { memo, useCallback, useLayoutEffect, useState } from 'react'
 
 import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { ViewGrid } from '../../../../views'
 import { Insight } from '../../core'
 import { getTrackingTypeByInsightType } from '../../pings'
 
 import { SmartInsight } from './components/SmartInsight'
+import { ViewGrid } from './components/view-grid/ViewGrid'
 import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
 
 interface SmartInsightsViewGridProps extends TelemetryProps {
@@ -32,7 +32,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<React.PropsWithChild
         const [layouts, setLayouts] = useState<Layouts>({})
         const [resizingView, setResizeView] = useState<Layout | null>(null)
 
-        useEffect(() => {
+        useLayoutEffect(() => {
             setLayouts(insightLayoutGenerator(insights))
         }, [insights])
 

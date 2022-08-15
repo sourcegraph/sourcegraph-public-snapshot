@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestComputeGithubCheckState(t *testing.T) {
@@ -559,9 +560,12 @@ func TestComputeExternalState(t *testing.T) {
 	now := timeutil.Now()
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
+	archivedRepo := &types.Repo{Archived: true}
+
 	tests := []struct {
 		name      string
 		changeset *btypes.Changeset
+		repo      *types.Repo
 		history   []changesetStatesAtTime
 		want      btypes.ChangesetExternalState
 	}{
@@ -715,13 +719,43 @@ func TestComputeExternalState(t *testing.T) {
 			},
 			want: btypes.ChangesetExternalStateDraft,
 		},
+		{
+			name:      "gitlab read-only - no events",
+			changeset: setDraft(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
+			repo:      archivedRepo,
+			history:   []changesetStatesAtTime{},
+			want:      btypes.ChangesetExternalStateReadOnly,
+		},
+		{
+			name:      "gitlab read-only - changeset older than events",
+			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil),
+			repo:      archivedRepo,
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateDraft},
+			},
+			want: btypes.ChangesetExternalStateReadOnly,
+		},
+		{
+			name:      "gitlab read-only - changeset newer than events",
+			changeset: setDraft(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
+			repo:      archivedRepo,
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			},
+			want: btypes.ChangesetExternalStateReadOnly,
+		},
 	}
 
 	for i, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			changeset := tc.changeset
 
-			have, err := computeExternalState(changeset, tc.history)
+			repo := tc.repo
+			if repo == nil {
+				repo = &types.Repo{Archived: false}
+			}
+
+			have, err := computeExternalState(changeset, tc.history, repo)
 			if err != nil {
 				t.Fatalf("got error: %s", err)
 			}

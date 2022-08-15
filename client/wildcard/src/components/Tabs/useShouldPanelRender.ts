@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 
 import { useTabsContext as useReachTabsContext } from '@reach/tabs'
 
-import { useTablePanelIndex, useTabsSettings } from './context'
+import { useTablePanelIndex, useTabsState } from './context'
 
 export function useShouldPanelRender(children: React.ReactNode): boolean {
     const { selectedIndex } = useReachTabsContext()
     const index = useTablePanelIndex()
-    const { lazy, behavior } = useTabsSettings()
+    const {
+        settings: { lazy, behavior },
+    } = useTabsState()
     const [wasRendered, setWasRendered] = useState(selectedIndex === index)
     const previousChildren = useRef(children)
 

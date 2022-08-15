@@ -6,8 +6,10 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,14 +21,14 @@ type Symbol struct {
 	Line   int    `json:"line"`
 }
 
-type ParseSymbolsFunc func(path string, bytes []byte) (symbols []Symbol, err error)
-
 const NULL CommitId = 0
 
 type Service struct {
+	logger               log.Logger
 	db                   *sql.DB
-	git                  Git
-	createParser         func() ParseSymbolsFunc
+	git                  GitserverClient
+	fetcher              fetcher.RepositoryFetcher
+	createParser         func() (ctags.Parser, error)
 	status               *ServiceStatus
 	repoUpdates          chan struct{}
 	maxRepos             int
@@ -40,8 +42,9 @@ type Service struct {
 
 func NewService(
 	db *sql.DB,
-	git Git,
-	createParser func() ParseSymbolsFunc,
+	git GitserverClient,
+	fetcher fetcher.RepositoryFetcher,
+	createParser func() (ctags.Parser, error),
 	maxConcurrentlyIndexing int,
 	maxRepos int,
 	logQueries bool,
@@ -54,9 +57,13 @@ func NewService(
 		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
 	}
 
+	logger := log.Scoped("service", "")
+
 	service := &Service{
+		logger:               logger,
 		db:                   db,
 		git:                  git,
+		fetcher:              fetcher,
 		createParser:         createParser,
 		status:               NewStatus(),
 		repoUpdates:          make(chan struct{}, 1),
@@ -72,15 +79,15 @@ func NewService(
 	go service.startCleanupLoop()
 
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
-		go service.startIndexingLoop(database.NewDB(service.db), service.indexRequestQueues[i])
+		go service.startIndexingLoop(service.indexRequestQueues[i])
 	}
 
 	return service, nil
 }
 
-func (s *Service) startIndexingLoop(db database.DB, indexRequestQueue chan indexRequest) {
+func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
 	for indexRequest := range indexRequestQueue {
-		err := s.Index(context.Background(), db, indexRequest.repo, indexRequest.commit)
+		err := s.Index(context.Background(), indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
 		if err != nil {
 			log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)

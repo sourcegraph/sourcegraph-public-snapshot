@@ -5,10 +5,10 @@
 ARG JAEGER_VERSION
 FROM jaegertracing/all-in-one:${JAEGER_VERSION} as base
 
-FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233
+FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e
 USER root
 RUN apk update
-RUN apk --no-cache add bash curl apk-tools>=2.10.8-r0 krb5-libs>=1.18.4-r0
+RUN apk --no-cache add bash curl 'apk-tools>=2.10.8-r0' 'krb5-libs>=1.18.4-r0'
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=base /go/bin/all-in-one-linux /go/bin/all-in-one-linux

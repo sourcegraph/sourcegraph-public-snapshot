@@ -24,7 +24,7 @@ func validateArgs(query *string, active *bool, first *int32, after *string) (p p
 
 	offset, err := graphqlutil.DecodeIntCursor(after)
 	if err != nil {
-		return
+		return p, err
 	}
 	p.offset = offset
 

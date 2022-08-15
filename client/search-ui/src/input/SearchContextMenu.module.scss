@@ -1,3 +1,8 @@
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
 .header {
     display: flex;
     padding: 0.5rem;

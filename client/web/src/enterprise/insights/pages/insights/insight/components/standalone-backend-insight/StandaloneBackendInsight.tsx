@@ -1,14 +1,29 @@
-import React, { useCallback, useContext, useRef, useState } from 'react'
+import React, { useContext, useState } from 'react'
 
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
 import { asError } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
-import { InsightCard, InsightCardHeader, InsightCardLoading } from '../../../../../components'
-import { FORM_ERROR, FormChangeEvent, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { useFeatureFlag } from '../../../../../../../featureFlags/useFeatureFlag'
+import {
+    GetInsightViewResult,
+    GetInsightViewVariables,
+    InsightViewFiltersInput,
+    SeriesDisplayOptionsInput,
+} from '../../../../../../../graphql-operations'
+import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
+import {
+    InsightCard,
+    InsightCardHeader,
+    InsightCardLoading,
+    FORM_ERROR,
+    FormChangeEvent,
+    SubmissionErrors,
+} from '../../../../../components'
 import {
     DrillDownInsightFilters,
     FilterSectionVisualMode,
@@ -18,10 +33,18 @@ import {
     BackendInsightErrorAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
+    parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
-import { useInsightData } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
-import { ALL_INSIGHTS_DASHBOARD, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
-import { LazyQueryStatus } from '../../../../../hooks/use-parallel-requests/use-parallel-request'
+import {
+    BackendInsightData,
+    ALL_INSIGHTS_DASHBOARD,
+    BackendInsight,
+    CodeInsightsBackendContext,
+    InsightFilters,
+} from '../../../../../core'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
+import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
+import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
 
@@ -35,7 +58,12 @@ interface StandaloneBackendInsight extends TelemetryProps {
 export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackendInsight> = props => {
     const { telemetryService, insight, className } = props
     const history = useHistory()
-    const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+
+    const seriesToggleState = useSeriesToggle()
+    const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
+    const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
+    const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -44,20 +72,42 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters)
-    const insightCardReference = useRef<HTMLDivElement>(null)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
+    const [filterVisualMode, setFilterVisualMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const { state, isVisible } = useInsightData(
-        useCallback(() => getBackendInsightData({ ...insight, filters: debouncedFilters }), [
-            insight,
-            debouncedFilters,
-            getBackendInsightData,
-        ]),
-        insightCardReference
+    const filterInput: InsightViewFiltersInput = {
+        includeRepoRegex: debouncedFilters.includeRepoRegexp,
+        excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
+        searchContexts: [debouncedFilters.context],
+    }
+
+    const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+        limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+        sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
+    }
+
+    const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
+        GET_INSIGHT_VIEW_GQL,
+        {
+            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
+            fetchPolicy: 'cache-and-network',
+            pollInterval: pollingInterval,
+            context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
+            onCompleted: data => {
+                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
+                if (!parsedData.isFetchingHistoricalData) {
+                    stopPolling()
+                }
+                setInsightData(parsedData)
+            },
+            onError: () => {
+                stopPolling()
+            },
+        }
     )
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
@@ -97,7 +147,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             }).toPromise()
 
             setOriginalInsightFilters(filters)
-            history.push(`/insights/dashboard${ALL_INSIGHTS_DASHBOARD.id}`)
+            history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
@@ -113,7 +163,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     <DrillDownInsightFilters
                         initialValues={filters}
                         originalValues={originalInsightFilters}
-                        visualMode={FilterSectionVisualMode.HorizontalSections}
+                        visualMode={filterVisualMode}
+                        onVisualModeChange={setFilterVisualMode}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
@@ -129,7 +180,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             </Card>
 
             <InsightCard
-                ref={insightCardReference}
                 data-testid={`insight-standalone-card.${insight.id}`}
                 className={styles.chart}
                 onMouseEnter={trackMouseEnter}
@@ -143,12 +193,20 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     />
                 </InsightCardHeader>
 
-                {state.status === LazyQueryStatus.Loading || !isVisible ? (
+                {error ? (
+                    <BackendInsightErrorAlert error={error} />
+                ) : loading || !insightData ? (
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
-                ) : state.status === LazyQueryStatus.Error ? (
-                    <BackendInsightErrorAlert error={state.error} />
+                ) : error ? (
+                    <BackendInsightErrorAlert error={error} />
                 ) : (
-                    <BackendInsightChart {...state.data} locked={insight.isFrozen} onDatumClick={trackDatumClicks} />
+                    <BackendInsightChart
+                        {...insightData}
+                        locked={insight.isFrozen}
+                        zeroYAxisMin={zeroYAxisMin}
+                        onDatumClick={trackDatumClicks}
+                        seriesToggleState={seriesToggleState}
+                    />
                 )}
             </InsightCard>
         </div>

@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -13,15 +15,16 @@ func TestNamespaces(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create user and organization to test lookups.
-	user, err := Users(db).Create(ctx, NewUser{Username: "alice"})
+	user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	org, err := Orgs(db).Create(ctx, "Acme", nil)
+	org, err := db.Orgs().Create(ctx, "Acme", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

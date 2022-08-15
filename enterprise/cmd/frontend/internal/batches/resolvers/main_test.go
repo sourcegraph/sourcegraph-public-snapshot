@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -25,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -128,7 +128,7 @@ func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore)
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		// The authorization field is needed to enforce permissions
-		Config:    `{"url": "https://github.com", "authorization": {}}`,
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -194,7 +194,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		}
 		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { git.Mocks.GetCommit = nil })
+	t.Cleanup(func() { gitserver.Mocks.GetCommit = nil })
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
@@ -208,13 +208,13 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	}
 	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
 		return a, nil
 	}
-	t.Cleanup(func() { git.Mocks.MergeBase = nil })
+	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
 }
 
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {
@@ -228,12 +228,13 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.C
 
 func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	t.Helper()
-	creds, _, err := database.UserCredentials(db, key).List(context.Background(), database.UserCredentialsListOpts{})
+	ctx := actor.WithInternalActor(context.Background())
+	creds, _, err := db.UserCredentials(key).List(ctx, database.UserCredentialsListOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range creds {
-		if err := database.UserCredentials(db, key).Delete(context.Background(), c.ID); err != nil {
+		if err := db.UserCredentials(key).Delete(ctx, c.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -9,13 +9,15 @@ import (
 	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
@@ -28,6 +30,7 @@ type Worker struct {
 	options          WorkerOptions
 	dequeueClock     glock.Clock
 	heartbeatClock   glock.Clock
+	cancelClock      glock.Clock
 	shutdownClock    glock.Clock
 	numDequeues      int             // tracks number of dequeue attempts
 	handlerSemaphore chan struct{}   // tracks available handler slots
@@ -75,6 +78,10 @@ type WorkerOptions struct {
 	// record is neither pending nor abandoned.
 	HeartbeatInterval time.Duration
 
+	// CancelInterval is the interval between checking for jobs that are to be canceled. If not set,
+	// the worker will not check for canceled jobs.
+	CancelInterval time.Duration
+
 	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
 	MaximumRuntimePerJob time.Duration
 
@@ -84,10 +91,10 @@ type WorkerOptions struct {
 
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
 	clock := glock.NewRealClock()
-	return newWorker(ctx, store, handler, options, clock, clock, clock)
+	return newWorker(ctx, store, handler, options, clock, clock, clock, clock)
 }
 
-func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker {
+func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, cancelClock, shutdownClock glock.Clock) *Worker {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
@@ -114,6 +121,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		options:          options,
 		dequeueClock:     mainClock,
 		heartbeatClock:   heartbeatClock,
+		cancelClock:      cancelClock,
 		shutdownClock:    shutdownClock,
 		handlerSemaphore: handlerSemaphore,
 		rootCtx:          ctx,
@@ -161,6 +169,35 @@ func (w *Worker) Start() {
 			}
 		}
 	}()
+
+	if w.options.CancelInterval > 0 {
+		// Create a background routine that periodically checks for jobs that are to be canceled.
+		go func() {
+			for {
+				select {
+				case <-w.finished:
+					// All jobs finished.
+					return
+				case <-w.cancelClock.After(w.options.CancelInterval):
+				}
+
+				knownIDs := w.runningIDSet.Slice()
+				canceled, err := w.store.CanceledJobs(w.rootCtx, knownIDs)
+				if err != nil {
+					w.options.Metrics.logger.Error("Failed to fetch canceled jobs", log.Error(err))
+					continue
+				}
+
+				if len(canceled) > 0 {
+					w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceled))
+				}
+
+				for _, id := range canceled {
+					w.runningIDSet.Cancel(id)
+				}
+			}
+		}()
+	}
 
 	var shutdownChan <-chan time.Time
 	if w.options.MaxActiveTime > 0 {
@@ -234,12 +271,6 @@ func (w *Worker) Wait() {
 	<-w.finished
 }
 
-// Cancel cancels the handler context of the running job with the given record id.
-// It will eventually be marked as failed.
-func (w *Worker) Cancel(id int) {
-	w.runningIDSet.Cancel(id)
-}
-
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
@@ -281,9 +312,9 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.rootCtx, true), w.options.Name)
+	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(policy.WithShouldTrace(w.rootCtx, true), w.options.Name)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
-	processLog := w.options.Metrics.logger.WithTrace(log.TraceContext{TraceID: trace.IDFromSpan(workerSpan)})
+	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordID(), cancel) {
@@ -341,8 +372,15 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
 func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
-	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
+	var handleErr error
+	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &handleErr, observation.Args{})
+	defer func() {
+		// prioritize handleErr in `operations.handle.With` without bubbling handleErr up if non-nil
+		if handleErr == nil && err != nil {
+			handleErr = err
+		}
+		endOperation(1, observation.Args{})
+	}()
 
 	// If a maximum runtime is configured, set a deadline on the handle context.
 	if w.options.MaximumRuntimePerJob > 0 {
@@ -352,7 +390,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 	}
 
 	// Open namespace for logger to avoid key collisions on fields
-	handleErr := w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
+	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))

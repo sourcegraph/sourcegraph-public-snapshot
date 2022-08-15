@@ -5,11 +5,10 @@ import (
 	"database/sql"
 
 	"github.com/inconshreveable/log15"
-	"github.com/jmoiron/sqlx"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -18,7 +17,7 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	Search(ctx context.Context, args types.SearchArgs) ([]result.Symbol, error)
+	Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error)
 
 	CreateMetaTable(ctx context.Context) error
 	GetCommit(ctx context.Context) (string, bool, error)
@@ -32,19 +31,19 @@ type Store interface {
 }
 
 type store struct {
-	db *sqlx.DB
+	db *sql.DB
 	*basestore.Store
 }
 
 func NewStore(dbFile string) (Store, error) {
-	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
+	db, err := sql.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{
 		db:    db,
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 	}, nil
 }
 

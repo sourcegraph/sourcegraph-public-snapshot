@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiChevronDown } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 
 import {
     ProductStatusBadge,
@@ -12,7 +12,11 @@ import {
     MenuList,
     Position,
     MenuItem,
-    Typography,
+    MenuDivider,
+    H4,
+    Text,
+    Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
@@ -130,18 +134,19 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
             {renderedElement}
             <Menu>
                 <ButtonGroup>
-                    <Button
-                        className="text-nowrap"
-                        onClick={onTriggerAction}
-                        disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
-                        data-tooltip={tooltip}
-                        variant="primary"
-                    >
-                        {label}
-                    </Button>
+                    <Tooltip content={tooltip}>
+                        <Button
+                            className="text-nowrap"
+                            onClick={onTriggerAction}
+                            disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
+                            variant="primary"
+                        >
+                            {label}
+                        </Button>
+                    </Tooltip>
                     {actions.length > 1 && (
                         <MenuButton variant="primary" className={styles.dropdownButton}>
-                            <ChevronDownIcon />
+                            <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
                             <VisuallyHidden>Actions</VisuallyHidden>
                         </MenuButton>
                     )}
@@ -151,7 +156,7 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
                         {actions.map((action, index) => (
                             <React.Fragment key={action.type}>
                                 <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                {index !== actions.length - 1 && <div className="dropdown-divider" />}
+                                {index !== actions.length - 1 && <MenuDivider />}
                             </React.Fragment>
                         ))}
                     </MenuList>
@@ -175,7 +180,7 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
     }, [setSelectedType, action.type])
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
-            <Typography.H4 className="mb-1">
+            <H4 className="mb-1">
                 {action.dropdownTitle}
                 {action.experimental && (
                     <>
@@ -183,10 +188,10 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                         <ProductStatusBadge status="experimental" as="small" />
                     </>
                 )}
-            </Typography.H4>
-            <p className="text-wrap text-muted mb-0">
+            </H4>
+            <Text className="text-wrap text-muted mb-0">
                 <small>{action.dropdownDescription}</small>
-            </p>
+            </Text>
         </MenuItem>
     )
 }

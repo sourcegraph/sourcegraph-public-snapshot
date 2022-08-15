@@ -7,11 +7,12 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type operations struct {
@@ -44,10 +45,10 @@ var (
 	opsOnce sync.Once
 )
 
-func getOperations() *operations {
+func getOperations(logger log.Logger) *operations {
 	opsOnce.Do(func() {
 		observationContext := &observation.Context{
-			Logger:     log.Scoped("database.batch", ""),
+			Logger:     logger,
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 			HoneyDataset: &honey.Dataset{

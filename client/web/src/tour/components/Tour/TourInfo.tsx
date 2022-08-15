@@ -16,5 +16,5 @@ export const TourInfo: React.FunctionComponent<React.PropsWithChildren<TourInfoP
     if (!isSourcegraphDotCom) {
         return null
     }
-    return <div className={classNames(GETTING_STARTED_TOUR_MARKER, className)} />
+    return <div id={GETTING_STARTED_TOUR_MARKER} className={classNames('d-none', className)} />
 }

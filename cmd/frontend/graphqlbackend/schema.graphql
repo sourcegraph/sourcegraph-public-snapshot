@@ -214,6 +214,10 @@ type Mutation {
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
     """
+    Bulk "deleteUser" action.
+    """
+    deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
+    """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
@@ -536,6 +540,10 @@ type Mutation {
     """
     invalidateSessionsByID(userID: ID!): EmptyResponse
     """
+    Bulk "invalidateSessionsByID" action.
+    """
+    invalidateSessionsByIDs(userIDs: [ID!]!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 
@@ -753,6 +761,28 @@ type Mutation {
     Only administrators can use this API.
     """
     sendTestEmail(to: String!): String!
+
+    """
+    Enqueues a sync for the external service. It will be picked up in the background.
+
+    Site-admin or owner of the external service only.
+    """
+    syncExternalService(id: ID!): EmptyResponse!
+
+    """
+    Associate a new key-value pair with a repo.
+    """
+    addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Update a key-value pair associated with a repo.
+    """
+    updateRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Delete a key-value pair associated with a repo.
+    """
+    deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
 }
 
 """
@@ -1058,6 +1088,17 @@ type RandomizeUserPasswordResult {
 }
 
 """
+Possible answers to "You use Sourcegraph to..." in the NPS Survey.
+"""
+enum SurveyUseCase {
+    UNDERSTAND_NEW_CODE
+    FIX_SECURITY_VULNERABILITIES
+    REUSE_CODE
+    RESPOND_TO_INCIDENTS
+    IMPROVE_CODE_QUALITY
+}
+
+"""
 Input for a user satisfaction (NPS) survey submission.
 """
 input SurveySubmissionInput {
@@ -1071,11 +1112,11 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "What is the most important reason for the score you gave".
+    The answer to "What do you use Sourcegraph for?".
     """
-    reason: String
+    otherUseCase: String
     """
-    The answer to "What can Sourcegraph do to provide a better product"
+    The answer to "What would make Sourcegraph better?"
     """
     better: String
 }
@@ -1422,9 +1463,20 @@ type Query {
     featureFlags: [FeatureFlag!]!
 
     """
-    Retrieve the values of all feature flags for the current user
+    Retrieve a feature flag
     """
-    viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+    featureFlag(name: String!): FeatureFlag!
+
+    """
+    Evaluates a feature flag for the current user
+    Returns null if feature flag does not exist
+    """
+    evaluateFeatureFlag(flagName: String!): Boolean
+
+    """
+    Retrieve all evaluated feature flags for the current user
+    """
+    evaluatedFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
     Retrieve the value of a feature flag for the organization
@@ -1840,18 +1892,25 @@ enum SearchVersion {
     """
     V1
     """
-    Search syntax that defaults to literal search.
+    Search syntax that defaults to literal-only search.
     """
     V2
+    """
+    Search syntax that defaults to standard search.
+    """
+    V3
 }
 
 """
 The search pattern type.
 """
 enum SearchPatternType {
+    standard
     literal
     regexp
     structural
+    lucky
+    keyword
 }
 
 """
@@ -2118,6 +2177,10 @@ type SearchAlert {
     """
     description: String
     """
+    An identifier indicating the kind of alert
+    """
+    kind: String
+    """
     "Did you mean: ____" query proposals
     """
     proposedQueries: [SearchQueryDescription!]
@@ -2299,6 +2362,7 @@ enum ExternalServiceKind {
     PERFORCE
     PHABRICATOR
     PYTHONPACKAGES
+    RUSTPACKAGES
 }
 
 """
@@ -2309,38 +2373,47 @@ type ExternalService implements Node {
     The external service's unique ID.
     """
     id: ID!
+
     """
     The kind of external service.
     """
     kind: ExternalServiceKind!
+
     """
     The display name of the external service.
     """
     displayName: String!
+
     """
     The JSON configuration of the external service.
     """
     config: JSONCString!
+
     """
     When the external service was created.
     """
     createdAt: DateTime!
+
     """
     When the external service was last updated.
     """
     updatedAt: DateTime!
+
     """
     The namespace this external service belongs to.
     """
     namespace: Namespace
+
     """
     The number of repos synced by the external service.
     """
     repoCount: Int!
+
     """
     An optional URL that will be populated when webhooks have been configured for the external service.
     """
     webhookURL: String
+
     """
     This is an optional field that's populated when we ran into errors on the
     backend side when trying to create/update an ExternalService, but the
@@ -2349,16 +2422,19 @@ type ExternalService implements Node {
     not break the API and stay backwards compatible.
     """
     warning: String
+
     """
     External services are synced with code hosts in the background. This optional field
     will contain any errors that occured during the most recent completed sync.
     """
     lastSyncError: String
+
     """
     LastSyncAt is the time the last sync job was run for this code host. Null if it
     has never been synced so far.
     """
     lastSyncAt: DateTime
+
     """
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
@@ -2367,6 +2443,7 @@ type ExternalService implements Node {
     """
     Returns a list of scopes granted by the code host. It is based on the token used
     when configuring the external service.
+
     NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
     so it should be used sparingly.
     """
@@ -2417,6 +2494,97 @@ type ExternalService implements Node {
     reaches out to the code host directly which is wasteful if repositories are already cloned.
     """
     invitableCollaborators: [Person!]!
+
+    """
+    The list of recent sync jobs for this external service.
+    """
+    syncJobs(first: Int): ExternalServiceSyncJobConnection!
+}
+
+"""
+A list of external service sync jobs.
+"""
+type ExternalServiceSyncJobConnection {
+    """
+    A list of sync jobs.
+    """
+    nodes: [ExternalServiceSyncJob!]!
+
+    """
+    The total number of jobs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+The possible states of an external service sync job.
+"""
+enum ExternalServiceSyncJobState {
+    """
+    Not yet started. Will be picked up by a worker eventually.
+    """
+    QUEUED
+
+    """
+    Currently syncing.
+    """
+    PROCESSING
+
+    """
+    An error occured while syncing. Will be retried eventually.
+    """
+    ERRORED
+
+    """
+    A fatal error occured while syncing. No retries will be made.
+    """
+    FAILED
+
+    """
+    Sync finished successfully.
+    """
+    COMPLETED
+}
+
+"""
+An external service sync job represents one sync with the code host. It's a background
+job that will eventually be run by the repo syncer.
+"""
+type ExternalServiceSyncJob implements Node {
+    """
+    The unique identifier of the sync job.
+    """
+    id: ID!
+
+    """
+    The current state of the sync job.
+    """
+    state: ExternalServiceSyncJobState!
+
+    """
+    When the sync job was added to the queue.
+    """
+    queuedAt: DateTime!
+
+    """
+    Set when sync begins.
+    """
+    startedAt: DateTime
+
+    """
+    Set when sync finished.
+    """
+    finishedAt: DateTime
+
+    """
+    Error message, if the sync failed.
+    """
+    failureMessage: String
 }
 
 """
@@ -2642,7 +2810,7 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         The date after which to count contributions.
         """
-        after: String
+        afterDate: String
         """
         Return contributors to files in this path.
         """
@@ -2679,6 +2847,26 @@ type Repository implements Node & GenericSearchResultInterface {
     The star count the repository has in the code host.
     """
     stars: Int!
+
+    """
+    A set of user-defined key-value pairs associated with the repo.
+    """
+    keyValuePairs: [KeyValuePair!]!
+}
+
+"""
+A key-value pair
+"""
+type KeyValuePair {
+    """
+    The non-nullable key.
+    """
+    key: String!
+
+    """
+    The nullable value. A null value indicates this key-value pair should be treated as a tag.
+    """
+    value: String
 }
 
 """
@@ -2772,6 +2960,10 @@ type MirrorRepositoryInfo {
     The state of this repository in the update queue.
     """
     updateQueue: UpdateQueue
+    """
+    The last error message, if any, returned when fetching or cloning the repo
+    """
+    lastError: String
 }
 
 """
@@ -2920,6 +3112,24 @@ type RepositoryTextSearchIndexedRef {
     indexed is false, this field's value is null.
     """
     indexedCommit: GitObject
+    """
+    EXPERIMENTAL: Information about the files that were not indexed.
+    """
+    skippedIndexed: SkippedIndexed
+}
+
+"""
+EXPERIMENTAL: Information about the files that were not indexed.
+"""
+type SkippedIndexed {
+    """
+    The count of files that were not indexed.
+    """
+    count: BigInt!
+    """
+    The query to retrieve the list of files that were not indexed.
+    """
+    query: String!
 }
 
 """
@@ -2967,6 +3177,10 @@ type PreviewRepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3011,6 +3225,10 @@ type RepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3864,6 +4082,16 @@ type GitCommit implements Node {
         """
         includePatterns: [String!]
     ): SymbolConnection!
+
+    """
+    Returns the comparison with another revision.
+    """
+    diff(
+        """
+        The base commit to compare to. Defaults to the commit's first parent.
+        """
+        base: String
+    ): RepositoryComparison!
 }
 
 """
@@ -4134,6 +4362,24 @@ type GitTree implements TreeEntry {
 }
 
 """
+The format and highlighting to use when requesting highlighting information for a file.
+"""
+enum HighlightResponseFormat {
+    """
+    HTML formatted file content without syntax highlighting.
+    """
+    HTML_PLAINTEXT
+    """
+    HTML formatted file content with syntax highlighting.
+    """
+    HTML_HIGHLIGHT
+    """
+    SCIP highlighting information as JSON.
+    """
+    JSON_SCIP
+}
+
+"""
 A file.
 In a future version of Sourcegraph, a repository's files may be distinct from a repository's blobs
 (for example, to support searching/browsing generated files that aren't committed and don't exist
@@ -4199,6 +4445,10 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
 
@@ -4262,6 +4512,10 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
 
@@ -4363,6 +4617,10 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -4465,6 +4723,11 @@ type FileMatch {
     """
     lineMatches: [LineMatch!]!
     """
+    EXPERIMENTAL: This field is experimental and may be unstable.
+    The chunk matches.
+    """
+    chunkMatches: [ChunkMatch!]!
+    """
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
@@ -4491,6 +4754,24 @@ type LineMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean! @deprecated(reason: "will always be false")
+}
+
+"""
+A set of matched ranges contained in a chunk of contiguous lines.
+"""
+type ChunkMatch {
+    """
+    The contiguous set of full lines which contain the matches in ranges.
+    """
+    content: String!
+    """
+    The location of the beginning of content.
+    """
+    contentStart: Position!
+    """
+    The set of ranges within the content that matched the search query.
+    """
+    ranges: [Range!]!
 }
 
 """
@@ -5461,6 +5742,43 @@ type Site implements SettingsSubject {
         """
         months: Int
     ): SiteUsageStatistics!
+
+    """
+    New usage statistics/analytics for this site.
+    """
+    analytics: Analytics!
+
+    """
+    List all users.
+    """
+    users(
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+        """
+        Returns users who have been active in a given period of time.
+        """
+        siteAdmin: Boolean
+        """
+        Returns users that contain filter in the username field.
+        """
+        username: String
+        """
+        Returns users that contain filter in the email field.
+        """
+        email: String
+        """
+        Returns users for the given lastActive enum period.
+        When omitted does NOT apply and returns for all period available.
+        """
+        lastActivePeriod: SiteUsersLastActivePeriod
+        """
+        Returns either deleted or not deleted users. Returns all users when omitted.
+        """
+        deleted: Boolean
+    ): SiteUsers!
+
     """
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
@@ -5771,6 +6089,394 @@ type SiteUsageStatistics {
 }
 
 """
+A pre-defined periods to get site analytics.
+"""
+enum AnalyticsDateRange {
+    """
+    Last 3 monthes date range.
+    """
+    LAST_THREE_MONTHS
+    """
+    Last month date range.
+    """
+    LAST_MONTH
+    """
+    Last week date range.
+    """
+    LAST_WEEK
+    """
+    Custom date range.
+    """
+    CUSTOM
+}
+
+"""
+Group site analytics by period.
+"""
+enum AnalyticsGrouping {
+    """
+    Group data by day.
+    """
+    DAILY
+    """
+    Group data by week.
+    """
+    WEEKLY
+}
+
+"""
+Analytics for certain date.
+"""
+type AnalyticsStatItemNode {
+    """
+    A date in ISO format
+    """
+    date: String!
+    """
+    Total number of events.
+    """
+    count: Float!
+    """
+    Unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
+    uniqueUsers: Float!
+    """
+    Unique number of currently registered users who triggered event.
+    """
+    registeredUsers: Float!
+}
+
+"""
+Analytics summary.
+"""
+type AnalyticsStatItemSummary {
+    """
+    Total number of events.
+    """
+    totalCount: Float!
+    """
+    Total unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
+    totalUniqueUsers: Float!
+    """
+    Total unique number of currently registered users who triggered event.
+    """
+    totalRegisteredUsers: Float!
+}
+
+"""
+Analytics result item.
+"""
+type AnalyticsStatItem {
+    """
+    Analytics summary.
+    """
+    summary: AnalyticsStatItemSummary!
+    """
+    Array of analytics by period.
+    """
+    nodes: [AnalyticsStatItemNode!]!
+}
+
+"""
+Search analytics.
+"""
+type AnalyticsSearchResult {
+    """
+    Searches analytics
+    """
+    searches: AnalyticsStatItem!
+    """
+    Search result click analytics
+    """
+    resultClicks: AnalyticsStatItem!
+    """
+    File view analytics
+    """
+    fileViews: AnalyticsStatItem!
+    """
+    File open analytics
+    """
+    fileOpens: AnalyticsStatItem!
+}
+
+"""
+Notebook analytics.
+"""
+type AnalyticsNotebooksResults {
+    """
+    Notebooks creation analytics.
+    """
+    creations: AnalyticsStatItem!
+    """
+    Notebooks views analytics.
+    """
+    views: AnalyticsStatItem!
+    """
+    Notebooks block run analytics.
+    """
+    blockRuns: AnalyticsStatItem!
+}
+
+"""
+Users frequency by days used.
+"""
+type AnalyticsUsersFrequencyItem {
+    """
+    Number of days used
+    """
+    daysUsed: Float!
+    """
+    Number of users.
+    """
+    frequency: Float!
+    """
+    Percentage of users from total frequencies.
+    """
+    percentage: Float!
+}
+
+"""
+Average DAUs/WAUs/MAUs.
+"""
+type AnalyticsUsersSummaryResult {
+    """
+    Average DAUs
+    """
+    avgDAU: Float!
+    """
+    Average WAUs
+    """
+    avgWAU: Float!
+    """
+    Average MAUs
+    """
+    avgMAU: Float!
+}
+
+"""
+Users' analytics.
+"""
+type AnalyticsUsersResult {
+    """
+    Users' activity analytics.
+    """
+    activity: AnalyticsStatItem!
+    """
+    Frequency of usage by day.
+    """
+    frequencies: [AnalyticsUsersFrequencyItem!]!
+    """
+    Average number of active users summary.
+    """
+    summary: AnalyticsUsersSummaryResult!
+}
+
+"""
+CodeIntel' analytics.
+"""
+type AnalyticsCodeIntelResult {
+    """
+    "GoToRef" click
+    """
+    referenceClicks: AnalyticsStatItem!
+    """
+    "GoToDef" click
+    """
+    definitionClicks: AnalyticsStatItem!
+    """
+    Code Intel events made from web
+    """
+    inAppEvents: AnalyticsStatItem!
+    """
+    Code Intel events made from code host
+    """
+    codeHostEvents: AnalyticsStatItem!
+    """
+    Search based events
+    """
+    searchBasedEvents: AnalyticsStatItem!
+    """
+    Precise events
+    """
+    preciseEvents: AnalyticsStatItem!
+    """
+    Cross-repo events
+    """
+    crossRepoEvents: AnalyticsStatItem!
+}
+
+"""
+Repositories summary.
+"""
+type AnalyticsReposSummartResult {
+    """
+    Total number of repositories.
+    """
+    count: Float!
+    """
+    Total number of repositories with precise code-intel.
+    """
+    preciseCodeIntelCount: Float!
+}
+
+"""
+Batch changes analytics.
+"""
+type AnalyticsBatchChangesResult {
+    """
+    Changesets created
+    """
+    changesetsCreated: AnalyticsStatItem!
+    """
+    Changesets merged
+    """
+    changesetsMerged: AnalyticsStatItem!
+}
+
+"""
+Analytics describes a new site statistics.
+"""
+type Analytics {
+    """
+    Search statistics.
+    """
+    search(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsSearchResult!
+    """
+    Notebooks statistics.
+    """
+    notebooks(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsNotebooksResults!
+    """
+    Users statistics.
+    """
+    users(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsUsersResult!
+    """
+    Code-intelligence statistics.
+    """
+    codeIntel(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodeIntelResult!
+    """
+    Repositories summary statistics.
+    """
+    repos: AnalyticsReposSummartResult!
+    """
+    Batch changes statistics
+    """
+    batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
+}
+
+"""
+Site user.
+"""
+type SiteUser {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    User's username.
+    """
+    username: String!
+    """
+    User's primary email.
+    """
+    email: String
+    """
+    User's display name
+    """
+    displayName: String
+    """
+    The datetime when user was created in the system.
+    """
+    createdAt: String!
+    """
+    The datetime when user was last active.
+    """
+    lastActiveAt: String
+    """
+    The datetime when user was deleted.
+    """
+    deletedAt: String
+    """
+    Whether user is site admin or not.
+    """
+    siteAdmin: Boolean!
+    """
+    Total number of user's event_logs.
+    """
+    eventsCount: Float!
+}
+
+"""
+SiteUserOrderBy enumerates the ways a users list can be ordered.
+"""
+enum SiteUserOrderBy {
+    USERNAME
+    """
+    User's primary email.
+    """
+    EMAIL
+    """
+    The total number of user's event_logs.
+    """
+    EVENTS_COUNT
+    """
+    The last event_log datetime.
+    """
+    LAST_ACTIVE_AT
+    """
+    The datetime when user was added to the system.
+    """
+    CREATED_AT
+    """
+    The datetime when user was soft deleted.
+    """
+    DELETED_AT
+    """
+    Whether the user is site admin or not.
+    """
+    SITE_ADMIN
+}
+
+"""
+SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
+"""
+enum SiteUsersLastActivePeriod {
+    ALL
+    TODAY
+    THIS_WEEK
+    THIS_MONTH
+}
+
+"""
+Site users.
+"""
+type SiteUsers {
+    """
+    User total count.
+    """
+    totalCount: Float!
+    """
+    List of users.
+    """
+    nodes(
+        """
+        Returns the first n users from the list.
+        """
+        first: Int
+        """
+        Returns users ordered by a given column.
+        """
+        orderBy: SiteUserOrderBy
+        """
+        Returns ordered users in descending order provided by orderBy field.
+        """
+        descending: Boolean
+    ): [SiteUser!]!
+}
+
+"""
 SiteUsagePeriod describes a site's usage statistics for a given timespan.
 This information is visible to all viewers.
 """
@@ -5893,6 +6599,10 @@ type SurveyResponse {
     The answer to "What can Sourcegraph do to provide a better product"
     """
     better: String
+    """
+    The answer to "What do you use Sourcegraph for?".
+    """
+    otherUseCase: String
     """
     The time when this response was created.
     """

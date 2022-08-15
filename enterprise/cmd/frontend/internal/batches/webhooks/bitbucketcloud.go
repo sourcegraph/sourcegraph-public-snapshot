@@ -42,7 +42,7 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
-	externalServiceID, err := extractExternalServiceID(extSvc)
+	externalServiceID, err := extractExternalServiceID(ctx, extSvc)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -107,7 +107,7 @@ func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types
 			continue
 		}
 
-		c, _ := e.Configuration()
+		c, _ := e.Configuration(r.Context())
 		con, ok := c.(*schema.BitbucketCloudConnection)
 		if !ok {
 			continue
@@ -204,7 +204,7 @@ func bitbucketCloudRepoCommitStatusEventPRs(
 	// Now we can look up the changeset(s).
 	changesets, _, err := bstore.ListChangesets(ctx, store.ListChangesetsOpts{
 		BitbucketCloudCommit: e.CommitStatus.Commit.Hash,
-		RepoID:               repo.ID,
+		RepoIDs:              []api.RepoID{repo.ID},
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing changesets matched to repo ID=%d", repo.ID)

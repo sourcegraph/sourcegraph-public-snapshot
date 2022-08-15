@@ -1,15 +1,15 @@
 import React, { useMemo, useEffect } from 'react'
 
+import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
-import GithubIcon from 'mdi-react/GithubIcon'
 
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H2, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -108,12 +108,10 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                 {/* Publisher */}
                 {publisher && (
                     <div className="pt-2 pb-3">
-                        <Typography.H3 as={Typography.H2}>Publisher</Typography.H3>
-                        <small
-                            data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
-                        >
-                            {publisher}
-                        </small>
+                        <H3 as={H2}>Publisher</H3>
+                        <Tooltip content={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}>
+                            <small>{publisher}</small>
+                        </Tooltip>
                         {isSourcegraphExtension && <SourcegraphExtensionIcon className={styles.sourcegraphIcon} />}
                     </div>
                 )}
@@ -123,7 +121,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                 {extension.registryExtension &&
                     (extension.registryExtension.updatedAt || extension.registryExtension.publishedAt) && (
                         <div className={styles.sidebarSection}>
-                            <Typography.H3>Last updated</Typography.H3>
+                            <H3>Last updated</H3>
                             <small className="text-muted">
                                 <Timestamp
                                     date={maxDate(
@@ -137,7 +135,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                     )}
                 {/* Resources */}
                 <div className={styles.sidebarSection}>
-                    <Typography.H3>Resources</Typography.H3>
+                    <H3>Resources</H3>
                     <small>
                         {extension.registryExtension && (
                             <Link to={`${extension.registryExtension.url}/-/manifest`} className="d-block mb-1">
@@ -156,7 +154,9 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                         )}
                         {repositoryURL && (
                             <div className="d-flex">
-                                {repositoryURL.hostname === 'github.com' && <Icon className="mr-1" as={GithubIcon} />}
+                                {repositoryURL.hostname === 'github.com' && (
+                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiGithub} />
+                                )}
                                 <Link
                                     to={repositoryURL.href}
                                     rel="nofollow noreferrer noopener"
@@ -171,13 +171,13 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                 </div>
                 {/* Full extension ID */}
                 <div className={styles.sidebarSection}>
-                    <Typography.H3>Extension ID</Typography.H3>
+                    <H3>Extension ID</H3>
                     <small className="text-muted">{extension.id}</small>
                 </div>
                 {/* Categories */}
                 {categories && (
                     <div className={classNames('pb-0', styles.sidebarSection)}>
-                        <Typography.H3>Categories</Typography.H3>
+                        <H3>Categories</H3>
                         <ul className="list-inline" data-testid="test-registry-extension-categories">
                             {categories.map(category => (
                                 <li key={category} className="list-inline-item mb-2">
@@ -201,7 +201,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                     extension.manifest.tags &&
                     extension.manifest.tags.length > 0 && (
                         <div className={classNames('pb-0', styles.sidebarSection)}>
-                            <Typography.H3>Tags</Typography.H3>
+                            <H3>Tags</H3>
                             <ul className="list-inline">
                                 {extension.manifest.tags.map(tag => (
                                     <li key={tag} className="list-inline-item mb-2">

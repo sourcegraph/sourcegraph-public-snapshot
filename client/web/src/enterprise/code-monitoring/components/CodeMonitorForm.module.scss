@@ -49,3 +49,9 @@
 .test-action-error {
     color: var(--danger);
 }
+
+.action-button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}

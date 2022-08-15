@@ -1,7 +1,7 @@
 package query
 
 type Visitor struct {
-	Operator  func(kind operatorKind, operands []Node)
+	Operator  func(kind OperatorKind, operands []Node)
 	Parameter func(field, value string, negated bool, annotation Annotation)
 	Pattern   func(value string, negated bool, annotation Annotation)
 }
@@ -36,7 +36,7 @@ func (v *Visitor) Visit(node Node) {
 
 // VisitOperator is a convenience function that calls `f` on all operators `f`
 // supplies the node's kind and operands.
-func VisitOperator(nodes []Node, f func(kind operatorKind, operands []Node)) {
+func VisitOperator(nodes []Node, f func(kind OperatorKind, operands []Node)) {
 	v := &Visitor{Operator: f}
 	for _, n := range nodes {
 		v.Visit(n)
@@ -80,5 +80,37 @@ func VisitPredicate(nodes []Node, f func(field, name, value string)) {
 			name, predValue := ParseAsPredicate(value)
 			f(gotField, name, predValue)
 		}
+	})
+}
+
+// PredicatePointer is a pointer to a type that implements Predicate.
+// This is useful so we can construct the zero-value of the non-pointer
+// type T rather than getting the zero value of the pointer type,
+// which is a nil pointer.
+type predicatePointer[T any] interface {
+	Predicate
+	*T
+}
+
+// VisitTypedPredicate visits every predicate of the type given to the callback function. The callback
+// will be called with a value of the predicate with its fields populated with its parsed arguments.
+func VisitTypedPredicate[T any, PT predicatePointer[T]](nodes []Node, f func(pred PT, negated bool)) {
+	zeroPred := PT(new(T))
+	VisitField(nodes, zeroPred.Field(), func(value string, negated bool, annotation Annotation) {
+		if !annotation.Labels.IsSet(IsPredicate) {
+			return // skip non-predicates
+		}
+
+		predName, predArgs := ParseAsPredicate(value)
+		if predName != zeroPred.Name() { // NOTE(camdencheek): we don't handle aliases here
+			return // skip unrequested predicates
+		}
+
+		newPred := PT(new(T))
+		err := newPred.ParseParams(predArgs)
+		if err != nil {
+			panic(err) // should already be validated
+		}
+		f(newPred, negated)
 	})
 }

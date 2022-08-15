@@ -17,15 +17,15 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 			if field == "content" {
 				if searchType == SearchTypeRegex {
-					annotation.Labels.set(Regexp)
+					annotation.Labels.Set(Regexp)
 				} else {
-					annotation.Labels.set(Literal)
+					annotation.Labels.Set(Literal)
 				}
-				annotation.Labels.set(IsAlias)
+				annotation.Labels.Set(IsAlias)
 				return Pattern{Value: value, Negated: negated, Annotation: annotation}
 			}
 			if canonical, ok := aliases[field]; ok {
-				annotation.Labels.set(IsAlias)
+				annotation.Labels.Set(IsAlias)
 				field = canonical
 			}
 			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
@@ -424,7 +424,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 		annotation.Labels |= HeuristicHoisted
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
-	return append(toNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
+	return append(toNodes(scopeParameters), NewOperator(pattern, expression.Kind)...), nil
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
@@ -501,7 +501,7 @@ func conjunction(left, right Basic) Basic {
 	} else if right.Pattern == nil {
 		pattern = left.Pattern
 	} else if left.Pattern != nil && right.Pattern != nil {
-		pattern = newOperator([]Node{left.Pattern, right.Pattern}, And)[0]
+		pattern = NewOperator([]Node{left.Pattern, right.Pattern}, And)[0]
 	}
 	return Basic{
 		// Deep copy parameters to avoid appending multiple times to the same backing array.
@@ -547,10 +547,10 @@ func substituteOrForRegexp(nodes []Node) []Node {
 				newNode = append(newNode, Pattern{Value: valueString})
 				if len(rest) > 0 {
 					rest = substituteOrForRegexp(rest)
-					newNode = newOperator(append(newNode, rest...), Or)
+					newNode = NewOperator(append(newNode, rest...), Or)
 				}
 			} else {
-				newNode = append(newNode, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
+				newNode = append(newNode, NewOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
 			}
 		case Parameter, Pattern:
 			newNode = append(newNode, node)
@@ -561,9 +561,9 @@ func substituteOrForRegexp(nodes []Node) []Node {
 
 // fuzzyRegexp interpolates patterns with .*? regular expressions and
 // concatenates them. Invariant: len(patterns) > 0.
-func fuzzyRegexp(patterns []Pattern) Pattern {
+func fuzzyRegexp(patterns []Pattern) []Node {
 	if len(patterns) == 1 {
-		return patterns[0]
+		return []Node{patterns[0]}
 	}
 	var values []string
 	for _, p := range patterns {
@@ -573,28 +573,79 @@ func fuzzyRegexp(patterns []Pattern) Pattern {
 			values = append(values, p.Value)
 		}
 	}
-	return Pattern{
-		Annotation: Annotation{Labels: Regexp},
-		Value:      "(?:" + strings.Join(values, ").*?(?:") + ")",
+	return []Node{
+		Pattern{
+			Annotation: Annotation{Labels: Regexp},
+			Value:      "(?:" + strings.Join(values, ").*?(?:") + ")",
+		},
 	}
+}
+
+// standard reduces a sequence of Patterns such that:
+//
+// - adjacent literal patterns are concattenated with space. I.e., contiguous
+// literal patterns are joined on space to create one literal pattern.
+//
+// - any patterns adjacent to regular expression patterns are AND-ed.
+//
+// Here are concrete examples of input strings and equivalent transformation.
+// I'm using the `content` field for literal patterns to explicitly delineate
+// how those are processed.
+//
+// `/foo/ /bar/ baz` -> (/foo/ AND /bar/ AND content:"baz")
+// `/foo/ bar baz` -> (/foo/ AND content:"bar baz")
+// `/foo/ bar /baz/` -> (/foo/ AND content:"bar" AND /baz/)
+func standard(patterns []Pattern) []Node {
+	if len(patterns) == 1 {
+		return []Node{patterns[0]}
+	}
+
+	var literals []Pattern
+	var result []Node
+	for _, p := range patterns {
+		if p.Annotation.Labels.IsSet(Regexp) {
+			// Push any sequence of literal patterns accumulated.
+			// Then push this regexp pattern.
+			if len(literals) > 0 {
+				// Use existing `space` concatenator on literal
+				// patterns. Correct and safe cast under
+				// invariant len(literals) > 0.
+				result = append(result, space(literals)[0].(Pattern))
+			}
+
+			result = append(result, p)
+			literals = []Pattern{}
+			continue
+		}
+		// Not Regexp => assume literal pattern and accumulate.
+		literals = append(literals, p)
+	}
+
+	if len(literals) > 0 {
+		result = append(result, space(literals)[0].(Pattern))
+	}
+
+	return result
 }
 
 // fuzzyRegexp interpolates patterns with spaces and concatenates them.
 // Invariant: len(patterns) > 0.
-func space(patterns []Pattern) Pattern {
+func space(patterns []Pattern) []Node {
 	if len(patterns) == 1 {
-		return patterns[0]
+		return []Node{patterns[0]}
 	}
 	var values []string
 	for _, p := range patterns {
 		values = append(values, p.Value)
 	}
 
-	return Pattern{
-		// Preserve labels based on first pattern. Required to
-		// distinguish quoted, literal, structural pattern labels.
-		Annotation: patterns[0].Annotation,
-		Value:      strings.Join(values, " "),
+	return []Node{
+		Pattern{
+			// Preserve labels based on first pattern. Required to
+			// distinguish quoted, literal, structural pattern labels.
+			Annotation: patterns[0].Annotation,
+			Value:      strings.Join(values, " "),
+		},
 	}
 }
 
@@ -604,7 +655,7 @@ func space(patterns []Pattern) Pattern {
 //
 // The callback parameter defines how the function concatenates patterns. The
 // return value of callback is substituted in-place in the tree.
-func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Node {
+func substituteConcat(callback func([]Pattern) []Node) func(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true
@@ -636,16 +687,16 @@ func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Nod
 							continue
 						}
 						if len(ps) > 0 {
-							newNode = append(newNode, callback(ps))
+							newNode = append(newNode, callback(ps)...)
 							ps = []Pattern{}
 						}
 						newNode = append(newNode, substituteNodes([]Node{node})...)
 					}
 					if len(ps) > 0 {
-						newNode = append(newNode, callback(ps))
+						newNode = append(newNode, callback(ps)...)
 					}
 				} else {
-					newNode = append(newNode, newOperator(substituteNodes(v.Operands), v.Kind)...)
+					newNode = append(newNode, NewOperator(substituteNodes(v.Operands), v.Kind)...)
 				}
 			}
 		}
@@ -763,8 +814,8 @@ func ConcatRevFilters(b Basic) Basic {
 // a postprocessing step to keep the parser lean.
 func labelStructural(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		annotation.Labels.unset(Literal)
-		annotation.Labels.set(Structural)
+		annotation.Labels.Unset(Literal)
+		annotation.Labels.Set(Structural)
 		return Pattern{
 			Value:      value,
 			Negated:    negated,
@@ -817,7 +868,7 @@ func AddRegexpField(q Q, field, pattern string) string {
 
 	if !modified {
 		// use newOperator to reduce And nodes when adding a parameter to the query toplevel.
-		q = newOperator(append(q, Parameter{Field: field, Value: pattern}), And)
+		q = NewOperator(append(q, Parameter{Field: field, Value: pattern}), And)
 	}
 	return StringHuman(q)
 }

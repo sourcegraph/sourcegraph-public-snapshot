@@ -2,12 +2,12 @@ package compression
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -27,9 +27,9 @@ type CommitStore interface {
 	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, indexedThrough time.Time, debugInfo string) error
 }
 
-func NewCommitStore(db dbutil.DB) *DBCommitStore {
+func NewCommitStore(db edb.InsightsDB) *DBCommitStore {
 	return &DBCommitStore{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		Store: basestore.NewWithHandle(db.Handle()),
 	}
 }
 

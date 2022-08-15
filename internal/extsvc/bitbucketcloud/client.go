@@ -9,11 +9,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -64,7 +61,7 @@ type client struct {
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient creates a new Bitbucket Cloud API client from the given external
@@ -207,13 +204,8 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		return err
 	}
 
-	startWait := time.Now()
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Bitbucket Cloud self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)

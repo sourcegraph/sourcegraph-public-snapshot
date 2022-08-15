@@ -1,22 +1,28 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 import classNames from 'classnames'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { ChangesetApplyPreviewNode } from './ChangesetApplyPreviewNode'
-import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
-import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
 import styles from './PreviewList.module.scss'
 
-const { add } = storiesOf('web/batches/preview/ChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
-))
-
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('Overview', () => {
+const decorator: DecoratorFn = story => (
+    <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
+)
+
+const config: Meta = {
+    title: 'web/batches/preview/ChangesetApplyPreviewNode',
+    decorators: [decorator],
+}
+
+export default config
+
+export const Overview: Story = () => {
     const nodes = [
         ...Object.values(visibleChangesetApplyPreviewNodeStories(false)),
         ...Object.values(hiddenChangesetApplyPreviewStories),
@@ -43,4 +49,4 @@ add('Overview', () => {
             )}
         </WebStory>
     )
-})
+}

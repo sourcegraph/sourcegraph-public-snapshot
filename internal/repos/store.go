@@ -7,16 +7,16 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,8 +32,6 @@ type Store interface {
 	// database handle.
 	ExternalServiceStore() database.ExternalServiceStore
 
-	// SetLogger updates logger for the store in place.
-	SetLogger(l logging.ErrorLogger)
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
 	// SetTracer updates tracer for the store in place.
@@ -79,6 +77,10 @@ type Store interface {
 	// external service, respectively in the repo and external_service_repos table.
 	// The associated external service must already exist.
 	UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
+	// UpdateRepo updates a single repo without updating its association to an
+	// external service. This must only be used when updating metadata on a repo
+	// that cannot affect its associations.
+	UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error)
 	// EnqueueSingleSyncJob enqueues a single sync job for the given external service
 	// if it is not already queued or processing. Additionally, it also skips
 	// queueing up a sync job for cloud_default external services. This is done to
@@ -101,8 +103,8 @@ type Store interface {
 type store struct {
 	*basestore.Store
 
-	// Logger used by the store. Defaults to log15.Root().
-	Log logging.ErrorLogger
+	// Logger used by the store. Does not have a default - it must be provided.
+	Logger log.Logger
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
 	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
@@ -113,17 +115,17 @@ type store struct {
 }
 
 // NewStore instantiates and returns a new Store with given database handle.
-func NewStore(db database.DB, txOpts sql.TxOptions) Store {
-	s := basestore.NewWithDB(db, txOpts)
+func NewStore(logger log.Logger, db database.DB) Store {
+	s := basestore.NewWithHandle(db.Handle())
 	return &store{
 		Store:  s,
-		Log:    log15.Root(),
+		Logger: logger,
 		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}
 }
 
 func (s *store) RepoStore() database.RepoStore {
-	return database.ReposWith(s)
+	return database.ReposWith(s.Logger, s)
 }
 
 func (s *store) GitserverReposStore() database.GitserverRepoStore {
@@ -131,17 +133,16 @@ func (s *store) GitserverReposStore() database.GitserverRepoStore {
 }
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s)
+	return database.ExternalServicesWith(s.Logger, s)
 }
 
-func (s *store) SetLogger(l logging.ErrorLogger) { s.Log = l }
-func (s *store) SetMetrics(m StoreMetrics)       { s.Metrics = m }
-func (s *store) SetTracer(t trace.Tracer)        { s.Tracer = t }
+func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
+func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
 
 func (s *store) With(other basestore.ShareableStore) Store {
 	return &store{
 		Store:   s.Store.With(other),
-		Log:     s.Log,
+		Logger:  s.Logger,
 		Metrics: s.Metrics,
 		Tracer:  s.Tracer,
 	}
@@ -153,12 +154,15 @@ func (s *store) Transact(ctx context.Context) (Store, error) {
 
 func (s *store) transact(ctx context.Context) (stx *store, err error) {
 	tr, ctx := s.trace(ctx, "Store.Transact")
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.Transact.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.transact", &err)
+
 		if err != nil {
+			logger.Error("store.transact", log.Error(err))
+
 			tr.SetError(err)
 			// Finish is called in Done in the non-error case
 			tr.Finish()
@@ -171,7 +175,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 	}
 	return &store{
 		Store:   txBase,
-		Log:     s.Log,
+		Logger:  s.Logger,
 		Metrics: s.Metrics,
 		Tracer:  s.Tracer,
 		txtrace: tr,
@@ -183,6 +187,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 func (s *store) Done(err error) error {
 	tr := s.txtrace
 	tr.LogFields(otlog.String("event", "Store.Done"))
+	logger := trace.Logger(s.txctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -192,7 +197,8 @@ func (s *store) Done(err error) error {
 			done = true
 			tr.SetError(err)
 			s.Metrics.Done.Observe(secs, 1, &err)
-			logging.Log(s.Log, "store.done", &err)
+
+			logger.Error("store.done", log.Error(err))
 		}
 
 		if !done {
@@ -217,12 +223,20 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 
 func (s *store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
 	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
+	logger := trace.Logger(ctx, s.Logger).With(
+		log.Int("userID", int(userID)),
+		log.Int("orgID", int(orgID)),
+	)
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		tr.LogFields(otlog.Int32("user-id", userID), otlog.Int32("org-id", orgID))
 		s.Metrics.CountNamespacedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.Log, "store.count-namespaced-repos", &err, "count", count, "user-id", userID, "org-id", orgID)
+
+		if err != nil {
+			logger.Error("store.count-namespaced-repos", log.Uint64("count", count), log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
@@ -252,12 +266,16 @@ func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		otlog.Int("len(ids)", len(ids)),
 		otlog.Int64("external_service_id", svc.ID),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(log.Int64("externalServiceID", svc.ID), log.Int("len(ids)", len(ids)))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.DeleteExternalServiceReposNotIn.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.delete-external-service-repos-not-in", &err, "external-service-id", svc.ID, "len(ids)", len(ids))
+
+		if err != nil {
+			logger.Error("store.delete-external-service-repos-not-in", log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
@@ -299,12 +317,16 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 		otlog.Int32("id", int32(id)),
 		otlog.Int64("external_service_id", svc.ID),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(log.Int64("externalServiceID", svc.ID), log.Int("repoID", int(id)))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.DeleteExternalServiceRepo.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.delete-external-service-repo", &err, "external-service-id", svc.ID, "repo-id", id)
+
+		if err != nil {
+			logger.Error("store.delete-external-service-repo", log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
@@ -355,13 +377,16 @@ func (s *store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID a
 	tr.LogFields(
 		otlog.Int32("repo_id", int32(repoID)),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(log.Int("repoID", int(repoID)))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.ListExternalServiceUserIDsByRepoID.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.list-external-service-user-ids-by-repo-id", &err,
-			"repo-id", repoID,
-		)
+
+		if err != nil {
+			logger.Error("store.list-external-service-user-ids-by-repo-id", log.Error(err))
+		}
+
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
@@ -384,13 +409,16 @@ func (s *store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, u
 	tr.LogFields(
 		otlog.Int32("user_id", userID),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(log.Int("userID", int(userID)))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.ListExternalServiceRepoIDsByUserID.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.list-external-service-repo-ids-by-user-id", &err,
-			"user-id", userID,
-		)
+
+		if err != nil {
+			logger.Error("store.list-external-service-private-repo-id-by-user-id", log.Error(err))
+		}
+
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
@@ -415,16 +443,24 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		otlog.Int64("external_service_id", svc.ID),
 		otlog.String("external_repo_spec", r.ExternalRepo.String()),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(
+		log.Int("externalServiceID", int(svc.ID)),
+		log.String("Name", string(r.Name)),
+		log.Object("ExternalRepo",
+			log.String("ID", r.ExternalRepo.ID),
+			log.String("ServiceID", r.ExternalRepo.ServiceID),
+			log.String("ServiceType", r.ExternalRepo.ServiceType),
+		),
+	)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.create-external-service-repo", &err,
-			"external-service-id", svc.ID,
-			"name", r.Name,
-			"external-repo-spec", r.ExternalRepo.String(),
-		)
+
+		if err != nil {
+			logger.Error("store.create-external-service-repo", log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()
@@ -514,6 +550,59 @@ WHERE
 	external_service_repos.org_id    != excluded.org_id
 `
 
+func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error) {
+	tr, ctx := s.trace(ctx, "Store.UpdateRepo")
+	tr.LogFields(
+		otlog.String("name", string(r.Name)),
+		otlog.Int32("id", int32(r.ID)),
+	)
+	logger := trace.Logger(ctx, s.Logger).With(
+		log.Int32("id", int32(r.ID)),
+		log.String("name", string(r.Name)),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		s.Metrics.UpdateRepo.Observe(secs, 1, &err)
+		if err != nil {
+			logger.Error("store.update-repo", log.Error(err))
+		}
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	if r.ID == 0 {
+		return nil, errors.New("empty repo id in update")
+	}
+
+	metadata, err := metadataColumn(r.Metadata)
+	if err != nil {
+		return nil, errors.Wrap(err, "metadata marshalling failed")
+	}
+
+	q := sqlf.Sprintf(updateRepoQuery,
+		r.Name,
+		r.URI,
+		r.Description,
+		r.ExternalRepo.ServiceType,
+		r.ExternalRepo.ServiceID,
+		r.ExternalRepo.ID,
+		r.Archived,
+		r.Fork,
+		r.Stars,
+		r.Private,
+		metadata,
+		r.ID,
+	)
+
+	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
 func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.UpdateExternalServiceRepo")
 	tr.LogFields(
@@ -521,16 +610,23 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		otlog.Int64("external_service_id", svc.ID),
 		otlog.String("external_repo_spec", r.ExternalRepo.String()),
 	)
+	logger := trace.Logger(ctx, s.Logger).With(
+		log.Int("externalServiceID", int(svc.ID)),
+		log.String("Name", string(r.Name)),
+		log.Object("ExternalRepo",
+			log.String("ID", r.ExternalRepo.ID),
+			log.String("ServiceID", r.ExternalRepo.ServiceID),
+			log.String("ServiceType", r.ExternalRepo.ServiceType),
+		),
+	)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.UpdateExternalServiceRepo.Observe(secs, 1, &err)
-		logging.Log(s.Log, "store.update-external-service-repo", &err,
-			"external-service-id", svc.ID,
-			"name", r.Name,
-			"external-repo-spec", r.ExternalRepo.String(),
-		)
+		if err != nil {
+			logger.Error("store.update-external-service-repo", log.Error(err))
+		}
 
 		tr.SetError(err)
 		tr.Finish()

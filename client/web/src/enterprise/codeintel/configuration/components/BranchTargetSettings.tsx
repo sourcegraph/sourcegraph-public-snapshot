@@ -1,6 +1,7 @@
 import { FunctionComponent } from 'react'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
+import { Input } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { nullPolicy } from '../hooks/types'
@@ -34,19 +35,16 @@ export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<Bra
 
     return (
         <>
-            <div className="form-group">
-                <label htmlFor="name">Name</label>
-                <input
-                    id="name"
-                    type="text"
-                    className="form-control"
-                    value={policy.name}
-                    onChange={({ target: { value: name } }) => updatePolicy({ name })}
-                    disabled={disabled}
-                    required={true}
-                />
-                <small className="form-text text-muted">Required.</small>
-            </div>
+            <Input
+                id="name"
+                className="form-group"
+                value={policy.name}
+                onChange={({ target: { value: name } }) => updatePolicy({ name })}
+                disabled={disabled}
+                required={true}
+                label="Name"
+                message="Required."
+            />
 
             {repoId || policy.repository ? (
                 <div className="mb-3">

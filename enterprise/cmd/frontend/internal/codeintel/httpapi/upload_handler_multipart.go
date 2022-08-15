@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -42,17 +43,18 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 		State:             "uploading",
 		NumParts:          uploadState.numParts,
 		UploadedParts:     nil,
+		UncompressedSize:  uploadState.uncompressedSize,
 	})
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
 	trace.Log(log.Int("uploadID", id))
 
-	log15.Info(
+	h.logger.Info(
 		"codeintel.httpapi: enqueued upload",
-		"id", id,
-		"repository_id", uploadState.repositoryID,
-		"commit", uploadState.commit,
+		sglog.Int("id", id),
+		sglog.Int("repository_id", uploadState.repositoryID),
+		sglog.String("commit", uploadState.commit),
 	)
 
 	// older versions of src-cli expect a string
@@ -152,6 +154,6 @@ func (h *UploadHandler) markUploadAsFailed(ctx context.Context, tx DBStore, uplo
 	}
 
 	if markErr := tx.MarkFailed(ctx, uploadID, reason); markErr != nil {
-		log15.Error("codeintel.httpapi: failed to mark upload as failed", "error", markErr)
+		h.logger.Error("codeintel.httpapi: failed to mark upload as failed", sglog.Error(markErr))
 	}
 }

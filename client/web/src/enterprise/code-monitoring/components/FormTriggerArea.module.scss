@@ -1,6 +1,13 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .query-input {
     display: flex;
     align-items: stretch;
+
+    @media (--xs-breakpoint-down) {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
     &-preview-link {
         white-space: nowrap;
@@ -16,6 +23,14 @@
         &-icon {
             max-height: 1rem;
             max-width: 1rem;
+        }
+
+        @media (--xs-breakpoint-down) {
+            height: 2rem;
+            width: 100%;
+            border-top: none;
+            border-top-right-radius: 0;
+            border-bottom-left-radius: 2px;
         }
     }
 
@@ -34,6 +49,12 @@
         &:focus-within {
             border: 1px solid var(--input-focus-border-color);
             box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+        }
+
+        @media (--xs-breakpoint-down) {
+            border-right: 1px solid var(--input-border-color);
+            border-top-right-radius: 2px;
+            border-bottom-left-radius: 0;
         }
     }
 }
@@ -55,6 +76,7 @@
         font-size: 0.65rem;
         margin-right: 0.5rem;
         color: var(--icon-muted);
+        flex-shrink: 0;
 
         &--unchecked {
             /* Make unchecked icon smaller so it doesn't look like a radio button. */

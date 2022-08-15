@@ -124,7 +124,8 @@ if [ -f "${flakefile}" ]; then
   echo ""
   echo "Disabling tests listed in flakefile ${flakefile}"
 
-  for pair in $(jq -r '.[] | "\(.path):\(.prefix)"' <"${flakefile}"); do
+  pairs=$(jq -r '.[] | "\(.path):\(.prefix)"' <"${flakefile}")
+  for pair in $pairs; do
     IFS=' ' read -ra parts <<<"${pair/:/ }"
     disable_test_path "${parts[0]}" "${parts[1]}"
   done
@@ -152,6 +153,9 @@ an exception for this test can be added to the following flakefile:
 ${flakefile}
 \`\`\`
 
+⚠️ If by the time you are adding an exception, the release has already been cut, but it has not
+been published yet, the best course of action is to postpone merging the commit creating the issue
+until the release process is complete.
 EOF
   )
   mkdir -p ./annotations/

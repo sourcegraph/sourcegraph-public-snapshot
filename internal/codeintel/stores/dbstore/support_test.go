@@ -6,13 +6,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestRequestLanguageSupport(t *testing.T) {
 	ctx := context.Background()
-	store := testStore(database.NewDB(dbtest.NewDB(t)))
+	logger := logtest.Scoped(t)
+	store := testStore(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	requests := []struct {
 		userID    int

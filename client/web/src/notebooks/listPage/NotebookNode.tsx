@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react'
 
+import { mdiStar, mdiStarOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import StarIcon from 'mdi-react/StarIcon'
-import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 
 import { renderMarkdown, pluralize } from '@sourcegraph/common'
 import { IMarkdownBlock, NotebookBlock } from '@sourcegraph/shared/src/schema'
@@ -61,13 +60,20 @@ export const NotebookNode: React.FunctionComponent<React.PropsWithChildren<Noteb
                 <span className="d-flex align-items-center mr-3">
                     {node.viewerHasStarred ? (
                         <Icon
+                            aria-label="You have starred this notebook"
                             className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
-                            as={StarIcon}
+                            svgPath={mdiStar}
                         />
                     ) : (
-                        <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
+                        <Icon
+                            aria-label="You have not starred this notebook"
+                            className={styles.notebookStarIcon}
+                            svgPath={mdiStarOutline}
+                        />
                     )}
-                    <span className="ml-1">{node.stars.totalCount}</span>
+                    <span className="ml-1" aria-label={`${node.stars.totalCount} stars`}>
+                        {node.stars.totalCount}
+                    </span>
                 </span>
                 <span className="mr-3">
                     Updated <Timestamp date={node.updatedAt} noAbout={true} />

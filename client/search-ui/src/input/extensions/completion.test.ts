@@ -60,6 +60,7 @@ describe('codmirror completions', () => {
                                 name: 'RepoRoutes',
                                 url: '',
                                 containerName: '',
+                                line: 1,
                             },
                         ],
                     },
@@ -88,7 +89,6 @@ describe('codmirror completions', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -127,7 +127,6 @@ describe('codmirror completions', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -165,7 +164,6 @@ describe('codmirror completions', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -203,7 +201,6 @@ describe('codmirror completions', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -251,24 +248,6 @@ describe('codmirror completions', () => {
                 )
             )?.map(({ label, apply }) => ({ label, apply }))
         ).toStrictEqual([{ label: 'connect.go', apply: '^connect\\.go$ ' }])
-    })
-
-    test('inserts valid suggestion when completing repo:deps predicate', async () => {
-        expect(
-            (
-                await getCompletionItems(
-                    getToken('repo:deps(sourcegraph', 0),
-                    20,
-                    async () =>
-                        [
-                            {
-                                type: 'repo',
-                                repository: 'github.com/sourcegraph/jsonrpc2.go',
-                            },
-                        ] as SearchMatch[]
-                )
-            )?.map(({ apply }) => apply)
-        ).toStrictEqual(['deps(^github\\.com/sourcegraph/jsonrpc2\\.go$) '])
     })
 
     test('includes file path in insertText when completing filter value', async () => {

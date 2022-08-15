@@ -14,12 +14,10 @@ import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
 import { ConnectGitHubAppPage } from './org/settings/codeHosts/ConnectGitHubAppPage'
 import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
-import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
@@ -38,10 +36,8 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionAlertProps,
         CodeIntelligenceProps,
-        BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        BatchChangesProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
@@ -71,7 +67,7 @@ function passThroughToServer(): React.ReactNode {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = [
+export const routes: readonly LayoutRouteProps<any>[] = ([
     {
         path: PageRoutes.Index,
         render: props =>
@@ -90,13 +86,9 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.SearchConsole,
         render: props => {
-            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+            const { showMultilineSearchConsole } = getExperimentalFeatures()
 
-            return showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
+            return showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to={PageRoutes.Search} />
         },
         exact: true,
     },
@@ -174,7 +166,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     authenticatedUser={props.authenticatedUser}
                     telemetryService={props.telemetryService}
                     context={window.context}
-                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                     setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (
@@ -235,12 +226,14 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Survey,
-        render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
+        render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
     },
-    {
-        path: PageRoutes.Extensions,
-        render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
-    },
+    window.context.enableLegacyExtensions
+        ? {
+              path: PageRoutes.Extensions,
+              render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
+          }
+        : undefined,
     {
         path: PageRoutes.Help,
         render: passThroughToServer,
@@ -254,4 +247,4 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.RepoContainer,
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
-]
+] as readonly (LayoutRouteProps<any> | undefined)[]).filter(Boolean) as readonly LayoutRouteProps<any>[]

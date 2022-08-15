@@ -12,11 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,14 +30,15 @@ import (
 )
 
 func TestChangesetApplyPreviewResolver(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -49,11 +52,11 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	}
 	// Create a batch change and create a new spec targetting the same batch change again.
 	batchChangeName := "test-apply-preview-resolver"
-	batchChange := ct.CreateBatchChange(t, ctx, cstore, batchChangeName, userID, oldBatchSpec.ID)
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, batchChangeName, userID)
+	batchChange := bt.CreateBatchChange(t, ctx, cstore, batchChangeName, userID, oldBatchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, batchChangeName, userID, batchChange.ID)
 
-	esStore := database.ExternalServicesWith(cstore)
-	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
+	repoStore := database.ReposWith(logger, cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -67,7 +70,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 
 	changesetSpecs := make([]*btypes.ChangesetSpec, 0, 2)
 	for i, r := range rs[:2] {
-		s := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		s := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      r.ID,
@@ -78,13 +81,13 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	}
 
 	// Add one changeset that doesn't match any new spec anymore but was there before (close, detach).
-	closingChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+	closingChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      rs[2].ID,
 		BatchSpec: oldBatchSpec.ID,
 		HeadRef:   "d34db33f-2",
 	})
-	closingChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	closingChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:             rs[2].ID,
 		BatchChange:      batchChange.ID,
 		CurrentSpec:      closingChangesetSpec.ID,
@@ -92,13 +95,13 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	})
 
 	// Add one changeset that doesn't matches a new spec (update).
-	updatedChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+	updatedChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
 		BatchSpec: oldBatchSpec.ID,
 		User:      userID,
 		Repo:      changesetSpecs[1].RepoID,
 		HeadRef:   changesetSpecs[1].Spec.HeadRef,
 	})
-	updatedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	updatedChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
 		Repo:               rs[1].ID,
 		BatchChange:        batchChange.ID,
 		CurrentSpec:        updatedChangesetSpec.ID,
@@ -106,7 +109,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByBatchChange: batchChange.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,19 +261,21 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	ctx := actor.WithInternalActor(context.Background())
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	bstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(bstore)
-	repoStore := database.ReposWith(bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+	repoStore := database.ReposWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
 	require.Nil(t, repoStore.Create(ctx, repo))
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	require.Nil(t, err)
 
 	// To make it easier to assert against the operations in a preview node,
@@ -514,36 +519,36 @@ func newApplyPreviewTestFixture(
 	// with an explicit published field (so we can verify that UI publication
 	// states can't override that), and four changeset specs without published
 	// fields (one for each possible publication state).
-	batchSpec := ct.CreateBatchSpec(t, ctx, bstore, name, userID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, name, userID, 0)
 
 	return &applyPreviewTestFixture{
 		batchSpec: batchSpec,
-		specPublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specPublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "published " + name,
 			Published: true,
 		}),
-		specToBePublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specToBePublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be published " + name,
 		}),
-		specToBeDraft: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specToBeDraft: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be draft " + name,
 		}),
-		specToBeUnpublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specToBeUnpublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be unpublished " + name,
 		}),
-		specToBeOmitted: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		specToBeOmitted: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,

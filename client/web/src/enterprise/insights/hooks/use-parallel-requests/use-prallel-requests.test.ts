@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react-hooks'
+import { renderHook, act } from '@testing-library/react'
 import { Observable, ObservableInput, of } from 'rxjs'
 import { delay, map, switchMap, tap } from 'rxjs/operators'
 import sinon from 'sinon'

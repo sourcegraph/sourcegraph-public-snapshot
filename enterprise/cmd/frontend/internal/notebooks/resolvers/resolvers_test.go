@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	notebooksapitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks/resolvers/apitest"
@@ -178,11 +180,11 @@ func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapi
 }
 
 func TestSingleNotebookCRUD(t *testing.T) {
+	logger := logtest.Scoped(t)
 	internalCtx := actor.WithInternalActor(context.Background())
-	testdb := database.NewDB(dbtest.NewDB(t))
-	db := database.NewDB(testdb)
-	u := database.Users(db)
-	o := database.Orgs(db)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	u := db.Users()
+	o := db.Orgs()
 	om := db.OrgMembers()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -548,10 +550,11 @@ func createNotebookStars(t *testing.T, db database.DB, notebookID int64, userIDs
 }
 
 func TestListNotebooks(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
-	o := database.Orgs(db)
+	u := db.Users()
+	o := db.Orgs()
 	om := db.OrgMembers()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -597,8 +600,7 @@ func TestListNotebooks(t *testing.T) {
 		return ids
 	}
 
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -706,4 +708,41 @@ func TestListNotebooks(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetNotebookWithSoftDeletedUserColumns(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := db.Users()
+	n := notebooks.Notebooks(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	createdNotebook, err := n.CreateNotebook(internalCtx, userNotebookFixture(user2.ID, true))
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	err = u.Delete(internalCtx, user2.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]any{"id": marshalNotebookID(createdNotebook.ID)}
+	var response struct{ Node notebooksapitest.Notebook }
+	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, input, &response, queryNotebook)
 }

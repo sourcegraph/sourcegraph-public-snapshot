@@ -12,11 +12,27 @@ type Job struct {
 	// workspace prior to job execution.
 	RepositoryName string `json:"repositoryName"`
 
+	// RepositoryDirectory is the relative path to which the repo is cloned. If
+	// unset, defaults to the workspace root.
+	RepositoryDirectory string `json:"repositoryDirectory"`
+
 	// Commit is the revhash that should be checked out prior to job execution.
 	Commit string `json:"commit"`
 
+	// FetchTags, when true also fetches tags from the remote.
+	FetchTags bool `json:"fetchTags"`
+
+	// ShallowClone, when true speeds up repo cloning by fetching only the target commit
+	// and no tags.
+	ShallowClone bool `json:"shallowClone"`
+
+	// SparseCheckout denotes the path patterns to check out. This can be used to fetch
+	// only a part of a repository.
+	SparseCheckout []string `json:"sparseCheckout"`
+
 	// VirtualMachineFiles is a map from file names to content. Each entry in
 	// this map will be written into the workspace prior to job execution.
+	// The file paths must be relative and within the working directory.
 	VirtualMachineFiles map[string]string `json:"files"`
 
 	// DockerSteps describe a series of docker run commands to be invoked in the
@@ -106,8 +122,11 @@ type HeartbeatRequest struct {
 	GitVersion      string `json:"gitVersion"`
 	IgniteVersion   string `json:"igniteVersion"`
 	SrcCliVersion   string `json:"srcCliVersion"`
+
+	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
-type CanceledRequest struct {
+type CanceledJobsRequest struct {
+	KnownJobIDs  []int  `json:"knownJobIds"`
 	ExecutorName string `json:"executorName"`
 }

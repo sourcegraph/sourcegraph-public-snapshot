@@ -8,18 +8,18 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
-	mockGitServer := NewMockGitserverClient()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -35,26 +35,25 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v1.2.0"}}, true, nil)
 	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
 
-	mockGitServer.RepoInfoFunc.PushReturn(map[api.RepoName]*protocol.RepoInfo{
-		"https://github.com/sample/text": {
-			CloneInProgress: false,
-			Cloned:          true,
+	mockGitserverReposStore := NewMockGitserverRepoStore()
+	mockGitserverReposStore.GetByNamesFunc.PushReturn(map[api.RepoName]*types.GitserverRepo{
+		"github.com/sample/text": {
+			CloneStatus: types.CloneStatusCloned,
 		},
-		"https://github.com/cheese/burger": {
-			CloneInProgress: false,
-			Cloned:          true,
+		"github.com/cheese/burger": {
+			CloneStatus: types.CloneStatusCloned,
 		},
 	}, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
 	handler := &dependencyIndexingSchedulerHandler{
-		dbStore:       mockDBStore,
-		indexEnqueuer: indexEnqueuer,
-		extsvcStore:   mockExtSvcStore,
-		workerStore:   mockWorkerStore,
-		gitserver:     mockGitServer,
-		repoUpdater:   mockRepoUpdater,
+		dbStore:            mockDBStore,
+		indexEnqueuer:      indexEnqueuer,
+		extsvcStore:        mockExtSvcStore,
+		workerStore:        mockWorkerStore,
+		gitserverRepoStore: mockGitserverReposStore,
+		repoUpdater:        mockRepoUpdater,
 	}
 
 	logger := logtest.Scoped(t)
@@ -112,7 +111,6 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
-	mockGitServer := NewMockGitserverClient()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -124,26 +122,25 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
 	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
 
-	mockGitServer.RepoInfoFunc.PushReturn(map[api.RepoName]*protocol.RepoInfo{
+	mockGitserverReposStore := NewMockGitserverRepoStore()
+	mockGitserverReposStore.GetByNamesFunc.PushReturn(map[api.RepoName]*types.GitserverRepo{
 		"github.com/sample/text": {
-			CloneInProgress: false,
-			Cloned:          true,
+			CloneStatus: types.CloneStatusCloned,
 		},
 		"github.com/cheese/burger": {
-			CloneInProgress: true,
-			Cloned:          false,
+			CloneStatus: types.CloneStatusCloning,
 		},
 	}, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
 	handler := &dependencyIndexingSchedulerHandler{
-		dbStore:       mockDBStore,
-		indexEnqueuer: indexEnqueuer,
-		extsvcStore:   mockExtSvcStore,
-		workerStore:   mockWorkerStore,
-		gitserver:     mockGitServer,
-		repoUpdater:   mockRepoUpdater,
+		dbStore:            mockDBStore,
+		indexEnqueuer:      indexEnqueuer,
+		extsvcStore:        mockExtSvcStore,
+		gitserverRepoStore: mockGitserverReposStore,
+		workerStore:        mockWorkerStore,
+		repoUpdater:        mockRepoUpdater,
 	}
 
 	job := dbstore.DependencyIndexingJob{
@@ -173,7 +170,6 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
-	mockGitServer := NewMockGitserverClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
@@ -184,26 +180,25 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
 	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
 
-	mockGitServer.RepoInfoFunc.PushReturn(map[api.RepoName]*protocol.RepoInfo{
+	mockGitserverReposStore := NewMockGitserverRepoStore()
+	mockGitserverReposStore.GetByNamesFunc.PushReturn(map[api.RepoName]*types.GitserverRepo{
 		"github.com/sample/text": {
-			CloneInProgress: false,
-			Cloned:          true,
+			CloneStatus: types.CloneStatusCloned,
 		},
 		"github.com/cheese/burger": {
-			CloneInProgress: false,
-			Cloned:          false,
+			CloneStatus: types.CloneStatusNotCloned,
 		},
 	}, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
 	handler := &dependencyIndexingSchedulerHandler{
-		dbStore:       mockDBStore,
-		indexEnqueuer: indexEnqueuer,
-		extsvcStore:   mockExtSvcStore,
-		workerStore:   mockWorkerStore,
-		gitserver:     mockGitServer,
-		repoUpdater:   mockRepoUpdater,
+		dbStore:            mockDBStore,
+		indexEnqueuer:      indexEnqueuer,
+		extsvcStore:        mockExtSvcStore,
+		gitserverRepoStore: mockGitserverReposStore,
+		workerStore:        mockWorkerStore,
+		repoUpdater:        mockRepoUpdater,
 	}
 
 	job := dbstore.DependencyIndexingJob{
@@ -232,19 +227,19 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
+	mockGitserverReposStore := NewMockGitserverRepoStore()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockGitServer := NewMockGitserverClient()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51, Indexer: "lsif-tsc"}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51, Indexer: "scip-typescript"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
 	handler := &dependencyIndexingSchedulerHandler{
-		dbStore:       mockDBStore,
-		indexEnqueuer: indexEnqueuer,
-		extsvcStore:   mockExtSvcStore,
-		gitserver:     mockGitServer,
+		dbStore:            mockDBStore,
+		indexEnqueuer:      indexEnqueuer,
+		extsvcStore:        mockExtSvcStore,
+		gitserverRepoStore: mockGitserverReposStore,
 	}
 
 	job := dbstore.DependencyIndexingJob{

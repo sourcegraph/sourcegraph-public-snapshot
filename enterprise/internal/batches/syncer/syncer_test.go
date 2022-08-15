@@ -6,6 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -47,6 +51,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -87,6 +92,7 @@ func TestSyncerRun(t *testing.T) {
 		}, nil)
 
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			metrics:          makeMetrics(&observation.TestContext),
@@ -117,6 +123,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -137,6 +144,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        newTestStore(),
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -225,6 +233,7 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 	t.Cleanup(syncerCancel)
 
 	syncer := &changesetSyncer{
+		logger:      logtest.Scoped(t),
 		syncStore:   syncStore,
 		codeHostURL: codeHostURL,
 		syncFunc: func(ctx context.Context, id int64) error {
@@ -261,6 +270,59 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 	}
 }
 
+func TestSyncRegistry_EnqueueChangesetSyncsForRepos(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("store error", func(t *testing.T) {
+		bstore := NewMockSyncStore()
+		want := errors.New("expected")
+		bstore.ListChangesetsFunc.SetDefaultReturn(nil, 0, want)
+
+		s := &SyncRegistry{
+			syncStore: bstore,
+		}
+
+		err := s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{})
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("no changesets", func(t *testing.T) {
+		bstore := NewMockSyncStore()
+		bstore.ListChangesetsFunc.SetDefaultHook(func(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error) {
+			assert.Equal(t, []api.RepoID{1}, opts.RepoIDs)
+			return []*btypes.Changeset{}, 0, nil
+		})
+
+		s := &SyncRegistry{
+			syncStore: bstore,
+		}
+
+		assert.NoError(t, s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{1}))
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs := []*btypes.Changeset{
+			{ID: 1},
+			{ID: 2},
+		}
+
+		bstore := NewMockSyncStore()
+		bstore.ListChangesetsFunc.SetDefaultHook(func(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error) {
+			assert.Equal(t, []api.RepoID{1}, opts.RepoIDs)
+			return cs, 0, nil
+		})
+
+		s := &SyncRegistry{
+			logger:         logtest.Scoped(t),
+			priorityNotify: make(chan []int64, 1),
+			syncStore:      bstore,
+		}
+
+		assert.NoError(t, s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{1}))
+		assert.ElementsMatch(t, []int64{1, 2}, <-s.priorityNotify)
+	})
+}
+
 func TestLoadChangesetSource(t *testing.T) {
 	ctx := context.Background()
 	cf := httpcli.NewFactory(
@@ -278,7 +340,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		ID:          1,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub.com",
-		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 	}
 	repo := &types.Repo{
 		Name:    api.RepoName("test-repo"),
@@ -297,43 +359,136 @@ func TestLoadChangesetSource(t *testing.T) {
 		},
 	}
 
-	// Store mocks.
-	hasCredential := false
-	syncStore := newTestStore()
-	syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
-		if hasCredential {
-			cred := &btypes.SiteCredential{}
-			cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "456"})
-			return cred, nil
+	newMockStore := func() *MockSyncStore {
+		syncStore := newTestStore()
+
+		ess := database.NewMockExternalServiceStore()
+		ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			return []*types.ExternalService{&externalService}, nil
+		})
+		syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
+
+		return syncStore
+	}
+
+	t.Run("imported changesets", func(t *testing.T) {
+		// Store mocks.
+		hasCredential := false
+		syncStore := newMockStore()
+		syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
+			if hasCredential {
+				cred := &btypes.SiteCredential{Credential: database.NewEmptyCredential()}
+				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "456"})
+				return cred, nil
+			}
+			return nil, store.ErrNoResults
+		})
+
+		ch := &btypes.Changeset{OwnedByBatchChangeID: 0}
+
+		// If no site-credential exists, the token from the external service should be used.
+		src, err := loadChangesetSource(ctx, cf, syncStore, ch, repo)
+		if err != nil {
+			t.Fatal(err)
 		}
-		return nil, store.ErrNoResults
-	})
-	ess := database.NewMockExternalServiceStore()
-	ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{&externalService}, nil
-	})
-	syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
+		if err := src.ValidateAuthenticator(ctx); err == nil {
+			t.Fatal("unexpected nil error")
+		} else if have, want := err.Error(), "Bearer 123"; have != want {
+			t.Fatalf("invalid token used, want=%q have=%q", want, have)
+		}
 
-	// If no site-credential exists, the token from the external service should be used.
-	src, err := loadChangesetSource(ctx, cf, syncStore, repo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := src.ValidateAuthenticator(ctx); err == nil {
-		t.Fatal("unexpected nil error")
-	} else if have, want := err.Error(), "Bearer 123"; have != want {
-		t.Fatalf("invalid token used, want=%q have=%q", want, have)
-	}
+		// If one exists, prefer that one over the external service config ones.
+		hasCredential = true
+		src, err = loadChangesetSource(ctx, cf, syncStore, ch, repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := src.ValidateAuthenticator(ctx); err == nil {
+			t.Fatal("unexpected nil error")
+		} else if have, want := err.Error(), "Bearer 456"; have != want {
+			t.Fatalf("invalid token used, want=%q have=%q", want, have)
+		}
+	})
 
-	// If one exists, prefer that one over the external service config ones.
-	hasCredential = true
-	src, err = loadChangesetSource(ctx, cf, syncStore, repo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := src.ValidateAuthenticator(ctx); err == nil {
-		t.Fatal("unexpected nil error")
-	} else if have, want := err.Error(), "Bearer 456"; have != want {
-		t.Fatalf("invalid token used, want=%q have=%q", want, have)
-	}
+	t.Run("owned changesets", func(t *testing.T) {
+		t.Run("has user credential", func(t *testing.T) {
+			bc := &btypes.BatchChange{ID: 1, LastApplierID: 42}
+			ch := &btypes.Changeset{OwnedByBatchChangeID: bc.ID}
+
+			credStore := database.NewMockUserCredentialsStore()
+			credStore.GetByScopeFunc.SetDefaultHook(func(ctx context.Context, opts database.UserCredentialScope) (*database.UserCredential, error) {
+				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
+				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
+				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
+				cred := &database.UserCredential{Credential: database.NewEmptyCredential()}
+				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "789"})
+				return cred, nil
+			})
+
+			syncStore := newMockStore()
+			syncStore.UserCredentialsFunc.SetDefaultReturn(credStore)
+			syncStore.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
+				assert.EqualValues(t, bc.ID, opts.ID)
+				return bc, nil
+			})
+
+			src, err := loadChangesetSource(ctx, cf, syncStore, ch, repo)
+			assert.NoError(t, err)
+
+			err = src.ValidateAuthenticator(ctx)
+			assert.Error(t, err)
+			assert.Equal(t, "Bearer 789", err.Error())
+		})
+
+		t.Run("site credential only", func(t *testing.T) {
+			bc := &btypes.BatchChange{ID: 1, LastApplierID: 42}
+			ch := &btypes.Changeset{OwnedByBatchChangeID: bc.ID}
+
+			credStore := database.NewMockUserCredentialsStore()
+			credStore.GetByScopeFunc.SetDefaultReturn(nil, database.UserCredentialNotFoundErr{})
+
+			syncStore := newMockStore()
+			syncStore.UserCredentialsFunc.SetDefaultReturn(credStore)
+			syncStore.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
+				assert.EqualValues(t, bc.ID, opts.ID)
+				return bc, nil
+			})
+			syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
+				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
+				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
+				cred := &btypes.SiteCredential{Credential: database.NewEmptyCredential()}
+				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "456"})
+				return cred, nil
+			})
+
+			src, err := loadChangesetSource(ctx, cf, syncStore, ch, repo)
+			assert.NoError(t, err)
+
+			err = src.ValidateAuthenticator(ctx)
+			assert.Error(t, err)
+			assert.Equal(t, "Bearer 456", err.Error())
+		})
+
+		t.Run("no user or site credential", func(t *testing.T) {
+			bc := &btypes.BatchChange{ID: 1, LastApplierID: 42}
+			ch := &btypes.Changeset{OwnedByBatchChangeID: bc.ID}
+
+			credStore := database.NewMockUserCredentialsStore()
+			credStore.GetByScopeFunc.SetDefaultReturn(nil, database.UserCredentialNotFoundErr{})
+
+			syncStore := newMockStore()
+			syncStore.UserCredentialsFunc.SetDefaultReturn(credStore)
+			syncStore.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
+				assert.EqualValues(t, bc.ID, opts.ID)
+				return bc, nil
+			})
+
+			src, err := loadChangesetSource(ctx, cf, syncStore, ch, repo)
+			assert.NoError(t, err)
+
+			err = src.ValidateAuthenticator(ctx)
+			assert.Error(t, err)
+			assert.Equal(t, "Bearer 123", err.Error())
+		})
+	})
 }

@@ -10,8 +10,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -70,8 +70,8 @@ type releaseStore struct {
 var _ ReleaseStore = (*releaseStore)(nil)
 
 // Releases instantiates and returns a new ReleasesStore with prepared statements.
-func Releases(db dbutil.DB) ReleaseStore {
-	return &releaseStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Releases(db database.DB) ReleaseStore {
+	return &releaseStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 // ReleasesWith instantiates and returns a new ReleasesStore using the other store handle.

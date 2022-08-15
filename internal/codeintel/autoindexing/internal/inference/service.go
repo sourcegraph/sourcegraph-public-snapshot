@@ -10,14 +10,15 @@ import (
 
 	otelog "github.com/opentracing/opentracing-go/log"
 	baselua "github.com/yuin/gopher-lua"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/lua"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,7 +26,7 @@ import (
 type Service struct {
 	sandboxService                  SandboxService
 	gitService                      GitService
-	limiter                         *rate.Limiter
+	limiter                         *ratelimit.InstrumentedLimiter
 	maximumFilesWithContentCount    int
 	maximumFileWithContentSizeBytes int
 	operations                      *operations
@@ -53,7 +54,7 @@ type invocationFunctionTable struct {
 func newService(
 	sandboxService SandboxService,
 	gitService GitService,
-	limiter *rate.Limiter,
+	limiter *ratelimit.InstrumentedLimiter,
 	maximumFilesWithContentCount int,
 	maximumFileWithContentSizeBytes int,
 	observationContext *observation.Context,
@@ -348,13 +349,13 @@ func (s *Service) resolveFileContents(
 		return nil, err
 	}
 
-	pathspecs := make([]gitserver.Pathspec, 0, len(relevantPaths))
+	pathspecs := make([]gitdomain.Pathspec, 0, len(relevantPaths))
 	for _, p := range relevantPaths {
-		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+		pathspecs = append(pathspecs, gitdomain.PathspecLiteral(p))
 	}
 	opts := gitserver.ArchiveOptions{
 		Treeish:   invocationContext.commit,
-		Format:    "tar",
+		Format:    gitserver.ArchiveFormatTar,
 		Pathspecs: pathspecs,
 	}
 	rc, err := invocationContext.gitService.Archive(ctx, invocationContext.repo, opts)

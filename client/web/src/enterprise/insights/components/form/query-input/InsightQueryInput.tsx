@@ -34,7 +34,7 @@ export const InsightQueryInput = forwardRef<HTMLInputElement, InsightQueryInputP
                     {children}
                 </Monaco.Root>
             ) : (
-                <Monaco.Field {...props} ref={reference} className={props.className} />
+                <Monaco.Field {...props} ref={reference} className={classNames(styles.inputWrapper, props.className)} />
             )}
 
             <Monaco.PreviewLink query={previewQuery} patternType={patternType} className={styles.previewButton} />

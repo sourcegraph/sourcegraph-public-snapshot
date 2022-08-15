@@ -1,17 +1,20 @@
 import React from 'react'
 
+import { mdiShieldCheck } from '@mdi/js'
 import classNames from 'classnames'
-import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 
-import { ForwardReferenceComponent, Icon, IconProps } from '@sourcegraph/wildcard'
+import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './EncryptedDataIcon.module.scss'
 
-export const EncryptedDataIcon = React.forwardRef(({ className, ...rest }, reference) => (
+export const EncryptedDataIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className,
+    ...rest
+}) => (
     <Icon
-        as={ShieldCheckIcon}
         className={classNames('text-muted', styles.iconInside, className)}
+        aria-label="Encrypted Data"
+        svgPath={mdiShieldCheck}
         {...rest}
-        ref={reference}
     />
-)) as ForwardReferenceComponent<'svg', IconProps>
+)

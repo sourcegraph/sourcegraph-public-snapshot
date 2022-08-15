@@ -1,37 +1,8 @@
 [
   {
    "ID": 0,
-   "Name": "npm/async",
-   "URI": "npm/async",
-   "Description": "Higher-order functions and common patterns for asynchronous code",
-   "Fork": false,
-   "Archived": false,
-   "Private": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
-   "ExternalRepo": {
-    "ID": "npm/async",
-    "ServiceType": "npmPackages",
-    "ServiceID": "npmPackages"
-   },
-   "Sources": {
-    "extsvc:npmpackages:0": {
-     "ID": "extsvc:npmpackages:0",
-     "CloneURL": "npm/async"
-    }
-   },
-   "Metadata": {
-    "Package": {
-     "Scope": "",
-     "Name": "async"
-    }
-   }
-  },
-  {
-   "ID": 0,
-   "Name": "npm/lodash",
-   "URI": "npm/lodash",
+   "Name": "npm/fastq",
+   "URI": "npm/fastq",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -40,56 +11,27 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "npm/lodash",
+    "ID": "npm/fastq",
     "ServiceType": "npmPackages",
     "ServiceID": "npmPackages"
    },
    "Sources": {
     "extsvc:npmpackages:0": {
      "ID": "extsvc:npmpackages:0",
-     "CloneURL": "npm/lodash"
+     "CloneURL": "npm/fastq"
     }
    },
    "Metadata": {
     "Package": {
      "Scope": "",
-     "Name": "lodash"
+     "Name": "fastq"
     }
    }
   },
   {
    "ID": 0,
-   "Name": "npm/react",
-   "URI": "npm/react",
-   "Description": "React is a JavaScript library for building user interfaces.",
-   "Fork": false,
-   "Archived": false,
-   "Private": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
-   "ExternalRepo": {
-    "ID": "npm/react",
-    "ServiceType": "npmPackages",
-    "ServiceID": "npmPackages"
-   },
-   "Sources": {
-    "extsvc:npmpackages:0": {
-     "ID": "extsvc:npmpackages:0",
-     "CloneURL": "npm/react"
-    }
-   },
-   "Metadata": {
-    "Package": {
-     "Scope": "",
-     "Name": "react"
-    }
-   }
-  },
-  {
-   "ID": 0,
-   "Name": "npm/urql",
-   "URI": "npm/urql",
+   "Name": "npm/sourcegraph/prettierrc",
+   "URI": "npm/sourcegraph/prettierrc",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -98,20 +40,78 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "npm/urql",
+    "ID": "npm/sourcegraph/prettierrc",
     "ServiceType": "npmPackages",
     "ServiceID": "npmPackages"
    },
    "Sources": {
     "extsvc:npmpackages:0": {
      "ID": "extsvc:npmpackages:0",
-     "CloneURL": "npm/urql"
+     "CloneURL": "npm/sourcegraph/prettierrc"
     }
    },
    "Metadata": {
     "Package": {
-     "Scope": "",
-     "Name": "urql"
+     "Scope": "sourcegraph",
+     "Name": "prettierrc"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "npm/sourcegraph/sourcegraph.proposed",
+   "URI": "npm/sourcegraph/sourcegraph.proposed",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/sourcegraph/sourcegraph.proposed",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/sourcegraph/sourcegraph.proposed"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "sourcegraph",
+     "Name": "sourcegraph.proposed"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "npm/sourcegraph/web-ext",
+   "URI": "npm/sourcegraph/web-ext",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/sourcegraph/web-ext",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/sourcegraph/web-ext"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "sourcegraph",
+     "Name": "web-ext"
     }
    }
   }

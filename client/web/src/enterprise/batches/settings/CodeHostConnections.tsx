@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Container, Link, Typography } from '@sourcegraph/wildcard'
+import { Container, Link, H3, Text } from '@sourcegraph/wildcard'
 
 import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -48,7 +48,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
     return (
         <Container>
-            <Typography.H3>Code host tokens</Typography.H3>
+            <H3>Code host tokens</H3>
             {headerLine}
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
@@ -68,22 +68,23 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
                             first={15}
+                            centered={true}
                             connection={connection}
                             noun="code host"
                             pluralNoun="code hosts"
                             hasNextPage={hasNextPage}
                         />
-                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
-            <p className="mb-0">
+            <Text className="mb-0">
                 Code host not present? Site admins can add a code host in{' '}
                 <Link to="/help/admin/external_service" target="_blank" rel="noopener noreferrer">
                     the manage repositories settings
                 </Link>
                 .
-            </p>
+            </Text>
         </Container>
     )
 }

@@ -1,11 +1,10 @@
 import React, { useEffect, useState, HTMLAttributes } from 'react'
 
+import { mdiGithub, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Card, CardBody, Link, PageHeader, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import { Card, CardBody, Link, PageHeader, LoadingSpinner, H3, Text, Icon } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -77,7 +76,7 @@ export const ConnectGitHubAppPage: React.FunctionComponent<React.PropsWithChildr
             <PageHeader
                 path={[
                     {
-                        icon: GithubIcon,
+                        icon: mdiGithub,
                         text: 'Complete your GitHub connection',
                     },
                 ]}
@@ -100,10 +99,10 @@ export const ConnectGitHubAppPage: React.FunctionComponent<React.PropsWithChildr
                                             />
                                         </div>
                                         <div className="flex-1 align-self-center">
-                                            <Typography.H3 className="m-1">{install.account.login}</Typography.H3>
+                                            <H3 className="m-1">{install.account.login}</H3>
                                         </div>
                                         <div className="align-self-center ml-3">
-                                            <ChevronRightIcon />
+                                            <Icon svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
                                         </div>
                                     </div>
                                 </GitHubOrgListItem>
@@ -117,13 +116,13 @@ export const ConnectGitHubAppPage: React.FunctionComponent<React.PropsWithChildr
                                         Connect with a different organization
                                     </Link>
                                     <div className="align-self-center ml-3">
-                                        <ChevronRightIcon />
+                                        <Icon svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
                                     </div>
                                 </div>
                             </GitHubOrgListItem>
                         </ul>
                     ) : (
-                        <p>Something went wrong.</p>
+                        <Text>Something went wrong.</Text>
                     )}
                 </CardBody>
             </Card>

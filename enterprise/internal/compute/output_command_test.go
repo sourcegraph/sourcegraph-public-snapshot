@@ -2,19 +2,19 @@ package compute
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"testing"
 
 	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func Test_output(t *testing.T) {
@@ -23,7 +23,7 @@ func Test_output(t *testing.T) {
 		if err != nil {
 			return err.Error()
 		}
-		return result.Value
+		return result
 	}
 
 	autogold.Want(
@@ -50,15 +50,25 @@ train(commuter, lightrail)`).
 		}))
 }
 
-func fileMatch(content string) result.Match {
-	git.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
-		return []byte(content), nil
+func fileMatch(chunks ...string) result.Match {
+	matches := make([]result.ChunkMatch, 0, len(chunks))
+	for _, content := range chunks {
+		matches = append(matches, result.ChunkMatch{
+			Content:      content,
+			ContentStart: result.Location{Offset: 0, Line: 1, Column: 0},
+			Ranges: result.Ranges{{
+				Start: result.Location{Offset: 0, Line: 1, Column: 0},
+				End:   result.Location{Offset: len(content), Line: 1, Column: len(content)},
+			}},
+		})
 	}
+
 	return &result.FileMatch{
 		File: result.File{
 			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
 			Path: "my/awesome/path.ml",
 		},
+		ChunkMatches: result.ChunkMatches(matches),
 	}
 }
 
@@ -74,13 +84,21 @@ func commitMatch(content string) result.Match {
 
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 		computeQuery, _ := Parse(q)
 		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
 		if err != nil {
 			return err.Error()
 		}
-		return res.(*Text).Value
+
+		switch r := res.(type) {
+		case *Text:
+			return r.Value
+		case *TextExtra:
+			result, _ := json.Marshal(r)
+			return string(result)
+		}
+		return "Error, unrecognized result type returned"
 	}
 
 	autogold.Want(
@@ -103,6 +121,11 @@ func TestRun(t *testing.T) {
 		"bob: (1)\nbob: (2)\nbob: (3)\n").
 		Equal(t, test(`content:output((\d) -> $author: ($1))`, commitMatch("a 1 b 2 c 3")))
 
+	autogold.Want(
+		"works with boundary assertions",
+		"test\nstring\n").
+		Equal(t, test(`content:output((\b\w+\b) -> $1)`, fileMatch("test", "string")))
+
 	// If we are not on CI skip the test if comby is not installed.
 	if os.Getenv("CI") == "" && !comby.Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
@@ -117,4 +140,9 @@ func TestRun(t *testing.T) {
 		"substitute language",
 		"OCaml\n").
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
+
+	autogold.Want(
+		"use output.extra",
+		`{"value":"OCaml\n","kind":"output","repositoryID":0,"repository":"my/awesome/repo"}`).
+		Equal(t, test(`content:output.extra((.|\n)* -> $lang)`, fileMatch("anything")))
 }

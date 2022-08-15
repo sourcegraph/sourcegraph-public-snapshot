@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/unpack/unpacktest"
 )
 
@@ -42,5 +43,5 @@ func testService(t *testing.T, repositoryContents map[string]string) *Service {
 		return unpacktest.CreateTarArchive(t, files), nil
 	})
 
-	return newService(sandboxService, gitService, rate.NewLimiter(rate.Limit(100), 1), 100, 1024*1024, &observation.TestContext)
+	return newService(sandboxService, gitService, ratelimit.NewInstrumentedLimiter("TestInference", rate.NewLimiter(rate.Limit(100), 1)), 100, 1024*1024, &observation.TestContext)
 }

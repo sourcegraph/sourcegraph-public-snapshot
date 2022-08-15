@@ -11,12 +11,14 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	shellquote "github.com/kballard/go-shellquote"
+
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type commandRunner interface {
-	RunCommand(ctx context.Context, command command, logger *Logger) error
+	RunCommand(ctx context.Context, command command, logger Logger) error
 }
 
 const firecrackerContainerDir = "/work"
@@ -33,7 +35,7 @@ const firecrackerContainerDir = "/work"
 func formatFirecrackerCommand(spec CommandSpec, name string, options Options) command {
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
 
-	innerCommand := strings.Join(rawOrDockerCommand.Command, " ")
+	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
 	if len(rawOrDockerCommand.Env) > 0 {
 		// If we have env vars that are arguments to the command we need to escape them
 		quotedEnv := quoteEnv(rawOrDockerCommand.Env)
@@ -53,7 +55,7 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name, repoDir string, options Options, operations *Operations) error {
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, repoDir string, options Options, operations *Operations) error {
 	// Start the VM and wait for the SSH server to become available
 	startCommand := command{
 		Key: "setup.firecracker.start",
@@ -65,12 +67,13 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 			firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
 			"--ssh",
 			"--name", name,
+			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
 			sanitizeImage(options.FirecrackerOptions.Image),
 		),
 		Operation: operations.SetupFirecrackerStart,
 	}
 
-	if err := callWithInstrumentedLock(operations, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
+	if err := callWithInstrumentedLock(operations, logger, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
 		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
@@ -99,12 +102,22 @@ var igniteRunLock sync.Mutex
 
 // callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
 // and active portions of this method are emitted as prometheus metrics.
-func callWithInstrumentedLock(operations *Operations, f func() error) error {
+func callWithInstrumentedLock(operations *Operations, logger Logger, f func() error) error {
+	handle := logger.Log("setup.firecracker.runlock", nil)
+
 	lockRequestedAt := time.Now()
+
 	igniteRunLock.Lock()
+
 	lockAcquiredAt := time.Now()
+
+	handle.Finalize(0)
+	handle.Close()
+
 	err := f()
+
 	lockReleasedAt := time.Now()
+
 	igniteRunLock.Unlock()
 
 	operations.RunLockWaitTotal.Add(float64(lockAcquiredAt.Sub(lockRequestedAt) / time.Millisecond))
@@ -114,7 +127,7 @@ func callWithInstrumentedLock(operations *Operations, f func() error) error {
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
 // the given name.
-func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, operations *Operations) error {
+func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name string, operations *Operations) error {
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
 		Command:   flatten("ignite", "rm", "-f", name),

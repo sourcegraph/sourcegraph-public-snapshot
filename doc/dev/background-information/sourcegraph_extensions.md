@@ -9,10 +9,10 @@ Here are all repositories beyond sourcegraph/sourcegraph that relate to extensio
 - [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin)
 
 ### Editor extensions
-- [sourcegraph-vscode](https://github.com/sourcegraph/sourcegraph-vscode)
+- [sourcegraph-vscode](https://github.com/sourcegraph/sourcegraph/tree/main/client/vscode)
 - [sourcegraph-sublime](https://github.com/sourcegraph/sourcegraph-sublime)
 - [sourcegraph-atom](https://github.com/sourcegraph/sourcegraph-atom)
-- [sourcegraph-jetbrains](https://github.com/sourcegraph/sourcegraph-jetbrains)
+- [sourcegraph-jetbrains](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
 
 ### Sourcegraph Extensions
 - [extension-api-classes](https://github.com/sourcegraph/extension-api-classes)

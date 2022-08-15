@@ -53,6 +53,6 @@ Insights that have any filters applied will have a small dot on their filter ico
 
 ### Saving a filter as a new view
 
-When you create a filter and "save as new view," it will create a new insight chart with this filter saved as the default filteres. Except the title and filters, all other configuration options will be cloned from the original insight. 
+When you create a filter and "save as new view," it will create a new insight chart with this filter saved as the default filters. Except the title and filters, all other configuration options will be cloned from the original insight. 
 
 Filters and all other configuration options for the newly created view and the original insight are indpendent. Editing the forked insight (e.g. changing the data series query) will not change the original insight.

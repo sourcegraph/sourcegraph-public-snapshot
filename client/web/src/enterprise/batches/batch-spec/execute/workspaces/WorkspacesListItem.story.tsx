@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
@@ -8,9 +8,14 @@ import { mockWorkspace } from '../../batch-spec.mock'
 
 import { WorkspacesListItem } from './WorkspacesListItem'
 
-const { add } = storiesOf('web/batches/batch-spec/execute/workspaces/WorkspacesList', module).addDecorator(story => (
-    <div className="list-group d-flex flex-column w-100">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="list-group d-flex flex-column w-100">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/batch-spec/execute/workspaces/WorkspacesList',
+    decorators: [decorator],
+}
+
+export default config
 
 const WORKSPACE_STATES: [key: string, state: BatchSpecWorkspaceState, isCached: boolean][] = [
     ['pending', BatchSpecWorkspaceState.PENDING, false],
@@ -24,7 +29,7 @@ const WORKSPACE_STATES: [key: string, state: BatchSpecWorkspaceState, isCached: 
     ['completed-cached', BatchSpecWorkspaceState.COMPLETED, true],
 ]
 
-add('WorkspacesListItem', () => {
+export const WorkspacesListItemStory: Story = () => {
     const [selectedIndex, setSelectedIndex] = useState<number>()
 
     return (
@@ -44,4 +49,6 @@ add('WorkspacesListItem', () => {
             )}
         </WebStory>
     )
-})
+}
+
+WorkspacesListItemStory.storyName = 'WorkspacesListItem'

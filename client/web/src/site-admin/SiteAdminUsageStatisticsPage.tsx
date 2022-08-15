@@ -1,14 +1,14 @@
 import * as React from 'react'
 
+import { mdiFileDownload } from '@mdi/js'
 import format from 'date-fns/format'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Icon, H2, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
@@ -46,7 +46,7 @@ interface UsageChartPageProps {
 
 export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
     <div>
-        {props.header ? props.header : <Typography.H3>{chartGeneratorOptions[props.chartID].label}</Typography.H3>}
+        {props.header ? props.header : <H3>{chartGeneratorOptions[props.chartID].label}</H3>}
         <BarChart
             showLabels={true}
             showLegend={props.showLegend === undefined ? true : props.showLegend}
@@ -82,7 +82,7 @@ class UserUsageStatisticsHeader extends React.PureComponent<UserUsageStatisticsH
                     <th>User</th>
                     <th>Page views</th>
                     <th>Search queries</th>
-                    <th>Code intelligence actions</th>
+                    <th>Code navigation actions</th>
                     <th className={styles.dateColumn}>Last active</th>
                     <th className={styles.dateColumn}>Last active in code host or code review</th>
                 </tr>
@@ -145,14 +145,14 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                     {this.props.node.usageStatistics?.lastActiveTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                     ) : (
-                        'never'
+                        'not available'
                     )}
                 </td>
                 <td className={styles.dateColumn}>
                     {this.props.node.usageStatistics?.lastActiveCodeHostIntegrationTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
                     ) : (
-                        'never'
+                        'not available'
                     )}
                 </td>
             </tr>
@@ -247,18 +247,14 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         return (
             <div>
                 <PageTitle title="Usage statistics - Admin" />
-                <Typography.H2>Usage statistics</Typography.H2>
+                <H2>Usage statistics</H2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
-                <Button
-                    href="/site-admin/usage-statistics/archive"
-                    data-tooltip="Download usage stats archive"
-                    download="true"
-                    variant="secondary"
-                    as="a"
-                >
-                    <Icon as={FileDownloadIcon} /> Download usage stats archive
-                </Button>
+                <Tooltip content="Download usage stats archive">
+                    <Button href="/site-admin/usage-statistics/archive" download="true" variant="secondary" as="a">
+                        <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download usage stats archive
+                    </Button>
+                </Tooltip>
 
                 {this.state.stats && (
                     <>
@@ -274,7 +270,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                         <UsageChart {...this.props} chartID={this.state.chartID} stats={this.state.stats} />
                     </>
                 )}
-                <Typography.H3 className="mt-4">All registered users</Typography.H3>
+                <H3 className="mt-4">All registered users</H3>
                 {!this.state.error && (
                     <FilteredUserConnection
                         listComponent="table"

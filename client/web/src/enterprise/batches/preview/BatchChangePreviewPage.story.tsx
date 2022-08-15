@@ -1,9 +1,9 @@
 import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
-import { of, Observable } from 'rxjs'
-import { WildcardMockLink } from 'wildcard-mock-link'
+import { Observable, of } from 'rxjs'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -16,20 +16,28 @@ import {
     ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
+import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
+import { getLicenseAndUsageInfoResult } from '../list/testData'
 
 import { BATCH_SPEC_BY_ID } from './backend'
-import { BatchChangePreviewPage } from './BatchChangePreviewPage'
-import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyPreviewNode.story'
-import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
+import { BatchChangePreviewPage, NewBatchChangePreviewPage } from './BatchChangePreviewPage'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './list/storyData'
 
-const { add } = storiesOf('web/batches/preview/BatchChangePreviewPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/preview/BatchChangePreviewPage',
+    decorators: [decorator],
+
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
-    })
+    },
+}
+
+export default config
 
 const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(visibleChangesetApplyPreviewNodeStories(false)),
@@ -139,6 +147,35 @@ const fetchBatchSpecUpdate = () =>
         },
     })
 
+const fetchExceedsLicense = () =>
+    new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(BATCH_SPEC_BY_ID),
+                variables: {
+                    batchSpec: '123123',
+                },
+            },
+            result: {
+                data: {
+                    node: {
+                        __typename: 'BatchSpec',
+                        ...batchSpec(),
+                    },
+                },
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: getLicenseAndUsageInfoResult(false, true) },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+    ])
+
 const queryApplyPreviewStats = (): Observable<ApplyPreviewStatsFields['stats']> =>
     of({
         close: 10,
@@ -150,6 +187,7 @@ const queryApplyPreviewStats = (): Observable<ApplyPreviewStatsFields['stats']> 
         reopen: 10,
         undraft: 10,
         update: 10,
+        reattach: 10,
         archive: 18,
         added: 5,
         modified: 10,
@@ -178,7 +216,7 @@ const queryEmptyChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConn
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('Create', () => {
+export const Create: Story = () => {
     const link = useMemo(() => fetchBatchSpecCreate(), [])
     return (
         <WebStory>
@@ -202,9 +240,9 @@ add('Create', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Update', () => {
+export const Update: Story = () => {
     const link = useMemo(() => fetchBatchSpecUpdate(), [])
     return (
         <WebStory>
@@ -228,9 +266,9 @@ add('Update', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Missing credentials', () => {
+export const MissingCredentials: Story = () => {
     const link = useMemo(() => fetchBatchSpecMissingCredentials(), [])
     return (
         <WebStory>
@@ -254,9 +292,11 @@ add('Missing credentials', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('Spec file', () => {
+MissingCredentials.storyName = 'Missing credentials'
+
+export const SpecFile: Story = () => {
     const link = useMemo(() => fetchBatchSpecCreate(), [])
     return (
         <WebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
@@ -280,9 +320,11 @@ add('Spec file', () => {
             )}
         </WebStory>
     )
-})
+}
 
-add('No changesets', () => {
+SpecFile.storyName = 'Spec file'
+
+export const NoChangesets: Story = () => {
     const link = useMemo(() => fetchBatchSpecCreate(), [])
     return (
         <WebStory>
@@ -306,4 +348,62 @@ add('No changesets', () => {
             )}
         </WebStory>
     )
-})
+}
+
+NoChangesets.storyName = 'No changesets'
+
+export const CreateNewStory: Story = () => {
+    const link = useMemo(() => fetchBatchSpecCreate(), [])
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <NewBatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
+
+CreateNewStory.storyName = 'Create (New)'
+
+export const ExceedsLicenseStory: Story = () => {
+    const link = useMemo(() => fetchExceedsLicense(), [])
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <NewBatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
+
+ExceedsLicenseStory.storyName = 'Exceeds License (New)'

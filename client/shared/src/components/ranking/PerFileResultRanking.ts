@@ -26,6 +26,7 @@ export interface MatchItem extends ExtensionBadgeType {
         start: number
         highlightLength: number
     }[]
+    preview: string
     /**
      * The 0-based line number of this match.
      */
@@ -59,5 +60,4 @@ export interface MatchGroupMatch {
     line: number
     character: number
     highlightLength: number
-    isInContext: boolean
 }

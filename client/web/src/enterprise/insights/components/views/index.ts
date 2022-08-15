@@ -1,6 +1,5 @@
 export * from './card/InsightCard'
 
-export { SeriesChart, CategoricalChart } from './chart'
-export { CategoricalBasedChartTypes, SeriesBasedChartTypes } from './types'
+export { SeriesChart, CategoricalChart, CategoricalBasedChartTypes, SeriesBasedChartTypes } from './chart'
 
 export type { SeriesChartProps, CategoricalChartProps } from './chart'

@@ -16,7 +16,9 @@ import { TabBar, TabsConfig } from '../batch-spec/TabBar'
 import { ConfigurationForm } from './ConfigurationForm'
 import { InsightTemplatesBanner } from './InsightTemplatesBanner'
 import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'
+import { SearchTemplatesBanner } from './SearchTemplatesBanner'
 import { useInsightTemplates } from './useInsightTemplates'
+import { useSearchTemplate } from './useSearchTemplate'
 
 import layoutStyles from '../batch-spec/Layout.module.scss'
 
@@ -62,17 +64,20 @@ const TABS_CONFIG: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 const NewBatchChangePageContent: React.FunctionComponent<
     React.PropsWithChildren<Omit<CreateBatchChangePageProps, 'headingElement'>>
 > = ({ settingsCascade, initialNamespaceID }) => {
-    const { renderTemplate, insightTitle } = useInsightTemplates(settingsCascade)
+    const { renderTemplate: insightRenderTemplate, insightTitle } = useInsightTemplates(settingsCascade)
+    const { renderTemplate: searchRenderTemplate, searchQuery } = useSearchTemplate()
     return (
         <div className={layoutStyles.pageContainer}>
             <PageTitle title="Create new batch change" />
+            {searchQuery && <SearchTemplatesBanner className="mb-5" />}
             {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-5" />}
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader title={{ text: 'Create batch change' }} />
             </div>
             <TabBar activeTabKey="configuration" tabsConfig={TABS_CONFIG} />
             <ConfigurationForm
-                renderTemplate={renderTemplate}
+                // the insight render template takes precendence over the search query render
+                renderTemplate={insightRenderTemplate || searchRenderTemplate}
                 insightTitle={insightTitle}
                 settingsCascade={settingsCascade}
                 initialNamespaceID={initialNamespaceID}
