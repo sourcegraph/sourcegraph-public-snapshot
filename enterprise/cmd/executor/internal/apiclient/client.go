@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -23,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Client is the client used to communicate with a remote job queue API.
+// Client is the client used to communicate with an API.
 type Client struct {
 	options         Options
 	client          *BaseClient
@@ -243,6 +244,30 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	}
 
 	return knownIDs, nil
+}
+
+func (c *Client) GetMount(ctx context.Context, path string) (body io.ReadCloser, err error) {
+	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("path", path),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	u, err := makeRelativeURL(
+		c.options.EndpointOptions.URL,
+		".executors",
+		path,
+	)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Token))
+
+	_, resBody, err := c.client.Do(ctx, req)
+	return resBody, err
 }
 
 const SchemeExecutorToken = "token-executor"
