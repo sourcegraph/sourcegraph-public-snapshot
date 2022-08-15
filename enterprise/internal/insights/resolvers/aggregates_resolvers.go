@@ -66,10 +66,22 @@ type searchAggregationResultResolver struct {
 	resolver any
 }
 
-// ToSearchAggregationModeResult is used by the GraphQL library to resolve type fragments for unions
-func (r *searchAggregationResultResolver) ToSearchAggregationModeResult() (graphqlbackend.SearchAggregationModeResultResolver, bool) {
+// ToExhaustiveSearchAggregationResult is used by the GraphQL library to resolve type fragments for unions
+func (r *searchAggregationResultResolver) ToExhaustiveSearchAggregationResult() (graphqlbackend.ExhaustiveSearchAggregationResultResolver, bool) {
 	res, ok := r.resolver.(*searchAggregationModeResultResolver)
-	return res, ok
+	if ok && res.isExhaustive {
+		return res, ok
+	}
+	return nil, false
+}
+
+// ToNonExhaustiveSearchAggregationResult is used by the GraphQL library to resolve type fragments for unions
+func (r *searchAggregationResultResolver) ToNonExhaustiveSearchAggregationResult() (graphqlbackend.NonExhaustiveSearchAggregationResultResolver, bool) {
+	res, ok := r.resolver.(*searchAggregationModeResultResolver)
+	if ok && !res.isExhaustive {
+		return res, ok
+	}
+	return nil, false
 }
 
 // ToSearchAggregationNotAvailable is used by the GraphQL library to resolve type fragments for unions
@@ -92,9 +104,10 @@ func (r *searchAggregationNotAvailableResolver) Reason() string {
 // Resolver to calcuate aggregations for a combination of search query, pattern type, aggregation mode
 type searchAggregationModeResultResolver struct {
 	baseInsightResolver
-	searchQuery string
-	patternType query.SearchType
-	mode        SearchAggregationMode
+	searchQuery  string
+	patternType  query.SearchType
+	mode         SearchAggregationMode
+	isExhaustive bool
 }
 
 func (r *searchAggregationModeResultResolver) Values() ([]graphqlbackend.AggregationValue, error) {
@@ -105,10 +118,17 @@ func (r *searchAggregationModeResultResolver) OtherResultCount() (*int32, error)
 	return nil, errors.New("not implemented")
 }
 
-func (r *searchAggregationModeResultResolver) OtherValueCount() (*int32, error) {
+// OtherGroupCount - used for exhaustive aggregations to indicate count of additional groups
+func (r *searchAggregationModeResultResolver) OtherGroupCount() (*int32, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (r *searchAggregationModeResultResolver) IsExhaustive() (*bool, error) {
+// ApproximateOtherGroupCount - used for nonexhaustive aggregations to indicate approx count of additional groups
+func (r *searchAggregationModeResultResolver) ApproximateOtherGroupCount() (*int32, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (r *searchAggregationModeResultResolver) SupportsPersistence() (*bool, error) {
+	supported := false
+	return &supported, nil
 }

@@ -1273,28 +1273,50 @@ type AggregationModeAvailability {
 }
 
 """
-Information regarding the availablity of a SearchAggregationMode
+Information regarding the results of an exhaustive search aggregation
 """
-type SearchAggregationModeResult {
+type ExhaustiveSearchAggregationResult {
     """
-    A list of individual aggregation values in decreasing order
+    A list of the first [LIMIT] aggregation values in decreasing order
     """
     values: [AggregationValue!]!
+
+    """
+    Boolean indicating if the search query support being persisted as an insight on a dashboard
+    """
+    supportsPersistence: Boolean
     """
     A count to capture the number of results that are not included in the list of values returned.
-    This includes result counts for both known values that were excluded by the requested limit and result count for
-    unknown values if the result is not exhaustive
+    This includes result counts for values that were excluded due to the requested limit
     """
     otherResultCount: Int
     """
-    A count to capture the number of aggregation values that are not included in the list of values returned
-    This includes both the count of values excluded by the requested limit and unknown values if the result is not exhaustive
+    A count to represent the number of aggrgation groups that were not returned due to the requested LIMIT
     """
-    otherValueCount: Int
+    otherGroupCount: Int
+}
+
+"""
+Information regarding the results of an exhaustive search aggregation
+"""
+type NonExhaustiveSearchAggregationResult {
     """
-    Indiciates if aggregation was exhaustive and all captured values fit within the internally defined maximum allowed tracked values
+    A list of the first [LIMIT] aggregation values in decreasing order
     """
-    isExhaustive: Boolean
+    values: [AggregationValue!]!
+
+    """
+    Boolean indicating if the search query support being persisted as an insight on a dashboard
+    """
+    supportsPersistence: Boolean
+    """
+    A count to capture the total number of results that are not included in the list of values returned.
+    """
+    otherResultCount: Int
+    """
+    An approximate count of the total number of aggregation groups that were not available in the values list
+    """
+    approximateOtherGroupCount: Int
 }
 
 """
@@ -1318,7 +1340,10 @@ type AggregationValue {
 """
 Defines how the data series is generated.
 """
-union SearchAggregationResult = SearchAggregationModeResult | SearchAggregationNotAvailable
+union SearchAggregationResult =
+      ExhaustiveSearchAggregationResult
+    | NonExhaustiveSearchAggregationResult
+    | SearchAggregationNotAvailable
 
 """
 Indicates that a search aggregation is not available

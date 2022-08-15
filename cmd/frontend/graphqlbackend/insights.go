@@ -488,11 +488,18 @@ type AggregationModeAvailabilityResolver interface {
 	ReasonUnavailable() (*string, error)
 }
 
-type SearchAggregationModeResultResolver interface {
+type ExhaustiveSearchAggregationResultResolver interface {
 	Values() ([]AggregationValue, error)
+	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
-	OtherValueCount() (*int32, error)
-	IsExhaustive() (*bool, error)
+	OtherGroupCount() (*int32, error)
+}
+
+type NonExhaustiveSearchAggregationResultResolver interface {
+	Values() ([]AggregationValue, error)
+	SupportsPersistence() (*bool, error)
+	OtherResultCount() (*int32, error)
+	ApproximateOtherGroupCount() (*int32, error)
 }
 
 type AggregationValue interface {
@@ -506,7 +513,8 @@ type SearchAggregationNotAvailable interface {
 }
 
 type SearchAggregationResultResolver interface {
-	ToSearchAggregationModeResult() (SearchAggregationModeResultResolver, bool)
+	ToExhaustiveSearchAggregationResult() (ExhaustiveSearchAggregationResultResolver, bool)
+	ToNonExhaustiveSearchAggregationResult() (NonExhaustiveSearchAggregationResultResolver, bool)
 	ToSearchAggregationNotAvailable() (SearchAggregationNotAvailable, bool)
 }
 
