@@ -70,8 +70,8 @@ export const SearchPageFooter: React.FunctionComponent<
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })
     }
 
-    const logDevelopmentToolTimeClicked = (): void => {
-        telemetryService.log('HomepageDevToolTimeClicked')
+    const logDiscordClicked = (): void => {
+        telemetryService.log('HomepageDiscordClicked')
     }
 
     return isSourcegraphDotCom ? (
@@ -102,15 +102,11 @@ export const SearchPageFooter: React.FunctionComponent<
                 <li>
                     <Link
                         to="https://srcgr.ph/discord-server"
-                        className={styles.devToolTimeWrapper}
-                        onClick={logDevelopmentToolTimeClicked}
+                        className={styles.discordWrapper}
+                        onClick={logDiscordClicked}
                     >
-                        <img
-                            src={`${assetsRoot}/img/discord-footer-logo.svg`}
-                            alt=""
-                            className={styles.devToolTimeImage}
-                        />
-                        <div className={styles.devToolTimeText}>
+                        <img src={`${assetsRoot}/img/discord-footer-logo.svg`} alt="" className={styles.discordImage} />
+                        <div className={styles.discordText}>
                             <H2 className={styles.linkSectionHeading}>Join our Discord</H2>
                             <div>If you need help or want to share something with the community, join us!</div>
                         </div>
