@@ -104,6 +104,14 @@ describe('GitHub', () => {
                     siteAdmin: false,
                 },
             }),
+            PublicConfiguration: () => ({
+                site: {
+                    publicConfiguration: {
+                        effectiveContents:
+                            '{"disableNonCriticalTelemetry":true,"experimentalFeatures":{"enableLegacyExtensions":true},"update.channel":"release"}',
+                    },
+                },
+            }),
         })
 
         // Ensure that the same assets are requested in all environments.
