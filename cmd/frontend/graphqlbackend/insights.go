@@ -483,19 +483,10 @@ type SearchQueryAggregateResolver interface {
 }
 
 type AggregationModeAvailabilityResolver interface {
-	Mode() SearchAggregationMode
+	Mode() string //ENUM
 	Available() (bool, error)
 	UnavailableReason() (*string, error)
 }
-
-type SearchAggregationMode string
-
-const (
-	REPO_AGGREGATION_MODE          SearchAggregationMode = "REPO"
-	FILE_AGGREGATION_MODE          SearchAggregationMode = "FILE"
-	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
-	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
-)
 
 type SearchAggregationModeResultResolver interface {
 	Values() ([]AggregationValues, error)
@@ -518,5 +509,5 @@ type SearchAggregationResultResolver interface {
 }
 
 type AggregationsArgs struct {
-	Mode SearchAggregationMode `json:"mode"`
+	Mode string `json:"mode"` //enum
 }
