@@ -6,7 +6,7 @@ import { formatDistanceToNowStrict } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce, Link } from '@sourcegraph/wildcard'
+import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import {
@@ -260,12 +260,21 @@ export const UsersList: React.FunctionComponent = () => {
     )
 }
 
-function RenderUsernameAndEmail({ username, email }: SiteUser): JSX.Element {
+function RenderUsernameAndEmail({ username, email, displayName, deletedAt }: SiteUser): JSX.Element {
     return (
-        <div className={classNames('d-flex flex-column p-2', styles.usernameColumn)}>
-            <Text className={classNames(styles.linkColor, 'mb-0 text-truncate')}>{username}</Text>
-            <Text className="mb-0 text-truncate">{email}</Text>
-        </div>
+        <Tooltip content={username}>
+            <div className={classNames('d-flex flex-column p-2', styles.usernameColumn)}>
+                {!deletedAt ? (
+                    <Link to={`/users/${username}`} className="text-truncate">
+                        @{username}
+                    </Link>
+                ) : (
+                    <Text className="mb-0 text-truncate">@{username}</Text>
+                )}
+                <Text className="mb-0 text-truncate">{displayName}</Text>
+                <Text className="mb-0 text-truncate">{email}</Text>
+            </div>
+        </Tooltip>
     )
 }
 
