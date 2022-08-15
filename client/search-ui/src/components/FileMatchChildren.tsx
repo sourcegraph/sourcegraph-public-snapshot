@@ -1,9 +1,9 @@
-import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
+import React, { MouseEvent, KeyboardEvent, useCallback, useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 import { useHistory } from 'react-router'
-import { Observable, of } from 'rxjs'
+import { Observable, of, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -15,12 +15,12 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import { fetchBlob } from '@sourcegraph/shared/src/backend/blob'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { HighlightResponseFormat, IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
@@ -151,7 +151,7 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const prefetchFileEnabled = useMemo(
+    const preloadFileEnabled = useMemo(
         () =>
             isSettingsValid(props.settingsCascade) &&
             props.settingsCascade.final.experimentalFeatures?.enableLazyBlobSyntaxHighlighting,
@@ -315,20 +315,39 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.log(...codeCopiedEvent('file-match'))
     }, [telemetryService])
 
+    useEffect(() => {
+        let observable: Subscription
+
+        /**
+         * Plaintext blob pre-fetching.
+         * Note that we don't actually do anything with this data.
+         * The primary aim is to kickstart the memoized observable so that when we try
+         * to render the blob pages, the data is already resolved/resolving.
+         */
+        if (preloadFileEnabled) {
+            observable = fetchBlob({
+                commitID: result.commit || '',
+                filePath: result.path,
+                repoName: result.repository,
+                requestGraphQL: props.platformContext.requestGraphQL,
+                format: HighlightResponseFormat.HTML_PLAINTEXT,
+            }).subscribe()
+        }
+
+        return () => {
+            observable?.unsubscribe()
+        }
+    }, [preloadFileEnabled, props.platformContext.requestGraphQL, result])
+
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
-        <PrefetchableFile
-            prefetch={Boolean(prefetchFileEnabled)}
+        <div
             className={classNames(
                 styles.fileMatchChildren,
                 coreWorkflowImprovementsEnabled && result.type === 'symbol' && styles.symbols
             )}
             data-testid="file-match-children"
-            revision={result.commit || ''}
-            filePath={result.path}
-            repoName={result.repository}
-            platformContext={props.platformContext}
         >
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
@@ -430,6 +449,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     ))}
                 </div>
             )}
-        </PrefetchableFile>
+        </div>
     )
 }
