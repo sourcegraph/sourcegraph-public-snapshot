@@ -91,6 +91,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 	handler := &handler{
 		nameSet:       nameSet,
 		store:         store,
+		uploadStore:   queueStore,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
 		runnerFactory: command.NewRunner,
