@@ -31,8 +31,8 @@ For example: we want to cache the `node_modules` folder to avoid dowloading agai
 pipeline.AddStep(":jest::chrome: Test browser extension",
   bk.Cache(&buildkite.CacheOptions{
 		ID:          "node_modules",
-		Key:         "cache-node_modules-{{ checksum 'yarn.lock' }}",
-		RestoreKeys: []string{"cache-node_modules-{{ checksum 'yarn.lock' }}"},
+		Key:         "cache-node_modules-yarn_v3-{{ checksum 'yarn.lock' }}",
+		RestoreKeys: []string{"cache-node_modules-yarn_v3-{{ checksum 'yarn.lock' }}"},
 		Paths:       []string{"node_modules", "client/extension-api/node_modules", ".yarn/cache"},
 	})
   bk.Cmd("dev/ci/yarn-test.sh client/browser"),
