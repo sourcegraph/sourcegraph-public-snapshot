@@ -16,6 +16,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { InlineSymbolsResult } from '../graphql-operations'
+import { PrefetchableFile } from '../repo/blob/PrefetchableFile'
+import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import {
@@ -55,7 +57,9 @@ interface FileProps extends ThemeProps {
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
+    const { commitID, repoName } = useTreeRootContext()
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableLazyBlobSyntaxHighlighting ?? false)
 
     const renderedFileDecorations = (
         <FileDecorator
@@ -111,7 +115,12 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             </TreeLayerRowContents>
                         )
                     ) : (
-                        <TreeLayerRowContentsLink
+                        <PrefetchableFile
+                            prefetch={prefetchFileEnabled}
+                            revision={commitID}
+                            repoName={repoName}
+                            filePath={props.entryInfo.path}
+                            as={TreeLayerRowContentsLink}
                             className="test-tree-file-link"
                             to={props.entryInfo.url}
                             onClick={props.linkRowClick}
@@ -133,7 +142,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                 <TreeRowLabel className="test-file-decorable-name">{props.entryInfo.name}</TreeRowLabel>
                                 {renderedFileDecorations}
                             </TreeLayerRowContentsText>
-                        </TreeLayerRowContentsLink>
+                        </PrefetchableFile>
                     )}
                     {props.index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert

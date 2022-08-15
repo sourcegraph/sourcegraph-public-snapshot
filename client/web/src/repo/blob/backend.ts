@@ -5,8 +5,8 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ParsedRepoURI, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../graphql-operations'
-import { PlatformContext } from '../platform/context'
+import { requestGraphQL } from '../../backend/graphql'
+import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean; format?: string }): string {
     return `${makeRepoURI(parsed)}?disableTimeout=${parsed.disableTimeout}&=${parsed.format}`
@@ -21,13 +21,12 @@ interface FetchBlobArguments {
 
 export const fetchBlob = memoizeObservable(
     ({
-        requestGraphQL,
         repoName,
         commitID,
         filePath,
         disableTimeout = false,
         format = HighlightResponseFormat.HTML_HIGHLIGHT,
-    }: FetchBlobArguments & Pick<PlatformContext, 'requestGraphQL'>): Observable<BlobFileFields | null> => {
+    }: FetchBlobArguments): Observable<BlobFileFields | null> => {
         // We only want to include HTML data if explicitly requested. We always
         // include LSIF because this is used for languages that are configured
         // to be processed with tree sitter (and is used when explicitly
@@ -35,8 +34,8 @@ export const fetchBlob = memoizeObservable(
         const html =
             format === HighlightResponseFormat.HTML_PLAINTEXT || format === HighlightResponseFormat.HTML_HIGHLIGHT
 
-        return requestGraphQL<BlobResult, BlobVariables>({
-            request: gql`
+        return requestGraphQL<BlobResult, BlobVariables>(
+            gql`
                 query Blob(
                     $repoName: String!
                     $commitID: String!
@@ -64,9 +63,8 @@ export const fetchBlob = memoizeObservable(
                     }
                 }
             `,
-            variables: { repoName, commitID, filePath, disableTimeout, format, html },
-            mightContainPrivateInfo: true,
-        }).pipe(
+            { repoName, commitID, filePath, disableTimeout, format, html }
+        ).pipe(
             map(dataOrThrowErrors),
             map(data => {
                 if (!data.repository?.commit) {

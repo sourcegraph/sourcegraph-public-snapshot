@@ -12,7 +12,6 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import { fetchBlob } from '@sourcegraph/shared/src/backend/blob'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -43,6 +42,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
+import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -158,13 +158,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 return of(undefined)
             }
 
-            return fetchBlob({
-                repoName,
-                commitID,
-                filePath,
-                format: HighlightResponseFormat.HTML_PLAINTEXT,
-                requestGraphQL: props.platformContext.requestGraphQL,
-            }).pipe(
+            return fetchBlob({ repoName, commitID, filePath, format: HighlightResponseFormat.HTML_PLAINTEXT }).pipe(
                 map(blob => {
                     if (blob === null) {
                         return blob
@@ -186,15 +180,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     return blobInfo
                 })
             )
-        }, [
-            commitID,
-            enableLazyBlobSyntaxHighlighting,
-            filePath,
-            mode,
-            props.platformContext.requestGraphQL,
-            repoName,
-            revision,
-        ])
+        }, [commitID, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -219,7 +205,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
-                            requestGraphQL: props.platformContext.requestGraphQL,
                         })
                     ),
                     map(blob => {
@@ -252,7 +237,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, commitID, filePath, enableCodeMirror, props.platformContext.requestGraphQL, revision, mode]
+            [repoName, revision, commitID, filePath, mode, enableCodeMirror]
         )
     )
 
