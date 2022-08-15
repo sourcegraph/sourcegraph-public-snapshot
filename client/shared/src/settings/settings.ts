@@ -35,7 +35,7 @@ export interface Settings {
         enableExtensionsDecorationsColumnView?: boolean
         extensionsAsCoreFeatures?: boolean
         enableLegacyExtensions?: boolean
-        enableLazySyntaxHighlighting?: boolean
+        enableLazyBlobSyntaxHighlighting?: boolean
     }
     [key: string]: any
 

@@ -9,7 +9,7 @@ import { HighlightResponseFormat } from '../graphql-operations'
 import { PlatformContextProps } from '../platform/context'
 
 interface PrefetchableFileProps extends PlatformContextProps<'requestGraphQL'> {
-    revision?: string
+    revision: string
     filePath: string
     repoName: string
     prefetch?: boolean
@@ -53,8 +53,8 @@ export const PrefetchableFile = React.forwardRef(function PrefetchableFile(
 
     return (
         <Component
-            onMouseOver={prefetch ? startPrefetch : undefined}
-            onMouseLeave={prefetch ? stopPrefetch : undefined}
+            onMouseOver={prefetch ? undefined : undefined}
+            onMouseLeave={prefetch ? undefined : undefined}
             ref={reference}
             {...rest}
         />

@@ -13,7 +13,7 @@ function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean; f
 }
 interface FetchBlobArguments {
     repoName: string
-    commitID?: string
+    commitID: string
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
@@ -23,7 +23,7 @@ export const fetchBlob = memoizeObservable(
     ({
         requestGraphQL,
         repoName,
-        commitID = '',
+        commitID,
         filePath,
         disableTimeout = false,
         format = HighlightResponseFormat.HTML_HIGHLIGHT,

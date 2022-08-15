@@ -14,6 +14,7 @@ import { MatchGroup, MatchItem } from '@sourcegraph/shared/src/components/rankin
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     ContentMatch,
     SymbolMatch,
@@ -34,7 +35,7 @@ import { ResultContainerProps, ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
 
-interface Props extends SettingsCascadeProps, TelemetryProps {
+interface Props extends SettingsCascadeProps, TelemetryProps, PlatformContextProps<'requestGraphQL'> {
     location: H.Location
     /**
      * The file match search result.
