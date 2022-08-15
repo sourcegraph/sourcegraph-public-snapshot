@@ -111,13 +111,23 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 		err = jobStoreTx.Done(err)
 	}()
 
-	allComplete, err := jobStoreTx.IsJobTypeComplete(ctx, jobType)
+	var cond *sqlf.Query
+	switch jobType {
+	case "USER":
+		cond = sqlf.Sprintf("user_id IS NOT NULL")
+	case "ORG":
+		cond = sqlf.Sprintf("org_id IS NOT NULL")
+	default:
+		cond = sqlf.Sprintf("global IS TRUE")
+	}
+	count, _, err := basestore.ScanFirstInt(jobStoreTx.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM insights_settings_migration_jobs WHERE %s AND completed_at IS NULL", cond)))
 	if err != nil {
 		return false, err
 	}
-	if allComplete {
+	if count == 0 {
 		return true, nil
 	}
+
 	jobs, err := jobStoreTx.GetNextSettingsMigrationJobs(ctx, jobType)
 	if err != nil {
 		return false, err
