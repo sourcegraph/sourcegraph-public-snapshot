@@ -333,7 +333,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	_, tok, err := github.GetExternalAccountData(&account.AccountData)
+	_, tok, err := github.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	} else if tok == nil {
