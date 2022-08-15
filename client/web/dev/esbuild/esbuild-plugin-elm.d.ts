@@ -1,7 +1,7 @@
 declare module 'esbuild-plugin-elm' {
-    function ElmPlugin(config: ElmPluginConfig): esbuild.Plugin;
+    function ElmPlugin(config: ElmPluginConfig): esbuild.Plugin
 
-  export default ElmPlugin;
+    export default ElmPlugin
 }
 
 interface ElmPluginConfig {
