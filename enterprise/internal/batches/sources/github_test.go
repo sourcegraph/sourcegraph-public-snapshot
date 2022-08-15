@@ -97,18 +97,18 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
-				}),
+				})),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -253,18 +253,18 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
-				}),
+				})),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -329,18 +329,18 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
-				}),
+				})),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -391,18 +391,18 @@ func TestGithubSource_CreateComment(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
-				}),
+				})),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -461,18 +461,18 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
-				}),
+				})),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -535,18 +535,18 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
-				}),
+				})),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -569,13 +569,14 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 func TestGithubSource_WithAuthenticator(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
-		}),
+		})),
 	}
 
-	githubSrc, err := NewGithubSource(svc, nil)
+	ctx := context.Background()
+	githubSrc, err := NewGithubSource(ctx, svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

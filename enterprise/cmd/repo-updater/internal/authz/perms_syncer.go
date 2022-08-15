@@ -636,7 +636,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 	for _, svc := range svcs {
 		svcLogger := logger.With(log.Int32("svc.ID", int32(svc.ID)))
 
-		provider, err := eauthz.ProviderFromExternalService(s.db.ExternalServices(), conf.Get().SiteConfiguration, svc, s.db)
+		provider, err := eauthz.ProviderFromExternalService(ctx, s.db.ExternalServices(), conf.Get().SiteConfiguration, svc, s.db)
 		if err != nil {
 			return nil, errors.Wrapf(err, "new provider from external service %d", svc.ID)
 		}
@@ -648,7 +648,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 			continue
 		}
 
-		token, err := extsvc.ExtractToken(svc.Config, svc.Kind)
+		token, err := extsvc.ExtractEncryptableToken(ctx, svc.Config, svc.Kind)
 		if err != nil {
 			return nil, errors.Wrapf(err, "extract token from external service %d", svc.ID)
 		}

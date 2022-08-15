@@ -1179,7 +1179,7 @@ type ListIndexableReposOptions struct {
 	// status.
 	CloneStatus types.CloneStatus
 
-	// If true, we include user added private repos
+	// IncludePrivate when true will include user added private repos.
 	IncludePrivate bool
 
 	*LimitOffset

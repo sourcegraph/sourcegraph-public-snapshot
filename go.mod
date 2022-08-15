@@ -69,7 +69,6 @@ require (
 	github.com/google/go-github/v43 v43.0.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.0
-	github.com/google/zoekt v0.0.0-20211108135652-f8e8ada171c7
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.1
 	github.com/gorilla/handlers v1.5.1
@@ -93,6 +92,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/json-iterator/go v1.1.12
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.1
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
@@ -200,7 +200,10 @@ require (
 
 require github.com/hmarr/codeowners v0.4.0
 
-require github.com/stretchr/objx v0.4.0 // indirect
+require (
+	github.com/sourcegraph/zoekt v0.0.0-20220815140312-5ee92f5abab3
+	github.com/stretchr/objx v0.4.0 // indirect
+)
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
@@ -427,8 +430,6 @@ require (
 // These entries indicate permanent replace directives due to significant changes from upstream
 // or intentional forks.
 replace (
-	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220719111241-09ac1ff91e8c
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -453,7 +454,7 @@ func mockExternalServicesDB() *database.MockDB {
 		{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config: `{
+			Config: extsvc.NewUnencryptedConfig(`{
       "url": "https://ghe.org/",
       "token": "someToken",
       "repos": [
@@ -467,12 +468,12 @@ func mockExternalServicesDB() *database.MockDB {
         "sgtest/test-repo8"
       ],
       "repositoryPathPattern": "github.com/{nameWithOwner}"
-    }`,
+    }`),
 		},
 		{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config: `{
+			Config: extsvc.NewUnencryptedConfig(`{
       "url": "https://ghe.org/",
       "token": "someToken",
       "repos": [
@@ -486,12 +487,12 @@ func mockExternalServicesDB() *database.MockDB {
         "sgtest/test-repo8"
       ],
       "repositoryPathPattern": "github.com/{nameWithOwner}"
-    }`,
+    }`),
 		},
 		{
 			Kind:        extsvc.KindBitbucketCloud,
 			DisplayName: "GitLab - Test1",
-			Config: `{
+			Config: extsvc.NewUnencryptedConfig(`{
       "url": "https://bitbucket.org",
       "token": "someToken",
       "username": "user",
@@ -500,7 +501,7 @@ func mockExternalServicesDB() *database.MockDB {
         "SOURCEGRAPH/repo-1"
       ],
       "repositoryPathPattern": "bbs/{projectKey}/{repositorySlug}"
-    }`,
+    }`),
 		},
 	}, nil)
 

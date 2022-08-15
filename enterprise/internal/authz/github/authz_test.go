@@ -195,8 +195,9 @@ func TestNewAuthzProviders(t *testing.T) {
 				[]*ExternalConnection{
 					{
 						ExternalService: &types.ExternalService{
-							ID:   1,
-							Kind: extsvc.KindGitHub,
+							ID:     1,
+							Kind:   extsvc.KindGitHub,
+							Config: extsvc.NewEmptyConfig(),
 						},
 						GitHubConnection: &types.GitHubConnection{
 							URN: "extsvc:github:1",

@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
