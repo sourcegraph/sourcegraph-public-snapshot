@@ -620,7 +620,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
-				cred := &btypes.SiteCredential{}
+				cred := &btypes.SiteCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, siteToken)
 				return cred, nil
 			})
@@ -680,7 +680,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
-				cred := &btypes.SiteCredential{}
+				cred := &btypes.SiteCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, siteToken)
 				return cred, nil
 			})
