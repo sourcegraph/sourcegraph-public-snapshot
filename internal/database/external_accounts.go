@@ -322,7 +322,7 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) er
 	for _, id := range ids {
 		idStrings = append(idStrings, strconv.Itoa(int(id)))
 	}
-	res, err := s.Handle().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id IN (%s) AND deleted_at IS NULL", strings.Join(idStrings, ", "))
+	res, err := s.Handle().ExecContext(ctx, fmt.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE id IN (%s) AND deleted_at IS NULL", strings.Join(idStrings, ", ")))
 	if err != nil {
 		return err
 	}
