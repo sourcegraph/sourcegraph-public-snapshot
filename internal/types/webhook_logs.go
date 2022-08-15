@@ -27,11 +27,7 @@ type WebhookLogMessage struct {
 type EncryptableWebhookLogMessage = encryption.JSONEncryptable[WebhookLogMessage]
 
 func NewUnencryptedWebhookLogMessage(value WebhookLogMessage) *EncryptableWebhookLogMessage {
-	return NewUnencryptedWebhookLogMessageWithKey(value, nil)
-}
-
-func NewUnencryptedWebhookLogMessageWithKey(value WebhookLogMessage, key encryption.Key) *EncryptableWebhookLogMessage {
-	message, _ := encryption.NewUnencryptedJSONWithKey(value, key)
+	message, _ := encryption.NewUnencryptedJSON(value)
 	return message
 }
 
