@@ -25,7 +25,7 @@ const RedactedSecret = "REDACTED"
 
 // RedactedConfig returns the external service config with all secret fields replaces by RedactedSecret.
 func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
-	rawConfig, err := e.Config.Decrypted(ctx)
+	rawConfig, err := e.Config.Decrypt(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -106,11 +106,11 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		return nil
 	}
 
-	eConfig, err := e.Config.Decrypted(ctx)
+	eConfig, err := e.Config.Decrypt(ctx)
 	if err != nil || eConfig == "" {
 		return nil
 	}
-	oldConfig, err := old.Config.Decrypted(ctx)
+	oldConfig, err := old.Config.Decrypt(ctx)
 	if err != nil || oldConfig == "" {
 		return nil
 	}

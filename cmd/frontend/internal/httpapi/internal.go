@@ -53,7 +53,7 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 			var config map[string]any
 			// Raw configs may have comments in them so we have to use a json parser
 			// that supports comments in json.
-			rawConfig, err := service.Config.Decrypted(r.Context())
+			rawConfig, err := service.Config.Decrypt(r.Context())
 			if err != nil {
 				return err
 			}

@@ -151,7 +151,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	}
 
 	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
-	oldConfig, err := es.Config.Decrypted(ctx)
+	oldConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
-	newConfig, err := es.Config.Decrypted(ctx)
+	newConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}

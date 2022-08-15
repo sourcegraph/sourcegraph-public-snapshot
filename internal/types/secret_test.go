@@ -419,7 +419,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			cfg, err := in.Config.Decrypted(ctx)
+			cfg, err := in.Config.Decrypt(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}

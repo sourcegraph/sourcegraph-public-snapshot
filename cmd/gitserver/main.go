@@ -346,7 +346,7 @@ func getRemoteURLFunc(
 		if envvar.SourcegraphDotComMode() &&
 			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
 			svc.Kind == extsvc.KindGitHub {
-			rawConfig, err := svc.Config.Decrypted(ctx)
+			rawConfig, err := svc.Config.Decrypt(ctx)
 			if err != nil {
 				return "", err
 			}
@@ -436,7 +436,7 @@ func getVCSSyncer(
 			if err != nil {
 				return "", errors.Wrap(err, "get external service")
 			}
-			rawConfig, err := extSvc.Config.Decrypted(ctx)
+			rawConfig, err := extSvc.Config.Decrypt(ctx)
 			if err != nil {
 				return "", err
 			}

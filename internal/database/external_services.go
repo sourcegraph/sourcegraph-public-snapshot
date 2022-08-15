@@ -599,7 +599,7 @@ func upsertAuthorizationToExternalService(kind, config string) (string, error) {
 }
 
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
-	rawConfig, err := es.Config.Decrypted(ctx)
+	rawConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
 		return err
 	}
@@ -642,7 +642,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	encryptedConfig, keyID, err := es.Config.Encrypted(ctx, e.getEncryptionKey())
+	encryptedConfig, keyID, err := es.Config.Encrypt(ctx, e.getEncryptionKey())
 	if err != nil {
 		return err
 	}
@@ -695,7 +695,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	}
 
 	for _, s := range svcs {
-		rawConfig, err := s.Config.Decrypted(ctx)
+		rawConfig, err := s.Config.Decrypt(ctx)
 		if err != nil {
 			return err
 		}
@@ -792,7 +792,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
-		encryptedConfig, keyID, err := s.Config.Encrypted(ctx, e.getEncryptionKey())
+		encryptedConfig, keyID, err := s.Config.Encrypt(ctx, e.getEncryptionKey())
 		if err != nil {
 			return nil, err
 		}
@@ -945,7 +945,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			newSvc.Config.Set(rawConfig)
 		}
 
-		encryptedConfig, keyID, err = newSvc.Config.Encrypted(ctx, e.getEncryptionKey())
+		encryptedConfig, keyID, err = newSvc.Config.Encrypt(ctx, e.getEncryptionKey())
 		if err != nil {
 			return err
 		}

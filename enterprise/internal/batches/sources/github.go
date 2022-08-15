@@ -28,7 +28,7 @@ type GithubSource struct {
 var _ ForkableChangesetSource = GithubSource{}
 
 func NewGithubSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}

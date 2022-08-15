@@ -619,7 +619,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 					return cmp.Diff(normalize(a), normalize(b))
 				}
 
-				cfg, err := got.Config.Decrypted(ctx)
+				cfg, err := got.Config.Decrypt(ctx)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -789,7 +789,7 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 
 	got, err := externalServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
-	cfg, err := got.Config.Decrypted(ctx)
+	cfg, err := got.Config.Decrypt(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -803,7 +803,7 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 
 	got, err = externalServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
-	cfg, err = got.Config.Decrypted(ctx)
+	cfg, err = got.Config.Decrypt(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -823,7 +823,7 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 
 	got, err = externalServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
-	cfg, err = got.Config.Decrypted(ctx)
+	cfg, err = got.Config.Decrypt(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1193,7 +1193,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying service: %s", err)
 	}
-	if _, err := svc.Config.Decrypted(ctx); err == nil {
+	if _, err := svc.Config.Decrypt(ctx); err == nil {
 		t.Fatalf("expected error decrypting with a different key")
 	}
 
@@ -1902,7 +1902,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("unexpected HasWebhooks: %v", svc.HasWebhooks)
 		}
 
-		cfg, err := svc.Config.Decrypted(ctx)
+		cfg, err := svc.Config.Decrypt(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1974,7 +1974,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
-			cfg, err := r.Config.Decrypted(ctx)
+			cfg, err := r.Config.Decrypt(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2050,7 +2050,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error querying service: %s", err)
 			}
-			if _, err := svc.Config.Decrypted(ctx); err == nil {
+			if _, err := svc.Config.Decrypt(ctx); err == nil {
 				t.Fatalf("expected error decrypting with a different key")
 			}
 		}
@@ -2074,7 +2074,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
-			cfg, err := r.Config.Decrypted(ctx)
+			cfg, err := r.Config.Decrypt(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}

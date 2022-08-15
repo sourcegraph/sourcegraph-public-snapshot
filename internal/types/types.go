@@ -619,12 +619,12 @@ func (e *ExternalService) Update(ctx context.Context, n *ExternalService) (modif
 		e.DisplayName, modified = n.DisplayName, true
 	}
 
-	eConfig, err := e.Config.Decrypted(ctx)
+	eConfig, err := e.Config.Decrypt(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	nConfig, err := n.Config.Decrypted(ctx)
+	nConfig, err := n.Config.Decrypt(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -674,7 +674,7 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 }
 
 func (e *ExternalService) ToAPIService(ctx context.Context) (api.ExternalService, error) {
-	rawConfig, err := e.Config.Decrypted(ctx)
+	rawConfig, err := e.Config.Decrypt(ctx)
 	if err != nil {
 		return api.ExternalService{}, err
 	}

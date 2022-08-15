@@ -175,7 +175,7 @@ func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
 
 // rustPackagesConfig returns the configuration for the provided RUSTPACKAGES code host.
 func rustPackagesConfig(ctx context.Context, externalService *dbtypes.ExternalService) (*schema.RustPackagesConnection, error) {
-	rawConfig, err := externalService.Config.Decrypted(ctx)
+	rawConfig, err := externalService.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -49,7 +49,7 @@ var _ VersionSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
@@ -455,7 +455,7 @@ func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, logger log.Lo
 			gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
 		}()
 
-		rawConfig, err := svc.Config.Decrypted(ctx)
+		rawConfig, err := svc.Config.Decrypt(ctx)
 		if err != nil {
 			return "", err
 		}

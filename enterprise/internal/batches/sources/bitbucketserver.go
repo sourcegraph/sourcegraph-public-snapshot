@@ -27,7 +27,7 @@ var _ ForkableChangesetSource = BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}

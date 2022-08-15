@@ -34,7 +34,7 @@ type PhabricatorSource struct {
 
 // NewPhabricatorSource returns a new PhabricatorSource from the given external service.
 func NewPhabricatorSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}

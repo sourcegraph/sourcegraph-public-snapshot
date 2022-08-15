@@ -362,7 +362,7 @@ func ParseEncryptableConfig(ctx context.Context, kind string, config *Encryptabl
 		return nil, err
 	}
 
-	rawConfig, err := config.Decrypted(ctx)
+	rawConfig, err := config.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}

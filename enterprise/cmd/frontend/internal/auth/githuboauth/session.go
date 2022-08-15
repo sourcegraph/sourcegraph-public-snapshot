@@ -202,7 +202,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		// We have an existing service, update it
 		svc = services[0]
 
-		rawConfig, err := svc.Config.Decrypted(ctx)
+		rawConfig, err := svc.Config.Decrypt(ctx)
 		if err != nil {
 			return nil, "", err
 		}

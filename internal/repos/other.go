@@ -28,7 +28,7 @@ type OtherSource struct {
 
 // NewOtherSource returns a new OtherSource from the given external service.
 func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}

@@ -275,7 +275,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		}
 
 		if setupAction == "request" {
-			rawConfig, err := svc.Config.Decrypted(r.Context())
+			rawConfig, err := svc.Config.Decrypt(r.Context())
 			if err != nil {
 				responseServerError("Failed to retrieve config", err)
 				return
@@ -306,7 +306,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			}
 			svc.DisplayName = displayName
 
-			rawConfig, err := svc.Config.Decrypted(r.Context())
+			rawConfig, err := svc.Config.Decrypt(r.Context())
 			if err != nil {
 				responseServerError("Failed to retrieve config", err)
 				return

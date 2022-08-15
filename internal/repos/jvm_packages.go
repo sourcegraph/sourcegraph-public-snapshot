@@ -16,7 +16,7 @@ import (
 // NewJVMPackagesSource returns a new MavenSource from the given external
 // service.
 func NewJVMPackagesSource(ctx context.Context, svc *types.ExternalService) (*PackagesSource, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}

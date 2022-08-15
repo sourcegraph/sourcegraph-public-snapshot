@@ -265,12 +265,12 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 		// Now eliminate operations from toAdd/toRemove where the config
 		// file and DB describe an equivalent external service.
 		isEquiv := func(a, b *types.ExternalService) (bool, error) {
-			aConfig, err := a.Config.Decrypted(ctx)
+			aConfig, err := a.Config.Decrypt(ctx)
 			if err != nil {
 				return false, err
 			}
 
-			bConfig, err := b.Config.Decrypted(ctx)
+			bConfig, err := b.Config.Decrypt(ctx)
 			if err != nil {
 				return false, err
 			}
@@ -278,12 +278,12 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig == bConfig, nil
 		}
 		shouldUpdate := func(a, b *types.ExternalService) (bool, error) {
-			aConfig, err := a.Config.Decrypted(ctx)
+			aConfig, err := a.Config.Decrypt(ctx)
 			if err != nil {
 				return false, err
 			}
 
-			bConfig, err := b.Config.Decrypted(ctx)
+			bConfig, err := b.Config.Decrypt(ctx)
 			if err != nil {
 				return false, err
 			}
@@ -330,7 +330,7 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 		for id, extSvc := range toUpdate {
 			log.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 
-			rawConfig, err := extSvc.Config.Decrypted(ctx)
+			rawConfig, err := extSvc.Config.Decrypt(ctx)
 			if err != nil {
 				return err
 			}

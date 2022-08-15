@@ -25,7 +25,7 @@ type PerforceSource struct {
 // NewPerforceSource returns a new PerforceSource from the given external
 // service.
 func NewPerforceSource(ctx context.Context, svc *types.ExternalService) (*PerforceSource, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}

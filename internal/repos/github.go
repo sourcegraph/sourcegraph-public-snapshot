@@ -66,7 +66,7 @@ var (
 
 // NewGithubSource returns a new GitHubSource from the given external service.
 func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
@@ -109,7 +109,7 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 	client *github.V3Client,
 	installationID int64,
 ) (string, error) {
-	rawConfig, err := svc.Config.Decrypted(ctx)
+	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return "", nil
 	}

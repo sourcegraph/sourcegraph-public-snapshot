@@ -135,7 +135,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 			assert.Equal(t, extsvc.KindGitHub, svc.Kind)
 			assert.Equal(t, "GitHub (abc-org)", svc.DisplayName)
 
-			cfg, err := svc.Config.Decrypted(ctx)
+			cfg, err := svc.Config.Decrypt(ctx)
 			assert.Nil(t, err)
 
 			wantConfig := `
@@ -182,7 +182,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 			assert.Equal(t, extsvc.KindGitHub, svc.Kind)
 			assert.Equal(t, "GitHub (abc-org)", svc.DisplayName)
 
-			cfg, err := svc.Config.Decrypted(ctx)
+			cfg, err := svc.Config.Decrypt(ctx)
 			assert.Nil(t, err)
 
 			wantConfig := `
