@@ -489,11 +489,12 @@ type AggregationModeAvailabilityResolver interface {
 }
 
 type SearchAggregationModeResultResolver interface {
-	Values() ([]AggregationValues, error)
-	OverflowCount() (*int32, error)
+	Values() ([]AggregationValue, error)
+	OtherCount() (*int32, error)
+	LimitHit() (*bool, error)
 }
 
-type AggregationValues interface {
+type AggregationValue interface {
 	Label() string
 	Count() int32
 	Query() (*string, error)
@@ -509,5 +510,6 @@ type SearchAggregationResultResolver interface {
 }
 
 type AggregationsArgs struct {
-	Mode string `json:"mode"` //enum
+	Mode  string `json:"mode"` //enum
+	Limit int32  `json:"limit"`
 }

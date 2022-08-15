@@ -96,10 +96,14 @@ type searchAggregationModeResultResolver struct {
 	mode        SearchAggregationMode
 }
 
-func (r *searchAggregationModeResultResolver) Values() ([]graphqlbackend.AggregationValues, error) {
+func (r *searchAggregationModeResultResolver) Values() ([]graphqlbackend.AggregationValue, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (r *searchAggregationModeResultResolver) OverflowCount() (*int32, error) {
+func (r *searchAggregationModeResultResolver) OtherCount() (*int32, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (r *searchAggregationModeResultResolver) LimitHit() (*bool, error) {
 	panic("not implemented") // TODO: Implement
 }

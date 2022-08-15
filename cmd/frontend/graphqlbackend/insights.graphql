@@ -1248,9 +1248,10 @@ type SearchQueryAggregate {
     modeAvailability: [AggregationModeAvailability!]!
 
     """
-    A result of aggregating a search query.
+    A result of aggregating a search query for the specified aggregation mode.
+    Limit - is the maximum number of aggregation values to return, this limit will not override any internal limits.
     """
-    aggregations(mode: SearchAggregationMode = REPO): SearchAggregationResult
+    aggregations(mode: SearchAggregationMode = REPO, limit: Int = 50): SearchAggregationResult
 }
 
 """
@@ -1276,19 +1277,23 @@ Information regarding the availablity of a SearchAggregationMode
 """
 type SearchAggregationModeResult {
     """
-    A list of individual aggregation values
+    A list of individual aggregation values in decreasing order, this list should only be considered exhaustive if otherCount = 0 and limitHit = false
     """
-    values: [AggregationValues!]!
+    values: [AggregationValue!]!
     """
-    A count to capture the number of results that were not included in a named aggregation values
+    A count to capture the number of results that are not included in the list of values returned
     """
-    overflowCount: Int
+    otherCount: Int
+    """
+    Indiciates if the maximum number of tracked values was hit.  If true any individual AggregationValue count should be considered "at least as many"
+    """
+    limitHit: Boolean
 }
 
 """
 Information regarding the availablity of a SearchAggregationMode
 """
-type AggregationValues {
+type AggregationValue {
     """
     A label associated with the Aggregation for example a Repo name or Author name
     """
