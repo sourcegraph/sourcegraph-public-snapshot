@@ -647,7 +647,7 @@ func TestExternalAccounts_UpdateGitHubAppInstallations(t *testing.T) {
 	require.NoError(t, err)
 	acct, err := db.UserExternalAccounts().Get(ctx, 1)
 	require.NoError(t, err)
-	spec.ServiceType = "githubApp"
+	spec.ServiceType = extsvc.TypeGitHubApp
 	spec.AccountID = "9876/1234"
 	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
 	require.NoError(t, err)

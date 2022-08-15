@@ -355,7 +355,7 @@ type ExternalAccountsListOptions struct {
 
 func (s *userExternalAccountsStore) UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error {
 	acctInstallations, err := s.List(ctx, ExternalAccountsListOptions{
-		ServiceType:    "githubApp",
+		ServiceType:    extsvc.TypeGitHubApp,
 		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
 		ExcludeExpired: true,
 	})
@@ -388,7 +388,7 @@ INSTALLATIONS:
 		}
 		accountID := installationID + "/" + acct.AccountID
 		if err := s.Insert(ctx, acct.UserID, extsvc.AccountSpec{
-			ServiceType: fmt.Sprintf("%sApp", acct.ServiceType),
+			ServiceType: extsvc.TypeGitHubApp,
 			ServiceID:   acct.ServiceID,
 			ClientID:    acct.ClientID,
 			AccountID:   accountID,

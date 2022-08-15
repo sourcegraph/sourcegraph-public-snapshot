@@ -149,6 +149,9 @@ const (
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
 	TypeGitHub = "github"
 
+	// TypeGitHubApp is used for GitHub App linked user external accounts.
+	TypeGitHubApp = "githubApp"
+
 	// TypeGitLab is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
 	// value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
 	TypeGitLab = "gitlab"

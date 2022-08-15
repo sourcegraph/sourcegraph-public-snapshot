@@ -62,7 +62,7 @@ func DefaultServices() Services {
 		BitbucketCloudWebhook:     makeNotFoundHandler("bitbucket cloud webhook"),
 		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
-		NewGitHubAppSetupHandler:  func() http.Handler { return makeNotFoundHandler("Sourcegraph Cloud GitHub App setup") },
+		NewGitHubAppSetupHandler:  func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:   func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 	}
 }

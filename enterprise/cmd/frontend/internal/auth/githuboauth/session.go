@@ -105,6 +105,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	installations, err := ghClient.GetUserInstallations(ctx)
 	if err != nil {
+		// Only log a warning, since we still want to create the user account
+		// even if we fail to get installations.
 		log15.Warn("Could not get GitHub App installations", "error", err)
 	}
 
@@ -138,7 +140,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 						AvatarURL:       deref(ghUser.AvatarURL),
 					},
 					ExternalAccount: extsvc.AccountSpec{
-						ServiceType: fmt.Sprintf("%sApp", s.ServiceType),
+						ServiceType: extsvc.TypeGitHubApp,
 						ServiceID:   s.ServiceID,
 						ClientID:    s.clientID,
 						AccountID:   accountID,

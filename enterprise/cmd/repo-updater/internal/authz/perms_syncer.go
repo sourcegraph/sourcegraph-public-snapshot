@@ -456,7 +456,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 
 	for _, acct := range accts {
-		if acct.ServiceType == "githubApp" {
+		if acct.ServiceType == extsvc.TypeGitHubApp {
 			continue
 		}
 
@@ -509,7 +509,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				// longer has any access.
 				linkedAccts, err := s.db.UserExternalAccounts().List(ctx,
 					database.ExternalAccountsListOptions{
-						ServiceType:   fmt.Sprintf("%sApp", acct.ServiceType),
+						ServiceType:   extsvc.TypeGitHubApp,
 						AccountIDLike: fmt.Sprintf("%%/%s", acct.AccountID),
 					},
 				)
@@ -1029,7 +1029,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 			if provider.ServiceType() == extsvc.TypeGitHub {
 				linkedAccountIDsToUserIDs, err := s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
-					ServiceType: "githubApp",
+					ServiceType: extsvc.TypeGitHubApp,
 					ServiceID:   provider.ServiceID(),
 					AccountIDs:  accountIDs,
 				})
