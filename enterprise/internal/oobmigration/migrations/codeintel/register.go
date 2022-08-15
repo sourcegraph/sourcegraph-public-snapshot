@@ -17,10 +17,11 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 	if err != nil {
 		return err
 	}
+	store := lsifStore.Store
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DiagnosticsCountMigrationID, // 1
-		lsifmigrations.NewDiagnosticsCountMigrator(lsifStore, config.DiagnosticsCountMigrationBatchSize),
+		lsifmigrations.NewDiagnosticsCountMigrator(store, config.DiagnosticsCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.DiagnosticsCountMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -28,7 +29,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DefinitionsCountMigrationID, // 4
-		lsifmigrations.NewLocationsCountMigrator(lsifStore, "lsif_data_definitions", config.DefinitionsCountMigrationBatchSize),
+		lsifmigrations.NewLocationsCountMigrator(store, "lsif_data_definitions", config.DefinitionsCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.DefinitionsCountMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -36,7 +37,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.ReferencesCountMigrationID, // 5
-		lsifmigrations.NewLocationsCountMigrator(lsifStore, "lsif_data_references", config.ReferencesCountMigrationBatchSize),
+		lsifmigrations.NewLocationsCountMigrator(store, "lsif_data_references", config.ReferencesCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.ReferencesCountMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -44,7 +45,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DocumentColumnSplitMigrationID, // 7
-		lsifmigrations.NewDocumentColumnSplitMigrator(lsifStore, config.DocumentColumnSplitMigrationBatchSize),
+		lsifmigrations.NewDocumentColumnSplitMigrator(store, config.DocumentColumnSplitMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.DocumentColumnSplitMigrationBatchInterval},
 	); err != nil {
 		return err

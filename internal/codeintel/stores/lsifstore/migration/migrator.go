@@ -5,7 +5,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -41,7 +40,7 @@ import (
 // table. When checking progress, we can efficiently do a full-table on the much smaller
 // aggregate table.
 type Migrator struct {
-	store                    *lsifstore.Store
+	store                    *basestore.Store
 	driver                   migrationDriver
 	options                  migratorOptions
 	selectionExpressions     []*sqlf.Query // expressions used in select query
@@ -104,7 +103,7 @@ type scanner interface {
 	Scan(dest ...any) error
 }
 
-func newMigrator(store *lsifstore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
+func newMigrator(store *basestore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
 	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
 	temporaryTableFieldNames := make([]string, 0, len(options.fields))
 	temporaryTableFieldSpecs := make([]*sqlf.Query, 0, len(options.fields))
@@ -286,7 +285,7 @@ SELECT
 // Having each batch of updates touch only rows associated with a single dump reduces contention
 // when multiple migrators are running. This method returns the dump identifier and a boolean flag
 // indicating that such a dump could be selected.
-func (m *Migrator) selectAndLockDump(ctx context.Context, tx *lsifstore.Store, sourceVersion int) (_ int, _ bool, err error) {
+func (m *Migrator) selectAndLockDump(ctx context.Context, tx *basestore.Store, sourceVersion int) (_ int, _ bool, err error) {
 	return basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		selectAndLockDumpQuery,
 		sqlf.Sprintf(m.options.tableName),
@@ -313,7 +312,7 @@ FOR UPDATE SKIP LOCKED
 // processRows selects a batch of rows from the target table associated with the given dump identifier
 // to  update and calls the given driver func over each row. The driver func returns the set of values
 // that should be used to update that row. These values are fed into a channel usable for batch insert.
-func (m *Migrator) processRows(ctx context.Context, tx *lsifstore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []any, err error) {
+func (m *Migrator) processRows(ctx context.Context, tx *basestore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []any, err error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		processRowsQuery,
 		sqlf.Join(m.selectionExpressions, ", "),
@@ -353,7 +352,7 @@ var temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
 // updateBatch creates a temporary table symmetric to the target table but without any of the read-only
 // fields. Then, the given row values are bulk inserted into the temporary table. Finally, the rows in
 // the temporary table are used to update the target table.
-func (m *Migrator) updateBatch(ctx context.Context, tx *lsifstore.Store, dumpID, targetVersion int, rowValues <-chan []any) error {
+func (m *Migrator) updateBatch(ctx context.Context, tx *basestore.Store, dumpID, targetVersion int, rowValues <-chan []any) error {
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		updateBatchTemporaryTableQuery,
 		temporaryTableExpression,

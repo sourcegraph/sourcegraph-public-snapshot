@@ -2,6 +2,7 @@ package migration
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -13,7 +14,7 @@ type documentColumnSplitMigrator struct {
 // the lsif_data_documents table with a schema version of 2 and unsets the payload in favor
 // of populating the new ranges, hovers, monikers, packages, and diagnostics columns. Updated
 // records will have a schema version of 3.
-func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmigration.Migrator {
+func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize int) oobmigration.Migrator {
 	driver := &documentColumnSplitMigrator{
 		serializer: lsifstore.NewSerializer(),
 	}

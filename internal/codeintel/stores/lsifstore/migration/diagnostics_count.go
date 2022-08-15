@@ -2,6 +2,7 @@ package migration
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -12,7 +13,7 @@ type diagnosticsCountMigrator struct {
 // NewDiagnosticsCountMigrator creates a new Migrator instance that reads records from
 // the lsif_data_documents table with a schema version of 1 and populates that record's
 // (new) num_diagnostics column. Updated records will have a schema version of 2.
-func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigration.Migrator {
+func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize int) oobmigration.Migrator {
 	driver := &diagnosticsCountMigrator{
 		serializer: lsifstore.NewSerializer(),
 	}
