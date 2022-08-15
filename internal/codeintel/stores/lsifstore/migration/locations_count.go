@@ -10,10 +10,18 @@ type locationsCountMigrator struct {
 	serializer *lsifstore.Serializer
 }
 
-// NewLocationsCountMigrator creates a new Migrator instance that reads records from
+func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize int) oobmigration.Migrator {
+	return newLocationsCountMigrator(store, "lsif_data_definitions", batchSize)
+}
+
+func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize int) oobmigration.Migrator {
+	return newLocationsCountMigrator(store, "lsif_data_references", batchSize)
+}
+
+// newLocationsCountMigrator creates a new Migrator instance that reads records from
 // the given table with a schema version of 1 and populates that record's (new) num_locations
 // column. Updated records will have a schema version of 2.
-func NewLocationsCountMigrator(store *basestore.Store, tableName string, batchSize int) oobmigration.Migrator {
+func newLocationsCountMigrator(store *basestore.Store, tableName string, batchSize int) oobmigration.Migrator {
 	driver := &locationsCountMigrator{
 		serializer: lsifstore.NewSerializer(),
 	}

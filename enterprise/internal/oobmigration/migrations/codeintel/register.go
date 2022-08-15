@@ -29,7 +29,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DefinitionsCountMigrationID, // 4
-		lsifmigrations.NewLocationsCountMigrator(store, "lsif_data_definitions", config.DefinitionsCountMigrationBatchSize),
+		lsifmigrations.NewDefinitionLocationsCountMigrator(store, config.DefinitionsCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.DefinitionsCountMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -37,7 +37,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.ReferencesCountMigrationID, // 5
-		lsifmigrations.NewLocationsCountMigrator(store, "lsif_data_references", config.ReferencesCountMigrationBatchSize),
+		lsifmigrations.NewReferencesLocationsCountMigrator(store, config.ReferencesCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.ReferencesCountMigrationBatchInterval},
 	); err != nil {
 		return err
