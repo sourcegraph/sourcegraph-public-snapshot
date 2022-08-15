@@ -420,7 +420,7 @@ func TestLoadChangesetSource(t *testing.T) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
 				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
-				cred := &database.UserCredential{}
+				cred := &database.UserCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "789"})
 				return cred, nil
 			})
