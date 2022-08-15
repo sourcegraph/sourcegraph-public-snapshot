@@ -3,6 +3,9 @@ package workers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -19,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // batchSpecWorkspaceCreator takes in BatchSpecs, resolves them into
@@ -119,7 +123,7 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
-		r := batcheslib.Repository{
+		repo := batcheslib.Repository{
 			ID:          string(graphqlbackend.MarshalRepositoryID(w.Repo.ID)),
 			Name:        string(w.Repo.Name),
 			BaseRef:     w.Branch,
@@ -144,11 +148,12 @@ func (r *batchSpecWorkspaceCreator) process(
 					Name:        spec.Spec.Name,
 					Description: spec.Spec.Description,
 				},
-				r,
+				repo,
 				w.Path,
 				w.OnlyFetchWorkspace,
 				spec.Spec.Steps,
 				i,
+				&remoteFileMetadataRetriever{ctx: ctx, batchSpecID: spec.ID, store: r.store},
 			)
 
 			rawStepKey, err := key.Key()
@@ -162,7 +167,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		cacheKeyWorkspaces = append(cacheKeyWorkspaces, workspaceCacheKey{
 			dbWorkspace:   workspace,
-			repo:          r,
+			repo:          repo,
 			stepCacheKeys: stepCacheKeys,
 			skippedSteps:  skippedSteps,
 		})
@@ -292,6 +297,48 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
+}
+
+type remoteFileMetadataRetriever struct {
+	ctx         context.Context
+	batchSpecID int64
+	store       *store.Store
+}
+
+func (r *remoteFileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.MountMetadata, error) {
+	var mountsMetadata []cache.MountMetadata
+	mounts, _, err := r.store.ListBatchSpecMounts(r.ctx, store.ListBatchSpecMountsOpts{BatchSpecID: r.batchSpecID})
+	if err != nil {
+		return nil, err
+	}
+	for _, step := range steps {
+		for _, stepMount := range step.Mount {
+			metadata, err := getMountMetadata(mounts, stepMount.Path)
+			if err != nil {
+				return nil, err
+			}
+			mountsMetadata = append(mountsMetadata, metadata)
+		}
+	}
+	return mountsMetadata, nil
+}
+
+func getMountMetadata(mounts []*btypes.BatchSpecMount, path string) (metadata cache.MountMetadata, err error) {
+	dir, file := filepath.Split(path)
+	dir = strings.TrimSuffix(dir, string(filepath.Separator))
+	dir = strings.TrimPrefix(dir, fmt.Sprintf(".%s", string(filepath.Separator)))
+	mountPath := filepath.Join(dir, file)
+
+	for _, mount := range mounts {
+		if filepath.Join(mount.Path, mount.FileName) == mountPath {
+			return cache.MountMetadata{
+				Path:     mountPath,
+				Size:     mount.Size,
+				Modified: mount.Modified,
+			}, nil
+		}
+	}
+	return metadata, errors.New("could not find a matching mount entry")
 }
 
 func changesetSpecsForImports(ctx context.Context, s *store.Store, importChangesets []batcheslib.ImportChangeset, batchSpecID int64, userID int32) ([]*btypes.ChangesetSpec, error) {
