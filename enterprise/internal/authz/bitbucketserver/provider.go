@@ -10,6 +10,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -139,7 +140,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	var user bitbucketserver.User
-	if err := account.Data.DecryptInto(ctx, &user); err != nil {
+	if err := encryption.DecryptJSON(ctx, account.Data, &user); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 

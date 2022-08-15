@@ -22,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -1875,7 +1876,7 @@ type restTopicsResponse struct {
 func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
 		var u github.User
-		if err := data.Data.DecryptInto(ctx, &u); err != nil {
+		if err := encryption.DecryptJSON(ctx, data.Data, &u); err != nil {
 			return nil, nil, err
 		}
 
@@ -1884,7 +1885,7 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 
 	if data.AuthData != nil {
 		var t oauth2.Token
-		if err := data.AuthData.DecryptInto(ctx, &t); err != nil {
+		if err := encryption.DecryptJSON(ctx, data.AuthData, &t); err != nil {
 			return nil, nil, err
 		}
 

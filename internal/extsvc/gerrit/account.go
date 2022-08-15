@@ -3,6 +3,7 @@ package gerrit
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -20,6 +21,6 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*Acc
 	}
 
 	var d AccountData
-	err := data.Data.DecryptInto(ctx, &d)
+	err := encryption.DecryptJSON(ctx, data.Data, &d)
 	return &d, err
 }

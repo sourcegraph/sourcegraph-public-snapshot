@@ -47,7 +47,7 @@ type AccountData struct {
 	Data     *EncryptableData
 }
 
-type EncryptableData encryption.JSONEncryptable[any]
+type EncryptableData = encryption.JSONEncryptable[any]
 
 func NewUnencryptedData(value json.RawMessage) *EncryptableData {
 	return &EncryptableData{Encryptable: encryption.NewUnencrypted(string(value))}
@@ -59,22 +59,6 @@ func NewEncryptedData(cipher, keyID string, key encryption.Key) *EncryptableData
 	}
 
 	return &EncryptableData{Encryptable: encryption.NewEncrypted(cipher, keyID, key)}
-}
-
-// DecryptInto decrypts the underlying value and updates the given value. This method may make an external
-// API call to decrypt the underlying encrypted value, but will memoize the result so that subsequent calls
-// will be cheap.
-func (e *EncryptableData) DecryptInto(ctx context.Context, value any) error {
-	serialized, err := e.Encryptable.Decrypt(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal([]byte(serialized), &value); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Repository contains necessary information to identify an external repository on the code host.
