@@ -634,7 +634,7 @@ query {
 If the Sourcegraph instance is configured to sync repositories from multiple code hosts (regardless of whether they are the same code host, e.g. `GitHub + GitHub` or `GitHub + GitLab`), Sourcegraph will enforce access to repositories from each code host with authorization enabled, so long as:
 
 - users log in to Sourcegraph at least once from each code host's [authentication provider](../auth/index.md)
-- users have the same primary email in Sourcegraph (under "User settings" > "Emails") as the code host at the time of the initial log in via that code host
+- users have the same verified email in Sourcegraph (under "User settings" > "Emails") as any of the emails on the user account from the code host at the time of the initial log in via that code host
 
 To attach a user's Sourcegraph account to all relevant code host accounts, a specific sign-in flow needs to be utilized when users are creating an account and signing into Sourcegraph for the first time.
 
