@@ -16,7 +16,7 @@ GOOGLE_IMAGE_NAME="${NAME}"
 gcloud compute images add-iam-policy-binding --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --member='allAuthenticatedUsers' --role='roles/compute.imageUser'
 gcloud compute images update --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --family="${IMAGE_FAMILY}"
 
-for region in $(cat executor.json | jq -r '.builders[1].ami_regions[]'); do
+for region in $(jq -r '.builders[1].ami_regions[]' <executor.json); do
   AWS_AMI_ID=$(aws ec2 --region="${region}" describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
   # Make executor AMI usable outside of Sourcegraph.
   aws ec2 --region="${region}" modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
