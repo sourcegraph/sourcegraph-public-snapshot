@@ -132,17 +132,25 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	flags := make(map[string]bool)
 	flags["testflag"] = true
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	want := []*database.Event{
 		{
 			Name:             "event1",
 			UserID:           1,
 			Source:           "test",
 			EvaluatedFlagSet: flags,
+			DeviceID:         ptr("device-1"),
+			InsertID:         ptr("insert-1"),
 		},
 		{
-			Name:   "event2",
-			UserID: 2,
-			Source: "test",
+			Name:     "event2",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device-2"),
+			InsertID: ptr("insert-2"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, want)
@@ -163,21 +171,31 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		}
 		autogold.Want("loads events without error", []*database.Event{
 			{
-				ID:               1,
-				Name:             "event1",
-				UserID:           1,
-				Argument:         json.RawMessage("{}"),
+				ID:     1,
+				Name:   "event1",
+				UserID: 1,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:           "test",
 				Version:          "0.0.0+dev",
-				EvaluatedFlagSet: flags,
+				EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
+				DeviceID:         valast.Addr("device-1").(*string),
+				InsertID:         valast.Addr("insert-1").(*string),
 			},
 			{
-				ID:       2,
-				Name:     "event2",
-				UserID:   2,
-				Argument: json.RawMessage("{}"),
+				ID:     2,
+				Name:   "event2",
+				UserID: 2,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device-2").(*string),
+				InsertID: valast.Addr("insert-2").(*string),
 			},
 		}).Equal(t, got)
 	})
@@ -197,17 +215,20 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("loads using specified batch size from settings", []*database.Event{
-			{
-				ID:               1,
-				Name:             "event1",
-				UserID:           1,
-				Argument:         json.RawMessage("{}"),
-				Source:           "test",
-				Version:          "0.0.0+dev",
-				EvaluatedFlagSet: flags,
+		autogold.Want("loads using specified batch size from settings", []*database.Event{{
+			ID:     1,
+			Name:   "event1",
+			UserID: 1,
+			Argument: json.RawMessage{
+				123,
+				125,
 			},
-		}).Equal(t, got)
+			Source:           "test",
+			Version:          "0.0.0+dev",
+			EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
+			DeviceID:         valast.Addr("device-1").(*string),
+			InsertID:         valast.Addr("insert-1").(*string),
+		}}).Equal(t, got)
 	})
 }
 
