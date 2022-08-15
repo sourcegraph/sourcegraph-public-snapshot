@@ -12,14 +12,13 @@ import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { CopyableText } from '../components/CopyableText'
-import { FilteredConnection } from '../components/FilteredConnection'
-import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
-import { userURL } from '../user'
-import { setUserEmailVerified } from '../user/settings/backend'
-
+import { AuthenticatedUser } from '../../auth'
+import { CopyableText } from '../../components/CopyableText'
+import { FilteredConnection } from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
+import { eventLogger } from '../../tracking/eventLogger'
+import { userURL } from '../../user'
+import { setUserEmailVerified } from '../../user/settings/backend'
 import {
     deleteUser,
     fetchAllUsers,
@@ -27,7 +26,7 @@ import {
     setUserIsSiteAdmin,
     invalidateSessionsByID,
     setUserTag,
-} from './backend'
+} from '../backend'
 
 const CREATE_ORG_TAG = 'CreateOrg'
 
@@ -369,7 +368,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 }
 
-interface Props extends RouteComponentProps<{}> {
+export interface Props extends RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
     history: H.History
 }

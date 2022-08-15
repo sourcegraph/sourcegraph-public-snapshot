@@ -6439,6 +6439,7 @@ enum SiteUserOrderBy {
 SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
 """
 enum SiteUsersLastActivePeriod {
+    ALL
     TODAY
     THIS_WEEK
     THIS_MONTH
