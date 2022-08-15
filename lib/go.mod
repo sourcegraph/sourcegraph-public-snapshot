@@ -10,7 +10,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.7
-	github.com/grafana/regexp v0.0.0-20220202152701-6a046c4caf32
+	github.com/grafana/regexp v0.0.0-20220304100321-149c8afcd6cb
 	github.com/hexops/autogold v1.3.0
 	github.com/json-iterator/go v1.1.12
 	github.com/klauspost/pgzip v1.2.5
