@@ -69,5 +69,6 @@ func (j *uploadExpirerJob) Routines(ctx context.Context, logger log.Logger) ([]g
 
 	return []goroutine.BackgroundRoutine{
 		expiration.NewExpirer(uploadSvc, policySvc, policyMatcher, metrics),
+		expiration.NewReferenceCountUpdater(uploadSvc),
 	}, nil
 }
