@@ -50,6 +50,7 @@ func main() {
 		definitions.CodeIntelAutoIndexing(),
 		definitions.CodeIntelUploads(),
 		definitions.CodeIntelPolicies(),
+		definitions.Telemetry(),
 	); err != nil {
 		println(err.Error())
 		os.Exit(1)

@@ -501,7 +501,7 @@ func TestListIndexableRepos(t *testing.T) {
 		},
 		{
 			name: "only uncloned",
-			opts: ListIndexableReposOptions{OnlyUncloned: true},
+			opts: ListIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
 			want: []api.RepoID{1},
 		},
 		{
