@@ -26,12 +26,17 @@ jobs:
         # --dep-batch-size=100 avoids loading all deps into memory and getting OOM killed
         run: lsif-go --no-animation --dep-batch-size=100
 
-      # Upload lsif-go data to Cloud, Dogfood, and Demo instances
-      - name: Upload lsif-go dump to Cloud
+      # Upload lsif-go data to Dotcom, S2, Dogfood, and Demo instances
+      - name: Upload lsif-go dump to Dotcom
         working-directory: ${{ matrix.root }}
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
         env:
           SRC_ENDPOINT: https://sourcegraph.com/
+      - name: Upload lsif-go dump to S2
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
+        env:
+          SRC_ENDPOINT: https://sourcegraph.sourcegraph.com/
       - name: Upload lsif-go dump to Dogfood
         working-directory: ${{ matrix.root }}
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
