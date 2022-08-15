@@ -236,7 +236,7 @@ func (r *webhookLogResolver) StatusCode() int32 {
 }
 
 func (r *webhookLogResolver) Request(ctx context.Context) (*webhookLogRequestResolver, error) {
-	message, err := r.log.Request.Decrypted(ctx)
+	message, err := r.log.Request.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (r *webhookLogResolver) Request(ctx context.Context) (*webhookLogRequestRes
 }
 
 func (r *webhookLogResolver) Response(ctx context.Context) (*webhookLogMessageResolver, error) {
-	message, err := r.log.Response.Decrypted(ctx)
+	message, err := r.log.Response.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}

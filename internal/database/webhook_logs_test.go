@@ -52,9 +52,9 @@ func TestWebhookLogStore(t *testing.T) {
 			err = row.Scan(&haveReq, &haveResp)
 			assert.Nil(t, err)
 
-			logRequest, err := log.Request.Decrypted(ctx)
+			logRequest, err := log.Request.Decrypt(ctx)
 			assert.Nil(t, err)
-			logResponse, err := log.Response.Decrypted(ctx)
+			logResponse, err := log.Response.Decrypt(ctx)
 			assert.Nil(t, err)
 
 			wantReq, _ := json.Marshal(logRequest)
@@ -89,9 +89,9 @@ func TestWebhookLogStore(t *testing.T) {
 			err = row.Scan(&haveReq, &haveResp)
 			assert.Nil(t, err)
 
-			logRequest, err := log.Request.Decrypted(ctx)
+			logRequest, err := log.Request.Decrypt(ctx)
 			assert.Nil(t, err)
-			logResponse, err := log.Response.Decrypted(ctx)
+			logResponse, err := log.Response.Decrypt(ctx)
 			assert.Nil(t, err)
 
 			wantReq, _ := json.Marshal(logRequest)
@@ -146,7 +146,7 @@ func TestWebhookLogStore(t *testing.T) {
 			assert.Nil(t, err)
 
 			// error on decode
-			_, err = v.Request.Decrypted(ctx)
+			_, err = v.Request.Decrypt(ctx)
 			assert.NotNil(t, err)
 		})
 	})

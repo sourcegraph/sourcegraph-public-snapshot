@@ -46,11 +46,11 @@ func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) err
 		receivedAt = log.ReceivedAt
 	}
 
-	rawRequest, _, err := log.Request.Encrypted(ctx, s.key)
+	rawRequest, _, err := log.Request.Encrypt(ctx, s.key)
 	if err != nil {
 		return err
 	}
-	rawResponse, keyID, err := log.Response.Encrypted(ctx, s.key)
+	rawResponse, keyID, err := log.Response.Encrypt(ctx, s.key)
 	if err != nil {
 		return err
 	}

@@ -16,12 +16,12 @@ var CompareEncryptable = cmp.Comparer(func(a, b *encryption.Encryptable) bool {
 		return false
 	}
 
-	aValue, err := a.Decrypted(context.Background())
+	aValue, err := a.Decrypt(context.Background())
 	if err != nil {
 		return false
 	}
 
-	bValue, err := b.Decrypted(context.Background())
+	bValue, err := b.Decrypt(context.Background())
 	if err != nil {
 		return false
 	}

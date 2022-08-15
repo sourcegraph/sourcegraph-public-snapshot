@@ -75,11 +75,11 @@ func TestLogMiddleware(t *testing.T) {
 	t.Run("logging enabled", func(t *testing.T) {
 		store := database.NewMockWebhookLogStore()
 		store.CreateFunc.SetDefaultHook(func(c context.Context, log *types.WebhookLog) error {
-			logRequest, err := log.Request.Decrypted(c)
+			logRequest, err := log.Request.Decrypt(c)
 			if err != nil {
 				return err
 			}
-			logResponse, err := log.Response.Decrypted(c)
+			logResponse, err := log.Response.Decrypt(c)
 			if err != nil {
 				return err
 			}
