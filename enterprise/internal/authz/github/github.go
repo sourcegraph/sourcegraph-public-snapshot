@@ -378,8 +378,6 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return nil, errors.Wrap(err, "split nameWithOwner")
 	}
 
-	p.ServiceType()
-
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	const userPageSize = 100

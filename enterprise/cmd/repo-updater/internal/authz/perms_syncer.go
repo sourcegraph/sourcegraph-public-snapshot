@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -270,81 +271,6 @@ func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config
 	}
 }
 
-func (s *PermsSyncer) updateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account) error {
-	if acct.ServiceType != extsvc.TypeGitHub {
-		return nil
-	}
-
-	_, tok, err := github.GetExternalAccountData(&acct.AccountData)
-
-	if err != nil {
-		return err
-	}
-
-	if tok == nil {
-		return nil
-	}
-
-	apiURL, err := url.Parse(acct.ServiceID)
-	if err != nil {
-		return err
-	}
-	apiURL, _ = github.APIRoot(apiURL)
-	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
-		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil)
-
-	installations, err := ghClient.GetUserInstallations(ctx)
-	if err != nil {
-		return err
-	}
-
-	acctInstallations, err := s.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-		ServiceType:    fmt.Sprintf("%sApp", acct.ServiceType),
-		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
-		ExcludeExpired: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	validInstallations := []*extsvc.Account{}
-ACCTINSTALLATIONS:
-	for _, acctInstallation := range acctInstallations {
-		for _, installation := range installations {
-			installationID := strconv.FormatInt(*installation.ID, 10)
-			if acctInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
-				validInstallations = append(validInstallations, acctInstallation)
-				continue ACCTINSTALLATIONS
-			}
-		}
-		if err = s.db.UserExternalAccounts().Delete(ctx, acctInstallation.ID); err != nil {
-			return err
-		}
-	}
-
-INSTALLATIONS:
-	for _, installation := range installations {
-		installationID := strconv.FormatInt(*installation.ID, 10)
-		for _, validInstallation := range validInstallations {
-			if validInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
-				continue INSTALLATIONS
-			}
-		}
-		accountID := installationID + "/" + acct.AccountID
-		if err := s.db.UserExternalAccounts().Insert(ctx, acct.UserID, extsvc.AccountSpec{
-			ServiceType: fmt.Sprintf("%sApp", acct.ServiceType),
-			ServiceID:   acct.ServiceID,
-			ClientID:    acct.ClientID,
-			AccountID:   accountID,
-		},
-			extsvc.AccountData{AuthData: nil, Data: nil},
-		); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) (err error) {
 	if acct.ServiceType != extsvc.TypeGitLab {
 		return nil
@@ -398,6 +324,34 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 		}
 	}
 	return nil
+}
+
+func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *extsvc.Account) ([]gh.Installation, error) {
+	if acct.ServiceType != extsvc.TypeGitHub {
+		return nil, nil
+	}
+
+	_, tok, err := github.GetExternalAccountData(&acct.AccountData)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if tok == nil {
+		return nil, nil
+	}
+
+	apiURL, err := url.Parse(acct.ServiceID)
+	if err != nil {
+		return nil, err
+	}
+	apiURL, _ = github.APIRoot(apiURL)
+	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
+		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil)
+
+	installations, err := ghClient.GetUserInstallations(ctx)
+
+	return installations, nil
 }
 
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
@@ -524,8 +478,17 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 
 		logger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
-		if err := s.updateGitHubAppInstallations(ctx, acct); err != nil {
-			acctLogger.Warn("failed to update GitHub App installation access", log.Error(err))
+
+		installations, err := s.getUserGitHubAppInstallations(ctx, acct)
+
+		// These errors aren't fatal, so we continue with the normal flow
+		// even if things go wrong.
+		if err != nil && installations != nil {
+			if err := s.db.UserExternalAccounts().UpdateGitHubAppInstallations(ctx, acct, installations); err != nil {
+				acctLogger.Warn("failed to update GitHub App installation access", log.Error(err))
+			}
+		} else if err != nil {
+			acctLogger.Warn("failed to fetch GitHub App installations", log.Error(err))
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
