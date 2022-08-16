@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiAlertCircle, mdiChevronDown } from '@mdi/js'
+import { mdiAlertCircle, mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
@@ -49,6 +49,8 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                     >
                         {skippedWithWarningOrError ? (
                             <Icon aria-hidden={true} className="mr-2" svgPath={mdiAlertCircle} />
+                        ) : coreWorkflowImprovementsEnabled ? (
+                            <Icon aria-hidden={true} className="mr-2" svgPath={mdiInformationOutline} />
                         ) : null}
                         {coreWorkflowImprovementsEnabled ? (
                             <CountContent progressText={progressText} />
