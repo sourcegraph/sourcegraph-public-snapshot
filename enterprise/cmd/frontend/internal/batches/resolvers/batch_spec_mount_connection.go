@@ -53,7 +53,6 @@ func (r *batchSpecMountConnectionResolver) Nodes(ctx context.Context) ([]graphql
 	resolvers := make([]graphqlbackend.BatchSpecMountResolver, len(nodes))
 	for i, node := range nodes {
 		resolvers[i] = &batchSpecMountResolver{
-			store:           r.store,
 			batchSpecRandID: r.opts.BatchSpecRandID,
 			mount:           node,
 		}
