@@ -19,22 +19,6 @@ import (
 
 const schemaErrorPrefix = "insights oob migration schema error"
 
-func (i integratedInsights) Insights(perms permissionAssociations) []searchInsight {
-	results := make([]searchInsight, 0)
-	for key, insight := range i {
-		insight.ID = key // the insight ID is the value of the dict key
-
-		// each setting is owned by either a user or an organization, which needs to be mapped when this insight is synced
-		// to preserve permissions semantics
-		insight.UserID = perms.userID
-		insight.OrgID = perms.orgID
-
-		results = append(results, insight)
-	}
-
-	return results
-}
-
 func (m *migrator) migrateInsights(ctx context.Context, toMigrate []searchInsight, batch migrationBatch) (int, error) {
 	var count int
 	var errs error

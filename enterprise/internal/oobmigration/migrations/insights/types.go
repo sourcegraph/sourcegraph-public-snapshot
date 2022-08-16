@@ -43,8 +43,6 @@ type permissionAssociations struct {
 	orgID  *int32
 }
 
-type integratedInsights map[string]searchInsight
-
 type langStatsInsight struct {
 	ID             string
 	Title          string
