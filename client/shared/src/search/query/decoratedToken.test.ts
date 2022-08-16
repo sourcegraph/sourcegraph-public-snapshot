@@ -1485,41 +1485,6 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
-    test('highlight repo:dependencies predicate', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:dependencies(.*)')))).toMatchInlineSnapshot(`
-            [
-              {
-                "startIndex": 0,
-                "scopes": "field"
-              },
-              {
-                "startIndex": 4,
-                "scopes": "metaFilterSeparator"
-              },
-              {
-                "startIndex": 5,
-                "scopes": "metaPredicateNameAccess"
-              },
-              {
-                "startIndex": 17,
-                "scopes": "metaPredicateParenthesis"
-              },
-              {
-                "startIndex": 18,
-                "scopes": "metaRegexpCharacterSet"
-              },
-              {
-                "startIndex": 19,
-                "scopes": "metaRegexpRangeQuantifier"
-              },
-              {
-                "startIndex": 20,
-                "scopes": "metaPredicateParenthesis"
-              }
-            ]
-        `)
-    })
-
     test('highlight repo:has.description predicate', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.description(.*)')))).toMatchInlineSnapshot(`
             [
