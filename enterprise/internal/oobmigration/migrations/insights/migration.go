@@ -49,20 +49,20 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 	return progress, err
 }
 
-type SettingsMigrationJobType string
+type settingsMigrationJobType string
 
 const (
-	UserJob   SettingsMigrationJobType = "USER"
-	OrgJob    SettingsMigrationJobType = "ORG"
-	GlobalJob SettingsMigrationJobType = "GLOBAL"
+	UserJob   settingsMigrationJobType = "USER"
+	OrgJob    settingsMigrationJobType = "ORG"
+	GlobalJob settingsMigrationJobType = "GLOBAL"
 )
 
-type DashboardType string
+type dashboardType string
 
 const (
-	Standard DashboardType = "standard"
+	standard dashboardType = "standard"
 	// This is a singleton dashboard that facilitates users having global access to their insights in Limited Access Mode.
-	LimitedAccessMode DashboardType = "limited_access_mode"
+	limitedAccessMode dashboardType = "limited_access_mode"
 )
 
 func (m *migrator) Up(ctx context.Context) (err error) {
@@ -97,7 +97,7 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	return nil
 }
 
-type SettingsMigrationJob struct {
+type settingsMigrationJob struct {
 	UserId             *int
 	OrgId              *int
 	Global             bool
@@ -106,12 +106,12 @@ type SettingsMigrationJob struct {
 	Runs               int
 }
 
-var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j SettingsMigrationJob, _ error) {
+var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j settingsMigrationJob, _ error) {
 	err := s.Scan(&j.UserId, &j.OrgId, &j.Global, &j.MigratedInsights, &j.MigratedDashboards, &j.Runs)
 	return j, err
 })
 
-type Org struct {
+type organization struct {
 	ID          int32
 	Name        string
 	DisplayName *string
@@ -119,12 +119,12 @@ type Org struct {
 	UpdatedAt   time.Time
 }
 
-var scanOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (org Org, _ error) {
+var scanOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (org organization, _ error) {
 	err := s.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
 	return org, err
 })
 
-type User struct {
+type user struct {
 	ID                    int32
 	Username              string
 	DisplayName           string
@@ -139,7 +139,7 @@ type User struct {
 	Searchable            bool
 }
 
-var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u User, _ error) {
+var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u user, _ error) {
 	var displayName, avatarURL sql.NullString
 	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
 	u.DisplayName = displayName.String
@@ -147,21 +147,21 @@ var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u User, _ erro
 	return u, err
 })
 
-type SettingsSubject struct {
+type settingsSubject struct {
 	Default bool   // whether this is for default settings
 	Site    bool   // whether this is for global settings
 	Org     *int32 // the org's ID
 	User    *int32 // the user's ID
 }
-type Settings struct {
+type settings struct {
 	ID           int32           // the unique ID of this settings value
-	Subject      SettingsSubject // the subject of these settings
+	Subject      settingsSubject // the subject of these settings
 	AuthorUserID *int32          // the ID of the user who authored this settings value
 	Contents     string          // the raw JSON (with comments and trailing commas allowed)
 	CreatedAt    time.Time       // the date when this settings value was created
 }
 
-var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s Settings, _ error) {
+var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s settings, _ error) {
 	err := scanner.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorUserID, &s.Contents, &s.CreatedAt)
 	if s.Subject.Org == nil && s.Subject.User == nil {
 		s.Subject.Site = true
@@ -169,7 +169,7 @@ var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s Set
 	return s, err
 })
 
-type InsightSeries struct {
+type insightSeries struct {
 	ID                         int
 	SeriesID                   string
 	Query                      string
@@ -186,22 +186,22 @@ type InsightSeries struct {
 	SampleIntervalValue        int
 	GeneratedFromCaptureGroups bool
 	JustInTime                 bool
-	GenerationMethod           GenerationMethod
+	GenerationMethod           generationMethod
 	GroupBy                    *string
 	BackfillAttempts           int32
 }
 
-type GenerationMethod string
+type generationMethod string
 
 const (
-	Search         GenerationMethod = "search"
-	SearchCompute  GenerationMethod = "search-compute"
-	LanguageStats  GenerationMethod = "language-stats"
-	MappingCompute GenerationMethod = "mapping-compute"
+	Search         generationMethod = "search"
+	SearchCompute  generationMethod = "search-compute"
+	LanguageStats  generationMethod = "language-stats"
+	MappingCompute generationMethod = "mapping-compute"
 )
 
 type TimeInterval struct {
-	Unit  IntervalUnit
+	Unit  intervalUnit
 	Value int
 }
 
@@ -232,17 +232,17 @@ func (t TimeInterval) step(start time.Time, direction stepDirection) time.Time {
 	}
 }
 
-type IntervalUnit string
+type intervalUnit string
 
 const (
-	Month IntervalUnit = "MONTH"
-	Day   IntervalUnit = "DAY"
-	Week  IntervalUnit = "WEEK"
-	Year  IntervalUnit = "YEAR"
-	Hour  IntervalUnit = "HOUR"
+	Month intervalUnit = "MONTH"
+	Day   intervalUnit = "DAY"
+	Week  intervalUnit = "WEEK"
+	Year  intervalUnit = "YEAR"
+	Hour  intervalUnit = "HOUR"
 )
 
-var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s InsightSeries, _ error) {
+var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s insightSeries, _ error) {
 	err := scanner.Scan(
 		&s.ID,
 		&s.SeriesID,
@@ -266,7 +266,7 @@ var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s Insig
 	return s, err
 })
 
-func (m *migrator) performBatchMigration(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
+func (m *migrator) performBatchMigration(ctx context.Context, jobType settingsMigrationJobType) (bool, error) {
 	// This transaction will allow us to lock the jobs rows while working on them.
 	tx, err := m.frontendStore.Transact(ctx)
 	if err != nil {
@@ -329,8 +329,8 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType SettingsMi
 	return false, errs
 }
 
-func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job SettingsMigrationJob) error {
-	var subject SettingsSubject
+func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job settingsMigrationJob) error {
+	var subject settingsSubject
 	var migrationContext migrationContext
 	var subjectName string
 
@@ -348,7 +348,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 
 	if job.UserId != nil {
 		userId := int32(*job.UserId)
-		subject = SettingsSubject{User: &userId}
+		subject = settingsSubject{User: &userId}
 
 		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 		// resolve insight ID collisions as if it were in a setting cascade
@@ -414,7 +414,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
-		subject = SettingsSubject{Org: &orgId}
+		subject = settingsSubject{Org: &orgId}
 		migrationContext.orgIds = []int{*job.OrgId}
 		orgs, err := scanOrgs(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
@@ -444,7 +444,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		org := orgs[0]
 		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
 	} else {
-		subject = SettingsSubject{Site: true}
+		subject = settingsSubject{Site: true}
 		// nothing to set for migration context, it will infer global based on the lack of user / orgs
 		subjectName = "Global"
 	}
@@ -616,23 +616,23 @@ func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName s
 	return nil
 }
 
-type DashboardGrant struct {
+type dashboardGrant struct {
 	UserID *int
 	OrgID  *int
 	Global *bool
 }
 
-func UserDashboardGrant(userID int) DashboardGrant {
-	return DashboardGrant{UserID: &userID}
+func UserDashboardGrant(userID int) dashboardGrant {
+	return dashboardGrant{UserID: &userID}
 }
 
-func OrgDashboardGrant(orgID int) DashboardGrant {
-	return DashboardGrant{OrgID: &orgID}
+func OrgDashboardGrant(orgID int) dashboardGrant {
+	return dashboardGrant{OrgID: &orgID}
 }
 
-func GlobalDashboardGrant() DashboardGrant {
+func GlobalDashboardGrant() dashboardGrant {
 	b := true
-	return DashboardGrant{Global: &b}
+	return dashboardGrant{Global: &b}
 }
 
 func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, title string, insightReferences []string, migration migrationContext) (err error) {
@@ -646,7 +646,7 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 		mapped = append(mapped, id)
 	}
 
-	var grants []DashboardGrant
+	var grants []dashboardGrant
 	if migration.userId != 0 {
 		grants = append(grants, UserDashboardGrant(migration.userId))
 	} else if len(migration.orgIds) == 1 {
@@ -662,7 +662,7 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 	`,
 		title,
 		true,
-		Standard,
+		standard,
 	)))
 	if len(mapped) > 0 {
 		// Create rows for an inline table which is used to preserve the ordering of the viewIds.
@@ -733,7 +733,7 @@ func (c migrationContext) buildUniqueIdCondition(insightId string) string {
 	return fmt.Sprintf("%s-%%(%s)%%", insightId, strings.Join(conds, "|"))
 }
 
-type SettingDashboard struct {
+type settingDashboard struct {
 	ID         string   `json:"id,omitempty"`
 	Title      string   `json:"title,omitempty"`
 	InsightIds []string `json:"insightIds,omitempty"`
@@ -741,7 +741,7 @@ type SettingDashboard struct {
 	OrgID      *int32
 }
 
-func (m *migrator) migrateDashboard(ctx context.Context, from SettingDashboard, migrationContext migrationContext) (err error) {
+func (m *migrator) migrateDashboard(ctx context.Context, from settingDashboard, migrationContext migrationContext) (err error) {
 	tx, err := m.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
