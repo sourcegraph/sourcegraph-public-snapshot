@@ -1017,38 +1017,49 @@ func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName s
 }
 
 func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, title string, insightReferences []string, migration migrationContext) (err error) {
-	var mapped []string
+	targetsUniqueIDs := make([]string, 0, len(migration.orgIds)+1)
+	if migration.userId != 0 {
+		targetsUniqueIDs = append(targetsUniqueIDs, fmt.Sprintf("user-%d", migration.userId))
+	}
+	for _, orgId := range migration.orgIds {
+		targetsUniqueIDs = append(targetsUniqueIDs, fmt.Sprintf("org-%d", orgId))
+	}
 
+	uniqueIDs := make([]string, 0, len(insightReferences))
 	for _, reference := range insightReferences {
-		var conds []string
-		for _, orgId := range migration.orgIds {
-			conds = append(conds, fmt.Sprintf("org-%d", orgId))
-		}
-		if migration.userId != 0 {
-			conds = append(conds, fmt.Sprintf("user-%d", migration.userId))
-		}
-		id, _, err := basestore.ScanFirstString(m.insightsStore.Query(ctx, sqlf.Sprintf("SELECT unique_id FROM insight_view WHERE unique_id SIMILAR TO %s OR unique_id = %s LIMIT 1", fmt.Sprintf("%s-%%(%s)%%", reference, strings.Join(conds, "|")), reference)))
+		id, _, err := basestore.ScanFirstString(m.insightsStore.Query(ctx, sqlf.Sprintf(
+			insightsMigratorCreateDashboardSelectQuery,
+			reference,
+			fmt.Sprintf("%s-%%(%s)%%", reference, strings.Join(targetsUniqueIDs, "|")),
+		)))
 		if err != nil {
 			return err
 		}
-		mapped = append(mapped, id)
+		uniqueIDs = append(uniqueIDs, id)
 	}
 
-	dashboardID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertQuery, title)))
+	dashboardID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		insightsMigratorCreateDashboardInsertQuery,
+		title,
+	)))
 	if err != nil {
 		return err
 	}
 
-	indexedViewIDs := make([]*sqlf.Query, 0, len(mapped))
-	for i, viewID := range mapped {
-		indexedViewIDs = append(indexedViewIDs, sqlf.Sprintf("(%s, %s)", viewID, fmt.Sprintf("%d", i)))
+	indexedViewIDs := make([]*sqlf.Query, 0, len(uniqueIDs))
+	for i, viewID := range uniqueIDs {
+		indexedViewIDs = append(indexedViewIDs, sqlf.Sprintf(
+			"(%s, %s)",
+			viewID,
+			fmt.Sprintf("%d", i),
+		))
 	}
 	if len(indexedViewIDs) > 0 {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			insightsMigratorCreateDashboardInsertInsightViewQuery,
 			dashboardID,
 			sqlf.Join(indexedViewIDs, ", "),
-			pq.Array(mapped),
+			pq.Array(uniqueIDs),
 		)); err != nil {
 			return errors.Wrap(err, "AddViewsToDashboard")
 		}
@@ -1068,6 +1079,17 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 
 	return nil
 }
+
+const insightsMigratorCreateDashboardSelectQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:createDashboard
+SELECT
+	unique_id
+FROM insight_view
+WHERE
+	unique_id = %s OR
+	unique_id SIMILAR TO %s
+LIMIT 1
+`
 
 const insightsMigratorCreateDashboardInsertQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:createDashboard
