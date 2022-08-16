@@ -22,18 +22,11 @@ export const UsersSummary: React.FunctionComponent = () => {
 
         const legends: ValueLegendListProps['items'] = [
             {
-                value: data.registeredUsers.totalCount,
+                value: data.site.registeredUsers.totalCount,
                 description: 'Registered Users',
                 color: 'var(--purple)',
                 position: 'left',
-                tooltip: 'Total number of not-deleted users.',
-            },
-            {
-                value: data.site.users.totalCount,
-                description: 'Total Users',
-                color: 'var(--body-color)',
-                position: 'right',
-                tooltip: 'Total number of all users. This includes those who were soft deleted.',
+                tooltip: 'Total number of registered and not deleted users.',
             },
             {
                 value: data.site.productSubscription.license?.userCount ?? 0,
