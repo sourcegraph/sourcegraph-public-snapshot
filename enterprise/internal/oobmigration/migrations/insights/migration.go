@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -981,7 +982,14 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 	var mapped []string
 
 	for _, reference := range insightReferences {
-		id, _, err := basestore.ScanFirstString(m.insightsStore.Query(ctx, migration.ToInsightUniqueIdQuery(reference)))
+		var conds []string
+		for _, orgId := range migration.orgIds {
+			conds = append(conds, fmt.Sprintf("org-%d", orgId))
+		}
+		if migration.userId != 0 {
+			conds = append(conds, fmt.Sprintf("user-%d", migration.userId))
+		}
+		id, _, err := basestore.ScanFirstString(m.insightsStore.Query(ctx, sqlf.Sprintf("SELECT unique_id FROM insight_view WHERE unique_id SIMILAR TO %s OR unique_id = %s LIMIT 1", fmt.Sprintf("%s-%%(%s)%%", reference, strings.Join(conds, "|")), reference)))
 		if err != nil {
 			return err
 		}
