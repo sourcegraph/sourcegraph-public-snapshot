@@ -492,16 +492,46 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, worker
 
 		// Backend series require special consideration to re-use series
 		if batch == backend {
-			matched, exists, err := tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
-				Query:             temp.Query,
-				StepIntervalUnit:  temp.SampleIntervalUnit,
-				StepIntervalValue: temp.SampleIntervalValue,
-			})
+			rows, err := scanSeries(tx.Query(ctx, sqlf.Sprintf(`
+				SELECT
+					id,
+					series_id,
+					query,
+					created_at,
+					oldest_historical_at,
+					last_recorded_at,
+					next_recording_after,
+					last_snapshot_at,
+					next_snapshot_after,
+					(CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
+					sample_interval_unit,
+					sample_interval_value,
+					generated_from_capture_groups,
+					just_in_time,
+					generation_method,
+					repositories,
+					group_by,
+					backfill_attempts
+				FROM insight_series
+				WHERE
+					(repositories = '{}' OR repositories is NULL) AND
+					query = %s AND
+					sample_interval_unit = %s AND
+					sample_interval_value = %s AND
+					generated_from_capture_groups = %s AND
+					group_by IS NULL
+			`,
+				temp.Query,
+				temp.SampleIntervalUnit,
+				temp.SampleIntervalValue,
+				false,
+			)))
 			if err != nil {
 				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
-			} else if exists {
+			}
+			if len(rows) > 0 {
 				// If the series already exists, we can re-use that series
-				series = matched
+				series = rows[0]
 			} else {
 				now := time.Now()
 

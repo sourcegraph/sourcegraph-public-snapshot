@@ -13,6 +13,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -120,6 +121,30 @@ var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s api
 	if s.Subject.Org == nil && s.Subject.User == nil {
 		s.Subject.Site = true
 	}
+	return s, err
+})
+
+var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s types.InsightSeries, _ error) {
+	err := scanner.Scan(
+		&s.ID,
+		&s.SeriesID,
+		&s.Query,
+		&s.CreatedAt,
+		&s.OldestHistoricalAt,
+		&s.LastRecordedAt,
+		&s.NextRecordingAfter,
+		&s.LastSnapshotAt,
+		&s.NextSnapshotAfter,
+		&s.Enabled,
+		&s.SampleIntervalUnit,
+		&s.SampleIntervalValue,
+		&s.GeneratedFromCaptureGroups,
+		&s.JustInTime,
+		&s.GenerationMethod,
+		pq.Array(&s.Repositories),
+		&s.GroupBy,
+		&s.BackfillAttempts,
+	)
 	return s, err
 })
 
