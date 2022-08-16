@@ -547,7 +547,7 @@ type migrationContext struct {
 }
 
 func (m *migrator) lookupUniqueId(ctx context.Context, migration migrationContext, insightId string) (string, bool, error) {
-	return basestore.ScanFirstString(m.insightStore.Query(ctx, migration.ToInsightUniqueIdQuery(insightId)))
+	return basestore.ScanFirstString(m.insightsStore.Query(ctx, migration.ToInsightUniqueIdQuery(insightId)))
 }
 
 func (c migrationContext) ToInsightUniqueIdQuery(insightId string) *sqlf.Query {
