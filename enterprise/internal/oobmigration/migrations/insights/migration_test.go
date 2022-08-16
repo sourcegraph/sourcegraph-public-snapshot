@@ -1,15 +1,9 @@
 package insights
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestBuildUniqueIdCondition(t *testing.T) {
@@ -41,96 +35,96 @@ func TestBuildUniqueIdCondition(t *testing.T) {
 	}
 }
 
-func TestToInsightUniqueIdQuery(t *testing.T) {
-	t.Skip()
-	if testing.Short() {
-		t.Skip()
-	}
+// func TestToInsightUniqueIdQuery(t *testing.T) {
+// 	t.Skip()
+// 	if testing.Short() {
+// 		t.Skip()
+// 	}
 
-	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	insightsDB := database.NewDB(logger, dbtest.NewInsightsDB(logger, t))
+// 	logger := logtest.Scoped(t)
+// 	ctx := context.Background()
+// 	insightsDB := database.NewDB(logger, dbtest.NewInsightsDB(logger, t))
 
-	migrator := migrator{insightsStore: basestore.NewWithHandle(insightsDB.Handle())}
+// 	migrator := migrator{insightsStore: basestore.NewWithHandle(insightsDB.Handle())}
 
-	t.Run("match on org ID", func(t *testing.T) {
-		want := "myInsight-org-3"
+// 	t.Run("match on org ID", func(t *testing.T) {
+// 		want := "myInsight-org-3"
 
-		migration := migrationContext{
-			userId: 0,
-			orgIds: []int{3},
-		}
+// 		migration := migrationContext{
+// 			userId: 0,
+// 			orgIds: []int{3},
+// 		}
 
-		_, err := insightsDB.ExecContext(context.Background(), "insert into insight_view (unique_id) values ($1);", want)
-		if err != nil {
-			t.Fatal(err)
-		}
+// 		_, err := insightsDB.ExecContext(context.Background(), "insert into insight_view (unique_id) values ($1);", want)
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
 
-		got, found, err := migrator.lookupUniqueId(ctx, migration, "myInsight")
-		if err != nil {
-			t.Fatal(err)
-		} else if !found {
-			t.Fatal("insight not found")
-		}
+// 		got, found, err := migrator.lookupUniqueId(ctx, migration, "myInsight")
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		} else if !found {
+// 			t.Fatal("insight not found")
+// 		}
 
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("mismatched unique insight id (want/got): %s", diff)
-		}
-	})
+// 		if diff := cmp.Diff(want, got); diff != "" {
+// 			t.Errorf("mismatched unique insight id (want/got): %s", diff)
+// 		}
+// 	})
 
-	t.Run("match on user ID", func(t *testing.T) {
-		want := "myInsight2-user-1"
+// 	t.Run("match on user ID", func(t *testing.T) {
+// 		want := "myInsight2-user-1"
 
-		migration := migrationContext{
-			userId: 1,
-		}
+// 		migration := migrationContext{
+// 			userId: 1,
+// 		}
 
-		_, err := insightsDB.ExecContext(context.Background(), "insert into insight_view (unique_id) values ($1);", want)
-		if err != nil {
-			t.Fatal(err)
-		}
+// 		_, err := insightsDB.ExecContext(context.Background(), "insert into insight_view (unique_id) values ($1);", want)
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
 
-		got, found, err := migrator.lookupUniqueId(ctx, migration, "myInsight2")
-		if err != nil {
-			t.Fatal(err)
-		} else if !found {
-			t.Fatal("insight not found")
-		}
+// 		got, found, err := migrator.lookupUniqueId(ctx, migration, "myInsight2")
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		} else if !found {
+// 			t.Fatal("insight not found")
+// 		}
 
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("mismatched unique insight id (want/got): %s", diff)
-		}
-	})
+// 		if diff := cmp.Diff(want, got); diff != "" {
+// 			t.Errorf("mismatched unique insight id (want/got): %s", diff)
+// 		}
+// 	})
 
-	t.Run("match on specific Org", func(t *testing.T) {
-		want := "myInsight3-org-3"
+// 	t.Run("match on specific Org", func(t *testing.T) {
+// 		want := "myInsight3-org-3"
 
-		migration := migrationContext{
-			orgIds: []int{3},
-		}
+// 		migration := migrationContext{
+// 			orgIds: []int{3},
+// 		}
 
-		_, err := insightsDB.ExecContext(context.Background(), "insert into insight_view (unique_id) values ($1);", want)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// this one should NOT match
-		_, err = insightsDB.ExecContext(context.Background(), "insert into insight_view (unique_id) values ($1);", "myInsight3-org-5")
-		if err != nil {
-			t.Fatal(err)
-		}
+// 		_, err := insightsDB.ExecContext(context.Background(), "insert into insight_view (unique_id) values ($1);", want)
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		// this one should NOT match
+// 		_, err = insightsDB.ExecContext(context.Background(), "insert into insight_view (unique_id) values ($1);", "myInsight3-org-5")
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
 
-		got, found, err := migrator.lookupUniqueId(ctx, migration, "myInsight3")
-		if err != nil {
-			t.Fatal(err)
-		} else if !found {
-			t.Fatal("insight not found")
-		}
+// 		got, found, err := migrator.lookupUniqueId(ctx, migration, "myInsight3")
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		} else if !found {
+// 			t.Fatal("insight not found")
+// 		}
 
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("mismatched unique insight id (want/got): %s", diff)
-		}
-	})
-}
+// 		if diff := cmp.Diff(want, got); diff != "" {
+// 			t.Errorf("mismatched unique insight id (want/got): %s", diff)
+// 		}
+// 	})
+// }
 
 func TestSpecialCaseDashboardTitle(t *testing.T) {
 	t.Run("global title", func(t *testing.T) {
