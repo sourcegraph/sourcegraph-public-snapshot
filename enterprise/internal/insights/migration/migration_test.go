@@ -4,11 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/google/go-cmp/cmp"
-
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -50,7 +49,7 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := database.NewDB(logger, dbtest.NewInsightsDB(logger, t))
 
 	migrator := migrator{insightsStore: basestore.NewWithHandle(insightsDB.Handle())}
 

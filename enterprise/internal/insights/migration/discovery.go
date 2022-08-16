@@ -13,7 +13,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -604,7 +603,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 
 				// Also match/replace old series_points ids with the new series id
 				oldId := discovery.Encode(timeSeries)
-				countUpdated, silentErr := updateTimeSeriesReferences(edb.NewInsightsDBWith(tx), ctx, oldId, temp.SeriesID)
+				countUpdated, silentErr := updateTimeSeriesReferences(tx, ctx, oldId, temp.SeriesID)
 				if silentErr != nil {
 					// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
 					log15.Error("error updating series_id for series_points", "series_id", temp.SeriesID, "err", silentErr)

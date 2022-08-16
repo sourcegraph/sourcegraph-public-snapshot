@@ -7,11 +7,9 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/keegancsmith/sqlf"
-
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -635,7 +633,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	return nil
 }
 
-func updateTimeSeriesReferences(handle edb.InsightsDB, ctx context.Context, oldId, newId string) (int, error) {
+func updateTimeSeriesReferences(handle *basestore.Store, ctx context.Context, oldId, newId string) (int, error) {
 	q := sqlf.Sprintf(`
 		WITH updated AS (
 			UPDATE series_points sp
