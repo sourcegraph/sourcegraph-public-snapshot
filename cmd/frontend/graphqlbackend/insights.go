@@ -489,20 +489,20 @@ type AggregationModeAvailabilityResolver interface {
 }
 
 type ExhaustiveSearchAggregationResultResolver interface {
-	Values() ([]AggregationValue, error)
+	Groups() ([]AggregationGroup, error)
 	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
 	OtherGroupCount() (*int32, error)
 }
 
 type NonExhaustiveSearchAggregationResultResolver interface {
-	Values() ([]AggregationValue, error)
+	Groups() ([]AggregationGroup, error)
 	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
 	ApproximateOtherGroupCount() (*int32, error)
 }
 
-type AggregationValue interface {
+type AggregationGroup interface {
 	Label() string
 	Count() int32
 	Query() (*string, error)

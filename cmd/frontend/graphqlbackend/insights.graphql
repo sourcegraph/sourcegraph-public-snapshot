@@ -1249,7 +1249,7 @@ type SearchQueryAggregate {
 
     """
     A result of aggregating a search query for the specified aggregation mode.
-    Limit - is the maximum number of aggregation values to return, this limit will not override any internal limits.
+    Limit - is the maximum number of aggregation groups to return, this limit will not override any internal limits.
     """
     aggregations(mode: SearchAggregationMode = REPO, limit: Int = 50): SearchAggregationResult
 }
@@ -1277,17 +1277,17 @@ Information regarding the results of an exhaustive search aggregation
 """
 type ExhaustiveSearchAggregationResult {
     """
-    A list of the first [LIMIT] aggregation values in decreasing order
+    A list of the first [LIMIT] aggregation groups in decreasing order
     """
-    values: [AggregationValue!]!
+    groups: [AggregationGroup!]!
 
     """
     Boolean indicating if the search query support being persisted as an insight on a dashboard
     """
     supportsPersistence: Boolean
     """
-    A count to capture the number of results that are not included in the list of values returned.
-    This includes result counts for values that were excluded due to the requested limit
+    A count to capture the number of results that are not included in the list of groups returned.
+    This includes result counts for groups that were excluded due to the requested limit
     """
     otherResultCount: Int
     """
@@ -1301,9 +1301,9 @@ Information regarding the results of an exhaustive search aggregation
 """
 type NonExhaustiveSearchAggregationResult {
     """
-    A list of the first [LIMIT] aggregation values in decreasing order
+    A list of the first [LIMIT] aggregation groups in decreasing order
     """
-    values: [AggregationValue!]!
+    groups: [AggregationGroup!]!
 
     """
     Boolean indicating if the search query support being persisted as an insight on a dashboard
@@ -1322,7 +1322,7 @@ type NonExhaustiveSearchAggregationResult {
 """
 Information regarding the availablity of a SearchAggregationMode
 """
-type AggregationValue {
+type AggregationGroup {
     """
     A label associated with the Aggregation for example a Repo name or Author name
     """
@@ -1332,7 +1332,7 @@ type AggregationValue {
     """
     count: Int!
     """
-    A modified search query that would filter the orginal query to just these values
+    A modified search query that would filter the orginal query to just the selected group
     """
     query: String
 }

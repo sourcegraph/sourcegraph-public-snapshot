@@ -110,7 +110,7 @@ type searchAggregationModeResultResolver struct {
 	isExhaustive bool
 }
 
-func (r *searchAggregationModeResultResolver) Values() ([]graphqlbackend.AggregationValue, error) {
+func (r *searchAggregationModeResultResolver) Groups() ([]graphqlbackend.AggregationGroup, error) {
 	return nil, errors.New("not implemented")
 }
 
