@@ -201,7 +201,7 @@ require (
 require github.com/hmarr/codeowners v0.4.0
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220815140312-5ee92f5abab3
+	github.com/sourcegraph/zoekt v0.0.0-20220816140334-c9182fcd2a2e
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
