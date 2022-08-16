@@ -157,14 +157,15 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	var subjectName string
 
 	defer func() {
-		var cond *sqlf.Query
-		if job.UserId != nil {
-			cond = sqlf.Sprintf("user_id = %s", *job.UserId)
-		} else if job.OrgId != nil {
-			cond = sqlf.Sprintf("org_id = %s", *job.OrgId)
-		} else {
-			cond = sqlf.Sprintf("global IS TRUE")
-		}
+		cond := func() *sqlf.Query {
+			if job.UserId != nil {
+				return sqlf.Sprintf("user_id = %s", *job.UserId)
+			}
+			if job.OrgId != nil {
+				return sqlf.Sprintf("org_id = %s", *job.OrgId)
+			}
+			return sqlf.Sprintf("global IS TRUE")
+		}()
 		tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s`, job.Runs+1, cond))
 	}()
 
