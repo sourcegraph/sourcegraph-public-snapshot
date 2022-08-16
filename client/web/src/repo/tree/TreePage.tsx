@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
-import { mdiCodeJson, mdiCog, mdiFolder, mdiSourceRepository } from '@mdi/js'
+import { mdiCog, mdiFolder, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
@@ -30,7 +30,6 @@ import {
     Icon,
     ButtonGroup,
     Button,
-    Badge,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -264,21 +263,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 </div>
                 {isNewRepoPageEnabled && (
                     <ButtonGroup>
-                        <Button
-                            to={`/search?q=${encodeURIPathComponent(
-                                `context:global count:all repo:dependencies(${repo.name.replaceAll('.', '\\.')}$) `
-                            )}`}
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                            className="ml-1"
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiCodeJson} /> Search dependencies{' '}
-                            <Badge variant="info" className={classNames('text-uppercase')}>
-                                NEW
-                            </Badge>
-                        </Button>
-
                         {!isSourcegraphDotCom && batchChangesEnabled && (
                             <Button
                                 to="/batch-changes/create"
