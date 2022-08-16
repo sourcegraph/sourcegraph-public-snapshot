@@ -344,22 +344,32 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	initAllowedEvents(t, db, []string{"allowed"})
 	testData := []*database.Event{
 		{
-			Name:   "allowed",
-			UserID: 1,
-			Source: "test",
+			Name:     "allowed",
+			UserID:   1,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "not-allowed",
-			UserID: 2,
-			Source: "test",
+			Name:     "not-allowed",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "allowed",
-			UserID: 3,
-			Source: "test",
+			Name:     "allowed",
+			UserID:   3,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -383,20 +393,30 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("first execution of handler should return first event", []*database.Event{
 				{
-					ID:       1,
-					Name:     "allowed",
-					UserID:   1,
-					Argument: json.RawMessage("{}"),
+					ID:     1,
+					Name:   "allowed",
+					UserID: 1,
+					Argument: json.RawMessage{
+						123,
+						125,
+					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
+					DeviceID: valast.Addr("device").(*string),
+					InsertID: valast.Addr("insert").(*string),
 				},
 				{
-					ID:       3,
-					Name:     "allowed",
-					UserID:   3,
-					Argument: json.RawMessage("{}"),
+					ID:     3,
+					Name:   "allowed",
+					UserID: 3,
+					Argument: json.RawMessage{
+						123,
+						125,
+					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
+					DeviceID: valast.Addr("device").(*string),
+					InsertID: valast.Addr("insert").(*string),
 				},
 			}).Equal(t, got)
 			return nil
