@@ -561,7 +561,9 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, worker
 						// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
 						log15.Error("error updating series_id for jobs", "series_id", temp.SeriesID, "err", silentErr)
 					} else {
-						series, silentErr = tx.StampBackfill(ctx, series)
+						now := time.Now()
+						silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, series.ID))
+						series.BackfillQueuedAt = now
 						if silentErr != nil {
 							// If the stamp fails, skip it. It will just need to be calcuated again.
 							log15.Error("error updating backfill_queued_at", "series_id", temp.SeriesID, "err", silentErr)
