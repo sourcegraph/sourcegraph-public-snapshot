@@ -530,21 +530,3 @@ func (m *migrator) migrateDashboard(ctx context.Context, from settingDashboard, 
 
 	return nil
 }
-
-func updateTimeSeriesReferences(handle *basestore.Store, ctx context.Context, oldId, newId string) (int, error) {
-	q := sqlf.Sprintf(`
-		WITH updated AS (
-			UPDATE series_points sp
-			SET series_id = %s
-			WHERE series_id = %s
-			RETURNING sp.series_id
-		)
-		SELECT count(*) FROM updated;
-	`, newId, oldId)
-	tempStore := basestore.NewWithHandle(handle.Handle())
-	count, _, err := basestore.ScanFirstInt(tempStore.Query(ctx, q))
-	if err != nil {
-		return 0, errors.Wrap(err, "updateTimeSeriesReferences")
-	}
-	return count, nil
-}

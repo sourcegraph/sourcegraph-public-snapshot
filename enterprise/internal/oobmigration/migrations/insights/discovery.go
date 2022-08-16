@@ -474,7 +474,18 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 
 				// Also match/replace old series_points ids with the new series id
 				oldId := fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(timeSeries.Query))))
-				countUpdated, silentErr := updateTimeSeriesReferences(tx, ctx, oldId, temp.SeriesID)
+				countUpdated, _, silentErr := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+						WITH updated AS (
+							UPDATE series_points sp
+							SET series_id = %s
+							WHERE series_id = %s
+							RETURNING sp.series_id
+						)
+						SELECT count(*) FROM updated;
+					`,
+					temp.SeriesID,
+					oldId,
+				)))
 				if silentErr != nil {
 					// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
 					log15.Error("error updating series_id for series_points", "series_id", temp.SeriesID, "err", silentErr)
