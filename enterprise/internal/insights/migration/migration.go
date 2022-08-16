@@ -466,16 +466,16 @@ func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName s
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Store.Done(err) }()
+	defer func() { err = tx.Done(err) }()
 
-	err = m.createDashboard(ctx, tx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
+	err = m.createDashboard(ctx, tx.Store, specialCaseDashboardTitle(subjectName), insightReferences, migration)
 	if err != nil {
 		return errors.Wrap(err, "CreateSpecialCaseDashboard")
 	}
 	return nil
 }
 
-func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardStore, title string, insightReferences []string, migration migrationContext) (err error) {
+func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, title string, insightReferences []string, migration migrationContext) (err error) {
 	var mapped []string
 
 	for _, reference := range insightReferences {
@@ -578,7 +578,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Store.Done(err) }()
+	defer func() { err = tx.Done(err) }()
 
 	exists, err := tx.DashboardExists(ctx, from)
 	if err != nil {
@@ -588,7 +588,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 		return nil
 	}
 
-	err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, migrationContext)
+	err = m.createDashboard(ctx, tx.Store, from.Title, from.InsightIds, migrationContext)
 	if err != nil {
 		return err
 	}
