@@ -233,7 +233,7 @@ type Options struct {
 	// is not necessary by the caller.
 	ViewName string
 
-	// Scan is the function used to convert a rows object into a record of the expected shape.
+	// Scan is the function used to scan a resultset into a slice of the expected type.
 	Scan ResultsetScanFn
 
 	// OrderByExpression is the SQL expression used to order candidate records when selecting the next
