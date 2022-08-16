@@ -525,7 +525,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 			return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 		}
 	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, %s)`, view.ID, true)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, true)`, view.ID)); err != nil {
 			return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 		}
 	}
@@ -908,7 +908,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			return err
 		}
 	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, %s)`, viewID, true)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, true)`, viewID)); err != nil {
 			return err
 		}
 	}
@@ -1034,15 +1034,10 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 		mapped = append(mapped, id)
 	}
 
-	dashboardId, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
-		INSERT INTO dashboard (title, save, type)
-		VALUES (%s, %s, %s)
-		RETURNING id
-	`,
-		title,
-		true,
-		"standard",
-	)))
+	dashboardId, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`INSERT INTO dashboard (title, save, type) VALUES (%s, true, 'standard') RETURNING id`, title)))
+	if err != nil {
+		return err
+	}
 	if len(mapped) > 0 {
 		// Create rows for an inline table which is used to preserve the ordering of the viewIds.
 		orderings := make([]*sqlf.Query, 0, 1)
@@ -1077,7 +1072,7 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 			return errors.Wrap(err, "AddDashboardGrants")
 		}
 	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, global) VALUES (%s, %s)`, dashboardId, true)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, global) VALUES (%s, true)`, dashboardId)); err != nil {
 			return errors.Wrap(err, "AddDashboardGrants")
 		}
 	}
