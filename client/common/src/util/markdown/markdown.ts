@@ -164,26 +164,51 @@ export const renderMarkdown = (
             },
             transformTags: {
                 object: function (tagName, attribs) {
+                    if (!'base64,' in attribs['data']) {
+                        return {
+                            tagName: tagName,
+                            attribs: attribs,
+                        }
+                    }
+
                     var data = attribs['data'].split('base64,')
 
                     if (data.length > 0) {
-                        var obj = data[1]
-                        var content = sanitize(window.atob(obj), {
-                            allowedTags: sanitize.defaults.allowedTags.concat(['svg', 'xmlns', 'path', 'picture']),
-                            allowedAttributes: false,
+                        var b64obj = data[1]
+
+                        var cleaned = sanitize(window.atob(b64obj), {
+                            allowedTags: sanitize.defaults.allowedTags.concat([
+                                'svg',
+                                'xmlns',
+                                'path',
+                                'picture',
+                                'circle',
+                                'pattern',
+                                'rect',
+                            ]),
+                            allowedAttributes: {
+                                svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
+                                rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
+                                path: ['d', ...svgPresentationAttributes],
+                                circle: ['cx', 'cy', ...svgPresentationAttributes],
+                            },
+                            allowedStyles: {
+                                svg: {
+                                    flex: ALL_VALUES_ALLOWED,
+                                    'flex-grow': ALL_VALUES_ALLOWED,
+                                    'flex-shrink': ALL_VALUES_ALLOWED,
+                                    'flex-basis': ALL_VALUES_ALLOWED,
+                                },
+                            },
                         })
 
                         return {
                             tagName: tagName,
                             attribs: {
-                                type: 'image/svg+xml',
-                                data: 'data:image/svg+xml;base64,' + window.btoa(content),
+                                type: attribs['type'],
+                                // reconstruct cleaned base64 blob
+                                data: 'data:image/svg+xml;base64,' + window.btoa(cleaned),
                             },
-                        }
-                    } else {
-                        return {
-                            tagName: tagName,
-                            attribs: attribs,
                         }
                     }
                 },
