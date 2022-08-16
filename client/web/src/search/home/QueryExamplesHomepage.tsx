@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { EditorHint, QueryState } from '@sourcegraph/search'
+import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
@@ -16,19 +16,20 @@ export interface QueryExamplesHomepageProps extends TelemetryProps {
     setQueryState: (newState: QueryState) => void
 }
 
-type Tip = 'rev' | 'lang' | 'type-commit-diff'
+type Tip = 'rev' | 'lang' | 'before'
 
 export const queryToTip = (id: string | undefined): Tip | null => {
     switch (id) {
         case 'single-repo':
         case 'org-repos':
             return 'rev'
-        case 'file-filter':
-        case 'type-symbol':
         case 'exact-matches':
+        case 'regex-pattern':
             return 'lang'
-        case 'author':
-            return 'type-commit-diff'
+        case 'type-diff-author':
+        case 'type-commit-message':
+        case 'type-diff-after':
+            return 'before'
     }
     return null
 }
@@ -97,11 +98,11 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                         for matches only in a given language
                     </>
                 )}
-                {selectedTip === 'type-commit-diff' && (
+                {selectedTip === 'before' && (
                     <>
-                        Use <QueryExampleChip query="type:commit" onClick={onQueryExampleClick} className="mx-1" /> or{' '}
-                        <QueryExampleChip query="type:diff" onClick={onQueryExampleClick} className="mx-1" /> to specify
-                        where the author appears
+                        Use{' '}
+                        <QueryExampleChip query={'before:"last week"'} onClick={onQueryExampleClick} className="mx-1" />{' '}
+                        to query within a time range
                     </>
                 )}
             </div>
@@ -177,7 +178,7 @@ export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = 
 }) => (
     <span className={classNames('d-flex align-items-center', className)}>
         <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query)}>
-            <SyntaxHighlightedSearchQuery query={query} />
+            <SyntaxHighlightedSearchQuery query={query} searchPatternType={SearchPatternType.standard} />
         </Button>
         {helperText && (
             <span className="text-muted ml-2">
