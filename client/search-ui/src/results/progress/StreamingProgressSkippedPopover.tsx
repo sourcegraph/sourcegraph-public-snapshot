@@ -9,7 +9,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, H4, Text, H3 } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import { limitHit } from './StreamingProgressCount'
@@ -133,7 +133,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
     return (
         <>
             {coreWorkflowImprovementsEnabled && (
-                <Text className="m-3">
+                <Text className="mx-3 mt-3">
                     Found {limitHit(progress) ? 'more than ' : ''}
                     {progress.matchCount} {pluralize('result', progress.matchCount)}
                     {progress.repositoriesCount !== undefined
@@ -147,6 +147,9 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                 </Text>
             )}
 
+            {coreWorkflowImprovementsEnabled && sortedSkippedItems.length > 0 && (
+                <H3 className="mx-3">Some results skipped:</H3>
+            )}
             {sortedSkippedItems.map((skipped, index) => (
                 <SkippedMessage
                     key={skipped.reason}
