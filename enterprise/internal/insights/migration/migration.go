@@ -2,10 +2,12 @@ package migration
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/lib/pq"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -232,19 +234,47 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.userId = int(userId)
 		migrationContext.orgIds = orgIds
 
-		userStore := m.postgresDB.Users()
-		user, err := userStore.GetByID(ctx, userId)
+		scanUsers := basestore.NewSliceScanner(func(s dbutil.Scanner) (u itypes.User, _ error) {
+			var displayName, avatarURL sql.NullString
+			err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
+			u.DisplayName = displayName.String
+			u.AvatarURL = avatarURL.String
+			return u, err
+		})
+		users, err := scanUsers(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+			SELECT
+				u.id,
+				u.username,
+				u.display_name,
+				u.avatar_url,
+				u.created_at,
+				u.updated_at,
+				u.site_admin,
+				u.passwd IS NOT NULL,
+				u.tags,
+				u.invalidated_sessions_at,
+				u.tos_accepted,
+				u.searchable
+			FROM users u
+			WHERE
+				id = %s AND
+				deleted_at IS NULL
+			LIMIT 1
+		`,
+			userId,
+		)))
 		if err != nil {
-			// If the user doesn't exist, just mark the job complete.
-			if strings.Contains(err.Error(), "user not found") {
-				err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
-				if err != nil {
-					return errors.Wrap(err, "MarkCompleted")
-				}
-				return nil
-			}
 			return errors.Wrap(err, "UserStoreGetByID")
 		}
+		if len(users) == 0 {
+			// If the user doesn't exist, just mark the job complete.
+			err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+			if err != nil {
+				return errors.Wrap(err, "MarkCompleted")
+			}
+			return nil
+		}
+		user := users[0]
 		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
