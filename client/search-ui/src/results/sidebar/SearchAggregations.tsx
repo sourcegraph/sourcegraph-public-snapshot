@@ -123,7 +123,7 @@ const getTruncatedTickFromTheEnd = (tick: string): string =>
 
 const getTruncationFormatter = (aggregationMode: AggregationModes): ((tick: string) => string) => {
     switch (aggregationMode) {
-        // These types possible have long labels with the same pattern at the start of the string,
+        // These types possibly have long labels with the same pattern at the start of the string,
         // so we truncate their labels from the end
         case AggregationModes.Repository:
         case AggregationModes.FilePath:
