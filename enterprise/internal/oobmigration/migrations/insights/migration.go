@@ -1063,19 +1063,22 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 		}
 	}
 
+	var grantValues []any
 	if migration.userId != 0 {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, user_id) VALUES (%s, %s)`, dashboardId, migration.userId)); err != nil {
-			return errors.Wrap(err, "AddDashboardGrants")
-		}
-	} else if len(migration.orgIds) == 1 {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, org_id) VALUES (%s, %s)`, dashboardId, migration.orgIds[0])); err != nil {
-			return errors.Wrap(err, "AddDashboardGrants")
-		}
+		grantValues = []any{dashboardId, migration.userId, nil, nil}
+	} else if len(migration.orgIds) != 0 {
+		grantValues = []any{dashboardId, nil, migration.orgIds[0], nil}
 	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, global) VALUES (%s, true)`, dashboardId)); err != nil {
-			return errors.Wrap(err, "AddDashboardGrants")
-		}
+		grantValues = []any{dashboardId, nil, nil, true}
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertGrantQuery, grantValues...)); err != nil {
+		return errors.Wrap(err, "AddDashboardGrants")
 	}
 
 	return nil
 }
+
+const insightsMigratorCreateDashboardInsertGrantQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:createDashboard
+INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
+`
