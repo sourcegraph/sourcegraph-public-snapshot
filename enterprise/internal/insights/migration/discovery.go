@@ -215,7 +215,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 			count++
 			continue
 		}
-		err = migrateSeries(ctx, m.insightStore, m.workerBaseStore, d, batch)
+		err = migrateSeries(ctx, m.insightStore, m.frontendStore, d, batch)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
