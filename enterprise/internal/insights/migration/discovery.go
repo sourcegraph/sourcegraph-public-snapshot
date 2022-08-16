@@ -543,9 +543,38 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, worker
 		grants = []store.InsightViewGrant{store.GlobalGrant()}
 	}
 
-	view, err = tx.CreateView(ctx, view, grants)
+	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+		INSERT INTO insight_view (
+			title,
+			description,
+			unique_id,
+			default_filter_include_repo_regex,
+			default_filter_exclude_repo_regex,
+			default_filter_search_contexts,
+			other_threshold,
+			presentation_type,
+		)
+		VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+		RETURNING id
+	`,
+		view.Title,
+		view.Description,
+		view.UniqueID,
+		view.Filters.IncludeRepoRegex,
+		view.Filters.ExcludeRepoRegex,
+		pq.Array(view.Filters.SearchContexts),
+		view.OtherThreshold,
+		view.PresentationType,
+	)))
+	view.ID = viewID
+
+	values := make([]*sqlf.Query, 0, len(grants))
+	for _, grant := range grants {
+		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s)", view.ID, grant.OrgID, grant.UserID, grant.Global))
+	}
+	err = tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global) VALUES %s`, sqlf.Join(values, ", ")))
 	if err != nil {
-		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+		return err
 	}
 
 	for i, insightSeries := range dataSeries {
