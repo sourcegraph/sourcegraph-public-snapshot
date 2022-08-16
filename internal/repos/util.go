@@ -4,9 +4,9 @@ import (
 	"net/url"
 )
 
-// setUserinfoBestEffort adds the username and password to rawurl. If username param
-// is not set, user from url is used. If password is not set and there is a
-// user, password is used. If anything fails, the original rawurl is returned.
+// setUserinfoBestEffort updates the url to utilize the username param and also utilize
+// the password param if provided. If username param is not provided then
+// utilize the UserInfo from rawurl to determine username and password to use for the url.
 func setUserinfoBestEffort(rawurl, username, password string) string {
 	u, err := url.Parse(rawurl)
 	if err != nil {
