@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,7 +21,7 @@ var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH
 type searchAggregateResolver struct {
 	baseInsightResolver
 	searchQuery string
-	patternType query.SearchType
+	patternType string
 }
 
 func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphqlbackend.AggregationModeAvailabilityResolver {
@@ -38,13 +37,13 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver()}, nil
 }
 
-func newAggregationModeAvailabilityResolver(searchQuery string, patternType query.SearchType, mode SearchAggregationMode) graphqlbackend.AggregationModeAvailabilityResolver {
+func newAggregationModeAvailabilityResolver(searchQuery string, patternType string, mode SearchAggregationMode) graphqlbackend.AggregationModeAvailabilityResolver {
 	return &aggregationModeAvailabilityResolver{searchQuery: searchQuery, patternType: patternType, mode: mode}
 }
 
 type aggregationModeAvailabilityResolver struct {
 	searchQuery string
-	patternType query.SearchType
+	patternType string
 	mode        SearchAggregationMode
 }
 
@@ -105,7 +104,7 @@ func (r *searchAggregationNotAvailableResolver) Reason() string {
 type searchAggregationModeResultResolver struct {
 	baseInsightResolver
 	searchQuery  string
-	patternType  query.SearchType
+	patternType  string
 	mode         SearchAggregationMode
 	isExhaustive bool
 }

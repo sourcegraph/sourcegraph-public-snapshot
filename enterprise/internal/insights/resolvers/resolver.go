@@ -14,10 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.InsightsResolver = &Resolver{}
@@ -114,14 +112,11 @@ func (r *Resolver) SearchQueryInsights(ctx context.Context, args graphqlbackend.
 }
 
 func (r *Resolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
-	searchType, err := toSearchType(args.PatternType)
-	if err != nil {
-		return nil, err
-	}
+
 	return &searchAggregateResolver{
 		baseInsightResolver: r.baseInsightResolver,
 		searchQuery:         args.Query,
-		patternType:         searchType,
+		patternType:         args.PatternType,
 	}, nil
 }
 
@@ -143,25 +138,4 @@ func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userId
 		}
 	}
 	return
-}
-
-func toSearchType(patternType string) (query.SearchType, error) {
-	var searchType query.SearchType
-	switch patternType {
-	case "standard":
-		searchType = query.SearchTypeStandard
-	case "literal":
-		searchType = query.SearchTypeLiteral
-	case "regexp":
-		searchType = query.SearchTypeRegex
-	case "structural":
-		searchType = query.SearchTypeStructural
-	case "lucky":
-		searchType = query.SearchTypeLucky
-	case "keyword":
-		searchType = query.SearchTypeKeyword
-	default:
-		return -1, errors.New("unknown search patternType")
-	}
-	return searchType, nil
 }
