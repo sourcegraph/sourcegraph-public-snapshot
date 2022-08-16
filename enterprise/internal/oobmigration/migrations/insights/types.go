@@ -118,7 +118,6 @@ type searchInsight struct {
 	Repositories []string
 	Series       []timeSeries
 	Step         interval
-	Visibility   string
 	OrgID        *int32
 	UserID       *int32
 	Filters      *defaultFilters
