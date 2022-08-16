@@ -99,7 +99,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				baseRev           *string
 				baseRef           *string
 				body              *string
-				diff              *string
+				diff              []byte
 				commitMessage     *string
 				commitAuthorName  *string
 				commitAuthorEmail *string
@@ -127,7 +127,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				if err != nil {
 					return err
 				}
-				diff = &d
+				diff = []byte(d)
 
 				cm, err := c.Spec.CommitMessage()
 				if err != nil {
@@ -186,7 +186,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				dbutil.NullString{S: baseRef},
 				dbutil.NullString{S: body},
 				published,
-				dbutil.NullString{S: diff},
+				diff,
 				dbutil.NullString{S: commitMessage},
 				dbutil.NullString{S: commitAuthorName},
 				dbutil.NullString{S: commitAuthorEmail},
