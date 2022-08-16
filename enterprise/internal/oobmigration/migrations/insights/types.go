@@ -21,10 +21,10 @@ type insightView struct {
 	UniqueID            string
 	Filters             insightViewFilters
 	OtherThreshold      *float64
-	PresentationType    presentationType
+	PresentationType    string
 	IsFrozen            bool
-	SeriesSortMode      *seriesSortMode
-	SeriesSortDirection *seriesSortDirection
+	SeriesSortMode      *string
+	SeriesSortDirection *string
 	SeriesLimit         *int32
 }
 
@@ -35,7 +35,7 @@ type insightViewFilters struct {
 }
 
 type timeInterval struct {
-	unit  intervalUnit
+	unit  string
 	value int
 }
 
@@ -88,7 +88,7 @@ type insightSeries struct {
 	SampleIntervalValue        int
 	GeneratedFromCaptureGroups bool
 	JustInTime                 bool
-	GenerationMethod           generationMethod
+	GenerationMethod           string
 	GroupBy                    *string
 	BackfillAttempts           int32
 }
@@ -178,12 +178,3 @@ type settingDashboard struct {
 	UserID     *int32
 	OrgID      *int32
 }
-
-type presentationType string
-type seriesSortMode string
-type seriesSortDirection string
-type migrationBatch string
-type settingsMigrationJobType string
-type dashboardType string
-type generationMethod string
-type intervalUnit string

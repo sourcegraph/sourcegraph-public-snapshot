@@ -79,7 +79,7 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	return nil
 }
 
-func (m *migrator) performBatchMigration(ctx context.Context, jobType settingsMigrationJobType) (bool, error) {
+func (m *migrator) performBatchMigration(ctx context.Context, jobType string) (bool, error) {
 	// This transaction will allow us to lock the jobs rows while working on them.
 	tx, err := m.frontendStore.Transact(ctx)
 	if err != nil {
@@ -449,7 +449,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		PresentationType: "PIE",
 	}
 	interval := timeInterval{
-		unit:  intervalUnit("MONTH"),
+		unit:  "MONTH",
 		value: 0, // TODO - confirm: series.SampleIntervalValue is not set below
 	}
 	series := insightSeries{
@@ -580,7 +580,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	return nil
 }
 
-func (m *migrator) migrateInsights(ctx context.Context, toMigrate []searchInsight, batch migrationBatch) (int, error) {
+func (m *migrator) migrateInsights(ctx context.Context, toMigrate []searchInsight, batch string) (int, error) {
 	var count int
 	var errs error
 	for _, d := range toMigrate {
@@ -626,7 +626,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []searchInsigh
 	return count, errs
 }
 
-func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerStore *basestore.Store, from searchInsight, batch migrationBatch) (err error) {
+func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerStore *basestore.Store, from searchInsight, batch string) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
