@@ -27,9 +27,13 @@ type OtherSource struct {
 }
 
 // NewOtherSource returns a new OtherSource from the given external service.
-func NewOtherSource(svc *types.ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
+func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.OtherExternalServiceConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 

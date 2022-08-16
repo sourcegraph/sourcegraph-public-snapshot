@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -15,10 +16,11 @@ func TestGitoliteSource(t *testing.T) {
 
 	svc := &types.ExternalService{
 		Kind:   extsvc.KindGitolite,
-		Config: marshalJSON(t, &schema.GitoliteConnection{}),
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitoliteConnection{})),
 	}
 
-	_, err := NewGitoliteSource(svc, cf)
+	ctx := context.Background()
+	_, err := NewGitoliteSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

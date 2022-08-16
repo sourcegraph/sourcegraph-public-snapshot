@@ -44,6 +44,7 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
+import { CoreWorkflowImprovementsEnabledProvider } from '@sourcegraph/shared/src/settings/CoreWorkflowImprovementsEnabledProvider'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
@@ -211,6 +212,7 @@ export class SourcegraphWebApp extends React.Component<
                 })
             )
         }
+
         setQueryStateFromURL(window.location.search)
 
         this.state = {
@@ -344,9 +346,9 @@ export class SourcegraphWebApp extends React.Component<
                         <ShortcutProvider>
                             <WildcardThemeContext.Provider value={WILDCARD_THEME}>
                                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
-                                    <SearchResultsCacheProvider>
-                                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                                            <>
+                                    <CoreWorkflowImprovementsEnabledProvider>
+                                        <SearchResultsCacheProvider>
+                                            <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
                                                 <ScrollManager history={history}>
                                                     <Router history={history} key={0}>
                                                         <CompatRouter>
@@ -431,10 +433,10 @@ export class SourcegraphWebApp extends React.Component<
                                                         notificationItemStyleProps={notificationStyles}
                                                     />
                                                 ) : null}
-                                            </>
-                                            <UserSessionStores />
-                                        </SearchQueryStateStoreProvider>
-                                    </SearchResultsCacheProvider>
+                                                <UserSessionStores />
+                                            </SearchQueryStateStoreProvider>
+                                        </SearchResultsCacheProvider>
+                                    </CoreWorkflowImprovementsEnabledProvider>
                                 </TemporarySettingsProvider>
                             </WildcardThemeContext.Provider>
                         </ShortcutProvider>

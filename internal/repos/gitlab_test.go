@@ -147,9 +147,9 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 					Url: "https://gitlab.com",
-				}),
+				})),
 			}
 
 			ctx := context.Background()
@@ -181,7 +181,11 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitLab}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
@@ -306,7 +310,7 @@ func Test_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
 			externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, services ...*types.ExternalService) error {
 				databaseHit = true
 				svc := services[0]
-				parsed, err := extsvc.ParseConfig(extsvc.KindGitLab, svc.Config)
+				parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitLab, svc.Config)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -359,7 +363,7 @@ func Test_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
 			svc := &types.ExternalService{
 				ID:   1,
 				Kind: extsvc.KindGitLab,
-				Config: fmt.Sprintf(`{
+				Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{
    "url": "%s",
    "token": "af865c51fb0ac7f7b6714ce25d837ad42f13f57006b651a592c810ac93d2e2cc",
    "token.type": "oauth",
@@ -373,7 +377,7 @@ func Test_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
        "type": "oauth"
      }
    }
- }`, server.URL, expiryDate.Unix()),
+ }`, server.URL, expiryDate.Unix())),
 			}
 
 			refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(context.Background(), logtest.Scoped(t), db, svc)

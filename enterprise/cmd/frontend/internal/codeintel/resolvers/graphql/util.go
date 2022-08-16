@@ -2,8 +2,9 @@ package graphql
 
 import (
 	"github.com/sourcegraph/go-lsp"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	policiesShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -74,6 +75,32 @@ func convertRange(r lsifstore.Range) lsp.Range {
 // convertPosition creates an LSP position from a line and character pair.
 func convertPosition(line, character int) lsp.Position {
 	return lsp.Position{Line: line, Character: character}
+}
+
+func sharedConfigurationPoliciesListToStoreConfigurationPoliciesList(policies []policiesShared.ConfigurationPolicy) []store.ConfigurationPolicy {
+	storePolicies := make([]store.ConfigurationPolicy, 0, len(policies))
+	for _, p := range policies {
+		storePolicies = append(storePolicies, sharedConfigurationPoliciesToStoreConfigurationPolicies(p))
+	}
+	return storePolicies
+}
+
+func sharedConfigurationPoliciesToStoreConfigurationPolicies(p policiesShared.ConfigurationPolicy) store.ConfigurationPolicy {
+	return store.ConfigurationPolicy{
+		ID:                        p.ID,
+		RepositoryID:              p.RepositoryID,
+		RepositoryPatterns:        p.RepositoryPatterns,
+		Name:                      p.Name,
+		Type:                      store.GitObjectType(p.Type),
+		Pattern:                   p.Pattern,
+		Protected:                 p.Protected,
+		RetentionEnabled:          p.RetentionEnabled,
+		RetentionDuration:         p.RetentionDuration,
+		RetainIntermediateCommits: p.RetainIntermediateCommits,
+		IndexingEnabled:           p.IndexingEnabled,
+		IndexCommitMaxAge:         p.IndexCommitMaxAge,
+		IndexIntermediateCommits:  p.IndexIntermediateCommits,
+	}
 }
 
 func sharedRangeTolsifstoreRange(r shared.Range) lsifstore.Range {
@@ -174,6 +201,59 @@ func uploadLocationToAdjustedLocations(location []shared.UploadLocation) []Adjus
 	}
 
 	return uploadLocation
+}
+
+func sharedPoliciesUploadsToStoreUpload(dump store.Upload) policiesShared.Upload {
+	return policiesShared.Upload{
+		ID:                dump.ID,
+		Commit:            dump.Commit,
+		Root:              dump.Root,
+		VisibleAtTip:      dump.VisibleAtTip,
+		UploadedAt:        dump.UploadedAt,
+		State:             dump.State,
+		FailureMessage:    dump.FailureMessage,
+		StartedAt:         dump.StartedAt,
+		FinishedAt:        dump.FinishedAt,
+		ProcessAfter:      dump.ProcessAfter,
+		NumResets:         dump.NumResets,
+		NumFailures:       dump.NumFailures,
+		RepositoryID:      dump.RepositoryID,
+		RepositoryName:    dump.RepositoryName,
+		Indexer:           dump.Indexer,
+		IndexerVersion:    dump.IndexerVersion,
+		NumParts:          0,
+		UploadedParts:     []int{},
+		UploadSize:        nil,
+		Rank:              nil,
+		AssociatedIndexID: dump.AssociatedIndexID,
+	}
+}
+
+func sharedRetentionPolicyToStoreRetentionPolicy(policy []policiesShared.RetentionPolicyMatchCandidate) []resolvers.RetentionPolicyMatchCandidate {
+	retentionPolicy := make([]resolvers.RetentionPolicyMatchCandidate, 0, len(policy))
+	for _, p := range policy {
+		retentionPolicy = append(retentionPolicy, resolvers.RetentionPolicyMatchCandidate{
+			ConfigurationPolicy: &store.ConfigurationPolicy{
+				ID:                        p.ID,
+				RepositoryID:              p.RepositoryID,
+				RepositoryPatterns:        p.RepositoryPatterns,
+				Name:                      p.Name,
+				Type:                      store.GitObjectType(p.Type),
+				Pattern:                   p.Pattern,
+				Protected:                 p.Protected,
+				RetentionEnabled:          p.RetentionEnabled,
+				RetentionDuration:         p.RetentionDuration,
+				RetainIntermediateCommits: p.RetainIntermediateCommits,
+				IndexingEnabled:           p.IndexingEnabled,
+				IndexCommitMaxAge:         p.IndexCommitMaxAge,
+				IndexIntermediateCommits:  p.IndexIntermediateCommits,
+			},
+			Matched:           p.Matched,
+			ProtectingCommits: p.ProtectingCommits,
+		})
+	}
+
+	return retentionPolicy
 }
 
 func sharedDumpToDbstoreUpload(dump shared.Dump) store.Upload {

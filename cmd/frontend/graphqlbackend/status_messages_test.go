@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -82,7 +83,11 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 		externalServices := database.NewMockExternalServiceStore()
-		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil)
+		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{
+			ID:          1,
+			DisplayName: "GitHub.com testing",
+			Config:      extsvc.NewEmptyConfig(),
+		}, nil)
 
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
