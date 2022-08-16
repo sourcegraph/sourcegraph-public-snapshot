@@ -1223,7 +1223,7 @@ type SearchInsightLivePreviewSeries {
 
 extend type Query {
     """
-    Returns infomation about aggregate the potential results of a search query.
+    Returns information about aggregating the potential results of a search query.
     """
     searchQueryAggregate(query: String!, patternType: SearchPatternType!): SearchQueryAggregate
 }
