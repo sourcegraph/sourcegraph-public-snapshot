@@ -208,12 +208,26 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromInsight(d), "error msg", "insight failed to migrate due to missing id")
 			continue
 		}
-		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
+
+		numInsights, _, err := basestore.ScanFirstInt(m.insightStore.Query(ctx, sqlf.Sprintf(`
+			SELECT COUNT(*)
+			FROM (
+				SELECT *
+				FROM insight_view
+				WHERE unique_id = %s
+				ORDER BY unique_id
+			) iv
+			JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+			JOIN insight_series i ON ivs.insight_series_id = i.id
+			WHERE i.deleted_at IS NULL
+		`,
+			d.ID,
+		)))
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
 		}
-		if len(insight) > 0 {
+		if numInsights > 0 {
 			// this insight has already been migrated, so count it
 			count++
 			continue
@@ -240,12 +254,25 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 			count++
 			continue
 		}
-		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
+		numInsights, _, err := basestore.ScanFirstInt(m.insightStore.Query(ctx, sqlf.Sprintf(`
+			SELECT COUNT(*)
+			FROM (
+				SELECT *
+				FROM insight_view
+				WHERE unique_id = %s
+				ORDER BY unique_id
+			) iv
+			JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+			JOIN insight_series i ON ivs.insight_series_id = i.id
+			WHERE i.deleted_at IS NULL
+		`,
+			d.ID,
+		)))
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
 		}
-		if len(insight) > 0 {
+		if numInsights > 0 {
 			// this insight has already been migrated, so count it towards the total
 			count++
 			continue
