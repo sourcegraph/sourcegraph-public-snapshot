@@ -3,9 +3,9 @@ package migrations
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
+	codeinsightsmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -36,7 +36,7 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 		return err
 	}
 
-	if err := insights.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
+	if err := codeinsightsmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
 		return err
 	}
 
