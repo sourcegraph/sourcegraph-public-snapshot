@@ -451,6 +451,40 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		GenerationMethod:   LanguageStats,
 		CreatedAt:          now,
 	}
+	interval := TimeInterval{
+		Unit:  intervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}
+	validType := false
+	switch interval.Unit {
+	case Year:
+		fallthrough
+	case Month:
+		fallthrough
+	case Week:
+		fallthrough
+	case Day:
+		fallthrough
+	case Hour:
+		validType = true
+	}
+	if !(validType && interval.Value >= 0) {
+		interval = TimeInterval{
+			Unit:  Month,
+			Value: 1,
+		}
+	}
+
+	if series.NextRecordingAfter.IsZero() {
+		series.NextRecordingAfter = interval.StepForwards(now)
+	}
+	if series.NextSnapshotAfter.IsZero() {
+		series.NextSnapshotAfter = nextSnapshot(now)
+	}
+	if series.OldestHistoricalAt.IsZero() {
+		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
+		series.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
+	}
 	var grants []insightViewGrant
 	if from.UserID != nil {
 		grants = []insightViewGrant{userGrant(int(*from.UserID))}
@@ -494,41 +528,6 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	err = tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global) VALUES %s`, sqlf.Join(values, ", ")))
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
-	}
-
-	interval := TimeInterval{
-		Unit:  intervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
-	}
-	validType := false
-	switch interval.Unit {
-	case Year:
-		fallthrough
-	case Month:
-		fallthrough
-	case Week:
-		fallthrough
-	case Day:
-		fallthrough
-	case Hour:
-		validType = true
-	}
-	if !(validType && interval.Value >= 0) {
-		interval = TimeInterval{
-			Unit:  Month,
-			Value: 1,
-		}
-	}
-
-	if series.NextRecordingAfter.IsZero() {
-		series.NextRecordingAfter = interval.StepForwards(now)
-	}
-	if series.NextSnapshotAfter.IsZero() {
-		series.NextSnapshotAfter = nextSnapshot(now)
-	}
-	if series.OldestHistoricalAt.IsZero() {
-		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-		series.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
 	}
 
 	seriesID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
@@ -689,6 +688,45 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			temp.JustInTime = false
 			temp.GenerationMethod = Search
 		}
+		now := time.Now()
+
+		if temp.CreatedAt.IsZero() {
+			temp.CreatedAt = now
+		}
+		interval := TimeInterval{
+			Unit:  intervalUnit(temp.SampleIntervalUnit),
+			Value: temp.SampleIntervalValue,
+		}
+		validType := false
+		switch interval.Unit {
+		case Year:
+			fallthrough
+		case Month:
+			fallthrough
+		case Week:
+			fallthrough
+		case Day:
+			fallthrough
+		case Hour:
+			validType = true
+		}
+		if !(validType && interval.Value >= 0) {
+			interval = TimeInterval{
+				Unit:  Month,
+				Value: 1,
+			}
+		}
+
+		if temp.NextRecordingAfter.IsZero() {
+			temp.NextRecordingAfter = interval.StepForwards(now)
+		}
+		if temp.NextSnapshotAfter.IsZero() {
+			temp.NextSnapshotAfter = nextSnapshot(now)
+		}
+		if temp.OldestHistoricalAt.IsZero() {
+			// TODO(insights): this value should probably somewhere more discoverable / obvious than here
+			temp.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
+		}
 
 		var series insightSeries
 
@@ -735,45 +773,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				// If the series already exists, we can re-use that series
 				series = rows[0]
 			} else {
-				now := time.Now()
 
-				if temp.CreatedAt.IsZero() {
-					temp.CreatedAt = now
-				}
-				interval := TimeInterval{
-					Unit:  intervalUnit(temp.SampleIntervalUnit),
-					Value: temp.SampleIntervalValue,
-				}
-				validType := false
-				switch interval.Unit {
-				case Year:
-					fallthrough
-				case Month:
-					fallthrough
-				case Week:
-					fallthrough
-				case Day:
-					fallthrough
-				case Hour:
-					validType = true
-				}
-				if !(validType && interval.Value >= 0) {
-					interval = TimeInterval{
-						Unit:  Month,
-						Value: 1,
-					}
-				}
-
-				if temp.NextRecordingAfter.IsZero() {
-					temp.NextRecordingAfter = interval.StepForwards(now)
-				}
-				if temp.NextSnapshotAfter.IsZero() {
-					temp.NextSnapshotAfter = nextSnapshot(now)
-				}
-				if temp.OldestHistoricalAt.IsZero() {
-					// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-					temp.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
-				}
 				// If it's not a backend series, we just want to create it.
 				id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 				INSERT INTO insight_series (
@@ -858,45 +858,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				}
 			}
 		} else {
-			now := time.Now()
 
-			if temp.CreatedAt.IsZero() {
-				temp.CreatedAt = now
-			}
-			interval := TimeInterval{
-				Unit:  intervalUnit(temp.SampleIntervalUnit),
-				Value: temp.SampleIntervalValue,
-			}
-			validType := false
-			switch interval.Unit {
-			case Year:
-				fallthrough
-			case Month:
-				fallthrough
-			case Week:
-				fallthrough
-			case Day:
-				fallthrough
-			case Hour:
-				validType = true
-			}
-			if !(validType && interval.Value >= 0) {
-				interval = TimeInterval{
-					Unit:  Month,
-					Value: 1,
-				}
-			}
-
-			if temp.NextRecordingAfter.IsZero() {
-				temp.NextRecordingAfter = interval.StepForwards(now)
-			}
-			if temp.NextSnapshotAfter.IsZero() {
-				temp.NextSnapshotAfter = nextSnapshot(now)
-			}
-			if temp.OldestHistoricalAt.IsZero() {
-				// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-				temp.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
-			}
 			// If it's not a backend series, we just want to create it.
 			id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 				INSERT INTO insight_series (
