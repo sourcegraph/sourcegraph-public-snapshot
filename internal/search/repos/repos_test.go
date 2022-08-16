@@ -12,8 +12,8 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
-	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
