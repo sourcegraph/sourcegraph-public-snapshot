@@ -1174,7 +1174,10 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 			for i := range changesetSpecs {
 				changesetSpecs[i] = &btypes.ChangesetSpec{
 					BatchSpecID: batchSpec.ID,
-					RepoID:      repo.ID,
+					Spec: &batcheslib.ChangesetSpec{
+						ExternalID: "123",
+					},
+					RepoID: repo.ID,
 				}
 				err = bstore.CreateChangesetSpec(ctx, changesetSpecs[i])
 				require.NoError(t, err)
