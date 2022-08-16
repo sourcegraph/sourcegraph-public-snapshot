@@ -4,11 +4,6 @@ import (
 	"time"
 )
 
-type permissionAssociations struct {
-	userID *int32
-	orgID  *int32
-}
-
 type insightViewSeriesMetadata struct {
 	Label  string
 	Stroke string

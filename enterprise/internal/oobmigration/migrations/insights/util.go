@@ -193,10 +193,6 @@ func getBackendInsights(setting settings) []searchInsight {
 	prefix := "insights.allrepos"
 
 	results := make([]searchInsight, 0)
-	perms := permissionAssociations{
-		userID: setting.Subject.User,
-		orgID:  setting.Subject.Org,
-	}
 
 	var raw map[string]json.RawMessage
 	raw, err := filterSettingJson(setting.Contents, prefix)
@@ -217,8 +213,8 @@ func getBackendInsights(setting settings) []searchInsight {
 
 			// each setting is owned by either a user or an organization, which needs to be mapped when this insight is synced
 			// to preserve permissions semantics
-			insight.UserID = perms.userID
-			insight.OrgID = perms.orgID
+			insight.UserID = setting.Subject.User
+			insight.OrgID = setting.Subject.Org
 
 			results = append(results, insight)
 		}
