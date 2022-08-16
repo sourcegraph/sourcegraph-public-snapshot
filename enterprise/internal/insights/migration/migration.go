@@ -116,12 +116,21 @@ var scanOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (org itypes.Org,
 	err := s.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
 	return org, err
 })
+
 var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u itypes.User, _ error) {
 	var displayName, avatarURL sql.NullString
 	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
 	u.DisplayName = displayName.String
 	u.AvatarURL = avatarURL.String
 	return u, err
+})
+
+var scanSettings = basestore.NewSliceScanner[api.Settings](func(scanner dbutil.Scanner) (s api.Settings, _ error) {
+	err := scanner.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorUserID, &s.Contents, &s.CreatedAt)
+	if s.Subject.Org == nil && s.Subject.User == nil {
+		s.Subject.Site = true
+	}
+	return s, err
 })
 
 func (m *migrator) performBatchMigration(ctx context.Context, jobType store.SettingsMigrationJobType) (bool, error) {
@@ -306,18 +315,43 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		// nothing to set for migration context, it will infer global based on the lack of user / orgs
 		subjectName = "Global"
 	}
-	settings, err := m.settingsStore.GetLatest(ctx, subject)
+
+	var cond *sqlf.Query
+	switch {
+	case subject.Org != nil:
+		cond = sqlf.Sprintf("org_id = %d", *subject.Org)
+	case subject.User != nil:
+		cond = sqlf.Sprintf("user_id = %d AND EXISTS (SELECT NULL FROM users WHERE id=%d AND deleted_at IS NULL)", *subject.User, *subject.User)
+	default:
+		// No org and no user represents global site settings.
+		cond = sqlf.Sprintf("user_id IS NULL AND org_id IS NULL")
+	}
+	settings, err := scanSettings(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+		SELECT
+			s.id,
+			s.org_id,
+			s.user_id,
+			CASE WHEN users.deleted_at IS NULL THEN s.author_user_id ELSE NULL END,
+			s.contents,
+			s.created_at
+		FROM settings s
+		LEFT JOIN users ON users.id = s.author_user_id
+		WHERE %s
+		ORDER BY id DESC LIMIT 1
+		`,
+		cond,
+	)))
 	if err != nil {
 		return err
 	}
-	// If this settings object no longer exists, skip it.
-	if settings == nil {
+	if len(settings) == 0 {
+		// If this settings object no longer exists, skip it.
 		return nil
 	}
 
-	langStatsInsights := getLangStatsInsights(*settings)
-	frontendInsights := getFrontendInsights(*settings)
-	backendInsights := getBackendInsights(*settings)
+	langStatsInsights := getLangStatsInsights(settings[0])
+	frontendInsights := getFrontendInsights(settings[0])
+	backendInsights := getBackendInsights(settings[0])
 
 	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
 	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
@@ -364,7 +398,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 	}
 
-	dashboards := getDashboards(*settings)
+	dashboards := getDashboards(settings[0])
 	totalDashboards := len(dashboards)
 	if totalDashboards != job.MigratedDashboards {
 		err = jobStoreTx.UpdateTotalDashboards(ctx, job.UserId, job.OrgId, totalDashboards)
