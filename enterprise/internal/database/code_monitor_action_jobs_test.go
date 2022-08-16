@@ -91,6 +91,7 @@ func TestScanActionJob(t *testing.T) {
 	rows, err := s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), actionJobID))
 
 	require.True(t, rows.Next())
+	require.NoError(t, err)
 	job, err := ScanActionJob(rows)
 	require.NoError(t, err)
 	require.Equal(t, int(actionJobID), job.RecordID())
