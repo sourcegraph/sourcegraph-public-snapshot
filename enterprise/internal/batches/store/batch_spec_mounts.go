@@ -42,6 +42,8 @@ var batchSpecMountConflictTarget = []*sqlf.Query{
 	sqlf.Sprintf("path"),
 }
 
+// UpsertBatchSpecMount creates a new BatchSpecMount, if it does not exist already, or updates the existing
+// BatchSpecMount.
 func (s *Store) UpsertBatchSpecMount(ctx context.Context, mount *btypes.BatchSpecMount) (err error) {
 	ctx, _, endObservation := s.operations.upsertBatchSpecMount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -98,50 +100,14 @@ DO UPDATE SET
 (%s) = (%s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
-func (s *Store) UpdateBatchSpecMount(ctx context.Context, mount *btypes.BatchSpecMount) (err error) {
-	ctx, _, endObservation := s.operations.updateBatchSpecMount.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(mount.ID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	q := s.updateBatchSpecMountQuery(mount)
-
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanBatchSpecMount(mount, sc)
-	})
-}
-
-func (s *Store) updateBatchSpecMountQuery(m *btypes.BatchSpecMount) *sqlf.Query {
-	m.UpdatedAt = s.now()
-
-	return sqlf.Sprintf(
-		updateBatchSpecMountQueryFmtstr,
-		sqlf.Join(batchSpecMountInsertColumns, ", "),
-		m.BatchSpecID,
-		m.FileName,
-		m.Path,
-		m.Size,
-		m.Modified,
-		m.CreatedAt,
-		m.UpdatedAt,
-		m.ID,
-		sqlf.Join(batchChangeColumns, ", "),
-	)
-}
-
-var updateBatchSpecMountQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_mounts.go:UpdateBatchSpecMount
-UPDATE batch_spec_mounts
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s)
-WHERE id = %s
-RETURNING %s`
-
+// DeleteBatchSpecMountOpts are the options to determine which BatchSpecMounts to delete.
 type DeleteBatchSpecMountOpts struct {
 	ID              int64
 	BatchSpecID     int64
 	BatchSpecRandID string
 }
 
+// DeleteBatchSpecMount deletes BatchSpecMounts that match the specified DeleteBatchSpecMountOpts.
 func (s *Store) DeleteBatchSpecMount(ctx context.Context, opts DeleteBatchSpecMountOpts) (err error) {
 	ctx, _, endObservation := s.operations.getBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
@@ -185,11 +151,13 @@ DELETE FROM batch_spec_mounts
 %s
 WHERE %s`
 
+// GetBatchSpecMountOpts are the options to determine which BatchSpecMount to retrieve.
 type GetBatchSpecMountOpts struct {
 	ID     int64
 	RandID string
 }
 
+// GetBatchSpecMount retrieves the matching BatchSpecMount based on the provided GetBatchSpecMountOpts.
 func (s *Store) GetBatchSpecMount(ctx context.Context, opts GetBatchSpecMountOpts) (mount *btypes.BatchSpecMount, err error) {
 	ctx, _, endObservation := s.operations.getBatchSpecMount.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
@@ -241,6 +209,7 @@ SELECT %s FROM batch_spec_mounts
 WHERE %s
 LIMIT 1`
 
+// ListBatchSpecMountsOpts are the options to determine which BatchSpecMounts to list.
 type ListBatchSpecMountsOpts struct {
 	LimitOpts
 	Cursor int64
@@ -249,6 +218,7 @@ type ListBatchSpecMountsOpts struct {
 	BatchSpecRandID string
 }
 
+// CountBatchSpecMounts counts the number of BatchSpecMounts based on the provided ListBatchSpecMountsOpts.
 func (s *Store) CountBatchSpecMounts(ctx context.Context, opts ListBatchSpecMountsOpts) (count int64, err error) {
 	ctx, _, endObservation := s.operations.countBatchSpecMounts.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -289,6 +259,7 @@ SELECT COUNT(1) FROM batch_spec_mounts
 %s
 WHERE %s`
 
+// ListBatchSpecMounts retrieves the matching BatchSpecMounts that match the provided ListBatchSpecMountsOpts.
 func (s *Store) ListBatchSpecMounts(ctx context.Context, opts ListBatchSpecMountsOpts) (mounts []*btypes.BatchSpecMount, next int64, err error) {
 	ctx, _, endObservation := s.operations.listBatchSpecMounts.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
