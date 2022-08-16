@@ -113,9 +113,21 @@ type SettingsMigrationJob struct {
 	Runs               int
 }
 
-var scanJobs = basestore.NewSliceScanner[SettingsMigrationJob](func(s dbutil.Scanner) (j SettingsMigrationJob, _ error) {
+var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j SettingsMigrationJob, _ error) {
 	err := s.Scan(&j.UserId, &j.OrgId, &j.Global, &j.MigratedInsights, &j.MigratedDashboards, &j.Runs)
 	return j, err
+})
+
+var scanOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (org itypes.Org, _ error) {
+	err := s.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
+	return org, err
+})
+var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u itypes.User, _ error) {
+	var displayName, avatarURL sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
+	u.DisplayName = displayName.String
+	u.AvatarURL = avatarURL.String
+	return u, err
 })
 
 func (m *migrator) performBatchMigration(ctx context.Context, jobType store.SettingsMigrationJobType) (bool, error) {
@@ -205,10 +217,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 
 		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 		// resolve insight ID collisions as if it were in a setting cascade
-		scanOrgs := basestore.NewSliceScanner(func(s dbutil.Scanner) (org itypes.Org, _ error) {
-			err := s.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
-			return org, err
-		})
 		orgs, err := scanOrgs(jobStoreTx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				orgs.id,
@@ -234,13 +242,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.userId = int(userId)
 		migrationContext.orgIds = orgIds
 
-		scanUsers := basestore.NewSliceScanner(func(s dbutil.Scanner) (u itypes.User, _ error) {
-			var displayName, avatarURL sql.NullString
-			err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
-			u.DisplayName = displayName.String
-			u.AvatarURL = avatarURL.String
-			return u, err
-		})
 		users, err := scanUsers(jobStoreTx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				u.id,
