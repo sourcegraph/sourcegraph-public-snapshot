@@ -495,7 +495,6 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 	}
-	view.ID = viewID
 
 	if from.UserID != nil {
 		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, user_id) VALUES (%s, %s)`, viewID, *from.UserID)); err != nil {
@@ -516,8 +515,9 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		unit:  "MONTH",
 		value: 0, // TODO - confirm: series.SampleIntervalValue is not set below
 	}
+	xSeriesID := ksuid.New().String()
 	series := insightSeries{
-		SeriesID:           ksuid.New().String(),
+		SeriesID:           xSeriesID,
 		Repositories:       []string{from.Repository},
 		SampleIntervalUnit: "MONTH",
 		JustInTime:         true,
@@ -593,7 +593,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		SET deleted_at IS NULL
 		WHERE series_id = %s
 	`,
-		series.SeriesID,
+		xSeriesID,
 	))
 
 	return nil
