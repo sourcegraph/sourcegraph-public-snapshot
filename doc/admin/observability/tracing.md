@@ -14,7 +14,7 @@ Note that the policies above are implemented at an application level - to sample
 We support the following tracing backend types:
 
 * [`"type": "jaeger"`](#jaeger) (default)
-* [`"type": "opentelemetry"](#opentelemetry) <span class="badge badge-experimental">Experimental</span>
+* [`"type": "opentelemetry"`](#opentelemetry) <span class="badge badge-experimental">Experimental</span>
 
 In addition, we also export some tracing [via net/trace](#nettrace).
 
@@ -84,13 +84,13 @@ algorithm to root-cause issues with Jaeger:
    trace JSON.
 
 
-## OpenTelemetry
+### OpenTelemetry
 
 <span class="badge badge-experimental">Experimental</span>
 
 > NOTE: Documentation coming soon!
 
-## net/trace
+### net/trace
 
 Sourcegraph uses the [`net/trace`](https://pkg.go.dev/golang.org/x/net/trace) package in its backend
 services. This provides simple tracing information within a single process. It can be used as an
