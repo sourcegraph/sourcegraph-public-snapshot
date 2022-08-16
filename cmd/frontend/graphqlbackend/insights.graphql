@@ -1263,7 +1263,7 @@ type AggregationModeAvailability {
     """
     mode: SearchAggregationMode!
     """
-    Boolean indiciating if the mode is available
+    Boolean indicating if the mode is available
     """
     available: Boolean!
     """
