@@ -480,7 +480,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			continue
 		}
 
-		logger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
+		acctLogger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
 
 		installations, err := s.getUserGitHubAppInstallations(ctx, acct)
 
