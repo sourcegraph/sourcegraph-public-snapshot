@@ -197,7 +197,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	var subject api.SettingsSubject
 	var migrationContext migrationContext
 	var subjectName string
-	orgStore := m.postgresDB.Orgs()
 
 	defer func() {
 		var cond *sqlf.Query
