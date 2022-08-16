@@ -28,13 +28,8 @@ func NewLicenseKeyFieldsMigrator(db database.DB) *licenseKeyFieldsMigrator {
 	}
 }
 
-func (m *licenseKeyFieldsMigrator) ID() int {
-	return 16
-}
-
-func (m *licenseKeyFieldsMigrator) Interval() time.Duration {
-	return time.Second * 5
-}
+func (m *licenseKeyFieldsMigrator) ID() int                 { return 16 }
+func (m *licenseKeyFieldsMigrator) Interval() time.Duration { return time.Second * 5 }
 
 func (m *licenseKeyFieldsMigrator) Progress(ctx context.Context) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorProgressQuery)))

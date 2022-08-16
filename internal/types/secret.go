@@ -9,6 +9,7 @@
 package types
 
 import (
+	"context"
 	"net/url"
 	"reflect"
 
@@ -23,12 +24,16 @@ import (
 const RedactedSecret = "REDACTED"
 
 // RedactedConfig returns the external service config with all secret fields replaces by RedactedSecret.
-func (e *ExternalService) RedactedConfig() (string, error) {
-	if e.Config == "" {
+func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
+	rawConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return "", err
+	}
+	if rawConfig == "" {
 		return "", nil
 	}
 
-	cfg, err := e.Configuration()
+	cfg, err := e.Configuration(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -90,14 +95,23 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 		return "", errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
 	}
 
-	return es.apply(e.Config)
+	return es.apply(rawConfig)
 }
 
 // UnredactConfig will replace redacted fields with their unredacted form from the 'old' ExternalService.
 // You should call this when accepting updated config from a user that may have been
 // previously redacted, and pass in the unredacted form directly from the DB as the 'old' parameter
-func (e *ExternalService) UnredactConfig(old *ExternalService) error {
-	if e == nil || old == nil || e.Config == "" || old.Config == "" {
+func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalService) error {
+	if e == nil || old == nil {
+		return nil
+	}
+
+	eConfig, err := e.Config.Decrypt(ctx)
+	if err != nil || eConfig == "" {
+		return nil
+	}
+	oldConfig, err := old.Config.Decrypt(ctx)
+	if err != nil || oldConfig == "" {
 		return nil
 	}
 
@@ -109,12 +123,12 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		)
 	}
 
-	newCfg, err := e.Configuration()
+	newCfg, err := e.Configuration(ctx)
 	if err != nil {
 		return err
 	}
 
-	oldCfg, err := old.Configuration()
+	oldCfg, err := old.Configuration(ctx)
 	if err != nil {
 		return err
 	}
@@ -182,12 +196,12 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		return errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(newCfg))
 	}
 
-	unredacted, err := es.apply(e.Config)
+	unredacted, err := es.apply(eConfig)
 	if err != nil {
 		return err
 	}
 
-	e.Config = unredacted
+	e.Config.Set(unredacted)
 	return nil
 }
 

@@ -5777,6 +5777,10 @@ type Site implements SettingsSubject {
         When omitted does NOT apply and returns for all period available.
         """
         lastActivePeriod: SiteUsersLastActivePeriod
+        """
+        Returns either deleted or not deleted users. Returns all users when omitted.
+        """
+        deleted: Boolean
     ): SiteUsers!
 
     """
