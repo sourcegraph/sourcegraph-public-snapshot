@@ -104,7 +104,6 @@ type settings struct {
 }
 
 type settingsSubject struct {
-	Site bool   // whether this is for global settings
 	Org  *int32 // the org's ID
 	User *int32 // the user's ID
 }

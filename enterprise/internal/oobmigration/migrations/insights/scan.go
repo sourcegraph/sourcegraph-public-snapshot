@@ -28,9 +28,6 @@ var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u user, _ erro
 
 var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s settings, _ error) {
 	err := scanner.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.Contents)
-	if s.Subject.Org == nil && s.Subject.User == nil {
-		s.Subject.Site = true
-	}
 	return s, err
 })
 
