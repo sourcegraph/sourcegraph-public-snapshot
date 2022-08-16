@@ -36,7 +36,7 @@ type migrator struct {
 	insightsStore *basestore.Store
 }
 
-func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
+func NewMigrator(insightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
 		frontendStore: basestore.NewWithHandle(postgresDB.Handle()),
 		insightsStore: basestore.NewWithHandle(insightsDB.Handle()),

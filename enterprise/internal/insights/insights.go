@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
@@ -87,7 +89,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 		if err != nil {
 			return err
 		}
-		insightsMigrator = migration.NewMigrator(insightsDB, db)
+		insightsMigrator = migration.NewMigrator(database.NewDBWith(log.Scoped("codeinsights-db", ""), insightsDB), db)
 	}
 
 	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
