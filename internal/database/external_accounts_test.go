@@ -70,8 +70,8 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	authData := json.RawMessage(`"authData"`)
 	data := json.RawMessage(`"data"`)
 	accountData := extsvc.AccountData{
-		AuthData: &authData,
-		Data:     &data,
+		AuthData: extsvc.NewUnencryptedData(authData),
+		Data:     extsvc.NewUnencryptedData(data),
 	}
 	if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
 		t.Fatal(err)
@@ -84,16 +84,16 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	if len(accounts) != 1 {
 		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
 	}
-	account := *accounts[0]
-	simplifyExternalAccount(&account)
+	account := accounts[0]
+	simplifyExternalAccount(account)
 	account.ID = 0
 
-	want := extsvc.Account{
+	want := &extsvc.Account{
 		UserID:      user.ID,
 		AccountSpec: spec,
 		AccountData: accountData,
 	}
-	if diff := cmp.Diff(want, account); diff != "" {
+	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
@@ -117,8 +117,8 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	authData := json.RawMessage(`"authData"`)
 	data := json.RawMessage(`"data"`)
 	accountData := extsvc.AccountData{
-		AuthData: &authData,
-		Data:     &data,
+		AuthData: extsvc.NewUnencryptedData(authData),
+		Data:     extsvc.NewUnencryptedData(data),
 	}
 	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
 	if err != nil {
@@ -140,16 +140,16 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	if len(accounts) != 1 {
 		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
 	}
-	account := *accounts[0]
-	simplifyExternalAccount(&account)
+	account := accounts[0]
+	simplifyExternalAccount(account)
 	account.ID = 0
 
-	want := extsvc.Account{
+	want := &extsvc.Account{
 		UserID:      userID,
 		AccountSpec: spec,
 		AccountData: accountData,
 	}
-	if diff := cmp.Diff(want, account); diff != "" {
+	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
@@ -190,15 +190,15 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 	if len(accounts) != 1 {
 		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
 	}
-	account := *accounts[0]
-	simplifyExternalAccount(&account)
+	account := accounts[0]
+	simplifyExternalAccount(account)
 	account.ID = 0
 
-	want := extsvc.Account{
+	want := &extsvc.Account{
 		UserID:      userID,
 		AccountSpec: spec,
 	}
-	if diff := cmp.Diff(want, account); diff != "" {
+	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
@@ -323,12 +323,12 @@ func TestExternalAccounts_List(t *testing.T) {
 			for i, id := range c.expectedIDs {
 				account := accounts[i]
 				simplifyExternalAccount(account)
-				want := extsvc.Account{
+				want := &extsvc.Account{
 					UserID:      id,
 					ID:          id,
 					AccountSpec: specByID[id],
 				}
-				if diff := cmp.Diff(want, *account); diff != "" {
+				if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 					t.Fatalf("Mismatch (-want +got):\n%s", diff)
 				}
 			}
@@ -357,8 +357,8 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	authData := json.RawMessage(`"authData"`)
 	data := json.RawMessage(`"data"`)
 	accountData := extsvc.AccountData{
-		AuthData: &authData,
-		Data:     &data,
+		AuthData: extsvc.NewUnencryptedData(authData),
+		Data:     extsvc.NewUnencryptedData(data),
 	}
 
 	// store with encrypted authdata
@@ -385,7 +385,11 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 
 	// values encrypted should not be readable without the encrypting key
 	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
-	if _, err := noopStore.List(ctx, ExternalAccountsListOptions{}); err == nil {
+	svcs, err := noopStore.List(ctx, ExternalAccountsListOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error listing services: %s", err)
+	}
+	if _, err := svcs[0].Data.Decrypt(ctx); err == nil {
 		t.Fatalf("expected error decrypting with a different key")
 	}
 
@@ -396,7 +400,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 		AccountSpec: spec,
 		AccountData: accountData,
 	}
-	if diff := cmp.Diff(want, account); diff != "" {
+	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
@@ -406,7 +410,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 		t.Fatal(err)
 	}
 	account = listFirstAccount(store)
-	if diff := cmp.Diff(want, account); diff != "" {
+	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
@@ -416,7 +420,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 		t.Fatal(err)
 	}
 	account = listFirstAccount(store)
-	if diff := cmp.Diff(want, account); diff != "" {
+	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }

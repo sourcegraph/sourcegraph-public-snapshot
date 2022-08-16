@@ -95,7 +95,7 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Fatal(err.Error())
 	}
 
-	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, observationContext, services); err != nil {
+	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, services); err != nil {
 		logger.Fatal("failed to initialize codeintel", log.Error(err))
 	}
 

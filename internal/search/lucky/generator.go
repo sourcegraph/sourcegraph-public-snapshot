@@ -20,7 +20,7 @@ const (
 	THREE
 )
 
-// NewComboGenerator returns a generator for queries produces by a combination
+// NewComboGenerator returns a generator for queries produced by a combination
 // of rules on a seed query. The generator has a strategy over two kinds of rule
 // sets: narrowing and widening rules. You can read more below, but if you don't
 // care about this and just want to apply rules sequentially, simply pass in

@@ -1,0 +1,58 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 539
+expression: "dump_document(&document, &contents)"
+---
+  package main
+//^^^^^^^ IdentifierKeyword
+//        ^^^^ Identifier
+  
+  import "fmt"
+//^^^^^^ IdentifierKeyword
+//       ^^^^^ StringLiteral
+  
+  func main() {
+//^^^^ IdentifierKeyword
+//     ^^^^ IdentifierFunction
+   // this is comment
+// ^^^^^^^^^^^^^^^^^^ Comment
+  
+   x := 1234
+// ^ Identifier
+//   ^^ IdentifierOperator
+//      ^^^^ NumericLiteral
+   char := '1'
+// ^^^^ Identifier
+//      ^^ IdentifierOperator
+//         ^^^ CharacterLiteral
+   string := "hello\n"
+// ^^^^^^ Identifier
+//        ^^ IdentifierOperator
+//           ^^^^^^ StringLiteral
+//                 ^^ StringLiteralEscape
+//                   ^ StringLiteral
+   bool := true
+// ^^^^ Identifier
+//      ^^ IdentifierOperator
+//         ^^^^ IdentifierBuiltin
+  
+   var null_was_a_mistake *int
+// ^^^ IdentifierKeyword
+//     ^^^^^^^^^^^^^^^^^^ Identifier
+//                        ^ IdentifierOperator
+//                         ^^^ IdentifierBuiltinType
+   null_was_a_mistake = nil
+// ^^^^^^^^^^^^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^^ IdentifierBuiltin
+  
+   fmt.Println(x, char, string, bool, null_was_a_mistake)
+// ^^^ Identifier
+//     ^^^^^^^ Identifier
+//             ^ Identifier
+//                ^^^^ Identifier
+//                      ^^^^^^ Identifier
+//                              ^^^^ Identifier
+//                                    ^^^^^^^^^^^^^^^^^^ Identifier
+  }
+

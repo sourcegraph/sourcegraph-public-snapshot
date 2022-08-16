@@ -38,6 +38,8 @@ type LsifStore interface {
 
 	// Ranges
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error)
+
+	GetPathExists(ctx context.Context, bundleID int, path string) (_ bool, err error)
 }
 
 type store struct {

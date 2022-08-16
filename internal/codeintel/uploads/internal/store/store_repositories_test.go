@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -19,14 +18,13 @@ func TestSetRepositoryAsDirty(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
-	tx := basestore.NewWithHandle(db.Handle())
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "")
 	}
 
 	for _, repositoryID := range []int{50, 51, 52, 51, 52} {
-		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID, tx); err != nil {
+		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID); err != nil {
 			t.Errorf("unexpected error marking repository as dirty: %s", err)
 		}
 	}

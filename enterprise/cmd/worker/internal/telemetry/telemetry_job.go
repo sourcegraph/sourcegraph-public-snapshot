@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"cloud.google.com/go/pubsub"
 
@@ -75,21 +74,26 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 }
 
 func queueSizeMetricJob(db database.DB) goroutine.BackgroundRoutine {
-	gauge := promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Name:      "telemetry_job_queue_size",
-		Help:      "Current number of events waiting to be scraped.",
-	})
 	job := &queueSizeJob{
-		db:        db,
-		sizeGauge: gauge,
+		db: db,
+		sizeGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: "src",
+			Name:      "telemetry_job_queue_size_total",
+			Help:      "Current number of events waiting to be scraped.",
+		}),
+		throughputGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: "src",
+			Name:      "telemetry_job_max_throughput",
+			Help:      "Currently configured maximum throughput per second.",
+		}),
 	}
 	return goroutine.NewPeriodicGoroutine(context.Background(), time.Minute*5, job)
 }
 
 type queueSizeJob struct {
-	db        database.DB
-	sizeGauge prometheus.Gauge
+	db              database.DB
+	sizeGauge       prometheus.Gauge
+	throughputGauge prometheus.Gauge
 }
 
 func (j *queueSizeJob) Handle(ctx context.Context) error {
@@ -106,6 +110,10 @@ func (j *queueSizeJob) Handle(ctx context.Context) error {
 	}
 	j.sizeGauge.Set(float64(val))
 
+	batchSize := getBatchSize()
+	throughput := float64(batchSize) / float64(JobCooldownDuration/time.Second)
+	j.throughputGauge.Set(throughput)
+
 	return nil
 }
 
@@ -116,7 +124,7 @@ func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.Back
 	}
 	handlerMetrics := newHandlerMetrics(observationContext)
 	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, handlerMetrics.handler)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), JobCooldownDuration, th, handlerMetrics.handler)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error
@@ -173,6 +181,7 @@ func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEm
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
 
 const MaxEventsCountDefault = 1000
+const JobCooldownDuration = time.Second * 60
 
 func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	if !isEnabled() {
@@ -241,15 +250,15 @@ func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore dat
 var confClient = conf.DefaultClient()
 
 func isEnabled() bool {
-	return envvar.ExportUsageData()
+	return enabled
 }
 
 func getBatchSize() int {
-	val := confClient.Get().ExportUsageTelemetry.BatchSize
-	if val <= 0 {
-		val = MaxEventsCountDefault
+	config := confClient.Get()
+	if config == nil || config.ExportUsageTelemetry == nil || config.ExportUsageTelemetry.BatchSize <= 0 {
+		return MaxEventsCountDefault
 	}
-	return val
+	return config.ExportUsageTelemetry.BatchSize
 }
 
 type topicConfig struct {
@@ -260,16 +269,26 @@ type topicConfig struct {
 func getTopicConfig() (topicConfig, error) {
 	var config topicConfig
 
-	config.topicName = confClient.Get().ExportUsageTelemetry.TopicName
+	config.topicName = topicName
 	if config.topicName == "" {
 		return config, errors.New("missing topic name to export usage data")
 	}
-	config.projectName = confClient.Get().ExportUsageTelemetry.TopicProjectName
+	config.projectName = projectName
 	if config.projectName == "" {
 		return config, errors.New("missing project name to export usage data")
 	}
 	return config, nil
 }
+
+const (
+	enabledEnvVar     = "EXPORT_USAGE_DATA_ENABLED"
+	topicNameEnvVar   = "EXPORT_USAGE_DATA_TOPIC_NAME"
+	projectNameEnvVar = "EXPORT_USAGE_DATA_TOPIC_PROJECT"
+)
+
+var enabled, _ = strconv.ParseBool(env.Get(enabledEnvVar, "false", "Export usage data from this Sourcegraph instance to centralized Sourcegraph analytics (requires restart)."))
+var topicName = env.Get(topicNameEnvVar, "", "GCP pubsub topic name for event level data usage exporter")
+var projectName = env.Get(projectNameEnvVar, "", "GCP project name for pubsub topic for event level data usage exporter")
 
 func emptyIfNil(s *string) string {
 	if s == nil {

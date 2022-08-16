@@ -1,5 +1,16 @@
-import { Annotation, Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, Decoration, lineNumbers, ViewPlugin, PluginValue, ViewUpdate } from '@codemirror/view'
+import { Annotation, Extension, RangeSet, Range, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
+import {
+    EditorView,
+    Decoration,
+    lineNumbers,
+    ViewPlugin,
+    PluginValue,
+    ViewUpdate,
+    GutterMarker,
+    gutterLineClass,
+} from '@codemirror/view'
+
+import { isValidLineRange } from './utils'
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -8,7 +19,10 @@ import { EditorView, Decoration, lineNumbers, ViewPlugin, PluginValue, ViewUpdat
  */
 export type SelectedLineRange = { line: number; endLine?: number } | null
 
-const highlighedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineGutterMarker = new (class extends GutterMarker {
+    public elementClass = 'selected-line'
+})()
 const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
 
@@ -19,9 +33,6 @@ const setEndLine = StateEffect.define<number>()
 export const selectedLines = StateField.define<SelectedLineRange>({
     create() {
         return null
-    },
-    compare(previous, next): boolean {
-        return previous?.line === next?.line && previous?.endLine === next?.endLine
     },
     update(value, transaction) {
         for (const effect of transaction.effects) {
@@ -53,12 +64,28 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
             const builder = new RangeSetBuilder<Decoration>()
 
-            for (let line = from; line <= to; line++) {
-                const from = state.doc.line(line).from
-                builder.add(from, from, highlighedLineDecoration)
+            for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                const from = state.doc.line(lineNumber).from
+                builder.add(from, from, selectedLineDecoration)
             }
 
             return builder.finish()
+        }),
+        gutterLineClass.compute([field], state => {
+            const range = state.field(field)
+            const marks: Range<GutterMarker>[] = []
+
+            if (range) {
+                const endLine = range.endLine ?? range.line
+                const from = Math.min(range.line, endLine)
+                const to = from === endLine ? range.line : endLine
+
+                for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                    marks.push(selectedLineGutterMarker.range(state.doc.line(lineNumber).from))
+                }
+            }
+
+            return RangeSet.of(marks)
         }),
     ],
 })
@@ -146,6 +173,7 @@ export function selectableLineNumbers(config: {
                     function onmouseup(): void {
                         dragging = false
                         window.removeEventListener('mouseup', onmouseup)
+                        window.removeEventListener('mousemove', onmousemove)
 
                         let range = view.state.field(selectedLines)
                         if (range) {
@@ -163,22 +191,23 @@ export function selectableLineNumbers(config: {
                         }
                         config.onSelection(range)
                     }
-                    window.addEventListener('mouseup', onmouseup)
-                    return true
-                },
-                mousemove(view, line) {
-                    if (dragging) {
-                        const newEndline = view.state.doc.lineAt(line.from).number
-                        const { endLine } = view.state.field(selectedLines) ?? {}
-                        if (endLine !== newEndline) {
-                            view.dispatch({
-                                effects: setEndLine.of(newEndline),
-                                annotations: lineSelectionSource.of('gutter'),
-                            })
+
+                    function onmousemove(event: MouseEvent): void {
+                        if (dragging) {
+                            const newEndline = view.state.doc.lineAt(view.posAtCoords(event, false)).number
+                            if (view.state.field(selectedLines)?.endLine !== newEndline) {
+                                view.dispatch({
+                                    effects: setEndLine.of(newEndline),
+                                    annotations: lineSelectionSource.of('gutter'),
+                                })
+                            }
+                            event.preventDefault()
                         }
-                        return true
                     }
-                    return false
+
+                    window.addEventListener('mouseup', onmouseup)
+                    window.addEventListener('mousemove', onmousemove)
+                    return true
                 },
             },
         }),
@@ -198,7 +227,9 @@ export function selectableLineNumbers(config: {
  * Set selected lines (e.g. from the URL).
  */
 export function selectLines(view: EditorView, newRange: SelectedLineRange): void {
-    view.dispatch({ effects: setSelectedLines.of(newRange) })
+    view.dispatch({
+        effects: setSelectedLines.of(newRange && isValidLineRange(newRange, view.state.doc) ? newRange : null),
+    })
 }
 
 /**

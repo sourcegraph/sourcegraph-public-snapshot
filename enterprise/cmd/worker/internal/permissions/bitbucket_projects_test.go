@@ -53,11 +53,12 @@ func TestGetBitbucketClient(t *testing.T) {
 	require.NoError(t, err)
 
 	svc := types.ExternalService{
-		Config: string(cfg),
+		Config: extsvc.NewUnencryptedConfig(string(cfg)),
 	}
 
+	ctx := context.Background()
 	var handler bitbucketProjectPermissionsHandler
-	client, err := handler.getBitbucketClient(&svc)
+	client, err := handler.getBitbucketClient(ctx, &svc)
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }
@@ -72,6 +73,7 @@ func TestHandle_UnsupportedCodeHost(t *testing.T) {
 			ID:          1,
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "github",
+			Config:      extsvc.NewEmptyConfig(),
 		},
 		nil,
 	)
@@ -287,7 +289,7 @@ func TestHandleRestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`),
 	})
 	require.NoError(t, err)
 
@@ -396,7 +398,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`),
 	})
 	require.NoError(t, err)
 

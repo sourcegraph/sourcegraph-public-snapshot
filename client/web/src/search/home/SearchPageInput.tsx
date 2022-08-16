@@ -83,10 +83,21 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                       searchQueryHistorySource({
                           userId: props.authenticatedUser.id,
                           selectedSearchContext: props.selectedSearchContextSpec,
+                          onSelection: index => {
+                              props.telemetryService.log('SearchSuggestionItemClicked', {
+                                  type: 'SearchHistory',
+                                  index,
+                              })
+                          },
                       }),
                   ]
                 : [],
-        [props.authenticatedUser, props.selectedSearchContextSpec, coreWorkflowImprovementsEnabled]
+        [
+            props.authenticatedUser,
+            props.selectedSearchContextSpec,
+            coreWorkflowImprovementsEnabled,
+            props.telemetryService,
+        ]
     )
 
     const quickLinks =
@@ -154,7 +165,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                        applySuggestionsOnEnter={applySuggestionsOnEnter}
+                        applySuggestionsOnEnter={coreWorkflowImprovementsEnabled || applySuggestionsOnEnter}
                         suggestionSources={suggestionSources}
                         defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
                         showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}

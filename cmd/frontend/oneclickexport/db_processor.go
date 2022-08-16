@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -33,9 +34,8 @@ func (d ExtSvcQueryProcessor) Process(ctx context.Context, payload Limit, dir st
 	}
 
 	redactedExtSvc := make([]*RedactedExternalService, len(externalServices))
-
 	for idx, extSvc := range externalServices {
-		redacted, err := convertExtSvcToRedacted(extSvc)
+		redacted, err := convertExtSvcToRedacted(ctx, extSvc)
 		if err != nil {
 			d.logger.Error("error during redacting external service code host config", log.Error(err))
 			return
@@ -80,8 +80,8 @@ type RedactedExternalService struct {
 	TokenExpiresAt  *time.Time
 }
 
-func convertExtSvcToRedacted(extSvc *types.ExternalService) (*RedactedExternalService, error) {
-	config, err := extSvc.RedactedConfig()
+func convertExtSvcToRedacted(ctx context.Context, extSvc *types.ExternalService) (*RedactedExternalService, error) {
+	config, err := extSvc.RedactedConfig(ctx)
 	if err != nil {
 		return nil, err
 	}

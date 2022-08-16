@@ -36,6 +36,14 @@ func (b *Build) authorName() string {
 	return b.Author.Name
 }
 
+func (b *Build) authorEmail() string {
+	if b.Author == nil {
+		return ""
+	}
+
+	return b.Author.Email
+}
+
 func (b *Build) state() string {
 	return strp(b.State)
 }

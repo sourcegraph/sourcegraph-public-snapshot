@@ -2,8 +2,8 @@ import { formatISO } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Series } from '@sourcegraph/wildcard'
 
-import { Series } from '../../../../../charts'
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
 import { DATA_SERIES_COLORS } from '../../../constants'

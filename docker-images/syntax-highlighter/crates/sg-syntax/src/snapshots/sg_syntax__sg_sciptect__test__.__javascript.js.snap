@@ -1,0 +1,82 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 541
+expression: "dump_document(&document, &contents)"
+---
+  function $initHighlight(block, cls) {
+//^^^^^^^^ IdentifierType
+//         ^^^^^^^^^^^^^^ IdentifierFunction
+//                        ^^^^^ Identifier
+//                               ^^^ Identifier
+    try {
+//  ^^^ IdentifierKeyword
+      if (cls.search(/\bno\-highlight\b/) != -1)
+//    ^^ IdentifierKeyword
+//        ^^^ Identifier
+//            ^^^^^^ Identifier
+//                   ^ StringLiteral
+//                    ^^ IdentifierKeyword
+//                      ^^ StringLiteral
+//                        ^^ StringLiteralEscape
+//                          ^^^^^^^^^ StringLiteral
+//                                   ^^ IdentifierKeyword
+//                                     ^ StringLiteral
+//                                        ^^ IdentifierOperator
+//                                           ^ IdentifierOperator
+//                                            ^ NumericLiteral
+        return process(block, true, 0x0F) +
+//      ^^^^^^ IdentifierKeyword
+//                     ^^^^^ Identifier
+//                            ^^^^ IdentifierBuiltin
+//                                  ^^^^ NumericLiteral
+//                                        ^ IdentifierOperator
+               ` class="${cls}"`;
+//             ^^^^^^^^^ StringLiteral
+//                        ^^^ Identifier
+//                            ^^ StringLiteral
+//                              ^ PunctuationDelimiter
+    } catch (e) {
+//    ^^^^^ IdentifierKeyword
+//           ^ Identifier
+      /* handle exception */
+//    ^^^^^^^^^^^^^^^^^^^^^^ Comment
+    }
+    for (var i = 0 / 2; i < classes.length; i++) {
+//  ^^^ IdentifierKeyword
+//       ^^^ IdentifierType
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^ NumericLiteral
+//                 ^ IdentifierOperator
+//                   ^ NumericLiteral
+//                      ^ Identifier
+//                        ^ IdentifierOperator
+//                          ^^^^^^^ Identifier
+//                                          ^ Identifier
+//                                           ^^ IdentifierOperator
+      if (checkCondition(classes[i]) === undefined)
+//    ^^ IdentifierKeyword
+//        ^^^^^^^^^^^^^^ Identifier
+//                       ^^^^^^^ Identifier
+//                               ^ Identifier
+//                                   ^^^ IdentifierOperator
+//                                       ^^^^^^^^^ IdentifierBuiltin
+        console.log('undefined');
+//                  ^^^^^^^^^^^ StringLiteral
+//                              ^ PunctuationDelimiter
+    }
+  
+    return (
+//  ^^^^^^ IdentifierKeyword
+      <div>
+        <web-component>{block}</web-component>
+//                      ^^^^^ Identifier
+      </div>
+    )
+  }
+  
+  export  $initHighlight;
+//^^^^^^ IdentifierKeyword
+//        ^^^^^^^^^^^^^^ Identifier
+//                      ^ PunctuationDelimiter
+

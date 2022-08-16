@@ -8,7 +8,7 @@ import sinon from 'sinon'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
