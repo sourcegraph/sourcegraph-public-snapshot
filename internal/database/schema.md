@@ -340,7 +340,6 @@ Foreign-key constraints:
  external_id         | text                     |           |          | 
  fork_namespace      | citext                   |           |          | 
  diff                | bytea                    |           |          | 
- head_repo_id        | integer                  |           |          | 
  base_rev            | text                     |           |          | 
  base_ref            | text                     |           |          | 
  body                | text                     |           |          | 
@@ -349,7 +348,6 @@ Foreign-key constraints:
  commit_author_name  | text                     |           |          | 
  commit_author_email | text                     |           |          | 
  type                | text                     |           |          | 
- migrated            | boolean                  |           | not null | false
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
@@ -360,7 +358,6 @@ Indexes:
     "changeset_specs_title" btree (title)
 Foreign-key constraints:
     "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
-    "changeset_specs_head_repo_id_fkey" FOREIGN KEY (head_repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
@@ -2395,7 +2392,6 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Referenced by:
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
-    TABLE "changeset_specs" CONSTRAINT "changeset_specs_head_repo_id_fkey" FOREIGN KEY (head_repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE

@@ -7,5 +7,4 @@ ALTER TABLE changeset_specs
     DROP COLUMN IF EXISTS commit_message,
     DROP COLUMN IF EXISTS commit_author_name,
     DROP COLUMN IF EXISTS commit_author_email,
-    DROP COLUMN IF EXISTS type,
-    DROP COLUMN IF EXISTS migrated;
+    DROP COLUMN IF EXISTS type;

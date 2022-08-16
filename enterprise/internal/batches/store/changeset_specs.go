@@ -48,7 +48,6 @@ var changesetSpecInsertColumns = []string{
 	"commit_author_name",
 	"commit_author_email",
 	"type",
-	"migrated",
 }
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
@@ -90,9 +89,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.UpdatedAt = c.CreatedAt
 			}
 
-			// We don't want invalid specs to hit the normalized DB, so rather
-			// error here when we detect bad data, than in the DB migration later.
-			// We guard against this when they come in, but you never know.
 			if c.Spec.IsBranch() && c.Spec.BaseRepository != c.Spec.HeadRepository {
 				return errors.Wrap(batcheslib.ErrHeadBaseMismatch, "failed to migrate changeset spec to new DB schema")
 			}
@@ -129,9 +125,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				body = &c.Spec.Body
 			}
 			if c.Spec.IsBranch() {
-				// We don't want invalid specs to hit the normalized DB, so rather
-				// error here when we detect bad data, than in the DB migration later
-				// where we will add non-null constraints and the likes.
 				d, err := c.Spec.Diff()
 				if err != nil {
 					return err
@@ -203,9 +196,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				dbutil.NullString{S: commitAuthorName},
 				dbutil.NullString{S: commitAuthorEmail},
 				typ,
-				// Records created through this code path are always using the new
-				// schema, so mark it as migrated right away.
-				true,
 			); err != nil {
 				return err
 			}

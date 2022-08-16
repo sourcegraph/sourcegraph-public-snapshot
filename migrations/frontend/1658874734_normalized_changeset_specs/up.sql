@@ -7,13 +7,12 @@ ALTER TABLE changeset_specs
     ADD COLUMN IF NOT EXISTS commit_message TEXT,
     ADD COLUMN IF NOT EXISTS commit_author_name TEXT,
     ADD COLUMN IF NOT EXISTS commit_author_email TEXT,
-    ADD COLUMN IF NOT EXISTS type TEXT,
-    ADD COLUMN IF NOT EXISTS migrated BOOLEAN NOT NULL DEFAULT FALSE;
+    ADD COLUMN IF NOT EXISTS type TEXT;
 
 UPDATE
     changeset_specs
 SET
-    diff = spec->'commits'->0->>'diff',
+    diff = convert_to(spec->'commits'->0->>'diff', 'UTF8'),
     base_rev = spec->>'baseRev',
     base_ref = spec->>'baseRef',
     body = spec->>'body',
@@ -21,7 +20,4 @@ SET
     commit_message = spec->'commits'->0->>'message',
     commit_author_name = spec->'commits'->0->>'authorName',
     commit_author_email = spec->'commits'->0->>'authorEmail',
-    type = CASE WHEN spec->>'externalID' IS NOT NULL THEN 'existing' ELSE 'branch' END,
-    migrated = TRUE
-WHERE
-    migrated = FALSE;
+    type = CASE WHEN spec->>'externalID' IS NOT NULL THEN 'existing' ELSE 'branch' END;

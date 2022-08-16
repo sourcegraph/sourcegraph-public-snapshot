@@ -3251,7 +3251,7 @@
       "Columns": [
         {
           "Name": "base_ref",
-          "Index": 19,
+          "Index": 18,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -3264,7 +3264,7 @@
         },
         {
           "Name": "base_rev",
-          "Index": 18,
+          "Index": 17,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -3290,7 +3290,7 @@
         },
         {
           "Name": "body",
-          "Index": 20,
+          "Index": 19,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -3303,19 +3303,6 @@
         },
         {
           "Name": "commit_author_email",
-          "Index": 24,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "commit_author_name",
           "Index": 23,
           "TypeName": "text",
           "IsNullable": true,
@@ -3328,8 +3315,21 @@
           "Comment": ""
         },
         {
-          "Name": "commit_message",
+          "Name": "commit_author_name",
           "Index": 22,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "commit_message",
+          "Index": 21,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -3445,19 +3445,6 @@
           "Comment": ""
         },
         {
-          "Name": "head_repo_id",
-          "Index": 17,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "id",
           "Index": 1,
           "TypeName": "bigint",
@@ -3471,21 +3458,8 @@
           "Comment": ""
         },
         {
-          "Name": "migrated",
-          "Index": 26,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "published",
-          "Index": 21,
+          "Index": 20,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -3550,7 +3524,7 @@
         },
         {
           "Name": "type",
-          "Index": 25,
+          "Index": 24,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -3667,13 +3641,6 @@
           "RefTableName": "batch_specs",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "changeset_specs_head_repo_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "repo",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (head_repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE"
         },
         {
           "Name": "changeset_specs_repo_id_fkey",
