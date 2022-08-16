@@ -1068,14 +1068,15 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 		}
 	}
 
-	var grantValues []any
-	if migration.userId != 0 {
-		grantValues = []any{dashboardID, migration.userId, nil, nil}
-	} else if len(migration.orgIds) != 0 {
-		grantValues = []any{dashboardID, nil, migration.orgIds[0], nil}
-	} else {
-		grantValues = []any{dashboardID, nil, nil, true}
-	}
+	grantValues := func() []any {
+		if migration.userId != 0 {
+			return []any{dashboardID, migration.userId, nil, nil}
+		}
+		if len(migration.orgIds) != 0 {
+			return []any{dashboardID, nil, migration.orgIds[0], nil}
+		}
+		return []any{dashboardID, nil, nil, true}
+	}()
 	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertGrantQuery, grantValues...)); err != nil {
 		return errors.Wrap(err, "AddDashboardGrants")
 	}
