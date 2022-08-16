@@ -364,18 +364,18 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	}
 	logDuplicates(allDefinedInsightIds)
 
+	if job.UserId != nil {
+		cond = sqlf.Sprintf("user_id = %s", *job.UserId)
+	} else if job.OrgId != nil {
+		cond = sqlf.Sprintf("org_id = %s", *job.OrgId)
+	} else {
+		cond = sqlf.Sprintf("global IS TRUE")
+	}
+
 	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
 	var migratedInsightsCount int
 	var insightMigrationErrors error
 	if totalInsights != job.MigratedInsights {
-		var cond *sqlf.Query
-		if job.UserId != nil {
-			cond = sqlf.Sprintf("user_id = %s", *job.UserId)
-		} else if job.OrgId != nil {
-			cond = sqlf.Sprintf("org_id = %s", *job.OrgId)
-		} else {
-			cond = sqlf.Sprintf("global IS TRUE")
-		}
 		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond))
 		if err != nil {
 			return err
@@ -405,12 +405,12 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	dashboards := getDashboards(settings[0])
 	totalDashboards := len(dashboards)
 	if totalDashboards != job.MigratedDashboards {
-		err = jobStoreTx.UpdateTotalDashboards(ctx, job.UserId, job.OrgId, totalDashboards)
+		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s`, totalDashboards, cond))
 		if err != nil {
 			return err
 		}
 		migratedDashboardsCount, dashboardMigrationErrors := m.migrateDashboards(ctx, dashboards, migrationContext)
-		err = jobStoreTx.UpdateMigratedDashboards(ctx, job.UserId, job.OrgId, migratedDashboardsCount)
+		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s`, migratedDashboardsCount, cond))
 		if err != nil {
 			return err
 		}
