@@ -28,9 +28,16 @@ export class GlobalContributions extends React.Component<Props> {
                 throw error // Throw error to the <ErrorBoundary />
             })
 
-        this.subscriptions.add(
-            registerHoverContributions({ ...this.props, locationAssign: location.assign.bind(location) })
-        )
+        const { extensionsController } = this.props
+        if (extensionsController !== null) {
+            this.subscriptions.add(
+                registerHoverContributions({
+                    ...this.props,
+                    extensionsController,
+                    locationAssign: location.assign.bind(location),
+                })
+            )
+        }
         this.subscriptions.add(registerSearchStatsContributions(this.props))
     }
 

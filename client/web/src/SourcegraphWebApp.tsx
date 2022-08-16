@@ -33,10 +33,8 @@ import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabled
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import {
-    Controller as ExtensionsController,
-    createController as createExtensionsController,
-} from '@sourcegraph/shared/src/extensions/controller'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
@@ -185,28 +183,33 @@ export class SourcegraphWebApp extends React.Component<
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly platformContext: PlatformContext = createPlatformContext()
-    private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
+    private readonly extensionsController: ExtensionsController | null = window.context.enableLegacyExtensions
+        ? createExtensionsController(this.platformContext)
+        : null
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
-        this.subscriptions.add(this.extensionsController)
 
-        // Preload extensions whenever user enabled extensions or the viewed language changes.
-        this.subscriptions.add(
-            combineLatest([
-                getEnabledExtensions(this.platformContext),
-                observeLocation(history).pipe(
-                    startWith(location),
-                    map(location => getModeFromPath(location.pathname)),
-                    distinctUntilChanged()
-                ),
-            ]).subscribe(([extensions, languageID]) => {
-                preloadExtensions({
-                    extensions,
-                    languages: new Set([languageID]),
+        if (this.extensionsController !== null) {
+            this.subscriptions.add(this.extensionsController)
+
+            // Preload extensions whenever user enabled extensions or the viewed language changes.
+            this.subscriptions.add(
+                combineLatest([
+                    getEnabledExtensions(this.platformContext),
+                    observeLocation(history).pipe(
+                        startWith(location),
+                        map(location => getModeFromPath(location.pathname)),
+                        distinctUntilChanged()
+                    ),
+                ]).subscribe(([extensions, languageID]) => {
+                    preloadExtensions({
+                        extensions,
+                        languages: new Set([languageID]),
+                    })
                 })
-            })
-        )
+            )
+        }
 
         setQueryStateFromURL(window.location.search)
 
@@ -421,11 +424,13 @@ export class SourcegraphWebApp extends React.Component<
                                                         </CompatRouter>
                                                     </Router>
                                                 </ScrollManager>
-                                                <Notifications
-                                                    key={2}
-                                                    extensionsController={this.extensionsController}
-                                                    notificationItemStyleProps={notificationStyles}
-                                                />
+                                                {this.extensionsController !== null ? (
+                                                    <Notifications
+                                                        key={2}
+                                                        extensionsController={this.extensionsController}
+                                                        notificationItemStyleProps={notificationStyles}
+                                                    />
+                                                ) : null}
                                                 <UserSessionStores />
                                             </SearchQueryStateStoreProvider>
                                         </SearchResultsCacheProvider>
@@ -465,6 +470,9 @@ export class SourcegraphWebApp extends React.Component<
     }
 
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
+        if (this.extensionsController === null) {
+            return
+        }
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
