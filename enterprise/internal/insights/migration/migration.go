@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -202,9 +203,27 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 
 		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 		// resolve insight ID collisions as if it were in a setting cascade
-		orgs, err := orgStore.GetByUserID(ctx, userId)
+		scanOrgs := basestore.NewSliceScanner(func(s dbutil.Scanner) (org itypes.Org, _ error) {
+			err := s.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
+			return org, err
+		})
+		orgs, err := scanOrgs(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+			SELECT
+				orgs.id,
+				orgs.name,
+				orgs.display_name,
+				orgs.created_at,
+				orgs.updated_at
+			FROM org_members
+			LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
+			WHERE
+				user_id = %s AND
+				orgs.deleted_at IS NULL
+		`,
+			userId,
+		)))
 		if err != nil {
-			return errors.Wrap(err, "OrgStoreGetByUserID")
+			return err
 		}
 		orgIds := make([]int, 0, len(orgs))
 		for _, org := range orgs {
