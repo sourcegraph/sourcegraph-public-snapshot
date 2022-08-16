@@ -29,6 +29,6 @@ func BuildWorkerScan[T workerutil.Record](scan func(dbutil.Scanner) (T, error)) 
 			records = append(records, record)
 		}
 
-		return records, rows.Err()
+		return records, nil
 	}
 }
