@@ -52,7 +52,7 @@ enum AggregationModes {
     Repository = 'repo',
     FilePath = 'file',
     Author = 'author',
-    CaptureGroups = 'groups',
+    CaptureGroups = 'captureGroup',
 }
 
 const AGGREGATION_MODE_URL_KEY = 'groupBy'
@@ -65,7 +65,7 @@ const aggregationModeDeserializer = (serializedValue: string | null): Aggregatio
             return AggregationModes.FilePath
         case 'author':
             return AggregationModes.Author
-        case 'groups':
+        case 'captureGroup':
             return AggregationModes.CaptureGroups
 
         default:
