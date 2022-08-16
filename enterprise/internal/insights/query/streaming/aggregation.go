@@ -22,6 +22,7 @@ type OtherCount struct {
 	GroupCount  int32
 }
 
+// Add performs best-effort aggregation for a (label, count) search result.
 func (a *aggregated) Add(label string, count int32) {
 	// 1. We have a match in our in-memory map. Update and update the smallest result.
 	// 2. We haven't hit the max buffer size. Add to our in-memory map and update the smallest result.
@@ -75,17 +76,19 @@ func (a *aggregated) updateOtherCount(resultCount, groupCount int32) {
 	a.OtherCount.GroupCount += groupCount
 }
 
+// SortAggregate sorts aggregated results into a slice of descending order.
 func (a aggregated) SortAggregate() []*Aggregate {
-	aggregateSlice := make(aggregateSlice, 0, len(a.Results))
+	aggregateSlice := make([]*Aggregate, 0, len(a.Results))
 	for val, count := range a.Results {
 		aggregateSlice = append(aggregateSlice, &Aggregate{val, count})
 	}
-	sort.Sort(aggregateSlice)
+	// Sort in descending order.
+	sort.Slice(aggregateSlice, func(i int, j int) bool {
+		return aggregateSlice[j].Less(aggregateSlice[i])
+	})
 
 	return aggregateSlice
 }
-
-type aggregateSlice []*Aggregate
 
 func (a *Aggregate) Less(b *Aggregate) bool {
 	if b == nil {
@@ -96,16 +99,4 @@ func (a *Aggregate) Less(b *Aggregate) bool {
 		return a.Label <= b.Label
 	}
 	return a.Count < b.Count
-}
-
-func (as aggregateSlice) Len() int {
-	return len(as)
-}
-
-func (as aggregateSlice) Less(i, j int) bool {
-	return as[i].Less(as[j])
-}
-
-func (as aggregateSlice) Swap(i, j int) {
-	as[i], as[j] = as[j], as[i]
 }
