@@ -58,25 +58,6 @@ const (
 	Desc seriesSortDirection = "DESC"
 )
 
-type insightViewGrant struct {
-	UserID *int
-	OrgID  *int
-	Global *bool
-}
-
-func userGrant(userID int) insightViewGrant {
-	return insightViewGrant{UserID: &userID}
-}
-
-func orgGrant(orgID int) insightViewGrant {
-	return insightViewGrant{OrgID: &orgID}
-}
-
-func globalGrant() insightViewGrant {
-	b := true
-	return insightViewGrant{Global: &b}
-}
-
 type timeInterval struct {
 	unit  intervalUnit
 	value int
