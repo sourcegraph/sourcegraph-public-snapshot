@@ -393,16 +393,20 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		return err
 	}
 
+	now := time.Now()
+
 	if job.UserId != nil {
-		cond = sqlf.Sprintf("user_id = %s", *job.UserId)
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE user_id = %s`, now, *job.UserId)); err != nil {
+			return errors.Wrap(err, "MarkCompleted")
+		}
 	} else if job.OrgId != nil {
-		cond = sqlf.Sprintf("org_id = %s", *job.OrgId)
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE org_id = %s`, now, *job.OrgId)); err != nil {
+			return errors.Wrap(err, "MarkCompleted")
+		}
 	} else {
-		cond = sqlf.Sprintf("global IS TRUE")
-	}
-	err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE %s`, cond))
-	if err != nil {
-		return errors.Wrap(err, "MarkCompleted")
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE global IS TRUE`, now)); err != nil {
+			return errors.Wrap(err, "MarkCompleted")
+		}
 	}
 
 	return nil
