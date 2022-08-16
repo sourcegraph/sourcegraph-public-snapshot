@@ -93,6 +93,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Collect all cache keys so we can look them up in a single query.
 	cacheKeyWorkspaces := make([]workspaceCacheKey, 0, len(workspaces))
 	allStepCacheKeys := make([]string, 0, len(workspaces))
+	retriever := &remoteFileMetadataRetriever{ctx: ctx, batchSpecID: spec.ID, store: r.store}
 
 	// Build workspaces DB objects.
 	for _, w := range workspaces {
@@ -153,7 +154,7 @@ func (r *batchSpecWorkspaceCreator) process(
 				w.OnlyFetchWorkspace,
 				spec.Spec.Steps,
 				i,
-				&remoteFileMetadataRetriever{ctx: ctx, batchSpecID: spec.ID, store: r.store},
+				retriever,
 			)
 
 			rawStepKey, err := key.Key()
