@@ -66,38 +66,6 @@ func getLangStatsInsights(settingsRow settings) []langStatsInsight {
 	return results
 }
 
-type timeSeries struct {
-	Name   string
-	Stroke string
-	Query  string
-}
-
-type interval struct {
-	Years  *int
-	Months *int
-	Weeks  *int
-	Days   *int
-	Hours  *int
-}
-
-type searchInsight struct {
-	ID           string
-	Title        string
-	Description  string
-	Repositories []string
-	Series       []timeSeries
-	Step         interval
-	Visibility   string
-	OrgID        *int32
-	UserID       *int32
-	Filters      *defaultFilters
-}
-
-type defaultFilters struct {
-	IncludeRepoRegexp *string
-	ExcludeRepoRegexp *string
-}
-
 func getFrontendInsights(settingsRow settings) []searchInsight {
 	prefix := "searchInsights."
 	var raw map[string]json.RawMessage
@@ -174,13 +142,6 @@ func getDashboards(settingsRow settings) []settingDashboard {
 
 	return results
 }
-
-type permissionAssociations struct {
-	userID *int32
-	orgID  *int32
-}
-
-type integratedInsights map[string]searchInsight
 
 func (i integratedInsights) Insights(perms permissionAssociations) []searchInsight {
 	results := make([]searchInsight, 0)
@@ -289,15 +250,6 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []searchInsigh
 	return count, errs
 }
 
-type langStatsInsight struct {
-	ID             string
-	Title          string
-	Repository     string
-	OtherThreshold float64
-	OrgID          *int32
-	UserID         *int32
-}
-
 func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []langStatsInsight) (int, error) {
 	var count int
 	var errs error
@@ -342,59 +294,6 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []lan
 		}
 	}
 	return count, errs
-}
-
-type insightViewSeriesMetadata struct {
-	Label  string
-	Stroke string
-}
-
-type insightView struct {
-	ID                  int
-	Title               string
-	Description         string
-	UniqueID            string
-	Filters             insightViewFilters
-	OtherThreshold      *float64
-	PresentationType    presentationType
-	IsFrozen            bool
-	SeriesSortMode      *seriesSortMode
-	SeriesSortDirection *seriesSortDirection
-	SeriesLimit         *int32
-}
-
-type insightViewFilters struct {
-	IncludeRepoRegex *string
-	ExcludeRepoRegex *string
-	SearchContexts   []string
-}
-
-type presentationType string
-
-const (
-	Line presentationType = "LINE"
-	Pie  presentationType = "PIE"
-)
-
-type seriesSortMode string
-
-const (
-	ResultCount     seriesSortMode = "RESULT_COUNT"    // Sorts by the number of results for the most recent datapoint of a series.
-	DateAdded       seriesSortMode = "DATE_ADDED"      // Sorts by the date of the earliest datapoint in the series.
-	Lexicographical seriesSortMode = "LEXICOGRAPHICAL" // Sorts by label: first by semantic version and then alphabetically.
-)
-
-type seriesSortDirection string
-
-const (
-	Asc  seriesSortDirection = "ASC"
-	Desc seriesSortDirection = "DESC"
-)
-
-type insightViewGrant struct {
-	UserID *int
-	OrgID  *int
-	Global *bool
 }
 
 func userGrant(userID int) insightViewGrant {
@@ -1024,11 +923,6 @@ func parseTimeInterval(insight searchInsight) timeInterval {
 			value: 1,
 		}
 	}
-}
-
-type timeInterval struct {
-	unit  intervalUnit
-	value int
 }
 
 func makeUniqueId(id string, subject settingsSubject) string {
