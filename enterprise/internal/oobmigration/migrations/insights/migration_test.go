@@ -2,8 +2,6 @@ package insights
 
 import (
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // func TestBuildUniqueIdCondition(t *testing.T) {
@@ -126,22 +124,22 @@ import (
 // 	})
 // }
 
-func TestSpecialCaseDashboardTitle(t *testing.T) {
-	t.Run("global title", func(t *testing.T) {
-		want := "Global Insights"
-		got := specialCaseDashboardTitle("Global")
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("unexpected special case dashboard title (want/got): %v", diff)
-		}
-	})
-	t.Run("non global title", func(t *testing.T) {
-		want := "First Last's Insights"
-		got := specialCaseDashboardTitle("First Last")
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("unexpected special case dashboard title (want/got): %v", diff)
-		}
-	})
-}
+// func TestSpecialCaseDashboardTitle(t *testing.T) {
+// 	t.Run("global title", func(t *testing.T) {
+// 		want := "Global Insights"
+// 		got := specialCaseDashboardTitle("Global")
+// 		if diff := cmp.Diff(want, got); diff != "" {
+// 			t.Errorf("unexpected special case dashboard title (want/got): %v", diff)
+// 		}
+// 	})
+// 	t.Run("non global title", func(t *testing.T) {
+// 		want := "First Last's Insights"
+// 		got := specialCaseDashboardTitle("First Last")
+// 		if diff := cmp.Diff(want, got); diff != "" {
+// 			t.Errorf("unexpected special case dashboard title (want/got): %v", diff)
+// 		}
+// 	})
+// }
 
 func TestCreateSpecialCaseDashboard(t *testing.T) {
 	// if testing.Short() {
