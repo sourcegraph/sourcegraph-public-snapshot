@@ -129,6 +129,7 @@ export const BarChartVitrina: Story = () => (
             getDatumValue={getValue}
             getDatumColor={getColor}
             getDatumLink={getLink}
+            getDatumHover={datum => `custom text for ${datum.name}`}
         />
         <BarChart
             width={400}
