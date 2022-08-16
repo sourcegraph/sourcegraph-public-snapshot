@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -15,25 +16,43 @@ import (
 	"github.com/segmentio/ksuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const schemaErrorPrefix = "insights oob migration schema error"
 
-func getLangStatsInsights(settingsRow Settings) []insights.LangStatsInsight {
+// FilterSettingJson will return a json map that only contains keys that match a prefix string, mapped to the keyed contents.
+func FilterSettingJson(settingJson string, prefix string) (map[string]json.RawMessage, error) {
+	var raw map[string]json.RawMessage
+
+	if err := jsonc.Unmarshal(settingJson, &raw); err != nil {
+		return map[string]json.RawMessage{}, err
+	}
+
+	filtered := make(map[string]json.RawMessage)
+	for key, val := range raw {
+		if strings.HasPrefix(key, prefix) {
+			filtered[key] = val
+		}
+	}
+
+	return filtered, nil
+}
+
+func getLangStatsInsights(settingsRow Settings) []LangStatsInsight {
 	prefix := "codeStatsInsights."
 	var raw map[string]json.RawMessage
-	results := make([]insights.LangStatsInsight, 0)
+	results := make([]LangStatsInsight, 0)
 
-	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
+	raw, err := FilterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
 		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "language usage insights failed to migrate due to unrecognized schema")
 		return results
 	}
 
 	for id, body := range raw {
-		var temp insights.LangStatsInsight
+		var temp LangStatsInsight
 		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
 			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "language usage insight failed to migrate due to unrecognized schema")
@@ -47,19 +66,51 @@ func getLangStatsInsights(settingsRow Settings) []insights.LangStatsInsight {
 	return results
 }
 
-func getFrontendInsights(settingsRow Settings) []insights.SearchInsight {
+type TimeSeries struct {
+	Name   string
+	Stroke string
+	Query  string
+}
+
+type Interval struct {
+	Years  *int
+	Months *int
+	Weeks  *int
+	Days   *int
+	Hours  *int
+}
+
+type SearchInsight struct {
+	ID           string
+	Title        string
+	Description  string
+	Repositories []string
+	Series       []TimeSeries
+	Step         Interval
+	Visibility   string
+	OrgID        *int32
+	UserID       *int32
+	Filters      *DefaultFilters
+}
+
+type DefaultFilters struct {
+	IncludeRepoRegexp *string
+	ExcludeRepoRegexp *string
+}
+
+func getFrontendInsights(settingsRow Settings) []SearchInsight {
 	prefix := "searchInsights."
 	var raw map[string]json.RawMessage
-	results := make([]insights.SearchInsight, 0)
+	results := make([]SearchInsight, 0)
 
-	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
+	raw, err := FilterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
 		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "search insights failed to migrate due to unrecognized schema")
 		return results
 	}
 
 	for id, body := range raw {
-		var temp insights.SearchInsight
+		var temp SearchInsight
 		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
 			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "search insight failed to migrate due to unrecognized schema")
@@ -74,17 +125,17 @@ func getFrontendInsights(settingsRow Settings) []insights.SearchInsight {
 	return results
 }
 
-func getBackendInsights(setting Settings) []insights.SearchInsight {
+func getBackendInsights(setting Settings) []SearchInsight {
 	prefix := "insights.allrepos"
 
-	results := make([]insights.SearchInsight, 0)
+	results := make([]SearchInsight, 0)
 	perms := permissionAssociations{
 		userID: setting.Subject.User,
 		orgID:  setting.Subject.Org,
 	}
 
 	var raw map[string]json.RawMessage
-	raw, err := insights.FilterSettingJson(setting.Contents, prefix)
+	raw, err := FilterSettingJson(setting.Contents, prefix)
 	if err != nil {
 		log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insights failed to migrate due to unrecognized schema")
 		return results
@@ -107,7 +158,7 @@ func getDashboards(settingsRow Settings) []SettingDashboard {
 
 	results := make([]SettingDashboard, 0)
 	var raw map[string]json.RawMessage
-	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
+	raw, err := FilterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
 		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
 		return results
@@ -129,10 +180,10 @@ type permissionAssociations struct {
 	orgID  *int32
 }
 
-type IntegratedInsights map[string]insights.SearchInsight
+type IntegratedInsights map[string]SearchInsight
 
-func (i IntegratedInsights) Insights(perms permissionAssociations) []insights.SearchInsight {
-	results := make([]insights.SearchInsight, 0)
+func (i IntegratedInsights) Insights(perms permissionAssociations) []SearchInsight {
+	results := make([]SearchInsight, 0)
 	for key, insight := range i {
 		insight.ID = key // the insight ID is the value of the dict key
 
@@ -156,7 +207,7 @@ func unmarshalBackendInsights(raw json.RawMessage, setting Settings) IntegratedI
 	}
 
 	for id, body := range dict {
-		var temp insights.SearchInsight
+		var temp SearchInsight
 		if err := json.Unmarshal(body, &temp); err != nil {
 			log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insight failed to migrate due to unrecognized schema")
 			continue
@@ -192,7 +243,7 @@ func unmarshalDashboard(raw json.RawMessage, settingsRow Settings) []SettingDash
 	return result
 }
 
-func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.SearchInsight, batch migrationBatch) (int, error) {
+func (m *migrator) migrateInsights(ctx context.Context, toMigrate []SearchInsight, batch migrationBatch) (int, error) {
 	var count int
 	var errs error
 	for _, d := range toMigrate {
@@ -238,7 +289,16 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 	return count, errs
 }
 
-func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []insights.LangStatsInsight) (int, error) {
+type LangStatsInsight struct {
+	ID             string
+	Title          string
+	Repository     string
+	OtherThreshold float64
+	OrgID          *int32
+	UserID         *int32
+}
+
+func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []LangStatsInsight) (int, error) {
 	var count int
 	var errs error
 	for _, d := range toMigrate {
@@ -350,12 +410,18 @@ func GlobalGrant() InsightViewGrant {
 	return InsightViewGrant{Global: &b}
 }
 
+// NextRecording calculates the time that a series recording should occur given the current or most recent recording time.
+func NextRecording(current time.Time) time.Time {
+	year, month, _ := current.In(time.UTC).Date()
+	return time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
+}
+
 func NextSnapshot(current time.Time) time.Time {
 	year, month, day := current.In(time.UTC).Date()
 	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
 }
 
-func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, from insights.LangStatsInsight) (err error) {
+func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, from LangStatsInsight) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -531,7 +597,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	return nil
 }
 
-func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerStore *basestore.Store, from insights.SearchInsight, batch migrationBatch) (err error) {
+func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerStore *basestore.Store, from SearchInsight, batch migrationBatch) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -563,8 +629,8 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 		} else if batch == backend {
 			temp.SampleIntervalUnit = string(Month)
 			temp.SampleIntervalValue = 1
-			temp.NextRecordingAfter = insights.NextRecording(time.Now())
-			temp.NextSnapshotAfter = insights.NextSnapshot(time.Now())
+			temp.NextRecordingAfter = NextRecording(time.Now())
+			temp.NextSnapshotAfter = NextSnapshot(time.Now())
 			temp.SeriesID = ksuid.New().String()
 			temp.JustInTime = false
 			temp.GenerationMethod = Search
@@ -926,7 +992,7 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []SettingDas
 }
 
 // there seems to be some global insights with possibly old schema that have a step field
-func parseTimeInterval(insight insights.SearchInsight) timeInterval {
+func parseTimeInterval(insight SearchInsight) timeInterval {
 	if insight.Step.Days != nil {
 		return timeInterval{
 			unit:  Day,
@@ -987,7 +1053,7 @@ func getOwnerName(settingsRow Settings) string {
 	return name
 }
 
-func getOwnerNameFromInsight(insight insights.SearchInsight) string {
+func getOwnerNameFromInsight(insight SearchInsight) string {
 	name := ""
 	if insight.UserID != nil {
 		name = fmt.Sprintf("user id %d", *insight.UserID)
@@ -999,7 +1065,7 @@ func getOwnerNameFromInsight(insight insights.SearchInsight) string {
 	return name
 }
 
-func getOwnerNameFromLangStatsInsight(insight insights.LangStatsInsight) string {
+func getOwnerNameFromLangStatsInsight(insight LangStatsInsight) string {
 	name := ""
 	if insight.UserID != nil {
 		name = fmt.Sprintf("user id %d", *insight.UserID)
