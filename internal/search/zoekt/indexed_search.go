@@ -7,10 +7,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"

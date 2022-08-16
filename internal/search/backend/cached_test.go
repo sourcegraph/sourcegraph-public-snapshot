@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 )
 
 func TestCachedSearcher(t *testing.T) {

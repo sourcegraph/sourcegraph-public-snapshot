@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"sort"
 
+	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )

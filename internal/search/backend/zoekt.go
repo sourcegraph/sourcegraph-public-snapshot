@@ -3,10 +3,10 @@ package backend
 import (
 	"sync"
 
+	"github.com/google/zoekt"
+	"github.com/google/zoekt/rpc"
+	zoektstream "github.com/google/zoekt/stream"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/rpc"
-	zoektstream "github.com/sourcegraph/zoekt/stream"
 )
 
 // We don't use the normal factory for internal requests because we disable
