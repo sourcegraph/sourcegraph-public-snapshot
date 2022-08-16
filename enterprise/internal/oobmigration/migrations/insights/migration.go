@@ -295,42 +295,7 @@ UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
 
 func (m *migrator) getForUser(ctx context.Context, tx *basestore.Store, userId int) (string, []settings, []int, error) {
-	// when this is a user setting we need to load all of the organizations the user is a member of so that we can
-	// resolve insight ID collisions as if it were in a setting cascade
-	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			orgs.id,
-			orgs.name,
-			orgs.display_name
-		FROM org_members
-		LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
-		WHERE
-			user_id = %s AND
-			orgs.deleted_at IS NULL
-	`,
-		userId,
-	)))
-	if err != nil {
-		return "", nil, nil, err
-	}
-	orgIds := make([]int, 0, len(orgs))
-	for _, org := range orgs {
-		orgIds = append(orgIds, int(org.ID))
-	}
-
-	users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			u.id,
-			u.username,
-			u.display_name
-		FROM users u
-		WHERE
-			id = %s AND
-			deleted_at IS NULL
-		LIMIT 1
-	`,
-		userId,
-	)))
+	users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(getForUserSelectUserQuery, userId)))
 	if err != nil {
 		return "", nil, nil, errors.Wrap(err, "UserStoreGetByID")
 	}
@@ -340,44 +305,55 @@ func (m *migrator) getForUser(ctx context.Context, tx *basestore.Store, userId i
 		if err != nil {
 			return "", nil, nil, errors.Wrap(err, "MarkCompleted")
 		}
-		return "", nil, orgIds, nil
+		return "", nil, nil, nil
 	}
 
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			s.id,
-			s.org_id,
-			s.user_id,
-			s.contents
-		FROM settings s
-		LEFT JOIN users ON users.id = s.author_user_id
-		WHERE
-			user_id = %s AND
-			EXISTS (
-				SELECT NULL FROM users
-				WHERE id = %s AND
-				deleted_at IS NULL
-			)
-		ORDER BY id DESC LIMIT 1
-		`,
-		userId,
-	)))
+	// when this is a user setting we need to load all of the organizations the user is a member of so that we can
+	// resolve insight ID collisions as if it were in a setting cascade
+	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(getForUserSelectOrgsQuery, userId)))
+	if err != nil {
+		return "", nil, nil, err
+	}
+	orgIds := make([]int, 0, len(orgs))
+	for _, org := range orgs {
+		orgIds = append(orgIds, int(org.ID))
+	}
+
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(getForUserSelectSettingsQuery, userId)))
 	return replaceIfEmpty(users[0].DisplayName, users[0].Name), settings, orgIds, err
 }
 
+const getForUserSelectUserQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForUser
+SELECT u.id, u.username, u.display_name
+FROM users u
+WHERE id = %s AND deleted_at IS NULL
+LIMIT 1
+`
+
+const getForUserSelectOrgsQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForUser
+SELECT orgs.id, orgs.name, orgs.display_name
+FROM org_members
+LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
+WHERE user_id = %s AND orgs.deleted_at IS NULL
+`
+
+const getForUserSelectSettingsQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForUser
+SELECT s.id, s.org_id, s.user_id, s.contents
+FROM settings s
+LEFT JOIN users ON users.id = s.author_user_id
+WHERE user_id = %s AND EXISTS (
+	SELECT
+	FROM users
+	WHERE id = %s AND deleted_at IS NULL
+)
+ORDER BY id DESC LIMIT 1
+`
+
 func (m *migrator) getForOrg(ctx context.Context, tx *basestore.Store, orgId int) (string, []settings, error) {
-	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			id,
-			name,
-			display_name
-		FROM orgs
-		WHERE
-			deleted_at IS NULL AND
-			id = %s
-		LIMIT 1
-	`, orgId,
-	)))
+	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(getForOrgSelectOrgQuery, orgId)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "OrgStoreGetByID")
 	}
@@ -390,42 +366,42 @@ func (m *migrator) getForOrg(ctx context.Context, tx *basestore.Store, orgId int
 		return "", nil, nil
 	}
 
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			s.id,
-			s.org_id,
-			s.user_id,
-			s.contents
-		FROM settings s
-		LEFT JOIN users ON users.id = s.author_user_id
-		WHERE org_id = %s
-		ORDER BY id DESC LIMIT 1
-		`,
-		orgId,
-	)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(getForOrgSelectSettingsQuery, orgId)))
 	return replaceIfEmpty(orgs[0].DisplayName, orgs[0].Name), settings, err
 }
 
-func (m *migrator) getForGlobal(ctx context.Context, tx *basestore.Store) (string, []settings, error) {
-	// nothing to set for migration context, it will infer global based on the lack of user / orgs
-	subjectName := "Global"
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(`
-	SELECT
-		s.id,
-		s.org_id,
-		s.user_id,
-		s.contents
-	FROM settings s
-	LEFT JOIN users ON users.id = s.author_user_id
-	WHERE
-		user_id IS NULL AND
-		org_id IS NULL
-	ORDER BY id DESC LIMIT 1
-	`,
-	)))
+const getForOrgSelectOrgQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForOrg
+SELECT id, name, display_name
+FROM orgs
+WHERE id = %s AND deleted_at IS NULL
+LIMIT 1
+`
 
-	return subjectName, settings, err
+const getForOrgSelectSettingsQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForOrg
+SELECT s.id, s.org_id, s.user_id, s.contents
+FROM settings s
+LEFT JOIN users ON users.id = s.author_user_id
+WHERE org_id = %s
+ORDER BY id DESC
+LIMIT 1
+`
+
+func (m *migrator) getForGlobal(ctx context.Context, tx *basestore.Store) (string, []settings, error) {
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(getForGlobalSelectSettingsQuery)))
+	return "Global", settings, err
 }
+
+const getForGlobalSelectSettingsQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForGlobal
+SELECT s.id, s.org_id, s.user_id, s.contents
+FROM settings s
+LEFT JOIN users ON users.id = s.author_user_id
+WHERE user_id IS NULL AND org_id IS NULL
+ORDER BY id DESC
+LIMIT 1
+`
 
 func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []langStatsInsight) (int, error) {
 	var count int
