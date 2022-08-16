@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/zoekt"
+	"github.com/google/zoekt/query"
+	"github.com/google/zoekt/web"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/query"
-	"github.com/sourcegraph/zoekt/web"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"

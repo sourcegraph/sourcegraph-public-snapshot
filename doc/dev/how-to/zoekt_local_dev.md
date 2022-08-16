@@ -13,7 +13,7 @@ Change at the bottom:
 ```
 replace (
     ...
-    github.com/sourcegraph/zoekt => <your zoekt repository directory>
+    github.com/google/zoekt => <your zoekt repository directory>
     ...
 )
 ```

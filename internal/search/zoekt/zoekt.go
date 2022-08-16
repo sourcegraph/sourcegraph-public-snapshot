@@ -5,10 +5,10 @@ import (
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"time"
 
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
