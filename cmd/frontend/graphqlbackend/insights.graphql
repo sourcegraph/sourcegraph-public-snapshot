@@ -1282,7 +1282,7 @@ type ExhaustiveSearchAggregationResult {
     groups: [AggregationGroup!]!
 
     """
-    Boolean indicating if the search query support being persisted as an insight on a dashboard
+    Boolean indicating if the search query supports being persisted as an insight on a dashboard
     """
     supportsPersistence: Boolean
     """
