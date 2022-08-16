@@ -78,12 +78,12 @@ func TestGetRemoteURLFunc_GitHubAppCloud(t *testing.T) {
 		&types.ExternalService{
 			ID:   1,
 			Kind: extsvc.KindGitHub,
-			Config: `
+			Config: extsvc.NewUnencryptedConfig(`
 {
   "url": "https://github.com",
   "githubAppInstallationID": "21994992",
   "repos": []
-}`,
+}`),
 		},
 		nil,
 	)
@@ -172,7 +172,7 @@ func TestGetVCSSyncer(t *testing.T) {
 			ID:          1,
 			Kind:        extsvc.KindPerforce,
 			DisplayName: "test",
-			Config:      `{}`,
+			Config:      extsvc.NewEmptyConfig(),
 		}, nil
 	})
 

@@ -355,6 +355,10 @@ func (c PolicyServiceGetConfigurationPoliciesFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/expiration)
 // used for unit testing.
 type MockUploadService struct {
+	// BackfillReferenceCountBatchFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// BackfillReferenceCountBatch.
+	BackfillReferenceCountBatchFunc *UploadServiceBackfillReferenceCountBatchFunc
 	// GetCommitsVisibleToUploadFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetCommitsVisibleToUpload.
@@ -375,6 +379,11 @@ type MockUploadService struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockUploadService() *MockUploadService {
 	return &MockUploadService{
+		BackfillReferenceCountBatchFunc: &UploadServiceBackfillReferenceCountBatchFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
+				return
+			},
+		},
 		GetCommitsVisibleToUploadFunc: &UploadServiceGetCommitsVisibleToUploadFunc{
 			defaultHook: func(context.Context, int, int, *string) (r0 []string, r1 *string, r2 error) {
 				return
@@ -402,6 +411,11 @@ func NewMockUploadService() *MockUploadService {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockUploadService() *MockUploadService {
 	return &MockUploadService{
+		BackfillReferenceCountBatchFunc: &UploadServiceBackfillReferenceCountBatchFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockUploadService.BackfillReferenceCountBatch")
+			},
+		},
 		GetCommitsVisibleToUploadFunc: &UploadServiceGetCommitsVisibleToUploadFunc{
 			defaultHook: func(context.Context, int, int, *string) ([]string, *string, error) {
 				panic("unexpected invocation of MockUploadService.GetCommitsVisibleToUpload")
@@ -430,6 +444,9 @@ func NewStrictMockUploadService() *MockUploadService {
 // overwritten.
 func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	return &MockUploadService{
+		BackfillReferenceCountBatchFunc: &UploadServiceBackfillReferenceCountBatchFunc{
+			defaultHook: i.BackfillReferenceCountBatch,
+		},
 		GetCommitsVisibleToUploadFunc: &UploadServiceGetCommitsVisibleToUploadFunc{
 			defaultHook: i.GetCommitsVisibleToUpload,
 		},
@@ -443,6 +460,115 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 			defaultHook: i.UpdateUploadRetention,
 		},
 	}
+}
+
+// UploadServiceBackfillReferenceCountBatchFunc describes the behavior when
+// the BackfillReferenceCountBatch method of the parent MockUploadService
+// instance is invoked.
+type UploadServiceBackfillReferenceCountBatchFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []UploadServiceBackfillReferenceCountBatchFuncCall
+	mutex       sync.Mutex
+}
+
+// BackfillReferenceCountBatch delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUploadService) BackfillReferenceCountBatch(v0 context.Context, v1 int) error {
+	r0 := m.BackfillReferenceCountBatchFunc.nextHook()(v0, v1)
+	m.BackfillReferenceCountBatchFunc.appendCall(UploadServiceBackfillReferenceCountBatchFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// BackfillReferenceCountBatch method of the parent MockUploadService
+// instance is invoked and the hook queue is empty.
+func (f *UploadServiceBackfillReferenceCountBatchFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BackfillReferenceCountBatch method of the parent MockUploadService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UploadServiceBackfillReferenceCountBatchFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceBackfillReferenceCountBatchFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceBackfillReferenceCountBatchFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *UploadServiceBackfillReferenceCountBatchFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceBackfillReferenceCountBatchFunc) appendCall(r0 UploadServiceBackfillReferenceCountBatchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceBackfillReferenceCountBatchFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceBackfillReferenceCountBatchFunc) History() []UploadServiceBackfillReferenceCountBatchFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceBackfillReferenceCountBatchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceBackfillReferenceCountBatchFuncCall is an object that
+// describes an invocation of method BackfillReferenceCountBatch on an
+// instance of MockUploadService.
+type UploadServiceBackfillReferenceCountBatchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceBackfillReferenceCountBatchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceBackfillReferenceCountBatchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // UploadServiceGetCommitsVisibleToUploadFunc describes the behavior when

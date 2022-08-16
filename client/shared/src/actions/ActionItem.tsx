@@ -20,7 +20,7 @@ import {
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
@@ -53,7 +53,7 @@ export interface ActionItemStyleProps {
 }
 
 export interface ActionItemComponentProps
-    extends ExtensionsControllerProps<'executeCommand'>,
+    extends RequiredExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings'> {
     location: H.Location
 

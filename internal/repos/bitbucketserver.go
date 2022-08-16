@@ -37,9 +37,13 @@ var _ VersionSource = &BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
-func NewBitbucketServerSource(logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func NewBitbucketServerSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.BitbucketServerConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newBitbucketServerSource(logger, svc, &c, cf)

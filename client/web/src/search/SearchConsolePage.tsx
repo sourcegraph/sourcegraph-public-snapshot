@@ -4,7 +4,7 @@ import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
 import * as H from 'history'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import {
@@ -42,12 +42,8 @@ interface SearchConsolePageProps
 }
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
-    const {
-        globbing,
-        streamSearch,
-        extensionsController: { extHostAPI: extensionHostAPI },
-        isSourcegraphDotCom,
-    } = props
+    const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
+    const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -63,11 +59,15 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     }, [props.history, searchQuery])
 
     const transformedQuery = useMemo(() => {
-        const query = parseSearchURLQuery(props.location.search)
-        return transformSearchQuery({
-            query: query?.replace(/\/\/.*/g, '') || '',
-            extensionHostAPIPromise: extensionHostAPI,
-        })
+        let query = parseSearchURLQuery(props.location.search)
+        query = query?.replace(/\/\/.*/g, '') || ''
+
+        return extensionHostAPI !== null
+            ? transformSearchQuery({
+                  query,
+                  extensionHostAPIPromise: extensionHostAPI,
+              })
+            : of(query)
     }, [props.location.search, extensionHostAPI])
 
     const autocompletion = useMemo(

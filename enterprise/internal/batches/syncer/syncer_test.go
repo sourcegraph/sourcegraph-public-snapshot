@@ -340,7 +340,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		ID:          1,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub.com",
-		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 	}
 	repo := &types.Repo{
 		Name:    api.RepoName("test-repo"),

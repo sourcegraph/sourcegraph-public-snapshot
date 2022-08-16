@@ -37,7 +37,6 @@ type gitBlobLSIFDataResolver struct {
 
 	operations *operations
 
-	// codenavResolver CodeNavResolver
 	requestState codenav.RequestState
 }
 

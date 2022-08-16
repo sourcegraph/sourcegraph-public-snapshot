@@ -166,12 +166,6 @@ const toPredicateHover = (token: MetaPredicate): string => {
             return `**Built-in predicate**. Search only inside repositories that contain **file content** matching the regular expression \`${parameters}\`.`
         case 'contains.commit.after':
             return `**Built-in predicate**. Search only inside repositories that have been committed to since \`${parameters}\`.`
-        case 'dependencies':
-        case 'deps':
-            return '**Built-in predicate**. Search only repository dependencies of repositories matching the regular expression'
-        case 'dependents':
-        case 'revdeps':
-            return '**Built-in predicate**. Search only repositories depending on repositories matching the regular expression'
         case 'has.description':
             return '**Built-in predicate**. Search only inside repositories that have a **description** matching the given regular expression'
     }

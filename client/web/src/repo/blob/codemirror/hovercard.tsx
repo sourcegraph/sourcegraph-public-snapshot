@@ -513,7 +513,8 @@ class Hovercard implements TooltipView {
                 (actionsOrError &&
                     actionsOrError !== 'loading' &&
                     (isErrorLike(actionsOrError) || actionsOrError.length > 0))
-            )
+            ) ||
+            props.extensionsController === null
         ) {
             this.removeRange()
             root.render([])
