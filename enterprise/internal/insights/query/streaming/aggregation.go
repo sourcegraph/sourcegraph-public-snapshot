@@ -1,7 +1,6 @@
 package streaming
 
 import (
-	"fmt"
 	"sort"
 )
 
@@ -28,7 +27,6 @@ func (a *aggregated) Add(label string, count int32) {
 	// 2. We haven't hit the max buffer size. Add to our in-memory map and update the smallest result.
 	// 3. We don't have a match but have a better result than our smallest. Update the overflow by ejected smallest.
 	// 4. We don't have a match or a better result. Update the overflow by the hit count.
-	fmt.Println(a.OtherCount)
 	if _, ok := a.Results[label]; !ok {
 		if len(a.Results) < a.resultBufferSize {
 			a.Results[label] = count
@@ -55,11 +53,9 @@ func (a *aggregated) findSmallestAggregate() *Aggregate {
 	var smallestAggregate *Aggregate
 	for label, count := range a.Results {
 		tempSmallest := &Aggregate{label, count}
-		fmt.Println("temp", tempSmallest)
 		if smallestAggregate == nil || tempSmallest.Less(smallestAggregate) {
 			smallestAggregate = tempSmallest
 		}
-		fmt.Println("smallest", smallestAggregate)
 	}
 	return smallestAggregate
 }
