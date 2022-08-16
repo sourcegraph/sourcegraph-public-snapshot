@@ -834,18 +834,10 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 		}
 	}
 
-	view := insightView{
-		Title:            from.Title,
-		Description:      from.Description,
-		UniqueID:         from.ID,
-		PresentationType: "LINE",
-	}
-
+	var includeRepoRegex, excludeRepoRegex *string
 	if from.Filters != nil {
-		view.Filters = insightViewFilters{
-			IncludeRepoRegex: from.Filters.IncludeRepoRegexp,
-			ExcludeRepoRegex: from.Filters.ExcludeRepoRegexp,
-		}
+		includeRepoRegex = from.Filters.IncludeRepoRegexp
+		excludeRepoRegex = from.Filters.ExcludeRepoRegexp
 	}
 
 	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
@@ -855,34 +847,29 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			unique_id,
 			default_filter_include_repo_regex,
 			default_filter_exclude_repo_regex,
-			default_filter_search_contexts,
-			other_threshold,
 			presentation_type,
 		)
-		VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+		VALUES (%s, %s, %s, %s, %s, %s)
 		RETURNING id
 	`,
-		view.Title,
-		view.Description,
-		view.UniqueID,
-		view.Filters.IncludeRepoRegex,
-		view.Filters.ExcludeRepoRegex,
-		pq.Array(view.Filters.SearchContexts),
-		view.OtherThreshold,
-		view.PresentationType,
+		from.Title,
+		from.Description,
+		from.ID,
+		includeRepoRegex,
+		excludeRepoRegex,
+		"LINE",
 	)))
-	view.ID = viewID
 
 	if from.UserID != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, user_id) VALUES (%s, %s)`, view.ID, *from.UserID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, user_id) VALUES (%s, %s)`, viewID, *from.UserID)); err != nil {
 			return err
 		}
 	} else if from.OrgID != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, org_id) VALUES (%s, %s)`, view.ID, *from.OrgID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, org_id) VALUES (%s, %s)`, viewID, *from.OrgID)); err != nil {
 			return err
 		}
 	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, %s)`, view.ID, true)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, %s)`, viewID, true)); err != nil {
 			return err
 		}
 	}
@@ -898,7 +885,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			VALUES (%s, %s, %s, %s)
 		`,
 			insightSeries.ID,
-			view.ID,
+			viewID,
 			metadata[i].Label,
 			metadata[i].Stroke,
 		))
