@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -52,7 +52,7 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
-	migrator := migrator{insightStore: store.NewInsightStore(insightsDB)}
+	migrator := migrator{insightsStore: basestore.NewWithHandle(insightsDB.Handle())}
 
 	t.Run("match on org ID", func(t *testing.T) {
 		want := "myInsight-org-3"

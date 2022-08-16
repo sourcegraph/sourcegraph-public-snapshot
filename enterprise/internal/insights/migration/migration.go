@@ -34,14 +34,12 @@ const (
 type migrator struct {
 	frontendStore *basestore.Store
 	insightsStore *basestore.Store
-	insightStore  *store.InsightStore
 }
 
 func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
 		frontendStore: basestore.NewWithHandle(postgresDB.Handle()),
 		insightsStore: basestore.NewWithHandle(insightsDB.Handle()),
-		insightStore:  store.NewInsightStore(insightsDB),
 	}
 }
 

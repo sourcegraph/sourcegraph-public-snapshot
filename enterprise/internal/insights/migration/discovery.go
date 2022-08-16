@@ -209,7 +209,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 			continue
 		}
 
-		numInsights, _, err := basestore.ScanFirstInt(m.insightStore.Query(ctx, sqlf.Sprintf(`
+		numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(`
 			SELECT COUNT(*)
 			FROM (
 				SELECT *
@@ -232,7 +232,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 			count++
 			continue
 		}
-		err = migrateSeries(ctx, m.insightStore, m.frontendStore, d, batch)
+		err = migrateSeries(ctx, m.insightsStore, m.frontendStore, d, batch)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
@@ -254,7 +254,7 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 			count++
 			continue
 		}
-		numInsights, _, err := basestore.ScanFirstInt(m.insightStore.Query(ctx, sqlf.Sprintf(`
+		numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(`
 			SELECT COUNT(*)
 			FROM (
 				SELECT *
@@ -278,7 +278,7 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 			continue
 		}
 
-		err = migrateLangStatSeries(ctx, m.insightStore.Store, d)
+		err = migrateLangStatSeries(ctx, m.insightsStore, d)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
@@ -449,12 +449,12 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	return nil
 }
 
-func migrateSeries(ctx context.Context, insightStore *store.InsightStore, workerStore *basestore.Store, from insights.SearchInsight, batch migrationBatch) (err error) {
+func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerStore *basestore.Store, from insights.SearchInsight, batch migrationBatch) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Store.Done(err) }()
+	defer func() { err = tx.Done(err) }()
 
 	dataSeries := make([]types.InsightSeries, len(from.Series))
 	metadata := make([]types.InsightViewSeriesMetadata, len(from.Series))
