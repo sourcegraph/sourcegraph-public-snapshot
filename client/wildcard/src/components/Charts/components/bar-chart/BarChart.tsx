@@ -17,6 +17,9 @@ interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVG
     width: number
     height: number
     stacked?: boolean
+
+    // TODO: Move these specific only to the axis label UI props to the axis components
+    // see https://github.com/sourcegraph/sourcegraph/issues/40009
     pixelsPerYTick?: number
     pixelsPerXTick?: number
     maxAngleXTick?: number
