@@ -578,9 +578,27 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, worker
 	}
 
 	for i, insightSeries := range dataSeries {
-		err := tx.AttachSeriesToView(ctx, insightSeries, view, metadata[i])
+		err = tx.Exec(ctx, sqlf.Sprintf(
+			`INSERT INTO insight_view_series (
+				insight_series_id,
+				insight_view_id,
+				label,
+				stroke,
+			)
+			VALUES (%s, %s, %s, %s)
+		`,
+			insightSeries.ID,
+			view.ID,
+			metadata[i].Label,
+			metadata[i].Stroke,
+		))
 		if err != nil {
-			return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+			return err
+		}
+
+		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET deleted_at IS NULL WHERE series_id = %s`, insightSeries.SeriesID))
+		if err != nil {
+			return err
 		}
 	}
 	return nil
