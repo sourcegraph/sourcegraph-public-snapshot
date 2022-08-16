@@ -238,17 +238,25 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
 		{
-			Name:   "event1",
-			UserID: 1,
-			Source: "test",
+			Name:     "event1",
+			UserID:   1,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "event2",
-			UserID: 2,
-			Source: "test",
+			Name:     "event2",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -272,12 +280,17 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	t.Run("first execution of handler should return first event", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("first execution of handler should return first event", []*database.Event{{
-				ID:       1,
-				Name:     "event1",
-				UserID:   1,
-				Argument: json.RawMessage("{}"),
+				ID:     1,
+				Name:   "event1",
+				UserID: 1,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device").(*string),
+				InsertID: valast.Addr("insert").(*string),
 			}}).Equal(t, got)
 			return nil
 		}
@@ -290,12 +303,17 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	t.Run("second execution of handler should return second event", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("second execution of handler should return second event", []*database.Event{{
-				ID:       2,
-				Name:     "event2",
-				UserID:   2,
-				Argument: json.RawMessage("{}"),
+				ID:     2,
+				Name:   "event2",
+				UserID: 2,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device").(*string),
+				InsertID: valast.Addr("insert").(*string),
 			}}).Equal(t, got)
 			return nil
 		}
