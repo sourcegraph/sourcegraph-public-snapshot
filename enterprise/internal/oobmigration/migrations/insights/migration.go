@@ -629,8 +629,8 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 		} else if batch == "backend" {
 			temp.SampleIntervalUnit = "MONTH"
 			temp.SampleIntervalValue = 1
-			temp.NextRecordingAfter = nextRecording(time.Now())
-			temp.NextSnapshotAfter = nextSnapshot(time.Now())
+			temp.NextRecordingAfter = nextRecording(now)
+			temp.NextSnapshotAfter = nextSnapshot(now)
 			temp.SeriesID = ksuid.New().String()
 			temp.JustInTime = false
 			temp.GenerationMethod = "SEARCH"
@@ -679,30 +679,29 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				// If the series already exists, we can re-use that series
 				series = rows[0]
 			} else {
-
 				// If it's not a backend series, we just want to create it.
 				id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
-				INSERT INTO insight_series (
-					series_id,
-					query,
-					created_at,
-					oldest_historical_at,
-					last_recorded_at,
-					next_recording_after,
-					last_snapshot_at,
-					next_snapshot_after,
-					repositories,
-					sample_interval_unit,
-					sample_interval_value,
-					generated_from_capture_groups,
-					just_in_time,
-					generation_method,
-					group_by,
-					needs_migration
+					INSERT INTO insight_series (
+						series_id,
+						query,
+						created_at,
+						oldest_historical_at,
+						last_recorded_at,
+						next_recording_after,
+						last_snapshot_at,
+						next_snapshot_after,
+						repositories,
+						sample_interval_unit,
+						sample_interval_value,
+						generated_from_capture_groups,
+						just_in_time,
+						generation_method,
+						group_by,
+						needs_migration
 					)
-				VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
-				RETURNING id
-			`,
+					VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
+					RETURNING id
+				`,
 					temp.SeriesID,
 					temp.Query,
 					temp.CreatedAt,
@@ -728,14 +727,14 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				// Also match/replace old series_points ids with the new series id
 				oldId := fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(timeSeries.Query))))
 				countUpdated, _, silentErr := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
-						WITH updated AS (
-							UPDATE series_points sp
-							SET series_id = %s
-							WHERE series_id = %s
-							RETURNING sp.series_id
-						)
-						SELECT count(*) FROM updated;
-					`,
+					WITH updated AS (
+						UPDATE series_points sp
+						SET series_id = %s
+						WHERE series_id = %s
+						RETURNING sp.series_id
+					)
+					SELECT count(*) FROM updated;
+				`,
 					temp.SeriesID,
 					oldId,
 				)))
@@ -752,9 +751,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 						// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
 						log15.Error("error updating series_id for jobs", "series_id", temp.SeriesID, "err", errors.Wrap(err, "updateTimeSeriesJobReferences"))
 					} else {
-						now := time.Now()
-						silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, series.ID))
-						if silentErr != nil {
+						if silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, series.ID)); silentErr != nil {
 							// If the stamp fails, skip it. It will just need to be calcuated again.
 							log15.Error("error updating backfill_queued_at", "series_id", temp.SeriesID, "err", silentErr)
 						}
@@ -762,7 +759,6 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				}
 			}
 		} else {
-
 			// If it's not a backend series, we just want to create it.
 			id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 				INSERT INTO insight_series (
@@ -856,26 +852,21 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 	}
 
 	for i, insightSeries := range dataSeries {
-		err = tx.Exec(ctx, sqlf.Sprintf(
-			`INSERT INTO insight_view_series (
-				insight_series_id,
-				insight_view_id,
-				label,
-				stroke,
-			)
+		if err := tx.Exec(ctx, sqlf.Sprintf(`
+			INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
 			VALUES (%s, %s, %s, %s)
 		`,
 			insightSeries.ID,
 			viewID,
 			metadata[i].Label,
 			metadata[i].Stroke,
-		))
-		if err != nil {
+		)); err != nil {
 			return err
 		}
 
-		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET deleted_at IS NULL WHERE series_id = %s`, insightSeries.SeriesID))
-		if err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`
+			UPDATE insight_series SET deleted_at IS NULL WHERE series_id = %s
+		`, insightSeries.SeriesID)); err != nil {
 			return err
 		}
 	}
@@ -887,9 +878,7 @@ const insightsMigratormigrateSeriesInsertViewGrantQuery = `
 INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
 `
 
-func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []settingDashboard, mc migrationContext) (int, error) {
-	var count int
-	var errs error
+func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []settingDashboard, mc migrationContext) (count int, err error) {
 	for _, d := range toMigrate {
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
@@ -898,14 +887,14 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []settingDas
 			count++
 			continue
 		}
-		err := m.migrateDashboard(ctx, d, mc)
-		if err != nil {
-			errs = errors.Append(errs, err)
+		if migrationErr := m.migrateDashboard(ctx, d, mc); migrationErr != nil {
+			err = errors.Append(err, migrationErr)
 		} else {
 			count++
 		}
 	}
-	return count, errs
+
+	return count, err
 }
 
 func (m *migrator) migrateDashboard(ctx context.Context, from settingDashboard, migrationContext migrationContext) (err error) {
