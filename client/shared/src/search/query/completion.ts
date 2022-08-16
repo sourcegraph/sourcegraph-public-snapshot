@@ -248,7 +248,7 @@ async function completeFilterValue(
     const { value } = token
 
     // FIXME(tsenart): We need to refactor completions to work with
-    // complex predicates like repo:dependencies()
+    // complex predicates.
     // For now we just disable all static suggestions for a predicate's filter
     // if we are inside that predicate.
     const insidePredicate = value ? PREDICATE_REGEX.test(value.value) : false
