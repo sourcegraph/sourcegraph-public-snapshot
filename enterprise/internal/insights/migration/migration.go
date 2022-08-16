@@ -580,11 +580,29 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	}
 	defer func() { err = tx.Done(err) }()
 
-	exists, err := tx.DashboardExists(ctx, from)
+	var grantsQuery *sqlf.Query
+	if from.UserID != nil {
+		grantsQuery = sqlf.Sprintf("dg.user_id = %s", *from.UserID)
+	} else if from.OrgID != nil {
+		grantsQuery = sqlf.Sprintf("dg.org_id = %s", *from.OrgID)
+	} else {
+		grantsQuery = sqlf.Sprintf("dg.global IS TRUE")
+	}
+
+	count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+		SELECT COUNT(*) from dashboard
+		JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
+		WHERE
+			dashboard.title = %s AND
+			%s
+	`,
+		from.Title,
+		grantsQuery,
+	)))
 	if err != nil {
 		return err
 	}
-	if exists {
+	if count != 0 {
 		return nil
 	}
 
