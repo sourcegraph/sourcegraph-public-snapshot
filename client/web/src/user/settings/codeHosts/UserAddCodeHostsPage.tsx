@@ -463,7 +463,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
                 defaultNavigateToAuthProvider(kind)
             }
         },
-        [authProvidersByKind, defaultNavigateToAuthProvider, owner, refetchServices]
+        [authProvidersByKind, defaultNavigateToAuthProvider]
     )
 
     return (
