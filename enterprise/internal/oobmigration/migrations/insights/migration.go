@@ -169,142 +169,23 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	}()
 
 	if job.UserId != nil {
-		userId := int32(*job.UserId)
-
-		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
-		// resolve insight ID collisions as if it were in a setting cascade
-		orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
-			SELECT
-				orgs.id,
-				orgs.name,
-				orgs.display_name
-			FROM org_members
-			LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
-			WHERE
-				user_id = %s AND
-				orgs.deleted_at IS NULL
-		`,
-			userId,
-		)))
+		var orgIDs []int
+		subjectName, settings, orgIDs, err = m.getForUser(ctx, tx, *job.UserId)
 		if err != nil {
 			return err
 		}
-		orgIds := make([]int, 0, len(orgs))
-		for _, org := range orgs {
-			orgIds = append(orgIds, int(org.ID))
-		}
-		migrationContext.userId = int(userId)
-		migrationContext.orgIds = orgIds
 
-		users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
-			SELECT
-				u.id,
-				u.username,
-				u.display_name
-			FROM users u
-			WHERE
-				id = %s AND
-				deleted_at IS NULL
-			LIMIT 1
-		`,
-			userId,
-		)))
-		if err != nil {
-			return errors.Wrap(err, "UserStoreGetByID")
-		}
-		if len(users) == 0 {
-			// If the user doesn't exist, just mark the job complete.
-			err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId))
-			if err != nil {
-				return errors.Wrap(err, "MarkCompleted")
-			}
-			return nil
-		}
-		user := users[0]
-		subjectName = replaceIfEmpty(user.DisplayName, user.Name)
-		settings, err = scanSettings(tx.Query(ctx, sqlf.Sprintf(`
-			SELECT
-				s.id,
-				s.org_id,
-				s.user_id,
-				s.contents
-			FROM settings s
-			LEFT JOIN users ON users.id = s.author_user_id
-			WHERE
-				user_id = %s AND
-				EXISTS (
-					SELECT NULL FROM users
-					WHERE id = %s AND
-					deleted_at IS NULL
-				)
-			ORDER BY id DESC LIMIT 1
-			`,
-			userId,
-		)))
-		if err != nil {
-			return err
-		}
+		migrationContext.userId = *job.UserId
+		migrationContext.orgIds = orgIDs
 	} else if job.OrgId != nil {
-		orgId := int32(*job.OrgId)
-		migrationContext.orgIds = []int{*job.OrgId}
-		orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
-			SELECT
-				id,
-				name,
-				display_name
-			FROM orgs
-			WHERE
-				deleted_at IS NULL AND
-				id = %s
-			LIMIT 1
-		`, orgId,
-		)))
-		if err != nil {
-			return errors.Wrap(err, "OrgStoreGetByID")
-		}
-		if len(orgs) == 0 {
-			// If the org doesn't exist, just mark the job complete.
-			err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, orgId))
-			if err != nil {
-				return errors.Wrap(err, "MarkCompleted")
-			}
-			return nil
-		}
-		org := orgs[0]
-		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
-		settings, err = scanSettings(tx.Query(ctx, sqlf.Sprintf(`
-			SELECT
-				s.id,
-				s.org_id,
-				s.user_id,
-				s.contents
-			FROM settings s
-			LEFT JOIN users ON users.id = s.author_user_id
-			WHERE org_id = %s
-			ORDER BY id DESC LIMIT 1
-			`,
-			orgId,
-		)))
+		subjectName, settings, err = m.getForOrg(ctx, tx, *job.OrgId)
 		if err != nil {
 			return err
 		}
+
+		migrationContext.orgIds = []int{*job.OrgId}
 	} else {
-		// nothing to set for migration context, it will infer global based on the lack of user / orgs
-		subjectName = "Global"
-		settings, err = scanSettings(tx.Query(ctx, sqlf.Sprintf(`
-			SELECT
-				s.id,
-				s.org_id,
-				s.user_id,
-				s.contents
-			FROM settings s
-			LEFT JOIN users ON users.id = s.author_user_id
-			WHERE
-				user_id IS NULL AND
-				org_id IS NULL
-			ORDER BY id DESC LIMIT 1
-			`,
-		)))
+		subjectName, settings, err = m.getForGlobal(ctx, tx)
 		if err != nil {
 			return err
 		}
@@ -411,6 +292,139 @@ const performMigrationForRowUpdateJobQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationForRow
 UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
+
+func (m *migrator) getForUser(ctx context.Context, tx *basestore.Store, userId int) (string, []settings, []int, error) {
+	// when this is a user setting we need to load all of the organizations the user is a member of so that we can
+	// resolve insight ID collisions as if it were in a setting cascade
+	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
+		SELECT
+			orgs.id,
+			orgs.name,
+			orgs.display_name
+		FROM org_members
+		LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
+		WHERE
+			user_id = %s AND
+			orgs.deleted_at IS NULL
+	`,
+		userId,
+	)))
+	if err != nil {
+		return "", nil, nil, err
+	}
+	orgIds := make([]int, 0, len(orgs))
+	for _, org := range orgs {
+		orgIds = append(orgIds, int(org.ID))
+	}
+
+	users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
+		SELECT
+			u.id,
+			u.username,
+			u.display_name
+		FROM users u
+		WHERE
+			id = %s AND
+			deleted_at IS NULL
+		LIMIT 1
+	`,
+		userId,
+	)))
+	if err != nil {
+		return "", nil, nil, errors.Wrap(err, "UserStoreGetByID")
+	}
+	if len(users) == 0 {
+		// If the user doesn't exist, just mark the job complete.
+		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId))
+		if err != nil {
+			return "", nil, nil, errors.Wrap(err, "MarkCompleted")
+		}
+		return "", nil, orgIds, nil
+	}
+
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(`
+		SELECT
+			s.id,
+			s.org_id,
+			s.user_id,
+			s.contents
+		FROM settings s
+		LEFT JOIN users ON users.id = s.author_user_id
+		WHERE
+			user_id = %s AND
+			EXISTS (
+				SELECT NULL FROM users
+				WHERE id = %s AND
+				deleted_at IS NULL
+			)
+		ORDER BY id DESC LIMIT 1
+		`,
+		userId,
+	)))
+	return replaceIfEmpty(users[0].DisplayName, users[0].Name), settings, orgIds, err
+}
+
+func (m *migrator) getForOrg(ctx context.Context, tx *basestore.Store, orgId int) (string, []settings, error) {
+	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
+		SELECT
+			id,
+			name,
+			display_name
+		FROM orgs
+		WHERE
+			deleted_at IS NULL AND
+			id = %s
+		LIMIT 1
+	`, orgId,
+	)))
+	if err != nil {
+		return "", nil, errors.Wrap(err, "OrgStoreGetByID")
+	}
+	if len(orgs) == 0 {
+		// If the org doesn't exist, just mark the job complete.
+		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, orgId))
+		if err != nil {
+			return "", nil, errors.Wrap(err, "MarkCompleted")
+		}
+		return "", nil, nil
+	}
+
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(`
+		SELECT
+			s.id,
+			s.org_id,
+			s.user_id,
+			s.contents
+		FROM settings s
+		LEFT JOIN users ON users.id = s.author_user_id
+		WHERE org_id = %s
+		ORDER BY id DESC LIMIT 1
+		`,
+		orgId,
+	)))
+	return replaceIfEmpty(orgs[0].DisplayName, orgs[0].Name), settings, err
+}
+
+func (m *migrator) getForGlobal(ctx context.Context, tx *basestore.Store) (string, []settings, error) {
+	// nothing to set for migration context, it will infer global based on the lack of user / orgs
+	subjectName := "Global"
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(`
+	SELECT
+		s.id,
+		s.org_id,
+		s.user_id,
+		s.contents
+	FROM settings s
+	LEFT JOIN users ON users.id = s.author_user_id
+	WHERE
+		user_id IS NULL AND
+		org_id IS NULL
+	ORDER BY id DESC LIMIT 1
+	`,
+	)))
+
+	return subjectName, settings, err
+}
 
 func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []langStatsInsight) (int, error) {
 	var count int
