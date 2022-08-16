@@ -277,22 +277,3 @@ type settingDashboard struct {
 	UserID     *int32
 	OrgID      *int32
 }
-
-type dashboardGrant struct {
-	UserID *int
-	OrgID  *int
-	Global *bool
-}
-
-func userDashboardGrant(userID int) dashboardGrant {
-	return dashboardGrant{UserID: &userID}
-}
-
-func orgDashboardGrant(orgID int) dashboardGrant {
-	return dashboardGrant{OrgID: &orgID}
-}
-
-func globalDashboardGrant() dashboardGrant {
-	b := true
-	return dashboardGrant{Global: &b}
-}

@@ -1122,15 +1122,6 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 		mapped = append(mapped, id)
 	}
 
-	var grants []dashboardGrant
-	if migration.userId != 0 {
-		grants = append(grants, userDashboardGrant(migration.userId))
-	} else if len(migration.orgIds) == 1 {
-		grants = append(grants, orgDashboardGrant(migration.orgIds[0]))
-	} else {
-		grants = append(grants, globalDashboardGrant())
-	}
-
 	dashboardId, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 		INSERT INTO dashboard (title, save, type)
 		VALUES (%s, %s, %s)
@@ -1165,13 +1156,18 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 		}
 	}
 
-	values := make([]*sqlf.Query, 0, len(grants))
-	for _, grant := range grants {
-		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s)", dashboardId, grant.UserID, grant.OrgID, grant.Global))
-	}
-	err = tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global) VALUES %s`, sqlf.Join(values, ", ")))
-	if err != nil {
-		return errors.Wrap(err, "AddDashboardGrants")
+	if migration.userId != 0 {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, user_id) VALUES (%s, %s)`, dashboardId, migration.userId)); err != nil {
+			return errors.Wrap(err, "AddDashboardGrants")
+		}
+	} else if len(migration.orgIds) == 1 {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, org_id) VALUES (%s, %s)`, dashboardId, migration.orgIds[0])); err != nil {
+			return errors.Wrap(err, "AddDashboardGrants")
+		}
+	} else {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, global) VALUES (%s, %s)`, dashboardId, true)); err != nil {
+			return errors.Wrap(err, "AddDashboardGrants")
+		}
 	}
 
 	return nil
