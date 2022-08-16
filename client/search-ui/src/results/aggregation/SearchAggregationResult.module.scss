@@ -1,0 +1,37 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.chart-container {
+    min-height: 400px;
+    max-width: 960px;
+}
+
+.list-result {
+    margin-top: 1.5rem;
+    list-style: none;
+    max-width: 960px;
+}
+
+.list-result-item {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    padding: 0.5rem 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+
+    &:first-child {
+        border-top: 1px solid var(--border-color);
+    }
+}
