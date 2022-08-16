@@ -15,6 +15,18 @@ type Build struct {
 	Jobs     map[string]Job
 }
 
+func (b *Build) updateFromEvent(e *Event) {
+    orgBuild := b.Build
+    newBuild := e.build()
+
+    b.Build = newBuild
+
+    if b.Build.Author == nil {
+        b.Build.Author = orgBuild.Author
+    }
+	build.Pipeline = event.pipeline()
+}
+
 func (b *Build) hasFailed() bool {
 	return b.state() == "failed"
 }
@@ -155,8 +167,7 @@ func (s *BuildStore) Add(event *Event) {
 		s.builds[event.buildNumber()] = build
 	}
 	// if the build is finished replace the original build with the replaced one since it will be more up to date
-	build.Build = event.Build
-	build.Pipeline = event.pipeline()
+    build.updateFromEvent(event)
 
 	wrappedJob := event.job()
 	if wrappedJob.name() != "" {
