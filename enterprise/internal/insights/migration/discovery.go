@@ -4,6 +4,7 @@ package migration
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -678,7 +678,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				series = temp
 
 				// Also match/replace old series_points ids with the new series id
-				oldId := discovery.Encode(timeSeries)
+				oldId := fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(timeSeries.Query))))
 				countUpdated, silentErr := updateTimeSeriesReferences(tx, ctx, oldId, temp.SeriesID)
 				if silentErr != nil {
 					// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
