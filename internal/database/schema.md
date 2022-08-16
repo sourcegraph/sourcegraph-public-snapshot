@@ -125,6 +125,7 @@ Foreign-key constraints:
  filename      | text                     |           | not null | 
  path          | text                     |           | not null | 
  size          | bigint                   |           | not null | 
+ modified      | timestamp with time zone |           | not null | 
  created_at    | timestamp with time zone |           | not null | now()
  updated_at    | timestamp with time zone |           | not null | now()
 Indexes:

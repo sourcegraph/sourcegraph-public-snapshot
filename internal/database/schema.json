@@ -1666,7 +1666,7 @@
         },
         {
           "Name": "created_at",
-          "Index": 7,
+          "Index": 8,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -1696,6 +1696,19 @@
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "nextval('batch_spec_mounts_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "modified",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -1744,7 +1757,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 8,
+          "Index": 9,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
