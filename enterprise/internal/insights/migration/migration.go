@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -734,7 +733,15 @@ func (c migrationContext) buildUniqueIdCondition(insightId string) string {
 	return fmt.Sprintf("%s-%%(%s)%%", insightId, strings.Join(conds, "|"))
 }
 
-func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDashboard, migrationContext migrationContext) (err error) {
+type SettingDashboard struct {
+	ID         string   `json:"id,omitempty"`
+	Title      string   `json:"title,omitempty"`
+	InsightIds []string `json:"insightIds,omitempty"`
+	UserID     *int32
+	OrgID      *int32
+}
+
+func (m *migrator) migrateDashboard(ctx context.Context, from SettingDashboard, migrationContext migrationContext) (err error) {
 	tx, err := m.insightsStore.Transact(ctx)
 	if err != nil {
 		return err

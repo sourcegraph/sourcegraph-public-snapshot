@@ -102,10 +102,10 @@ func getBackendInsights(setting Settings) []insights.SearchInsight {
 	return results
 }
 
-func getDashboards(settingsRow Settings) []insights.SettingDashboard {
+func getDashboards(settingsRow Settings) []SettingDashboard {
 	prefix := "insights.dashboards"
 
-	results := make([]insights.SettingDashboard, 0)
+	results := make([]SettingDashboard, 0)
 	var raw map[string]json.RawMessage
 	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
@@ -167,9 +167,9 @@ func unmarshalBackendInsights(raw json.RawMessage, setting Settings) IntegratedI
 	return result
 }
 
-func unmarshalDashboard(raw json.RawMessage, settingsRow Settings) []insights.SettingDashboard {
+func unmarshalDashboard(raw json.RawMessage, settingsRow Settings) []SettingDashboard {
 	var dict map[string]json.RawMessage
-	result := []insights.SettingDashboard{}
+	result := []SettingDashboard{}
 
 	if err := json.Unmarshal(raw, &dict); err != nil {
 		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
@@ -177,7 +177,7 @@ func unmarshalDashboard(raw json.RawMessage, settingsRow Settings) []insights.Se
 	}
 
 	for id, body := range dict {
-		var temp insights.SettingDashboard
+		var temp SettingDashboard
 		if err := json.Unmarshal(body, &temp); err != nil {
 			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboard failed to migrate due to unrecognized schema")
 			continue
@@ -904,7 +904,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 	return nil
 }
 
-func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.SettingDashboard, mc migrationContext) (int, error) {
+func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []SettingDashboard, mc migrationContext) (int, error) {
 	var count int
 	var errs error
 	for _, d := range toMigrate {
@@ -1011,7 +1011,7 @@ func getOwnerNameFromLangStatsInsight(insight insights.LangStatsInsight) string 
 	return name
 }
 
-func getOwnerNameFromDashboard(insight insights.SettingDashboard) string {
+func getOwnerNameFromDashboard(insight SettingDashboard) string {
 	name := ""
 	if insight.UserID != nil {
 		name = fmt.Sprintf("user id %d", *insight.UserID)
