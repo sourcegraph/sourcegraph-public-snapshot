@@ -507,11 +507,74 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, worker
 				}
 			}
 		} else {
+			now := time.Now()
+
+			if temp.CreatedAt.IsZero() {
+				temp.CreatedAt = now
+			}
+			interval := timeseries.TimeInterval{
+				Unit:  types.IntervalUnit(temp.SampleIntervalUnit),
+				Value: temp.SampleIntervalValue,
+			}
+			if !interval.IsValid() {
+				interval = timeseries.DefaultInterval
+			}
+
+			if temp.NextRecordingAfter.IsZero() {
+				temp.NextRecordingAfter = interval.StepForwards(now)
+			}
+			if temp.NextSnapshotAfter.IsZero() {
+				temp.NextSnapshotAfter = store.NextSnapshot(now)
+			}
+			if temp.OldestHistoricalAt.IsZero() {
+				// TODO(insights): this value should probably somewhere more discoverable / obvious than here
+				temp.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
+			}
 			// If it's not a backend series, we just want to create it.
-			series, err = tx.CreateSeries(ctx, temp)
+			id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+				INSERT INTO insight_series (
+					series_id,
+					query,
+					created_at,
+					oldest_historical_at,
+					last_recorded_at,
+					next_recording_after,
+					last_snapshot_at,
+					next_snapshot_after,
+					repositories,
+					sample_interval_unit,
+					sample_interval_value,
+					generated_from_capture_groups,
+					just_in_time,
+					generation_method,
+					group_by,
+					needs_migration
+					)
+				VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
+				RETURNING id
+			`,
+				temp.SeriesID,
+				temp.Query,
+				temp.CreatedAt,
+				temp.OldestHistoricalAt,
+				temp.LastRecordedAt,
+				temp.NextRecordingAfter,
+				temp.LastSnapshotAt,
+				temp.NextSnapshotAfter,
+				pq.Array(temp.Repositories),
+				temp.SampleIntervalUnit,
+				temp.SampleIntervalValue,
+				temp.GeneratedFromCaptureGroups,
+				temp.JustInTime,
+				temp.GenerationMethod,
+				temp.GroupBy,
+			)))
 			if err != nil {
 				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
 			}
+			temp.ID = id
+			temp.Enabled = true
+			series = temp
 		}
 		dataSeries[i] = series
 
