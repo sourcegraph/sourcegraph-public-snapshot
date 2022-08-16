@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import sinon from 'sinon'
+import { spy } from 'sinon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
@@ -20,7 +20,7 @@ const config: Meta = {
 
 export default config
 
-const onSearchAgain = sinon.spy()
+const onSearchAgain = spy()
 
 const render = () => (
     <>
@@ -211,7 +211,7 @@ const render = () => (
             />
         </div>
 
-        <H2>2 results from 2 repositories, complete, skipped with warning, traced</H2>
+        <H2>2 results from 2 repositories, complete, skipped with warning, limit hit, traced</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
                 progress={{
@@ -240,13 +240,13 @@ const render = () => (
                             },
                         },
                         {
-                            reason: 'shard-timedout',
-                            message: 'Search timed out',
+                            reason: 'shard-match-limit',
+                            message: 'Search limit hit',
                             severity: 'warn',
-                            title: 'Search timed out',
+                            title: 'Search limit hit',
                             suggested: {
-                                title: 'timeout:2m',
-                                queryExpression: 'timeout:2m',
+                                title: 'count:all',
+                                queryExpression: 'count:all',
                             },
                         },
                     ],

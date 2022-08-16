@@ -25,7 +25,8 @@ const abbreviateNumber = (number: number): string => {
     return (number / 1e9).toFixed(1) + 'b'
 }
 
-const limitHit = (progress: Progress): boolean => progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
+export const limitHit = (progress: Progress): boolean =>
+    progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
 
 export const getProgressText = (progress: Progress): { visibleText: string; readText: string } => {
     const contentWithoutTimeUnit =
