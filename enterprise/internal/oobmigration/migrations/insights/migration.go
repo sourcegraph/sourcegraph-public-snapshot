@@ -1034,20 +1034,19 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 		mapped = append(mapped, id)
 	}
 
-	dashboardId, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`INSERT INTO dashboard (title, save, type) VALUES (%s, true, 'standard') RETURNING id`, title)))
+	dashboardID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertQuery, title)))
 	if err != nil {
 		return err
 	}
-	if len(mapped) > 0 {
-		// Create rows for an inline table which is used to preserve the ordering of the viewIds.
-		indexedViewIDs := make([]*sqlf.Query, 0, len(mapped))
-		for i, viewID := range mapped {
-			indexedViewIDs = append(indexedViewIDs, sqlf.Sprintf("(%s, %s)", viewID, fmt.Sprintf("%d", i)))
-		}
 
+	indexedViewIDs := make([]*sqlf.Query, 0, len(mapped))
+	for i, viewID := range mapped {
+		indexedViewIDs = append(indexedViewIDs, sqlf.Sprintf("(%s, %s)", viewID, fmt.Sprintf("%d", i)))
+	}
+	if len(indexedViewIDs) > 0 {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			insightsMigratorCreateDashboardInsertInsightViewQuery,
-			dashboardId,
+			dashboardID,
 			sqlf.Join(indexedViewIDs, ", "),
 			pq.Array(mapped),
 		)); err != nil {
@@ -1057,11 +1056,11 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 
 	var grantValues []any
 	if migration.userId != 0 {
-		grantValues = []any{dashboardId, migration.userId, nil, nil}
+		grantValues = []any{dashboardID, migration.userId, nil, nil}
 	} else if len(migration.orgIds) != 0 {
-		grantValues = []any{dashboardId, nil, migration.orgIds[0], nil}
+		grantValues = []any{dashboardID, nil, migration.orgIds[0], nil}
 	} else {
-		grantValues = []any{dashboardId, nil, nil, true}
+		grantValues = []any{dashboardID, nil, nil, true}
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertGrantQuery, grantValues...)); err != nil {
 		return errors.Wrap(err, "AddDashboardGrants")
@@ -1069,6 +1068,13 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 
 	return nil
 }
+
+const insightsMigratorCreateDashboardInsertQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:createDashboard
+INSERT INTO dashboard (title, save, type)
+VALUES (%s, true, 'standard')
+RETURNING id
+`
 
 const insightsMigratorCreateDashboardInsertInsightViewQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:createDashboard
