@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
@@ -25,8 +24,6 @@ func unmarshalBatchSpecMountID(id graphql.ID) (batchSpecMountRandID string, err 
 var _ graphqlbackend.BatchSpecMountResolver = &batchSpecMountResolver{}
 
 type batchSpecMountResolver struct {
-	store *store.Store
-
 	batchSpecRandID string
 	mount           *btypes.BatchSpecMount
 }
@@ -48,6 +45,10 @@ func (r *batchSpecMountResolver) Path() string {
 func (r *batchSpecMountResolver) Size() int32 {
 	// GraphQL does not support int64
 	return int32(r.mount.Size)
+}
+
+func (r *batchSpecMountResolver) Modified() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.mount.Modified}
 }
 
 func (r *batchSpecMountResolver) CreatedAt() graphqlbackend.DateTime {
