@@ -93,7 +93,12 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Collect all cache keys so we can look them up in a single query.
 	cacheKeyWorkspaces := make([]workspaceCacheKey, 0, len(workspaces))
 	allStepCacheKeys := make([]string, 0, len(workspaces))
-	retriever := &remoteFileMetadataRetriever{ctx: ctx, batchSpecID: spec.ID, store: r.store}
+	// load the mounts from the DB up front to avoid duplicate calls with no difference in data
+	mounts, err := listBatchSpecMounts(ctx, r.store, spec.ID)
+	if err != nil {
+		return err
+	}
+	retriever := &remoteFileMetadataRetriever{mounts: mounts}
 
 	// Build workspaces DB objects.
 	for _, w := range workspaces {
@@ -300,21 +305,23 @@ func (r *batchSpecWorkspaceCreator) process(
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
 }
 
+func listBatchSpecMounts(ctx context.Context, s *store.Store, batchSpecID int64) ([]*btypes.BatchSpecMount, error) {
+	mounts, _, err := s.ListBatchSpecMounts(ctx, store.ListBatchSpecMountsOpts{BatchSpecID: batchSpecID})
+	if err != nil {
+		return nil, err
+	}
+	return mounts, nil
+}
+
 type remoteFileMetadataRetriever struct {
-	ctx         context.Context
-	batchSpecID int64
-	store       *store.Store
+	mounts []*btypes.BatchSpecMount
 }
 
 func (r *remoteFileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.MountMetadata, error) {
 	var mountsMetadata []cache.MountMetadata
-	mounts, _, err := r.store.ListBatchSpecMounts(r.ctx, store.ListBatchSpecMountsOpts{BatchSpecID: r.batchSpecID})
-	if err != nil {
-		return nil, err
-	}
 	for _, step := range steps {
 		for _, stepMount := range step.Mount {
-			metadata, err := getMountMetadata(mounts, stepMount.Path)
+			metadata, err := getMountMetadata(r.mounts, stepMount.Path)
 			if err != nil {
 				return nil, err
 			}
