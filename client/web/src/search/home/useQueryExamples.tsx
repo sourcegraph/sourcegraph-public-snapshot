@@ -29,9 +29,9 @@ interface ComputeResult {
 }
 
 const defaultQueryExamplesContent = {
-    repositoryName: 'awesomecorp/big-repo',
-    author: 'logansmith',
-    filePath: 'examplefile.go',
+    repositoryName: 'organization/repo-name',
+    author: 'Logan Smith',
+    filePath: 'filename.go',
 }
 
 function hasQueryExamplesContentCacheExpired(lastCachedTimestamp: string): boolean {
