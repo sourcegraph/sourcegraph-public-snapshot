@@ -38,7 +38,6 @@ var changesetSpecInsertColumns = []string{
 	"external_id",
 	"head_ref",
 	"title",
-	"head_repo_id",
 	"base_rev",
 	"base_ref",
 	"body",
@@ -104,7 +103,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				commitMessage     *string
 				commitAuthorName  *string
 				commitAuthorEmail *string
-				headRepoID        int32
 			)
 			if c.Spec.ExternalID != "" {
 				externalID = &c.Spec.ExternalID
@@ -148,8 +146,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 					return err
 				}
 				commitAuthorEmail = &cae
-
-				headRepoID = int32(c.RepoID)
 			}
 
 			published, err := json.Marshal(c.Spec.Published)
@@ -186,7 +182,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				dbutil.NullString{S: externalID},
 				dbutil.NullString{S: headRef},
 				dbutil.NullString{S: title},
-				nullInt32Column(headRepoID),
 				dbutil.NullString{S: baseRev},
 				dbutil.NullString{S: baseRef},
 				dbutil.NullString{S: body},
