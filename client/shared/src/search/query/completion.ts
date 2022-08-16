@@ -14,7 +14,6 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
-export const REPO_DEPS_PREDICATE_REGEX = /^(deps|dependencies|revdeps|dependents)\((.*?)\)?$/
 export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
 
 /**
@@ -94,16 +93,7 @@ export const regexInsertText = (value: string, options: { globbing: boolean }): 
 export const repositoryInsertText = (
     { repository }: RepositoryMatch,
     options: { globbing: boolean; filterValue?: string }
-): string => {
-    const insertText = regexInsertText(repository, options)
-
-    const depsPredicateMatches = options.filterValue ? options.filterValue.match(REPO_DEPS_PREDICATE_REGEX) : null
-    if (depsPredicateMatches) {
-        // depsPredicateMatches[1] contains either `deps`, `dependencies`, `revdeps` or `dependents` based on the matched value.
-        return `${depsPredicateMatches[1]}(${insertText})`
-    }
-    return insertText
-}
+): string => regexInsertText(repository, options)
 
 /**
  * Maps Sourcegraph SymbolKinds to Monaco CompletionItemKinds.
