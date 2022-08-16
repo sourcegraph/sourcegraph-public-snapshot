@@ -5,7 +5,7 @@ import { Intersection } from 'utility-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
-import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 
 import { SearchSidebarAPI } from '../../../../contract'
 import { WebviewPageProps } from '../../../platform/context'

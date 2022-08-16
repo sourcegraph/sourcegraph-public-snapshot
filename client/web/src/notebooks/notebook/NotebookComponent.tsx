@@ -54,7 +54,7 @@ export interface NotebookComponentProps
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
-    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
+    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'> | null
     platformContext: Pick<PlatformContext, 'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>
     exportedFileName: string
     isEmbedded?: boolean
@@ -113,10 +113,10 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         const notebook = useMemo(
             () =>
                 new Notebook(initialBlocks, {
-                    extensionHostAPI: extensionsController.extHostAPI,
+                    extensionHostAPI: extensionsController !== null ? extensionsController.extHostAPI : null,
                     fetchHighlightedFileLineRanges,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
+            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)
@@ -567,7 +567,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         blocks={blocks}
                     />
                 )}
-                {hoverState.hoverOverlayProps && (
+                {hoverState.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
                         platformContext={platformContext}

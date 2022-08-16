@@ -496,50 +496,51 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     useObservable(
         useMemo(
             () =>
-                combineLatest([
-                    blobInfoChanges,
-                    // Use the initial position when the document is opened.
-                    // Don't want to create new viewers on position change
-                    locationPositions.pipe(first()),
-                    from(extensionsController.extHostAPI),
-                    settingsChanges,
-                ]).pipe(
-                    concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
-                        const uri = toURIWithPath(blobInfo)
+                extensionsController !== null
+                    ? combineLatest([
+                          blobInfoChanges,
+                          // Use the initial position when the document is opened.
+                          // Don't want to create new viewers on position change
+                          locationPositions.pipe(first()),
+                          from(extensionsController.extHostAPI),
+                          settingsChanges,
+                      ]).pipe(
+                          concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
+                              const uri = toURIWithPath(blobInfo)
+                              return from(
+                                  Promise.all([
+                                      // This call should be made before adding viewer, but since
+                                      // messages to web worker are handled in order, we can use Promise.all
+                                      extensionHostAPI.addTextDocumentIfNotExists({
+                                          uri,
+                                          languageId: blobInfo.mode,
+                                          text: blobInfo.content,
+                                      }),
+                                      extensionHostAPI.addViewerIfNotExists({
+                                          type: 'CodeEditor' as const,
+                                          resource: uri,
+                                          selections: lprToSelectionsZeroIndexed(initialPosition),
+                                          isActive: true,
+                                      }),
+                                  ])
+                              ).pipe(map(([, viewerId]) => ({ viewerId, blobInfo, extensionHostAPI })))
+                          }),
+                          tap(({ viewerId, blobInfo, extensionHostAPI }) => {
+                              const subscriptions = new Subscription()
 
-                        return from(
-                            Promise.all([
-                                // This call should be made before adding viewer, but since
-                                // messages to web worker are handled in order, we can use Promise.all
-                                extensionHostAPI.addTextDocumentIfNotExists({
-                                    uri,
-                                    languageId: blobInfo.mode,
-                                    text: blobInfo.content,
-                                }),
-                                extensionHostAPI.addViewerIfNotExists({
-                                    type: 'CodeEditor' as const,
-                                    resource: uri,
-                                    selections: lprToSelectionsZeroIndexed(initialPosition),
-                                    isActive: true,
-                                }),
-                            ])
-                        ).pipe(map(([, viewerId]) => ({ viewerId, blobInfo, extensionHostAPI })))
-                    }),
-                    tap(({ viewerId, blobInfo, extensionHostAPI }) => {
-                        const subscriptions = new Subscription()
+                              // Cleanup on navigation between/away from viewers
+                              subscriptions.add(() => {
+                                  extensionHostAPI
+                                      .removeViewer(viewerId)
+                                      .catch(error => console.error('Error removing viewer from extension host', error))
+                              })
 
-                        // Cleanup on navigation between/away from viewers
-                        subscriptions.add(() => {
-                            extensionHostAPI
-                                .removeViewer(viewerId)
-                                .catch(error => console.error('Error removing viewer from extension host', error))
-                        })
-
-                        viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
-                    }),
-                    mapTo(undefined)
-                ),
-            [blobInfoChanges, locationPositions, extensionsController.extHostAPI, settingsChanges, viewerUpdates]
+                              viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
+                          }),
+                          mapTo(undefined)
+                      )
+                    : EMPTY,
+            [blobInfoChanges, locationPositions, extensionsController, settingsChanges, viewerUpdates]
         )
     )
 
@@ -650,7 +651,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Warm cache for references panel. Eventually display a loading indicator
     useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController.extHostAPI])
+        useMemo(
+            () =>
+                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : EMPTY,
+            [extensionsController]
+        )
     )
 
     const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
@@ -826,7 +831,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         __html: blobInfo.html,
                     }}
                 />
-                {hoverState.hoverOverlayProps && (
+                {hoverState.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
@@ -865,7 +870,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     })
                     .toArray()}
             </div>
-            {!props.disableStatusBar && (
+            {!props.disableStatusBar && extensionsController !== null && (
                 <StatusBar
                     getStatusBarItems={getStatusBarItems}
                     extensionsController={extensionsController}

@@ -24,7 +24,7 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { haveInitialExtensionsLoaded } from '../api/features'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { getContributedActionItems } from '../contributions/contributions'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
@@ -67,7 +67,7 @@ export interface CommandListClassProps {
 
 export interface CommandListProps
     extends CommandListClassProps,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
+        RequiredExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps {
     /** The menu whose commands to display. */
