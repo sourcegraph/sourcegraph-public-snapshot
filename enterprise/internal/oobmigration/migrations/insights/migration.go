@@ -463,29 +463,12 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	}
 	defer func() { err = tx.Done(err) }()
 
-	now := time.Now()
 	view := insightView{
 		Title:            from.Title,
 		UniqueID:         from.ID,
 		OtherThreshold:   &from.OtherThreshold,
 		PresentationType: "PIE",
 	}
-	interval := timeInterval{
-		unit:  "MONTH",
-		value: 0, // TODO - confirm: series.SampleIntervalValue is not set below
-	}
-	series := insightSeries{
-		SeriesID:           ksuid.New().String(),
-		Repositories:       []string{from.Repository},
-		SampleIntervalUnit: "MONTH",
-		JustInTime:         true,
-		GenerationMethod:   "language-stats",
-		CreatedAt:          now,
-		NextRecordingAfter: interval.StepForwards(now),
-		NextSnapshotAfter:  nextSnapshot(now),
-		OldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
-	}
-
 	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 	INSERT INTO insight_view (
 		title,
@@ -515,19 +498,35 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	view.ID = viewID
 
 	if from.UserID != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, user_id) VALUES (%s, %s)`, view.ID, *from.UserID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, user_id) VALUES (%s, %s)`, viewID, *from.UserID)); err != nil {
 			return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 		}
 	} else if from.OrgID != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, org_id) VALUES (%s, %s)`, view.ID, *from.OrgID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, org_id) VALUES (%s, %s)`, viewID, *from.OrgID)); err != nil {
 			return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 		}
 	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, true)`, view.ID)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, true)`, viewID)); err != nil {
 			return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 		}
 	}
 
+	now := time.Now()
+	interval := timeInterval{
+		unit:  "MONTH",
+		value: 0, // TODO - confirm: series.SampleIntervalValue is not set below
+	}
+	series := insightSeries{
+		SeriesID:           ksuid.New().String(),
+		Repositories:       []string{from.Repository},
+		SampleIntervalUnit: "MONTH",
+		JustInTime:         true,
+		GenerationMethod:   "language-stats",
+		CreatedAt:          now,
+		NextRecordingAfter: interval.StepForwards(now),
+		NextSnapshotAfter:  nextSnapshot(now),
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
+	}
 	seriesID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 			INSERT INTO insight_series (
 				series_id,
@@ -569,7 +568,6 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", from.ID)
 	}
-	series.ID = seriesID
 
 	metadata := insightViewSeriesMetadata{}
 	err = tx.Exec(ctx, sqlf.Sprintf(`
@@ -581,8 +579,8 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		)
 		VALUES (%s, %s, %s, %s)
 	`,
-		series.ID,
-		view.ID,
+		seriesID,
+		viewID,
 		metadata.Label,
 		metadata.Stroke,
 	))
