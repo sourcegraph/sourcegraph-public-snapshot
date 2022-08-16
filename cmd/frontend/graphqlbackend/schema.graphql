@@ -6338,6 +6338,25 @@ type AnalyticsBatchChangesResult {
 }
 
 """
+Extentions analytics.
+"""
+type AnalyticsExtensionsResult {
+    """
+    JetBrains IDE plugin search events.
+    """
+    jetbrains: AnalyticsStatItem!
+    """
+    VsCode IDE extension search events.
+    """
+    vscode: AnalyticsStatItem!
+    """
+    Browser (chrome, firefox, safari) extensions code navigation events.
+    This includes events like "Go to Def", "Find ref" and "Find implementation"
+    """
+    browser: AnalyticsStatItem!
+}
+
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -6365,6 +6384,10 @@ type Analytics {
     Batch changes statistics
     """
     batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
+    """
+    Extensions statistics
+    """
+    extensions(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsExtensionsResult!
 }
 
 """
