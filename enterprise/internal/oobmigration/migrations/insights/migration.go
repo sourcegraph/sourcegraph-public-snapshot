@@ -391,24 +391,26 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		return err
 	}
 
-	now := time.Now()
-
-	if job.UserId != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE user_id = %s`, now, *job.UserId)); err != nil {
-			return errors.Wrap(err, "MarkCompleted")
+	cond = func() *sqlf.Query {
+		if job.UserId != nil {
+			return sqlf.Sprintf("user_id = %s", *job.UserId)
 		}
-	} else if job.OrgId != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE org_id = %s`, now, *job.OrgId)); err != nil {
-			return errors.Wrap(err, "MarkCompleted")
+		if job.OrgId != nil {
+			return sqlf.Sprintf("org_id = %s", *job.OrgId)
 		}
-	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE global IS TRUE`, now)); err != nil {
-			return errors.Wrap(err, "MarkCompleted")
-		}
+		return sqlf.Sprintf("global IS TRUE")
+	}()
+	if err := tx.Exec(ctx, sqlf.Sprintf(performMigrationForRowUpdateJobQuery, time.Now(), cond)); err != nil {
+		return errors.Wrap(err, "MarkCompleted")
 	}
 
 	return nil
 }
+
+const performMigrationForRowUpdateJobQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationForRow
+UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
+`
 
 func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []langStatsInsight) (int, error) {
 	var count int
