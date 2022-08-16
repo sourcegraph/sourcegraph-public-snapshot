@@ -139,6 +139,7 @@ describe('VS Code extension', () => {
             throw new Error('Timeout waiting for search results to render after viewing repo page')
         }
 
+        // This will be fixed and re-enabled in https://github.com/sourcegraph/sourcegraph/issues/40366
         // // Open remote file from search results
         // try {
         //     await searchPanelFrame.waitForSelector('.test-search-result strong', { visible: true })
