@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useState } from 'react'
 
 import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
@@ -36,7 +36,7 @@ import {
 } from '../graphql-operations'
 import { refreshSiteFlags } from '../site/backend'
 
-import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning, REPOSITORY_STATS } from './backend'
+import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning, REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo as RepoMirrorInfo } from './components/RepoMirrorInfo'
 
@@ -152,7 +152,10 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         }
     }, [])
 
-    const { data, loading, error } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
+    const [pollRepositoryStats, setPollRepositoryStats] = useState(true)
+    const { data, loading, error } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {
+        pollInterval: pollRepositoryStats ? REPO_PAGE_POLL_INTERVAL : 0,
+    })
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
@@ -160,6 +163,10 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         []
     )
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
+
+    if (!error && !loading && data && data.repositoryStats.total !== 0 && data.repositoryStats.cloning === 0) {
+        setPollRepositoryStats(false)
+    }
 
     return (
         <div className="site-admin-repositories-page">
