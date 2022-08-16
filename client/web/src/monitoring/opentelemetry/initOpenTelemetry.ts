@@ -17,6 +17,7 @@ import {
     WindowLoadInstrumentation,
     HistoryInstrumentation,
     SharedSpanStoreProcessor,
+    ClientAttributesSpanProcessor,
 } from '@sourcegraph/observability-client'
 
 export function initOpenTelemetry(): void {
@@ -39,6 +40,7 @@ export function initOpenTelemetry(): void {
 
         provider.addSpanProcessor(new BatchSpanProcessor(collectorExporter))
         provider.addSpanProcessor(new SharedSpanStoreProcessor())
+        provider.addSpanProcessor(new ClientAttributesSpanProcessor(window.context.version))
 
         // Enable the console exporter only in the development environment.
         if (process.env.NODE_ENV === 'development') {
