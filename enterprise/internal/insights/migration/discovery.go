@@ -16,6 +16,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -268,6 +269,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 	}
 	defer func() { err = tx.Store.Done(err) }()
 
+	now := time.Now()
 	view := types.InsightView{
 		Title:            from.Title,
 		UniqueID:         from.ID,
@@ -280,6 +282,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 		SampleIntervalUnit: string(types.Month),
 		JustInTime:         true,
 		GenerationMethod:   types.LanguageStats,
+		CreatedAt:          now,
 	}
 	var grants []store.InsightViewGrant
 	if from.UserID != nil {
@@ -326,7 +329,64 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 	}
 
-	series, err = tx.CreateSeries(ctx, series)
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}
+	if !interval.IsValid() {
+		interval = timeseries.DefaultInterval
+	}
+
+	if series.NextRecordingAfter.IsZero() {
+		series.NextRecordingAfter = interval.StepForwards(now)
+	}
+	if series.NextSnapshotAfter.IsZero() {
+		series.NextSnapshotAfter = store.NextSnapshot(now)
+	}
+	if series.OldestHistoricalAt.IsZero() {
+		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
+		series.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
+	}
+
+	seriesID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+			INSERT INTO insight_series (
+				series_id,
+				query,
+				created_at,
+				oldest_historical_at,
+				last_recorded_at,
+				next_recording_after,
+				last_snapshot_at,
+				next_snapshot_after
+				repositories,
+				sample_interval_unit,
+				sample_interval_value,
+				generated_from_capture_groups,
+				just_in_time,
+				generation_method,
+				group_by,
+				needs_migration,
+			)
+			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
+			RETURNING id
+		`,
+		series.SeriesID,
+		series.Query,
+		series.CreatedAt,
+		series.OldestHistoricalAt,
+		series.LastRecordedAt,
+		series.NextRecordingAfter,
+		series.LastSnapshotAt,
+		series.NextSnapshotAfter,
+		pq.Array(series.Repositories),
+		series.SampleIntervalUnit,
+		series.SampleIntervalValue,
+		series.GeneratedFromCaptureGroups,
+		series.JustInTime,
+		series.GenerationMethod,
+		series.GroupBy,
+	)))
+	series.ID = seriesID
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", from.ID)
 	}
