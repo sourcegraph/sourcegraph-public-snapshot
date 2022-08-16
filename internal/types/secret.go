@@ -117,7 +117,7 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 
 	if old.Kind != e.Kind {
 		return errors.Errorf(
-			"UnRedactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
+			"UnredactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
 			old.Kind,
 			e.Kind,
 		)
