@@ -235,7 +235,17 @@ func getBackendInsights(setting settings) []searchInsight {
 		if len(temp) == 0 {
 			continue
 		}
-		results = append(results, temp.Insights(perms)...)
+
+		for key, insight := range temp {
+			insight.ID = key // the insight ID is the value of the dict key
+
+			// each setting is owned by either a user or an organization, which needs to be mapped when this insight is synced
+			// to preserve permissions semantics
+			insight.UserID = perms.userID
+			insight.OrgID = perms.orgID
+
+			results = append(results, insight)
+		}
 	}
 
 	return results
@@ -263,9 +273,9 @@ func getDashboards(settingsRow settings) []settingDashboard {
 	return results
 }
 
-func unmarshalBackendInsights(raw json.RawMessage, setting settings) integratedInsights {
+func unmarshalBackendInsights(raw json.RawMessage, setting settings) map[string]searchInsight {
 	var dict map[string]json.RawMessage
-	result := make(integratedInsights)
+	result := make(map[string]searchInsight)
 
 	if err := json.Unmarshal(raw, &dict); err != nil {
 		log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insights failed to migrate due to unrecognized schema")
