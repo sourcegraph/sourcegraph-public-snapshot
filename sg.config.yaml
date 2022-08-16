@@ -1010,7 +1010,7 @@ tests:
 
         👉 User test (test@sourcegraph.com) has been created and its password is supersecurepassword .
     cmd: |
-      yarn run test-e2e
+      yarn run --verbose test-e2e
     env:
       TEST_USER_EMAIL: test@sourcegraph.com
       TEST_USER_PASSWORD: supersecurepassword

@@ -6,6 +6,7 @@ const Base = mocha.reporters.Base;
 class SpecFileReporter extends mocha.reporters.Spec {
     constructor(runner, options) {
         super(runner, options);
+        console.log("🚓 🚒 🧨 REPORTER");
         this.title = "placeholder";
         this.buildkite = false;
 
@@ -16,6 +17,7 @@ class SpecFileReporter extends mocha.reporters.Spec {
         if ('BUILDKITE_LABEL' in process.env) {
             this.title = process.env.BUILDKIATE_LABEL;
         }
+        console.log(`🕵 🔎 ➡️ buildkite=${this.buildkite}`);
     }
 
     epilogue() {
