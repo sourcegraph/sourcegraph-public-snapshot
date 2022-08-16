@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,7 +24,7 @@ import (
 
 const schemaErrorPrefix = "insights oob migration schema error"
 
-func getLangStatsInsights(settingsRow api.Settings) []insights.LangStatsInsight {
+func getLangStatsInsights(settingsRow Settings) []insights.LangStatsInsight {
 	prefix := "codeStatsInsights."
 	var raw map[string]json.RawMessage
 	results := make([]insights.LangStatsInsight, 0)
@@ -51,7 +50,7 @@ func getLangStatsInsights(settingsRow api.Settings) []insights.LangStatsInsight 
 	return results
 }
 
-func getFrontendInsights(settingsRow api.Settings) []insights.SearchInsight {
+func getFrontendInsights(settingsRow Settings) []insights.SearchInsight {
 	prefix := "searchInsights."
 	var raw map[string]json.RawMessage
 	results := make([]insights.SearchInsight, 0)
@@ -78,7 +77,7 @@ func getFrontendInsights(settingsRow api.Settings) []insights.SearchInsight {
 	return results
 }
 
-func getBackendInsights(setting api.Settings) []insights.SearchInsight {
+func getBackendInsights(setting Settings) []insights.SearchInsight {
 	prefix := "insights.allrepos"
 
 	results := make([]insights.SearchInsight, 0)
@@ -106,7 +105,7 @@ func getBackendInsights(setting api.Settings) []insights.SearchInsight {
 	return results
 }
 
-func getDashboards(settingsRow api.Settings) []insights.SettingDashboard {
+func getDashboards(settingsRow Settings) []insights.SettingDashboard {
 	prefix := "insights.dashboards"
 
 	results := make([]insights.SettingDashboard, 0)
@@ -150,7 +149,7 @@ func (i IntegratedInsights) Insights(perms permissionAssociations) []insights.Se
 	return results
 }
 
-func unmarshalBackendInsights(raw json.RawMessage, setting api.Settings) IntegratedInsights {
+func unmarshalBackendInsights(raw json.RawMessage, setting Settings) IntegratedInsights {
 	var dict map[string]json.RawMessage
 	result := make(IntegratedInsights)
 
@@ -171,7 +170,7 @@ func unmarshalBackendInsights(raw json.RawMessage, setting api.Settings) Integra
 	return result
 }
 
-func unmarshalDashboard(raw json.RawMessage, settingsRow api.Settings) []insights.SettingDashboard {
+func unmarshalDashboard(raw json.RawMessage, settingsRow Settings) []insights.SettingDashboard {
 	var dict map[string]json.RawMessage
 	result := []insights.SettingDashboard{}
 
@@ -850,7 +849,7 @@ type timeInterval struct {
 	value int
 }
 
-func makeUniqueId(id string, subject api.SettingsSubject) string {
+func makeUniqueId(id string, subject SettingsSubject) string {
 	if subject.User != nil {
 		return fmt.Sprintf("%s-user-%d", id, *subject.User)
 	} else if subject.Org != nil {
@@ -860,7 +859,7 @@ func makeUniqueId(id string, subject api.SettingsSubject) string {
 	}
 }
 
-func getOwnerName(settingsRow api.Settings) string {
+func getOwnerName(settingsRow Settings) string {
 	name := ""
 	if settingsRow.Subject.User != nil {
 		name = fmt.Sprintf("user id %d", *settingsRow.Subject.User)

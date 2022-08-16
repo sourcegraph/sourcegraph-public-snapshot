@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
@@ -12,13 +13,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -99,12 +98,35 @@ var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j SettingsMigra
 	return j, err
 })
 
-var scanOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (org itypes.Org, _ error) {
+type Org struct {
+	ID          int32
+	Name        string
+	DisplayName *string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+var scanOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (org Org, _ error) {
 	err := s.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
 	return org, err
 })
 
-var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u itypes.User, _ error) {
+type User struct {
+	ID                    int32
+	Username              string
+	DisplayName           string
+	AvatarURL             string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	SiteAdmin             bool
+	BuiltinAuth           bool
+	Tags                  []string
+	InvalidatedSessionsAt time.Time
+	TosAccepted           bool
+	Searchable            bool
+}
+
+var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u User, _ error) {
 	var displayName, avatarURL sql.NullString
 	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
 	u.DisplayName = displayName.String
@@ -112,7 +134,21 @@ var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u itypes.User,
 	return u, err
 })
 
-var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s api.Settings, _ error) {
+type SettingsSubject struct {
+	Default bool   // whether this is for default settings
+	Site    bool   // whether this is for global settings
+	Org     *int32 // the org's ID
+	User    *int32 // the user's ID
+}
+type Settings struct {
+	ID           int32           // the unique ID of this settings value
+	Subject      SettingsSubject // the subject of these settings
+	AuthorUserID *int32          // the ID of the user who authored this settings value
+	Contents     string          // the raw JSON (with comments and trailing commas allowed)
+	CreatedAt    time.Time       // the date when this settings value was created
+}
+
+var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s Settings, _ error) {
 	err := scanner.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorUserID, &s.Contents, &s.CreatedAt)
 	if s.Subject.Org == nil && s.Subject.User == nil {
 		s.Subject.Site = true
@@ -208,7 +244,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 }
 
 func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job SettingsMigrationJob) error {
-	var subject api.SettingsSubject
+	var subject SettingsSubject
 	var migrationContext migrationContext
 	var subjectName string
 
@@ -226,7 +262,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 
 	if job.UserId != nil {
 		userId := int32(*job.UserId)
-		subject = api.SettingsSubject{User: &userId}
+		subject = SettingsSubject{User: &userId}
 
 		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 		// resolve insight ID collisions as if it were in a setting cascade
@@ -292,7 +328,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
-		subject = api.SettingsSubject{Org: &orgId}
+		subject = SettingsSubject{Org: &orgId}
 		migrationContext.orgIds = []int{*job.OrgId}
 		orgs, err := scanOrgs(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
@@ -322,7 +358,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		org := orgs[0]
 		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
 	} else {
-		subject = api.SettingsSubject{Site: true}
+		subject = SettingsSubject{Site: true}
 		// nothing to set for migration context, it will infer global based on the lack of user / orgs
 		subjectName = "Global"
 	}
