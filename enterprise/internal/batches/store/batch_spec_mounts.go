@@ -98,52 +98,6 @@ DO UPDATE SET
 (%s) = (%s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
-func (s *Store) CreateBatchSpecMount(ctx context.Context, mount *btypes.BatchSpecMount) (err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecMount.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	q, err := s.createBatchSpecMountQuery(mount)
-	if err != nil {
-		return err
-	}
-
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanBatchSpecMount(mount, sc)
-	})
-}
-
-func (s *Store) createBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query, error) {
-	if m.UpdatedAt.IsZero() {
-		m.UpdatedAt = time.Now()
-	}
-
-	if m.RandID == "" {
-		var err error
-		if m.RandID, err = RandomID(); err != nil {
-			return nil, errors.Wrap(err, "creating RandID failed")
-		}
-	}
-
-	return sqlf.Sprintf(
-		createBatchSpecMountQueryFmtstr,
-		sqlf.Join(batchSpecMountInsertColumns, ", "),
-		m.BatchSpecID,
-		m.FileName,
-		m.Path,
-		m.Size,
-		m.Modified,
-		m.CreatedAt,
-		m.UpdatedAt,
-		sqlf.Join(batchSpecMountColumns, ", "),
-	), nil
-}
-
-var createBatchSpecMountQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_mounts.go:CreateBatchSpecMount
-INSERT INTO batch_spec_mounts (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
-RETURNING %s`
-
 func (s *Store) UpdateBatchSpecMount(ctx context.Context, mount *btypes.BatchSpecMount) (err error) {
 	ctx, _, endObservation := s.operations.updateBatchSpecMount.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(mount.ID)),
