@@ -390,10 +390,33 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", from.ID)
 	}
-	err = tx.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{})
+
+	metadata := types.InsightViewSeriesMetadata{}
+	err = tx.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO insight_view_series (
+			insight_series_id,
+			insight_view_id,
+			label,
+			stroke
+		)
+		VALUES (%s, %s, %s, %s)
+	`,
+		series.ID,
+		view.ID,
+		metadata.Label,
+		metadata.Stroke,
+	))
 	if err != nil {
-		return errors.Wrapf(err, "unable to attach series, unique_id: %s", from.ID)
+		return err
 	}
+	// Enable the series in case it had previously been soft-deleted.
+	err = tx.Exec(ctx, sqlf.Sprintf(`
+		UPDATE insight_series
+		SET deleted_at IS NULL
+		WHERE series_id = %s
+	`,
+		series.SeriesID,
+	))
 
 	return nil
 }
