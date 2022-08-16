@@ -314,9 +314,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		return nil
 	}
 
-	langStatsInsights := getLangStatsInsights(settings[0])
-	frontendInsights := getFrontendInsights(settings[0])
-	backendInsights := getBackendInsights(settings[0])
+	langStatsInsights, frontendInsights, backendInsights := getInsightsFromSettings(settings[0])
 
 	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
 	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example

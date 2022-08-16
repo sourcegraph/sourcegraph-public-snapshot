@@ -132,6 +132,10 @@ func filterSettingJson(settingJson string, prefix string) (map[string]json.RawMe
 	return filtered, nil
 }
 
+func getInsightsFromSettings(settingsRow settings) ([]langStatsInsight, []searchInsight, []searchInsight) {
+	return getLangStatsInsights(settingsRow), getFrontendInsights(settingsRow), getBackendInsights(settingsRow)
+}
+
 func getLangStatsInsights(settingsRow settings) []langStatsInsight {
 	prefix := "codeStatsInsights."
 	var raw map[string]json.RawMessage
