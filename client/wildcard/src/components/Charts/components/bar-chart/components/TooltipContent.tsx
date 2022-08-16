@@ -37,7 +37,7 @@ export function BarTooltipContent<Datum>(props: BarTooltipContentProps<Datum>): 
 
     return (
         <>
-            {category.data.length > 1 && <H3>{category.id}</H3>}
+            <H3>{category.id}</H3>
             <TooltipList>
                 {category.data.map(item => {
                     const hover = getName(item)
