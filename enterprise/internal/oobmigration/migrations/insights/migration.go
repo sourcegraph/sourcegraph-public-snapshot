@@ -151,7 +151,8 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType string) (b
 }
 
 func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job settingsMigrationJob) error {
-	var subject settingsSubject
+	var settings []settings
+	var err error
 	var migrationContext migrationContext
 	var subjectName string
 
@@ -169,7 +170,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 
 	if job.UserId != nil {
 		userId := int32(*job.UserId)
-		subject = settingsSubject{User: &userId}
 
 		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 		// resolve insight ID collisions as if it were in a setting cascade
@@ -222,9 +222,30 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		}
 		user := users[0]
 		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
+		settings, err = scanSettings(tx.Query(ctx, sqlf.Sprintf(`
+			SELECT
+				s.id,
+				s.org_id,
+				s.user_id,
+				s.contents
+			FROM settings s
+			LEFT JOIN users ON users.id = s.author_user_id
+			WHERE
+				user_id = %s AND
+				EXISTS (
+					SELECT NULL FROM users
+					WHERE id = %s AND
+					deleted_at IS NULL
+				)
+			ORDER BY id DESC LIMIT 1
+			`,
+			userId,
+		)))
+		if err != nil {
+			return err
+		}
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
-		subject = settingsSubject{Org: &orgId}
 		migrationContext.orgIds = []int{*job.OrgId}
 		orgs, err := scanOrgs(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
@@ -251,37 +272,42 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		}
 		org := orgs[0]
 		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
+		settings, err = scanSettings(tx.Query(ctx, sqlf.Sprintf(`
+			SELECT
+				s.id,
+				s.org_id,
+				s.user_id,
+				s.contents
+			FROM settings s
+			LEFT JOIN users ON users.id = s.author_user_id
+			WHERE org_id = %s
+			ORDER BY id DESC LIMIT 1
+			`,
+			orgId,
+		)))
+		if err != nil {
+			return err
+		}
 	} else {
-		subject = settingsSubject{Site: true}
 		// nothing to set for migration context, it will infer global based on the lack of user / orgs
 		subjectName = "Global"
-	}
-
-	var cond *sqlf.Query
-	switch {
-	case subject.Org != nil:
-		cond = sqlf.Sprintf("org_id = %d", *subject.Org)
-	case subject.User != nil:
-		cond = sqlf.Sprintf("user_id = %d AND EXISTS (SELECT NULL FROM users WHERE id=%d AND deleted_at IS NULL)", *subject.User, *subject.User)
-	default:
-		// No org and no user represents global site settings.
-		cond = sqlf.Sprintf("user_id IS NULL AND org_id IS NULL")
-	}
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			s.id,
-			s.org_id,
-			s.user_id,
-			s.contents
-		FROM settings s
-		LEFT JOIN users ON users.id = s.author_user_id
-		WHERE %s
-		ORDER BY id DESC LIMIT 1
-		`,
-		cond,
-	)))
-	if err != nil {
-		return err
+		settings, err = scanSettings(tx.Query(ctx, sqlf.Sprintf(`
+			SELECT
+				s.id,
+				s.org_id,
+				s.user_id,
+				s.contents
+			FROM settings s
+			LEFT JOIN users ON users.id = s.author_user_id
+			WHERE
+				user_id IS NULL AND
+				org_id IS NULL
+			ORDER BY id DESC LIMIT 1
+			`,
+		)))
+		if err != nil {
+			return err
+		}
 	}
 	if len(settings) == 0 {
 		// If this settings object no longer exists, skip it.
@@ -307,6 +333,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	}
 	logDuplicates(allDefinedInsightIds)
 
+	var cond *sqlf.Query
 	if job.UserId != nil {
 		cond = sqlf.Sprintf("user_id = %s", *job.UserId)
 	} else if job.OrgId != nil {
