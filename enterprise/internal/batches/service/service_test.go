@@ -406,7 +406,7 @@ func TestService(t *testing.T) {
 		changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
-			cs := &btypes.ChangesetSpec{RepoID: r.ID, UserID: admin.ID}
+			cs := &btypes.ChangesetSpec{RepoID: r.ID, UserID: admin.ID, Spec: &batcheslib.ChangesetSpec{ExternalID: "123"}}
 			if err := s.CreateChangesetSpec(ctx, cs); err != nil {
 				t.Fatal(err)
 			}

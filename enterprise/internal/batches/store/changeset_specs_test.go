@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -16,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -74,8 +76,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	// listing or getting ChangesetSpecs, since we don't want to load
 	// ChangesetSpecs whose repository has been (soft-)deleted.
 	changesetSpecDeletedRepo := &btypes.ChangesetSpec{
-		UserID:      int32(424242),
-		Spec:        &batcheslib.ChangesetSpec{},
+		UserID: int32(424242),
+		Spec: &batcheslib.ChangesetSpec{
+			ExternalID: "123",
+		},
 		BatchSpecID: int64(424242),
 		RepoID:      deletedRepo.ID,
 	}
@@ -109,6 +113,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
+			}
+
+			if typ, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf("SELECT type FROM changeset_specs WHERE id = %d", have.ID))); err != nil {
+				t.Fatal(err)
+			} else if typ != string(btypes.ChangesetSpecTypeExisting) {
+				t.Fatalf("got incorrect changeset spec type %s", typ)
 			}
 		}
 	})
@@ -376,6 +386,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				spec := &btypes.ChangesetSpec{
 					BatchSpecID: int64(i + 1),
 					RepoID:      repo.ID,
+					Spec:        &batcheslib.ChangesetSpec{ExternalID: "123"},
 				}
 				err := s.CreateChangesetSpec(ctx, spec)
 				if err != nil {
@@ -404,6 +415,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				spec := &btypes.ChangesetSpec{
 					BatchSpecID: int64(i + 1),
 					RepoID:      repo.ID,
+					Spec: &batcheslib.ChangesetSpec{
+						ExternalID: "123",
+					},
 				}
 				err := s.CreateChangesetSpec(ctx, spec)
 				if err != nil {
@@ -454,6 +468,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				RepoID:    repo.ID,
 				CreatedAt: tc.createdAt,
+				Spec:      &batcheslib.ChangesetSpec{ExternalID: "123"},
 			}
 
 			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
@@ -550,6 +565,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				BatchSpecID: batchSpec.ID,
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				RepoID:    repo.ID,
+				Spec:      &batcheslib.ChangesetSpec{ExternalID: "123"},
 				CreatedAt: tc.createdAt,
 			}
 
