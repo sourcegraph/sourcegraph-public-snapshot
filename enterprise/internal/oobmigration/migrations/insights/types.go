@@ -6,50 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
-type timeSeries struct {
-	Name   string
-	Stroke string
-	Query  string
-}
-
-type interval struct {
-	Years  *int
-	Months *int
-	Weeks  *int
-	Days   *int
-	Hours  *int
-}
-
-type searchInsight struct {
-	ID           string
-	Title        string
-	Description  string
-	Repositories []string
-	Series       []timeSeries
-	Step         interval
-	Visibility   string
-	OrgID        *int32
-	UserID       *int32
-	Filters      *defaultFilters
-}
-
-type defaultFilters struct {
-	IncludeRepoRegexp *string
-	ExcludeRepoRegexp *string
-}
-
 type permissionAssociations struct {
 	userID *int32
 	orgID  *int32
-}
-
-type langStatsInsight struct {
-	ID             string
-	Title          string
-	Repository     string
-	OtherThreshold float64
-	OrgID          *int32
-	UserID         *int32
 }
 
 type insightViewSeriesMetadata struct {
@@ -183,20 +142,6 @@ type user struct {
 	Searchable            bool
 }
 
-type settingsSubject struct {
-	Default bool   // whether this is for default settings
-	Site    bool   // whether this is for global settings
-	Org     *int32 // the org's ID
-	User    *int32 // the user's ID
-}
-type settings struct {
-	ID           int32           // the unique ID of this settings value
-	Subject      settingsSubject // the subject of these settings
-	AuthorUserID *int32          // the ID of the user who authored this settings value
-	Contents     string          // the raw JSON (with comments and trailing commas allowed)
-	CreatedAt    time.Time       // the date when this settings value was created
-}
-
 type insightSeries struct {
 	ID                         int
 	SeriesID                   string
@@ -269,6 +214,66 @@ const (
 	Year  intervalUnit = "YEAR"
 	Hour  intervalUnit = "HOUR"
 )
+
+//
+// JSON UNMARSHALLED
+//
+
+type settings struct {
+	ID           int32           // the unique ID of this settings value
+	Subject      settingsSubject // the subject of these settings
+	AuthorUserID *int32          // the ID of the user who authored this settings value
+	Contents     string          // the raw JSON (with comments and trailing commas allowed)
+	CreatedAt    time.Time       // the date when this settings value was created
+}
+
+type settingsSubject struct {
+	Default bool   // whether this is for default settings
+	Site    bool   // whether this is for global settings
+	Org     *int32 // the org's ID
+	User    *int32 // the user's ID
+}
+
+type langStatsInsight struct {
+	ID             string
+	Title          string
+	Repository     string
+	OtherThreshold float64
+	OrgID          *int32
+	UserID         *int32
+}
+
+type searchInsight struct {
+	ID           string
+	Title        string
+	Description  string
+	Repositories []string
+	Series       []timeSeries
+	Step         interval
+	Visibility   string
+	OrgID        *int32
+	UserID       *int32
+	Filters      *defaultFilters
+}
+
+type timeSeries struct {
+	Name   string
+	Stroke string
+	Query  string
+}
+
+type interval struct {
+	Years  *int
+	Months *int
+	Weeks  *int
+	Days   *int
+	Hours  *int
+}
+
+type defaultFilters struct {
+	IncludeRepoRegexp *string
+	ExcludeRepoRegexp *string
+}
 
 type settingDashboard struct {
 	ID         string   `json:"id,omitempty"`
