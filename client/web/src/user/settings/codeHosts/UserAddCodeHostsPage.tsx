@@ -227,12 +227,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
         })
     }, [fetchExternalServices])
 
-    const refetchServices = useCallback((): void => {
-        fetchExternalServices().catch(error => {
-            setStatusOrError(asError(error))
-        })
-    }, [fetchExternalServices])
-
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
             eventLogger.log('UserSettingsAddRepositoriesCTAClicked', null, { source })
