@@ -1,13 +1,9 @@
 import { Remote } from 'comlink'
-import { from, Observable, Subscription, Unsubscribable } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { Observable, Unsubscribable } from 'rxjs'
 
 import type { CommandEntry, ExecuteCommandParameters } from '../api/client/mainthread-api'
 import type { FlatExtensionHostAPI } from '../api/contract'
-import type { InitData } from '../api/extension/extensionHost'
 import type { PlainNotification } from '../api/extension/extensionHostApi'
-import { syncPromiseSubscription } from '../api/util'
-import type { PlatformContext } from '../platform/context'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -47,63 +43,4 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
 }
 export interface RequiredExtensionsControllerProps<K extends keyof Controller = keyof Controller> {
     extensionsController: Pick<Controller, K>
-}
-
-/**
- * Creates the controller, which handles all communication between the client application and extensions.
- *
- * There should only be a single controller for the entire client application. The controller's model represents
- * all of the client application state that the client needs to know.
- *
- * The implementation (`createExtensionHostClientConnection`) is lazy loaded to avoid adding bytes when
- * the extension system is disabled
- */
-export function createController(
-    context: Pick<
-        PlatformContext,
-        | 'updateSettings'
-        | 'settings'
-        | 'getGraphQLClient'
-        | 'requestGraphQL'
-        | 'showMessage'
-        | 'showInputBox'
-        | 'sideloadedExtensionURL'
-        | 'getScriptURLForExtension'
-        | 'getStaticExtensions'
-        | 'telemetryService'
-        | 'clientApplication'
-        | 'sourcegraphURL'
-        | 'createExtensionHost'
-    >
-): Controller {
-    const subscriptions = new Subscription()
-    const initData: Omit<InitData, 'initialSettings'> = {
-        sourcegraphURL: context.sourcegraphURL,
-        clientApplication: context.clientApplication,
-    }
-    const extensionHostClientPromise = import('../api/client/connection').then(module =>
-        module.createExtensionHostClientConnection(context.createExtensionHost(), initData, context)
-    )
-
-    subscriptions.add(() => extensionHostClientPromise.then(({ subscription }) => subscription.unsubscribe()))
-
-    // TODO: Debug helpers, logging
-
-    return {
-        executeCommand: (parameters, suppressNotificationOnError) =>
-            extensionHostClientPromise.then(({ exposedToClient }) =>
-                exposedToClient.executeCommand(parameters, suppressNotificationOnError)
-            ),
-        commandErrors: from(extensionHostClientPromise).pipe(
-            switchMap(({ exposedToClient }) => exposedToClient.commandErrors)
-        ),
-        registerCommand: entryToRegister =>
-            syncPromiseSubscription(
-                extensionHostClientPromise.then(({ exposedToClient }) =>
-                    exposedToClient.registerCommand(entryToRegister)
-                )
-            ),
-        extHostAPI: extensionHostClientPromise.then(({ api }) => api),
-        unsubscribe: () => subscriptions.unsubscribe(),
-    }
 }
