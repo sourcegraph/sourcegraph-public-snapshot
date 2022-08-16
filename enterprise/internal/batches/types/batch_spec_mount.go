@@ -2,6 +2,7 @@ package types
 
 import "time"
 
+// BatchSpecMount contains the metadata about the mount object for the batch spec.
 type BatchSpecMount struct {
 	ID          int64
 	RandID      string
