@@ -169,9 +169,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 			SELECT
 				orgs.id,
 				orgs.name,
-				orgs.display_name,
-				orgs.created_at,
-				orgs.updated_at
+				orgs.display_name
 			FROM org_members
 			LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
 			WHERE
@@ -194,16 +192,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 			SELECT
 				u.id,
 				u.username,
-				u.display_name,
-				u.avatar_url,
-				u.created_at,
-				u.updated_at,
-				u.site_admin,
-				u.passwd IS NOT NULL,
-				u.tags,
-				u.invalidated_sessions_at,
-				u.tos_accepted,
-				u.searchable
+				u.display_name
 			FROM users u
 			WHERE
 				id = %s AND
@@ -233,9 +222,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 			SELECT
 				id,
 				name,
-				display_name,
-				created_at,
-				updated_at
+				display_name
 			FROM orgs
 			WHERE
 				deleted_at IS NULL AND
@@ -277,9 +264,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 			s.id,
 			s.org_id,
 			s.user_id,
-			CASE WHEN users.deleted_at IS NULL THEN s.author_user_id ELSE NULL END,
-			s.contents,
-			s.created_at
+			s.contents
 		FROM settings s
 		LEFT JOIN users ON users.id = s.author_user_id
 		WHERE %s
@@ -548,7 +533,6 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", from.ID)
 	}
 	series.ID = seriesID
-	series.Enabled = true
 
 	metadata := insightViewSeriesMetadata{}
 	err = tx.Exec(ctx, sqlf.Sprintf(`
@@ -685,15 +669,13 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 					next_recording_after,
 					last_snapshot_at,
 					next_snapshot_after,
-					(CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 					sample_interval_unit,
 					sample_interval_value,
 					generated_from_capture_groups,
 					just_in_time,
 					generation_method,
 					repositories,
-					group_by,
-					backfill_attempts
+					group_by
 				FROM insight_series
 				WHERE
 					(repositories = '{}' OR repositories is NULL) AND
@@ -759,7 +741,6 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 					return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
 				}
 				temp.ID = id
-				temp.Enabled = true
 				series = temp
 
 				// Also match/replace old series_points ids with the new series id
@@ -791,7 +772,6 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 					} else {
 						now := time.Now()
 						silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, series.ID))
-						series.BackfillQueuedAt = now
 						if silentErr != nil {
 							// If the stamp fails, skip it. It will just need to be calcuated again.
 							log15.Error("error updating backfill_queued_at", "series_id", temp.SeriesID, "err", silentErr)
@@ -844,7 +824,6 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
 			}
 			temp.ID = id
-			temp.Enabled = true
 			series = temp
 		}
 		dataSeries[i] = series

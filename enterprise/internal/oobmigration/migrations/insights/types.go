@@ -15,17 +15,13 @@ type insightViewSeriesMetadata struct {
 }
 
 type insightView struct {
-	ID                  int
-	Title               string
-	Description         string
-	UniqueID            string
-	Filters             insightViewFilters
-	OtherThreshold      *float64
-	PresentationType    string
-	IsFrozen            bool
-	SeriesSortMode      *string
-	SeriesSortDirection *string
-	SeriesLimit         *int32
+	ID               int
+	Title            string
+	Description      string
+	UniqueID         string
+	Filters          insightViewFilters
+	OtherThreshold   *float64
+	PresentationType string
 }
 
 type insightViewFilters struct {
@@ -52,23 +48,12 @@ type organization struct {
 	ID          int32
 	Name        string
 	DisplayName *string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
 }
 
 type user struct {
-	ID                    int32
-	Username              string
-	DisplayName           string
-	AvatarURL             string
-	CreatedAt             time.Time
-	UpdatedAt             time.Time
-	SiteAdmin             bool
-	BuiltinAuth           bool
-	Tags                  []string
-	InvalidatedSessionsAt time.Time
-	TosAccepted           bool
-	Searchable            bool
+	ID          int32
+	Username    string
+	DisplayName string
 }
 
 type insightSeries struct {
@@ -81,8 +66,6 @@ type insightSeries struct {
 	NextRecordingAfter         time.Time
 	LastSnapshotAt             time.Time
 	NextSnapshotAfter          time.Time
-	BackfillQueuedAt           time.Time
-	Enabled                    bool
 	Repositories               []string
 	SampleIntervalUnit         string
 	SampleIntervalValue        int
@@ -90,7 +73,6 @@ type insightSeries struct {
 	JustInTime                 bool
 	GenerationMethod           string
 	GroupBy                    *string
-	BackfillAttempts           int32
 }
 
 func (t timeInterval) StepForwards(start time.Time) time.Time {
@@ -116,18 +98,15 @@ func (t timeInterval) StepForwards(start time.Time) time.Time {
 //
 
 type settings struct {
-	ID           int32           // the unique ID of this settings value
-	Subject      settingsSubject // the subject of these settings
-	AuthorUserID *int32          // the ID of the user who authored this settings value
-	Contents     string          // the raw JSON (with comments and trailing commas allowed)
-	CreatedAt    time.Time       // the date when this settings value was created
+	ID       int32           // the unique ID of this settings value
+	Subject  settingsSubject // the subject of these settings
+	Contents string          // the raw JSON (with comments and trailing commas allowed)
 }
 
 type settingsSubject struct {
-	Default bool   // whether this is for default settings
-	Site    bool   // whether this is for global settings
-	Org     *int32 // the org's ID
-	User    *int32 // the user's ID
+	Site bool   // whether this is for global settings
+	Org  *int32 // the org's ID
+	User *int32 // the user's ID
 }
 
 type langStatsInsight struct {

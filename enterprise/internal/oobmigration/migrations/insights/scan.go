@@ -15,20 +15,19 @@ var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j settingsMigra
 })
 
 var scanOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (org organization, _ error) {
-	err := s.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
+	err := s.Scan(&org.ID, &org.Name, &org.DisplayName)
 	return org, err
 })
 
 var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u user, _ error) {
-	var displayName, avatarURL sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
+	var displayName sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName)
 	u.DisplayName = displayName.String
-	u.AvatarURL = avatarURL.String
 	return u, err
 })
 
 var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s settings, _ error) {
-	err := scanner.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorUserID, &s.Contents, &s.CreatedAt)
+	err := scanner.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.Contents)
 	if s.Subject.Org == nil && s.Subject.User == nil {
 		s.Subject.Site = true
 	}
@@ -46,7 +45,6 @@ var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s insig
 		&s.NextRecordingAfter,
 		&s.LastSnapshotAt,
 		&s.NextSnapshotAfter,
-		&s.Enabled,
 		&s.SampleIntervalUnit,
 		&s.SampleIntervalValue,
 		&s.GeneratedFromCaptureGroups,
@@ -54,7 +52,6 @@ var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s insig
 		&s.GenerationMethod,
 		pq.Array(&s.Repositories),
 		&s.GroupBy,
-		&s.BackfillAttempts,
 	)
 	return s, err
 })
