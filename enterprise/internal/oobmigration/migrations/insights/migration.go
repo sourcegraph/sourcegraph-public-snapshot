@@ -443,6 +443,10 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		OtherThreshold:   &from.OtherThreshold,
 		PresentationType: Pie,
 	}
+	interval := timeInterval{
+		unit:  intervalUnit(string(Month)),
+		value: 0, // TODO - confirm: series.SampleIntervalValue is not set below
+	}
 	series := insightSeries{
 		SeriesID:           ksuid.New().String(),
 		Repositories:       []string{from.Repository},
@@ -450,41 +454,11 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		JustInTime:         true,
 		GenerationMethod:   LanguageStats,
 		CreatedAt:          now,
-	}
-	interval := TimeInterval{
-		Unit:  intervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
-	}
-	validType := false
-	switch interval.Unit {
-	case Year:
-		fallthrough
-	case Month:
-		fallthrough
-	case Week:
-		fallthrough
-	case Day:
-		fallthrough
-	case Hour:
-		validType = true
-	}
-	if !(validType && interval.Value >= 0) {
-		interval = TimeInterval{
-			Unit:  Month,
-			Value: 1,
-		}
+		NextRecordingAfter: interval.StepForwards(now),
+		NextSnapshotAfter:  nextSnapshot(now),
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
 	}
 
-	if series.NextRecordingAfter.IsZero() {
-		series.NextRecordingAfter = interval.StepForwards(now)
-	}
-	if series.NextSnapshotAfter.IsZero() {
-		series.NextSnapshotAfter = nextSnapshot(now)
-	}
-	if series.OldestHistoricalAt.IsZero() {
-		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-		series.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
-	}
 	var grants []insightViewGrant
 	if from.UserID != nil {
 		grants = []insightViewGrant{userGrant(int(*from.UserID))}
@@ -657,12 +631,15 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 	}
 	defer func() { err = tx.Done(err) }()
 
+	now := time.Now()
 	dataSeries := make([]insightSeries, len(from.Series))
 	metadata := make([]insightViewSeriesMetadata, len(from.Series))
 
 	for i, timeSeries := range from.Series {
 		temp := insightSeries{
-			Query: timeSeries.Query,
+			Query:              timeSeries.Query,
+			CreatedAt:          now,
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
 		}
 
 		if batch == frontend {
@@ -679,6 +656,8 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			temp.SeriesID = ksuid.New().String() // this will cause some orphan records, but we can't use the query to match because of repo / time scope. We will purge orphan records at the end of this job.
 			temp.JustInTime = true
 			temp.GenerationMethod = Search
+			temp.NextSnapshotAfter = nextSnapshot(now)
+			temp.NextRecordingAfter = interval.StepForwards(now)
 		} else if batch == backend {
 			temp.SampleIntervalUnit = string(Month)
 			temp.SampleIntervalValue = 1
@@ -687,45 +666,6 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			temp.SeriesID = ksuid.New().String()
 			temp.JustInTime = false
 			temp.GenerationMethod = Search
-		}
-		now := time.Now()
-
-		if temp.CreatedAt.IsZero() {
-			temp.CreatedAt = now
-		}
-		interval := TimeInterval{
-			Unit:  intervalUnit(temp.SampleIntervalUnit),
-			Value: temp.SampleIntervalValue,
-		}
-		validType := false
-		switch interval.Unit {
-		case Year:
-			fallthrough
-		case Month:
-			fallthrough
-		case Week:
-			fallthrough
-		case Day:
-			fallthrough
-		case Hour:
-			validType = true
-		}
-		if !(validType && interval.Value >= 0) {
-			interval = TimeInterval{
-				Unit:  Month,
-				Value: 1,
-			}
-		}
-
-		if temp.NextRecordingAfter.IsZero() {
-			temp.NextRecordingAfter = interval.StepForwards(now)
-		}
-		if temp.NextSnapshotAfter.IsZero() {
-			temp.NextSnapshotAfter = nextSnapshot(now)
-		}
-		if temp.OldestHistoricalAt.IsZero() {
-			// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-			temp.OldestHistoricalAt = now.Add(-time.Hour * 24 * 7 * 26)
 		}
 
 		var series insightSeries

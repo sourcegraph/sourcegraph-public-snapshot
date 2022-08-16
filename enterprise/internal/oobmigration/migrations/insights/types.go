@@ -173,12 +173,7 @@ const (
 	MappingCompute generationMethod = "mapping-compute"
 )
 
-type TimeInterval struct {
-	Unit  intervalUnit
-	Value int
-}
-
-func (t TimeInterval) StepForwards(start time.Time) time.Time {
+func (t timeInterval) StepForwards(start time.Time) time.Time {
 	return t.step(start, forward)
 }
 
@@ -187,21 +182,21 @@ type stepDirection int
 const forward stepDirection = 1
 const backward stepDirection = -1
 
-func (t TimeInterval) step(start time.Time, direction stepDirection) time.Time {
-	switch t.Unit {
+func (t timeInterval) step(start time.Time, direction stepDirection) time.Time {
+	switch t.unit {
 	case Year:
-		return start.AddDate(int(direction)*t.Value, 0, 0)
+		return start.AddDate(int(direction)*t.value, 0, 0)
 	case Month:
-		return start.AddDate(0, int(direction)*t.Value, 0)
+		return start.AddDate(0, int(direction)*t.value, 0)
 	case Week:
-		return start.AddDate(0, 0, int(direction)*7*t.Value)
+		return start.AddDate(0, 0, int(direction)*7*t.value)
 	case Day:
-		return start.AddDate(0, 0, int(direction)*t.Value)
+		return start.AddDate(0, 0, int(direction)*t.value)
 	case Hour:
-		return start.Add(time.Hour * time.Duration(t.Value) * time.Duration(direction))
+		return start.Add(time.Hour * time.Duration(t.value) * time.Duration(direction))
 	default:
 		// this doesn't really make sense, so return something?
-		return start.AddDate(int(direction)*t.Value, 0, 0)
+		return start.AddDate(int(direction)*t.value, 0, 0)
 	}
 }
 
