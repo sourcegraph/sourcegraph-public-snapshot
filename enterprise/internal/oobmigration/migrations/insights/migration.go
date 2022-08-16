@@ -56,98 +56,55 @@ FROM
 `
 
 func (m *migrator) Up(ctx context.Context) (err error) {
-	globalMigrationComplete, err := m.performBatchMigration(ctx, "GLOBAL")
-	if err != nil {
-		return err
-	}
-	if !globalMigrationComplete {
-		return nil
-	}
-
-	orgMigrationComplete, err := m.performBatchMigration(ctx, "ORG")
-	if err != nil {
-		return err
-	}
-	if !orgMigrationComplete {
-		return nil
-	}
-
-	userMigrationComplete, err := m.performBatchMigration(ctx, "USER")
-	if err != nil {
-		return err
-	}
-	if !userMigrationComplete {
-		return nil
-	}
-
-	return nil
-}
-
-func (m *migrator) Down(ctx context.Context) (err error) {
-	return nil
-}
-
-func (m *migrator) performBatchMigration(ctx context.Context, jobType string) (bool, error) {
-	// This transaction will allow us to lock the jobs rows while working on them.
 	tx, err := m.frontendStore.Transact(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
-	defer func() {
-		err = tx.Done(err)
-	}()
+	defer func() { err = tx.Done(err) }()
 
-	var cond *sqlf.Query
-	switch jobType {
-	case "USER":
-		cond = sqlf.Sprintf("user_id IS NOT NULL")
-	case "ORG":
-		cond = sqlf.Sprintf("org_id IS NOT NULL")
-	default:
-		cond = sqlf.Sprintf("global IS TRUE")
-	}
-	count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
-		SELECT COUNT(*) FROM insights_settings_migration_jobs WHERE %s AND completed_at IS NULL
-	`, cond)))
-	if err != nil {
-		return false, err
-	}
-	if count == 0 {
-		return true, nil
+	jobs, err := scanJobs(tx.Query(ctx, sqlf.Sprintf(upQuery)))
+	if err != nil || len(jobs) == 0 {
+		return err
 	}
 
-	jobs, err := scanJobs(tx.Query(ctx, sqlf.Sprintf(`
-	SELECT
-		user_id,
-		org_id,
-		(CASE WHEN global IS NULL THEN FALSE ELSE TRUE END) AS global,
-		migrated_insights,
-		migrated_dashboards,
-		runs
-	FROM insights_settings_migration_jobs
-	WHERE
-		%s AND
-		completed_at IS NULL
-	LIMIT 100
-	FOR UPDATE SKIP LOCKED
-	`, cond)))
-	if err != nil {
-		return false, err
-	}
-	if len(jobs) == 0 {
-		return false, nil
-	}
-
-	var errs error
 	for _, job := range jobs {
-		err := m.performMigrationForRow(ctx, tx, job)
-		if err != nil {
-			errs = errors.Append(errs, err)
+		// TODO - note we might need to differentiate between tx
+		// and data-level errors, otherwise we'll always cancel the
+		// entire txn. The current code is a bit spaghetti about
+		// which connection its using as well.
+		if migrationErr := m.performMigrationForRow(ctx, tx, job); migrationErr != nil {
+			err = errors.Append(err, migrationErr)
 		}
 	}
 
-	// We'll rely on the next thread to return true right away, if everything has completed.
-	return false, errs
+	return err
+}
+
+const upQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:Up
+SELECT
+	user_id,
+	org_id,
+	CASE
+		WHEN global IS NULL THEN FALSE
+		ELSE TRUE
+	END AS global,
+	migrated_insights,
+	migrated_dashboards,
+	runs
+FROM insights_settings_migration_jobs
+WHERE completed_at IS NULL
+ORDER BY CASE
+	WHEN global IS TRUE THEN 1
+	WHEN org_id IS NOT NULL THEN 2
+	WHEN user_id IS NOT NULL THEN 3
+END
+LIMIT 100
+FOR UPDATE SKIP LOCKED
+`
+
+func (m *migrator) Down(ctx context.Context) (err error) {
+	return nil
 }
 
 func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job settingsMigrationJob) error {
