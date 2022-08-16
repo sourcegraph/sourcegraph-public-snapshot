@@ -107,6 +107,19 @@ type insightViewGrant struct {
 	Global *bool
 }
 
+func userGrant(userID int) insightViewGrant {
+	return insightViewGrant{UserID: &userID}
+}
+
+func orgGrant(orgID int) insightViewGrant {
+	return insightViewGrant{OrgID: &orgID}
+}
+
+func globalGrant() insightViewGrant {
+	b := true
+	return insightViewGrant{Global: &b}
+}
+
 type timeInterval struct {
 	unit  intervalUnit
 	value int
@@ -273,15 +286,15 @@ type dashboardGrant struct {
 	Global *bool
 }
 
-func UserDashboardGrant(userID int) dashboardGrant {
+func userDashboardGrant(userID int) dashboardGrant {
 	return dashboardGrant{UserID: &userID}
 }
 
-func OrgDashboardGrant(orgID int) dashboardGrant {
+func orgDashboardGrant(orgID int) dashboardGrant {
 	return dashboardGrant{OrgID: &orgID}
 }
 
-func GlobalDashboardGrant() dashboardGrant {
+func globalDashboardGrant() dashboardGrant {
 	b := true
 	return dashboardGrant{Global: &b}
 }

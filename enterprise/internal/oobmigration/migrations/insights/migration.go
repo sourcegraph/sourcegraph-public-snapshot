@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -427,33 +426,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	return nil
 }
 
-func logDuplicates(insightIds []string) {
-	set := make(map[string]struct{}, len(insightIds))
-	for _, id := range insightIds {
-		if _, ok := set[id]; ok {
-			log15.Info("insights setting oob-migration: duplicate insight ID", "uniqueId", id)
-		} else {
-			set[id] = struct{}{}
-		}
-	}
-}
-
-func specialCaseDashboardTitle(subjectName string) string {
-	format := "%s Insights"
-	if subjectName == "Global" {
-		return fmt.Sprintf(format, subjectName)
-	}
-	return fmt.Sprintf(format, fmt.Sprintf("%s's", subjectName))
-}
-
-// replaceIfEmpty will return a string where the first argument is given priority if non-empty.
-func replaceIfEmpty(firstChoice *string, replacement string) string {
-	if firstChoice == nil || *firstChoice == "" {
-		return replacement
-	}
-	return *firstChoice
-}
-
 func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) error {
 	tx, err := m.insightsStore.Transact(ctx)
 	if err != nil {
@@ -481,11 +453,11 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 
 	var grants []dashboardGrant
 	if migration.userId != 0 {
-		grants = append(grants, UserDashboardGrant(migration.userId))
+		grants = append(grants, userDashboardGrant(migration.userId))
 	} else if len(migration.orgIds) == 1 {
-		grants = append(grants, OrgDashboardGrant(migration.orgIds[0]))
+		grants = append(grants, orgDashboardGrant(migration.orgIds[0]))
 	} else {
-		grants = append(grants, GlobalDashboardGrant())
+		grants = append(grants, globalDashboardGrant())
 	}
 
 	dashboardId, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
