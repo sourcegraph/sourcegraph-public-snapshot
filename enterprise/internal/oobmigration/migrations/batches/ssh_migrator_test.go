@@ -26,7 +26,7 @@ func TestSSHMigrator(t *testing.T) {
 	bt.MockRSAKeygen(t)
 
 	key := et.TestKey{}
-	cstore := store.New(db, &observation.TestContext, key)
+	bstore := store.New(db, &observation.TestContext, key)
 	migrator := NewSSHMigratorWithDB(db, key)
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
@@ -37,7 +37,7 @@ func TestSSHMigrator(t *testing.T) {
 	}
 
 	oauth := &auth.OAuthBearerToken{Token: "test"}
-	credential, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+	credential, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		UserID:              user.ID,
 		ExternalServiceType: extsvc.TypeGitHub,
@@ -51,7 +51,7 @@ func TestSSHMigrator(t *testing.T) {
 	// true (since it _is_ true for new records), but since we want to test the
 	// migration, we need to explicitly override it here.
 	credential.SSHMigrationApplied = false
-	if err := cstore.UserCredentials().Update(ctx, credential); err != nil {
+	if err := bstore.UserCredentials().Update(ctx, credential); err != nil {
 		t.Fatal(err)
 	}
 
@@ -76,7 +76,7 @@ func TestSSHMigrator(t *testing.T) {
 	}
 
 	{
-		migratedCredential, err := cstore.UserCredentials().GetByID(ctx, credential.ID)
+		migratedCredential, err := bstore.UserCredentials().GetByID(ctx, credential.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -132,7 +132,7 @@ func TestSSHMigrator(t *testing.T) {
 	}
 
 	{
-		migratedCredential, err := cstore.UserCredentials().GetByID(ctx, credential.ID)
+		migratedCredential, err := bstore.UserCredentials().GetByID(ctx, credential.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

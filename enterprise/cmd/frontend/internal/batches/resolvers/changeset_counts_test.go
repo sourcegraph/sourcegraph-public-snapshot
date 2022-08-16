@@ -125,14 +125,14 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 	sourcer := sources.NewSourcer(cf)
 
 	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -146,7 +146,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		BatchSpecID:     spec.ID,
 	}
 
-	err = cstore.CreateBatchChange(ctx, batchChange)
+	err = bstore.CreateBatchChange(ctx, batchChange)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,20 +169,20 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	for _, c := range changesets {
-		if err = cstore.CreateChangeset(ctx, c); err != nil {
+		if err = bstore.CreateChangeset(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 
-		src, err := sourcer.ForRepo(ctx, cstore, githubRepo)
+		src, err := sourcer.ForRepo(ctx, bstore, githubRepo)
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}
-		if err := syncer.SyncChangeset(ctx, cstore, src, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, bstore, src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(bstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
