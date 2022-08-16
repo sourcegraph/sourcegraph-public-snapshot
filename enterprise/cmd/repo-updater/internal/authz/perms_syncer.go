@@ -1033,10 +1033,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 					ServiceID:   provider.ServiceID(),
 					AccountIDs:  accountIDs,
 				})
-				if err != nil {
+				if err == nil {
 					for k, v := range linkedAccountIDsToUserIDs {
 						accountIDsToUserIDs[k] = v
 					}
+				} else {
+					// Only log in case of error, as there can still be valid permissions syncing.
+					logger.Warn("error fetching linked accounts", log.Error(err))
 				}
 			}
 
