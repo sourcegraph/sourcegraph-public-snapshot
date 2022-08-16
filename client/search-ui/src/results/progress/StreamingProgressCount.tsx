@@ -1,12 +1,12 @@
 import * as React from 'react'
 
-import { mdiClipboardPulseOutline, mdiInformationOutline } from '@mdi/js'
+import { mdiInformationOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { Link, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -28,8 +28,10 @@ const abbreviateNumber = (number: number): string => {
 const limitHit = (progress: Progress): boolean => progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
 
 export const StreamingProgressCount: React.FunctionComponent<
-    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }>
-> = ({ progress, state, showTrace, className = '' }) => {
+    React.PropsWithChildren<
+        Pick<StreamingProgressProps, 'progress' | 'state'> & { className?: string; hideIcon?: boolean }
+    >
+> = ({ progress, state, className = '', hideIcon = false }) => {
     const isLoading = state === 'loading'
     const contentWithoutTimeUnit =
         `${abbreviateNumber(progress.matchCount)}` +
@@ -58,7 +60,7 @@ export const StreamingProgressCount: React.FunctionComponent<
                     <VisuallyHidden aria-live="polite">{readingContent}</VisuallyHidden>
                 </span>
                 <span aria-hidden={true}>{content}</span>
-                {progress.repositoriesCount !== undefined && (
+                {!hideIcon && progress.repositoriesCount !== undefined && (
                     <Tooltip
                         content={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
                             'repository',
@@ -79,14 +81,6 @@ export const StreamingProgressCount: React.FunctionComponent<
                     </Tooltip>
                 )}
             </small>
-            {showTrace && progress.trace && (
-                <small className={classNames('d-flex align-items-center', className, styles.count)}>
-                    <Link to={progress.trace}>
-                        <Icon aria-hidden={true} className="mr-2" svgPath={mdiClipboardPulseOutline} />
-                        View trace
-                    </Link>
-                </small>
-            )}
         </>
     )
 }
