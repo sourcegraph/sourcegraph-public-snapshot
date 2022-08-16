@@ -173,7 +173,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 
 		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 		// resolve insight ID collisions as if it were in a setting cascade
-		orgs, err := scanOrgs(tx.Query(ctx, sqlf.Sprintf(`
+		orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				orgs.id,
 				orgs.name,
@@ -196,7 +196,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		migrationContext.userId = int(userId)
 		migrationContext.orgIds = orgIds
 
-		users, err := scanUsers(tx.Query(ctx, sqlf.Sprintf(`
+		users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				u.id,
 				u.username,
@@ -221,7 +221,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 			return nil
 		}
 		user := users[0]
-		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
+		subjectName = replaceIfEmpty(user.DisplayName, user.Name)
 		settings, err = scanSettings(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				s.id,
@@ -247,7 +247,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
 		migrationContext.orgIds = []int{*job.OrgId}
-		orgs, err := scanOrgs(tx.Query(ctx, sqlf.Sprintf(`
+		orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				id,
 				name,

@@ -1,8 +1,6 @@
 package insights
 
 import (
-	"database/sql"
-
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -14,16 +12,9 @@ var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j settingsMigra
 	return j, err
 })
 
-var scanOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (org organization, _ error) {
-	err := s.Scan(&org.ID, &org.Name, &org.DisplayName)
-	return org, err
-})
-
-var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u user, _ error) {
-	var displayName sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName)
-	u.DisplayName = displayName.String
-	return u, err
+var scanUserOrOrg = basestore.NewSliceScanner(func(s dbutil.Scanner) (uo userOrOrg, _ error) {
+	err := s.Scan(&uo.ID, &uo.Name, &uo.DisplayName)
+	return uo, err
 })
 
 var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s settings, _ error) {

@@ -44,16 +44,10 @@ type settingsMigrationJob struct {
 	Runs               int
 }
 
-type organization struct {
+type userOrOrg struct {
 	ID          int32
 	Name        string
 	DisplayName *string
-}
-
-type user struct {
-	ID          int32
-	Username    string
-	DisplayName string
 }
 
 type insightSeries struct {
