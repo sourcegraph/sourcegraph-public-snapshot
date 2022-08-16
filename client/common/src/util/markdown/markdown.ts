@@ -163,53 +163,49 @@ export const renderMarkdown = (
                 },
             },
             transformTags: {
-                object: function (tagName, attribs) {
-                    if (!'base64,' in attribs['data']) {
+                object (tagName, attribs) {
+                    if (!attribs.data.includes('base64,')) {
                         return {
-                            tagName: tagName,
-                            attribs: attribs,
+                            tagName,
+                            attribs,
                         }
                     }
 
-                    var data = attribs['data'].split('base64,')
+                    const b64object = attribs.data.split('base64,')[1]
 
-                    if (data.length > 0) {
-                        var b64obj = data[1]
+                    const cleaned = sanitize(window.atob(b64object), {
+                        allowedTags: sanitize.defaults.allowedTags.concat([
+                            'svg',
+                            'xmlns',
+                            'path',
+                            'picture',
+                            'circle',
+                            'pattern',
+                            'rect',
+                        ]),
+                        allowedAttributes: {
+                            svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
+                            rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
+                            path: ['d', ...svgPresentationAttributes],
+                            circle: ['cx', 'cy', ...svgPresentationAttributes],
+                        },
+                        allowedStyles: {
+                            svg: {
+                                flex: ALL_VALUES_ALLOWED,
+                                'flex-grow': ALL_VALUES_ALLOWED,
+                                'flex-shrink': ALL_VALUES_ALLOWED,
+                                'flex-basis': ALL_VALUES_ALLOWED,
+                            },
+                        },
+                    })
 
-                        var cleaned = sanitize(window.atob(b64obj), {
-                            allowedTags: sanitize.defaults.allowedTags.concat([
-                                'svg',
-                                'xmlns',
-                                'path',
-                                'picture',
-                                'circle',
-                                'pattern',
-                                'rect',
-                            ]),
-                            allowedAttributes: {
-                                svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
-                                rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
-                                path: ['d', ...svgPresentationAttributes],
-                                circle: ['cx', 'cy', ...svgPresentationAttributes],
-                            },
-                            allowedStyles: {
-                                svg: {
-                                    flex: ALL_VALUES_ALLOWED,
-                                    'flex-grow': ALL_VALUES_ALLOWED,
-                                    'flex-shrink': ALL_VALUES_ALLOWED,
-                                    'flex-basis': ALL_VALUES_ALLOWED,
-                                },
-                            },
-                        })
-
-                        return {
-                            tagName: tagName,
-                            attribs: {
-                                type: attribs['type'],
-                                // reconstruct cleaned base64 blob
-                                data: 'data:image/svg+xml;base64,' + window.btoa(cleaned),
-                            },
-                        }
+                    return {
+                        tagName,
+                        attribs: {
+                            type: attribs.type,
+                            // reconstruct cleaned base64 blob
+                            data: 'data:image/svg+xml;base64,' + window.btoa(cleaned),
+                        },
                     }
                 },
             },
