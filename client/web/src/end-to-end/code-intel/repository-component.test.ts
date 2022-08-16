@@ -138,12 +138,6 @@ describe('Repository component', () => {
         await clickAnchorElement(selector)
     }
 
-    describe('FAKE ERAWR SUITE', () => {
-        test('witness me error out!', async () => {
-            throw new Error('🔥 What is my purpose ? ERROR!')
-        })
-    })
-
     describe('file tree', () => {
         test('does navigation on file click', async () => {
             await driver.page.goto(
