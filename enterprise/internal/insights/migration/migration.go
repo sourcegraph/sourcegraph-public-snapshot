@@ -31,18 +31,16 @@ const (
 )
 
 type migrator struct {
-	frontendStore  *basestore.Store
-	insightsStore  *basestore.Store
-	insightStore   *store.InsightStore
-	dashboardStore *store.DBDashboardStore
+	frontendStore *basestore.Store
+	insightsStore *basestore.Store
+	insightStore  *store.InsightStore
 }
 
 func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
-		frontendStore:  basestore.NewWithHandle(postgresDB.Handle()),
-		insightsStore:  basestore.NewWithHandle(insightsDB.Handle()),
-		insightStore:   store.NewInsightStore(insightsDB),
-		dashboardStore: store.NewDashboardStore(insightsDB),
+		frontendStore: basestore.NewWithHandle(postgresDB.Handle()),
+		insightsStore: basestore.NewWithHandle(insightsDB.Handle()),
+		insightStore:  store.NewInsightStore(insightsDB),
 	}
 }
 
@@ -462,13 +460,13 @@ func replaceIfEmpty(firstChoice *string, replacement string) string {
 }
 
 func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) error {
-	tx, err := m.dashboardStore.Transact(ctx)
+	tx, err := m.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	err = m.createDashboard(ctx, tx.Store, specialCaseDashboardTitle(subjectName), insightReferences, migration)
+	err = m.createDashboard(ctx, tx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
 	if err != nil {
 		return errors.Wrap(err, "CreateSpecialCaseDashboard")
 	}
@@ -574,7 +572,7 @@ func (c migrationContext) buildUniqueIdCondition(insightId string) string {
 }
 
 func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDashboard, migrationContext migrationContext) (err error) {
-	tx, err := m.dashboardStore.Transact(ctx)
+	tx, err := m.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -606,7 +604,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 		return nil
 	}
 
-	err = m.createDashboard(ctx, tx.Store, from.Title, from.InsightIds, migrationContext)
+	err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, migrationContext)
 	if err != nil {
 		return err
 	}
