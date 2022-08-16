@@ -1009,8 +1009,11 @@ func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName s
 	}
 	defer func() { err = tx.Done(err) }()
 
-	err = m.createDashboard(ctx, tx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
-	if err != nil {
+	if subjectName != "Global" {
+		subjectName += "'s"
+	}
+
+	if err := m.createDashboard(ctx, tx, fmt.Sprintf("%s Insights", subjectName), insightReferences, migration); err != nil {
 		return errors.Wrap(err, "CreateSpecialCaseDashboard")
 	}
 	return nil

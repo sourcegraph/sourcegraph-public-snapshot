@@ -19,14 +19,6 @@ func replaceIfEmpty(firstChoice *string, replacement string) string {
 	return *firstChoice
 }
 
-func specialCaseDashboardTitle(subjectName string) string {
-	format := "%s Insights"
-	if subjectName == "Global" {
-		return fmt.Sprintf(format, subjectName)
-	}
-	return fmt.Sprintf(format, fmt.Sprintf("%s's", subjectName))
-}
-
 func logDuplicates(insightIds []string) {
 	set := make(map[string]struct{}, len(insightIds))
 	for _, id := range insightIds {
