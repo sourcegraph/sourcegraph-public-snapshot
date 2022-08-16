@@ -9,22 +9,6 @@ type insightViewSeriesMetadata struct {
 	Stroke string
 }
 
-type insightView struct {
-	ID               int
-	Title            string
-	Description      string
-	UniqueID         string
-	Filters          insightViewFilters
-	OtherThreshold   *float64
-	PresentationType string
-}
-
-type insightViewFilters struct {
-	IncludeRepoRegex *string
-	ExcludeRepoRegex *string
-	SearchContexts   []string
-}
-
 type timeInterval struct {
 	unit  string
 	value int

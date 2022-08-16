@@ -463,12 +463,6 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	}
 	defer func() { err = tx.Done(err) }()
 
-	view := insightView{
-		Title:            from.Title,
-		UniqueID:         from.ID,
-		OtherThreshold:   &from.OtherThreshold,
-		PresentationType: "PIE",
-	}
 	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 	INSERT INTO insight_view (
 		title,
@@ -483,14 +477,14 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 	RETURNING id
 	`,
-		view.Title,
-		view.Description,
-		view.UniqueID,
-		view.Filters.IncludeRepoRegex,
-		view.Filters.ExcludeRepoRegex,
-		pq.Array(view.Filters.SearchContexts),
-		view.OtherThreshold,
-		view.PresentationType,
+		from.Title,
+		nil, // TODO - nil ok?
+		from.ID,
+		nil, // TODO - nil ok?
+		nil, // TOOD - nil ok?
+		pq.Array(nil),
+		&from.OtherThreshold,
+		"PIE",
 	)))
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
@@ -511,22 +505,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	}
 
 	now := time.Now()
-	interval := timeInterval{
-		unit:  "MONTH",
-		value: 0, // TODO - confirm: series.SampleIntervalValue is not set below
-	}
 	xSeriesID := ksuid.New().String()
-	series := insightSeries{
-		SeriesID:           xSeriesID,
-		Repositories:       []string{from.Repository},
-		SampleIntervalUnit: "MONTH",
-		JustInTime:         true,
-		GenerationMethod:   "language-stats",
-		CreatedAt:          now,
-		NextRecordingAfter: interval.StepForwards(now),
-		NextSnapshotAfter:  nextSnapshot(now),
-		OldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
-	}
 	seriesID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 			INSERT INTO insight_series (
 				series_id,
@@ -549,21 +528,21 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
 			RETURNING id
 		`,
-		series.SeriesID,
-		series.Query,
-		series.CreatedAt,
-		series.OldestHistoricalAt,
-		series.LastRecordedAt,
-		series.NextRecordingAfter,
-		series.LastSnapshotAt,
-		series.NextSnapshotAfter,
-		pq.Array(series.Repositories),
-		series.SampleIntervalUnit,
-		series.SampleIntervalValue,
-		series.GeneratedFromCaptureGroups,
-		series.JustInTime,
-		series.GenerationMethod,
-		series.GroupBy,
+		xSeriesID,
+		nil, // TOOD - nil ok?
+		now,
+		now.Add(-time.Hour*24*7*26),
+		nil, // TOOD - nil ok?
+		(timeInterval{unit: "MONTH", value: 0}).StepForwards(now),
+		nil, // TOOD - nil ok?
+		nextSnapshot(now),
+		pq.Array([]string{from.Repository}),
+		"MONTH",
+		nil, // TOOD - nil ok?
+		nil, // TOOD - nil ok?
+		true,
+		"language-stats",
+		nil, // TOOD - nil ok?
 	)))
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", from.ID)
