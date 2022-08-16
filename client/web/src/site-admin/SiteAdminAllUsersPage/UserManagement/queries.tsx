@@ -11,12 +11,9 @@ export const USERS_MANAGEMENT_SUMMARY = gql`
             adminUsers: users(siteAdmin: true, deleted: false) {
                 totalCount
             }
-            users {
+            registeredUsers: users(deleted: false) {
                 totalCount
             }
-        }
-        registeredUsers: users {
-            totalCount
         }
     }
 `
