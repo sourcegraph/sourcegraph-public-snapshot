@@ -1229,7 +1229,7 @@ extend type Query {
 }
 
 """
-Supported aggregtation modes for search aggregations
+Supported aggregation modes for search aggregations
 """
 enum SearchAggregationMode {
     REPO
