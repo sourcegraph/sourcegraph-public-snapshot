@@ -1,8 +1,8 @@
 package streaming
 
 import (
+	"fmt"
 	"sort"
-	"strings"
 )
 
 type aggregated struct {
@@ -27,6 +27,7 @@ func (a *aggregated) Add(label string, count int32) {
 	// 2. We haven't hit the max buffer size. Add to our in-memory map and update the smallest result.
 	// 3. We don't have a match but have a better result than our smallest. Update the overflow by ejected smallest.
 	// 4. We don't have a match or a better result. Update the overflow by the hit count.
+	fmt.Println(a.OtherCount)
 	if _, ok := a.Results[label]; !ok {
 		if len(a.Results) < a.resultBufferSize {
 			a.Results[label] = count
@@ -34,10 +35,10 @@ func (a *aggregated) Add(label string, count int32) {
 		} else {
 			newResult := &Aggregate{label, count}
 			if a.smallestResult.Less(newResult) {
+				a.updateOtherCount(a.smallestResult.Count, 1)
 				delete(a.Results, a.smallestResult.Label)
 				a.Results[label] = count
 				a.updateSmallestAggregate()
-				a.updateOtherCount(a.smallestResult.Count, 1)
 			} else {
 				a.updateOtherCount(count, 1)
 			}
@@ -53,13 +54,11 @@ func (a *aggregated) findSmallestAggregate() *Aggregate {
 	var smallestAggregate *Aggregate
 	for label, count := range a.Results {
 		tempSmallest := &Aggregate{label, count}
-		if smallestAggregate == nil {
-			smallestAggregate = tempSmallest
-			continue
-		}
-		if tempSmallest.Less(smallestAggregate) {
+		fmt.Println("temp", tempSmallest)
+		if smallestAggregate == nil || tempSmallest.Less(smallestAggregate) {
 			smallestAggregate = tempSmallest
 		}
+		fmt.Println("smallest", smallestAggregate)
 	}
 	return smallestAggregate
 }
@@ -89,17 +88,14 @@ func (a aggregated) SortAggregate() []*Aggregate {
 type aggregateSlice []*Aggregate
 
 func (a *Aggregate) Less(b *Aggregate) bool {
-	if a == nil {
-		return true
-	}
 	if b == nil {
 		return false
 	}
 	if a.Count == b.Count {
 		// Sort alphabetically if of same count.
-		return strings.Compare(a.Label, b.Label) < 0
+		return a.Label <= b.Label
 	}
-	return a.Count > b.Count
+	return a.Count < b.Count
 }
 
 func (as aggregateSlice) Len() int {
