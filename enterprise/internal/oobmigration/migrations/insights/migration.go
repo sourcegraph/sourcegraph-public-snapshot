@@ -156,16 +156,17 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	var migrationContext migrationContext
 	var subjectName string
 
+	cond := func() *sqlf.Query {
+		if job.UserId != nil {
+			return sqlf.Sprintf("user_id = %s", *job.UserId)
+		}
+		if job.OrgId != nil {
+			return sqlf.Sprintf("org_id = %s", *job.OrgId)
+		}
+		return sqlf.Sprintf("global IS TRUE")
+	}()
+
 	defer func() {
-		cond := func() *sqlf.Query {
-			if job.UserId != nil {
-				return sqlf.Sprintf("user_id = %s", *job.UserId)
-			}
-			if job.OrgId != nil {
-				return sqlf.Sprintf("org_id = %s", *job.OrgId)
-			}
-			return sqlf.Sprintf("global IS TRUE")
-		}()
 		tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s`, job.Runs+1, cond))
 	}()
 
@@ -205,7 +206,8 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
 	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
 	// to reconstruct the special case user / org / global dashboard
-	allDefinedInsightIds := make([]string, 0, len(langStatsInsights)+len(frontendInsights)+len(backendInsights))
+	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
+	allDefinedInsightIds := make([]string, 0, totalInsights)
 	for _, insight := range langStatsInsights {
 		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
 	}
@@ -217,16 +219,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	}
 	logDuplicates(allDefinedInsightIds)
 
-	var cond *sqlf.Query
-	if job.UserId != nil {
-		cond = sqlf.Sprintf("user_id = %s", *job.UserId)
-	} else if job.OrgId != nil {
-		cond = sqlf.Sprintf("org_id = %s", *job.OrgId)
-	} else {
-		cond = sqlf.Sprintf("global IS TRUE")
-	}
-
-	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
 	var migratedInsightsCount int
 	var insightMigrationErrors error
 	if totalInsights != job.MigratedInsights {
@@ -277,15 +269,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		return err
 	}
 
-	cond = func() *sqlf.Query {
-		if job.UserId != nil {
-			return sqlf.Sprintf("user_id = %s", *job.UserId)
-		}
-		if job.OrgId != nil {
-			return sqlf.Sprintf("org_id = %s", *job.OrgId)
-		}
-		return sqlf.Sprintf("global IS TRUE")
-	}()
 	if err := tx.Exec(ctx, sqlf.Sprintf(performMigrationForRowUpdateJobQuery, time.Now(), cond)); err != nil {
 		return errors.Wrap(err, "MarkCompleted")
 	}
