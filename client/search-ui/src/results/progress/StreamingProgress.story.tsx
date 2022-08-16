@@ -211,6 +211,53 @@ const render = () => (
             />
         </div>
 
+        <H2>2 results from 2 repositories, complete, skipped with warning, traced</H2>
+        <div className="d-flex align-items-center my-2">
+            <StreamingProgress
+                progress={{
+                    durationMs: 1500,
+                    matchCount: 2,
+                    repositoriesCount: 2,
+                    skipped: [
+                        {
+                            reason: 'excluded-fork',
+                            message: '10k forked repositories excluded',
+                            severity: 'info',
+                            title: '10k forked repositories excluded',
+                            suggested: {
+                                title: 'forked:yes',
+                                queryExpression: 'forked:yes',
+                            },
+                        },
+                        {
+                            reason: 'excluded-archive',
+                            message: '60k archived repositories excluded',
+                            severity: 'info',
+                            title: '60k archived repositories excluded',
+                            suggested: {
+                                title: 'archived:yes',
+                                queryExpression: 'archived:yes',
+                            },
+                        },
+                        {
+                            reason: 'shard-timedout',
+                            message: 'Search timed out',
+                            severity: 'warn',
+                            title: 'Search timed out',
+                            suggested: {
+                                title: 'timeout:2m',
+                                queryExpression: 'timeout:2m',
+                            },
+                        },
+                    ],
+                    trace: 'https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg',
+                }}
+                state="complete"
+                onSearchAgain={onSearchAgain}
+                showTrace={true}
+            />
+        </div>
+
         <H2>2 results from 2 repositories, loading, skipped with warning</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress

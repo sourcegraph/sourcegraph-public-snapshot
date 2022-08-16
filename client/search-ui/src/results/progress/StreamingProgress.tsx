@@ -26,10 +26,16 @@ export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<
     onSearchAgain,
 }) => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const isLoading = state === 'loading'
+
     return (
         <>
-            <StreamingProgressCount progress={progress} state={state} />
-            <StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />
+            {(!coreWorkflowImprovementsEnabled || isLoading) && (
+                <StreamingProgressCount progress={progress} state={state} hideIcon={coreWorkflowImprovementsEnabled} />
+            )}
+            {(!coreWorkflowImprovementsEnabled || !isLoading) && (
+                <StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />
+            )}
             <TraceLink showTrace={showTrace} trace={progress.trace} />
         </>
     )
