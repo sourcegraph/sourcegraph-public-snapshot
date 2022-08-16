@@ -100,7 +100,7 @@ func (r *searchAggregationNotAvailableResolver) Reason() string {
 	return "not implemented"
 }
 
-// Resolver to calcuate aggregations for a combination of search query, pattern type, aggregation mode
+// Resolver to calculate aggregations for a combination of search query, pattern type, aggregation mode
 type searchAggregationModeResultResolver struct {
 	baseInsightResolver
 	searchQuery  string
