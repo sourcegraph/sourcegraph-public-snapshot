@@ -251,7 +251,7 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 			continue
 		}
 
-		err = migrateLangStatSeries(ctx, m.insightStore, d)
+		err = migrateLangStatSeries(ctx, m.insightStore.Store, d)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
@@ -262,12 +262,12 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 	return count, errs
 }
 
-func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore, from insights.LangStatsInsight) (err error) {
+func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, from insights.LangStatsInsight) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Store.Done(err) }()
+	defer func() { err = tx.Done(err) }()
 
 	now := time.Now()
 	view := types.InsightView{
