@@ -12,7 +12,6 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -156,7 +155,80 @@ var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s Set
 	return s, err
 })
 
-var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s types.InsightSeries, _ error) {
+type InsightSeries struct {
+	ID                         int
+	SeriesID                   string
+	Query                      string
+	CreatedAt                  time.Time
+	OldestHistoricalAt         time.Time
+	LastRecordedAt             time.Time
+	NextRecordingAfter         time.Time
+	LastSnapshotAt             time.Time
+	NextSnapshotAfter          time.Time
+	BackfillQueuedAt           time.Time
+	Enabled                    bool
+	Repositories               []string
+	SampleIntervalUnit         string
+	SampleIntervalValue        int
+	GeneratedFromCaptureGroups bool
+	JustInTime                 bool
+	GenerationMethod           GenerationMethod
+	GroupBy                    *string
+	BackfillAttempts           int32
+}
+
+type GenerationMethod string
+
+const (
+	Search         GenerationMethod = "search"
+	SearchCompute  GenerationMethod = "search-compute"
+	LanguageStats  GenerationMethod = "language-stats"
+	MappingCompute GenerationMethod = "mapping-compute"
+)
+
+type TimeInterval struct {
+	Unit  IntervalUnit
+	Value int
+}
+
+func (t TimeInterval) StepForwards(start time.Time) time.Time {
+	return t.step(start, forward)
+}
+
+type stepDirection int
+
+const forward stepDirection = 1
+const backward stepDirection = -1
+
+func (t TimeInterval) step(start time.Time, direction stepDirection) time.Time {
+	switch t.Unit {
+	case Year:
+		return start.AddDate(int(direction)*t.Value, 0, 0)
+	case Month:
+		return start.AddDate(0, int(direction)*t.Value, 0)
+	case Week:
+		return start.AddDate(0, 0, int(direction)*7*t.Value)
+	case Day:
+		return start.AddDate(0, 0, int(direction)*t.Value)
+	case Hour:
+		return start.Add(time.Hour * time.Duration(t.Value) * time.Duration(direction))
+	default:
+		// this doesn't really make sense, so return something?
+		return start.AddDate(int(direction)*t.Value, 0, 0)
+	}
+}
+
+type IntervalUnit string
+
+const (
+	Month IntervalUnit = "MONTH"
+	Day   IntervalUnit = "DAY"
+	Week  IntervalUnit = "WEEK"
+	Year  IntervalUnit = "YEAR"
+	Hour  IntervalUnit = "HOUR"
+)
+
+var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s InsightSeries, _ error) {
 	err := scanner.Scan(
 		&s.ID,
 		&s.SeriesID,

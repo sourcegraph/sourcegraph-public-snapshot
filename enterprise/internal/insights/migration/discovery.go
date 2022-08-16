@@ -15,8 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -287,6 +285,53 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 	return count, errs
 }
 
+type InsightViewSeriesMetadata struct {
+	Label  string
+	Stroke string
+}
+
+type InsightView struct {
+	ID                  int
+	Title               string
+	Description         string
+	UniqueID            string
+	Filters             InsightViewFilters
+	OtherThreshold      *float64
+	PresentationType    PresentationType
+	IsFrozen            bool
+	SeriesSortMode      *SeriesSortMode
+	SeriesSortDirection *SeriesSortDirection
+	SeriesLimit         *int32
+}
+
+type InsightViewFilters struct {
+	IncludeRepoRegex *string
+	ExcludeRepoRegex *string
+	SearchContexts   []string
+}
+
+type PresentationType string
+
+const (
+	Line PresentationType = "LINE"
+	Pie  PresentationType = "PIE"
+)
+
+type SeriesSortMode string
+
+const (
+	ResultCount     SeriesSortMode = "RESULT_COUNT"    // Sorts by the number of results for the most recent datapoint of a series.
+	DateAdded       SeriesSortMode = "DATE_ADDED"      // Sorts by the date of the earliest datapoint in the series.
+	Lexicographical SeriesSortMode = "LEXICOGRAPHICAL" // Sorts by label: first by semantic version and then alphabetically.
+)
+
+type SeriesSortDirection string
+
+const (
+	Asc  SeriesSortDirection = "ASC"
+	Desc SeriesSortDirection = "DESC"
+)
+
 func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, from insights.LangStatsInsight) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
@@ -295,18 +340,18 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	defer func() { err = tx.Done(err) }()
 
 	now := time.Now()
-	view := types.InsightView{
+	view := InsightView{
 		Title:            from.Title,
 		UniqueID:         from.ID,
 		OtherThreshold:   &from.OtherThreshold,
-		PresentationType: types.Pie,
+		PresentationType: Pie,
 	}
-	series := types.InsightSeries{
+	series := InsightSeries{
 		SeriesID:           ksuid.New().String(),
 		Repositories:       []string{from.Repository},
-		SampleIntervalUnit: string(types.Month),
+		SampleIntervalUnit: string(Month),
 		JustInTime:         true,
-		GenerationMethod:   types.LanguageStats,
+		GenerationMethod:   LanguageStats,
 		CreatedAt:          now,
 	}
 	var grants []store.InsightViewGrant
@@ -354,12 +399,28 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 	}
 
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+	interval := TimeInterval{
+		Unit:  IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
 	}
-	if !interval.IsValid() {
-		interval = timeseries.DefaultInterval
+	validType := false
+	switch interval.Unit {
+	case Year:
+		fallthrough
+	case Month:
+		fallthrough
+	case Week:
+		fallthrough
+	case Day:
+		fallthrough
+	case Hour:
+		validType = true
+	}
+	if !(validType && interval.Value >= 0) {
+		interval = TimeInterval{
+			Unit:  Month,
+			Value: 1,
+		}
 	}
 
 	if series.NextRecordingAfter.IsZero() {
@@ -417,7 +478,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	series.ID = seriesID
 	series.Enabled = true
 
-	metadata := types.InsightViewSeriesMetadata{}
+	metadata := InsightViewSeriesMetadata{}
 	err = tx.Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO insight_view_series (
 			insight_series_id,
@@ -454,11 +515,11 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 	}
 	defer func() { err = tx.Done(err) }()
 
-	dataSeries := make([]types.InsightSeries, len(from.Series))
-	metadata := make([]types.InsightViewSeriesMetadata, len(from.Series))
+	dataSeries := make([]InsightSeries, len(from.Series))
+	metadata := make([]InsightViewSeriesMetadata, len(from.Series))
 
 	for i, timeSeries := range from.Series {
-		temp := types.InsightSeries{
+		temp := InsightSeries{
 			Query: timeSeries.Query,
 		}
 
@@ -475,18 +536,18 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			temp.SampleIntervalValue = interval.value
 			temp.SeriesID = ksuid.New().String() // this will cause some orphan records, but we can't use the query to match because of repo / time scope. We will purge orphan records at the end of this job.
 			temp.JustInTime = true
-			temp.GenerationMethod = types.Search
+			temp.GenerationMethod = Search
 		} else if batch == backend {
-			temp.SampleIntervalUnit = string(types.Month)
+			temp.SampleIntervalUnit = string(Month)
 			temp.SampleIntervalValue = 1
 			temp.NextRecordingAfter = insights.NextRecording(time.Now())
 			temp.NextSnapshotAfter = insights.NextSnapshot(time.Now())
 			temp.SeriesID = ksuid.New().String()
 			temp.JustInTime = false
-			temp.GenerationMethod = types.Search
+			temp.GenerationMethod = Search
 		}
 
-		var series types.InsightSeries
+		var series InsightSeries
 
 		// Backend series require special consideration to re-use series
 		if batch == backend {
@@ -536,12 +597,28 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				if temp.CreatedAt.IsZero() {
 					temp.CreatedAt = now
 				}
-				interval := timeseries.TimeInterval{
-					Unit:  types.IntervalUnit(temp.SampleIntervalUnit),
+				interval := TimeInterval{
+					Unit:  IntervalUnit(temp.SampleIntervalUnit),
 					Value: temp.SampleIntervalValue,
 				}
-				if !interval.IsValid() {
-					interval = timeseries.DefaultInterval
+				validType := false
+				switch interval.Unit {
+				case Year:
+					fallthrough
+				case Month:
+					fallthrough
+				case Week:
+					fallthrough
+				case Day:
+					fallthrough
+				case Hour:
+					validType = true
+				}
+				if !(validType && interval.Value >= 0) {
+					interval = TimeInterval{
+						Unit:  Month,
+						Value: 1,
+					}
 				}
 
 				if temp.NextRecordingAfter.IsZero() {
@@ -632,12 +709,28 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			if temp.CreatedAt.IsZero() {
 				temp.CreatedAt = now
 			}
-			interval := timeseries.TimeInterval{
-				Unit:  types.IntervalUnit(temp.SampleIntervalUnit),
+			interval := TimeInterval{
+				Unit:  IntervalUnit(temp.SampleIntervalUnit),
 				Value: temp.SampleIntervalValue,
 			}
-			if !interval.IsValid() {
-				interval = timeseries.DefaultInterval
+			validType := false
+			switch interval.Unit {
+			case Year:
+				fallthrough
+			case Month:
+				fallthrough
+			case Week:
+				fallthrough
+			case Day:
+				fallthrough
+			case Hour:
+				validType = true
+			}
+			if !(validType && interval.Value >= 0) {
+				interval = TimeInterval{
+					Unit:  Month,
+					Value: 1,
+				}
 			}
 
 			if temp.NextRecordingAfter.IsZero() {
@@ -698,21 +791,21 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 		}
 		dataSeries[i] = series
 
-		metadata[i] = types.InsightViewSeriesMetadata{
+		metadata[i] = InsightViewSeriesMetadata{
 			Label:  timeSeries.Name,
 			Stroke: timeSeries.Stroke,
 		}
 	}
 
-	view := types.InsightView{
+	view := InsightView{
 		Title:            from.Title,
 		Description:      from.Description,
 		UniqueID:         from.ID,
-		PresentationType: types.Line,
+		PresentationType: Line,
 	}
 
 	if from.Filters != nil {
-		view.Filters = types.InsightViewFilters{
+		view.Filters = InsightViewFilters{
 			IncludeRepoRegex: from.Filters.IncludeRepoRegexp,
 			ExcludeRepoRegex: from.Filters.ExcludeRepoRegexp,
 		}
@@ -813,39 +906,39 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 func parseTimeInterval(insight insights.SearchInsight) timeInterval {
 	if insight.Step.Days != nil {
 		return timeInterval{
-			unit:  types.Day,
+			unit:  Day,
 			value: *insight.Step.Days,
 		}
 	} else if insight.Step.Hours != nil {
 		return timeInterval{
-			unit:  types.Hour,
+			unit:  Hour,
 			value: *insight.Step.Hours,
 		}
 	} else if insight.Step.Weeks != nil {
 		return timeInterval{
-			unit:  types.Week,
+			unit:  Week,
 			value: *insight.Step.Weeks,
 		}
 	} else if insight.Step.Months != nil {
 		return timeInterval{
-			unit:  types.Month,
+			unit:  Month,
 			value: *insight.Step.Months,
 		}
 	} else if insight.Step.Years != nil {
 		return timeInterval{
-			unit:  types.Year,
+			unit:  Year,
 			value: *insight.Step.Years,
 		}
 	} else {
 		return timeInterval{
-			unit:  types.Month,
+			unit:  Month,
 			value: 1,
 		}
 	}
 }
 
 type timeInterval struct {
-	unit  types.IntervalUnit
+	unit  IntervalUnit
 	value int
 }
 
