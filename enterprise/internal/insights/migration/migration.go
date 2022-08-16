@@ -368,7 +368,15 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	var migratedInsightsCount int
 	var insightMigrationErrors error
 	if totalInsights != job.MigratedInsights {
-		err = jobStoreTx.UpdateTotalInsights(ctx, job.UserId, job.OrgId, totalInsights)
+		var cond *sqlf.Query
+		if job.UserId != nil {
+			cond = sqlf.Sprintf("user_id = %s", *job.UserId)
+		} else if job.OrgId != nil {
+			cond = sqlf.Sprintf("org_id = %s", *job.OrgId)
+		} else {
+			cond = sqlf.Sprintf("global IS TRUE")
+		}
+		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond))
 		if err != nil {
 			return err
 		}
