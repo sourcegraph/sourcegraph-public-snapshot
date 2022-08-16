@@ -385,7 +385,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		return err
 	}
 
-	var cond *sqlf.Query
 	if job.UserId != nil {
 		cond = sqlf.Sprintf("user_id = %s", *job.UserId)
 	} else if job.OrgId != nil {
