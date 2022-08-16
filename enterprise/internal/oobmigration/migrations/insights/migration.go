@@ -22,16 +22,20 @@ func NewMigrator(insightsDB, postgresDB database.DB) oobmigration.Migrator {
 }
 
 func (m *migrator) Progress(ctx context.Context) (float64, error) {
-	progress, _, err := basestore.ScanFirstFloat(m.frontendStore.Query(ctx, sqlf.Sprintf(`
-		SELECT CASE c2.count
-				   WHEN 0 THEN 1
-				   ELSE
-					   CAST(c1.count AS FLOAT) / CAST(c2.count AS FLOAT) END
-		FROM (SELECT COUNT(*) AS count FROM insights_settings_migration_jobs WHERE completed_at IS NOT NULL) c1,
-			 (SELECT COUNT(*) AS count FROM insights_settings_migration_jobs) c2;
-	`)))
+	progress, _, err := basestore.ScanFirstFloat(m.frontendStore.Query(ctx, sqlf.Sprintf(insightsMigratorProgressQuery)))
 	return progress, err
 }
+
+const insightsMigratorProgressQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:Progress
+SELECT
+	CASE c2.count WHEN 0 THEN 1 ELSE
+		CAST(c1.count AS FLOAT) / CAST(c2.count AS FLOAT)
+	END
+FROM
+	(SELECT COUNT(*) AS count FROM insights_settings_migration_jobs WHERE completed_at IS NOT NULL) c1,
+	(SELECT COUNT(*) AS count FROM insights_settings_migration_jobs) c2
+`
 
 func (m *migrator) Up(ctx context.Context) (err error) {
 	globalMigrationComplete, err := m.performBatchMigration(ctx, GlobalJob)
