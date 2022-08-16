@@ -170,20 +170,24 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	}()
 
 	if job.UserId != nil {
-		var orgIDs []int
-		subjectName, settings, orgIDs, err = m.getForUser(ctx, tx, *job.UserId)
+		subjectName, settings, err = m.getForUser(ctx, tx, *job.UserId)
 		if err != nil {
 			return err
 		}
-
 		migrationContext.userId = *job.UserId
+
+		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
+		// resolve insight ID collisions as if it were in a setting cascade
+		orgIDs, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(performMigrationForRowSelectOrgsQuery, *job.UserId)))
+		if err != nil {
+			return err
+		}
 		migrationContext.orgIds = orgIDs
 	} else if job.OrgId != nil {
 		subjectName, settings, err = m.getForOrg(ctx, tx, *job.OrgId)
 		if err != nil {
 			return err
 		}
-
 		migrationContext.orgIds = []int{*job.OrgId}
 	} else {
 		subjectName, settings, err = m.getForGlobal(ctx, tx)
@@ -289,38 +293,35 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	return nil
 }
 
+const performMigrationForRowSelectOrgsQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationForRow
+SELECT orgs.id
+FROM org_members
+LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
+WHERE user_id = %s AND orgs.deleted_at IS NULL
+`
+
 const performMigrationForRowUpdateJobQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationForRow
 UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
 
-func (m *migrator) getForUser(ctx context.Context, tx *basestore.Store, userId int) (string, []settings, []int, error) {
+func (m *migrator) getForUser(ctx context.Context, tx *basestore.Store, userId int) (string, []settings, error) {
 	users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(getForUserSelectUserQuery, userId)))
 	if err != nil {
-		return "", nil, nil, errors.Wrap(err, "UserStoreGetByID")
+		return "", nil, errors.Wrap(err, "UserStoreGetByID")
 	}
 	if len(users) == 0 {
 		// If the user doesn't exist, just mark the job complete.
 		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId))
 		if err != nil {
-			return "", nil, nil, errors.Wrap(err, "MarkCompleted")
+			return "", nil, errors.Wrap(err, "MarkCompleted")
 		}
-		return "", nil, nil, nil
-	}
-
-	// when this is a user setting we need to load all of the organizations the user is a member of so that we can
-	// resolve insight ID collisions as if it were in a setting cascade
-	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(getForUserSelectOrgsQuery, userId)))
-	if err != nil {
-		return "", nil, nil, err
-	}
-	orgIds := make([]int, 0, len(orgs))
-	for _, org := range orgs {
-		orgIds = append(orgIds, int(org.ID))
+		return "", nil, nil
 	}
 
 	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(getForUserSelectSettingsQuery, userId)))
-	return replaceIfEmpty(users[0].DisplayName, users[0].Name), settings, orgIds, err
+	return replaceIfEmpty(users[0].DisplayName, users[0].Name), settings, err
 }
 
 const getForUserSelectUserQuery = `
@@ -329,14 +330,6 @@ SELECT u.id, u.username, u.display_name
 FROM users u
 WHERE id = %s AND deleted_at IS NULL
 LIMIT 1
-`
-
-const getForUserSelectOrgsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForUser
-SELECT orgs.id, orgs.name, orgs.display_name
-FROM org_members
-LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
-WHERE user_id = %s AND orgs.deleted_at IS NULL
 `
 
 const getForUserSelectSettingsQuery = `
