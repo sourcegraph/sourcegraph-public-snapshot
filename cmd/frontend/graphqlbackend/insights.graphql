@@ -1291,7 +1291,7 @@ type ExhaustiveSearchAggregationResult {
     """
     otherResultCount: Int
     """
-    A count to represent the number of aggrgation groups that were not returned due to the requested LIMIT
+    A count to represent the number of aggregation groups that were not returned due to the requested LIMIT
     """
     otherGroupCount: Int
 }
