@@ -35,12 +35,18 @@ var changesetSpecInsertColumns = []string{
 	"updated_at",
 	"fork_namespace",
 
-	// `external_id`, `head_ref`, `title` are (for now) write-only columns that
-	// contain normalized data from `spec` and are used for JOINs and WHERE
-	// conditions.
 	"external_id",
 	"head_ref",
 	"title",
+	"base_rev",
+	"base_ref",
+	"body",
+	"published",
+	"diff",
+	"commit_message",
+	"commit_author_name",
+	"commit_author_email",
+	"type",
 }
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
@@ -82,17 +88,76 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.UpdatedAt = c.CreatedAt
 			}
 
-			var externalID, headRef, title *string
-			if c.Spec != nil {
-				if c.Spec.ExternalID != "" {
-					externalID = &c.Spec.ExternalID
+			if c.Spec.IsBranch() && c.Spec.BaseRepository != c.Spec.HeadRepository {
+				return errors.Wrap(batcheslib.ErrHeadBaseMismatch, "failed to migrate changeset spec to new DB schema")
+			}
+
+			var (
+				externalID        *string
+				headRef           *string
+				title             *string
+				baseRev           *string
+				baseRef           *string
+				body              *string
+				diff              *string
+				commitMessage     *string
+				commitAuthorName  *string
+				commitAuthorEmail *string
+			)
+			if c.Spec.ExternalID != "" {
+				externalID = &c.Spec.ExternalID
+			}
+			if c.Spec.HeadRef != "" {
+				headRef = &c.Spec.HeadRef
+			}
+			if c.Spec.Title != "" {
+				title = &c.Spec.Title
+			}
+			if c.Spec.BaseRev != "" {
+				baseRev = &c.Spec.BaseRev
+			}
+			if c.Spec.BaseRef != "" {
+				baseRef = &c.Spec.BaseRef
+			}
+			if c.Spec.Body != "" {
+				body = &c.Spec.Body
+			}
+			if c.Spec.IsBranch() {
+				d, err := c.Spec.Diff()
+				if err != nil {
+					return err
 				}
-				if c.Spec.HeadRef != "" {
-					headRef = &c.Spec.HeadRef
+				diff = &d
+
+				cm, err := c.Spec.CommitMessage()
+				if err != nil {
+					return err
 				}
-				if c.Spec.Title != "" {
-					title = &c.Spec.Title
+				commitMessage = &cm
+
+				can, err := c.Spec.AuthorName()
+				if err != nil {
+					return err
 				}
+				commitAuthorName = &can
+
+				cae, err := c.Spec.AuthorEmail()
+				if err != nil {
+					return err
+				}
+				commitAuthorEmail = &cae
+			}
+
+			published, err := json.Marshal(c.Spec.Published)
+			if err != nil {
+				return err
+			}
+
+			var typ btypes.ChangesetSpecType
+			if c.Spec.IsBranch() {
+				typ = btypes.ChangesetSpecTypeBranch
+			} else {
+				typ = btypes.ChangesetSpecTypeExisting
 			}
 
 			if c.RandID == "" {
@@ -114,9 +179,18 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.CreatedAt,
 				c.UpdatedAt,
 				c.ForkNamespace,
-				&dbutil.NullString{S: externalID},
-				&dbutil.NullString{S: headRef},
-				&dbutil.NullString{S: title},
+				dbutil.NullString{S: externalID},
+				dbutil.NullString{S: headRef},
+				dbutil.NullString{S: title},
+				dbutil.NullString{S: baseRev},
+				dbutil.NullString{S: baseRef},
+				dbutil.NullString{S: body},
+				published,
+				dbutil.NullString{S: diff},
+				dbutil.NullString{S: commitMessage},
+				dbutil.NullString{S: commitAuthorName},
+				dbutil.NullString{S: commitAuthorEmail},
+				typ,
 			); err != nil {
 				return err
 			}

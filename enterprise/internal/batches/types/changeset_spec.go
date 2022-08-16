@@ -27,6 +27,13 @@ func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, e
 	return c, c.computeDiffStat()
 }
 
+type ChangesetSpecType string
+
+const (
+	ChangesetSpecTypeBranch   ChangesetSpecType = "branch"
+	ChangesetSpecTypeExisting ChangesetSpecType = "existing"
+)
+
 type ChangesetSpec struct {
 	ID     int64
 	RandID string
