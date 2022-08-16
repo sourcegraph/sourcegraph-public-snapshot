@@ -6,34 +6,34 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestBuildUniqueIdCondition(t *testing.T) {
-	t.Skip()
-	insightId := "myInsight"
-	tests := []struct {
-		name             string
-		migrationContext migrationContext
-		result           string
-	}{
-		{name: "only orgs", migrationContext: migrationContext{
-			userId: 0,
-			orgIds: []int{5, 6, 7},
-		}, result: "myInsight-%(org-5|org-6|org-7)%"},
-		{name: "only user", migrationContext: migrationContext{
-			userId: 1,
-		}, result: "myInsight-%(user-1)%"},
-		{name: "both user and orgs", migrationContext: migrationContext{
-			userId: 7,
-			orgIds: []int{4, 5},
-		}, result: "myInsight-%(org-4|org-5|user-7)%"},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if diff := cmp.Diff(test.result, test.migrationContext.buildUniqueIdCondition(insightId)); diff != "" {
-				t.Errorf("mismatched insight id condition (want/got): %s", diff)
-			}
-		})
-	}
-}
+// func TestBuildUniqueIdCondition(t *testing.T) {
+// 	t.Skip()
+// 	insightId := "myInsight"
+// 	tests := []struct {
+// 		name             string
+// 		migrationContext migrationContext
+// 		result           string
+// 	}{
+// 		{name: "only orgs", migrationContext: migrationContext{
+// 			userId: 0,
+// 			orgIds: []int{5, 6, 7},
+// 		}, result: "myInsight-%(org-5|org-6|org-7)%"},
+// 		{name: "only user", migrationContext: migrationContext{
+// 			userId: 1,
+// 		}, result: "myInsight-%(user-1)%"},
+// 		{name: "both user and orgs", migrationContext: migrationContext{
+// 			userId: 7,
+// 			orgIds: []int{4, 5},
+// 		}, result: "myInsight-%(org-4|org-5|user-7)%"},
+// 	}
+// 	for _, test := range tests {
+// 		t.Run(test.name, func(t *testing.T) {
+// 			if diff := cmp.Diff(test.result, test.migrationContext.buildUniqueIdCondition(insightId)); diff != "" {
+// 				t.Errorf("mismatched insight id condition (want/got): %s", diff)
+// 			}
+// 		})
+// 	}
+// }
 
 // func TestToInsightUniqueIdQuery(t *testing.T) {
 // 	t.Skip()
