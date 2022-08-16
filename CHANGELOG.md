@@ -17,9 +17,18 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- The default directory used to mount files into containers will be automatically changed to a temporary directory within `$HOME` if Docker Desktop for Linux is in use. [#754](https://github.com/sourcegraph/src-cli/issues/754)
-
 ### Removed
+
+## 3.43.0
+
+### Changed
+
+- `src code-intel upload` now includes an additional header for efficiently tracking the uncompressed size of uploads in the backend. [#39690](https://github.com/sourcegraph/sourcegraph/pull/39690)
+
+### Fixed
+
+- The default directory used to mount files into containers will be automatically changed to a temporary directory within `$HOME` if Docker Desktop for Linux is in use. [#754](https://github.com/sourcegraph/src-cli/issues/754)
+- src-cli no longer leaves corrupted repo archives behind when interrupted during batch spec execution. [#817](https://github.com/sourcegraph/src-cli/pull/817)
 
 ## 3.42.3
 
