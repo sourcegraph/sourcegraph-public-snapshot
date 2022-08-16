@@ -393,7 +393,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
-		err = jobStoreTx.UpdateMigratedInsights(ctx, job.UserId, job.OrgId, migratedInsightsCount)
+		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s`, migratedInsightsCount, cond))
 		if err != nil {
 			return errors.Append(insightMigrationErrors, err)
 		}
