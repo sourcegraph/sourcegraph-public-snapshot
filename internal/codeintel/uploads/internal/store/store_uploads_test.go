@@ -406,6 +406,123 @@ func TestHardDeleteUploadsByIDs(t *testing.T) {
 	})
 }
 
+func TestBackfillReferenceCountBatch(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	n := 150
+	expectedReferenceCounts := make([]int, 0, n)
+	for i := 0; i < n; i++ {
+		expectedReferenceCounts = append(expectedReferenceCounts, n-i-1)
+	}
+
+	insertQuery := sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")
+	if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
+	for i := 0; i < n; i++ {
+		insertQuery := sqlf.Sprintf(
+			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
+			42+i/(n/2), // 50% id=42, 50% id=43
+			fmt.Sprintf("%040d", i),
+		)
+		if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
+			t.Fatalf("unexpected error inserting upload: %s", err)
+		}
+
+		insertQuery = sqlf.Sprintf(
+			"INSERT INTO lsif_packages (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
+			fmt.Sprintf("pkg-%03d", i),
+			i+1,
+		)
+		if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
+			t.Fatalf("unexpected error inserting upload: %s", err)
+		}
+
+		for j := i - 1; j >= 0; j-- {
+			insertQuery := sqlf.Sprintf(
+				"INSERT INTO lsif_references (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
+				fmt.Sprintf("pkg-%03d", j),
+				i+1,
+			)
+			if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
+				t.Fatalf("unexpected error inserting upload: %s", err)
+			}
+		}
+	}
+
+	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
+		t.Fatalf("unexpected error performing up migration: %s", err)
+	}
+	referenceCountQuery := sqlf.Sprintf("SELECT u.reference_count FROM lsif_uploads u WHERE u.reference_count IS NOT NULL ORDER BY u.id")
+	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
+		t.Fatalf("unexpected error querying uploads: %s", err)
+	} else if diff := cmp.Diff(expectedReferenceCounts[:n/2], referenceCounts); diff != "" {
+		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
+	}
+
+	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
+		t.Fatalf("unexpected error performing up migration: %s", err)
+	}
+	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
+		t.Fatalf("unexpected error querying uploads: %s", err)
+	} else if diff := cmp.Diff(expectedReferenceCounts, referenceCounts); diff != "" {
+		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
+	}
+}
+
+func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	now := time.Unix(1587396557, 0).UTC()
+
+	insertUploads(t, db,
+		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1), State: "completed"},
+		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), State: "completed", Root: "sub/"},
+		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4), State: "completed"},
+		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5), State: "completed"},
+		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7), State: "completed"},
+		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8), State: "completed"},
+	)
+
+	sourcedCommits, err := store.SourcedCommitsWithoutCommittedAt(context.Background(), 5)
+	if err != nil {
+		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
+	}
+	expectedCommits := []shared.SourcedCommits{
+		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
+		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
+		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
+	}
+	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
+		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+	}
+
+	// Update commits 1 and 4
+	if err := store.UpdateCommittedAt(context.Background(), 50, makeCommit(1), now.Format(time.RFC3339)); err != nil {
+		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
+	}
+	if err := store.UpdateCommittedAt(context.Background(), 51, makeCommit(4), now.Format(time.RFC3339)); err != nil {
+		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
+	}
+
+	sourcedCommits, err = store.SourcedCommitsWithoutCommittedAt(context.Background(), 5)
+	if err != nil {
+		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
+	}
+	expectedCommits = []shared.SourcedCommits{
+		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(5)}},
+		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
+	}
+	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
+		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+	}
+}
+
 func TestSoftDeleteExpiredUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

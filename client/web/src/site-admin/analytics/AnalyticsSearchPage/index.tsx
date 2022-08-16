@@ -5,9 +5,8 @@ import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
+import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, Series } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../../charts'
 import { SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'

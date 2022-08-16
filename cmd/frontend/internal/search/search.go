@@ -477,6 +477,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
+		repoEvent.KeyValuePairs = r.KeyValuePairs
 	}
 
 	return repoEvent

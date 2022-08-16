@@ -13,7 +13,6 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 	"github.com/stretchr/testify/require"
 
@@ -564,30 +563,15 @@ func TestRepoHasFileContent(t *testing.T) {
 		return false, nil
 	}
 
-	// Only repos A and B are indexed
-	mockZoekt := NewMockStreamer()
-	mockZoekt.ListFunc.SetDefaultReturn(&zoekt.RepoList{
-		Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
-			uint32(repoA.ID): {
-				Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
-			},
-			uint32(repoB.ID): {
-				Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
-			},
-		},
-	},
-		nil,
-	)
-
 	cases := []struct {
-		name       string
-		filters    []query.RepoHasFileContentArgs
-		zoektFiles []zoekt.FileMatch
-		expected   []*search.RepositoryRevisions
+		name          string
+		filters       []query.RepoHasFileContentArgs
+		matchingRepos map[uint32]*zoekt.MinimalRepoListEntry
+		expected      []*search.RepositoryRevisions
 	}{{
-		name:       "no filters",
-		filters:    nil,
-		zoektFiles: nil,
+		name:          "no filters",
+		filters:       nil,
+		matchingRepos: nil,
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoA),
 			mkHead(repoB),
@@ -599,18 +583,20 @@ func TestRepoHasFileContent(t *testing.T) {
 		filters: []query.RepoHasFileContentArgs{{
 			Path: "bad path",
 		}},
-		zoektFiles: nil,
-		expected:   []*search.RepositoryRevisions{},
+		matchingRepos: nil,
+		expected:      []*search.RepositoryRevisions{},
 	}, {
 		name: "one indexed path",
 		filters: []query.RepoHasFileContentArgs{{
 			Path: "pathB",
 		}},
-		zoektFiles: []zoekt.FileMatch{{
-			Repository:   "repoB",
-			RepositoryID: 2,
-			Branches:     []string{"HEAD"},
-		}},
+		matchingRepos: map[uint32]*zoekt.MinimalRepoListEntry{
+			2: {
+				Branches: []zoekt.RepositoryBranch{{
+					Name: "HEAD",
+				}},
+			},
+		},
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoB),
 		},
@@ -619,7 +605,7 @@ func TestRepoHasFileContent(t *testing.T) {
 		filters: []query.RepoHasFileContentArgs{{
 			Path: "pathC",
 		}},
-		zoektFiles: nil,
+		matchingRepos: nil,
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoC),
 		},
@@ -629,15 +615,15 @@ func TestRepoHasFileContent(t *testing.T) {
 			Path:    "pathC",
 			Content: "lineB",
 		}},
-		zoektFiles: nil,
-		expected:   []*search.RepositoryRevisions{},
+		matchingRepos: nil,
+		expected:      []*search.RepositoryRevisions{},
 	}, {
 		name: "path and content",
 		filters: []query.RepoHasFileContentArgs{{
 			Path:    "pathC",
 			Content: "lineC",
 		}},
-		zoektFiles: nil,
+		matchingRepos: nil,
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoC),
 		},
@@ -645,12 +631,23 @@ func TestRepoHasFileContent(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			mockZoekt.StreamSearchFunc.SetDefaultHook(func(_ context.Context, _ zoektquery.Q, _ *zoekt.SearchOptions, s zoekt.Sender) error {
-				s.Send(&zoekt.SearchResult{
-					Files: tc.zoektFiles,
-				})
-				return nil
-			})
+			// Only repos A and B are indexed
+			mockZoekt := NewMockStreamer()
+			mockZoekt.ListFunc.PushReturn(&zoekt.RepoList{
+				Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
+					uint32(repoA.ID): {
+						Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
+					},
+					uint32(repoB.ID): {
+						Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
+					},
+				},
+			}, nil)
+
+			mockZoekt.ListFunc.PushReturn(&zoekt.RepoList{
+				Minimal: tc.matchingRepos,
+			}, nil)
+
 			res := NewResolver(logtest.Scoped(t), db, endpoint.Static("test"), mockZoekt)
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    []string{".*"},

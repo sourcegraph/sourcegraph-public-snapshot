@@ -21,7 +21,7 @@ var (
 
 // GetService creates or returns an already-initialized policies service. If the service is
 // new, it will use the given database handle.
-func GetService(db database.DB) *Service {
+func GetService(db database.DB, uploadSvc UploadService, gitserver GitserverClient) *Service {
 	svcOnce.Do(func() {
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
@@ -32,7 +32,7 @@ func GetService(db database.DB) *Service {
 		}
 
 		store := store.New(db, oc("store"))
-		svc = newService(store, oc("service"))
+		svc = newService(store, uploadSvc, gitserver, oc("service"))
 	})
 
 	return svc

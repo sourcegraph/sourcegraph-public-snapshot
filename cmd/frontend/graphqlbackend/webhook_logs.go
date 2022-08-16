@@ -235,12 +235,22 @@ func (r *webhookLogResolver) StatusCode() int32 {
 	return int32(r.log.StatusCode)
 }
 
-func (r *webhookLogResolver) Request() *webhookLogRequestResolver {
-	return &webhookLogRequestResolver{webhookLogMessageResolver{message: &r.log.Request}}
+func (r *webhookLogResolver) Request(ctx context.Context) (*webhookLogRequestResolver, error) {
+	message, err := r.log.Request.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhookLogRequestResolver{webhookLogMessageResolver{message: &message}}, nil
 }
 
-func (r *webhookLogResolver) Response() *webhookLogMessageResolver {
-	return &webhookLogMessageResolver{message: &r.log.Response}
+func (r *webhookLogResolver) Response(ctx context.Context) (*webhookLogMessageResolver, error) {
+	message, err := r.log.Response.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhookLogMessageResolver{message: &message}, nil
 }
 
 type webhookLogMessageResolver struct {

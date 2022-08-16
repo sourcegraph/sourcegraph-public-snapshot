@@ -1,6 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
-import { Series } from '../../../../../../charts'
+import { Series } from '@sourcegraph/wildcard'
+
 import { WebStory } from '../../../../../../components/WebStory'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 
@@ -14,13 +15,13 @@ const StoryConfig: Meta = {
 export default StoryConfig
 
 interface StandardDatum {
-    value: number | null
+    value: number
     link: string
     x: number
 }
 
 const getXValue = (datum: StandardDatum): Date => new Date(datum.x)
-const getYValue = (datum: StandardDatum): number | null => datum.value
+const getYValue = (datum: StandardDatum): number => datum.value
 const getLinkURL = (datum: StandardDatum): string => datum.link
 
 const SERIES: Series<StandardDatum>[] = [

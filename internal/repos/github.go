@@ -65,9 +65,13 @@ var (
 )
 
 // NewGithubSource returns a new GitHubSource from the given external service.
-func NewGithubSource(logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGithubSource(logger, externalServicesStore, svc, &c, cf)
@@ -105,7 +109,12 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 	client *github.V3Client,
 	installationID int64,
 ) (string, error) {
-	token := gjson.Get(svc.Config, "token").String()
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return "", nil
+	}
+
+	token := gjson.Get(rawConfig, "token").String()
 	// It is incorrect to have GitHub App installation access token without an
 	// expiration time, and being conservative to have 5-minute buffer in case the
 	// expiration time is close to the current time.
@@ -127,7 +136,7 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
 	// validation with missing "repos" property when no repository has been selected,
 	// due to generated JSON tag of ",omitempty".
-	config, err := jsonc.Edit(svc.Config, *tok.Token, "token")
+	rawConfig, err = jsonc.Edit(rawConfig, *tok.Token, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "edit token")
 	}
@@ -136,7 +145,7 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 		conf.Get().AuthProviders,
 		svc.ID,
 		&database.ExternalServiceUpdate{
-			Config:         &config,
+			Config:         &rawConfig,
 			TokenExpiresAt: tok.ExpiresAt,
 		},
 	)
