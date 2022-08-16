@@ -268,7 +268,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 		if len(users) == 0 {
 			// If the user doesn't exist, just mark the job complete.
-			err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+			err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId))
 			if err != nil {
 				return errors.Wrap(err, "MarkCompleted")
 			}
@@ -299,7 +299,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 		if len(orgs) == 0 {
 			// If the org doesn't exist, just mark the job complete.
-			err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+			err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, orgId))
 			if err != nil {
 				return errors.Wrap(err, "MarkCompleted")
 			}
@@ -391,7 +391,15 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		return err
 	}
 
-	err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+	var cond *sqlf.Query
+	if job.UserId != nil {
+		cond = sqlf.Sprintf("user_id = %s", *job.UserId)
+	} else if job.OrgId != nil {
+		cond = sqlf.Sprintf("org_id = %s", *job.OrgId)
+	} else {
+		cond = sqlf.Sprintf("global IS TRUE")
+	}
+	err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE %s`, cond))
 	if err != nil {
 		return errors.Wrap(err, "MarkCompleted")
 	}
