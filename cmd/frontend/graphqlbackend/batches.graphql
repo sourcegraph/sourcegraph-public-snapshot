@@ -3556,6 +3556,11 @@ type BatchSpecMount {
     size: Int!
 
     """
+    When the file was last touched.
+    """
+    modified: DateTime!
+
+    """
     When the file is initially created at.
     """
     createdAt: DateTime!
