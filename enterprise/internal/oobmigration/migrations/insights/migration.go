@@ -1040,25 +1040,17 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 	}
 	if len(mapped) > 0 {
 		// Create rows for an inline table which is used to preserve the ordering of the viewIds.
-		orderings := make([]*sqlf.Query, 0, 1)
-		for i, viewId := range mapped {
-			orderings = append(orderings, sqlf.Sprintf("(%s, %s)", viewId, fmt.Sprintf("%d", i)))
+		indexedViewIDs := make([]*sqlf.Query, 0, len(mapped))
+		for i, viewID := range mapped {
+			indexedViewIDs = append(indexedViewIDs, sqlf.Sprintf("(%s, %s)", viewID, fmt.Sprintf("%d", i)))
 		}
 
-		err = tx.Exec(ctx, sqlf.Sprintf(`
-			INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
-			SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
-			FROM insight_view
-			JOIN (VALUES %s) as ids (id, ordering) ON ids.id = insight_view.unique_id
-			WHERE unique_id = ANY(%s)
-			ORDER BY ids.ordering
-			ON CONFLICT DO NOTHING;
-		`,
+		if err := tx.Exec(ctx, sqlf.Sprintf(
+			insightsMigratorCreateDashboardInsertInsightViewQuery,
 			dashboardId,
-			sqlf.Join(orderings, ","),
+			sqlf.Join(indexedViewIDs, ", "),
 			pq.Array(mapped),
-		))
-		if err != nil {
+		)); err != nil {
 			return errors.Wrap(err, "AddViewsToDashboard")
 		}
 	}
@@ -1077,6 +1069,19 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 
 	return nil
 }
+
+const insightsMigratorCreateDashboardInsertInsightViewQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:createDashboard
+INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+SELECT
+	%s AS dashboard_id,
+	insight_view.id AS insight_view_id
+FROM insight_view
+JOIN (VALUES %s) AS ids (id, ordering) ON ids.id = insight_view.unique_id
+WHERE unique_id = ANY(%s)
+ORDER BY ids.ordering
+ON CONFLICT DO NOTHING
+`
 
 const insightsMigratorCreateDashboardInsertGrantQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:createDashboard
