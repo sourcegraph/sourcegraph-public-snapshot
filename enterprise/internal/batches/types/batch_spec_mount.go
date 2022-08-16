@@ -11,6 +11,8 @@ type BatchSpecMount struct {
 	FileName string
 	Path     string
 	Size     int64
+	// Modified is when the file was last touched. Compared to UpdatedAt, this field is the filesystem modtime versus
+	// when updated in the database.
 	Modified time.Time
 
 	CreatedAt time.Time
