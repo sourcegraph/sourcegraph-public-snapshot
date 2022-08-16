@@ -75,48 +75,28 @@ func makeUniqueId(id string, subject settingsSubject) string {
 	}
 }
 
-func getOwnerName(settingsRow settings) string {
-	name := ""
-	if settingsRow.Subject.User != nil {
-		name = fmt.Sprintf("user id %d", *settingsRow.Subject.User)
-	} else if settingsRow.Subject.Org != nil {
-		name = fmt.Sprintf("org id %d", *settingsRow.Subject.Org)
-	} else {
-		name = "global"
-	}
-	return name
+func getOwnerNameFromSettings(settingsRow settings) string {
+	return getOwnerName(settingsRow.Subject.User, settingsRow.Subject.Org)
 }
 
 func getOwnerNameFromInsight(insight searchInsight) string {
-	name := ""
-	if insight.UserID != nil {
-		name = fmt.Sprintf("user id %d", *insight.UserID)
-	} else if insight.OrgID != nil {
-		name = fmt.Sprintf("org id %d", *insight.OrgID)
-	} else {
-		name = "global"
-	}
-	return name
+	return getOwnerName(insight.UserID, insight.OrgID)
 }
 
 func getOwnerNameFromLangStatsInsight(insight langStatsInsight) string {
-	name := ""
-	if insight.UserID != nil {
-		name = fmt.Sprintf("user id %d", *insight.UserID)
-	} else if insight.OrgID != nil {
-		name = fmt.Sprintf("org id %d", *insight.OrgID)
-	} else {
-		name = "global"
-	}
-	return name
+	return getOwnerName(insight.UserID, insight.OrgID)
 }
 
 func getOwnerNameFromDashboard(insight settingDashboard) string {
+	return getOwnerName(insight.UserID, insight.OrgID)
+}
+
+func getOwnerName(userID, orgID *int32) string {
 	name := ""
-	if insight.UserID != nil {
-		name = fmt.Sprintf("user id %d", *insight.UserID)
-	} else if insight.OrgID != nil {
-		name = fmt.Sprintf("org id %d", *insight.OrgID)
+	if userID != nil {
+		name = fmt.Sprintf("user id %d", *userID)
+	} else if orgID != nil {
+		name = fmt.Sprintf("org id %d", *orgID)
 	} else {
 		name = "global"
 	}
@@ -159,7 +139,7 @@ func getLangStatsInsights(settingsRow settings) []langStatsInsight {
 
 	raw, err := filterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
-		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "language usage insights failed to migrate due to unrecognized schema")
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(settingsRow), "error msg", "language usage insights failed to migrate due to unrecognized schema")
 		return results
 	}
 
@@ -167,7 +147,7 @@ func getLangStatsInsights(settingsRow settings) []langStatsInsight {
 		var temp langStatsInsight
 		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
-			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "language usage insight failed to migrate due to unrecognized schema")
+			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(settingsRow), "error msg", "language usage insight failed to migrate due to unrecognized schema")
 			continue
 		}
 		temp.UserID = settingsRow.Subject.User
@@ -185,7 +165,7 @@ func getFrontendInsights(settingsRow settings) []searchInsight {
 
 	raw, err := filterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
-		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "search insights failed to migrate due to unrecognized schema")
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(settingsRow), "error msg", "search insights failed to migrate due to unrecognized schema")
 		return results
 	}
 
@@ -193,7 +173,7 @@ func getFrontendInsights(settingsRow settings) []searchInsight {
 		var temp searchInsight
 		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
-			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "search insight failed to migrate due to unrecognized schema")
+			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(settingsRow), "error msg", "search insight failed to migrate due to unrecognized schema")
 			continue
 		}
 		temp.UserID = settingsRow.Subject.User
@@ -217,7 +197,7 @@ func getBackendInsights(setting settings) []searchInsight {
 	var raw map[string]json.RawMessage
 	raw, err := filterSettingJson(setting.Contents, prefix)
 	if err != nil {
-		log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insights failed to migrate due to unrecognized schema")
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(setting), "error msg", "search insights failed to migrate due to unrecognized schema")
 		return results
 	}
 
@@ -250,7 +230,7 @@ func getDashboards(settingsRow settings) []settingDashboard {
 	var raw map[string]json.RawMessage
 	raw, err := filterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
-		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
 		return results
 	}
 	for _, val := range raw {
@@ -270,14 +250,14 @@ func unmarshalBackendInsights(raw json.RawMessage, setting settings) map[string]
 	result := make(map[string]searchInsight)
 
 	if err := json.Unmarshal(raw, &dict); err != nil {
-		log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insights failed to migrate due to unrecognized schema")
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(setting), "error msg", "search insights failed to migrate due to unrecognized schema")
 		return result
 	}
 
 	for id, body := range dict {
 		var temp searchInsight
 		if err := json.Unmarshal(body, &temp); err != nil {
-			log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insight failed to migrate due to unrecognized schema")
+			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(setting), "error msg", "search insight failed to migrate due to unrecognized schema")
 			continue
 		}
 		result[makeUniqueId(id, setting.Subject)] = temp
@@ -291,14 +271,14 @@ func unmarshalDashboard(raw json.RawMessage, settingsRow settings) []settingDash
 	result := []settingDashboard{}
 
 	if err := json.Unmarshal(raw, &dict); err != nil {
-		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
 		return result
 	}
 
 	for id, body := range dict {
 		var temp settingDashboard
 		if err := json.Unmarshal(body, &temp); err != nil {
-			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboard failed to migrate due to unrecognized schema")
+			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(settingsRow), "error msg", "dashboard failed to migrate due to unrecognized schema")
 			continue
 		}
 		temp.ID = id
