@@ -10,10 +10,7 @@
       "*": ["../shared/src/types/*", "*"],
     },
   },
-  "include": [
-    "**/*",
-    ".*"
-  ],
+  "include": ["**/*", ".*"],
   "references": [
     {
       "path": "../common",
