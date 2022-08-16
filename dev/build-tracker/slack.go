@@ -51,8 +51,9 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 
 func (c *NotificationClient) send(build *Build) error {
 	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
-	logger.Debug("creating slack json", log.Int("buildNumber", build.number()))
+	logger.Debug("creating slack json")
 
+	logger.Debug("getting teammate information", log.String("authorName", build.authorName()), log.String("authorEmail", build.authorEmail()))
 	teammate, err := c.getTeammateForBuild(build)
 	if err != nil {
 		logger.Error("failed to find teammate", log.Error(err))
