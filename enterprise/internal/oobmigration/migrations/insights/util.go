@@ -42,32 +42,32 @@ func logDuplicates(insightIds []string) {
 func parseTimeInterval(insight searchInsight) timeInterval {
 	if insight.Step.Days != nil {
 		return timeInterval{
-			unit:  Day,
+			unit:  "DAY",
 			value: *insight.Step.Days,
 		}
 	} else if insight.Step.Hours != nil {
 		return timeInterval{
-			unit:  Hour,
+			unit:  "HOUR",
 			value: *insight.Step.Hours,
 		}
 	} else if insight.Step.Weeks != nil {
 		return timeInterval{
-			unit:  Week,
+			unit:  "WEEK",
 			value: *insight.Step.Weeks,
 		}
 	} else if insight.Step.Months != nil {
 		return timeInterval{
-			unit:  Month,
+			unit:  "MONTH",
 			value: *insight.Step.Months,
 		}
 	} else if insight.Step.Years != nil {
 		return timeInterval{
-			unit:  Year,
+			unit:  "YEAR",
 			value: *insight.Step.Years,
 		}
 	} else {
 		return timeInterval{
-			unit:  Month,
+			unit:  "MONTH",
 			value: 1,
 		}
 	}

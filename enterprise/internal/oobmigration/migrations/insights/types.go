@@ -2,8 +2,6 @@ package insights
 
 import (
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type permissionAssociations struct {
@@ -36,60 +34,10 @@ type insightViewFilters struct {
 	SearchContexts   []string
 }
 
-type presentationType string
-
-const (
-	Line presentationType = "LINE"
-	Pie  presentationType = "PIE"
-)
-
-type seriesSortMode string
-
-const (
-	ResultCount     seriesSortMode = "RESULT_COUNT"    // Sorts by the number of results for the most recent datapoint of a series.
-	DateAdded       seriesSortMode = "DATE_ADDED"      // Sorts by the date of the earliest datapoint in the series.
-	Lexicographical seriesSortMode = "LEXICOGRAPHICAL" // Sorts by label: first by semantic version and then alphabetically.
-)
-
-type seriesSortDirection string
-
-const (
-	Asc  seriesSortDirection = "ASC"
-	Desc seriesSortDirection = "DESC"
-)
-
 type timeInterval struct {
 	unit  intervalUnit
 	value int
 }
-
-type migrationBatch string
-
-const (
-	backend  migrationBatch = "backend"
-	frontend migrationBatch = "frontend"
-)
-
-type migrator struct {
-	frontendStore *basestore.Store
-	insightsStore *basestore.Store
-}
-
-type settingsMigrationJobType string
-
-const (
-	UserJob   settingsMigrationJobType = "USER"
-	OrgJob    settingsMigrationJobType = "ORG"
-	GlobalJob settingsMigrationJobType = "GLOBAL"
-)
-
-type dashboardType string
-
-const (
-	standard dashboardType = "standard"
-	// This is a singleton dashboard that facilitates users having global access to their insights in Limited Access Mode.
-	limitedAccessMode dashboardType = "limited_access_mode"
-)
 
 type settingsMigrationJob struct {
 	UserId             *int
@@ -145,51 +93,23 @@ type insightSeries struct {
 	BackfillAttempts           int32
 }
 
-type generationMethod string
-
-const (
-	Search         generationMethod = "search"
-	SearchCompute  generationMethod = "search-compute"
-	LanguageStats  generationMethod = "language-stats"
-	MappingCompute generationMethod = "mapping-compute"
-)
-
 func (t timeInterval) StepForwards(start time.Time) time.Time {
-	return t.step(start, forward)
-}
-
-type stepDirection int
-
-const forward stepDirection = 1
-const backward stepDirection = -1
-
-func (t timeInterval) step(start time.Time, direction stepDirection) time.Time {
 	switch t.unit {
-	case Year:
-		return start.AddDate(int(direction)*t.value, 0, 0)
-	case Month:
-		return start.AddDate(0, int(direction)*t.value, 0)
-	case Week:
-		return start.AddDate(0, 0, int(direction)*7*t.value)
-	case Day:
-		return start.AddDate(0, 0, int(direction)*t.value)
-	case Hour:
-		return start.Add(time.Hour * time.Duration(t.value) * time.Duration(direction))
+	case "YEAR":
+		return start.AddDate(t.value, 0, 0)
+	case "MONTH":
+		return start.AddDate(0, t.value, 0)
+	case "WEEK":
+		return start.AddDate(0, 0, 7*t.value)
+	case "DAY":
+		return start.AddDate(0, 0, t.value)
+	case "HOUR":
+		return start.Add(time.Hour * time.Duration(t.value))
 	default:
 		// this doesn't really make sense, so return something?
-		return start.AddDate(int(direction)*t.value, 0, 0)
+		return start.AddDate(t.value, 0, 0)
 	}
 }
-
-type intervalUnit string
-
-const (
-	Month intervalUnit = "MONTH"
-	Day   intervalUnit = "DAY"
-	Week  intervalUnit = "WEEK"
-	Year  intervalUnit = "YEAR"
-	Hour  intervalUnit = "HOUR"
-)
 
 //
 // JSON UNMARSHALLED
@@ -258,3 +178,12 @@ type settingDashboard struct {
 	UserID     *int32
 	OrgID      *int32
 }
+
+type presentationType string
+type seriesSortMode string
+type seriesSortDirection string
+type migrationBatch string
+type settingsMigrationJobType string
+type dashboardType string
+type generationMethod string
+type intervalUnit string

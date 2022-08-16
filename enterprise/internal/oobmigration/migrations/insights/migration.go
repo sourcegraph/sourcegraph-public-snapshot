@@ -19,6 +19,11 @@ import (
 
 const schemaErrorPrefix = "insights oob migration schema error"
 
+type migrator struct {
+	frontendStore *basestore.Store
+	insightsStore *basestore.Store
+}
+
 func NewMigrator(insightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
 		frontendStore: basestore.NewWithHandle(postgresDB.Handle()),
@@ -43,7 +48,7 @@ FROM
 `
 
 func (m *migrator) Up(ctx context.Context) (err error) {
-	globalMigrationComplete, err := m.performBatchMigration(ctx, GlobalJob)
+	globalMigrationComplete, err := m.performBatchMigration(ctx, "GLOBAL")
 	if err != nil {
 		return err
 	}
@@ -51,7 +56,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	orgMigrationComplete, err := m.performBatchMigration(ctx, OrgJob)
+	orgMigrationComplete, err := m.performBatchMigration(ctx, "ORG")
 	if err != nil {
 		return err
 	}
@@ -59,7 +64,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	userMigrationComplete, err := m.performBatchMigration(ctx, UserJob)
+	userMigrationComplete, err := m.performBatchMigration(ctx, "USER")
 	if err != nil {
 		return err
 	}
@@ -330,11 +335,11 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
-		count, err = m.migrateInsights(ctx, frontendInsights, frontend)
+		count, err = m.migrateInsights(ctx, frontendInsights, "frontend")
 		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
-		count, err = m.migrateInsights(ctx, backendInsights, backend)
+		count, err = m.migrateInsights(ctx, backendInsights, "backend")
 		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
@@ -441,18 +446,18 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		Title:            from.Title,
 		UniqueID:         from.ID,
 		OtherThreshold:   &from.OtherThreshold,
-		PresentationType: Pie,
+		PresentationType: "PIE",
 	}
 	interval := timeInterval{
-		unit:  intervalUnit(string(Month)),
+		unit:  intervalUnit("MONTH"),
 		value: 0, // TODO - confirm: series.SampleIntervalValue is not set below
 	}
 	series := insightSeries{
 		SeriesID:           ksuid.New().String(),
 		Repositories:       []string{from.Repository},
-		SampleIntervalUnit: string(Month),
+		SampleIntervalUnit: "MONTH",
 		JustInTime:         true,
-		GenerationMethod:   LanguageStats,
+		GenerationMethod:   "language-stats",
 		CreatedAt:          now,
 		NextRecordingAfter: interval.StepForwards(now),
 		NextSnapshotAfter:  nextSnapshot(now),
@@ -639,7 +644,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			OldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
 		}
 
-		if batch == frontend {
+		if batch == "frontend" {
 			temp.Repositories = from.Repositories
 			if temp.Repositories == nil {
 				// this shouldn't be possible, but if for some reason we get here there is a malformed schema
@@ -652,23 +657,23 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			temp.SampleIntervalValue = interval.value
 			temp.SeriesID = ksuid.New().String() // this will cause some orphan records, but we can't use the query to match because of repo / time scope. We will purge orphan records at the end of this job.
 			temp.JustInTime = true
-			temp.GenerationMethod = Search
+			temp.GenerationMethod = "SEARCH"
 			temp.NextSnapshotAfter = nextSnapshot(now)
 			temp.NextRecordingAfter = interval.StepForwards(now)
-		} else if batch == backend {
-			temp.SampleIntervalUnit = string(Month)
+		} else if batch == "backend" {
+			temp.SampleIntervalUnit = "MONTH"
 			temp.SampleIntervalValue = 1
 			temp.NextRecordingAfter = nextRecording(time.Now())
 			temp.NextSnapshotAfter = nextSnapshot(time.Now())
 			temp.SeriesID = ksuid.New().String()
 			temp.JustInTime = false
-			temp.GenerationMethod = Search
+			temp.GenerationMethod = "SEARCH"
 		}
 
 		var series insightSeries
 
 		// Backend series require special consideration to re-use series
-		if batch == backend {
+		if batch == "backend" {
 			rows, err := scanSeries(tx.Query(ctx, sqlf.Sprintf(`
 				SELECT
 					id,
@@ -854,7 +859,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 		Title:            from.Title,
 		Description:      from.Description,
 		UniqueID:         from.ID,
-		PresentationType: Line,
+		PresentationType: "LINE",
 	}
 
 	if from.Filters != nil {
@@ -1024,7 +1029,7 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 	`,
 		title,
 		true,
-		standard,
+		"standard",
 	)))
 	if len(mapped) > 0 {
 		// Create rows for an inline table which is used to preserve the ordering of the viewIds.
