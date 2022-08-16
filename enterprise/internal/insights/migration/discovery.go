@@ -14,7 +14,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -332,6 +331,30 @@ const (
 	Desc SeriesSortDirection = "DESC"
 )
 
+type InsightViewGrant struct {
+	UserID *int
+	OrgID  *int
+	Global *bool
+}
+
+func UserGrant(userID int) InsightViewGrant {
+	return InsightViewGrant{UserID: &userID}
+}
+
+func OrgGrant(orgID int) InsightViewGrant {
+	return InsightViewGrant{OrgID: &orgID}
+}
+
+func GlobalGrant() InsightViewGrant {
+	b := true
+	return InsightViewGrant{Global: &b}
+}
+
+func NextSnapshot(current time.Time) time.Time {
+	year, month, day := current.In(time.UTC).Date()
+	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
+}
+
 func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, from insights.LangStatsInsight) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
@@ -354,13 +377,13 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		GenerationMethod:   LanguageStats,
 		CreatedAt:          now,
 	}
-	var grants []store.InsightViewGrant
+	var grants []InsightViewGrant
 	if from.UserID != nil {
-		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
+		grants = []InsightViewGrant{UserGrant(int(*from.UserID))}
 	} else if from.OrgID != nil {
-		grants = []store.InsightViewGrant{store.OrgGrant(int(*from.OrgID))}
+		grants = []InsightViewGrant{OrgGrant(int(*from.OrgID))}
 	} else {
-		grants = []store.InsightViewGrant{store.GlobalGrant()}
+		grants = []InsightViewGrant{GlobalGrant()}
 	}
 
 	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
@@ -427,7 +450,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		series.NextRecordingAfter = interval.StepForwards(now)
 	}
 	if series.NextSnapshotAfter.IsZero() {
-		series.NextSnapshotAfter = store.NextSnapshot(now)
+		series.NextSnapshotAfter = NextSnapshot(now)
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
@@ -625,7 +648,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 					temp.NextRecordingAfter = interval.StepForwards(now)
 				}
 				if temp.NextSnapshotAfter.IsZero() {
-					temp.NextSnapshotAfter = store.NextSnapshot(now)
+					temp.NextSnapshotAfter = NextSnapshot(now)
 				}
 				if temp.OldestHistoricalAt.IsZero() {
 					// TODO(insights): this value should probably somewhere more discoverable / obvious than here
@@ -737,7 +760,7 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				temp.NextRecordingAfter = interval.StepForwards(now)
 			}
 			if temp.NextSnapshotAfter.IsZero() {
-				temp.NextSnapshotAfter = store.NextSnapshot(now)
+				temp.NextSnapshotAfter = NextSnapshot(now)
 			}
 			if temp.OldestHistoricalAt.IsZero() {
 				// TODO(insights): this value should probably somewhere more discoverable / obvious than here
@@ -811,13 +834,13 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 		}
 	}
 
-	var grants []store.InsightViewGrant
+	var grants []InsightViewGrant
 	if from.UserID != nil {
-		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
+		grants = []InsightViewGrant{UserGrant(int(*from.UserID))}
 	} else if from.OrgID != nil {
-		grants = []store.InsightViewGrant{store.OrgGrant(int(*from.OrgID))}
+		grants = []InsightViewGrant{OrgGrant(int(*from.OrgID))}
 	} else {
-		grants = []store.InsightViewGrant{store.GlobalGrant()}
+		grants = []InsightViewGrant{GlobalGrant()}
 	}
 
 	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`

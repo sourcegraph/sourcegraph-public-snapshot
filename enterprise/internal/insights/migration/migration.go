@@ -11,7 +11,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -51,8 +50,24 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 	return progress, err
 }
 
+type SettingsMigrationJobType string
+
+const (
+	UserJob   SettingsMigrationJobType = "USER"
+	OrgJob    SettingsMigrationJobType = "ORG"
+	GlobalJob SettingsMigrationJobType = "GLOBAL"
+)
+
+type DashboardType string
+
+const (
+	Standard DashboardType = "standard"
+	// This is a singleton dashboard that facilitates users having global access to their insights in Limited Access Mode.
+	LimitedAccessMode DashboardType = "limited_access_mode"
+)
+
 func (m *migrator) Up(ctx context.Context) (err error) {
-	globalMigrationComplete, err := m.performBatchMigration(ctx, store.GlobalJob)
+	globalMigrationComplete, err := m.performBatchMigration(ctx, GlobalJob)
 	if err != nil {
 		return err
 	}
@@ -60,7 +75,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	orgMigrationComplete, err := m.performBatchMigration(ctx, store.OrgJob)
+	orgMigrationComplete, err := m.performBatchMigration(ctx, OrgJob)
 	if err != nil {
 		return err
 	}
@@ -68,7 +83,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	userMigrationComplete, err := m.performBatchMigration(ctx, store.UserJob)
+	userMigrationComplete, err := m.performBatchMigration(ctx, UserJob)
 	if err != nil {
 		return err
 	}
@@ -252,7 +267,7 @@ var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s Insig
 	return s, err
 })
 
-func (m *migrator) performBatchMigration(ctx context.Context, jobType store.SettingsMigrationJobType) (bool, error) {
+func (m *migrator) performBatchMigration(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
 	// This transaction will allow us to lock the jobs rows while working on them.
 	tx, err := m.frontendStore.Transact(ctx)
 	if err != nil {
@@ -602,6 +617,25 @@ func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName s
 	return nil
 }
 
+type DashboardGrant struct {
+	UserID *int
+	OrgID  *int
+	Global *bool
+}
+
+func UserDashboardGrant(userID int) DashboardGrant {
+	return DashboardGrant{UserID: &userID}
+}
+
+func OrgDashboardGrant(orgID int) DashboardGrant {
+	return DashboardGrant{OrgID: &orgID}
+}
+
+func GlobalDashboardGrant() DashboardGrant {
+	b := true
+	return DashboardGrant{Global: &b}
+}
+
 func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, title string, insightReferences []string, migration migrationContext) (err error) {
 	var mapped []string
 
@@ -613,13 +647,13 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 		mapped = append(mapped, id)
 	}
 
-	var grants []store.DashboardGrant
+	var grants []DashboardGrant
 	if migration.userId != 0 {
-		grants = append(grants, store.UserDashboardGrant(migration.userId))
+		grants = append(grants, UserDashboardGrant(migration.userId))
 	} else if len(migration.orgIds) == 1 {
-		grants = append(grants, store.OrgDashboardGrant(migration.orgIds[0]))
+		grants = append(grants, OrgDashboardGrant(migration.orgIds[0]))
 	} else {
-		grants = append(grants, store.GlobalDashboardGrant())
+		grants = append(grants, GlobalDashboardGrant())
 	}
 
 	dashboardId, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
@@ -629,7 +663,7 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 	`,
 		title,
 		true,
-		store.Standard,
+		Standard,
 	)))
 	if len(mapped) > 0 {
 		// Create rows for an inline table which is used to preserve the ordering of the viewIds.
