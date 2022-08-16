@@ -1,11 +1,10 @@
 import { from, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
+import { createExtensionHostClientConnection } from '../api/client/connection'
 import type { InitData } from '../api/extension/extensionHost'
 import { syncPromiseSubscription } from '../api/util'
 import type { PlatformContext } from '../platform/context'
-
-import { createExtensionHostClientConnection } from '../api/client/connection'
 
 import type { Controller } from './controller'
 
