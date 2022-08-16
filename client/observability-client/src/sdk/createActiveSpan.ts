@@ -14,16 +14,12 @@ export interface ActiveSpanConfig extends SpanOptions {
  *
  * See https://opentelemetry.io/docs/instrumentation/js/instrumentation/#create-nested-spans
  */
-export function createActiveSpan<F extends (span: Span) => unknown>(
+export function createActiveSpan<F extends (span: Span) => ReturnType<F>>(
     tracer: Tracer,
     config: ActiveSpanConfig,
     callback: F
-): ReturnType<F> | null {
+): ReturnType<F> {
     const { name, startTime, parentSpan, context: spanContext = ROOT_CONTEXT, ...restSpanOptions } = config
-
-    if (typeof startTime === 'undefined') {
-        return null
-    }
 
     const resultContext = parentSpan ? trace.setSpan(context.active(), parentSpan) : spanContext
 
