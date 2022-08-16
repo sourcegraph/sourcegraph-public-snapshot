@@ -28,9 +28,9 @@ interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
     yScale: ScaleLinear<number, number>
     categories: Category<Datum>[]
 
-    getDatumHover: (datum: Datum) => string
     getDatumName: (datum: Datum) => string
     getDatumValue: (datum: Datum) => number
+    getDatumHover?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink: (datum: Datum) => string | undefined | null
     onBarClick: (datum: Datum) => void
