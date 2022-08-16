@@ -15,12 +15,14 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -404,6 +406,123 @@ func TestHardDeleteUploadsByIDs(t *testing.T) {
 	})
 }
 
+func TestBackfillReferenceCountBatch(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	n := 150
+	expectedReferenceCounts := make([]int, 0, n)
+	for i := 0; i < n; i++ {
+		expectedReferenceCounts = append(expectedReferenceCounts, n-i-1)
+	}
+
+	insertQuery := sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")
+	if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
+	for i := 0; i < n; i++ {
+		insertQuery := sqlf.Sprintf(
+			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
+			42+i/(n/2), // 50% id=42, 50% id=43
+			fmt.Sprintf("%040d", i),
+		)
+		if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
+			t.Fatalf("unexpected error inserting upload: %s", err)
+		}
+
+		insertQuery = sqlf.Sprintf(
+			"INSERT INTO lsif_packages (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
+			fmt.Sprintf("pkg-%03d", i),
+			i+1,
+		)
+		if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
+			t.Fatalf("unexpected error inserting upload: %s", err)
+		}
+
+		for j := i - 1; j >= 0; j-- {
+			insertQuery := sqlf.Sprintf(
+				"INSERT INTO lsif_references (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
+				fmt.Sprintf("pkg-%03d", j),
+				i+1,
+			)
+			if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
+				t.Fatalf("unexpected error inserting upload: %s", err)
+			}
+		}
+	}
+
+	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
+		t.Fatalf("unexpected error performing up migration: %s", err)
+	}
+	referenceCountQuery := sqlf.Sprintf("SELECT u.reference_count FROM lsif_uploads u WHERE u.reference_count IS NOT NULL ORDER BY u.id")
+	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
+		t.Fatalf("unexpected error querying uploads: %s", err)
+	} else if diff := cmp.Diff(expectedReferenceCounts[:n/2], referenceCounts); diff != "" {
+		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
+	}
+
+	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
+		t.Fatalf("unexpected error performing up migration: %s", err)
+	}
+	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
+		t.Fatalf("unexpected error querying uploads: %s", err)
+	} else if diff := cmp.Diff(expectedReferenceCounts, referenceCounts); diff != "" {
+		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
+	}
+}
+
+func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	now := time.Unix(1587396557, 0).UTC()
+
+	insertUploads(t, db,
+		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1), State: "completed"},
+		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), State: "completed", Root: "sub/"},
+		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4), State: "completed"},
+		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5), State: "completed"},
+		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7), State: "completed"},
+		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8), State: "completed"},
+	)
+
+	sourcedCommits, err := store.SourcedCommitsWithoutCommittedAt(context.Background(), 5)
+	if err != nil {
+		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
+	}
+	expectedCommits := []shared.SourcedCommits{
+		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
+		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
+		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
+	}
+	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
+		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+	}
+
+	// Update commits 1 and 4
+	if err := store.UpdateCommittedAt(context.Background(), 50, makeCommit(1), now.Format(time.RFC3339)); err != nil {
+		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
+	}
+	if err := store.UpdateCommittedAt(context.Background(), 51, makeCommit(4), now.Format(time.RFC3339)); err != nil {
+		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
+	}
+
+	sourcedCommits, err = store.SourcedCommitsWithoutCommittedAt(context.Background(), 5)
+	if err != nil {
+		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
+	}
+	expectedCommits = []shared.SourcedCommits{
+		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(5)}},
+		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
+	}
+	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
+		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+	}
+}
+
 func TestSoftDeleteExpiredUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -543,6 +662,147 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
+}
+
+func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertUploads(t, db,
+		shared.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
+		shared.Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
+		shared.Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
+		shared.Upload{ID: 4, Commit: makeCommit(3), Root: "sub4/"},
+		shared.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
+	)
+
+	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {
+			{UploadID: 1, Distance: 1},
+			{UploadID: 2, Distance: 2},
+			{UploadID: 3, Distance: 3},
+			{UploadID: 4, Distance: 2},
+			{UploadID: 5, Distance: 1},
+		},
+		makeCommit(2): {
+			{UploadID: 1, Distance: 0},
+			{UploadID: 2, Distance: 1},
+			{UploadID: 3, Distance: 2},
+			{UploadID: 4, Distance: 1},
+			{UploadID: 5, Distance: 0},
+		},
+		makeCommit(3): {
+			{UploadID: 1, Distance: 1},
+			{UploadID: 2, Distance: 0},
+			{UploadID: 3, Distance: 1},
+			{UploadID: 4, Distance: 0},
+			{UploadID: 5, Distance: 1},
+		},
+		makeCommit(4): {
+			{UploadID: 1, Distance: 2},
+			{UploadID: 2, Distance: 1},
+			{UploadID: 3, Distance: 0},
+			{UploadID: 4, Distance: 1},
+			{UploadID: 5, Distance: 2},
+		},
+	})
+
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+	})
+
+	moniker := precise.QualifiedMonikerData{
+		MonikerData: precise.MonikerData{
+			Scheme: "gomod",
+		},
+		PackageInformationData: precise.PackageInformationData{
+			Name:    "leftpad",
+			Version: "0.1.0",
+		},
+	}
+
+	refs := []shared.PackageReference{
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+	}
+
+	testCases := []struct {
+		limit    int
+		offset   int
+		expected []shared.PackageReference
+	}{
+		{5, 0, refs},
+		{5, 2, refs[2:]},
+		{2, 1, refs[1:3]},
+		{5, 5, nil},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
+			scanner, totalCount, err := store.GetVisibleUploadsMatchingMonikers(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, testCase.limit, testCase.offset)
+			if err != nil {
+				t.Fatalf("unexpected error getting scanner: %s", err)
+			}
+
+			if totalCount != 5 {
+				t.Errorf("unexpected count. want=%d have=%d", 5, totalCount)
+			}
+
+			filters, err := consumeScanner(scanner)
+			if err != nil {
+				t.Fatalf("unexpected error from scanner: %s", err)
+			}
+
+			if diff := cmp.Diff(testCase.expected, filters); diff != "" {
+				t.Errorf("unexpected filters (-want +got):\n%s", diff)
+			}
+		})
+	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		_, totalCount, err := store.GetVisibleUploadsMatchingMonikers(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, 50, 0)
+		if err != nil {
+			t.Fatalf("unexpected error getting filters: %s", err)
+		}
+		if totalCount != 0 {
+			t.Errorf("unexpected count. want=%d have=%d", 0, totalCount)
+		}
+	})
+}
+
+// consumeScanner reads all values from the scanner into memory.
+func consumeScanner(scanner shared.PackageReferenceScanner) (references []shared.PackageReference, _ error) {
+	for {
+		reference, exists, err := scanner.Next()
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			break
+		}
+
+		references = append(references, reference)
+	}
+	if err := scanner.Close(); err != nil {
+		return nil, err
+	}
+
+	return references, nil
 }
 
 // intsToQueries converts a slice of ints into a slice of queries.

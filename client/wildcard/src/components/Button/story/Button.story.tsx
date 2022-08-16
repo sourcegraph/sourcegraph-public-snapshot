@@ -5,7 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, H2, Text } from '../..'
+import { H1, H2, Text, Tooltip } from '../..'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
@@ -102,12 +102,16 @@ export const AllButtons: Story = () => (
         </ButtonGroup>
         <H2>Tooltips</H2>
         <Text>Buttons can have tooltips.</Text>
-        <Button variant="primary" className="mr-3" data-tooltip="Some extra context on the button.">
-            Enabled
-        </Button>
-        <Button variant="primary" disabled={true} data-tooltip="Some extra context on why the button is disabled.">
-            Disabled
-        </Button>
+        <Tooltip content="Some extra context on the button.">
+            <Button variant="primary" className="mr-3">
+                Enabled
+            </Button>
+        </Tooltip>
+        <Tooltip content="Some extra context on why the button is disabled.">
+            <Button variant="primary" disabled={true}>
+                Disabled
+            </Button>
+        </Tooltip>
     </div>
 )
 

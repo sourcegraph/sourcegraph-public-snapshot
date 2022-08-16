@@ -39,7 +39,7 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
 }
 
 export interface CodeViewToolbarProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
+    extends PlatformContextProps<'settings' | 'requestGraphQL'>,
         ExtensionsControllerProps,
         TelemetryProps,
         CodeViewToolbarClassProps {

@@ -24,7 +24,7 @@ export interface NotebookContentProps
             StreamingSearchResultsListProps,
             'allExpanded' | 'extensionsController' | 'platformContext' | 'executedQuery'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     globbing: boolean
     viewerCanManage: boolean

@@ -26,6 +26,7 @@ export interface TemporarySettingsSchema {
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
+    'user.themePreference': string
     'signup.finishedWelcomeFlow': boolean
     'homepage.userInvites.tab': number
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
@@ -35,6 +36,13 @@ export interface TemporarySettingsSchema {
     'codeintel.referencePanel.redesign.enabled': boolean
     'onboarding.quickStartTour': TourListState
     'coreWorkflowImprovements.enabled': boolean
+    'characterKeyShortcuts.enabled': boolean
+    'search.homepage.queryExamplesContent': {
+        lastCachedTimestamp: string
+        repositoryName: string
+        filePath: string
+        author: string
+    }
 }
 
 /**

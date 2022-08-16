@@ -6,6 +6,7 @@ import { animated, useSpring } from 'react-spring'
 import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
+import { eventLogger } from '../../../../../tracking/eventLogger'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
 
 import combySample from './comby.batch.yaml'
@@ -105,7 +106,9 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
 
     const onConfirm = useCallback(() => {
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
+            const templateName = selectedItem.name
             const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
+            eventLogger.log('batch_change_editor:template:loaded', { template: templateName })
             props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
@@ -160,6 +163,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             target="_blank"
                             rel="noopener noreferrer"
                             to="https://github.com/sourcegraph/batch-change-examples"
+                            onClick={() => eventLogger.log('batch_change_editor:view_more_examples:clicked')}
                         >
                             View more examples <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                         </Link>

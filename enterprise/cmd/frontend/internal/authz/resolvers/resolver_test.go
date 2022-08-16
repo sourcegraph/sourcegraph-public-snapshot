@@ -40,7 +40,7 @@ func clock() time.Time {
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, err := graphqlbackend.NewSchema(db, nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil, nil, nil, nil)
+	parsedSchema, err := graphqlbackend.NewSchema(db, nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,6 +484,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 						ID:          1,
 						Kind:        extsvc.KindBitbucketCloud,
 						DisplayName: "github :)",
+						Config:      extsvc.NewEmptyConfig(),
 					},
 					nil
 			} else {
@@ -523,6 +524,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 						ID:          1,
 						Kind:        extsvc.KindBitbucketServer,
 						DisplayName: "bb server no jokes here",
+						Config:      extsvc.NewEmptyConfig(),
 					},
 					nil
 			} else {

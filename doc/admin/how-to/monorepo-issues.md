@@ -48,7 +48,7 @@ _Learn more about managing resources in [docker-compose](../deploy/docker-compos
 
 ## Slow hover tooltip results
 
-Hovering over a symbol results in a query for the definition. If the symbol is defined in a repo that has precise code intel, then Sourcegraph should respond with results quickly. Otherwise, the definition query will have the same performance characteristics as above in [symbols sidebar](#symbols-sidebar---processing-symbols) because it uses a `type:symbol` search.
+Hovering over a symbol results in a query for the definition. If the symbol is defined in a repo that has precise code navigation, then Sourcegraph should respond with results quickly. Otherwise, the definition query will have the same performance characteristics as above in [symbols sidebar](#symbols-sidebar---processing-symbols) because it uses a `type:symbol` search.
 
 ## Slow history tab and git blame results
 

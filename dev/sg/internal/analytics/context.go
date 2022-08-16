@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/otfields"
 	"github.com/sourcegraph/run"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -30,7 +29,7 @@ func WithContext(ctx context.Context, sgVersion string) (context.Context, error)
 
 	// Create a provider with configuration and resource specification
 	provider := oteltracesdk.NewTracerProvider(
-		oteltracesdk.WithResource(newResource(otfields.Resource{
+		oteltracesdk.WithResource(newResource(log.Resource{
 			Name:       "sg",
 			Namespace:  "dev",
 			Version:    sgVersion,
@@ -55,12 +54,6 @@ func WithContext(ctx context.Context, sgVersion string) (context.Context, error)
 		provider: provider,
 	}), nil
 }
-
-const (
-	sgAnalyticsVersionResourceKey = "sg.analytics_version"
-	// Increment to make breaking changes to spans and discard old spans
-	sgAnalyticsVersion = "v1"
-)
 
 // newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
 // type.

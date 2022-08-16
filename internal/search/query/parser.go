@@ -683,43 +683,65 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
 	return string(result), count
 }
 
-// TryParseDelimiter tries to parse a delimited string, returning the
-// interpreted (i.e., unquoted) value if it succeeds, the delimiter that
-// suceeded parsing, and whether it succeeded.
-func (p *parser) TryParseDelimiter() (string, rune, bool) {
-	delimited := func(delimiter rune) (string, bool) {
-		start := p.pos
-		value, advance, err := ScanDelimited(p.buf[p.pos:], false, delimiter)
-		if err != nil {
+func (p *parser) parseQuoted(delimiter rune) (string, bool) {
+	start := p.pos
+	value, advance, err := ScanDelimited(p.buf[p.pos:], false, delimiter)
+	if err != nil {
+		return "", false
+	}
+	p.pos += advance
+	if !p.done() {
+		if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) {
+			p.pos = start // backtrack
+			// delimited value should be followed by whitespace
 			return "", false
 		}
-		p.pos += advance
-		if !p.done() {
-			if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) {
-				p.pos = start // backtrack
-				// delimited value should be followed by whitespace
-				return "", false
-			}
+	}
+	return value, true
+}
+
+// parseStringQuotes parses "..." or '...' syntax and returns a Patter node.
+// Returns whether parsing succeeds.
+func (p *parser) parseStringQuotes() (Pattern, bool) {
+	start := p.pos
+
+	if p.match(DQUOTE) {
+		if v, ok := p.parseQuoted('"'); ok {
+			return newPattern(v, Literal|Quoted, newRange(start, p.pos)), true
 		}
-		return value, true
 	}
 
 	if p.match(SQUOTE) {
-		if v, ok := delimited('\''); ok {
-			return v, '\'', true
+		if v, ok := p.parseQuoted('\''); ok {
+			return newPattern(v, Literal|Quoted, newRange(start, p.pos)), true
 		}
 	}
-	if p.match(DQUOTE) {
-		if v, ok := delimited('"'); ok {
-			return v, '"', true
-		}
+
+	return Pattern{}, false
+}
+
+// parseRegexpQuotes parses "/.../" syntax and returns a Pattern node. Returns
+// whether parsing succeeds.
+func (p *parser) parseRegexpQuotes() (Pattern, bool) {
+	if !p.match(SLASH) {
+		return Pattern{}, false
 	}
-	if p.match(SLASH) {
-		if v, ok := delimited('/'); ok {
-			return v, '/', true
-		}
+
+	start := p.pos
+	v, ok := p.parseQuoted('/')
+	if !ok {
+		return Pattern{}, false
 	}
-	return "", 0, false
+
+	labels := Regexp
+	if v == "" {
+		// This is an empty `//` delimited pattern: treat this
+		// heuristically as a literal // pattern instead, since an empty
+		// regex pattern offers lower utility.
+		v = "//"
+		labels = Literal
+	}
+	return newPattern(v, labels, newRange(start, p.pos)), true
 }
 
 // ParseFieldValue parses a value after a field like "repo:". It returns the
@@ -763,31 +785,6 @@ func (p *parser) ParseFieldValue(field string) (string, labels, error) {
 	return value, None, nil
 }
 
-// Try parse a delimited pattern, quoted as "...", '...', or /.../.
-func (p *parser) TryParseDelimitedPattern() (Pattern, bool) {
-	start := p.pos
-	if value, delimiter, ok := p.TryParseDelimiter(); ok {
-		var labels labels
-		if delimiter == '/' {
-			if value != "" {
-				// This is a non-empty regex-delimited pattern
-				labels = Regexp
-			} else {
-				// This is an empty `//` delimited pattern:
-				// treat this heuristically as a literal //
-				// pattern instead, since an empty regex
-				// pattern offers lower utility.
-				value = "//"
-				labels = Literal
-			}
-		} else {
-			labels = Literal | Quoted
-		}
-		return newPattern(value, labels, newRange(start, p.pos)), true
-	}
-	return Pattern{}, false
-}
-
 func (p *parser) TryScanBalancedPattern(label labels) (Pattern, bool) {
 	if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
 		pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
@@ -812,9 +809,14 @@ func newPattern(value string, labels labels, range_ Range) Pattern {
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern(label labels) Pattern {
-	if label.IsSet(Regexp | Standard) {
-		// First try parse delimited /.../ values for regexp patterns.
-		if pattern, ok := p.TryParseDelimitedPattern(); ok {
+	if label.IsSet(Standard | Regexp) {
+		if pattern, ok := p.parseRegexpQuotes(); ok {
+			return pattern
+		}
+	}
+
+	if label.IsSet(Regexp) {
+		if pattern, ok := p.parseStringQuotes(); ok {
 			return pattern
 		}
 	}

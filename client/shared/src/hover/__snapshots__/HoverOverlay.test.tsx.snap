@@ -112,6 +112,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-untitled"
+            data-state="closed"
             type="button"
           >
               
@@ -214,6 +215,7 @@ exports[`HoverOverlay actions present 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-some-title"
+            data-state="closed"
             type="button"
           >
              Some title 
@@ -258,6 +260,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-untitled"
+            data-state="closed"
             type="button"
           >
               
@@ -339,6 +342,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-untitled"
+            data-state="closed"
             type="button"
           >
               
@@ -408,6 +412,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
         >
           <button
             class="test-action-item action test-tooltip-untitled"
+            data-state="closed"
             type="button"
           >
               

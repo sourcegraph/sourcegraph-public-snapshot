@@ -7,10 +7,12 @@ import { CopyableText } from '../CopyableText'
 
 interface Props {
     externalService: Pick<ExternalServiceFields, 'kind' | 'webhookURL'>
+    className?: string
 }
 
 export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     externalService: { kind, webhookURL },
+    className,
 }) => {
     if (!webhookURL) {
         return <></>
@@ -55,7 +57,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChil
     }
 
     return (
-        <Alert variant="info">
+        <Alert variant="info" className={className}>
             <H3>Batch changes webhooks</H3>
             {description}
             <CopyableText className="mb-2" text={webhookURL} size={webhookURL.length} />

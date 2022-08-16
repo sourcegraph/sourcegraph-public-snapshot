@@ -2,7 +2,7 @@ import { InsightDataNode } from '../../../../../../../graphql-operations'
 import { BackendInsight, isComputeInsight } from '../../../../types'
 import { InsightContentType } from '../../../../types/insight/common'
 import { BackendInsightData } from '../../../code-insights-backend-types'
-import { createCategoricalChart } from '../../../utils/create-categorical-content'
+import { createComputeCategoricalChart } from '../../../utils/create-categorical-content'
 import { createLineChartContent } from '../../../utils/create-line-chart-content'
 
 export const MAX_NUMBER_OF_SERIES = 20
@@ -21,7 +21,7 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
             isFetchingHistoricalData: isFetchingHistoricalData || seriesData.some(series => !series.label),
             data: {
                 type: InsightContentType.Categorical,
-                content: createCategoricalChart(seriesData),
+                content: createComputeCategoricalChart(insight, seriesData),
             },
         }
     }

@@ -29,8 +29,9 @@ func TestNewBitbucketCloudSource(t *testing.T) {
 			"bad URN":        `{"apiURL": "http://[::1]:namedport"}`,
 		} {
 			t.Run(name, func(t *testing.T) {
-				s, err := NewBitbucketCloudSource(&types.ExternalService{
-					Config: input,
+				ctx := context.Background()
+				s, err := NewBitbucketCloudSource(ctx, &types.ExternalService{
+					Config: extsvc.NewUnencryptedConfig(input),
 				}, nil)
 				assert.Nil(t, s)
 				assert.NotNil(t, err)
@@ -39,7 +40,8 @@ func TestNewBitbucketCloudSource(t *testing.T) {
 	})
 
 	t.Run("valid", func(t *testing.T) {
-		s, err := NewBitbucketCloudSource(&types.ExternalService{}, nil)
+		ctx := context.Background()
+		s, err := NewBitbucketCloudSource(ctx, &types.ExternalService{Config: extsvc.NewEmptyConfig()}, nil)
 		assert.NotNil(t, s)
 		assert.Nil(t, err)
 	})
@@ -63,7 +65,7 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind:   extsvc.KindBitbucketCloud,
-		Config: `{}`,
+		Config: extsvc.NewEmptyConfig(),
 	}
 	store := database.NewStrictMockExternalServiceStore()
 	store.ListFunc.SetDefaultReturn([]*types.ExternalService{&svc}, nil)

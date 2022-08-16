@@ -179,6 +179,7 @@ SELECT EXTRACT(EPOCH FROM NOW() - ldr.set_dirty_at)::integer AS age
     INNER JOIN repo ON repo.id = ldr.repository_id
   WHERE ldr.dirty_token > ldr.update_token
     AND repo.deleted_at IS NULL
+    AND repo.blocked IS NULL
   ORDER BY age DESC
   LIMIT 1
 `

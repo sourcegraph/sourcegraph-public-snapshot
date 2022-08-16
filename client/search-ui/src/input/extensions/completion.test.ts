@@ -250,24 +250,6 @@ describe('codmirror completions', () => {
         ).toStrictEqual([{ label: 'connect.go', apply: '^connect\\.go$ ' }])
     })
 
-    test('inserts valid suggestion when completing repo:deps predicate', async () => {
-        expect(
-            (
-                await getCompletionItems(
-                    getToken('repo:deps(sourcegraph', 0),
-                    20,
-                    async () =>
-                        [
-                            {
-                                type: 'repo',
-                                repository: 'github.com/sourcegraph/jsonrpc2.go',
-                            },
-                        ] as SearchMatch[]
-                )
-            )?.map(({ apply }) => apply)
-        ).toStrictEqual(['deps(^github\\.com/sourcegraph/jsonrpc2\\.go$) '])
-    })
-
     test('includes file path in insertText when completing filter value', async () => {
         expect(
             (

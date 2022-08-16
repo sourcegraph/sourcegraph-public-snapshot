@@ -40,7 +40,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	if r.externalService.IsSiteOwned() {
 		return nil, errors.New("InvitableCollaborators may only be used on user-added external services.")
 	}
-	cfg, err := r.externalService.Configuration()
+	cfg, err := r.externalService.Configuration(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse external service config")
 	}

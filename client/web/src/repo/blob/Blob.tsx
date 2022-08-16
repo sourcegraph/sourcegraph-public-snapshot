@@ -59,7 +59,11 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import {
+    createDecorationType,
+    DecorationMapByLine,
+    groupDecorationsByLine,
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -100,9 +104,11 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
+export const blameDecorationType = createDecorationType('git-extras')({ display: 'column' })
+
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -124,6 +130,8 @@ export interface BlobProps
     nav?: (url: string) => void
     role?: string
     ariaLabel?: string
+
+    blameDecorations?: TextDocumentDecoration[]
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -132,6 +140,9 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** The trusted syntax-highlighted code as HTML */
     html: string
+
+    /** LSIF syntax-highlighting data */
+    lsif?: string
 }
 
 const domFunctions = {
@@ -241,7 +252,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             codeViewReference.current = codeView
             codeViewElements.next(codeView)
         },
-        [codeViewElements]
+        // We dangerousSetInnerHTML and modify the <code> element.
+        // We need to listen to blobInfo to ensure that we correctly
+        // respond whenever this element updates.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [codeViewElements, blobInfo.html]
     )
 
     // Emits on changes from URL search params
@@ -646,35 +661,19 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         column: [TextDocumentDecorationType, DecorationMapByLine][]
         inline: DecorationMapByLine
     } = useMemo(() => {
+        const blameDecorationsByLine = props.blameDecorations && groupDecorationsByLine(props.blameDecorations)
+        const columnWithBlame: [TextDocumentDecorationType, DecorationMapByLine][] =
+            !props.disableDecorations && blameDecorationsByLine ? [[blameDecorationType, blameDecorationsByLine]] : []
+
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            const { column, inline } = decorationsOrError.reduce(
-                (accumulator, [type, items]) => {
-                    if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
-                        const groupedByLine = groupDecorationsByLine(items)
-                        if (groupedByLine.size > 0) {
-                            accumulator.column.push([type, groupedByLine])
-                        }
-                    } else {
-                        accumulator.inline.push(...items)
-                    }
-
-                    return accumulator
-                },
-                {
-                    column: [] as [TextDocumentDecorationType, DecorationMapByLine][],
-                    inline: [] as TextDocumentDecoration[],
-                }
-            )
-
-            return {
-                // if extension contributes with a few decoration types let them go one by one
-                column: sortBy(column, ([{ extensionID }]) => extensionID),
-                inline: groupDecorationsByLine(inline),
-            }
+            return groupDecorations(decorationsOrError, enableExtensionsDecorationsColumnView, {
+                column: columnWithBlame,
+                inline: [],
+            })
         }
 
-        return { column: [], inline: new Map() }
-    }, [decorationsOrError, enableExtensionsDecorationsColumnView])
+        return { column: columnWithBlame, inline: new Map() }
+    }, [props.disableDecorations, props.blameDecorations, decorationsOrError, enableExtensionsDecorationsColumnView])
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -929,5 +928,33 @@ export function getLSPTextDocumentPositionParameters(
         revision: position.revision,
         mode,
         position,
+    }
+}
+
+export function groupDecorations(
+    decorations: [TextDocumentDecorationType, TextDocumentDecoration[]][],
+    enableExtensionsDecorationsColumnView: boolean,
+    initialValue: { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: TextDocumentDecoration[] } = {
+        column: [],
+        inline: [],
+    }
+): { column: [TextDocumentDecorationType, DecorationMapByLine][]; inline: DecorationMapByLine } {
+    const { column, inline } = decorations.reduce((accumulator, [type, items]) => {
+        if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
+            const groupedByLine = groupDecorationsByLine(items)
+            if (groupedByLine.size > 0) {
+                accumulator.column.push([type, groupedByLine])
+            }
+        } else {
+            accumulator.inline.push(...items)
+        }
+
+        return accumulator
+    }, initialValue)
+
+    return {
+        // if extension contributes with a few decoration types let them go one by one
+        column: sortBy(column, ([{ extensionID }]) => extensionID),
+        inline: groupDecorationsByLine(inline),
     }
 }

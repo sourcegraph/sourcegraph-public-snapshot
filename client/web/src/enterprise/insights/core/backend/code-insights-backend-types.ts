@@ -1,6 +1,7 @@
 import { Duration } from 'date-fns'
 
-import { Series } from '../../../../charts'
+import { Series } from '@sourcegraph/wildcard'
+
 import { GroupByField } from '../../../../graphql-operations'
 import {
     RuntimeInsight,
@@ -124,7 +125,7 @@ export interface AccessibleInsightInfo {
 
 export interface BackendInsightDatum {
     dateTime: Date
-    value: number | null
+    value: number
     link?: string
 }
 

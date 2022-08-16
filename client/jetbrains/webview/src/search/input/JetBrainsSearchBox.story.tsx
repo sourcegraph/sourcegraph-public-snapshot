@@ -8,6 +8,7 @@ import { SearchPatternType } from '@sourcegraph/search'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { usePrependStyles } from '@sourcegraph/storybook'
+import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { applyTheme } from '..'
 import { dark } from '../../bridge-mock/theme-snapshots/dark'
@@ -40,46 +41,48 @@ export const JetBrainsSearchBoxStory: Story = () => {
     }, [rootElementRef, isDarkTheme])
 
     return (
-        <div ref={rootElementRef}>
-            <div className="d-flex justify-content-center">
-                <div className="mx-6">
-                    <JetBrainsSearchBox
-                        caseSensitive={true}
-                        setCaseSensitivity={() => {}}
-                        patternType={SearchPatternType.regexp}
-                        setPatternType={() => {}}
-                        isSourcegraphDotCom={false}
-                        structuralSearchDisabled={false}
-                        queryState={{ query: 'type:file test AND test repo:contains.file(CHANGELOG)' }}
-                        onChange={() => {}}
-                        onSubmit={() => {}}
-                        authenticatedUser={null}
-                        searchContextsEnabled={true}
-                        showSearchContext={true}
-                        showSearchContextManagement={false}
-                        defaultSearchContextSpec="global"
-                        setSelectedSearchContextSpec={() => {}}
-                        selectedSearchContextSpec={undefined}
-                        fetchSearchContexts={() => {
-                            throw new Error('fetchSearchContexts')
-                        }}
-                        fetchAutoDefinedSearchContexts={() => NEVER}
-                        getUserSearchContextNamespaces={() => []}
-                        fetchStreamSuggestions={() => NEVER}
-                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                        globbing={false}
-                        isLightTheme={!isDarkTheme}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                        platformContext={{ requestGraphQL: () => EMPTY }}
-                        className=""
-                        containerClassName=""
-                        autoFocus={true}
-                        editorComponent="monaco"
-                        hideHelpButton={true}
-                    />
+        <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <div ref={rootElementRef}>
+                <div className="d-flex justify-content-center">
+                    <div className="mx-6">
+                        <JetBrainsSearchBox
+                            caseSensitive={true}
+                            setCaseSensitivity={() => {}}
+                            patternType={SearchPatternType.regexp}
+                            setPatternType={() => {}}
+                            isSourcegraphDotCom={false}
+                            structuralSearchDisabled={false}
+                            queryState={{ query: 'type:file test AND test repo:contains.file(CHANGELOG)' }}
+                            onChange={() => {}}
+                            onSubmit={() => {}}
+                            authenticatedUser={null}
+                            searchContextsEnabled={true}
+                            showSearchContext={true}
+                            showSearchContextManagement={false}
+                            defaultSearchContextSpec="global"
+                            setSelectedSearchContextSpec={() => {}}
+                            selectedSearchContextSpec={undefined}
+                            fetchSearchContexts={() => {
+                                throw new Error('fetchSearchContexts')
+                            }}
+                            fetchAutoDefinedSearchContexts={() => NEVER}
+                            getUserSearchContextNamespaces={() => []}
+                            fetchStreamSuggestions={() => NEVER}
+                            settingsCascade={EMPTY_SETTINGS_CASCADE}
+                            globbing={false}
+                            isLightTheme={!isDarkTheme}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                            platformContext={{ requestGraphQL: () => EMPTY }}
+                            className=""
+                            containerClassName=""
+                            autoFocus={true}
+                            editorComponent="monaco"
+                            hideHelpButton={true}
+                        />
+                    </div>
                 </div>
             </div>
-        </div>
+        </WildcardThemeContext.Provider>
     )
 }
 

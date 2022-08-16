@@ -62,6 +62,7 @@ import {
     Scalars,
     VisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
+import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import { ChangesetSpecFileDiffConnection } from '../../../preview/list/ChangesetSpecFileDiffConnection'
 import {
@@ -175,7 +176,14 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                 </span>
             )}
             {toggleShowTimeline && !workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                <Button className={styles.workspaceDetail} onClick={toggleShowTimeline} variant="link">
+                <Button
+                    className={styles.workspaceDetail}
+                    onClick={() => {
+                        toggleShowTimeline()
+                        eventLogger.log('batch_change_execution:workspace_timeline:clicked')
+                    }}
+                    variant="link"
+                >
                     Timeline
                 </Button>
             )}
@@ -500,7 +508,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
 
         return outputLines
     }, [step.exitCode, step.outputLines])
-
+    const tabsNames = ['logs', 'output', 'diff', 'files_env', 'cmd_container']
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
             <CollapseHeader
@@ -524,7 +532,14 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 <Card className={classNames('mt-2', styles.stepCard)}>
                     <CardBody>
                         {!step.skipped && (
-                            <Tabs className={styles.stepTabs} size="small" behavior="forceRender">
+                            <Tabs
+                                className={styles.stepTabs}
+                                size="small"
+                                behavior="forceRender"
+                                onChange={index =>
+                                    eventLogger.log(`batch_change_execution:workspace_tab_${tabsNames[index]}:clicked`)
+                                }
+                            >
                                 <TabList>
                                     <Tab key="logs">
                                         <span className="text-content" data-tab-content="Logs">
@@ -581,7 +596,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         {step.startedAt && (
                                             <WorkspaceStepFileDiffConnection
                                                 isLightTheme={isLightTheme}
-                                                step={step.number}
+                                                step={step}
                                                 workspaceID={workspaceID}
                                                 queryBatchSpecWorkspaceStepFileDiffs={
                                                     queryBatchSpecWorkspaceStepFileDiffs
@@ -642,7 +657,8 @@ const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: st
 
 interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     workspaceID: Scalars['ID']
-    step: number
+    // Require the entire step instead of just the spec number to ensure the query gets called as the step changes.
+    step: BatchSpecWorkspaceStepFields
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
@@ -660,7 +676,7 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
                 after: args.after ?? null,
                 first: args.first ?? null,
                 node: workspaceID,
-                step,
+                step: step.number,
             }),
         [workspaceID, step, queryBatchSpecWorkspaceStepFileDiffs]
     )

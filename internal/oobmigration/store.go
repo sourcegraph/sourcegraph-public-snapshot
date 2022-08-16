@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -178,9 +179,18 @@ var yamlMigrations = func() []yamlMigration {
 	return parsedMigrations
 }()
 
+var yamlMigrationIDs = func() []int {
+	ids := make([]int, 0, len(yamlMigrations))
+	for _, migration := range yamlMigrations {
+		ids = append(ids, migration.ID)
+	}
+
+	return ids
+}()
+
 // SynchronizeMetadata upserts the metadata defined in the sibling file oobmigrations.yaml.
 // Existing out-of-band migration metadata that does not match one of the identifiers in
-// the referenced file are not removed, as they have likely been registered by an earlier
+// the referenced file are not removed, as they have likely been registered by a later
 // version of the instance prior to a downgrade.
 func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
 	tx, err := s.Transact(ctx)
@@ -295,14 +305,16 @@ var ReturnEnterpriseMigrations = false
 
 // List returns the complete list of out-of-band migrations.
 func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
-	var conds []*sqlf.Query
+	conds := make([]*sqlf.Query, 0, 2)
 	if !ReturnEnterpriseMigrations {
 		conds = append(conds, sqlf.Sprintf("NOT m.is_enterprise"))
 	}
 
-	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
-	}
+	// Syncing metadata does not remove unknown migration fields. If we've removed them,
+	// we want to block them from returning from old instances. We also want to ignore
+	// any database content that we don't have metadata for. Similar checks should not
+	// be necessary on the other access methods, as they use ids returned by this method.
+	conds = append(conds, sqlf.Sprintf("m.id = ANY(%s)", pq.Array(yamlMigrationIDs)))
 
 	return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
 }

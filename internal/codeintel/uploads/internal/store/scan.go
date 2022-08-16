@@ -46,6 +46,7 @@ func scanUploadWithCount(s dbutil.Scanner) (upload shared.Upload, count int, err
 		&upload.UploadSize,
 		&upload.AssociatedIndexID,
 		&upload.Rank,
+		&upload.UncompressedSize,
 		&count,
 	); err != nil {
 		return upload, 0, err

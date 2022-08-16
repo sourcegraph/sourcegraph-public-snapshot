@@ -18,7 +18,7 @@ import { ActionItem, ActionItemAction } from './ActionItem'
 
 export interface ActionsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'settings'>,
         ContributionOptions {
     menu: ContributableMenu
     listClass?: string

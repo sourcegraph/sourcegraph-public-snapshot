@@ -13,12 +13,12 @@ export const temporal: CommunitySearchContextMetadata = {
     examples: [
         {
             title: 'All test functions',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'type:symbol Test',
         },
         {
             title: 'Search for a specifc function or class',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'type:symbol SimpleSslContextBuilder',
         },
     ],

@@ -1,9 +1,9 @@
 import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
-import { of, Observable } from 'rxjs'
-import { WildcardMockLink } from 'wildcard-mock-link'
+import { Observable, of } from 'rxjs'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -16,10 +16,12 @@ import {
     ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
+import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
+import { getLicenseAndUsageInfoResult } from '../list/testData'
 
 import { BATCH_SPEC_BY_ID } from './backend'
-import { BatchChangePreviewPage } from './BatchChangePreviewPage'
-import { visibleChangesetApplyPreviewNodeStories, hiddenChangesetApplyPreviewStories } from './list/storyData'
+import { BatchChangePreviewPage, NewBatchChangePreviewPage } from './BatchChangePreviewPage'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './list/storyData'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -144,6 +146,35 @@ const fetchBatchSpecUpdate = () =>
             url: '/users/alice/batch-changes/awesome-batch-change',
         },
     })
+
+const fetchExceedsLicense = () =>
+    new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(BATCH_SPEC_BY_ID),
+                variables: {
+                    batchSpec: '123123',
+                },
+            },
+            result: {
+                data: {
+                    node: {
+                        __typename: 'BatchSpec',
+                        ...batchSpec(),
+                    },
+                },
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: getLicenseAndUsageInfoResult(false, true) },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+    ])
 
 const queryApplyPreviewStats = (): Observable<ApplyPreviewStatsFields['stats']> =>
     of({
@@ -320,3 +351,59 @@ export const NoChangesets: Story = () => {
 }
 
 NoChangesets.storyName = 'No changesets'
+
+export const CreateNewStory: Story = () => {
+    const link = useMemo(() => fetchBatchSpecCreate(), [])
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <NewBatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
+
+CreateNewStory.storyName = 'Create (New)'
+
+export const ExceedsLicenseStory: Story = () => {
+    const link = useMemo(() => fetchExceedsLicense(), [])
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <NewBatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
+
+ExceedsLicenseStory.storyName = 'Exceeds License (New)'

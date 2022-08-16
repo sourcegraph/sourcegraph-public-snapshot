@@ -54,7 +54,10 @@ interface Props extends ThemeProps {
      * `window.context.needsSiteInit` is used.
      */
     needsSiteInit?: typeof window.context.needsSiteInit
-    context: Pick<SourcegraphContext, 'sourcegraphDotComMode' | 'authProviders' | 'experimentalFeatures'>
+    context: Pick<
+        SourcegraphContext,
+        'sourcegraphDotComMode' | 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'
+    >
 }
 
 /**

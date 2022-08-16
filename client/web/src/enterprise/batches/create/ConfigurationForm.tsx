@@ -9,12 +9,8 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsCascadeProps,
-    // SettingsOrgSubject,
-    // SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Input, Icon, RadioButton, Tooltip } from '@sourcegraph/wildcard'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -24,6 +20,7 @@ import {
     CreateEmptyBatchChangeVariables,
     Scalars,
 } from '../../../graphql-operations'
+import { useBatchChangesLicense } from '../useBatchChangesLicense'
 
 import { CREATE_BATCH_SPEC_FROM_RAW, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { NamespaceSelector } from './NamespaceSelector'
@@ -34,15 +31,7 @@ import styles from './ConfigurationForm.module.scss'
 /* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
 const NAME_PATTERN = /^[\w.-]+$/
 
-interface ConfigurationFormProps extends SettingsCascadeProps<Settings> {
-    /**
-     * Whether or not to display the configuration form in read-only mode, i.e. to view
-     * for an existing batch change.
-     */
-    isReadOnly?: boolean
-    /** The existing batch change to use to pre-populate the form. */
-    batchChange?: Pick<BatchChangeFields, 'name' | 'namespace'>
-
+type ConfigurationFormProps = SettingsCascadeProps<Settings> & {
     /**
      * When set, apply a template to the batch spec before redirecting to the edit page.
      */
@@ -54,7 +43,28 @@ interface ConfigurationFormProps extends SettingsCascadeProps<Settings> {
      * selector, if an existing batch change is not available.
      */
     initialNamespaceID?: Scalars['ID']
-}
+} & (
+        | // Either the form is editable and we may not have a batch change yet, or the form is
+        // read-only and we definitely already have a batch change.
+        {
+              /**
+               * Whether or not to display the configuration form in read-only mode, i.e. to view
+               * for an existing batch change.
+               */
+              isReadOnly?: false
+              /** The existing batch change to use to pre-populate the form. */
+              batchChange?: Pick<BatchChangeFields, 'name' | 'namespace'>
+          }
+        | {
+              /**
+               * Whether or not to display the configuration form in read-only mode, i.e. to view
+               * for an existing batch change.
+               */
+              isReadOnly: true
+              /** The existing batch change to use to pre-populate the form. */
+              batchChange: Pick<BatchChangeFields, 'name' | 'namespace'>
+          }
+    )
 
 export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<ConfigurationFormProps>> = ({
     settingsCascade,
@@ -90,6 +100,24 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     // )
     const selectedNamespace = userNamespace
 
+    const namespacesSelector = isReadOnly ? (
+        <NamespaceSelector
+            namespaces={[batchChange.namespace]}
+            selectedNamespace={batchChange.namespace.id}
+            disabled={true}
+        />
+    ) : (
+        <NamespaceSelector
+            namespaces={namespaces}
+            selectedNamespace={selectedNamespace.id}
+            // TODO: As we haven't finished implementing support for orgs, we've temporary
+            // disabled the namespace selector. This code should be uncommented to restore it
+            // onSelect={setSelectedNamespace}
+            // disabled={isReadOnly}
+            disabled={true}
+        />
+    )
+
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
 
@@ -97,6 +125,8 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         setNameInput(event.target.value)
         setIsNameValid(NAME_PATTERN.test(event.target.value))
     }, [])
+
+    const { isUnlicensed, maxUnlicensedChangesets } = useBatchChangesLicense()
 
     const history = useHistory()
     const location = useLocation()
@@ -119,10 +149,16 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 }
 
                 const template = renderTemplate(nameInput)
+                const batchChangeID = args.data?.createEmptyBatchChange.id
 
-                return args.data?.createEmptyBatchChange.id && template
+                return batchChangeID && template
                     ? createBatchSpecFromRaw({
-                          variables: { namespace: selectedNamespace.id, spec: template, noCache: false },
+                          variables: {
+                              namespace: selectedNamespace.id,
+                              spec: template,
+                              noCache: false,
+                              batchChange: batchChangeID,
+                          },
                       }).then(() => Promise.resolve(args))
                     : Promise.resolve(args)
             })
@@ -138,17 +174,20 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     return (
         <Form className={styles.form} onSubmit={handleCreate}>
             <Container className="mb-4">
+                {isUnlicensed && (
+                    <Alert variant="info">
+                        <div className="mb-2">
+                            <strong>
+                                Your license only allows for {maxUnlicensedChangesets} changesets per batch change
+                            </strong>
+                        </div>
+                        You can execute this batch spec and see how it operates, but if more than{' '}
+                        {maxUnlicensedChangesets} changesets are generated, you won't be able to apply the batch change
+                        and actually publish the changesets to the code host.
+                    </Alert>
+                )}
                 {error && <ErrorAlert error={error} />}
-                <NamespaceSelector
-                    namespaces={namespaces}
-                    selectedNamespace={selectedNamespace.id}
-                    // TODO: As we haven't finished implementing support for orgs, we've temporary
-                    // disabled the namespace selector. This code should be uncommented to restore it
-                    // onSelect={setSelectedNamespace}
-                    // disabled={isReadOnly}
-                    onSelect={noop}
-                    disabled={true}
-                />
+                {namespacesSelector}
                 <Input
                     autoFocus={true}
                     label="Batch change name"

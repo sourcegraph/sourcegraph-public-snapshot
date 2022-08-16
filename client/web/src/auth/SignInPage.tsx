@@ -75,7 +75,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         <div className="mb-2" key={index}>
                             <Button
                                 href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                className="btn-block"
+                                display="block"
                                 variant="secondary"
                                 as="a"
                             >
@@ -112,11 +112,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 iconLinkTo={props.context.sourcegraphDotComMode ? '/search' : undefined}
                 iconClassName="bg-transparent"
                 lessPadding={true}
-                title={
-                    props.context.sourcegraphDotComMode
-                        ? 'Sign in to Sourcegraph Cloud'
-                        : 'Sign in to Sourcegraph Server'
-                }
+                title="Sign in to Sourcegraph"
                 body={body}
             />
         </div>

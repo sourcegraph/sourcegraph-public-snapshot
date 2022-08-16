@@ -212,7 +212,6 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                             placeInQueue={uploadOrError.placeInQueue}
                             failure={uploadOrError.failure}
                             typeName="upload"
-                            pluralTypeName="uploads"
                             variant={variantByState.get(uploadOrError.state)}
                         />
                         {uploadOrError.isLatestForRepo && (

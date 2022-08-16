@@ -1,16 +1,21 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiAccount, mdiCog, mdiDelete } from '@mdi/js'
+import { mdiAccount, mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
+import classNames from 'classnames'
 import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
+import { Button, Link, Icon, Tooltip, Text } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
+import { Timestamp } from '../time/Timestamp'
 
 import { deleteExternalService } from './backend'
+import { defaultExternalServices } from './externalServices'
+
+import styles from './ExternalServiceNode.module.scss'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
@@ -45,20 +50,71 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         }
     }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
 
+    const IconComponent = defaultExternalServices[node.kind].icon
+
     return (
-        <li className="external-service-node list-group-item py-2" data-test-external-service-name={node.displayName}>
+        <li
+            className={classNames(styles.listNode, 'external-service-node list-group-item')}
+            data-test-external-service-name={node.displayName}
+        >
             <div className="d-flex align-items-center justify-content-between">
-                <div>
-                    {node.namespace && (
-                        <>
-                            <Icon aria-hidden={true} svgPath={mdiAccount} />
-                            <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
-                        </>
+                <div className="align-self-start">
+                    {node.lastSyncError === null && (
+                        <Tooltip content="All good, no errors!">
+                            <Icon
+                                svgPath={mdiCircle}
+                                aria-label="Code host integration is healthy"
+                                className="text-success mr-2"
+                            />
+                        </Tooltip>
                     )}
-                    {node.displayName}
+                    {node.lastSyncError !== null && (
+                        <Tooltip content="Syncing failed, check the error message for details!">
+                            <Icon
+                                svgPath={mdiCircle}
+                                aria-label="Code host integration is unhealthy"
+                                className="text-danger mr-2"
+                            />
+                        </Tooltip>
+                    )}
                 </div>
-                <div>
-                    <Tooltip content="External service settings">
+                <div className="flex-grow-1">
+                    <div>
+                        <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
+                        <strong>
+                            {node.namespace && (
+                                <>
+                                    <Icon aria-hidden={true} svgPath={mdiAccount} />
+                                    <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
+                                </>
+                            )}
+                            {node.displayName}{' '}
+                            <small className="text-muted">
+                                ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})
+                            </small>
+                        </strong>
+                        <br />
+                        <Text className="mb-0 text-muted">
+                            <small>
+                                {node.lastSyncAt === null ? (
+                                    <>Never synced.</>
+                                ) : (
+                                    <>
+                                        Last synced <Timestamp date={node.lastSyncAt} />.
+                                    </>
+                                )}{' '}
+                                {node.nextSyncAt !== null && (
+                                    <>
+                                        Next sync scheduled <Timestamp date={node.nextSyncAt} />.
+                                    </>
+                                )}
+                                {node.nextSyncAt === null && <>No next sync scheduled.</>}
+                            </small>
+                        </Text>
+                    </div>
+                </div>
+                <div className="flex-shrink-0 ml-3">
+                    <Tooltip content="Edit code host connection settings">
                         <Button
                             className="test-edit-external-service-button"
                             to={`${routingPrefix}/external-services/${node.id}`}
@@ -69,7 +125,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                             <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
                         </Button>
                     </Tooltip>{' '}
-                    <Tooltip content="Delete external service">
+                    <Tooltip content="Delete code host connection">
                         <Button
                             aria-label="Delete"
                             className="test-delete-external-service-button"
@@ -83,6 +139,9 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     </Tooltip>
                 </div>
             </div>
+            {node.lastSyncError !== null && (
+                <ErrorAlert error={node.lastSyncError} variant="danger" className="mt-2 mb-0" />
+            )}
             {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
         </li>
     )

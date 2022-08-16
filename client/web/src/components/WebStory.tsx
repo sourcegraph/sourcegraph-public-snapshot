@@ -6,8 +6,7 @@ import { CompatRouter } from 'react-router-dom-v5-compat'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
-// Add root Tooltip for Storybook
-import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
@@ -52,7 +51,6 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
                     <CompatRouter>
-                        <DeprecatedTooltip />
                         <Children
                             {...breadcrumbSetters}
                             isLightTheme={isLightTheme}

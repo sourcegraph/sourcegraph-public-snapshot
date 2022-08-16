@@ -20,6 +20,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
+
 	sglog "github.com/sourcegraph/log"
 
 	sentrylib "github.com/getsentry/sentry-go"
@@ -57,6 +59,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -276,6 +279,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
+	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
@@ -289,7 +293,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.OrgRepositoryResolver,
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
-		enterprise.DependenciesResolver,
 	)
 	if err != nil {
 		return err
@@ -314,6 +317,8 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
 	}
+
+	oce.GlobalExporter = oce.NewDataExporter(db, logger)
 
 	if printLogo {
 		// This is not a log entry and is usually disabled

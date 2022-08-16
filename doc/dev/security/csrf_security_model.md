@@ -213,7 +213,7 @@ Session cookies. Upon page load, users are given the session cookie and the [`se
 2. OR it comes from the Sourcegraph browser extension origin (which is a unique origin ID hash given to browser extensions by Chrome/Firefox)
 3. OR it is an allowed origin in the `corsOrigin` site configuration, it is a non-simple CORS request made with `X-Requested-With: <anything>`
 
-In some cases, e.g. in _Sourcegraph extensions_ (such as the Go code intelligence extension), the Sourcegraph extension will use the Sourcegraph API to generate an API access token and make requests by specifying that token in the `Authorization` header of its requests. This happens both on Sourcegraph.com and from code hosts, as Sourcegraph extensions run both on our website and in our browser extension on other allowed websites.
+In some cases, e.g. in _Sourcegraph extensions_ (such as the Go code navigation extension), the Sourcegraph extension will use the Sourcegraph API to generate an API access token and make requests by specifying that token in the `Authorization` header of its requests. This happens both on Sourcegraph.com and from code hosts, as Sourcegraph extensions run both on our website and in our browser extension on other allowed websites.
 
 ### How we protect against CSRF in API endpoints
 

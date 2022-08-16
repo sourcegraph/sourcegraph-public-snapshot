@@ -13,7 +13,8 @@ type Props = React.PropsWithChildren<
  * The LinkOrSpan component renders a <Link> if the "to" property is a non-empty string; otherwise it renders the
  * text in a <span> (with no link).
  */
-export const LinkOrSpan = React.forwardRef(({ to, className = '', children, ...otherProps }: Props, reference) => {
+// eslint-disable-next-line react/display-name
+const LinkOrSpan = React.forwardRef(({ to, className = '', children, ...otherProps }: Props, reference) => {
     if (to) {
         return (
             <Link ref={reference} to={to} className={className} {...otherProps}>
@@ -28,3 +29,7 @@ export const LinkOrSpan = React.forwardRef(({ to, className = '', children, ...o
         </span>
     )
 }) as ForwardReferenceComponent<typeof Link, Props>
+
+LinkOrSpan.displayName = 'LinkOrSpan'
+
+export { LinkOrSpan }

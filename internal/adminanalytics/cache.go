@@ -90,6 +90,7 @@ func setItemToCache[T interface{}](cacheKey string, summary *T) (bool, error) {
 }
 
 var dateRanges = []string{LastThreeMonths, LastMonth, LastWeek}
+var groupBys = []string{Weekly, Daily}
 
 type CacheAll interface {
 	CacheAll(ctx context.Context) error
@@ -97,17 +98,19 @@ type CacheAll interface {
 
 func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 	for _, dateRange := range dateRanges {
-		stores := []CacheAll{
-			&Search{DateRange: dateRange, DB: db, Cache: true},
-			&Users{DateRange: dateRange, DB: db, Cache: true},
-			&Notebooks{DateRange: dateRange, DB: db, Cache: true},
-			&CodeIntel{DateRange: dateRange, DB: db, Cache: true},
-			&Repos{DB: db, Cache: true},
-			&BatchChanges{DateRange: dateRange, DB: db, Cache: true},
-		}
-		for _, store := range stores {
-			if err := store.CacheAll(ctx); err != nil {
-				return err
+		for _, groupBy := range groupBys {
+			stores := []CacheAll{
+				&Search{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&Users{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&Notebooks{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&CodeIntel{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&Repos{DB: db, Cache: true},
+				&BatchChanges{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
+			}
+			for _, store := range stores {
+				if err := store.CacheAll(ctx); err != nil {
+					return err
+				}
 			}
 		}
 	}

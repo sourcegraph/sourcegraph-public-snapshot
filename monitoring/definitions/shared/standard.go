@@ -29,7 +29,7 @@ func (standardConstructor) Count(legend string) observableConstructor {
 
 	return func(options ObservableConstructorOptions) sharedObservable {
 		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
+			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{
@@ -56,7 +56,7 @@ func (standardConstructor) Duration(legend string) observableConstructor {
 
 	return func(options ObservableConstructorOptions) sharedObservable {
 		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
+			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 			by, _ := makeBy(append([]string{"le"}, options.By...)...)
 
 			observable := Observable{
@@ -99,7 +99,7 @@ func (standardConstructor) Errors(legend string) observableConstructor {
 
 	return func(options ObservableConstructorOptions) sharedObservable {
 		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
+			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{
@@ -128,7 +128,7 @@ func (standardConstructor) ErrorRate(legend string) observableConstructor {
 
 	return func(options ObservableConstructorOptions) sharedObservable {
 		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
+			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{
@@ -136,7 +136,7 @@ func (standardConstructor) ErrorRate(legend string) observableConstructor {
 				Description: fmt.Sprintf("%s%s error rate over 5m", options.MetricDescriptionRoot, legend),
 				Query: fmt.Sprintf(`sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m])) / (sum%[1]s(increase(src_%[2]s_total{%[3]s}[5m])) + sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m]))) * 100`,
 					by, options.MetricNameRoot, filters),
-				Panel: monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s error rate", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData(options.By...)).Unit(monitoring.Percentage).Max(200),
+				Panel: monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s error rate", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData(options.By...)).Unit(monitoring.Percentage).Max(100),
 				Owner: owner,
 			}
 		}
@@ -145,7 +145,7 @@ func (standardConstructor) ErrorRate(legend string) observableConstructor {
 
 // LastOverTime creates a last-over-time aggregate for the error-rate metric, stretching back over the lookback-window time range.
 func (standardConstructor) LastOverTimeErrorRate(containerName string, lookbackWindow model.Duration, options ObservableConstructorOptions) string {
-	filters := makeFilters(containerName, options.Filters...)
+	filters := makeFilters(options.JobLabel, containerName, options.Filters...)
 	by, _ := makeBy(options.By...)
 	return fmt.Sprintf(`last_over_time(sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m]))[%[4]s:]) / (last_over_time(sum%[1]s(increase(src_%[2]s_total{%[3]s}[5m]))[%[4]s:]) + last_over_time(sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m]))[%[4]s:])) * 100`,
 		by, options.MetricNameRoot, filters, lookbackWindow)

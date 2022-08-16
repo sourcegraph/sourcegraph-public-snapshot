@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,7 +40,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	ct.MockRSAKeygen(t)
+	bt.MockRSAKeygen(t)
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -48,7 +48,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	cstore := store.New(db, &observation.TestContext, key)
 	sr := New(cstore)
-	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,8 +62,8 @@ func TestPermissionLevels(t *testing.T) {
 	ctx := context.Background()
 
 	// Global test data that we reuse in every test
-	adminID := ct.CreateTestUser(t, db, true).ID
-	userID := ct.CreateTestUser(t, db, false).ID
+	adminID := bt.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	repoStore := database.ReposWith(logger, cstore)
 	esStore := database.ExternalServicesWith(logger, cstore)
@@ -131,7 +131,7 @@ func TestPermissionLevels(t *testing.T) {
 		// We're using the service method here since it also creates a resolution job
 		svc := service.New(s)
 		spec, err := svc.CreateBatchSpecFromRaw(userCtx, service.CreateBatchSpecFromRawOpts{
-			RawSpec:         ct.TestRawBatchSpecYAML,
+			RawSpec:         bt.TestRawBatchSpecYAML,
 			NamespaceUserID: userID,
 		})
 		if err != nil {
@@ -918,20 +918,20 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							cleanUpBatchChanges(t, cstore)
 
 							batchSpecRandID, batchSpecID := createBatchSpec(t, cstore, tc.batchChangeAuthor)
-							batchChagneID := createBatchChange(t, cstore, "test-batch-change", tc.batchChangeAuthor, batchSpecID)
+							batchChangeID := createBatchChange(t, cstore, "test-batch-change", tc.batchChangeAuthor, batchSpecID)
 
 							// We add the changeset to the batch change. It doesn't
 							// matter for the addChangesetsToBatchChange mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
-							changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChagneID}}
+							changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}}
 							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
 
 							mutation := m.mutationFunc(
 								string(graphqlbackend.MarshalUserID(tc.batchChangeAuthor)),
-								string(marshalBatchChangeID(batchChagneID)),
+								string(marshalBatchChangeID(batchChangeID)),
 								string(marshalChangesetID(changeset.ID)),
 								string(marshalBatchSpecRandID(batchSpecRandID)),
 							)
@@ -947,17 +947,17 @@ query($includeLocallyExecutedSpecs: Boolean) {
 	t.Run("spec mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
-			mutationFunc func(userID string) string
+			mutationFunc func(userID, bcID string) string
 		}{
 			{
 				name: "createChangesetSpec",
-				mutationFunc: func(_ string) string {
+				mutationFunc: func(_, _ string) string {
 					return `mutation { createChangesetSpec(changesetSpec: "{}") { type } }`
 				},
 			},
 			{
 				name: "createBatchSpec",
-				mutationFunc: func(userID string) string {
+				mutationFunc: func(userID, _ string) string {
 					return fmt.Sprintf(`
 					mutation {
 						createBatchSpec(namespace: %q, batchSpec: "{}", changesetSpecs: []) {
@@ -968,13 +968,13 @@ query($includeLocallyExecutedSpecs: Boolean) {
 			},
 			{
 				name: "createBatchSpecFromRaw",
-				mutationFunc: func(userID string) string {
+				mutationFunc: func(userID string, bcID string) string {
 					return fmt.Sprintf(`
 					mutation {
-						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing") {
+						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing", batchChange: %q) {
 							id
 						}
-					}`, userID)
+					}`, userID, bcID)
 				},
 			},
 		}
@@ -991,10 +991,16 @@ query($includeLocallyExecutedSpecs: Boolean) {
 					{name: "site-admin", currentUser: adminID, wantAuthErr: false},
 				}
 
+				const batchChangeIDKind = "BatchChange"
+
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpBatchChanges(t, cstore)
 
+						_, bsID := createBatchSpec(t, cstore, userID)
+						bcID := createBatchChange(t, cstore, "testing", userID, bsID)
+
+						batchChangeID := string(marshalBatchChangeID(bcID))
 						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
 						if tc.currentUser == 0 {
 							// If we don't have a currentUser we try to create
@@ -1002,7 +1008,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							// purposes of this test.
 							namespaceID = string(graphqlbackend.MarshalUserID(userID))
 						}
-						mutation := m.mutationFunc(namespaceID)
+						mutation := m.mutationFunc(namespaceID, batchChangeID)
 
 						assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, false, false, tc.wantAuthErr)
 					})
@@ -1279,7 +1285,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: bstore}
-	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1290,7 +1296,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	mockBackendCommits(t, testRev)
 
 	// Global test data that we reuse in every test
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
@@ -1388,7 +1394,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesets[0].RepoID
 		accessibleRepo := changesets[1].RepoID
-		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
+		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangeset
@@ -1487,7 +1493,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesetSpecs[0].RepoID
 		accessibleRepo := changesetSpecs[1].RepoID
-		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
+		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangesetSpec.
@@ -1563,7 +1569,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we set permissions and filter out the repository of one workspace.
 		filteredRepo := workspaces[0].RepoID
 		accessibleRepo := workspaces[1].RepoID
-		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
+		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenBatchSpecWorkspace.

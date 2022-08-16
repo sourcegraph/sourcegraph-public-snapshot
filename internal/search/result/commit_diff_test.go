@@ -3,6 +3,8 @@ package result
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/hexops/autogold"
 )
 
@@ -46,6 +48,10 @@ func TestParseDiffString(t *testing.T) {
 		panic(err)
 	}
 	autogold.Equal(t, res)
+
+	formatted := FormatDiffFiles(res)
+	require.Equal(t, input, formatted)
+
 }
 
 func TestCommitDiffMatch(t *testing.T) {
