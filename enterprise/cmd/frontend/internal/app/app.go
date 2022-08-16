@@ -47,39 +47,21 @@ func Init(
 	var err error
 	var appID string
 
-	if envvar.SourcegraphDotComMode() {
-		dotcomConfig := conf.SiteConfig().Dotcom
-		if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
-			enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusNotFound)
-					_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is not enabled"))
-				})
-			}
-			return nil
+	gitHubAppConfig := conf.SiteConfig().GitHubApp
+	if !repos.IsGitHubAppEnabled(gitHubAppConfig) {
+		enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte("Sourcegraph GitHub App setup is not enabled"))
+			})
 		}
-		privateKey, err = base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-		if err != nil {
-			return errors.Wrap(err, "decode private key")
-		}
-		appID = dotcomConfig.GithubAppCloud.AppID
-	} else {
-		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		if !repos.IsGitHubAppEnabled(gitHubAppConfig) {
-			enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusNotFound)
-					_, _ = w.Write([]byte("Sourcegraph GitHub App setup is not enabled"))
-				})
-			}
-			return nil
-		}
-		privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
-		if err != nil {
-			return errors.Wrap(err, "decode private key")
-		}
-		appID = gitHubAppConfig.AppID
+		return nil
 	}
+	privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
+	if err != nil {
+		return errors.Wrap(err, "decode private key")
+	}
+	appID = gitHubAppConfig.AppID
 
 	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
 	if err != nil {
@@ -181,28 +163,6 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 				var privateKey []byte
 				var err error
 
-				if envvar.SourcegraphDotComMode() {
-					dotcomConfig := conf.SiteConfig().Dotcom
-
-					privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-					if err != nil {
-						log15.Error("Error while decoding privatekey.", "error", err)
-						w.WriteHeader(http.StatusBadRequest)
-						_, _ = w.Write([]byte(`Error while decoding encryption key`))
-						return
-					}
-					installationID := r.URL.Query().Get("installation_id")
-					encryptedInstallationID, err := EncryptWithPrivateKey(installationID, privateKey)
-					if err != nil {
-						log15.Error("Error while encrypting installation ID.", "error", err)
-						w.WriteHeader(http.StatusBadRequest)
-						_, _ = w.Write([]byte(`Error while encrypting installation ID`))
-						return
-					}
-					base64InstallationID := base64.StdEncoding.EncodeToString(encryptedInstallationID)
-					http.Redirect(w, r, "/install-github-app-success?installation_id="+url.QueryEscape(base64InstallationID), http.StatusFound)
-					return
-				}
 				gitHubAppConfig := conf.SiteConfig().GitHubApp
 				privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
 				if err != nil {

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -70,81 +69,6 @@ type mockDoer struct {
 
 func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
-}
-
-func TestGetRemoteURLFunc_GitHubAppCloud(t *testing.T) {
-	externalServiceStore := database.NewMockExternalServiceStore()
-	externalServiceStore.GetByIDFunc.SetDefaultReturn(
-		&types.ExternalService{
-			ID:   1,
-			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(`
-{
-  "url": "https://github.com",
-  "githubAppInstallationID": "21994992",
-  "repos": []
-}`),
-		},
-		nil,
-	)
-
-	repoStore := database.NewMockRepoStore()
-	repoStore.GetByNameFunc.SetDefaultReturn(
-		&types.Repo{
-			ID:   1,
-			Name: "test-repo-1",
-			Sources: map[string]*types.SourceInfo{
-				"extsvc:github:1": {
-					ID:       "extsvc:github:1",
-					CloneURL: "https://github.com/sgtest/test-repo-1",
-				},
-			},
-			Metadata: &github.Repository{
-				URL: "https://github.com/sgtest/test-repo-1",
-			},
-		},
-		nil,
-	)
-
-	doer := &mockDoer{
-		do: func(r *http.Request) (*http.Response, error) {
-			want := "http://github-proxy/app/installations/21994992/access_tokens"
-			if r.URL.String() != want {
-				return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-			}
-
-			body := `{"token": "mock-installtion-access-token"}`
-			return &http.Response{
-				Status:     http.StatusText(http.StatusOK),
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-			}, nil
-		},
-	}
-
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
-	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			Dotcom: &schema.Dotcom{
-				GithubAppCloud: &schema.GithubAppCloud{
-					AppID:      "404",
-					PrivateKey: bogusKey,
-					Slug:       "test-app",
-				},
-			},
-		},
-	})
-	defer conf.Mock(nil)
-
-	got, err := getRemoteURLFunc(context.Background(), externalServiceStore, repoStore, doer, "test-repo-1")
-	require.NoError(t, err)
-
-	want := "https://x-access-token:mock-installtion-access-token@github.com/sgtest/test-repo-1"
-	assert.Equal(t, want, got)
 }
 
 func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {

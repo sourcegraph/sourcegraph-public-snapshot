@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -87,16 +86,6 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_github_rate_limit_wait_duration_seconds",
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
-
-// IsGitHubAppCloudEnabled returns true if all required configuration options for
-// Sourcegraph Cloud GitHub App are filled by checking the given dotcom config.
-func IsGitHubAppCloudEnabled(dotcom *schema.Dotcom) bool {
-	return dotcom != nil &&
-		dotcom.GithubAppCloud != nil &&
-		dotcom.GithubAppCloud.AppID != "" &&
-		dotcom.GithubAppCloud.PrivateKey != "" &&
-		dotcom.GithubAppCloud.Slug != ""
-}
 
 // IsGitHubAppEnabled returns true if all required configuration options for
 // Sourcegraph GitHub App are filled by checking the given config.
@@ -241,27 +230,17 @@ func newGithubSource(
 	)
 
 	useGitHubApp := false
-	dotcomConfig := conf.SiteConfig().Dotcom
 	gitHubAppConfig := conf.SiteConfig().GitHubApp
 	if c.GithubAppInstallationID != "" &&
-		((envvar.SourcegraphDotComMode() &&
-			IsGitHubAppCloudEnabled(dotcomConfig)) || IsGitHubAppEnabled(gitHubAppConfig)) {
+		IsGitHubAppEnabled(gitHubAppConfig) {
 		var privateKey []byte
 		var appID string
 
-		if dotcomConfig != nil && envvar.SourcegraphDotComMode() {
-			privateKey, err = base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-			if err != nil {
-				return nil, errors.Wrap(err, "decode private key")
-			}
-			appID = dotcomConfig.GithubAppCloud.AppID
-		} else {
-			privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
-			if err != nil {
-				return nil, errors.Wrap(err, "decode private key")
-			}
-			appID = gitHubAppConfig.AppID
+		privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode private key")
 		}
+		appID = gitHubAppConfig.AppID
 
 		auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
 		if err != nil {

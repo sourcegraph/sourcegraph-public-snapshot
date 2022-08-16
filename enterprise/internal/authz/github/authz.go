@@ -119,11 +119,6 @@ func newAuthzProvider(
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		dotcomConfig := conf.SiteConfig().Dotcom
-		if repos.IsGitHubAppCloudEnabled(dotcomConfig) {
-			return newAppProvider(externalServicesStore, c.ExternalService, c.GitHubConnection.URN, baseURL, dotcomConfig.GithubAppCloud.AppID, dotcomConfig.GithubAppCloud.PrivateKey, installationID, nil)
-		}
-
 		gitHubAppConfig := conf.SiteConfig().GitHubApp
 		if repos.IsGitHubAppEnabled(gitHubAppConfig) {
 			return newAppProvider(externalServicesStore, c.ExternalService, c.GitHubConnection.URN, baseURL, gitHubAppConfig.AppID, gitHubAppConfig.PrivateKey, installationID, nil)

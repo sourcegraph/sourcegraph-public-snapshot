@@ -26,7 +26,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -342,13 +341,8 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		var dotcomConfig *schema.Dotcom
-		if envvar.SourcegraphDotComMode() {
-			dotcomConfig = conf.SiteConfig().Dotcom
-		}
 		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		if ((envvar.SourcegraphDotComMode() &&
-			repos.IsGitHubAppCloudEnabled(dotcomConfig)) || repos.IsGitHubAppEnabled(gitHubAppConfig)) &&
+		if repos.IsGitHubAppEnabled(gitHubAppConfig) &&
 			svc.Kind == extsvc.KindGitHub {
 			rawConfig, err := svc.Config.Decrypt(ctx)
 			if err != nil {
@@ -356,7 +350,7 @@ func getRemoteURLFunc(
 			}
 			installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
 			if installationID > 0 {
-				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, dotcomConfig, gitHubAppConfig, installationID, cli)
+				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, gitHubAppConfig, installationID, cli)
 				if err != nil {
 					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
@@ -376,7 +370,6 @@ func editGitHubAppExternalServiceConfigToken(
 	externalServiceStore database.ExternalServiceStore,
 	svc *types.ExternalService,
 	rawConfig string,
-	dotcomConfig *schema.Dotcom,
 	gitHubAppConfig *schema.GitHubApp,
 	installationID int64,
 	cli httpcli.Doer,
@@ -396,14 +389,7 @@ func editGitHubAppExternalServiceConfigToken(
 	var pkey []byte
 	var appID string
 
-	if dotcomConfig != nil && envvar.SourcegraphDotComMode() {
-		pkey, err = base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-		if err != nil {
-			return "", errors.Wrap(err, "decode private key")
-		}
-
-		appID = dotcomConfig.GithubAppCloud.AppID
-	} else if gitHubAppConfig != nil {
+	if gitHubAppConfig != nil {
 		pkey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
 		if err != nil {
 			return "", errors.Wrap(err, "decode private key")
@@ -411,7 +397,7 @@ func editGitHubAppExternalServiceConfigToken(
 
 		appID = gitHubAppConfig.AppID
 	} else {
-		return "", errors.Wrap(err, "no site-level or dotcom GitHub App config found")
+		return "", errors.Wrap(err, "no site-level GitHub App config found")
 	}
 
 	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
