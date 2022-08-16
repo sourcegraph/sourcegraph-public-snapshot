@@ -1115,7 +1115,7 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 	var mapped []string
 
 	for _, reference := range insightReferences {
-		id, _, err := m.lookupUniqueId(ctx, migration, reference)
+		id, _, err := basestore.ScanFirstString(m.insightsStore.Query(ctx, migration.ToInsightUniqueIdQuery(reference)))
 		if err != nil {
 			return err
 		}
@@ -1175,8 +1175,4 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 	}
 
 	return nil
-}
-
-func (m *migrator) lookupUniqueId(ctx context.Context, migration migrationContext, insightId string) (string, bool, error) {
-	return basestore.ScanFirstString(m.insightsStore.Query(ctx, migration.ToInsightUniqueIdQuery(insightId)))
 }
