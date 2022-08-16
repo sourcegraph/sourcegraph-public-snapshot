@@ -13,7 +13,6 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -415,7 +414,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 			return dashboardMigrationErrors
 		}
 	}
-	_, err = m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, migrationContext)
+	err = m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, migrationContext)
 	if err != nil {
 		return err
 	}
@@ -462,27 +461,27 @@ func replaceIfEmpty(firstChoice *string, replacement string) string {
 	return *firstChoice
 }
 
-func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) (*types.Dashboard, error) {
+func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) error {
 	tx, err := m.dashboardStore.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer func() { err = tx.Store.Done(err) }()
 
-	created, err := m.createDashboard(ctx, tx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
+	err = m.createDashboard(ctx, tx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
 	if err != nil {
-		return nil, errors.Wrap(err, "CreateSpecialCaseDashboard")
+		return errors.Wrap(err, "CreateSpecialCaseDashboard")
 	}
-	return created, nil
+	return nil
 }
 
-func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardStore, title string, insightReferences []string, migration migrationContext) (_ *types.Dashboard, err error) {
+func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardStore, title string, insightReferences []string, migration migrationContext) (err error) {
 	var mapped []string
 
 	for _, reference := range insightReferences {
 		id, _, err := m.lookupUniqueId(ctx, migration, reference)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		mapped = append(mapped, id)
 	}
@@ -495,21 +494,51 @@ func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardSto
 	} else {
 		grants = append(grants, store.GlobalDashboardGrant())
 	}
-	created, err := tx.CreateDashboard(ctx, store.CreateDashboardArgs{
-		Dashboard: types.Dashboard{
-			Title:      title,
-			InsightIDs: mapped,
-			Save:       true,
-		},
-		Grants: grants,
-		UserID: []int{migration.userId},
-		OrgID:  migration.orgIds,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "CreateDashboard")
+
+	dashboardId, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+		INSERT INTO dashboard (title, save, type)
+		VALUES (%s, %s, %s)
+		RETURNING id
+	`,
+		title,
+		true,
+		store.Standard,
+	)))
+	if len(mapped) > 0 {
+		// Create rows for an inline table which is used to preserve the ordering of the viewIds.
+		orderings := make([]*sqlf.Query, 0, 1)
+		for i, viewId := range mapped {
+			orderings = append(orderings, sqlf.Sprintf("(%s, %s)", viewId, fmt.Sprintf("%d", i)))
+		}
+
+		err = tx.Exec(ctx, sqlf.Sprintf(`
+			INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+			SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
+			FROM insight_view
+			JOIN (VALUES %s) as ids (id, ordering) ON ids.id = insight_view.unique_id
+			WHERE unique_id = ANY(%s)
+			ORDER BY ids.ordering
+			ON CONFLICT DO NOTHING;
+		`,
+			dashboardId,
+			sqlf.Join(orderings, ","),
+			pq.Array(mapped),
+		))
+		if err != nil {
+			return errors.Wrap(err, "AddViewsToDashboard")
+		}
 	}
 
-	return created, nil
+	values := make([]*sqlf.Query, 0, len(grants))
+	for _, grant := range grants {
+		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s)", dashboardId, grant.UserID, grant.OrgID, grant.Global))
+	}
+	err = tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global) VALUES %s`, sqlf.Join(values, ", ")))
+	if err != nil {
+		return errors.Wrap(err, "AddDashboardGrants")
+	}
+
+	return nil
 }
 
 // migrationContext represents a context for which we are currently migrating. If we are migrating a user setting we would populate this with their
@@ -559,7 +588,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 		return nil
 	}
 
-	_, err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, migrationContext)
+	err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, migrationContext)
 	if err != nil {
 		return err
 	}
