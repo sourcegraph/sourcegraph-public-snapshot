@@ -548,12 +548,3 @@ func updateTimeSeriesReferences(handle *basestore.Store, ctx context.Context, ol
 	}
 	return count, nil
 }
-
-func updateTimeSeriesJobReferences(workerStore *basestore.Store, ctx context.Context, oldId, newId string) error {
-	q := sqlf.Sprintf("update insights_query_runner_jobs set series_id = %s where series_id = %s", newId, oldId)
-	err := workerStore.Exec(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "updateTimeSeriesJobReferences")
-	}
-	return nil
-}

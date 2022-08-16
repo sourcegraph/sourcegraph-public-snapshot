@@ -483,10 +483,10 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				} else {
 					// If the find-replace succeeded, we can do a similar find-replace on the jobs in the queue,
 					// and then stamp the backfill_queued_at on the new series.
-					silentErr = updateTimeSeriesJobReferences(workerStore, ctx, oldId, temp.SeriesID)
-					if silentErr != nil {
+
+					if err := workerStore.Exec(ctx, sqlf.Sprintf("update insights_query_runner_jobs set series_id = %s where series_id = %s", temp.SeriesID, oldId)); err != nil {
 						// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
-						log15.Error("error updating series_id for jobs", "series_id", temp.SeriesID, "err", silentErr)
+						log15.Error("error updating series_id for jobs", "series_id", temp.SeriesID, "err", errors.Wrap(err, "updateTimeSeriesJobReferences"))
 					} else {
 						now := time.Now()
 						silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, series.ID))
