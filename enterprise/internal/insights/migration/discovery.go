@@ -386,10 +386,11 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		series.GenerationMethod,
 		series.GroupBy,
 	)))
-	series.ID = seriesID
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", from.ID)
 	}
+	series.ID = seriesID
+	series.Enabled = true
 
 	metadata := types.InsightViewSeriesMetadata{}
 	err = tx.Exec(ctx, sqlf.Sprintf(`
