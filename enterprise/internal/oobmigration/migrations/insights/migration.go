@@ -507,18 +507,17 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 	}
 
-	if from.UserID != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, user_id) VALUES (%s, %s)`, viewID, *from.UserID)); err != nil {
-			return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
+	grantValues := func() []any {
+		if from.UserID != nil {
+			return []any{viewID, *from.UserID, nil, nil}
 		}
-	} else if from.OrgID != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, org_id) VALUES (%s, %s)`, viewID, *from.OrgID)); err != nil {
-			return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
+		if from.OrgID != nil {
+			return []any{viewID, nil, *from.OrgID, nil}
 		}
-	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, true)`, viewID)); err != nil {
-			return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
-		}
+		return []any{viewID, nil, nil, true}
+	}()
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratormigrateSeriesInsertViewGrantQuery, grantValues...)); err != nil {
+		return err
 	}
 
 	now := time.Now()
@@ -891,18 +890,17 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 		"LINE",
 	)))
 
-	if from.UserID != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, user_id) VALUES (%s, %s)`, viewID, *from.UserID)); err != nil {
-			return err
+	grantValues := func() []any {
+		if from.UserID != nil {
+			return []any{viewID, *from.UserID, nil, nil}
 		}
-	} else if from.OrgID != nil {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, org_id) VALUES (%s, %s)`, viewID, *from.OrgID)); err != nil {
-			return err
+		if from.OrgID != nil {
+			return []any{viewID, nil, *from.OrgID, nil}
 		}
-	} else {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO insight_view_grants (insight_view_id, global) VALUES (%s, true)`, viewID)); err != nil {
-			return err
-		}
+		return []any{viewID, nil, nil, true}
+	}()
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratormigrateSeriesInsertViewGrantQuery, grantValues...)); err != nil {
+		return err
 	}
 
 	for i, insightSeries := range dataSeries {
@@ -931,6 +929,11 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 	}
 	return nil
 }
+
+const insightsMigratormigrateSeriesInsertViewGrantQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:migarte{,LangStat}Series
+INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
+`
 
 func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []settingDashboard, mc migrationContext) (int, error) {
 	var count int
