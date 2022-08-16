@@ -5,7 +5,7 @@
  * ENTERPRISE=1 NODE_ENV=production DISABLE_TYPECHECKING=true WEBPACK_USE_NAMED_CHUNKS=true yarn build-web
  *
  * 2. Upload bundlesize information to Honeycomb:
- * HONEYCOMB_API_KEY=XXX yarn workspace @sourcegraph/observability run bundlesize:web:upload
+ * HONEYCOMB_API_KEY=XXX yarn workspace @sourcegraph/observability-server run bundlesize:web:upload
  *
  * 3. Check out collected data in Honeycomb! 🧠
  */
