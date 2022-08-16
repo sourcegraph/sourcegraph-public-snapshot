@@ -176,7 +176,7 @@ func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []
 
 // canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
 // to be canceled.
-func (h *handler) canceled(ctx context.Context, executorName string, knownIDs []int) (canceledIDs []int, err error) {
+func (h *handler) canceled(ctx context.Context, knownIDs []int) (canceledIDs []int, err error) {
 	canceledIDs, err = h.Store.CanceledJobs(ctx, knownIDs, store.CanceledJobsOptions{})
 	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
 }

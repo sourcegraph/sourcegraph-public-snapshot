@@ -406,7 +406,7 @@ var githubStore = &Store{
 }
 
 func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-	r, err := fetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
+	r, err := fetchTarFromGithubWithPaths(ctx, repo, commit)
 	return r, err
 }
 

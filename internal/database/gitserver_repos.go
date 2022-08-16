@@ -59,7 +59,7 @@ type GitserverRepoStore interface {
 	// ListReposWithoutSize returns a map of repo name to repo ID for repos which do not have a repo_size_bytes.
 	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
 	// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
-	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (int, error)
+	UpdateRepoSizes(ctx context.Context, repos map[api.RepoID]int64) (int, error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -560,14 +560,14 @@ JOIN gitserver_repos gr ON gr.repo_id = repo.id
 WHERE gr.repo_size_bytes IS NULL
 `
 
-func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (updated int, err error) {
+func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, repos map[api.RepoID]int64) (updated int, err error) {
 	// NOTE: We have two args per row, so rows*2 should be less than maximum
 	// Postgres allows.
 	const batchSize = batch.MaxNumPostgresParameters / 2
-	return s.updateRepoSizesWithBatchSize(ctx, shardID, repos, batchSize)
+	return s.updateRepoSizesWithBatchSize(ctx, repos, batchSize)
 }
 
-func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, shardID string, repos map[api.RepoID]int64, batchSize int) (updated int, err error) {
+func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, repos map[api.RepoID]int64, batchSize int) (updated int, err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return 0, err

@@ -34,10 +34,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
+
+	"golang.org/x/net/html"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"golang.org/x/net/html"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -45,11 +45,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// rateLimitingWaitThreshold is maximum rate limiting wait duration after which
-// a warning log is produced to help site admins debug why syncing may be taking
-// longer than expected.
-const rateLimitingWaitThreshold = 200 * time.Millisecond
 
 type Client struct {
 	// A list of PyPI proxies. Each url should point to the root of the simple-API.

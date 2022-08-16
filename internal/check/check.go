@@ -71,7 +71,6 @@ func (hc *HealthChecker) Init() {
 				time.Sleep(c.Interval)
 
 				ctx, cancel := context.WithTimeout(context.Background(), timeout)
-				defer cancel()
 
 				res, err := c.Run(ctx)
 				if err != nil {
@@ -86,6 +85,8 @@ func (hc *HealthChecker) Init() {
 
 				b, _ := json.Marshal(res)
 				out.Set(string(b))
+
+				cancel()
 			}
 		}(check)
 	}

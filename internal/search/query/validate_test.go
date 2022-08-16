@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -114,7 +113,7 @@ func TestValidation(t *testing.T) {
 		t.Run("validate and/or query", func(t *testing.T) {
 			_, err := Pipeline(Init(c.input, c.searchType))
 			if err == nil {
-				t.Fatal(fmt.Sprintf("expected test for %s to fail", c.input))
+				t.Fatalf("expected test for %s to fail", c.input)
 			}
 			if diff := cmp.Diff(c.want, err.Error()); diff != "" {
 				t.Fatal(diff)

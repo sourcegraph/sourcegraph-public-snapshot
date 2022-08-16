@@ -16,7 +16,6 @@ import (
 func Test_applyCodeOwnershipFiltering(t *testing.T) {
 	type args struct {
 		includeOwners []string
-		excludeOwners []string
 		matches       []result.Match
 		repoContent   map[string]string
 	}
@@ -29,7 +28,6 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			name: "filters all matches if we include an owner and have no code owners file",
 			args: args{
 				includeOwners: []string{"@sqs"},
-				excludeOwners: []string{},
 				matches: []result.Match{
 					&result.FileMatch{
 						File: result.File{
@@ -44,7 +42,6 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			name: "filters results based on code owners file",
 			args: args{
 				includeOwners: []string{"@sqs"},
-				excludeOwners: []string{},
 				matches: []result.Match{
 					&result.FileMatch{
 						File: result.File{
@@ -73,7 +70,6 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			name: "filters results based on code owners file in a subdirectory",
 			args: args{
 				includeOwners: []string{"@sqs"},
-				excludeOwners: []string{},
 				matches: []result.Match{
 					&result.FileMatch{
 						File: result.File{
@@ -115,7 +111,7 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			}
 			t.Cleanup(func() { gitserver.Mocks.ReadFile = nil })
 
-			matches, _ := applyCodeOwnershipFiltering(ctx, gitserver.NewClient(db), &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
+			matches, _ := applyCodeOwnershipFiltering(ctx, gitserver.NewClient(db), &rules, tt.args.includeOwners, tt.args.matches)
 
 			tt.want.Equal(t, matches)
 		})

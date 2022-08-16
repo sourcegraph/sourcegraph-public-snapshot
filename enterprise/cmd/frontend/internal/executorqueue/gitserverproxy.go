@@ -43,7 +43,6 @@ func gitserverProxy(gitserverClient GitserverClient, gitPath string) http.Handle
 			Transport: httpcli.InternalClient.Transport,
 		}
 		p.ServeHTTP(w, r)
-		return
 	})
 }
 

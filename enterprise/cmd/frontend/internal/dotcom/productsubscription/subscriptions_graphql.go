@@ -30,30 +30,29 @@ import (
 
 // productSubscription implements the GraphQL type ProductSubscription.
 type productSubscription struct {
-	logger log.Logger
-	db     database.DB
-	v      *dbSubscription
+	db database.DB
+	v  *dbSubscription
 }
 
 // ProductSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
 // ID. If no such ProductSubscription exists, it returns a non-nil error.
 func (p ProductSubscriptionLicensingResolver) ProductSubscriptionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductSubscription, error) {
-	return productSubscriptionByID(ctx, p.logger, p.DB, id)
+	return productSubscriptionByID(ctx, p.DB, id)
 }
 
 // productSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
 // ID. If no such ProductSubscription exists, it returns a non-nil error.
-func productSubscriptionByID(ctx context.Context, logger log.Logger, db database.DB, id graphql.ID) (*productSubscription, error) {
+func productSubscriptionByID(ctx context.Context, db database.DB, id graphql.ID) (*productSubscription, error) {
 	idString, err := unmarshalProductSubscriptionID(id)
 	if err != nil {
 		return nil, err
 	}
-	return productSubscriptionByDBID(ctx, logger, db, idString)
+	return productSubscriptionByDBID(ctx, db, idString)
 }
 
 // productSubscriptionByDBID looks up and returns the ProductSubscription with the given database
 // ID. If no such ProductSubscription exists, it returns a non-nil error.
-func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db database.DB, id string) (*productSubscription, error) {
+func productSubscriptionByDBID(ctx context.Context, db database.DB, id string) (*productSubscription, error) {
 	v, err := dbSubscriptions{db: db}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -202,7 +201,7 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 	if err != nil {
 		return nil, err
 	}
-	return productSubscriptionByDBID(ctx, r.logger, r.DB, id)
+	return productSubscriptionByDBID(ctx, r.DB, id)
 }
 
 func (r ProductSubscriptionLicensingResolver) SetProductSubscriptionBilling(ctx context.Context, args *graphqlbackend.SetProductSubscriptionBillingArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -212,7 +211,7 @@ func (r ProductSubscriptionLicensingResolver) SetProductSubscriptionBilling(ctx 
 	}
 
 	// Ensure the args refer to valid subscriptions in the database and in the billing system.
-	dbSub, err := productSubscriptionByID(ctx, r.logger, r.DB, args.ID)
+	dbSub, err := productSubscriptionByID(ctx, r.DB, args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +319,7 @@ func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx 
 		return nil, err
 	}
 
-	sub, err := productSubscriptionByDBID(ctx, r.logger, r.DB, subID)
+	sub, err := productSubscriptionByDBID(ctx, r.DB, subID)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +327,7 @@ func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx 
 }
 
 func (r ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx context.Context, args *graphqlbackend.UpdatePaidProductSubscriptionArgs) (*graphqlbackend.UpdatePaidProductSubscriptionResult, error) {
-	subToUpdate, err := productSubscriptionByID(ctx, r.logger, r.DB, args.SubscriptionID)
+	subToUpdate, err := productSubscriptionByID(ctx, r.DB, args.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -454,7 +453,7 @@ func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx con
 		return nil, err
 	}
 
-	sub, err := productSubscriptionByID(ctx, r.logger, r.DB, args.ID)
+	sub, err := productSubscriptionByID(ctx, r.DB, args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -467,7 +466,7 @@ func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx con
 func (r ProductSubscriptionLicensingResolver) ProductSubscription(ctx context.Context, args *graphqlbackend.ProductSubscriptionArgs) (graphqlbackend.ProductSubscription, error) {
 	// 🚨 SECURITY: Only site admins and the subscription's account owner may get a product
 	// subscription. This check is performed in productSubscriptionByDBID.
-	return productSubscriptionByDBID(ctx, r.logger, r.DB, args.UUID)
+	return productSubscriptionByDBID(ctx, r.DB, args.UUID)
 }
 
 func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.Context, args *graphqlbackend.ProductSubscriptionsArgs) (graphqlbackend.ProductSubscriptionConnection, error) {

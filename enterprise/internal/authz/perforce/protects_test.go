@@ -3,7 +3,6 @@ package perforce
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -107,7 +106,7 @@ func TestConvertToGlobMatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := convertToGlobMatch(tt.match)
 			if err != nil {
-				t.Fatal(fmt.Sprintf("unexpected error: %+v", err))
+				t.Fatalf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(tt.want, got.pattern); diff != "" {
 				t.Fatal(diff)

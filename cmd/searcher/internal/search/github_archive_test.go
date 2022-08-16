@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func fetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+func fetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 	// key is a sha256 hash since we want to use it for the disk name
 	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
 	key := hex.EncodeToString(h[:])

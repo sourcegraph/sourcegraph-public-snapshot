@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -19,7 +18,6 @@ import (
 )
 
 func init() {
-	maximumRepositoriesInspectedPerSecond = rate.Inf
 	maximumIndexJobsPerInferredConfiguration = 50
 }
 

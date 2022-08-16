@@ -50,7 +50,7 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 	)
 
 	// Run go generate [./...]
-	if err := runGoGenerate(ctx, args, progressBar, verbosity, reportOut, &sb); err != nil {
+	if err := runGoGenerate(ctx, args, progressBar, verbosity, reportOut); err != nil {
 		return &generate.Report{Output: sb.String(), Err: err}
 	}
 
@@ -128,13 +128,13 @@ func FindFilesWithGenerate(dir string) ([]string, error) {
 	return pkgPaths, nil
 }
 
-func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) (err error) {
+func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosity OutputVerbosityType, reportOut *std.Output) (err error) {
 	// Use the given packages.
 	if len(args) != 0 {
 		if verbosity != QuietOutput {
 			reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate %s", strings.Join(args, " ")))
 		}
-		if err := runGoGenerateOnPaths(ctx, args, progressBar, verbosity, reportOut, w); err != nil {
+		if err := runGoGenerateOnPaths(ctx, args, progressBar, verbosity); err != nil {
 			return errors.Wrap(err, "go generate")
 		}
 
@@ -163,7 +163,7 @@ func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosi
 	if verbosity != QuietOutput {
 		reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
 	}
-	if err := runGoGenerateOnPaths(ctx, filtered, progressBar, verbosity, reportOut, w); err != nil {
+	if err := runGoGenerateOnPaths(ctx, filtered, progressBar, verbosity); err != nil {
 		return errors.Wrap(err, "go generate")
 	}
 
@@ -173,7 +173,7 @@ func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosi
 // For debugging
 const showTimings = false
 
-func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) (err error) {
+func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType) (err error) {
 	var (
 		done     = 0.0
 		total    = float64(len(pkgPaths))

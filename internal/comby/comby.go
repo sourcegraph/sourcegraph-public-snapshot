@@ -204,7 +204,7 @@ func StartAndWaitForCompletion(cmd *exec.Cmd) error {
 
 	if err := cmd.Wait(); err != nil {
 		if len(b.Bytes()) > 0 {
-			log15.Error("failed to execute comby command", "error", string(b.Bytes()))
+			log15.Error("failed to execute comby command", "error", b.String())
 			msg := fmt.Sprintf("failed to wait for executing comby command: comby error: %s", b.Bytes())
 			return errors.Wrap(err, msg)
 		}

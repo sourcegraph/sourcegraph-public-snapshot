@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -443,9 +442,4 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	}
 
 	return conds
-}
-
-func rawMessagePtr(s string) *json.RawMessage {
-	msg := json.RawMessage(s)
-	return &msg
 }

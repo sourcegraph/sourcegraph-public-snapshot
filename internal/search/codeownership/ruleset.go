@@ -70,6 +70,8 @@ func loadOwnershipFile(ctx context.Context, gitserver gitserver.Client, repoName
 
 		if err == nil && content != nil {
 			return content, nil
+		} else if err != nil {
+			return nil, err
 		}
 	}
 

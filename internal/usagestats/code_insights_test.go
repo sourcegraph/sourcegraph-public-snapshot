@@ -3,7 +3,6 @@ package usagestats
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -170,7 +169,7 @@ func TestWithCreationPings(t *testing.T) {
 	}
 
 	if !cmp.Equal(want, got) {
-		t.Fatal(fmt.Sprintf("want: %v got: %v", want, got))
+		t.Fatalf("want: %v got: %v", want, got)
 	}
 }
 

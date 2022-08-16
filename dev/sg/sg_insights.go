@@ -119,5 +119,5 @@ func decodeIDIntoUniqueViewID(id string) (string, error) {
 	if !strings.Contains(sDecoded, "insight_view") {
 		return "", errors.Newf("decoded id is not an insight_view id: %s", sDecoded)
 	}
-	return strings.Trim(strings.TrimLeft(sDecoded, "insight_view:"), "\""), nil
+	return strings.Trim(strings.TrimPrefix(sDecoded, "insight_view:"), "\""), nil
 }

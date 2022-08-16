@@ -36,7 +36,7 @@ func AddLog(logger log.Logger, commandName string, factory RunnerFactory, outFac
 			upFlag      = upFlag.Get(cmd)
 		)
 
-		_, store, err := setupStore(ctx, factory, schemaName)
+		store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
 		}

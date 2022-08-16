@@ -60,10 +60,6 @@ var dependencySyncingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.upload_id"),
 }
 
-// scanDependencySyncingJobs scans a slice of dependency syncing jobs from the return value of
-// `*Store.query`.
-var scanDependencySyncingJobs = basestore.NewSliceScanner(scanDependencySyncingJob)
-
 // scanFirstDependencySyncingingJob scans a slice of dependency indexing jobs from the return
 // value of `*Store.query` and returns the first.
 var scanFirstDependencySyncingingJob = basestore.NewFirstScanner(scanDependencySyncingJob)
@@ -123,10 +119,6 @@ var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_kind"),
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_sync"),
 }
-
-// scanDependencyIndexingJobs scans a slice of dependency indexing jobs from the return value of
-// `*Store.query`.
-var scanDependencyIndexingJobs = basestore.NewSliceScanner(scanDependencyIndexingJob)
 
 // scanFirstDependencyIndexingJob scans a slice of dependency indexing jobs from the return
 // value of `*Store.query` and returns the first.

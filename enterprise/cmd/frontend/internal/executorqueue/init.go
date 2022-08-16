@@ -22,7 +22,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
 	codeintelUploadHandler http.Handler,
-) error {
+) {
 	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
 
 	// Register queues. If this set changes, be sure to also update the list of valid
@@ -33,11 +33,7 @@ func Init(
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 
-	queueHandler, err := newExecutorQueueHandler(db, queueOptions, accessToken, codeintelUploadHandler)
-	if err != nil {
-		return err
-	}
+	queueHandler := newExecutorQueueHandler(db, queueOptions, accessToken, codeintelUploadHandler)
 
 	enterpriseServices.NewExecutorProxyHandler = queueHandler
-	return nil
 }

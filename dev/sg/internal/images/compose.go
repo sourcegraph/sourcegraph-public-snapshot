@@ -19,7 +19,7 @@ import (
 // updates Sourcegraph images in each.
 func UpdateCompose(path string, creds credentials.Credentials, pinTag string) error {
 	var checked int
-	if err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+	if err := filepath.WalkDir(path, func(path string, d fs.DirEntry, _ error) error {
 		if d.IsDir() {
 			return nil
 		}

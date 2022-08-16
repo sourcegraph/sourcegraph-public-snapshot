@@ -509,14 +509,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "CreateView")
 	}
 
-	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, r.insightEnqueuer, view, series)
+		_, err := createAndAttachSeries(ctx, insightTx, r.backfiller, r.insightEnqueuer, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
-		}
-		if len(c.Repositories) > 0 {
-			scoped = append(scoped, *c)
 		}
 	}
 
@@ -1109,15 +1105,6 @@ func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlba
 	return false
 }
 
-func getExistingSeriesRepositories(seriesId string, existingSeries []types.InsightViewSeries) []string {
-	for i := range existingSeries {
-		if existingSeries[i].SeriesID == seriesId {
-			return existingSeries[i].Repositories
-		}
-	}
-	return nil
-}
-
 func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.DeleteInsightViewArgs) (*graphqlbackend.EmptyResponse, error) {
 	var viewId string
 	err := relay.UnmarshalSpec(args.Id, &viewId)
@@ -1247,7 +1234,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
 	sort.SliceStable(resolvers, func(i, j int) bool {
 		hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-		if hasSemVar == true {
+		if hasSemVar {
 			return result
 		}
 		return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) < 0
@@ -1271,7 +1258,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 		} else {
 			sort.SliceStable(resolvers, func(i, j int) bool {
 				hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-				if hasSemVar == true {
+				if hasSemVar {
 					return !result
 				}
 				return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) > 0

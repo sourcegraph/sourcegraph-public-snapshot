@@ -64,10 +64,7 @@ func TestFilterRemoteExtensions(t *testing.T) {
 			defer conf.Mock(nil)
 		}
 
-		var xs []*registry.Extension
-		for _, x := range extensions {
-			xs = append(xs, x)
-		}
+		xs := append([]*registry.Extension{}, extensions...)
 		got := []string{}
 		for _, x := range frontendregistry.FilterRemoteExtensions(xs) {
 			got = append(got, x.ExtensionID)

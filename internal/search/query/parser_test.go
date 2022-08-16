@@ -43,7 +43,7 @@ func TestParseParameterList(t *testing.T) {
 		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | allowDanglingParens}
 		result, err := parser.parseLeaves(Regexp)
 		if err != nil {
-			t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
+			t.Fatalf("Unexpected error: %s", err)
 		}
 		resultNode := result[0]
 		got, _ := json.Marshal(resultNode)
@@ -195,7 +195,7 @@ func TestScanPredicate(t *testing.T) {
 		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | allowDanglingParens}
 		result, err := parser.parseLeaves(Regexp)
 		if err != nil {
-			t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
+			t.Fatalf("Unexpected error: %s", err)
 		}
 		resultNode := result[0]
 		got, _ := json.Marshal(resultNode)

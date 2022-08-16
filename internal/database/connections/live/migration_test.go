@@ -31,7 +31,7 @@ func TestMigrations(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			testMigrations(t, name, schema)
-			testMigrationIdempotency(t, name, schema)
+			testMigrationIdempotency(t, schema)
 		})
 	}
 }
@@ -115,7 +115,7 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 	})
 }
 
-func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema) {
+func testMigrationIdempotency(t *testing.T, schema *schemas.Schema) {
 	t.Helper()
 
 	logger := logtest.Scoped(t)

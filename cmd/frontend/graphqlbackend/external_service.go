@@ -211,12 +211,11 @@ type externalServiceSyncJobsArgs struct {
 	First *int32
 }
 
-func (r *externalServiceResolver) SyncJobs(ctx context.Context, args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
-	return newExternalServiceSyncJobConnectionResolver(ctx, r.db, args, r.externalService.ID)
+func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
+	return newExternalServiceSyncJobConnectionResolver(r.db, args, r.externalService.ID)
 }
 
 type externalServiceSyncJobConnectionResolver struct {
-	logger            log.Logger
 	args              *externalServiceSyncJobsArgs
 	externalServiceID int64
 	db                database.DB
@@ -227,7 +226,7 @@ type externalServiceSyncJobConnectionResolver struct {
 	err        error
 }
 
-func newExternalServiceSyncJobConnectionResolver(ctx context.Context, db database.DB, args *externalServiceSyncJobsArgs, externalServiceID int64) (*externalServiceSyncJobConnectionResolver, error) {
+func newExternalServiceSyncJobConnectionResolver(db database.DB, args *externalServiceSyncJobsArgs, externalServiceID int64) (*externalServiceSyncJobConnectionResolver, error) {
 	return &externalServiceSyncJobConnectionResolver{
 		args:              args,
 		externalServiceID: externalServiceID,

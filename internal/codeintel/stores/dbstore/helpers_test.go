@@ -479,19 +479,6 @@ func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
 	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-func getIndexStates(db database.DB, ids ...int) (map[int]string, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	q := sqlf.Sprintf(
-		`SELECT id, state FROM lsif_indexes WHERE id IN (%s)`,
-		sqlf.Join(intsToQueries(ids), ", "),
-	)
-
-	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
-}
-
 // scanStates scans pairs of id/states from the return value of `*Store.query`.
 func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
 	if queryErr != nil {

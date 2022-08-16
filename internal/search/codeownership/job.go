@@ -15,11 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func New(child job.Job, includeOwners, excludeOwners []string) job.Job {
+func New(child job.Job, includeOwners []string) job.Job {
 	return &codeownershipJob{
 		child:         child,
 		includeOwners: includeOwners,
-		excludeOwners: excludeOwners,
 	}
 }
 
@@ -27,7 +26,6 @@ type codeownershipJob struct {
 	child job.Job
 
 	includeOwners []string
-	excludeOwners []string
 }
 
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -43,7 +41,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.Gitserver, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.Gitserver, &rules, s.includeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -70,7 +68,6 @@ func (s *codeownershipJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	case job.VerbosityBasic:
 		res = append(res,
 			trace.Strings("includeOwners", s.includeOwners),
-			trace.Strings("excludeOwners", s.excludeOwners),
 		)
 	}
 	return res
@@ -90,8 +87,7 @@ func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	gitserver gitserver.Client,
 	rules *RulesCache,
-	includeOwners,
-	excludeOwners []string,
+	includeOwners []string,
 	matches []result.Match) ([]result.Match, error) {
 	var errs error
 

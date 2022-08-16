@@ -24,4 +24,5 @@ func (r *scheduler) Handle(ctx context.Context) error {
 }
 
 func (r *scheduler) HandleError(err error) {
+	r.handleError(err)
 }

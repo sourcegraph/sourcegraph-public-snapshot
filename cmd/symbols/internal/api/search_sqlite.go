@@ -76,7 +76,6 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 			}
 
 			err = errors.Newf("Processing symbols using the SQLite backend is taking a while on this %s repository. %s", humanize.Bytes(uint64(size)), help)
-			return
 		}()
 
 		dbFile, err := cachedDatabaseWriter.GetOrCreateDatabaseFile(ctx, args)

@@ -228,14 +228,17 @@ func addSentry(r *mux.Router) {
 		// opened any longer.
 		go func() {
 			resp, err := client.Post(url, "text/plain;charset=UTF-8", bytes.NewReader(b))
-			if err != nil || resp.StatusCode >= 400 {
+			if err != nil {
+				logger.Warn("failed to forward", sglog.Error(err))
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode >= 400 {
 				logger.Warn("failed to forward", sglog.Error(err), sglog.Int("statusCode", resp.StatusCode))
 				return
 			}
 		}()
 
 		w.WriteHeader(http.StatusOK)
-		return
 	})
 }
 

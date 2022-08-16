@@ -26,9 +26,6 @@ func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration IndexConfigura
 	)
 }
 
-// scanIndexConfigurations scans a slice of index configurations from the return value of `*Store.query`.
-var scanIndexConfigurations = basestore.NewSliceScanner(scanIndexConfiguration)
-
 // scanFirstIndexConfiguration scans a slice of index configurations from the return value of `*Store.query`
 // and returns the first.
 var scanFirstIndexConfiguration = basestore.NewFirstScanner(scanIndexConfiguration)

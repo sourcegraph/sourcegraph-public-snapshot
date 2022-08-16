@@ -103,25 +103,6 @@ func testViaMigrationLogs(t *testing.T, schemaName string, initialVersion int, e
 	})
 }
 
-// setupMigrationLogsTest populates the migration_logs table with the given version.
-func setupMigrationLogsTest(ctx context.Context, store *Store, schemaName string, version int) error {
-	return store.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO migration_logs (
-			migration_logs_schema_version,
-			schema,
-			version,
-			up,
-			started_at,
-			finished_at,
-			success
-		) VALUES (%s, %s, %s, true, NOW(), NOW(), true)
-	`,
-		currentMigrationLogSchemaVersion,
-		schemaName,
-		version,
-	))
-}
-
 // testBackfillSchemaVersion runs the given setup function prior to backfilling a test
 // migration store. The versions available post-backfill are checked against the given
 // expected versions.

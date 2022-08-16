@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
@@ -85,7 +84,6 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob
 
 	dataSeriesStore := store.NewMockDataSeriesStore()
-	featureStore := database.NewMockFeatureFlagStore()
 
 	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]types.InsightSeries{
 		{
@@ -102,7 +100,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 		},
 	}, nil)
 
-	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore, featureStore); err != nil {
+	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore); err != nil {
 		t.Fatal(err)
 	}
 

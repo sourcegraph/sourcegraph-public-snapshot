@@ -11,8 +11,6 @@ import (
 )
 
 func TestPackagesSource_GetRepo(t *testing.T) {
-	ctx := context.Background()
-
 	dummySrc := &dummyPackagesSource{}
 	src := &PackagesSource{src: dummySrc, svc: &types.ExternalService{
 		ID:     1,
@@ -20,7 +18,7 @@ func TestPackagesSource_GetRepo(t *testing.T) {
 		Config: extsvc.NewEmptyConfig(),
 	}}
 
-	src.GetRepo(ctx, "go/github.com/sourcegraph-testing/go-repo-a")
+	src.GetRepo("go/github.com/sourcegraph-testing/go-repo-a")
 
 	if !dummySrc.parsePackageFromRepoNameCalled {
 		t.Fatalf("expected ParsePackageFromRepoName to be called, was not")

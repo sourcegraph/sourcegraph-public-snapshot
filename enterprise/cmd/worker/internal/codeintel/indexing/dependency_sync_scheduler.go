@@ -41,7 +41,7 @@ func NewDependencySyncScheduler(
 ) *workerutil.Worker {
 	// Init metrics here now after we've moved the autoindexing scheduler
 	// into the autoindexing service
-	newOperations(observationContext)
+	_ = newOperations(observationContext)
 
 	rootContext := actor.WithInternalActor(context.Background())
 

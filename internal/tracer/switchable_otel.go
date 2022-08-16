@@ -16,8 +16,7 @@ import (
 // The underlying opentracer used is switchable (set via the `set` method), so as to
 // support live configuration.
 type switchableOtelTracerProvider struct {
-	logger       log.Logger
-	noopProvider oteltrace.TracerProvider
+	logger log.Logger
 
 	v *atomic.Value
 }

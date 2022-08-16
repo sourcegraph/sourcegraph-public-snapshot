@@ -568,7 +568,7 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 
 	for _, sourcedCommits := range batch {
 		for _, commit := range sourcedCommits.Commits {
-			commitDateString, err := s.getCommitDate(ctx, tx, sourcedCommits.RepositoryID, commit)
+			commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryID, commit)
 			if err != nil {
 				return err
 			}
@@ -588,7 +588,7 @@ func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (
 	return nil
 }
 
-func (m *Service) getCommitDate(ctx context.Context, tx store.Store, repositoryID int, commit string) (string, error) {
+func (m *Service) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {
 	_, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
 	if err != nil && !gitdomain.IsRepoNotExist(err) {
 		return "", errors.Wrap(err, "gitserver.CommitDate")

@@ -19,8 +19,6 @@ import (
 // 	return value
 // }
 
-const logPrefix = "codeintel.uploads.transport.http"
-
 func handleErr(w http.ResponseWriter, err error, logMessage string, statusCode int) {
 	logger := log.Scoped("codeintel.uploads.transport.http", "")
 	if statusCode >= 500 {

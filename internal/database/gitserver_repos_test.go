@@ -874,7 +874,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 		repo2.ID: 500,
 		repo3.ID: 800,
 	}
-	numUpdated, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	numUpdated, err := db.GitserverRepos().UpdateRepoSizes(ctx, sizes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -908,7 +908,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 
 	// update again to make sure they're not updated again
-	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, sizes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -920,7 +920,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	sizes = map[api.RepoID]int64{
 		repo3.ID: 900,
 	}
-	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, sizes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -937,7 +937,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 			repo3.ID: 789 + batchSize,
 		}
 
-		numUpdated, err = gitserverRepoStore.updateRepoSizesWithBatchSize(ctx, shardID, sizes, int(batchSize))
+		numUpdated, err = gitserverRepoStore.updateRepoSizesWithBatchSize(ctx, sizes, int(batchSize))
 		if err != nil {
 			t.Fatal(err)
 		}

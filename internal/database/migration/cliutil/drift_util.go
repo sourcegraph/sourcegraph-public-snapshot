@@ -50,7 +50,7 @@ func compareSchemaDescriptions(out *output.Output, schemaName, version string, a
 	return err
 }
 
-func compareExtensions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareExtensions(out *output.Output, _, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(wrapStrings(actual.Extensions), wrapStrings(expected.Extensions), func(extension *stringNamer, expectedExtension stringNamer) bool {
 		if extension == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing extension %q", expectedExtension)))
@@ -62,7 +62,7 @@ func compareExtensions(out *output.Output, schemaName, version string, actual, e
 	}, noopAdditionalCallback[stringNamer])
 }
 
-func compareEnums(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareEnums(out *output.Output, _, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(actual.Enums, expected.Enums, func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) bool {
 		quotedLabels := make([]string, 0, len(expectedEnum.Labels))
 		for _, label := range expectedEnum.Labels {
@@ -90,7 +90,7 @@ func compareEnums(out *output.Output, schemaName, version string, actual, expect
 	}, noopAdditionalCallback[schemas.EnumDescription])
 }
 
-func compareFunctions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareFunctions(out *output.Output, _, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(actual.Functions, expected.Functions, func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) bool {
 		definitionStmt := fmt.Sprintf("%s;", strings.TrimSpace(expectedFunction.Definition))
 
@@ -141,10 +141,10 @@ func compareTables(out *output.Output, schemaName, version string, actual, expec
 
 		outOfSync := false
 		outOfSync = compareColumns(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareConstraints(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareIndexes(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareTriggers(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareTableComments(out, schemaName, version, *table, expectedTable) || outOfSync
+		outOfSync = compareConstraints(out, version, *table, expectedTable) || outOfSync
+		outOfSync = compareIndexes(out, version, *table, expectedTable) || outOfSync
+		outOfSync = compareTriggers(out, version, *table, expectedTable) || outOfSync
+		outOfSync = compareTableComments(out, version, *table, expectedTable) || outOfSync
 		return outOfSync
 	}, noopAdditionalCallback[schemas.TableDescription])
 }
@@ -210,7 +210,7 @@ func compareColumns(out *output.Output, schemaName, version string, actualTable,
 	})
 }
 
-func compareConstraints(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareConstraints(out *output.Output, _ string, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) bool {
 		createConstraintStmt := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", expectedTable.Name, expectedConstraint.Name, expectedConstraint.ConstraintDefinition)
 		dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, expectedConstraint.Name)
@@ -236,7 +236,7 @@ func compareConstraints(out *output.Output, schemaName, version string, actualTa
 	})
 }
 
-func compareIndexes(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareIndexes(out *output.Output, _ string, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) bool {
 		var createIndexStmt string
 		switch expectedIndex.ConstraintType {
@@ -270,7 +270,7 @@ func compareIndexes(out *output.Output, schemaName, version string, actualTable,
 	})
 }
 
-func compareTriggers(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareTriggers(out *output.Output, _ string, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) bool {
 		createTriggerStmt := fmt.Sprintf("%s;", expectedTrigger.Definition)
 		dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", expectedTrigger.Name, expectedTable.Name)
@@ -297,7 +297,7 @@ func compareTriggers(out *output.Output, schemaName, version string, actualTable
 	})
 }
 
-func compareTableComments(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareTableComments(out *output.Output, _ string, actualTable, expectedTable schemas.TableDescription) bool {
 	if actualTable.Comment != expectedTable.Comment {
 		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
 		setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
@@ -308,7 +308,7 @@ func compareTableComments(out *output.Output, schemaName, version string, actual
 	return false
 }
 
-func compareViews(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
+func compareViews(out *output.Output, _, version string, actual, expected schemas.SchemaDescription) bool {
 	return compareNamedLists(actual.Views, expected.Views, func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) bool {
 		// pgsql has weird indents here
 		viewDefinition := strings.TrimSpace(stripIndent(" " + expectedView.Definition))

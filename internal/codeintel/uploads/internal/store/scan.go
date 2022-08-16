@@ -12,14 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func scanUpload(s dbutil.Scanner) (upload shared.Upload, err error) {
-	return upload, s.Scan(
-		&upload.ID,
-	)
-}
-
-var scanUploads = basestore.NewSliceScanner(scanUpload)
-
 var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCount)
 
 func scanUploadWithCount(s dbutil.Scanner) (upload shared.Upload, count int, err error) {

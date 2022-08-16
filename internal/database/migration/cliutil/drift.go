@@ -26,7 +26,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		schemaName := schemaNameFlag.Get(cmd)
 		version := versionFlag.Get(cmd)
 
-		_, store, err := setupStore(ctx, factory, schemaName)
+		store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
 		}

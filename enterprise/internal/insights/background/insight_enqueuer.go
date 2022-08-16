@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
@@ -23,7 +22,7 @@ import (
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, featureFlagStore database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_enqueuer",
@@ -45,7 +44,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 		func(ctx context.Context) error {
 			ie := NewInsightEnqueuer(time.Now, workerBaseStore)
 
-			return ie.discoverAndEnqueueInsights(ctx, insightStore, featureFlagStore)
+			return ie.discoverAndEnqueueInsights(ctx, insightStore)
 		},
 	), operation)
 }
@@ -68,7 +67,6 @@ func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store) 
 func (ie *InsightEnqueuer) discoverAndEnqueueInsights(
 	ctx context.Context,
 	insightStore store.DataSeriesStore,
-	ffs database.FeatureFlagStore,
 ) error {
 	var multi error
 

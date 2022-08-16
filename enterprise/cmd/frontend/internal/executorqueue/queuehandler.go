@@ -16,7 +16,7 @@ import (
 	executorDB "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db"
 )
 
-func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
+func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) func() http.Handler {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := executorDB.New(db)
 	gitserverClient := gitserver.NewClient(db)
@@ -39,7 +39,7 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 		return actor.HTTPMiddleware(authMiddleware(accessToken, base))
 	}
 
-	return factory, nil
+	return factory
 }
 
 // authMiddleware rejects requests that do not have a Authorization header set

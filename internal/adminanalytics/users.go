@@ -69,7 +69,7 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 	}
 	query := sqlf.Sprintf(frequencyQuery, dateRangeCond)
 	cacheKey := fmt.Sprintf("Users:%s:%s", "Frequencies", f.DateRange)
-	if f.Cache == true {
+	if f.Cache {
 		if nodes, err := getArrayFromCache[UsersFrequencyNode](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -207,7 +207,7 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 
 	cacheKey := fmt.Sprintf("Users:%s:%s", "Summary", s.DateRange)
 
-	if s.Cache == true {
+	if s.Cache {
 		if summary, err := getItemFromCache[UsersSummary](cacheKey); err == nil {
 			return summary, nil
 		}

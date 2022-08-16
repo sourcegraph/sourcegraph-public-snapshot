@@ -57,7 +57,7 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 
 	for _, dep := range deps {
 		if _, ok := handledPackages[dep.PackageSyntax()]; !ok {
-			_, err := getPackage(ctx, s.src, dep.PackageSyntax())
+			_, err := getPackage(s.src, dep.PackageSyntax())
 			if err != nil {
 				results <- SourceResult{Source: s, Err: err}
 				continue
@@ -117,7 +117,7 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 			depRepo := depRepo
 			g.Go(func() error {
 				defer sem.Release(1)
-				pkg, err := getPackage(ctx, s.src, depRepo.Name)
+				pkg, err := getPackage(s.src, depRepo.Name)
 				if err != nil {
 					if !errcode.IsNotFound(err) {
 						results <- SourceResult{Source: s, Err: err}
@@ -134,13 +134,13 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 	}
 }
 
-func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.Repo, error) {
+func (s *PackagesSource) GetRepo(repoName string) (*types.Repo, error) {
 	parsedPkg, err := s.src.ParsePackageFromRepoName(api.RepoName(repoName))
 	if err != nil {
 		return nil, err
 	}
 
-	pkg, err := getPackage(ctx, s.src, parsedPkg.PackageSyntax())
+	pkg, err := getPackage(s.src, parsedPkg.PackageSyntax())
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
 	}
 }
 
-func getPackage(ctx context.Context, s packagesSource, name reposource.PackageName) (reposource.Package, error) {
+func getPackage(s packagesSource, name reposource.PackageName) (reposource.Package, error) {
 	switch d := s.(type) {
 	// Downloading package descriptions is disabled due to performance issues, causing sync times to take >12hr.
 	// Don't re-enable the case below without fixing https://github.com/sourcegraph/sourcegraph/issues/39653.

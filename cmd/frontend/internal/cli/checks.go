@@ -61,6 +61,7 @@ func checkCanReachHTTP(ctx context.Context, addrs []string) (any, error) {
 		if err != nil {
 			return nil, err
 		}
+		defer r.Body.Close()
 
 		if r.StatusCode != 200 {
 			return nil, errors.New(r.Status)

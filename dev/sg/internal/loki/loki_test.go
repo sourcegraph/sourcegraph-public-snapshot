@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 )
@@ -72,11 +73,11 @@ func TestSplitIntoChunks(t *testing.T) {
 
 		result := splitIntoChunks([]byte(line), 5)
 
-		if bytes.Compare(result[0], []byte("12345")) != 0 {
+		if !bytes.Equal(result[0], []byte("12345")) {
 			t.Errorf("incorrect chunk content for 0 idx. Got %s wanted %s", string(result[0]), "12345")
 		}
 
-		if bytes.Compare(result[1], []byte("6789")) != 0 {
+		if !bytes.Equal(result[1], []byte("6789")) {
 			t.Errorf("incorrect chunk content for 0 idx. Got %s wanted %s", string(result[0]), "12345")
 		}
 	})
