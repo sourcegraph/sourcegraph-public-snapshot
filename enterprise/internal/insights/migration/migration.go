@@ -281,18 +281,32 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		orgId := int32(*job.OrgId)
 		subject = api.SettingsSubject{Org: &orgId}
 		migrationContext.orgIds = []int{*job.OrgId}
-		org, err := orgStore.GetByID(ctx, orgId)
+		orgs, err := scanOrgs(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+			SELECT
+				id,
+				name,
+				display_name,
+				created_at,
+				updated_at
+			FROM orgs
+			WHERE
+				deleted_at IS NULL AND
+				id = %s
+			LIMIT 1
+		`, orgId,
+		)))
 		if err != nil {
-			// If the org doesn't exist, just mark the job complete.
-			if strings.Contains(err.Error(), "org not found") {
-				err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
-				if err != nil {
-					return errors.Wrap(err, "MarkCompleted")
-				}
-				return nil
-			}
 			return errors.Wrap(err, "OrgStoreGetByID")
 		}
+		if len(orgs) == 0 {
+			// If the org doesn't exist, just mark the job complete.
+			err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+			if err != nil {
+				return errors.Wrap(err, "MarkCompleted")
+			}
+			return nil
+		}
+		org := orgs[0]
 		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
 	} else {
 		subject = api.SettingsSubject{Site: true}
