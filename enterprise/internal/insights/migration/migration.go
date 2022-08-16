@@ -32,26 +32,23 @@ const (
 )
 
 type migrator struct {
-	frontendStore *basestore.Store
-	insightsStore *basestore.Store
-
-	settingsMigrationJobsStore *store.DBSettingsMigrationJobsStore
-	insightStore               *store.InsightStore
-	dashboardStore             *store.DBDashboardStore
+	frontendStore  *basestore.Store
+	insightsStore  *basestore.Store
+	insightStore   *store.InsightStore
+	dashboardStore *store.DBDashboardStore
 }
 
 func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
-		frontendStore:              basestore.NewWithHandle(postgresDB.Handle()),
-		insightsStore:              basestore.NewWithHandle(insightsDB.Handle()),
-		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(postgresDB),
-		insightStore:               store.NewInsightStore(insightsDB),
-		dashboardStore:             store.NewDashboardStore(insightsDB),
+		frontendStore:  basestore.NewWithHandle(postgresDB.Handle()),
+		insightsStore:  basestore.NewWithHandle(insightsDB.Handle()),
+		insightStore:   store.NewInsightStore(insightsDB),
+		dashboardStore: store.NewDashboardStore(insightsDB),
 	}
 }
 
 func (m *migrator) Progress(ctx context.Context) (float64, error) {
-	progress, _, err := basestore.ScanFirstFloat(m.settingsMigrationJobsStore.Query(ctx, sqlf.Sprintf(`
+	progress, _, err := basestore.ScanFirstFloat(m.frontendStore.Query(ctx, sqlf.Sprintf(`
 		SELECT CASE c2.count
 				   WHEN 0 THEN 1
 				   ELSE
@@ -121,7 +118,7 @@ var scanUsers = basestore.NewSliceScanner(func(s dbutil.Scanner) (u itypes.User,
 	return u, err
 })
 
-var scanSettings = basestore.NewSliceScanner[api.Settings](func(scanner dbutil.Scanner) (s api.Settings, _ error) {
+var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s api.Settings, _ error) {
 	err := scanner.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorUserID, &s.Contents, &s.CreatedAt)
 	if s.Subject.Org == nil && s.Subject.User == nil {
 		s.Subject.Site = true
@@ -131,12 +128,12 @@ var scanSettings = basestore.NewSliceScanner[api.Settings](func(scanner dbutil.S
 
 func (m *migrator) performBatchMigration(ctx context.Context, jobType store.SettingsMigrationJobType) (bool, error) {
 	// This transaction will allow us to lock the jobs rows while working on them.
-	jobStoreTx, err := m.settingsMigrationJobsStore.Transact(ctx)
+	tx, err := m.frontendStore.Transact(ctx)
 	if err != nil {
 		return false, err
 	}
 	defer func() {
-		err = jobStoreTx.Done(err)
+		err = tx.Done(err)
 	}()
 
 	var cond *sqlf.Query
@@ -148,7 +145,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 	default:
 		cond = sqlf.Sprintf("global IS TRUE")
 	}
-	count, _, err := basestore.ScanFirstInt(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+	count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*) FROM insights_settings_migration_jobs WHERE %s AND completed_at IS NULL
 	`, cond)))
 	if err != nil {
@@ -158,7 +155,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 		return true, nil
 	}
 
-	jobs, err := scanJobs(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+	jobs, err := scanJobs(tx.Query(ctx, sqlf.Sprintf(`
 	SELECT
 		user_id,
 		org_id,
@@ -182,7 +179,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 
 	var errs error
 	for _, job := range jobs {
-		err := m.performMigrationForRow(ctx, jobStoreTx, job)
+		err := m.performMigrationForRow(ctx, tx, job)
 		if err != nil {
 			errs = errors.Append(errs, err)
 		}
@@ -192,7 +189,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 	return false, errs
 }
 
-func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store.DBSettingsMigrationJobsStore, job SettingsMigrationJob) error {
+func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job SettingsMigrationJob) error {
 	var subject api.SettingsSubject
 	var migrationContext migrationContext
 	var subjectName string
@@ -206,7 +203,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		} else {
 			cond = sqlf.Sprintf("global IS TRUE")
 		}
-		jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s`, job.Runs+1, cond))
+		tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s`, job.Runs+1, cond))
 	}()
 
 	if job.UserId != nil {
@@ -215,7 +212,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 
 		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 		// resolve insight ID collisions as if it were in a setting cascade
-		orgs, err := scanOrgs(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+		orgs, err := scanOrgs(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				orgs.id,
 				orgs.name,
@@ -240,7 +237,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.userId = int(userId)
 		migrationContext.orgIds = orgIds
 
-		users, err := scanUsers(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+		users, err := scanUsers(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				u.id,
 				u.username,
@@ -267,7 +264,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 		if len(users) == 0 {
 			// If the user doesn't exist, just mark the job complete.
-			err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId))
+			err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId))
 			if err != nil {
 				return errors.Wrap(err, "MarkCompleted")
 			}
@@ -279,7 +276,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		orgId := int32(*job.OrgId)
 		subject = api.SettingsSubject{Org: &orgId}
 		migrationContext.orgIds = []int{*job.OrgId}
-		orgs, err := scanOrgs(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+		orgs, err := scanOrgs(tx.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				id,
 				name,
@@ -298,7 +295,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 		if len(orgs) == 0 {
 			// If the org doesn't exist, just mark the job complete.
-			err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, orgId))
+			err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, orgId))
 			if err != nil {
 				return errors.Wrap(err, "MarkCompleted")
 			}
@@ -322,7 +319,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		// No org and no user represents global site settings.
 		cond = sqlf.Sprintf("user_id IS NULL AND org_id IS NULL")
 	}
-	settings, err := scanSettings(jobStoreTx.Query(ctx, sqlf.Sprintf(`
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			s.id,
 			s.org_id,
@@ -376,7 +373,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	var migratedInsightsCount int
 	var insightMigrationErrors error
 	if totalInsights != job.MigratedInsights {
-		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond))
+		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond))
 		if err != nil {
 			return err
 		}
@@ -393,7 +390,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
-		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s`, migratedInsightsCount, cond))
+		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s`, migratedInsightsCount, cond))
 		if err != nil {
 			return errors.Append(insightMigrationErrors, err)
 		}
@@ -405,12 +402,12 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	dashboards := getDashboards(settings[0])
 	totalDashboards := len(dashboards)
 	if totalDashboards != job.MigratedDashboards {
-		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s`, totalDashboards, cond))
+		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s`, totalDashboards, cond))
 		if err != nil {
 			return err
 		}
 		migratedDashboardsCount, dashboardMigrationErrors := m.migrateDashboards(ctx, dashboards, migrationContext)
-		err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s`, migratedDashboardsCount, cond))
+		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s`, migratedDashboardsCount, cond))
 		if err != nil {
 			return err
 		}
@@ -430,7 +427,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	} else {
 		cond = sqlf.Sprintf("global IS TRUE")
 	}
-	err = jobStoreTx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE %s`, cond))
+	err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE %s`, cond))
 	if err != nil {
 		return errors.Wrap(err, "MarkCompleted")
 	}
