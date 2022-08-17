@@ -19,17 +19,19 @@ export interface SearchFilterSectionProps {
     showSearch?: boolean // Search only works if children are FilterLink
     onToggle?: (id: string, open: boolean) => void
     startCollapsed?: boolean
+
     /**
      * Shown when the built-in search doesn't find any results.
      */
     noResultText?: (links: ReactElement[]) => ReactNode
+
     /**
      * Clear the search input whenever this value changes. This is supposed to
      * be used together with function children, which use the search input but
      * handle search on their own.
      * Defaults to the component's children.
      */
-    clearSearchOnChange?: {}
+    clearSearchOnChange?: unknown
 
     /**
      * Minimal number of items to render the filter section.
@@ -41,6 +43,14 @@ export interface SearchFilterSectionProps {
 
 const defaultNoResult = (): string => 'No results'
 
+/**
+ * A wrapper UI component for rendering list of filters links (FilterLink) or any other custom
+ * UI filter components. It may add search box for runtime filtering child items.
+ *
+ * Note: It's an internal component and used only in SearchSidebarSection component.
+ *
+ * TODO: Refactor this component see https://github.com/sourcegraph/sourcegraph/issues/40481
+ */
 export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
     const {
         sectionId,
@@ -66,14 +76,21 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
     let searchVisible = showSearch
     let visible = false
 
+    // Supports render props approach
     if (typeof children === 'function') {
         visible = true
         body = children(filter)
-    } else if (Array.isArray(children)) {
-        visible = children.length > minItems
-        searchVisible = searchVisible && children.length > 1
-        const childrenList = children as React.ReactElement[]
 
+        // Supports list-like children, it's used when we need to render just a flat list of
+        // items (usually it's FilterLink components)
+    } else if (Array.isArray(children)) {
+        // Sometimes we don't need to render filter section with just one item (example - repositories filter section)
+        visible = children.length > minItems
+
+        // We don't need to have a search UI if we're dealing with only one item
+        searchVisible = searchVisible && children.length > 1
+
+        const childrenList = children as React.ReactElement[]
         const filteredChildren = searchVisible
             ? childrenList.filter(child => {
                   if (child.type === FilterLink) {
@@ -102,6 +119,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
             </>
         )
     } else {
+        // Just render children as it is without any checks or additional UI if child is regular React component
         visible = true
         body = children
     }

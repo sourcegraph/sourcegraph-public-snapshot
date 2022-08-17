@@ -33,6 +33,7 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
 
     filters?: Filter[]
     selectedSearchContextSpec?: string
+
     /** Content to render inside sidebar, but before other sections. */
     prefixContent?: React.ReactNode
 }
