@@ -324,8 +324,6 @@ type ListChangesetSpecsOpts struct {
 	RandIDs     []string
 	IDs         []int64
 	Type        batcheslib.ChangesetSpecDescriptionType
-
-	RequiresMigration bool
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
@@ -387,10 +385,6 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 			// Check that externalID is empty.
 			preds = append(preds, sqlf.Sprintf("changeset_specs.external_id IS NULL"))
 		}
-	}
-
-	if opts.RequiresMigration {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.migrated IS FALSE"))
 	}
 
 	return sqlf.Sprintf(

@@ -147,6 +147,7 @@ func TestCreateBatchSpec(t *testing.T) {
 			BaseRepoID: repo.ID,
 			UserID:     userID,
 			ExternalID: "123",
+			Typ:        btypes.ChangesetSpecTypeExisting,
 		}
 		if err := bstore.CreateChangesetSpec(ctx, changesetSpecs[i]); err != nil {
 			t.Fatal(err)

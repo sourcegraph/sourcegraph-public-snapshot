@@ -89,10 +89,7 @@ type ChangesetSpec struct {
 	ID     int64
 	RandID string
 
-	// Spec *batcheslib.ChangesetSpec
-
-	Typ  ChangesetSpecType
-	Diff []byte
+	Typ ChangesetSpecType
 
 	DiffStatAdded   int32
 	DiffStatChanged int32
@@ -112,6 +109,7 @@ type ChangesetSpec struct {
 	Title             string
 	Body              string
 	Published         batcheslib.PublishedValue
+	Diff              []byte
 	CommitMessage     string
 	CommitAuthorName  string
 	CommitAuthorEmail string
