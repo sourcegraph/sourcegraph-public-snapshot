@@ -105,12 +105,12 @@ interface Props
  */
 function useCalculatedNavLinkVariant(
     containerReference: React.MutableRefObject<HTMLDivElement | null>,
-    dependenciesProps: Pick<Props, 'authenticatedUser' | 'activation'>
+    activation: Props['activation'],
+    authenticatedUser: Props['authenticatedUser']
 ): 'compact' | undefined {
     const [navLinkVariant, setNavLinkVariant] = useState<'compact'>()
     const { width } = useWindowSize()
     const [savedWindowWidth, setSavedWindowWidth] = useState<number>()
-    const { authenticatedUser, activation } = dependenciesProps
 
     useLayoutEffect(() => {
         const container = containerReference.current
@@ -123,7 +123,8 @@ function useCalculatedNavLinkVariant(
         } else if (savedWindowWidth && width > savedWindowWidth) {
             setNavLinkVariant(undefined)
         }
-        // `authenticatedUser` and `activation` could be changed after mount
+        // Listen for change in `authenticatedUser` and `activation` to re-calculate with new dimensions,
+        // based on change in navbar's content.
     }, [containerReference, savedWindowWidth, width, authenticatedUser, activation])
 
     return navLinkVariant
@@ -231,7 +232,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     ])
 
     const navbarReference = useRef<HTMLDivElement | null>(null)
-    const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props)
+    const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.activation, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
