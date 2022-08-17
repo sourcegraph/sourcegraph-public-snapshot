@@ -12,19 +12,24 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
-const LuckySearchAlert = "lucky search triggered additional search queries"
+const luckySearchAlertKind = "lucky-search-queries"
 
 type AggregationMatchResult struct {
 	Key   MatchKey
 	Count int
 }
 
+type AggregationDecoderEvents struct {
+	StreamDecoderEvents
+	AdditionalSearchesExecuted bool
+}
+
 type AggregationTabulator func(*AggregationMatchResult, error)
 type OnMatches func(matches []streamhttp.EventMatch)
 
 // AggregationDecoder will tabulate the result using the passed in tabulator
-func AggregationDecoder(onMatches OnMatches) (streamhttp.FrontendStreamDecoder, *StreamDecoderEvents) {
-	decoderEvents := &StreamDecoderEvents{}
+func AggregationDecoder(onMatches OnMatches) (streamhttp.FrontendStreamDecoder, *AggregationDecoderEvents) {
+	decoderEvents := &AggregationDecoderEvents{}
 
 	return streamhttp.FrontendStreamDecoder{
 		OnProgress: func(progress *streamapi.Progress) {
@@ -46,6 +51,9 @@ func AggregationDecoder(onMatches OnMatches) (streamhttp.FrontendStreamDecoder, 
 		},
 		OnMatches: onMatches,
 		OnAlert: func(ea *streamhttp.EventAlert) {
+			if ea.Kind == luckySearchAlertKind {
+				decoderEvents.AdditionalSearchesExecuted = true
+			}
 			if ea.Title == "No repositories found" {
 				// If we hit a case where we don't find a repository we don't want to error, just
 				// complete our search.
