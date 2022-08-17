@@ -29,9 +29,9 @@ interface ComputeResult {
 }
 
 const defaultQueryExamplesContent = {
-    repositoryName: 'awesomecorp/big-repo',
-    author: 'logansmith',
-    filePath: 'examplefile.go',
+    repositoryName: 'organization/repo-name',
+    author: 'Logan Smith',
+    filePath: 'filename.go',
 }
 
 function hasQueryExamplesContentCacheExpired(lastCachedTimestamp: string): boolean {
@@ -145,35 +145,37 @@ export function useQueryExamples(): QueryExample[][] {
                     title: 'Jump into code navigation',
                     queryExamples: [
                         { id: 'file-filter', query: `file:${fileName}` },
-                        { id: 'type-symbol', query: 'type:symbol Handler' },
+                        { id: 'type-symbol', query: 'type:symbol SymbolName' },
                     ],
                 },
                 {
-                    title: 'Get specific',
+                    title: 'Explore code history',
                     queryExamples: [
-                        { id: 'author', query: `author:${quotedAuthor}` },
-                        { id: 'before-after-filters', query: 'before:today after:earlydate' },
+                        { id: 'type-diff-author', query: `type:diff author:${quotedAuthor}` },
+                        { id: 'type-commit-message', query: 'type:commit some message' },
+                        { id: 'type-diff-after', query: 'type:diff after:"1 year ago"' },
                     ],
                 },
             ],
             [
                 {
-                    title: 'Find exact matches',
+                    title: 'Find content or patterns',
                     queryExamples: [
-                        { id: 'exact-matches', query: 'some error message', helperText: 'No quotes needed' },
+                        { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
+                        { id: 'regex-pattern', query: '/regex.*pattern/' },
                     ],
                 },
                 {
-                    title: 'Operators',
+                    title: 'Get logical',
                     queryExamples: [
                         { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
-                        { id: 'and-operator', query: 'example AND secondexample' },
+                        { id: 'and-operator', query: 'hello AND world' },
                         { id: 'not-operator', query: 'lang:go NOT file:main.go' },
                     ],
                 },
                 {
                     title: 'Get advanced',
-                    queryExamples: [{ id: 'contains-commit-after', query: 'repo:contains.commit.after(yesterday)' }],
+                    queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
                     footer: (
                         <small className="d-block mt-3">
                             <Link target="blank" to="/help/code_search/reference/queries">

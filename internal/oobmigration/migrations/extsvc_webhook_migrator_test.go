@@ -80,7 +80,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 			svcs = append(svcs, &types.ExternalService{
 				Kind:        svc.kind,
 				DisplayName: svc.kind,
-				Config:      string(buf),
+				Config:      extsvc.NewUnencryptedConfig(string(buf)),
 			})
 		}
 

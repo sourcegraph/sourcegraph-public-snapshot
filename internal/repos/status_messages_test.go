@@ -52,7 +52,7 @@ func TestStatusMessages(t *testing.T) {
 
 	siteLevelService := &types.ExternalService{
 		ID:          1,
-		Config:      `{}`,
+		Config:      extsvc.NewEmptyConfig(),
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - site",
 	}
@@ -61,7 +61,7 @@ func TestStatusMessages(t *testing.T) {
 
 	userService := &types.ExternalService{
 		ID:              2,
-		Config:          `{}`,
+		Config:          extsvc.NewEmptyConfig(),
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "github.com - user",
 		NamespaceUserID: nonAdmin.ID,

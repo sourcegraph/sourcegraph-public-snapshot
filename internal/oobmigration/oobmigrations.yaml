@@ -38,22 +38,6 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 27
-- id: 8
-  team: code-intelligence
-  component: frontend-db.lsif_uploads
-  description: Backfill committed_at
-  non_destructive: true
-  is_enterprise: true
-  introduced_version_major: 3
-  introduced_version_minor: 28
-- id: 11
-  team: code-intelligence
-  component: lsif_uploads.num_references
-  description: Backfill LSIF upload reference counts
-  non_destructive: true
-  is_enterprise: false
-  introduced_version_major: 3
-  introduced_version_minor: 22
 - id: 12
   team: apidocs
   component: codeintel-db.lsif_data_documentation_search

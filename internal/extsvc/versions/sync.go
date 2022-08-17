@@ -75,7 +75,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 	// we don't send >1 requests to the same instance.
 	unique := make(map[string]*types.ExternalService)
 	for _, svc := range es {
-		ident, err := extsvc.UniqueCodeHostIdentifier(svc.Kind, svc.Config)
+		ident, err := extsvc.UniqueEncryptableCodeHostIdentifier(ctx, svc.Kind, svc.Config)
 		if err != nil {
 			return versions, err
 		}

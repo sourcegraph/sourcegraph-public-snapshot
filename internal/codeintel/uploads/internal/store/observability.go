@@ -36,6 +36,9 @@ type operations struct {
 	persistNearestUploadsLinks        *observation.Operation
 	persistUploadsVisibleAtTip        *observation.Operation
 	updateUploadRetention             *observation.Operation
+	backfillReferenceCountBatch       *observation.Operation
+	updateCommittedAt                 *observation.Operation
+	sourcedCommitsWithoutCommittedAt  *observation.Operation
 	updateUploadsReferenceCounts      *observation.Operation
 	deleteUploadsWithoutRepository    *observation.Operation
 	deleteUploadsStuckUploading       *observation.Operation
@@ -100,6 +103,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		getUploads:                        op("GetUploads"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),
+		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),
+		updateCommittedAt:                 op("UpdateCommittedAt"),
+		sourcedCommitsWithoutCommittedAt:  op("SourcedCommitsWithoutCommittedAt"),
 		updateUploadsReferenceCounts:      op("UpdateUploadsReferenceCounts"),
 		deleteUploadsStuckUploading:       op("DeleteUploadsStuckUploading"),
 		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),

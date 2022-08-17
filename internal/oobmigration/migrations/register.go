@@ -8,15 +8,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
+type TaggedMigrator interface {
+	oobmigration.Migrator
+	ID() int
+	Interval() time.Duration
+}
+
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	migrations := []interface {
-		oobmigration.Migrator
-		ID() int
-		Interval() time.Duration
-	}{
+	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
 		NewExternalServiceWebhookMigratorWithDB(db, keyring.Default().ExternalServiceKey),
-	}
-	for _, migrator := range migrations {
+	})
+}
+
+func RegisterAll(outOfBandMigrationRunner *oobmigration.Runner, migrators []TaggedMigrator) error {
+	for _, migrator := range migrators {
 		if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: migrator.Interval()}); err != nil {
 			return err
 		}

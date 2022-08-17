@@ -346,15 +346,20 @@ func getRemoteURLFunc(
 		if envvar.SourcegraphDotComMode() &&
 			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
 			svc.Kind == extsvc.KindGitHub {
-			installationID := gjson.Get(svc.Config, "githubAppInstallationID").Int()
+			rawConfig, err := svc.Config.Decrypt(ctx)
+			if err != nil {
+				return "", err
+			}
+			installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
 			if installationID > 0 {
-				svc.Config, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, dotcomConfig, installationID, cli)
+				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, dotcomConfig, installationID, cli)
 				if err != nil {
 					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
+				svc.Config.Set(rawConfig)
 			}
 		}
-		return repos.CloneURL(log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
+		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
@@ -366,13 +371,14 @@ func editGitHubAppExternalServiceConfigToken(
 	ctx context.Context,
 	externalServiceStore database.ExternalServiceStore,
 	svc *types.ExternalService,
+	rawConfig string,
 	dotcomConfig *schema.Dotcom,
 	installationID int64,
 	cli httpcli.Doer,
 ) (string, error) {
 	logger := log.Scoped("editGitHubAppExternalServiceConfigToken", "updates the 'token' field of the given external service")
 
-	baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
+	baseURL, err := url.Parse(gjson.Get(rawConfig, "url").String())
 	if err != nil {
 		return "", errors.Wrap(err, "parse base URL")
 	}
@@ -402,7 +408,7 @@ func editGitHubAppExternalServiceConfigToken(
 	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
 	// validation with missing "repos" property when no repository has been selected,
 	// due to generated JSON tag of ",omitempty".
-	config, err := jsonc.Edit(svc.Config, token, "token")
+	config, err := jsonc.Edit(rawConfig, token, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "edit token")
 	}
@@ -430,7 +436,11 @@ func getVCSSyncer(
 			if err != nil {
 				return "", errors.Wrap(err, "get external service")
 			}
-			normalized, err := jsonc.Parse(extSvc.Config)
+			rawConfig, err := extSvc.Config.Decrypt(ctx)
+			if err != nil {
+				return "", err
+			}
+			normalized, err := jsonc.Parse(rawConfig)
 			if err != nil {
 				return "", errors.Wrap(err, "normalize JSON")
 			}
@@ -501,7 +511,7 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 		return errors.Wrap(err, "listing external services")
 	}
 	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{})
-	return syncer.SyncServices(svcs)
+	return syncer.SyncServices(ctx, svcs)
 }
 
 // Sync rate limiters from config. Since we don't have a trigger that watches for

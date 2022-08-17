@@ -28,7 +28,6 @@ var _ service = (*Service)(nil)
 
 type service interface {
 	// Not in use yet.
-	List(ctx context.Context, opts ListOpts) (uploads []Upload, err error)
 	Get(ctx context.Context, id int) (upload Upload, ok bool, err error)
 	GetBatch(ctx context.Context, ids ...int) (uploads []Upload, err error)
 	Enqueue(ctx context.Context, state UploadState, reader io.Reader) (err error)
@@ -98,17 +97,6 @@ func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc shared.Git
 }
 
 type Upload = shared.Upload
-
-type ListOpts struct {
-	Limit int
-}
-
-func (s *Service) List(ctx context.Context, opts ListOpts) (uploads []Upload, err error) {
-	ctx, _, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.List(ctx, store.ListOpts(opts))
-}
 
 func (s *Service) Get(ctx context.Context, id int) (upload Upload, ok bool, err error) {
 	ctx, _, endObservation := s.operations.get.With(ctx, &err, observation.Args{})
@@ -362,6 +350,13 @@ func (s *Service) UpdateUploadRetention(ctx context.Context, protectedIDs, expir
 	return s.store.UpdateUploadRetention(ctx, protectedIDs, expiredIDs)
 }
 
+func (s *Service) BackfillReferenceCountBatch(ctx context.Context, batchSize int) (err error) {
+	ctx, _, endObservation := s.operations.backfillReferenceCountBatch.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.BackfillReferenceCountBatch(ctx, batchSize)
+}
+
 func (s *Service) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error) {
 	ctx, _, endObservation := s.operations.updateUploadsReferenceCounts.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -550,6 +545,67 @@ func (s *Service) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, 
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteOldAuditLogs(ctx, maxAge, now)
+}
+
+// BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
+// this value set. This method is used to backfill old upload records prior to this value being reliably set
+// during processing.
+func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error) {
+	ctx, _, endObservation := s.operations.backfillCommittedAtBatch.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.store.Transact(ctx)
+	defer func() {
+		err = tx.Done(err)
+	}()
+
+	batch, err := tx.SourcedCommitsWithoutCommittedAt(ctx, batchSize)
+	if err != nil {
+		return errors.Wrap(err, "store.SourcedCommitsWithoutCommittedAt")
+	}
+
+	for _, sourcedCommits := range batch {
+		for _, commit := range sourcedCommits.Commits {
+			commitDateString, err := s.getCommitDate(ctx, tx, sourcedCommits.RepositoryID, commit)
+			if err != nil {
+				return err
+			}
+
+			// Update commit date of all uploads attached to this this repository and commit
+			if err := tx.UpdateCommittedAt(ctx, sourcedCommits.RepositoryID, commit, commitDateString); err != nil {
+				return errors.Wrap(err, "store.UpdateCommittedAt")
+			}
+		}
+
+		// Mark repository as dirty so the commit graph is recalculated with fresh data
+		if err := tx.SetRepositoryAsDirty(ctx, sourcedCommits.RepositoryID); err != nil {
+			return errors.Wrap(err, "store.SetRepositoryAsDirty")
+		}
+	}
+
+	return nil
+}
+
+func (m *Service) getCommitDate(ctx context.Context, tx store.Store, repositoryID int, commit string) (string, error) {
+	_, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
+	if err != nil && !gitdomain.IsRepoNotExist(err) {
+		return "", errors.Wrap(err, "gitserver.CommitDate")
+	}
+
+	var commitDateString string
+	if revisionExists {
+		commitDateString = commitDate.Format(time.RFC3339)
+	} else {
+		// Set a value here that we'll filter out on the query side so that we don't
+		// reprocess the same failing batch infinitely. We could alternatively soft
+		// delete the record, but it would be better to keep record deletion behavior
+		// together in the same place (so we have unified metrics on that event).
+		commitDateString = "-infinity"
+	}
+
+	return commitDateString, nil
 }
 
 func uploadIDs(uploads []shared.Upload) []int {

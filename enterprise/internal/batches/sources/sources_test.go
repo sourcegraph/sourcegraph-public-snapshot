@@ -91,7 +91,7 @@ func TestExtractCloneURL(t *testing.T) {
 					services = append(services, &types.ExternalService{
 						ID:     id,
 						Kind:   extsvc.KindGitHub,
-						Config: tc.configs[int(id)],
+						Config: extsvc.NewUnencryptedConfig(tc.configs[int(id)]),
 					})
 				}
 				return services, nil
@@ -117,26 +117,26 @@ func TestLoadExternalService(t *testing.T) {
 		ID:          1,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub no token",
-		Config:      `{"url": "https://github.com", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
 	userOwnedWithToken := types.ExternalService{
 		ID:              2,
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "GitHub user owned",
 		NamespaceUserID: 1234,
-		Config:          `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 	}
 	withToken := types.ExternalService{
 		ID:          3,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub token",
-		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 	}
 	withTokenNewer := types.ExternalService{
 		ID:          4,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub newer token",
-		Config:      `{"url": "https://github.com", "token": "123456", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123456", "authorization": {}}`),
 	}
 
 	repo := &types.Repo{
@@ -522,7 +522,7 @@ func TestGitserverPushConfig(t *testing.T) {
 					services = append(services, &types.ExternalService{
 						ID:     id,
 						Kind:   extsvc.TypeToKind(tt.externalServiceType),
-						Config: tt.config,
+						Config: extsvc.NewUnencryptedConfig(tt.config),
 					})
 				}
 
@@ -547,7 +547,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 		ID:          1,
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitHub.com",
-		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 	}
 	repo := &types.Repo{
 		Name:    api.RepoName("test-repo"),

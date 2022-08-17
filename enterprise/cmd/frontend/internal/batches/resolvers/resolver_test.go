@@ -146,6 +146,7 @@ func TestCreateBatchSpec(t *testing.T) {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
 			Spec: &batcheslib.ChangesetSpec{
 				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+				ExternalID:     "123",
 			},
 			RepoID: repo.ID,
 			UserID: userID,
@@ -555,6 +556,7 @@ func TestApplyBatchChange(t *testing.T) {
 		BatchSpecID: batchSpec.ID,
 		Spec: &batcheslib.ChangesetSpec{
 			BaseRepository: string(repoAPIID),
+			ExternalID:     "123",
 		},
 		RepoID: repo.ID,
 		UserID: userID,
@@ -1172,7 +1174,10 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 			for i := range changesetSpecs {
 				changesetSpecs[i] = &btypes.ChangesetSpec{
 					BatchSpecID: batchSpec.ID,
-					RepoID:      repo.ID,
+					Spec: &batcheslib.ChangesetSpec{
+						ExternalID: "123",
+					},
+					RepoID: repo.ID,
 				}
 				err = bstore.CreateChangesetSpec(ctx, changesetSpecs[i])
 				require.NoError(t, err)

@@ -33,13 +33,8 @@ type EncryptedValue struct {
 
 // NewUnencrypted creates a new encryptable from a plaintext value.
 func NewUnencrypted(value string) *Encryptable {
-	return NewUnencryptedWithKey(value, nil)
-}
-
-func NewUnencryptedWithKey(value string, key Key) *Encryptable {
 	return &Encryptable{
 		decrypted: &decryptedValue{value, nil},
-		key:       key,
 	}
 }
 

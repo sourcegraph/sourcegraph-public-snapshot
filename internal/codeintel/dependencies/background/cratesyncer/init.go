@@ -48,7 +48,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 		return err
 	}
 
-	config, err := rustPackagesConfig(externalService)
+	config, err := rustPackagesConfig(ctx, externalService)
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,6 @@ func (s *syncer) Handle(ctx context.Context) error {
 }
 
 func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
-
 	observationContext := &observation.Context{
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.NewRegistry(),
@@ -156,7 +155,7 @@ func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
 	interval := time.Hour * 12
 	_, externalService, _ := singleRustExternalService(context.Background(), extSvcStore)
 	if externalService != nil {
-		config, err := rustPackagesConfig(externalService)
+		config, err := rustPackagesConfig(context.Background(), externalService)
 		if err == nil { // silently ignore config errors.
 			customInterval, err := time.ParseDuration(config.IndexRepositorySyncInterval)
 			if err == nil { // silently ignore duration decoding error.
@@ -175,15 +174,20 @@ func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
 }
 
 // rustPackagesConfig returns the configuration for the provided RUSTPACKAGES code host.
-func rustPackagesConfig(externalService *dbtypes.ExternalService) (*schema.RustPackagesConnection, error) {
-	config := &schema.RustPackagesConnection{}
-	normalized, err := jsonc.Parse(externalService.Config)
+func rustPackagesConfig(ctx context.Context, externalService *dbtypes.ExternalService) (*schema.RustPackagesConnection, error) {
+	rawConfig, err := externalService.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse JSON config for Rust external service %s", externalService.Config)
+		return nil, err
+	}
+
+	config := &schema.RustPackagesConnection{}
+	normalized, err := jsonc.Parse(rawConfig)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse JSON config for Rust external service %s", rawConfig)
 	}
 
 	if err = jsoniter.Unmarshal(normalized, config); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal Rust external service config %s", externalService.Config)
+		return nil, errors.Wrapf(err, "failed to unmarshal Rust external service config %s", rawConfig)
 	}
 	return config, nil
 }

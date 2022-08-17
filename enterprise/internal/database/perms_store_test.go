@@ -3074,7 +3074,7 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db database.DB) func(
 			&types.ExternalService{
 				Kind:           extsvc.KindGitHub,
 				DisplayName:    "GitHub (cindy-org)",
-				Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 				NamespaceOrgID: cindyOrg.ID,
 			},
 		)

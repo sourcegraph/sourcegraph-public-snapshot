@@ -79,8 +79,9 @@ export const StreamingSearchResults: React.FunctionComponent<
         telemetryService,
         codeInsightsEnabled,
         isSourcegraphDotCom,
-        extensionsController: { extHostAPI: extensionHostAPI },
+        extensionsController,
     } = props
+    const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
@@ -162,25 +163,24 @@ export const StreamingSearchResults: React.FunctionComponent<
                     },
                 },
             })
+            if (results.results.length > 0) {
+                telemetryService.log('SearchResultsNonEmpty')
+            }
         } else if (results?.state === 'error') {
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
             })
         }
-
-        if (resultsFound) {
-            telemetryService.log('SearchResultsNonEmpty')
-        }
-    }, [results, resultsFound, telemetryService])
+    }, [results, telemetryService])
 
     // Log lucky search events. To be removed at latest by 12/2022.
     const [luckySearchEnabled] = useFeatureFlag('ab-lucky-search')
     useEffect(() => {
         if (luckySearchEnabled && results?.state === 'complete') {
             telemetryService.log('SearchResultsFetchedAuto')
-        }
-        if (luckySearchEnabled && resultsFound) {
-            telemetryService.log('SearchResultsNonEmptyAuto')
+            if (results.results.length > 0) {
+                telemetryService.log('SearchResultsNonEmptyAuto')
+            }
         }
         if (
             luckySearchEnabled &&
@@ -196,7 +196,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                 telemetryService.log(event)
             }
         }
-    }, [results, resultsFound, luckySearchEnabled, telemetryService])
+    }, [results, luckySearchEnabled, telemetryService])
 
     useNotepad(
         useMemo(

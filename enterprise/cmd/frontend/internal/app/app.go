@@ -254,12 +254,12 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			svc = &types.ExternalService{
 				Kind:        extsvc.KindGitHub,
 				DisplayName: displayName,
-				Config: fmt.Sprintf(`
+				Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "repos": []
 }
-`, apiURL.String()),
+`, apiURL.String())),
 				NamespaceOrgID: org.ID,
 				CreatedAt:      now,
 				UpdatedAt:      now,
@@ -275,12 +275,18 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		}
 
 		if setupAction == "request" {
-			newConfig, err := jsonc.Edit(svc.Config, true, "pending")
+			rawConfig, err := svc.Config.Decrypt(r.Context())
+			if err != nil {
+				responseServerError("Failed to retrieve config", err)
+				return
+			}
+
+			rawConfig, err = jsonc.Edit(rawConfig, true, "pending")
 			if err != nil {
 				responseServerError("Failed to edit config", err)
 				return
 			}
-			svc.Config = newConfig
+			svc.Config.Set(rawConfig)
 		} else if setupAction == "install" {
 			installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
 			if err != nil {
@@ -298,18 +304,24 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			if ins.Account.Login != nil {
 				displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
 			}
-
 			svc.DisplayName = displayName
-			newConfig, err := jsonc.Edit(svc.Config, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
+
+			rawConfig, err := svc.Config.Decrypt(r.Context())
+			if err != nil {
+				responseServerError("Failed to retrieve config", err)
+				return
+			}
+
+			rawConfig, err = jsonc.Edit(rawConfig, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
 			if err != nil {
 				responseServerError("Failed to edit config", err)
 				return
 			}
-			newConfig, err = jsonc.Edit(newConfig, false, "pending")
+			rawConfig, err = jsonc.Edit(rawConfig, false, "pending")
 			if err != nil {
 				responseServerError("Failed to edit config", err)
 			}
-			svc.Config = newConfig
+			svc.Config.Set(rawConfig)
 			svc.UpdatedAt = now
 		}
 
