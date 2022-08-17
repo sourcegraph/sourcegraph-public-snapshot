@@ -27,9 +27,10 @@ func parseConfigData(data string, cfg any) error {
 			v.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}
 
-		// Ensure `EnableLegacyExtensions` is always set to `true` before the Sourcegraph 4.0 release.
-		// `false` will be a default value after release, and can be overriden by the site config.
-		v.ExperimentalFeatures.EnableLegacyExtensions = func() *bool { b := true; return &b }()
+		if v.ExperimentalFeatures.EnableLegacyExtensions == nil {
+			// `true` is the default value before the Sourcegraph 4.0 release (should be switched to `false` after the release).
+			v.ExperimentalFeatures.EnableLegacyExtensions = func() *bool { b := true; return &b }()
+		}
 	}
 	return nil
 }
