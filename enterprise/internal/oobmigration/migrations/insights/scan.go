@@ -8,12 +8,12 @@ import (
 )
 
 var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j settingsMigrationJob, _ error) {
-	err := s.Scan(&j.userID, &j.orgID, &j.global, &j.migratedInsights, &j.migratedDashboards)
+	err := s.Scan(&j.userID, &j.orgID, &j.migratedInsights, &j.migratedDashboards)
 	return j, err
 })
 
 var scanUserOrOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (uo userOrOrg, _ error) {
-	err := s.Scan(&uo.id, &uo.name, &uo.displayName)
+	err := s.Scan(&uo.name, &uo.displayName)
 	return uo, err
 })
 

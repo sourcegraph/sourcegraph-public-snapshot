@@ -34,7 +34,7 @@ func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore
 
 const insightsMigratorGetSettingsForUserSelectUserQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForUser
-SELECT u.id, u.username, u.display_name
+SELECT u.username, u.display_name
 FROM users u
 WHERE id = %s AND deleted_at IS NULL
 LIMIT 1
@@ -78,7 +78,7 @@ func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.
 
 const insightsMigratorGetSettingsForOrgSelectOrgQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForOrg
-SELECT id, name, display_name
+SELECT name, display_name
 FROM orgs
 WHERE id = %s AND deleted_at IS NULL
 LIMIT 1

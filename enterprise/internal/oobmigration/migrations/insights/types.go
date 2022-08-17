@@ -17,13 +17,11 @@ type timeInterval struct {
 type settingsMigrationJob struct {
 	userID             *int
 	orgID              *int
-	global             bool
 	migratedInsights   int
 	migratedDashboards int
 }
 
 type userOrOrg struct {
-	id          int32
 	name        string
 	displayName *string
 }

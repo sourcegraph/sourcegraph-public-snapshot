@@ -85,10 +85,6 @@ const insightsMigratorUpQuery = `
 SELECT
 	user_id,
 	org_id,
-	CASE
-		WHEN global IS NULL THEN FALSE
-		ELSE TRUE
-	END AS global,
 	migrated_insights,
 	migrated_dashboards
 FROM insights_settings_migration_jobs
