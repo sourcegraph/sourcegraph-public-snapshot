@@ -156,7 +156,7 @@ type regexpReplacer struct {
 
 func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 	if len(r.groups) == 0 {
-		// replace the entire content field
+		// replace the entire content field if there would be no submatch
 		return r.replaceContent(replacement)
 	}
 	var matches [][]string

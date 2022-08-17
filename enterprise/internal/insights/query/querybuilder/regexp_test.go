@@ -202,6 +202,12 @@ func TestReplace_Valid(t *testing.T) {
 			searchType:  query.SearchTypeStandard,
 		},
 		{
+			query:       "/b(?:u)(tt)(er)/",
+			replacement: "dd",
+			want:        autogold.Want("ensure only one group is replaced after non-capturing group", BasicQuery("/b(?:u)(?:dd)(er)/")),
+			searchType:  query.SearchTypeStandard,
+		},
+		{
 			query:       "replaceme",
 			replacement: "replace",
 			want:        autogold.Want("regexp_type_1", BasicQuery("/replace/")),
