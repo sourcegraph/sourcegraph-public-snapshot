@@ -60,10 +60,6 @@ type FirecrackerOptions struct {
 	// VMStartupScriptPath is a path to a file on the host that is loaded into a fresh
 	// virtual machine and executed on startup.
 	VMStartupScriptPath string
-
-	// UseRunlock determines if the self-imposed 1-concurrency limit on `ignite run`
-	// invocations should be enforced.
-	UseRunlock bool
 }
 
 type ResourceOptions struct {
