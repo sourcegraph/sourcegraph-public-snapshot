@@ -132,8 +132,8 @@ func filterSettingJson(settingJson string, prefix string) (map[string]json.RawMe
 	return filtered, nil
 }
 
-func getInsightsFromSettings(settingsRow settings) ([]langStatsInsight, []searchInsight, []searchInsight) {
-	return getLangStatsInsights(settingsRow), getFrontendInsights(settingsRow), getBackendInsights(settingsRow)
+func getInsightsFromSettings(settingsRow settings) ([]settingDashboard, []langStatsInsight, []searchInsight, []searchInsight) {
+	return getDashboards(settingsRow), getLangStatsInsights(settingsRow), getFrontendInsights(settingsRow), getBackendInsights(settingsRow)
 }
 
 func getLangStatsInsights(settingsRow settings) []langStatsInsight {

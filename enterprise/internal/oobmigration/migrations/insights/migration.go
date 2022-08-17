@@ -18,18 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const schemaErrorPrefix = "insights oob migration schema error"
-
 type migrator struct {
 	frontendStore *basestore.Store
 	insightsStore *basestore.Store
-}
-
-// migrationContext represents a context for which we are currently migrating. If we are migrating a user setting we would populate this with their
-// user ID, as well as any orgs they belong to. If we are migrating an org, we would populate this with just that orgID.
-type migrationContext struct {
-	userId int
-	orgIds []int
 }
 
 func NewMigrator(insightsDB, postgresDB database.DB) oobmigration.Migrator {
@@ -107,12 +98,12 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	return nil
 }
 
-func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job settingsMigrationJob) error {
-	var settings []settings
-	var err error
-	var migrationContext migrationContext
-	var subjectName string
+//
+// Single migration
 
+const schemaErrorPrefix = "insights oob migration schema error"
+
+func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job settingsMigrationJob) (err error) {
 	cond := func() *sqlf.Query {
 		if job.UserId != nil {
 			return sqlf.Sprintf("user_id = %s", *job.UserId)
@@ -127,38 +118,45 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 		tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s`, job.Runs+1, cond))
 	}()
 
-	if job.UserId != nil {
-		subjectName, settings, err = m.getForUser(ctx, tx, *job.UserId)
-		if err != nil {
-			return err
-		}
-		migrationContext.userId = *job.UserId
+	userID, orgIDs, err := func() (int, []int, error) {
+		if job.UserId != nil {
+			// when this is a user setting we need to load all of the organizations the user is a member of so that we can
+			// resolve insight ID collisions as if it were in a setting cascade
+			orgIDs, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(performMigrationForRowSelectOrgsQuery, *job.UserId)))
+			if err != nil {
+				return 0, nil, err
+			}
 
-		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
-		// resolve insight ID collisions as if it were in a setting cascade
-		orgIDs, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(performMigrationForRowSelectOrgsQuery, *job.UserId)))
-		if err != nil {
-			return err
+			return *job.UserId, orgIDs, nil
 		}
-		migrationContext.orgIds = orgIDs
-	} else if job.OrgId != nil {
-		subjectName, settings, err = m.getForOrg(ctx, tx, *job.OrgId)
-		if err != nil {
-			return err
+		if job.OrgId != nil {
+			return 0, []int{*job.OrgId}, nil
 		}
-		migrationContext.orgIds = []int{*job.OrgId}
-	} else {
-		subjectName, settings, err = m.getForGlobal(ctx, tx)
-		if err != nil {
-			return err
+		return 0, nil, nil
+	}()
+	if err != nil {
+		return err
+	}
+
+	subjectName, settings, err := func() (string, []settings, error) {
+		if job.UserId != nil {
+			return m.getForUser(ctx, tx, *job.UserId)
 		}
+		if job.OrgId != nil {
+			return m.getForOrg(ctx, tx, *job.OrgId)
+		}
+		return m.getForGlobal(ctx, tx)
+	}()
+	if err != nil {
+		return err
 	}
 	if len(settings) == 0 {
 		// If this settings object no longer exists, skip it.
 		return nil
 	}
 
-	langStatsInsights, frontendInsights, backendInsights := getInsightsFromSettings(settings[0])
+	dashboards, langStatsInsights, frontendInsights, backendInsights := getInsightsFromSettings(settings[0])
+	totalDashboards := len(dashboards)
 
 	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
 	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
@@ -176,53 +174,61 @@ func (m *migrator) performMigrationForRow(ctx context.Context, tx *basestore.Sto
 	}
 	logDuplicates(allDefinedInsightIds)
 
-	var migratedInsightsCount int
-	var insightMigrationErrors error
 	if totalInsights != job.MigratedInsights {
-		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond))
-		if err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond)); err != nil {
 			return err
 		}
 
-		count, err := m.migrateLangStatsInsights(ctx, langStatsInsights)
-		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
-		migratedInsightsCount += count
+		var (
+			migratedInsightsCount  int
+			insightMigrationErrors error
+		)
+		for _, f := range []func(ctx context.Context) (int, error){
+			func(ctx context.Context) (int, error) { return m.migrateLangStatsInsights(ctx, langStatsInsights) },
+			func(ctx context.Context) (int, error) { return m.migrateInsights(ctx, frontendInsights, "frontend") },
+			func(ctx context.Context) (int, error) { return m.migrateInsights(ctx, backendInsights, "backend") },
+		} {
+			count, err := f(ctx)
+			insightMigrationErrors = errors.Append(insightMigrationErrors, err)
+			migratedInsightsCount += count
+		}
 
-		count, err = m.migrateInsights(ctx, frontendInsights, "frontend")
-		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
-		migratedInsightsCount += count
-
-		count, err = m.migrateInsights(ctx, backendInsights, "backend")
-		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
-		migratedInsightsCount += count
-
-		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s`, migratedInsightsCount, cond))
-		if err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s`, migratedInsightsCount, cond)); err != nil {
 			return errors.Append(insightMigrationErrors, err)
 		}
+
 		if totalInsights != migratedInsightsCount {
 			return insightMigrationErrors
 		}
 	}
 
-	dashboards := getDashboards(settings[0])
-	totalDashboards := len(dashboards)
 	if totalDashboards != job.MigratedDashboards {
-		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s`, totalDashboards, cond))
-		if err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s`, totalDashboards, cond)); err != nil {
 			return err
 		}
-		migratedDashboardsCount, dashboardMigrationErrors := m.migrateDashboards(ctx, dashboards, migrationContext)
-		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s`, migratedDashboardsCount, cond))
-		if err != nil {
+
+		var (
+			migratedDashboardsCount  int
+			dashboardMigrationErrors error
+		)
+		for _, f := range []func(ctx context.Context) (int, error){
+			func(ctx context.Context) (int, error) { return m.migrateDashboards(ctx, dashboards, userID, orgIDs) },
+		} {
+			count, err := f(ctx)
+			dashboardMigrationErrors = errors.Append(dashboardMigrationErrors, err)
+			migratedDashboardsCount += count
+		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s`, migratedDashboardsCount, cond)); err != nil {
 			return err
 		}
+
 		if totalDashboards != migratedDashboardsCount {
 			return dashboardMigrationErrors
 		}
 	}
-	err = m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, migrationContext)
-	if err != nil {
+
+	if err := m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, userID, orgIDs); err != nil {
 		return err
 	}
 
@@ -253,8 +259,7 @@ func (m *migrator) getForUser(ctx context.Context, tx *basestore.Store, userId i
 	}
 	if len(users) == 0 {
 		// If the user doesn't exist, just mark the job complete.
-		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId))
-		if err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId)); err != nil {
 			return "", nil, errors.Wrap(err, "MarkCompleted")
 		}
 		return "", nil, nil
@@ -292,8 +297,7 @@ func (m *migrator) getForOrg(ctx context.Context, tx *basestore.Store, orgId int
 	}
 	if len(orgs) == 0 {
 		// If the org doesn't exist, just mark the job complete.
-		err = tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, orgId))
-		if err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, orgId)); err != nil {
 			return "", nil, errors.Wrap(err, "MarkCompleted")
 		}
 		return "", nil, nil
@@ -336,54 +340,35 @@ ORDER BY id DESC
 LIMIT 1
 `
 
-func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []langStatsInsight) (int, error) {
-	var count int
-	var errs error
-	for _, d := range toMigrate {
-		if d.ID == "" {
-			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
-			// since it can never be migrated, we count it towards the total
-			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromLangStatsInsight(d), "error msg", "insight failed to migrate due to missing id")
-			count++
-			continue
-		}
-		numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(`
-			SELECT COUNT(*)
-			FROM (
-				SELECT *
-				FROM insight_view
-				WHERE unique_id = %s
-				ORDER BY unique_id
-			) iv
-			JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
-			JOIN insight_series i ON ivs.insight_series_id = i.id
-			WHERE i.deleted_at IS NULL
-		`,
-			d.ID,
-		)))
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue
-		}
-		if numInsights > 0 {
-			// this insight has already been migrated, so count it towards the total
-			count++
-			continue
-		}
+//
+// Lang stat insights migration
 
-		err = migrateLangStatSeries(ctx, m.insightsStore, d)
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue
+func (m *migrator) migrateLangStatsInsights(ctx context.Context, insights []langStatsInsight) (count int, err error) {
+	for _, insight := range insights {
+		if migrationErr := m.migrateLangStatsInsight(ctx, insight); migrationErr != nil {
+			err = errors.Append(err, migrationErr)
 		} else {
 			count++
 		}
 	}
-	return count, errs
+
+	return count, err
 }
 
-func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, from langStatsInsight) (err error) {
-	tx, err := insightStore.Transact(ctx)
+func (m *migrator) migrateLangStatsInsight(ctx context.Context, insight langStatsInsight) (err error) {
+	if insight.ID == "" {
+		// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
+		// since it can never be migrated, we count it towards the total
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromLangStatsInsight(insight), "error msg", "insight failed to migrate due to missing id")
+		return nil
+	}
+
+	numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(migrateLangStatsInsightQuery, insight.ID)))
+	if err != nil || numInsights > 0 {
+		return err
+	}
+
+	tx, err := m.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -403,25 +388,25 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 	VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 	RETURNING id
 	`,
-		from.Title,
+		insight.Title,
 		nil, // TODO - nil ok?
-		from.ID,
+		insight.ID,
 		nil, // TODO - nil ok?
 		nil, // TOOD - nil ok?
 		pq.Array(nil),
-		&from.OtherThreshold,
+		&insight.OtherThreshold,
 		"PIE",
 	)))
 	if err != nil {
-		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
+		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", insight.ID)
 	}
 
 	grantValues := func() []any {
-		if from.UserID != nil {
-			return []any{viewID, *from.UserID, nil, nil}
+		if insight.UserID != nil {
+			return []any{viewID, *insight.UserID, nil, nil}
 		}
-		if from.OrgID != nil {
-			return []any{viewID, nil, *from.OrgID, nil}
+		if insight.OrgID != nil {
+			return []any{viewID, nil, *insight.OrgID, nil}
 		}
 		return []any{viewID, nil, nil, true}
 	}()
@@ -461,7 +446,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		(timeInterval{unit: "MONTH", value: 0}).StepForwards(now),
 		nil, // TOOD - nil ok?
 		nextSnapshot(now),
-		pq.Array([]string{from.Repository}),
+		pq.Array([]string{insight.Repository}),
 		"MONTH",
 		nil, // TOOD - nil ok?
 		nil, // TOOD - nil ok?
@@ -470,11 +455,11 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		nil, // TOOD - nil ok?
 	)))
 	if err != nil {
-		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", from.ID)
+		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", insight.ID)
 	}
 
 	metadata := insightViewSeriesMetadata{}
-	err = tx.Exec(ctx, sqlf.Sprintf(`
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO insight_view_series (
 			insight_series_id,
 			insight_view_id,
@@ -487,66 +472,67 @@ func migrateLangStatSeries(ctx context.Context, insightStore *basestore.Store, f
 		viewID,
 		metadata.Label,
 		metadata.Stroke,
-	))
-	if err != nil {
+	)); err != nil {
 		return err
 	}
 	// Enable the series in case it had previously been soft-deleted.
-	err = tx.Exec(ctx, sqlf.Sprintf(`
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
 		UPDATE insight_series
 		SET deleted_at IS NULL
 		WHERE series_id = %s
 	`,
 		xSeriesID,
-	))
+	)); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (m *migrator) migrateInsights(ctx context.Context, toMigrate []searchInsight, batch string) (int, error) {
-	var count int
-	var errs error
-	for _, d := range toMigrate {
-		if d.ID == "" {
-			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
-			// skippable error
-			count++
-			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromInsight(d), "error msg", "insight failed to migrate due to missing id")
-			continue
-		}
+const migrateLangStatsInsightQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/migration.go:migrateLangStatsInsight
+SELECT COUNT(*)
+FROM (SELECT * FROM insight_view WHERE unique_id = %s ORDER BY unique_id) iv
+JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+JOIN insight_series i ON ivs.insight_series_id = i.id
+WHERE i.deleted_at IS NULL
+`
 
-		numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(`
-			SELECT COUNT(*)
-			FROM (
-				SELECT *
-				FROM insight_view
-				WHERE unique_id = %s
-				ORDER BY unique_id
-			) iv
-			JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
-			JOIN insight_series i ON ivs.insight_series_id = i.id
-			WHERE i.deleted_at IS NULL
-		`,
-			d.ID,
-		)))
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue
-		}
-		if numInsights > 0 {
-			// this insight has already been migrated, so count it
-			count++
-			continue
-		}
-		err = migrateSeries(ctx, m.insightsStore, m.frontendStore, d, batch)
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue
+//
+// Insight migration
+
+func (m *migrator) migrateInsights(ctx context.Context, insights []searchInsight, batch string) (count int, err error) {
+	for _, insight := range insights {
+		if migrationErr := m.migrateInsight(ctx, insight, batch); migrationErr != nil {
+			err = errors.Append(err, migrationErr)
 		} else {
 			count++
 		}
 	}
-	return count, errs
+
+	return count, err
+}
+
+func (m *migrator) migrateInsight(ctx context.Context, insight searchInsight, batch string) error {
+	if insight.ID == "" {
+		// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
+		// skippable error
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromInsight(insight), "error msg", "insight failed to migrate due to missing id")
+		return nil
+	}
+
+	numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(`
+		SELECT COUNT(*)
+		FROM (SELECT * FROM insight_view WHERE unique_id = %s ORDER BY unique_id) iv
+		JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+		JOIN insight_series i ON ivs.insight_series_id = i.id
+		WHERE i.deleted_at IS NULL
+	`, insight.ID)))
+	if err != nil || numInsights > 0 {
+		return err
+	}
+
+	return migrateSeries(ctx, m.insightsStore, m.frontendStore, insight, batch)
 }
 
 func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerStore *basestore.Store, from searchInsight, batch string) (err error) {
@@ -835,16 +821,12 @@ const insightsMigratormigrateSeriesInsertViewGrantQuery = `
 INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
 `
 
-func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []settingDashboard, mc migrationContext) (count int, err error) {
-	for _, d := range toMigrate {
-		if d.ID == "" {
-			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
-			// since it can never be migrated, we count it towards the total
-			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromDashboard(d), "error msg", "dashboard failed to migrate due to missing id")
-			count++
-			continue
-		}
-		if migrationErr := m.migrateDashboard(ctx, d, mc); migrationErr != nil {
+//
+// Dashboard migration
+
+func (m *migrator) migrateDashboards(ctx context.Context, dashboards []settingDashboard, userID int, orgIDs []int) (count int, err error) {
+	for _, dashboard := range dashboards {
+		if migrationErr := m.migrateDashboard(ctx, dashboard, userID, orgIDs); migrationErr != nil {
 			err = errors.Append(err, migrationErr)
 		} else {
 			count++
@@ -854,7 +836,14 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []settingDas
 	return count, err
 }
 
-func (m *migrator) migrateDashboard(ctx context.Context, from settingDashboard, migrationContext migrationContext) (err error) {
+func (m *migrator) migrateDashboard(ctx context.Context, from settingDashboard, userID int, orgIDs []int) (err error) {
+	if from.ID == "" {
+		// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
+		// since it can never be migrated, we count it towards the total
+		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromDashboard(from), "error msg", "dashboard failed to migrate due to missing id")
+		return nil
+	}
+
 	tx, err := m.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -887,15 +876,17 @@ func (m *migrator) migrateDashboard(ctx context.Context, from settingDashboard, 
 		return nil
 	}
 
-	err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, migrationContext)
-	if err != nil {
+	if err := m.createDashboard(ctx, tx, from.Title, from.InsightIds, userID, orgIDs); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) error {
+//
+// Dashboard creation
+
+func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, userID int, orgIDs []int) error {
 	tx, err := m.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -906,19 +897,19 @@ func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName s
 		subjectName += "'s"
 	}
 
-	if err := m.createDashboard(ctx, tx, fmt.Sprintf("%s Insights", subjectName), insightReferences, migration); err != nil {
+	if err := m.createDashboard(ctx, tx, fmt.Sprintf("%s Insights", subjectName), insightReferences, userID, orgIDs); err != nil {
 		return errors.Wrap(err, "CreateSpecialCaseDashboard")
 	}
 	return nil
 }
 
-func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, title string, insightReferences []string, migration migrationContext) (err error) {
-	targetsUniqueIDs := make([]string, 0, len(migration.orgIds)+1)
-	if migration.userId != 0 {
-		targetsUniqueIDs = append(targetsUniqueIDs, fmt.Sprintf("user-%d", migration.userId))
+func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, title string, insightReferences []string, userID int, orgIDs []int) (err error) {
+	targetsUniqueIDs := make([]string, 0, len(orgIDs)+1)
+	if userID != 0 {
+		targetsUniqueIDs = append(targetsUniqueIDs, fmt.Sprintf("user-%d", userID))
 	}
-	for _, orgId := range migration.orgIds {
-		targetsUniqueIDs = append(targetsUniqueIDs, fmt.Sprintf("org-%d", orgId))
+	for _, orgID := range orgIDs {
+		targetsUniqueIDs = append(targetsUniqueIDs, fmt.Sprintf("org-%d", orgID))
 	}
 
 	uniqueIDs := make([]string, 0, len(insightReferences))
@@ -962,11 +953,11 @@ func (m *migrator) createDashboard(ctx context.Context, tx *basestore.Store, tit
 	}
 
 	grantValues := func() []any {
-		if migration.userId != 0 {
-			return []any{dashboardID, migration.userId, nil, nil}
+		if userID != 0 {
+			return []any{dashboardID, userID, nil, nil}
 		}
-		if len(migration.orgIds) != 0 {
-			return []any{dashboardID, nil, migration.orgIds[0], nil}
+		if len(orgIDs) != 0 {
+			return []any{dashboardID, nil, orgIDs[0], nil}
 		}
 		return []any{dashboardID, nil, nil, true}
 	}()
