@@ -1,7 +1,7 @@
 const mocha = require('mocha')
 const { Console } = require('console')
 const fs = require('fs')
-const Base = mocha.reporters.Base
+const originalConsole = mocha.reporters.Base.consoleLog
 
 class SpecFileReporter extends mocha.reporters.Spec {
   constructor(runner, options) {
