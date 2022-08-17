@@ -387,7 +387,7 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 		other_threshold,
 		presentation_type,
 	)
-	VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+	VALUES (%s, %s, %s, %s, %s, %s, %s, 'PIE')
 	RETURNING id
 	`,
 		insight.Title,
@@ -397,7 +397,6 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 		nil, // TOOD - nil ok?
 		pq.Array(nil),
 		&insight.OtherThreshold,
-		"PIE",
 	)))
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", insight.ID)
@@ -437,7 +436,7 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 				group_by,
 				needs_migration,
 			)
-			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
+			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'MONTH', %s, %s, %s, 'language-stats', %s, false)
 			RETURNING id
 		`,
 		xSeriesID,
@@ -449,42 +448,26 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 		nil, // TOOD - nil ok?
 		nextSnapshot(now),
 		pq.Array([]string{insight.Repository}),
-		"MONTH",
 		nil, // TOOD - nil ok?
 		nil, // TOOD - nil ok?
 		true,
-		"language-stats",
 		nil, // TOOD - nil ok?
 	)))
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", insight.ID)
 	}
 
-	metadata := insightViewSeriesMetadata{}
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO insight_view_series (
-			insight_series_id,
-			insight_view_id,
-			label,
-			stroke
-		)
-		VALUES (%s, %s, %s, %s)
+		INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
+		VALUES (%s, %s, '', '')
 	`,
 		seriesID,
 		viewID,
-		metadata.Label,
-		metadata.Stroke,
 	)); err != nil {
 		return err
 	}
 	// Enable the series in case it had previously been soft-deleted.
-	if err := tx.Exec(ctx, sqlf.Sprintf(`
-		UPDATE insight_series
-		SET deleted_at IS NULL
-		WHERE series_id = %s
-	`,
-		xSeriesID,
-	)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET deleted_at = NULL WHERE series_id = %s`, xSeriesID)); err != nil {
 		return err
 	}
 
