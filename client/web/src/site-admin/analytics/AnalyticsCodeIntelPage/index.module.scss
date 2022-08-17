@@ -7,3 +7,25 @@
     padding-right: 4rem;
     margin-top: 1.5rem;
 }
+
+.events {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.chart {
+    width: 300px;
+}
+
+.percent-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.percent {
+    font-weight: bold;
+    font-size: 2rem
+}

@@ -5,7 +5,19 @@ import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, Series } from '@sourcegraph/wildcard'
+import {
+    Card,
+    H2,
+    Text,
+    LoadingSpinner,
+    AnchorLink,
+    H4,
+    LineChart,
+    Series,
+    BarChart,
+    LegendList,
+    LegendItem,
+} from '@sourcegraph/wildcard'
 
 import { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -229,6 +241,42 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         )}
                     </ul>
                 </div>
+                <div>
+                    <H4 className="my-3">Events by language</H4>
+                    <div className={styles.events}>
+                        <ChartContainer className={styles.chart} labelX="Languages" labelY="Events">
+                            {width => (
+                                <>
+                                    <LegendList>
+                                        <LegendItem color={color('precise')} name="precise" />
+                                        <LegendItem color={color('search-based')} name="search-based" />
+                                    </LegendList>
+                                    <BarChart
+                                        stacked={true}
+                                        width={width}
+                                        height={300}
+                                        data={
+                                            [
+                                                { name: 'Java', kind: 'search-based', value: 90 },
+                                                { name: 'Java', kind: 'precise', value: 30 },
+                                                { name: 'Go', kind: 'search-based', value: 30 },
+                                                { name: 'Go', kind: 'precise', value: 10 },
+                                            ] as { name: string; kind: Kind; value: number }[]
+                                        }
+                                        getDatumColor={value => color(value.kind)}
+                                        getDatumValue={value => value.value}
+                                        getDatumName={value => value.name}
+                                        getDatumHover={value => `${value.name} ${value.kind}`}
+                                    />
+                                </>
+                            )}
+                        </ChartContainer>
+                        <div className={styles.percentContainer}>
+                            <div className={styles.percent}>30%</div>
+                            <div>Precise code navigation</div>
+                        </div>
+                    </div>
+                </div>
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.
@@ -236,4 +284,17 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             </Text>
         </>
     )
+}
+
+type Kind = 'precise' | 'search-based'
+
+const color = (kind: Kind): string => {
+    switch (kind) {
+        case 'precise':
+            return 'rgb(255, 184, 109)'
+        case 'search-based':
+            return 'rgb(155, 211, 255)'
+        default:
+            return 'gray'
+    }
 }
