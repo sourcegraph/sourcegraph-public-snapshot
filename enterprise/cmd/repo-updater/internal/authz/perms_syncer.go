@@ -516,11 +516,15 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "list linked accounts for %d", acct.ID)
 				}
-				for _, linkedAcct := range linkedAccts {
-					if err = accounts.TouchExpired(ctx, linkedAcct.ID); err != nil {
-						return nil, nil, errors.Wrapf(err, "set expired for external account %d", linkedAcct.ID)
-					}
+
+				linkedAcctIDs := make([]int32, len(linkedAccts))
+				for i, linkedAcct := range linkedAccts {
+					linkedAcctIDs[i] = linkedAcct.ID
 				}
+				if err = accounts.TouchExpired(ctx, linkedAcctIDs...); err != nil {
+					return nil, nil, errors.Wrapf(err, "set expired for external accounts %v", linkedAcctIDs)
+				}
+
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
