@@ -106,6 +106,7 @@ async function webpackDevelopmentServer() {
   /** @type {import('webpack-dev-server').Configuration} */
   const options = {
     // react-refresh plugin triggers page reload if needed.
+    // chnage this?
     liveReload: false,
     hot: true,
     host: DEV_SERVER_LISTEN_ADDR.host,

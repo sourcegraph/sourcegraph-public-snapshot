@@ -21,6 +21,7 @@ export const getProvidePlugin = (): webpack.ProvidePlugin =>
         process: 'process/browser.js',
         // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
         Buffer: ['buffer', 'Buffer'],
+        // React: 'react',
     })
 
 const STATOSCOPE_STATS: StatsOptions = {

@@ -22,7 +22,13 @@ export function numberWithCommas(number: string | number): string {
 }
 
 export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
-    return count === 1 || count === 1n ? string : plural
+    // eslint-disable-next-line eqeqeq
+    return count == 1 ? string : plural
+
+    // TODO: use the following code to remove the eslint-disable comment once all the browsers we target support BigInt
+    // For more context, read: https://github.com/sourcegraph/sourcegraph/pull/16345#discussion_r534055393
+    // (If the following line compiles without a warning, then you are good to go)
+    // return count === 1 || count === 1n ? string : plural
 }
 
 /**

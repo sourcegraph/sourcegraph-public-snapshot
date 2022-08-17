@@ -4,8 +4,11 @@ const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 const SentryWebpackPlugin = require('@sentry/webpack-plugin')
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const browserslistToEsbuild = require('browserslist-to-esbuild')
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
+const esbuild = require('esbuild')
 const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
@@ -62,10 +65,6 @@ const RUNTIME_ENV_VARIABLES = {
   COMMIT_SHA,
   ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
-
-const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace =>
-  path.resolve(ROOT_PATH, 'client', workspace, 'src')
-)
 
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 const styleLoader = IS_DEVELOPMENT ? 'style-loader' : MiniCssExtractPlugin.loader
@@ -212,26 +211,16 @@ const config = {
   },
   module: {
     rules: [
-      // Run hot-loading-related Babel plugins on our application code only (because they'd be
-      // slow to run on all JavaScript code).
       {
         test: /\.[jt]sx?$/,
-        include: hotLoadablePaths,
+        loader: 'esbuild-loader',
         exclude: extensionHostWorker,
-        use: [
-          {
-            loader: 'babel-loader',
-            options: {
-              cacheDirectory: !IS_PRODUCTION,
-              ...(isHotReloadEnabled && { plugins: ['react-refresh/babel'] }),
-            },
-          },
-        ],
-      },
-      {
-        test: /\.[jt]sx?$/,
-        exclude: [...hotLoadablePaths, extensionHostWorker],
-        use: [getBabelLoader()],
+        options: {
+            jsx: 'automatic',
+            loader: 'tsx',
+            target: browserslistToEsbuild(),
+            implementation: esbuild,
+        },
       },
       {
         test: /\.(sass|scss)$/,
