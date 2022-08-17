@@ -73,6 +73,31 @@ func mustCreate(ctx context.Context, t *testing.T, db DB, repo *types.Repo) *typ
 	return repo
 }
 
+func setGitserverRepoCloneStatus(t *testing.T, db DB, name api.RepoName, s types.CloneStatus) {
+	t.Helper()
+
+	if err := db.GitserverRepos().SetCloneStatus(context.Background(), name, s, shardID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func setGitserverRepoLastChanged(t *testing.T, db DB, name api.RepoName, last time.Time) {
+	t.Helper()
+
+	if err := db.GitserverRepos().SetLastFetched(context.Background(), name, GitserverFetchData{LastFetched: last, LastChanged: last}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg string) {
+	t.Helper()
+
+	err := db.GitserverRepos().SetLastError(context.Background(), name, msg, shardID)
+	if err != nil {
+		t.Fatalf("failed to set last error: %s", err)
+	}
+}
+
 func repoNamesFromRepos(repos []*types.Repo) []types.MinimalRepo {
 	rnames := make([]types.MinimalRepo, 0, len(repos))
 	for _, repo := range repos {
@@ -656,22 +681,6 @@ func TestRepos_List_fork(t *testing.T) {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, append(append([]*types.Repo(nil), mine...), yours...), repos)
-	}
-}
-
-func setGitserverRepoCloneStatus(t *testing.T, db DB, name api.RepoName, s types.CloneStatus) {
-	t.Helper()
-
-	if err := db.GitserverRepos().SetCloneStatus(context.Background(), name, s, ""); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func setGitserverRepoLastChanged(t *testing.T, db DB, name api.RepoName, last time.Time) {
-	t.Helper()
-
-	if err := db.GitserverRepos().SetLastFetched(context.Background(), name, GitserverFetchData{LastFetched: last, LastChanged: last}); err != nil {
-		t.Fatal(err)
 	}
 }
 
