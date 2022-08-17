@@ -167,11 +167,11 @@ const insightsWithManyLines: SearchBasedInsight[] = [
 
 interface SeriesDatum {
     x: number
-    value: number | null
+    value: number
 }
 
 const getXValue = (datum: SeriesDatum): Date => new Date(datum.x)
-const getYValue = (datum: SeriesDatum): number | null => datum.value
+const getYValue = (datum: SeriesDatum): number => datum.value
 
 const LINE_CHART_WITH_HUGE_NUMBER_OF_LINES: SeriesChartContent<SeriesDatum> = {
     series: [
@@ -237,9 +237,6 @@ const LINE_CHART_WITH_HUGE_NUMBER_OF_LINES: SeriesChartContent<SeriesDatum> = {
             data: [
                 { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 11000 },
                 { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286, value: null },
             ],
             color: 'var(--oc-grape-7)',
             getXValue,

@@ -137,7 +137,9 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 	}
 
 	var accountData extsvc.AccountData
-	gitlab.SetExternalAccountData(&accountData, glUser, nil)
+	if err := gitlab.SetExternalAccountData(&accountData, glUser, nil); err != nil {
+		return nil, err
+	}
 
 	glExternalAccount := extsvc.Account{
 		UserID: user.ID,
@@ -202,7 +204,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	user, _, err := gitlab.GetExternalAccountData(&account.AccountData)
+	user, _, err := gitlab.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	}

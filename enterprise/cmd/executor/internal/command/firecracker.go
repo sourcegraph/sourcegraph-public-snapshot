@@ -11,6 +11,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	shellquote "github.com/kballard/go-shellquote"
+
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,7 +35,7 @@ const firecrackerContainerDir = "/work"
 func formatFirecrackerCommand(spec CommandSpec, name string, options Options) command {
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
 
-	innerCommand := strings.Join(rawOrDockerCommand.Command, " ")
+	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
 	if len(rawOrDockerCommand.Env) > 0 {
 		// If we have env vars that are arguments to the command we need to escape them
 		quotedEnv := quoteEnv(rawOrDockerCommand.Env)

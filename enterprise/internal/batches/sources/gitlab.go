@@ -29,9 +29,13 @@ var _ DraftChangesetSource = &GitLabSource{}
 var _ ForkableChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitLabConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGitLabSource(svc.URN(), &c, cf)

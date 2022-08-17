@@ -675,7 +675,6 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 // BlameOptions configures a blame.
 type BlameOptions struct {
 	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
-	OldestCommit api.CommitID `json:",omitempty" url:",omitempty"` // or "" for the root commit
 
 	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start byte (or 0 for beginning of file)
 	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end byte (or 0 for end of file)
@@ -711,13 +710,7 @@ func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt 
 	if opt == nil {
 		opt = &BlameOptions{}
 	}
-	if opt.OldestCommit != "" {
-		return nil, errors.Errorf("OldestCommit not implemented")
-	}
 	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
-		return nil, err
-	}
-	if err := checkSpecArgSafety(string(opt.OldestCommit)); err != nil {
 		return nil, err
 	}
 
@@ -945,7 +938,7 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 			// repository.
 			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
-		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
+		return "", &gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
 	}
 	return commit, nil
 }

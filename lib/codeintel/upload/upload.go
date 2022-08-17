@@ -63,16 +63,16 @@ func UploadIndex(ctx context.Context, filename string, httpClient Client, opts U
 	}
 
 	if compressedSize <= opts.MaxPayloadSizeBytes {
-		return uploadIndex(ctx, httpClient, opts, compressedReader, compressedSize)
+		return uploadIndex(ctx, httpClient, opts, compressedReader, compressedSize, originalSize)
 	}
 
-	return uploadMultipartIndex(ctx, httpClient, opts, compressedReader, compressedSize)
+	return uploadMultipartIndex(ctx, httpClient, opts, compressedReader, compressedSize, originalSize)
 }
 
 // uploadIndex uploads the index file described by the given options to a Sourcegraph
 // instance via a single HTTP POST request. The identifier of the upload is returned
 // after a successful upload.
-func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen int64) (id int, err error) {
+func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen, uncompressedSize int64) (id int, err error) {
 	bars := []output.ProgressBar{{Label: "Upload", Max: 1.0}}
 	progress, retry, complete := logProgress(
 		opts.Output,
@@ -86,8 +86,9 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 	reader := io.NewSectionReader(r, 0, readerLen)
 
 	requestOptions := uploadRequestOptions{
-		UploadOptions: opts,
-		Target:        &id,
+		UploadOptions:    opts,
+		Target:           &id,
+		UncompressedSize: uncompressedSize,
 	}
 	err = uploadIndexFile(ctx, httpClient, opts, reader, readerLen, requestOptions, progress, retry, 0, 1)
 
@@ -135,14 +136,14 @@ func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions Uploa
 // uploadMultipartIndex uploads the index file described by the given options to a
 // Sourcegraph instance over multiple HTTP POST requests. The identifier of the upload
 // is returned after a successful upload.
-func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen int64) (_ int, err error) {
+func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen, uncompressedSize int64) (_ int, err error) {
 	// Create a slice of section readers for upload part retries.
 	// This allows us to both read concurrently from the same reader,
 	// but also retry reads from arbitrary offsets.
 	readers := splitReader(r, readerLen, opts.MaxPayloadSizeBytes)
 
 	// Perform initial request that gives us our upload identifier
-	id, err := uploadMultipartIndexInit(ctx, httpClient, opts, len(readers))
+	id, err := uploadMultipartIndexInit(ctx, httpClient, opts, len(readers), uncompressedSize)
 	if err != nil {
 		return 0, err
 	}
@@ -164,7 +165,7 @@ func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOpt
 // parts via additional HTTP requests. This upload will be in a pending state until all upload
 // parts are received and the multipart upload is finalized, or until the record is deleted by
 // a background process after an expiry period.
-func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts UploadOptions, numParts int) (id int, err error) {
+func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts UploadOptions, numParts int, uncompressedSize int64) (id int, err error) {
 	retry, complete := logPending(
 		opts.Output,
 		"Preparing multipart upload",
@@ -179,10 +180,11 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 		}
 
 		return performUploadRequest(ctx, httpClient, uploadRequestOptions{
-			UploadOptions: opts,
-			Target:        &id,
-			MultiPart:     true,
-			NumParts:      numParts,
+			UploadOptions:    opts,
+			Target:           &id,
+			MultiPart:        true,
+			NumParts:         numParts,
+			UncompressedSize: uncompressedSize,
 		})
 	})
 

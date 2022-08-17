@@ -31,15 +31,7 @@ import styles from './ConfigurationForm.module.scss'
 /* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
 const NAME_PATTERN = /^[\w.-]+$/
 
-interface ConfigurationFormProps extends SettingsCascadeProps<Settings> {
-    /**
-     * Whether or not to display the configuration form in read-only mode, i.e. to view
-     * for an existing batch change.
-     */
-    isReadOnly?: boolean
-    /** The existing batch change to use to pre-populate the form. */
-    batchChange?: Pick<BatchChangeFields, 'name' | 'namespace'>
-
+type ConfigurationFormProps = SettingsCascadeProps<Settings> & {
     /**
      * When set, apply a template to the batch spec before redirecting to the edit page.
      */
@@ -51,7 +43,28 @@ interface ConfigurationFormProps extends SettingsCascadeProps<Settings> {
      * selector, if an existing batch change is not available.
      */
     initialNamespaceID?: Scalars['ID']
-}
+} & (
+        | // Either the form is editable and we may not have a batch change yet, or the form is
+        // read-only and we definitely already have a batch change.
+        {
+              /**
+               * Whether or not to display the configuration form in read-only mode, i.e. to view
+               * for an existing batch change.
+               */
+              isReadOnly?: false
+              /** The existing batch change to use to pre-populate the form. */
+              batchChange?: Pick<BatchChangeFields, 'name' | 'namespace'>
+          }
+        | {
+              /**
+               * Whether or not to display the configuration form in read-only mode, i.e. to view
+               * for an existing batch change.
+               */
+              isReadOnly: true
+              /** The existing batch change to use to pre-populate the form. */
+              batchChange: Pick<BatchChangeFields, 'name' | 'namespace'>
+          }
+    )
 
 export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<ConfigurationFormProps>> = ({
     settingsCascade,
@@ -86,6 +99,24 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     //     defaultSelectedNamespace
     // )
     const selectedNamespace = userNamespace
+
+    const namespacesSelector = isReadOnly ? (
+        <NamespaceSelector
+            namespaces={[batchChange.namespace]}
+            selectedNamespace={batchChange.namespace.id}
+            disabled={true}
+        />
+    ) : (
+        <NamespaceSelector
+            namespaces={namespaces}
+            selectedNamespace={selectedNamespace.id}
+            // TODO: As we haven't finished implementing support for orgs, we've temporary
+            // disabled the namespace selector. This code should be uncommented to restore it
+            // onSelect={setSelectedNamespace}
+            // disabled={isReadOnly}
+            disabled={true}
+        />
+    )
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
@@ -156,16 +187,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     </Alert>
                 )}
                 {error && <ErrorAlert error={error} />}
-                <NamespaceSelector
-                    namespaces={namespaces}
-                    selectedNamespace={selectedNamespace.id}
-                    // TODO: As we haven't finished implementing support for orgs, we've temporary
-                    // disabled the namespace selector. This code should be uncommented to restore it
-                    // onSelect={setSelectedNamespace}
-                    // disabled={isReadOnly}
-                    onSelect={noop}
-                    disabled={true}
-                />
+                {namespacesSelector}
                 <Input
                     autoFocus={true}
                     label="Batch change name"

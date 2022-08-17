@@ -142,9 +142,9 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 					Url: "https://gitlab.com",
-				}),
+				})),
 			}
 
 			ctx := context.Background()
@@ -176,7 +176,11 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitLab}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string

@@ -416,18 +416,18 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 					svc := &types.ExternalService{
 						Kind: extsvc.KindGitLab,
-						Config: marshalJSON(t, &schema.GitLabConnection{
+						Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 							Url:   "https://gitlab.com",
 							Token: os.Getenv("GITLAB_TOKEN"),
-						}),
+						})),
 					}
 
-					gitlabSource, err := NewGitLabSource(svc, cf)
+					ctx := context.Background()
+					gitlabSource, err := NewGitLabSource(ctx, svc, cf)
 					if err != nil {
 						t.Fatal(err)
 					}
 
-					ctx := context.Background()
 					if tc.err == "" {
 						tc.err = "<nil>"
 					}
@@ -728,18 +728,18 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 				svc := &types.ExternalService{
 					Kind: extsvc.KindGitLab,
-					Config: marshalJSON(t, &schema.GitLabConnection{
+					Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 						Url:   "https://gitlab.com",
 						Token: os.Getenv("GITLAB_TOKEN"),
-					}),
+					})),
 				}
 
-				gitlabSource, err := NewGitLabSource(svc, cf)
+				ctx := context.Background()
+				gitlabSource, err := NewGitLabSource(ctx, svc, cf)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				ctx := context.Background()
 				repo := &types.Repo{Metadata: newGitLabProject(16606088)}
 				cs := &Changeset{
 					RemoteRepo: repo,

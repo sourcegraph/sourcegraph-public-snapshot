@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -90,7 +91,7 @@ func TestExtractCloneURL(t *testing.T) {
 					services = append(services, &types.ExternalService{
 						ID:     id,
 						Kind:   extsvc.KindGitHub,
-						Config: tc.configs[int(id)],
+						Config: extsvc.NewUnencryptedConfig(tc.configs[int(id)]),
 					})
 				}
 				return services, nil
@@ -116,26 +117,26 @@ func TestLoadExternalService(t *testing.T) {
 		ID:          1,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub no token",
-		Config:      `{"url": "https://github.com", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
 	userOwnedWithToken := types.ExternalService{
 		ID:              2,
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "GitHub user owned",
 		NamespaceUserID: 1234,
-		Config:          `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 	}
 	withToken := types.ExternalService{
 		ID:          3,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub token",
-		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 	}
 	withTokenNewer := types.ExternalService{
 		ID:          4,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub newer token",
-		Config:      `{"url": "https://github.com", "token": "123456", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123456", "authorization": {}}`),
 	}
 
 	repo := &types.Repo{
@@ -521,7 +522,7 @@ func TestGitserverPushConfig(t *testing.T) {
 					services = append(services, &types.ExternalService{
 						ID:     id,
 						Kind:   extsvc.TypeToKind(tt.externalServiceType),
-						Config: tt.config,
+						Config: extsvc.NewUnencryptedConfig(tt.config),
 					})
 				}
 
@@ -546,7 +547,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 		ID:          1,
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitHub.com",
-		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 	}
 	repo := &types.Repo{
 		Name:    api.RepoName("test-repo"),
@@ -578,7 +579,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
 				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
-				cred := &database.UserCredential{}
+				cred := &database.UserCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, userToken)
 				return cred, nil
 			})
@@ -619,7 +620,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
-				cred := &btypes.SiteCredential{}
+				cred := &btypes.SiteCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, siteToken)
 				return cred, nil
 			})
@@ -679,7 +680,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
-				cred := &btypes.SiteCredential{}
+				cred := &btypes.SiteCredential{Credential: database.NewEmptyCredential()}
 				cred.SetAuthenticator(ctx, siteToken)
 				return cred, nil
 			})

@@ -150,15 +150,19 @@ export class Notebook {
                     }),
                 })
                 break
-            case 'query':
+            case 'query': {
+                const { extensionHostAPI } = this.dependencies
+                // Removes comments
+                const query = block.input.query.replace(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(
-                        transformSearchQuery({
-                            // Removes comments
-                            query: block.input.query.replace(/\/\/.*/g, ''),
-                            extensionHostAPIPromise: this.dependencies.extensionHostAPI,
-                        }),
+                        extensionHostAPI !== null
+                            ? transformSearchQuery({
+                                  query,
+                                  extensionHostAPIPromise: extensionHostAPI,
+                              })
+                            : of(query),
                         {
                             version: LATEST_VERSION,
                             patternType: SearchPatternType.standard,
@@ -168,6 +172,7 @@ export class Notebook {
                     ).pipe(startWith(emptyAggregateResults)),
                 })
                 break
+            }
             case 'file':
                 this.blocks.set(block.id, {
                     ...block,

@@ -120,7 +120,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		ID:              1,
 		Kind:            extsvc.KindGitLab,
 		DisplayName:     "GITLAB1",
-		Config:          `{"token": "limited", "authorization": {}}`,
+		Config:          extsvc.NewUnencryptedConfig(`{"token": "limited", "authorization": {}}`),
 		NamespaceUserID: 1,
 	}
 
@@ -315,7 +315,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		ID:              1,
 		Kind:            extsvc.KindGitLab,
 		DisplayName:     "GITLAB1",
-		Config:          `{"token": "limited", "authorization": {}}`,
+		Config:          extsvc.NewUnencryptedConfig(`{"token": "limited", "authorization": {}}`),
 		NamespaceUserID: 1,
 	}
 
@@ -435,7 +435,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 				ID:              1,
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
-				Config:          `{"token": "mytoken"}`,
+				Config:          extsvc.NewUnencryptedConfig(`{"token": "mytoken"}`),
 				NamespaceUserID: opt.NamespaceUserID,
 			},
 		}, nil

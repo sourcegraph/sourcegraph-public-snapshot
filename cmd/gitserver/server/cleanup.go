@@ -570,7 +570,7 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		return nil
 	}
 
-	logger.Info("directory sizes calculated during file system walk",
+	logger.Debug("directory sizes calculated during file system walk",
 		log.Int("repoToSize", reposNumber))
 
 	// repos number is limited in order not to overwhelm the database with massive batch updates

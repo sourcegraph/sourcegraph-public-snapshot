@@ -27,9 +27,13 @@ type GithubSource struct {
 
 var _ ForkableChangesetSource = GithubSource{}
 
-func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGithubSource(svc.URN(), &c, cf, nil)

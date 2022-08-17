@@ -151,7 +151,7 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		for _, svc := range svcs {
-			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 			if err != nil {
 				return nil, errors.Wrap(err, "parse config")
 			}

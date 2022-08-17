@@ -348,8 +348,10 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		// Not an operation failure but the authz provider is unable to determine
 		// the external account for the current user.
 		if acct == nil {
+			providerLogger.Debug("no user account found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID))
 			continue
 		}
+		providerLogger.Debug("account found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID), log.Int32("account_id", acct.ID))
 
 		err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
 		if err != nil {
@@ -378,14 +380,16 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
-			// FetchUserPerms makes API requests using a client that will deal with the token expiration and try to
-			// refresh it when necessary. If the client fails to update the token, or if the token is revoked,
-			// the "401 Unauthorized" error will be handled here.
+			acctLogger.Debug("fetching user permissions", log.Error(err))
+
+			// FetchUserPerms makes API requests using a client that will deal with the token
+			// expiration and try to refresh it when necessary. If the client fails to update
+			// the token, or if the token is revoked, the "401 Unauthorized" error will be
+			// handled here.
 			unauthorized := errcode.IsUnauthorized(err)
 			forbidden := errcode.IsForbidden(err)
 			// Detect GitHub account suspension error
 			accountSuspended := errcode.IsAccountSuspended(err)
-
 			if unauthorized || accountSuspended || forbidden {
 				// These are fatal errors that mean we should continue as if the account no
 				// longer has any access.
@@ -411,7 +415,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 			// Skip this external account if unimplemented
 			if errors.Is(err, &authz.ErrUnimplemented{}) {
-				acctLogger.Debug("unimplemented", log.Error(err))
 				continue
 			}
 
@@ -572,7 +575,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 	for _, svc := range svcs {
 		svcLogger := logger.With(log.Int32("svc.ID", int32(svc.ID)))
 
-		provider, err := eauthz.ProviderFromExternalService(s.db.ExternalServices(), conf.Get().SiteConfiguration, svc, s.db)
+		provider, err := eauthz.ProviderFromExternalService(ctx, s.db.ExternalServices(), conf.Get().SiteConfiguration, svc, s.db)
 		if err != nil {
 			return nil, errors.Wrapf(err, "new provider from external service %d", svc.ID)
 		}
@@ -584,7 +587,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 			continue
 		}
 
-		token, err := extsvc.ExtractToken(svc.Config, svc.Kind)
+		token, err := extsvc.ExtractEncryptableToken(ctx, svc.Config, svc.Kind)
 		if err != nil {
 			return nil, errors.Wrapf(err, "extract token from external service %d", svc.ID)
 		}

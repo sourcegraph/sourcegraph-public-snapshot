@@ -5,7 +5,11 @@ import { mdiInformationOutline } from '@mdi/js'
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 import { Icon, Select, Tooltip } from '@sourcegraph/wildcard'
 
-const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
+type PartialNamespace =
+    | Pick<SettingsUserSubject, '__typename' | 'id' | 'username' | 'displayName'>
+    | Pick<SettingsOrgSubject, '__typename' | 'id' | 'name' | 'displayName'>
+
+const getNamespaceDisplayName = (namespace: PartialNamespace): string => {
     switch (namespace.__typename) {
         case 'User':
             return namespace.displayName ?? namespace.username
@@ -16,12 +20,10 @@ const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSub
 
 const NAMESPACE_SELECTOR_ID = 'batch-spec-execution-namespace-selector'
 
-interface NamespaceSelectorProps {
-    namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
+type NamespaceSelectorProps = {
+    namespaces: PartialNamespace[]
     selectedNamespace: string
-    disabled?: boolean
-    onSelect: (namespace: SettingsUserSubject | SettingsOrgSubject) => void
-}
+} & ({ disabled: true; onSelect?: undefined } | { disabled?: false; onSelect: (namespace: PartialNamespace) => void }) // Either the selector is disabled and there's on onSelect, or the selector is enabled and there is one.
 
 export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<NamespaceSelectorProps>> = ({
     namespaces,
@@ -31,13 +33,17 @@ export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<
 }) => {
     const onSelectNamespace = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => {
+            if (disabled) {
+                return
+            }
+
             const selectedNamespace = namespaces.find(
                 (namespace): namespace is SettingsUserSubject | SettingsOrgSubject =>
                     namespace.id === event.target.value
             )
             onSelect(selectedNamespace || namespaces[0])
         },
-        [onSelect, namespaces]
+        [disabled, onSelect, namespaces]
     )
 
     return (
