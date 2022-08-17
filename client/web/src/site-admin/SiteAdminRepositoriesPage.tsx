@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 
 import { mdiCloudDownload, mdiCog } from '@mdi/js'
-import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -57,10 +56,12 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
         </div>
 
         {node.mirrorInfo.lastError && (
-            <div className={classNames(styles.alertWrapper)}>
+            <div className={styles.alertWrapper}>
                 <Alert variant="warning">
-                    <TerminalLine>Error syncing repository:</TerminalLine>
-                    <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
+                    <Text className="font-weight-bold">Error syncing repository:</Text>
+                    <TerminalLine className={styles.alertContent}>
+                        {node.mirrorInfo.lastError.replaceAll('\r', '\n')}
+                    </TerminalLine>
                 </Alert>
             </div>
         )}
