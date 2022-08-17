@@ -75,6 +75,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 			User:      userID,
 			Repo:      r.ID,
 			HeadRef:   fmt.Sprintf("d34db33f-%d", i),
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		})
 
 		changesetSpecs = append(changesetSpecs, s)
@@ -86,6 +87,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		Repo:      rs[2].ID,
 		BatchSpec: oldBatchSpec.ID,
 		HeadRef:   "d34db33f-2",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	closingChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             rs[2].ID,
@@ -100,6 +102,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		User:      userID,
 		Repo:      changesetSpecs[1].BaseRepoID,
 		HeadRef:   changesetSpecs[1].HeadRef,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	updatedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:               rs[1].ID,
@@ -528,6 +531,7 @@ func newApplyPreviewTestFixture(
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "published " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 			Published: true,
 		}),
 		specToBePublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
@@ -535,24 +539,28 @@ func newApplyPreviewTestFixture(
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be published " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeDraft: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be draft " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeUnpublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be unpublished " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 		specToBeOmitted: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
 			HeadRef:   "to be omitted " + name,
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}),
 	}
 }

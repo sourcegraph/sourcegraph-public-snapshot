@@ -643,6 +643,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		for i := 0; i < cap(mappings); i++ {
 			spec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 				HeadRef:   fmt.Sprintf("refs/heads/test-get-rewirer-mappings-%d", i),
+				Typ:       btypes.ChangesetSpecTypeBranch,
 				Repo:      repo.ID,
 				BatchSpec: batchSpec.ID,
 			})
@@ -841,12 +842,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		conflictingBatchSpec := bt.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
 		conflictingRef := "refs/heads/conflicting-head-ref"
 		for _, opts := range []bt.TestSpecOpts{
-			{ExternalID: "4321", Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Repo: repo3.ID, BatchSpec: conflictingBatchSpec.ID},
+			{ExternalID: "4321", Typ: btypes.ChangesetSpecTypeExisting, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo3.ID, BatchSpec: conflictingBatchSpec.ID},
 		} {
 			bt.CreateChangesetSpec(t, ctx, s, opts)
 		}
@@ -866,12 +867,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 		nonConflictingBatchSpec := bt.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
 		for _, opts := range []bt.TestSpecOpts{
-			{ExternalID: "1234", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-1", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-2", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-1", Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-2", Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-1", Repo: repo3.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{ExternalID: "1234", Typ: btypes.ChangesetSpecTypeExisting, Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo3.ID, BatchSpec: nonConflictingBatchSpec.ID},
 		} {
 			bt.CreateChangesetSpec(t, ctx, s, opts)
 		}
@@ -910,6 +911,7 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 		Title:     "foobar",
 		Published: true,
 		HeadRef:   "refs/heads/foobar",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 
 	opts := bt.TestChangesetOpts{}
@@ -993,6 +995,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 			Title:     string(state),
 			Published: true,
 			HeadRef:   string(state),
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		}
 		oldSpecs[state] = bt.CreateChangesetSpec(t, ctx, s, specOpts)
 
@@ -1078,6 +1081,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Title:     "foo",
 		Published: true,
 		HeadRef:   "open-foo",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	oldOpenBar := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, bt.TestSpecOpts{
 		User:      user.ID,
@@ -1086,6 +1090,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Title:     "bar",
 		Published: true,
 		HeadRef:   "open-bar",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	oldClosedFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, bt.TestSpecOpts{
 		User:      user.ID,
@@ -1094,6 +1099,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Title:     "foo",
 		Published: true,
 		HeadRef:   "closed-foo",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 
 	// Finally, the changesets.
@@ -1237,12 +1243,14 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		Repo:       repos[0].ID,
 		BatchSpec:  oldBatchSpec.ID,
 		ExternalID: "1234",
+		Typ:        btypes.ChangesetSpecTypeExisting,
 	})
 	oldTrackedGitLabSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[1].ID,
 		BatchSpec:  oldBatchSpec.ID,
 		ExternalID: "1234",
+		Typ:        btypes.ChangesetSpecTypeExisting,
 	})
 	oldBranchGitHubSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
@@ -1251,6 +1259,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		HeadRef:   "main",
 		Published: true,
 		Title:     "GitHub branch",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	oldBranchGitLabSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
@@ -1259,6 +1268,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		HeadRef:   "main",
 		Published: true,
 		Title:     "GitLab branch",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 
 	// We also need actual changesets.
@@ -1315,12 +1325,14 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		Repo:       repos[0].ID,
 		BatchSpec:  newBatchSpec.ID,
 		ExternalID: "1234",
+		Typ:        btypes.ChangesetSpecTypeExisting,
 	})
 	newTrackedGitLab := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[1].ID,
 		BatchSpec:  newBatchSpec.ID,
 		ExternalID: "1234",
+		Typ:        btypes.ChangesetSpecTypeExisting,
 	})
 	newBranchGitHub := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
@@ -1329,6 +1341,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		HeadRef:   "main",
 		Published: true,
 		Title:     "New GitHub branch",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	newBranchGitLab := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
@@ -1337,6 +1350,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		HeadRef:   "main",
 		Published: true,
 		Title:     "New GitLab branch",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 
 	// A couple of hundred lines of boilerplate later, we have a scenario! Let's

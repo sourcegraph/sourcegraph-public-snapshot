@@ -568,11 +568,13 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if tc.hasCurrentSpec {
 				// The attributes of the spec don't really matter, but the
 				// associations do.
-				specOpts := bt.TestSpecOpts{}
-				specOpts.User = admin.ID
-				specOpts.Repo = repo.ID
-				specOpts.BatchSpec = batchSpec.ID
-				changesetSpec = bt.CreateChangesetSpec(t, ctx, bstore, specOpts)
+				specOpts := bt.TestSpecOpts{
+					User:      admin.ID,
+					Repo:      repo.ID,
+					BatchSpec: batchSpec.ID,
+					Typ:       btypes.ChangesetSpecTypeBranch,
+				}
+				changesetSpec = bt.CreateChangesetSpec(t, ctx, cstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
@@ -765,6 +767,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	plan.ChangesetSpec = bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 		Repo:      repo.ID,
 		HeadRef:   commonHeadRef,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		Published: true,
 	})
 	plan.Changeset = bt.BuildChangeset(bt.TestChangesetOpts{Repo: repo.ID})
@@ -790,6 +793,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	changesetSpec := bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 		Repo:      repo.ID,
 		HeadRef:   "refs/heads/my-pr",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		Published: true,
 	})
 	changeset := bt.BuildChangeset(bt.TestChangesetOpts{ExternalState: "OPEN", Repo: repo.ID})
@@ -1155,6 +1159,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			}
 			plan.ChangesetSpec = bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 				HeadRef:    "refs/heads/my-branch",
+				Typ:        btypes.ChangesetSpecTypeBranch,
 				Published:  true,
 				CommitDiff: "testdiff",
 			})

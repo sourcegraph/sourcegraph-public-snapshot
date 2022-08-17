@@ -969,6 +969,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
 			HeadRef:   "refs/heads/my-branch-1",
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		})
 
 		// We need a couple more changeset specs to make this useful: we need to
@@ -981,6 +982,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			Repo:      repo.ID,
 			BatchSpec: otherBatchSpec.ID,
 			HeadRef:   "refs/heads/my-branch-2",
+			Typ:       btypes.ChangesetSpecTypeBranch,
 		})
 
 		publishedChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
@@ -988,6 +990,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
 			HeadRef:   "refs/heads/my-branch-3",
+			Typ:       btypes.ChangesetSpecTypeBranch,
 			Published: true,
 		})
 
@@ -2166,12 +2169,14 @@ func TestPublishChangesets(t *testing.T) {
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: batchSpec.ID,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		HeadRef:   "main",
 	})
 	unpublishableChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: batchSpec.ID,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		HeadRef:   "main",
 		Published: true,
 	})
@@ -2179,6 +2184,7 @@ func TestPublishChangesets(t *testing.T) {
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: otherBatchSpec.ID,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		HeadRef:   "main",
 	})
 	publishableChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{

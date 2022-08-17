@@ -81,6 +81,7 @@ func TestChangesetResolver(t *testing.T) {
 		CommitDiff:    testDiff,
 		BaseRev:       baseRev,
 		BaseRef:       "refs/heads/master",
+		Typ:           btypes.ChangesetSpecTypeBranch,
 	})
 	unpublishedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
@@ -100,6 +101,7 @@ func TestChangesetResolver(t *testing.T) {
 		CommitDiff:    testDiff,
 		BaseRev:       baseRev,
 		BaseRef:       "refs/heads/master",
+		Typ:           btypes.ChangesetSpecTypeBranch,
 	})
 	erroredChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,

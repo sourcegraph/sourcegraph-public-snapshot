@@ -1485,6 +1485,7 @@ index e5af166..d44c3fc 100644
 				bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 					BatchSpec: spec.ID,
 					Repo:      r.ID,
+					Typ:       btypes.ChangesetSpecTypeBranch,
 				})
 			}
 
@@ -1794,12 +1795,12 @@ changesetTemplate:
 		batchSpec := bt.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID, 0)
 		conflictingRef := "refs/heads/conflicting-head-ref"
 		for _, opts := range []bt.TestSpecOpts{
-			{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[0].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[2].ID, BatchSpec: batchSpec.ID},
 		} {
 			bt.CreateChangesetSpec(t, ctx, s, opts)
 		}
@@ -1880,12 +1881,14 @@ changesetTemplate:
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			changesetSpec2 := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec-2",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			var workspaceIDs []int64
@@ -2098,12 +2101,14 @@ changesetTemplate:
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			changesetSpec2 := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec-2",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			var workspaceIDs []int64
@@ -2166,12 +2171,14 @@ changesetTemplate:
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			changesetSpec2 := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec-2",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			var workspaceIDs []int64

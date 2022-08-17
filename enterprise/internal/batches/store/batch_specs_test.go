@@ -841,12 +841,14 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 		Repo:      globalRepo.ID,
 		BatchSpec: batchSpec.ID,
 		HeadRef:   "branch",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 	bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      hiddenRepo.ID,
 		BatchSpec: batchSpec.ID,
 		HeadRef:   "branch",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 	})
 
 	// Also create an empty batch spec, just for fun.

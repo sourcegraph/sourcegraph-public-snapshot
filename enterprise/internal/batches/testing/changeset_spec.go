@@ -52,6 +52,10 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 		t.Fatalf("invalid value for published passed, got %v (%T)", opts.Published, opts.Published)
 	}
 
+	if opts.Typ == "" {
+		t.Fatal("empty typ on changeset spec in test helper")
+	}
+
 	spec := &btypes.ChangesetSpec{
 		ID:                opts.ID,
 		UserID:            opts.User,
@@ -90,11 +94,6 @@ func CreateChangesetSpec(
 	t.Helper()
 
 	spec := BuildChangesetSpec(t, opts)
-	if spec.ExternalID != "" {
-		spec.Typ = btypes.ChangesetSpecTypeExisting
-	} else {
-		spec.Typ = btypes.ChangesetSpecTypeBranch
-	}
 
 	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
 		t.Fatal(err)

@@ -60,11 +60,13 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 		"update a published changeset": {
 			currentSpec: &bt.TestSpecOpts{
 				HeadRef:   "refs/heads/head-ref-on-github",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 				Published: true,
 			},
 
 			previousSpec: &bt.TestSpecOpts{
 				HeadRef:   "refs/heads/head-ref-on-github",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 				Published: true,
 
 				Title:         "old title",
