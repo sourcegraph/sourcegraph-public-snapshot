@@ -39,10 +39,8 @@ export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['reque
             }
 
             try {
-                // const parsedConfig = JSON.parse(result.data.site.publicConfiguration.effectiveContents)
-                // return Boolean(parsedConfig?.experimentalFeatures?.enableLegacyExtensions)
-
-                return DEFAULT_ENABLE_LEGACY_EXTENSIONS // Should be taken from site config after Sourcegraph 4.0 release (uncomment the above lines)
+                const parsedConfig = JSON.parse(result.data.site.publicConfiguration.effectiveContents)
+                return Boolean(parsedConfig?.experimentalFeatures?.enableLegacyExtensions)
             } catch {
                 return DEFAULT_ENABLE_LEGACY_EXTENSIONS
             }
