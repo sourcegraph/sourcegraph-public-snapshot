@@ -82,8 +82,8 @@ type UserExternalAccountsStore interface {
 	// CreateUserAndSave for that.
 	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
 
-	// TouchExpired sets the given user external account to be expired now.
-	TouchExpired(ctx context.Context, id int32) error
+	// TouchExpired sets the given user external accounts to be expired now.
+	TouchExpired(ctx context.Context, ids ...int32) error
 
 	// TouchLastValid sets last valid time of the given user external account to be now.
 	TouchLastValid(ctx context.Context, id int32) error
@@ -298,13 +298,17 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
 }
 
-func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
-	_, err := s.Handle().ExecContext(ctx, `
+func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int32) error {
+	idStrings := make([]string, len(ids))
+	for i, id := range ids {
+		idStrings[i] = strconv.Itoa(int(id))
+	}
+	_, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
-WHERE id = $1
-`, id)
+WHERE id IN (%s) 
+`, strings.Join(idStrings, ", ")))
 	return err
 }
 
@@ -321,11 +325,15 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) error {
-	idStrings := []string{}
-	for _, id := range ids {
-		idStrings = append(idStrings, strconv.Itoa(int(id)))
+	idStrings := make([]string, len(ids))
+	for i, id := range ids {
+		idStrings[i] = strconv.Itoa(int(id))
 	}
-	res, err := s.Handle().ExecContext(ctx, fmt.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE id IN (%s) AND deleted_at IS NULL", strings.Join(idStrings, ", ")))
+	res, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
+-- source: internal/database/external_accounts.go:UserExternalAccountsStore.Delete
+UPDATE user_external_accounts
+SET deleted_at=now()
+WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(idStrings, ", ")))
 	if err != nil {
 		return err
 	}

@@ -39979,7 +39979,7 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 			},
 		},
 		TouchExpiredFunc: &UserExternalAccountsStoreTouchExpiredFunc{
-			defaultHook: func(context.Context, int32) (r0 error) {
+			defaultHook: func(context.Context, ...int32) (r0 error) {
 				return
 			},
 		},
@@ -40082,7 +40082,7 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 			},
 		},
 		TouchExpiredFunc: &UserExternalAccountsStoreTouchExpiredFunc{
-			defaultHook: func(context.Context, int32) error {
+			defaultHook: func(context.Context, ...int32) error {
 				panic("unexpected invocation of MockUserExternalAccountsStore.TouchExpired")
 			},
 		},
@@ -41621,16 +41621,16 @@ func (c UserExternalAccountsStoreQueryRowFuncCall) Results() []interface{} {
 // TouchExpired method of the parent MockUserExternalAccountsStore instance
 // is invoked.
 type UserExternalAccountsStoreTouchExpiredFunc struct {
-	defaultHook func(context.Context, int32) error
-	hooks       []func(context.Context, int32) error
+	defaultHook func(context.Context, ...int32) error
+	hooks       []func(context.Context, ...int32) error
 	history     []UserExternalAccountsStoreTouchExpiredFuncCall
 	mutex       sync.Mutex
 }
 
 // TouchExpired delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockUserExternalAccountsStore) TouchExpired(v0 context.Context, v1 int32) error {
-	r0 := m.TouchExpiredFunc.nextHook()(v0, v1)
+func (m *MockUserExternalAccountsStore) TouchExpired(v0 context.Context, v1 ...int32) error {
+	r0 := m.TouchExpiredFunc.nextHook()(v0, v1...)
 	m.TouchExpiredFunc.appendCall(UserExternalAccountsStoreTouchExpiredFuncCall{v0, v1, r0})
 	return r0
 }
@@ -41638,7 +41638,7 @@ func (m *MockUserExternalAccountsStore) TouchExpired(v0 context.Context, v1 int3
 // SetDefaultHook sets function that is called when the TouchExpired method
 // of the parent MockUserExternalAccountsStore instance is invoked and the
 // hook queue is empty.
-func (f *UserExternalAccountsStoreTouchExpiredFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+func (f *UserExternalAccountsStoreTouchExpiredFunc) SetDefaultHook(hook func(context.Context, ...int32) error) {
 	f.defaultHook = hook
 }
 
@@ -41647,7 +41647,7 @@ func (f *UserExternalAccountsStoreTouchExpiredFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UserExternalAccountsStoreTouchExpiredFunc) PushHook(hook func(context.Context, int32) error) {
+func (f *UserExternalAccountsStoreTouchExpiredFunc) PushHook(hook func(context.Context, ...int32) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -41656,19 +41656,19 @@ func (f *UserExternalAccountsStoreTouchExpiredFunc) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UserExternalAccountsStoreTouchExpiredFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32) error {
+	f.SetDefaultHook(func(context.Context, ...int32) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UserExternalAccountsStoreTouchExpiredFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32) error {
+	f.PushHook(func(context.Context, ...int32) error {
 		return r0
 	})
 }
 
-func (f *UserExternalAccountsStoreTouchExpiredFunc) nextHook() func(context.Context, int32) error {
+func (f *UserExternalAccountsStoreTouchExpiredFunc) nextHook() func(context.Context, ...int32) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -41706,18 +41706,25 @@ type UserExternalAccountsStoreTouchExpiredFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation.
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
 func (c UserExternalAccountsStoreTouchExpiredFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this
