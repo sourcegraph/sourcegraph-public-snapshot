@@ -635,12 +635,18 @@ func (r *batchSpecResolver) Mounts(ctx context.Context, args *graphqlbackend.Lis
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
-
 	opts := store.ListBatchSpecMountsOpts{
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},
 		BatchSpecRandID: r.batchSpec.RandID,
+	}
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = cursor
 	}
 
 	if args.After != nil {
