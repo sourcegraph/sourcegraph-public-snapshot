@@ -7,15 +7,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/oauth2"
-
 	"github.com/sourcegraph/log"
 
 	gh "github.com/google/go-github/v41/github"
@@ -32,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -40,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -258,74 +253,6 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
-	url := strings.TrimSuffix(p.Url, "/")
-	return &oauth2.Config{
-		ClientID:     p.ClientID,
-		ClientSecret: p.ClientSecret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  url + "/oauth/authorize",
-			TokenURL: url + "/oauth/token",
-		},
-		Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
-	}
-}
-
-func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) (err error) {
-	if acct.ServiceType != extsvc.TypeGitLab {
-		return nil
-	}
-
-	logger := s.logger.Scoped("maybeRefreshGitLabOAuthTokenFromAccount", "").With(log.Int32("externalAccountID", acct.ID))
-
-	var oauthConfig *oauth2.Config
-	expiryWindow := 10 * time.Minute
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab == nil ||
-			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
-			continue
-		}
-		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
-		if authProvider.Gitlab.TokenRefreshWindowMinutes > 0 {
-			expiryWindow = time.Duration(authProvider.Gitlab.TokenRefreshWindowMinutes) * time.Minute
-		}
-		break
-	}
-	if oauthConfig == nil {
-		logger.Warn("external account has no auth.provider")
-		return nil
-	}
-
-	_, tok, err := gitlab.GetExternalAccountData(ctx, &acct.AccountData)
-	if err != nil {
-		return errors.Wrap(err, "get external account data")
-	} else if tok == nil {
-		return errors.New("no token found in the external account data")
-	}
-
-	// The default window for the oauth2 library is only 10 seconds, we extend this
-	// to give ourselves a better chance of not having a token expire.
-	tok.Expiry = tok.Expiry.Add(expiryWindow)
-
-	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
-	if err != nil {
-		return errors.Wrap(err, "refresh token")
-	}
-
-	if refreshedToken.AccessToken != tok.AccessToken {
-		defer func() {
-			success := err == nil
-			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
-		}()
-		acct.AccountData.AuthData.Set(refreshedToken)
-		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
-		if err != nil {
-			return errors.Wrap(err, "save refreshed token")
-		}
-	}
-	return nil
-}
-
 func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *extsvc.Account) ([]gh.Installation, error) {
 	if acct.ServiceType != extsvc.TypeGitHub {
 		return nil, nil
@@ -472,14 +399,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
-		// Refresh the token after waiting for the rate limit to give us the best chance of it being valid
-		acctLogger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
-		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
-			// This should not be a fatal error, we should still try to sync from other accounts
-			acctLogger.Warn("failed to refresh GitLab token", log.Error(err))
-			continue
-		}
-
 		acctLogger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
 
 		installations, err := s.getUserGitHubAppInstallations(ctx, acct)
@@ -498,12 +417,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		if err != nil {
 			acctLogger.Debug("fetching user permissions", log.Error(err))
 
-			// The "401 Unauthorized" is returned by code hosts when the token is revoked
+			// FetchUserPerms makes API requests using a client that will deal with the token
+			// expiration and try to refresh it when necessary. If the client fails to update
+			// the token, or if the token is revoked, the "401 Unauthorized" error will be
+			// handled here.
 			unauthorized := errcode.IsUnauthorized(err)
 			forbidden := errcode.IsForbidden(err)
 			// Detect GitHub account suspension error
 			accountSuspended := errcode.IsAccountSuspended(err)
-
 			if unauthorized || accountSuspended || forbidden {
 				// These are fatal errors that mean we should continue as if the account no
 				// longer has any access.
@@ -1378,10 +1299,10 @@ type scheduledRepo struct {
 }
 
 // schedule computes schedule four lists in the following order:
-//   1. Users with no permissions, because they can't do anything meaningful (e.g. not able to search).
-//   2. Private repositories with no permissions, because those can't be viewed by anyone except site admins.
-//   3. Rolling updating user permissions over time from oldest ones.
-//   4. Rolling updating repository permissions over time from oldest ones.
+//  1. Users with no permissions, because they can't do anything meaningful (e.g. not able to search).
+//  2. Private repositories with no permissions, because those can't be viewed by anyone except site admins.
+//  3. Rolling updating user permissions over time from oldest ones.
+//  4. Rolling updating repository permissions over time from oldest ones.
 func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	schedule := new(schedule)
 
