@@ -32,119 +32,119 @@ func TestReconcilerWorkerView(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
 	user := bt.CreateTestUser(t, db, true)
-	spec := bt.CreateBatchSpec(t, ctx, cstore, "test-batch-change", user.ID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test-batch-change", user.ID, spec.ID)
-	repos, _ := bt.CreateTestRepos(t, ctx, cstore.DatabaseDB(), 2)
+	spec := bt.CreateBatchSpec(t, ctx, bstore, "test-batch-change", user.ID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-batch-change", user.ID, spec.ID)
+	repos, _ := bt.CreateTestRepos(t, ctx, bstore.DatabaseDB(), 2)
 	repo := repos[0]
 	deletedRepo := repos[1]
-	if err := cstore.Repos().Delete(ctx, deletedRepo.ID); err != nil {
+	if err := bstore.Repos().Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("Queued changeset", func(t *testing.T) {
-		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+		c := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     batchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
-			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
+			if err := bstore.DeleteChangeset(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{int(c.ID)})
+		assertReturnedChangesetIDs(t, ctx, bstore.DatabaseDB(), []int{int(c.ID)})
 	})
 	t.Run("Not in batch change", func(t *testing.T) {
-		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+		c := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     0,
 			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
-			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
+			if err := bstore.DeleteChangeset(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
+		assertReturnedChangesetIDs(t, ctx, bstore.DatabaseDB(), []int{})
 	})
 	t.Run("In batch change with deleted user namespace", func(t *testing.T) {
 		deletedUser := bt.CreateTestUser(t, db, true)
-		if err := database.UsersWith(logger, cstore).Delete(ctx, deletedUser.ID); err != nil {
+		if err := database.UsersWith(logger, bstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
-		userBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
-		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+		userBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-user-namespace", deletedUser.ID, spec.ID)
+		c := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     userBatchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
-			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
+			if err := bstore.DeleteChangeset(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
+		assertReturnedChangesetIDs(t, ctx, bstore.DatabaseDB(), []int{})
 	})
 	t.Run("In batch change with deleted org namespace", func(t *testing.T) {
 		orgID := bt.InsertTestOrg(t, db, "deleted-org")
-		if err := database.OrgsWith(cstore).Delete(ctx, orgID); err != nil {
+		if err := database.OrgsWith(bstore).Delete(ctx, orgID); err != nil {
 			t.Fatal(err)
 		}
-		orgBatchChange := bt.BuildBatchChange(cstore, "test-user-namespace", 0, spec.ID)
+		orgBatchChange := bt.BuildBatchChange(bstore, "test-user-namespace", 0, spec.ID)
 		orgBatchChange.NamespaceOrgID = orgID
-		if err := cstore.CreateBatchChange(ctx, orgBatchChange); err != nil {
+		if err := bstore.CreateBatchChange(ctx, orgBatchChange); err != nil {
 			t.Fatal(err)
 		}
-		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+		c := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     orgBatchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
-			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
+			if err := bstore.DeleteChangeset(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
+		assertReturnedChangesetIDs(t, ctx, bstore.DatabaseDB(), []int{})
 	})
 	t.Run("In batch change with deleted namespace but another batch change with an existing one", func(t *testing.T) {
 		deletedUser := bt.CreateTestUser(t, db, true)
-		if err := database.UsersWith(logger, cstore).Delete(ctx, deletedUser.ID); err != nil {
+		if err := database.UsersWith(logger, bstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
-		userBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
-		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+		userBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-user-namespace", deletedUser.ID, spec.ID)
+		c := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     userBatchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		// Attach second batch change
 		c.Attach(batchChange.ID)
-		if err := cstore.UpdateChangeset(ctx, c); err != nil {
+		if err := bstore.UpdateChangeset(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
+			if err := bstore.DeleteChangeset(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{int(c.ID)})
+		assertReturnedChangesetIDs(t, ctx, bstore.DatabaseDB(), []int{int(c.ID)})
 	})
 	t.Run("In deleted repo", func(t *testing.T) {
-		c := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+		c := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 			Repo:            deletedRepo.ID,
 			BatchChange:     batchChange.ID,
 			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
-			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
+			if err := bstore.DeleteChangeset(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
+		assertReturnedChangesetIDs(t, ctx, bstore.DatabaseDB(), []int{})
 	})
 }
 
