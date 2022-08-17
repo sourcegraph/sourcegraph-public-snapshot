@@ -188,7 +188,7 @@ func TestSyncerRun(t *testing.T) {
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "GitHub.com",
-				Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
 			}}, nil
 		})
 		syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
