@@ -1,8 +1,8 @@
 package insights
 
-import (
-	"time"
-)
+import "time"
+
+const schemaErrorPrefix = "insights oob migration schema error"
 
 type insightViewSeriesMetadata struct {
 	label  string

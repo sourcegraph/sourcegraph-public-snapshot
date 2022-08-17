@@ -63,7 +63,7 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 		}
 		return []any{viewID, nil, nil, true}
 	}()
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratormigrateSeriesInsertViewGrantQuery, grantValues...)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateLangstatsInsightInsertViewGrantQuery, grantValues...)); err != nil {
 		return errors.Wrap(err, "failed to insert view grant")
 	}
 
@@ -114,6 +114,11 @@ const insightsMigratorMigrateLangStatsInsightInsertViewQuery = `
 INSERT INTO insight_view (title, unique_id, other_threshold, presentation_type)
 VALUES (%s, %s, %s, 'PIE')
 RETURNING id
+`
+
+const insightsMigratorMigrateLangstatsInsightInsertViewGrantQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/langstat.go:migrateLangStatsInsight
+INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
 `
 
 // Note: these columns were never set
