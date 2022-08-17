@@ -114,11 +114,11 @@ const schemaErrorPrefix = "insights oob migration schema error"
 
 func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *basestore.Store, job settingsMigrationJob) (err error) {
 	cond := func() *sqlf.Query {
-		if job.UserId != nil {
-			return sqlf.Sprintf("user_id = %s", *job.UserId)
+		if job.userID != nil {
+			return sqlf.Sprintf("user_id = %s", *job.userID)
 		}
-		if job.OrgId != nil {
-			return sqlf.Sprintf("org_id = %s", *job.OrgId)
+		if job.orgID != nil {
+			return sqlf.Sprintf("org_id = %s", *job.orgID)
 		}
 		return sqlf.Sprintf("global IS TRUE")
 	}()
@@ -128,18 +128,18 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 	}()
 
 	userID, orgIDs, err := func() (int, []int, error) {
-		if job.UserId != nil {
+		if job.userID != nil {
 			// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 			// resolve insight ID collisions as if it were in a setting cascade
-			orgIDs, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationForRowSelectOrgsQuery, *job.UserId)))
+			orgIDs, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationForRowSelectOrgsQuery, *job.userID)))
 			if err != nil {
 				return 0, nil, err
 			}
 
-			return *job.UserId, orgIDs, nil
+			return *job.userID, orgIDs, nil
 		}
-		if job.OrgId != nil {
-			return 0, []int{*job.OrgId}, nil
+		if job.orgID != nil {
+			return 0, []int{*job.orgID}, nil
 		}
 		return 0, nil, nil
 	}()
@@ -148,11 +148,11 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 	}
 
 	subjectName, settings, err := func() (string, []settings, error) {
-		if job.UserId != nil {
-			return m.getSettingsForUser(ctx, tx, *job.UserId)
+		if job.userID != nil {
+			return m.getSettingsForUser(ctx, tx, *job.userID)
 		}
-		if job.OrgId != nil {
-			return m.getSettingsForOrg(ctx, tx, *job.OrgId)
+		if job.orgID != nil {
+			return m.getSettingsForOrg(ctx, tx, *job.orgID)
 		}
 		return m.getGlobalSettings(ctx, tx)
 	}()
@@ -179,7 +179,7 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 		}
 		logDuplicates(allDefinedInsightIds)
 
-		if totalInsights != job.MigratedInsights {
+		if totalInsights != job.migratedInsights {
 			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond)); err != nil {
 				return err
 			}
@@ -207,7 +207,7 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 			}
 		}
 
-		if totalDashboards != job.MigratedDashboards {
+		if totalDashboards != job.migratedDashboards {
 			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s`, totalDashboards, cond)); err != nil {
 				return err
 			}
@@ -271,7 +271,7 @@ func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore
 	}
 
 	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userId)))
-	return replaceIfEmpty(users[0].DisplayName, users[0].Name), settings, err
+	return replaceIfEmpty(users[0].displayName, users[0].name), settings, err
 }
 
 const insightsMigratorGetSettingsForUserSelectUserQuery = `
@@ -305,7 +305,7 @@ func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.
 	}
 
 	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectSettingsQuery, orgId)))
-	return replaceIfEmpty(orgs[0].DisplayName, orgs[0].Name), settings, err
+	return replaceIfEmpty(orgs[0].displayName, orgs[0].name), settings, err
 }
 
 const insightsMigratorGetSettingsForOrgSelectOrgQuery = `
@@ -532,35 +532,35 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 
 	for i, timeSeries := range from.Series {
 		temp := insightSeries{
-			Query:              timeSeries.Query,
-			CreatedAt:          now,
-			OldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
+			query:              timeSeries.Query,
+			createdAt:          now,
+			oldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
 		}
 
 		if batch == "frontend" {
-			temp.Repositories = from.Repositories
-			if temp.Repositories == nil {
+			temp.repositories = from.Repositories
+			if temp.repositories == nil {
 				// this shouldn't be possible, but if for some reason we get here there is a malformed schema
 				// we can't do anything to fix this, so skip this insight
 				log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromInsight(from), "error msg", "insight failed to migrate due to missing repositories")
 				return nil
 			}
 			interval := parseTimeInterval(from)
-			temp.SampleIntervalUnit = string(interval.unit)
-			temp.SampleIntervalValue = interval.value
-			temp.SeriesID = ksuid.New().String() // this will cause some orphan records, but we can't use the query to match because of repo / time scope. We will purge orphan records at the end of this job.
-			temp.JustInTime = true
-			temp.GenerationMethod = "SEARCH"
-			temp.NextSnapshotAfter = nextSnapshot(now)
-			temp.NextRecordingAfter = interval.StepForwards(now)
+			temp.sampleIntervalUnit = string(interval.unit)
+			temp.sampleIntervalValue = interval.value
+			temp.seriesID = ksuid.New().String() // this will cause some orphan records, but we can't use the query to match because of repo / time scope. We will purge orphan records at the end of this job.
+			temp.justInTime = true
+			temp.generationMethod = "SEARCH"
+			temp.nextSnapshotAfter = nextSnapshot(now)
+			temp.nextRecordingAfter = interval.StepForwards(now)
 		} else if batch == "backend" {
-			temp.SampleIntervalUnit = "MONTH"
-			temp.SampleIntervalValue = 1
-			temp.NextRecordingAfter = nextRecording(now)
-			temp.NextSnapshotAfter = nextSnapshot(now)
-			temp.SeriesID = ksuid.New().String()
-			temp.JustInTime = false
-			temp.GenerationMethod = "SEARCH"
+			temp.sampleIntervalUnit = "MONTH"
+			temp.sampleIntervalValue = 1
+			temp.nextRecordingAfter = nextRecording(now)
+			temp.nextSnapshotAfter = nextSnapshot(now)
+			temp.seriesID = ksuid.New().String()
+			temp.justInTime = false
+			temp.generationMethod = "SEARCH"
 		}
 
 		var series insightSeries
@@ -594,13 +594,13 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 					generated_from_capture_groups = %s AND
 					group_by IS NULL
 			`,
-				temp.Query,
-				temp.SampleIntervalUnit,
-				temp.SampleIntervalValue,
+				temp.query,
+				temp.sampleIntervalUnit,
+				temp.sampleIntervalValue,
 				false,
 			)))
 			if err != nil {
-				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.seriesID)
 			}
 			if len(rows) > 0 {
 				// If the series already exists, we can re-use that series
@@ -629,26 +629,26 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 					VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
 					RETURNING id
 				`,
-					temp.SeriesID,
-					temp.Query,
-					temp.CreatedAt,
-					temp.OldestHistoricalAt,
-					temp.LastRecordedAt,
-					temp.NextRecordingAfter,
-					temp.LastSnapshotAt,
-					temp.NextSnapshotAfter,
-					pq.Array(temp.Repositories),
-					temp.SampleIntervalUnit,
-					temp.SampleIntervalValue,
-					temp.GeneratedFromCaptureGroups,
-					temp.JustInTime,
-					temp.GenerationMethod,
-					temp.GroupBy,
+					temp.seriesID,
+					temp.query,
+					temp.createdAt,
+					temp.oldestHistoricalAt,
+					temp.lastRecordedAt,
+					temp.nextRecordingAfter,
+					temp.lastSnapshotAt,
+					temp.nextSnapshotAfter,
+					pq.Array(temp.repositories),
+					temp.sampleIntervalUnit,
+					temp.sampleIntervalValue,
+					temp.generatedFromCaptureGroups,
+					temp.justInTime,
+					temp.generationMethod,
+					temp.groupBy,
 				)))
 				if err != nil {
-					return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+					return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.seriesID)
 				}
-				temp.ID = id
+				temp.id = id
 				series = temp
 
 				// Also match/replace old series_points ids with the new series id
@@ -662,25 +662,25 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 					)
 					SELECT count(*) FROM updated;
 				`,
-					temp.SeriesID,
+					temp.seriesID,
 					oldId,
 				)))
 				if silentErr != nil {
 					// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
-					log15.Error("error updating series_id for series_points", "series_id", temp.SeriesID, "err", silentErr)
+					log15.Error("error updating series_id for series_points", "series_id", temp.seriesID, "err", silentErr)
 				} else if countUpdated == 0 {
 					// If find-replace doesn't match any records, we still need to backfill, so just continue
 				} else {
 					// If the find-replace succeeded, we can do a similar find-replace on the jobs in the queue,
 					// and then stamp the backfill_queued_at on the new series.
 
-					if err := workerStore.Exec(ctx, sqlf.Sprintf("update insights_query_runner_jobs set series_id = %s where series_id = %s", temp.SeriesID, oldId)); err != nil {
+					if err := workerStore.Exec(ctx, sqlf.Sprintf("update insights_query_runner_jobs set series_id = %s where series_id = %s", temp.seriesID, oldId)); err != nil {
 						// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
-						log15.Error("error updating series_id for jobs", "series_id", temp.SeriesID, "err", errors.Wrap(err, "updateTimeSeriesJobReferences"))
+						log15.Error("error updating series_id for jobs", "series_id", temp.seriesID, "err", errors.Wrap(err, "updateTimeSeriesJobReferences"))
 					} else {
-						if silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, series.ID)); silentErr != nil {
+						if silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, series.id)); silentErr != nil {
 							// If the stamp fails, skip it. It will just need to be calcuated again.
-							log15.Error("error updating backfill_queued_at", "series_id", temp.SeriesID, "err", silentErr)
+							log15.Error("error updating backfill_queued_at", "series_id", temp.seriesID, "err", silentErr)
 						}
 					}
 				}
@@ -709,33 +709,33 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 				VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
 				RETURNING id
 			`,
-				temp.SeriesID,
-				temp.Query,
-				temp.CreatedAt,
-				temp.OldestHistoricalAt,
-				temp.LastRecordedAt,
-				temp.NextRecordingAfter,
-				temp.LastSnapshotAt,
-				temp.NextSnapshotAfter,
-				pq.Array(temp.Repositories),
-				temp.SampleIntervalUnit,
-				temp.SampleIntervalValue,
-				temp.GeneratedFromCaptureGroups,
-				temp.JustInTime,
-				temp.GenerationMethod,
-				temp.GroupBy,
+				temp.seriesID,
+				temp.query,
+				temp.createdAt,
+				temp.oldestHistoricalAt,
+				temp.lastRecordedAt,
+				temp.nextRecordingAfter,
+				temp.lastSnapshotAt,
+				temp.nextSnapshotAfter,
+				pq.Array(temp.repositories),
+				temp.sampleIntervalUnit,
+				temp.sampleIntervalValue,
+				temp.generatedFromCaptureGroups,
+				temp.justInTime,
+				temp.generationMethod,
+				temp.groupBy,
 			)))
 			if err != nil {
-				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.seriesID)
 			}
-			temp.ID = id
+			temp.id = id
 			series = temp
 		}
 		dataSeries[i] = series
 
 		metadata[i] = insightViewSeriesMetadata{
-			Label:  timeSeries.Name,
-			Stroke: timeSeries.Stroke,
+			label:  timeSeries.Name,
+			stroke: timeSeries.Stroke,
 		}
 	}
 
@@ -783,17 +783,17 @@ func migrateSeries(ctx context.Context, insightStore *basestore.Store, workerSto
 			INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
 			VALUES (%s, %s, %s, %s)
 		`,
-			insightSeries.ID,
+			insightSeries.id,
 			viewID,
-			metadata[i].Label,
-			metadata[i].Stroke,
+			metadata[i].label,
+			metadata[i].stroke,
 		)); err != nil {
 			return err
 		}
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(`
 			UPDATE insight_series SET deleted_at IS NULL WHERE series_id = %s
-		`, insightSeries.SeriesID)); err != nil {
+		`, insightSeries.seriesID)); err != nil {
 			return err
 		}
 	}

@@ -5,8 +5,8 @@ import (
 )
 
 type insightViewSeriesMetadata struct {
-	Label  string
-	Stroke string
+	label  string
+	stroke string
 }
 
 type timeInterval struct {
@@ -15,36 +15,36 @@ type timeInterval struct {
 }
 
 type settingsMigrationJob struct {
-	UserId             *int
-	OrgId              *int
-	Global             bool
-	MigratedInsights   int
-	MigratedDashboards int
+	userID             *int
+	orgID              *int
+	global             bool
+	migratedInsights   int
+	migratedDashboards int
 }
 
 type userOrOrg struct {
-	ID          int32
-	Name        string
-	DisplayName *string
+	id          int32
+	name        string
+	displayName *string
 }
 
 type insightSeries struct {
-	ID                         int
-	SeriesID                   string
-	Query                      string
-	CreatedAt                  time.Time
-	OldestHistoricalAt         time.Time
-	LastRecordedAt             time.Time
-	NextRecordingAfter         time.Time
-	LastSnapshotAt             time.Time
-	NextSnapshotAfter          time.Time
-	Repositories               []string
-	SampleIntervalUnit         string
-	SampleIntervalValue        int
-	GeneratedFromCaptureGroups bool
-	JustInTime                 bool
-	GenerationMethod           string
-	GroupBy                    *string
+	id                         int
+	seriesID                   string
+	query                      string
+	createdAt                  time.Time
+	oldestHistoricalAt         time.Time
+	lastRecordedAt             time.Time
+	nextRecordingAfter         time.Time
+	lastSnapshotAt             time.Time
+	nextSnapshotAfter          time.Time
+	repositories               []string
+	sampleIntervalUnit         string
+	sampleIntervalValue        int
+	generatedFromCaptureGroups bool
+	justInTime                 bool
+	generationMethod           string
+	groupBy                    *string
 }
 
 func (t timeInterval) StepForwards(start time.Time) time.Time {
