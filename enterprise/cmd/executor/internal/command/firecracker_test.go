@@ -117,6 +117,7 @@ func TestSetupFirecracker(t *testing.T) {
 			Image:               "ignite-ubuntu",
 			KernelImage:         "ignite-kernel:5.10.135",
 			VMStartupScriptPath: "/vm-startup.sh",
+			UseRunlock:          true,
 		},
 		ResourceOptions: ResourceOptions{
 			NumCPUs:   4,
