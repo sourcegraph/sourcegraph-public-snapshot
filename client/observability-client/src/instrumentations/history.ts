@@ -10,11 +10,9 @@ type PatchedKeys = typeof PATCHED_HISTORY_METHODS[number]
  * creates the `PageView` span on every URL change. These navigation spans are
  * used as parents for other spans created by the application.
  *
- * It allows to group spans together in one trace bound to the page view,
- * which helps analyze data in Honeycomb.
- *
- * This experimental approach will be improved based on our experience
- * with events received from the production environment.
+ * Having top-level navigation allows grouping other spans in one trace bound to
+ * the page view, which helps analyze data in Honeycomb. This experimental approach
+ * will be improved based on our experience with events received from the production environment.
  */
 export class HistoryInstrumentation extends InstrumentationBaseWeb {
     public static instrumentationName = '@sourcegraph/instrumentation-history'

@@ -11,7 +11,17 @@ type SharedSpanNames = keyof typeof SharedSpanName
  * Used to store recent navigation spans to group other types of spans
  * under them, which helps analyze data in Honeycomb.
  *
- * Shared spans are set via the `SharedSpanStoreProcessor`.
+ * Question: Why having a separate store instead of sharing via context manager?
+ *
+ * The OpenTelemetry context is immutable and can only be passed down
+ * with a callback. If there's no way to wrap the function execution into a
+ * parent span via callback we need to implement another sharing mechanism like
+ * a store. This issue is raised in the OpenTelemetry repo and currently does not
+ * have a recommended solution.
+ *
+ * Example issues:
+ * 1. https://github.com/open-telemetry/opentelemetry-js-contrib/issues/995#issuecomment-1138367723
+ * 2. https://github.com/open-telemetry/opentelemetry-js-contrib/issues/732
  */
 class SharedSpanStore {
     private spanMap: { [key in SharedSpanNames]?: Context } = {}
