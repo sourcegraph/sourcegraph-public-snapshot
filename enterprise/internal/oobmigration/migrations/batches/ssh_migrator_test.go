@@ -28,8 +28,8 @@ func TestSSHMigrator(t *testing.T) {
 	bt.MockRSAKeygen(t)
 
 	key := et.TestKey{}
-	migrator := NewSSHMigratorWithDB(basestore, key)
 	bstore := store.New(db, &observation.TestContext, key)
+	migrator := NewSSHMigratorWithDB(basestore, key)
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
 		t.Fatal(err)
