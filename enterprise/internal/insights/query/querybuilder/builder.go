@@ -210,7 +210,7 @@ func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) 
 	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
 		return searchquery.Pattern{
 			Value:      replacement,
-			Negated:    false,
+			Negated:    negated,
 			Annotation: annotation,
 		}
 	})
