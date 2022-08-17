@@ -21,7 +21,7 @@ export function getServerSideTraceParent(): string {
  *
  * See https://github.com/open-telemetry/opentelemetry-js-api/blob/main/docs/tracing.md#describing-a-span
  */
-export function runInSpanContext(span: Span, callback: () => void): void {
+export function runInSpanContext<T extends () => ReturnType<T>>(span: Span, callback: T): void {
     context.with(trace.setSpan(context.active(), span), callback)
 }
 
