@@ -60,7 +60,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			BaseRepoID:  repo.ID,
 
 			DiffStatAdded:   123,
-			DiffStatChanged: 456,
 			DiffStatDeleted: 789,
 		}
 		if i == 0 {

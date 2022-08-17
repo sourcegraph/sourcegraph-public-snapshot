@@ -712,7 +712,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			Repo:            repo.ID,
 			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
 			DiffStatAdded:   testDiffStatCount,
-			DiffStatChanged: testDiffStatCount,
 			DiffStatDeleted: testDiffStatCount,
 		})
 
@@ -774,14 +773,12 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			Repo:            repo1.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount1,
-			DiffStatChanged: testDiffStatCount1,
 			DiffStatDeleted: testDiffStatCount1,
 		})
 		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo1.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
-			DiffStatChanged: 0,
 			DiffStatDeleted: testDiffStatCount2,
 		})
 
@@ -790,7 +787,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			Repo:            repo2.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
-			DiffStatChanged: testDiffStatCount2,
 			DiffStatDeleted: testDiffStatCount2,
 		})
 

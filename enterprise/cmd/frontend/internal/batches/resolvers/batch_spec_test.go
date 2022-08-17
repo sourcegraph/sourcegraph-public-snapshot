@@ -136,7 +136,6 @@ func TestBatchSpecResolver(t *testing.T) {
 
 		DiffStat: apitest.DiffStat{
 			Added:   changesetSpec.DiffStatAdded,
-			Changed: changesetSpec.DiffStatChanged,
 			Deleted: changesetSpec.DiffStatDeleted,
 		},
 

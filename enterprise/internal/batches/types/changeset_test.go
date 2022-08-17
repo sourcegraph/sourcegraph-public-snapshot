@@ -46,7 +46,6 @@ func TestChangeset_DiffStat(t *testing.T) {
 		"added missing": {
 			c: Changeset{
 				DiffStatAdded:   nil,
-				DiffStatChanged: &changed,
 				DiffStatDeleted: &deleted,
 			},
 			want: nil,
@@ -54,7 +53,6 @@ func TestChangeset_DiffStat(t *testing.T) {
 		"changed missing": {
 			c: Changeset{
 				DiffStatAdded:   &added,
-				DiffStatChanged: nil,
 				DiffStatDeleted: &deleted,
 			},
 			want: nil,
@@ -62,7 +60,6 @@ func TestChangeset_DiffStat(t *testing.T) {
 		"deleted missing": {
 			c: Changeset{
 				DiffStatAdded:   &added,
-				DiffStatChanged: &changed,
 				DiffStatDeleted: nil,
 			},
 			want: nil,
@@ -70,7 +67,6 @@ func TestChangeset_DiffStat(t *testing.T) {
 		"all present": {
 			c: Changeset{
 				DiffStatAdded:   &added,
-				DiffStatChanged: &changed,
 				DiffStatDeleted: &deleted,
 			},
 			want: &diff.Stat{
