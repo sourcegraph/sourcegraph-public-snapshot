@@ -20,9 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type RepositoriesQueryBaseArgs struct {
-}
-
 type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
 	Query       *string
