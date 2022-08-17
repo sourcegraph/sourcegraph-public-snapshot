@@ -1,4 +1,4 @@
-package migrations
+package iam
 
 import (
 	"context"
@@ -41,7 +41,7 @@ RETURNING id
 	require.NoError(t, err)
 
 	// Ensure there is no progress before migration
-	migrator := &licenseKeyFieldsMigrator{store: basestore.NewWithHandle(db.Handle())}
+	migrator := NewLicenseKeyFieldsMigrator(basestore.NewWithHandle(db.Handle()))
 	progress, err := migrator.Progress(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, progress)

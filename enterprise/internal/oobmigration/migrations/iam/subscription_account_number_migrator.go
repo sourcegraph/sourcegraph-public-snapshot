@@ -1,4 +1,4 @@
-package migrations
+package iam
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -17,9 +16,9 @@ type subscriptionAccountNumberMigrator struct {
 
 var _ oobmigration.Migrator = &subscriptionAccountNumberMigrator{}
 
-func NewSubscriptionAccountNumberMigrator(db database.DB) *subscriptionAccountNumberMigrator {
+func NewSubscriptionAccountNumberMigrator(store *basestore.Store) *subscriptionAccountNumberMigrator {
 	return &subscriptionAccountNumberMigrator{
-		store: basestore.NewWithHandle(db.Handle()),
+		store: store,
 	}
 }
 
