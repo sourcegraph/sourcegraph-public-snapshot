@@ -18,9 +18,7 @@ const StoryConfig: Meta = {
     ],
     argTypes: {
         useMaxValuesForYScale: {
-            control: {
-                type: 'boolean',
-            },
+            type: 'boolean',
             defaultValue: false,
         },
     },
