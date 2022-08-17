@@ -150,17 +150,30 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 
 	subjectName, settings, err := func() (string, []settings, error) {
 		if job.UserId != nil {
-			return m.getForUser(ctx, tx, *job.UserId)
+			return m.getSettingsForUser(ctx, tx, *job.UserId)
 		}
 		if job.OrgId != nil {
-			return m.getForOrg(ctx, tx, *job.OrgId)
+			return m.getSettingsForOrg(ctx, tx, *job.OrgId)
 		}
-		return m.getForGlobal(ctx, tx)
+		return m.getGlobalSettings(ctx, tx)
 	}()
 	if err != nil {
 		return err
 	}
 	if len(settings) == 0 {
+		if job.UserId != nil {
+			// If the user doesn't exist, just mark the job complete.
+			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, *job.UserId)); err != nil {
+				return errors.Wrap(err, "MarkCompleted")
+			}
+		}
+		if job.OrgId != nil {
+			// If the org doesn't exist, just mark the job complete.
+			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, *job.OrgId)); err != nil {
+				return errors.Wrap(err, "MarkCompleted")
+			}
+		}
+
 		// If this settings object no longer exists, skip it.
 		return nil
 	}
@@ -242,7 +255,7 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 		return err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationForRowUpdateJobQuery, time.Now(), cond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationForRowUpdateJobQuery, now, cond)); err != nil {
 		return errors.Wrap(err, "MarkCompleted")
 	}
 
@@ -262,24 +275,23 @@ const insightsMigratorPerformMigrationForRowUpdateJobQuery = `
 UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
 
-func (m *insightsMigrator) getForUser(ctx context.Context, tx *basestore.Store, userId int) (string, []settings, error) {
-	users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForUserSelectUserQuery, userId)))
+//
+// Settings retriever
+
+func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore.Store, userId int) (string, []settings, error) {
+	users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectUserQuery, userId)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "UserStoreGetByID")
 	}
 	if len(users) == 0 {
-		// If the user doesn't exist, just mark the job complete.
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, userId)); err != nil {
-			return "", nil, errors.Wrap(err, "MarkCompleted")
-		}
 		return "", nil, nil
 	}
 
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForUserSelectSettingsQuery, userId)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userId)))
 	return replaceIfEmpty(users[0].DisplayName, users[0].Name), settings, err
 }
 
-const insightsMigratorGetForUserSelectUserQuery = `
+const insightsMigratorGetSettingsForUserSelectUserQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForUser
 SELECT u.id, u.username, u.display_name
 FROM users u
@@ -287,7 +299,7 @@ WHERE id = %s AND deleted_at IS NULL
 LIMIT 1
 `
 
-const insightsMigratorGetForUserSelectSettingsQuery = `
+const insightsMigratorGetSettingsForUserSelectSettingsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForUser
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
@@ -300,24 +312,20 @@ WHERE user_id = %s AND EXISTS (
 ORDER BY id DESC LIMIT 1
 `
 
-func (m *insightsMigrator) getForOrg(ctx context.Context, tx *basestore.Store, orgId int) (string, []settings, error) {
-	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForOrgSelectOrgQuery, orgId)))
+func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.Store, orgId int) (string, []settings, error) {
+	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectOrgQuery, orgId)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "OrgStoreGetByID")
 	}
 	if len(orgs) == 0 {
-		// If the org doesn't exist, just mark the job complete.
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, orgId)); err != nil {
-			return "", nil, errors.Wrap(err, "MarkCompleted")
-		}
 		return "", nil, nil
 	}
 
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForOrgSelectSettingsQuery, orgId)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectSettingsQuery, orgId)))
 	return replaceIfEmpty(orgs[0].DisplayName, orgs[0].Name), settings, err
 }
 
-const insightsMigratorGetForOrgSelectOrgQuery = `
+const insightsMigratorGetSettingsForOrgSelectOrgQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForOrg
 SELECT id, name, display_name
 FROM orgs
@@ -325,7 +333,7 @@ WHERE id = %s AND deleted_at IS NULL
 LIMIT 1
 `
 
-const insightsMigratorGetForOrgSelectSettingsQuery = `
+const insightsMigratorGetSettingsForOrgSelectSettingsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForOrg
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
@@ -335,12 +343,12 @@ ORDER BY id DESC
 LIMIT 1
 `
 
-func (m *insightsMigrator) getForGlobal(ctx context.Context, tx *basestore.Store) (string, []settings, error) {
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForGlobalSelectSettingsQuery)))
+func (m *insightsMigrator) getGlobalSettings(ctx context.Context, tx *basestore.Store) (string, []settings, error) {
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetGlobalSettingsQuery)))
 	return "Global", settings, err
 }
 
-const insightsMigratorGetForGlobalSelectSettingsQuery = `
+const insightsMigratorGetGlobalSettingsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForGlobal
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
