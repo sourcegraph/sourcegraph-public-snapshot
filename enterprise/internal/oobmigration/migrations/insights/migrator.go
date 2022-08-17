@@ -125,7 +125,7 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 	}()
 
 	defer func() {
-		tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s`, job.Runs+1, cond))
+		tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET runs = runs + 1 WHERE %s`, cond))
 	}()
 
 	userID, orgIDs, err := func() (int, []int, error) {
