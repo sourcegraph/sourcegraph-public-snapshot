@@ -139,19 +139,22 @@ describe('VS Code extension', () => {
             throw new Error('Timeout waiting for search results to render after viewing repo page')
         }
 
-        // Open remote file from search results
-        try {
-            await searchPanelFrame.waitForSelector('.test-search-result strong', { visible: true })
-            await searchPanelFrame.click('.test-search-result strong', { delay: 100 })
-        } catch {
-            throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
-        }
+        // This will be fixed and re-enabled in https://github.com/sourcegraph/sourcegraph/issues/40366
+        // // Open remote file from search results
+        // try {
+        //     await searchPanelFrame.waitForSelector('.test-search-result strong', { visible: true })
+        //     await searchPanelFrame.click('.test-search-result strong', { delay: 100 })
+        // } catch {
+        //     throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
+        // }
 
-        // Look for file title
-        const remoteFileTitle = await vsCodeDriver.page.title()
-        if (!remoteFileTitle.includes('bool_or_string_test.go')) {
-            throw new Error('Timeout waiting for remote file to render')
-        }
+        // await vsCodeDriver.page.waitForTimeout(10000)
+
+        // // Look for file title
+        // const remoteFileTitle = await vsCodeDriver.page.title()
+        // if (!remoteFileTitle.includes('bool_or_string_test.go')) {
+        //     throw new Error('Timeout waiting for remote file to render')
+        // }
     })
 
     // Potential future test cases:
