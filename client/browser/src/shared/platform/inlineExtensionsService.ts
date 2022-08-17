@@ -13,10 +13,9 @@ import { isExtension } from '../context'
 const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false after Sourcegraph 4.0 release
 
 /**
- * Determine if inline extensions should be loaded.
- *
- * This requires the browser extension to be built with inline extensions enabled.
- * At build time this is determined by `shouldBuildWithInlineExtensions`.
+ * Determine which extensions should be loaded:
+ *   - inline (bundled with the browser extension)
+ *   - or from the extensions registry (if `enableLegacyExtensions` experimental feature value is set to `true`).
  */
 export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<boolean> =>
     requestGraphQL<GQL.IQuery>({
