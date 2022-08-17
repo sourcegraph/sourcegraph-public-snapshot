@@ -1,7 +1,7 @@
 const mocha = require('mocha')
 const { Console } = require('console')
 const fs = require('fs')
-const originalConsole = mocha.reporters.Base.consoleLog
+const originalConsoleLog = mocha.reporters.Base.consoleLog
 
 // SpecFileReporter is a custom Mocha reporter (https://mochajs.org/api/reporters_base.js.html) which behaves
 // almost exactly like the stock standard mocha.reporters.Spec reporter, but it also writes the final report out
@@ -48,12 +48,12 @@ class SpecFileReporter extends mocha.reporters.Spec {
       // We now want the Spec reporter (aka epilogue) to be written to a file, but Spec uses the console defined on Base!
       // So we swap out the consoleLog defined on Base with our customLog one
       // https://sourcegraph.com/github.com/mochajs/mocha/-/blob/lib/reporters/base.js?L43:5
-      Base.consoleLog = customConsole.log
+      mocha.reporters.Base.consoleLog = customConsole.log
       // Generate report using custom logger
       // https://mochajs.org/api/reporters_base.js.html#line367
       super.epilogue()
       // The report has been written to a file, so now we swap the consoleLog back to the originalConsole logger
-      Base.consoleLog = originalConsole
+      mocha.reporters.Base.consoleLog = originalConsoleLog
     }
   }
 }

@@ -140,7 +140,7 @@ describe('Repository component', () => {
 
     describe('THE FAKENESS', () => {
         test('throw a error to test custom Spec reporter', async () => {
-            throw new Error("WITNESS ME! FOR I AM. EROAR")
+            throw new Error('WITNESS ME! FOR I AM. EROAR')
         })
     })
 
