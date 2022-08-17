@@ -37,7 +37,6 @@ export function submitSearch({
         searchParameters
     )
 
-    // Check if `trace` is set in the query parameters, and retain it if present.
     const existingParameters = new URLSearchParams(history.location.search)
 
     for (const key of PRESERVED_QUERY_PARAMETERS) {
@@ -49,14 +48,6 @@ export function submitSearch({
             searchQueryParameter = parameters.toString()
         }
     }
-
-    // const traceParameter = existingParameters.get('trace')
-    //
-    // if (traceParameter !== null) {
-    //     const parameters = new URLSearchParams(searchQueryParameter)
-    //     parameters.set('trace', traceParameter)
-    //     searchQueryParameter = parameters.toString()
-    // }
 
     // Go to search results page
     const path = '/search?' + searchQueryParameter
