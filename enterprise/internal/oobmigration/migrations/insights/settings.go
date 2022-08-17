@@ -9,7 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (m *insightsMigrator) getSettings(ctx context.Context, tx *basestore.Store, userID, orgID *int) (string, []settings, error) {
+// getSettings retrieves the current settings from the database. A subject name relating to the settings will
+// also be returned. If the user or organization identifiers are set, the most specific relevant settings will
+// be returned (users > orgs > global settings).
+func (m *insightsMigrator) getSettings(ctx context.Context, tx *basestore.Store, userID, orgID *int32) (string, []settings, error) {
 	if userID != nil {
 		return m.getSettingsForUser(ctx, tx, *userID)
 	}
@@ -21,19 +24,20 @@ func (m *insightsMigrator) getSettings(ctx context.Context, tx *basestore.Store,
 	return m.getGlobalSettings(ctx, tx)
 }
 
-func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore.Store, userID int) (string, []settings, error) {
-	users, err := scanUserOrOrgs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectUserQuery, userID)))
-	if err != nil {
-		return "", nil, errors.Wrap(err, "failed to retrieve user by id")
-	}
-	if len(users) == 0 {
-		return "", nil, nil
-	}
-	user := users[0]
-
+func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore.Store, userID int32) (string, []settings, error) {
+	// Retrieve settings attached to user
 	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userID)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to retrieve user settings")
+	}
+
+	// Retrieve user record to construct subject name
+	user, ok, err := scanFirstUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectUserQuery, userID)))
+	if err != nil {
+		return "", nil, errors.Wrap(err, "failed to retrieve user by id")
+	}
+	if !ok {
+		return "", nil, nil
 	}
 
 	subjectName := user.name
@@ -43,14 +47,6 @@ func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore
 
 	return subjectName, settings, nil
 }
-
-const insightsMigratorGetSettingsForUserSelectUserQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForUser
-SELECT u.username, u.display_name
-FROM users u
-WHERE id = %s AND deleted_at IS NULL
-LIMIT 1
-`
 
 const insightsMigratorGetSettingsForUserSelectSettingsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForUser
@@ -66,19 +62,28 @@ ORDER BY id DESC
 LIMIT 1
 `
 
-func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.Store, orgID int) (string, []settings, error) {
-	orgs, err := scanUserOrOrgs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectOrgQuery, orgID)))
-	if err != nil {
-		return "", nil, errors.Wrap(err, "failed to retrieve org by id")
-	}
-	if len(orgs) == 0 {
-		return "", nil, nil
-	}
-	org := orgs[0]
+const insightsMigratorGetSettingsForUserSelectUserQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForUser
+SELECT u.username, u.display_name
+FROM users u
+WHERE id = %s AND deleted_at IS NULL
+LIMIT 1
+`
 
+func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.Store, orgID int32) (string, []settings, error) {
+	// Retrieve settings attached to org
 	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectSettingsQuery, orgID)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to retrieve org settings")
+	}
+
+	// Retrieve org record to construct subject name
+	org, ok, err := scanFirstUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectOrgQuery, orgID)))
+	if err != nil {
+		return "", nil, errors.Wrap(err, "failed to retrieve org by id")
+	}
+	if !ok {
+		return "", nil, nil
 	}
 
 	subjectName := org.name
@@ -88,14 +93,6 @@ func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.
 
 	return subjectName, settings, nil
 }
-
-const insightsMigratorGetSettingsForOrgSelectOrgQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForOrg
-SELECT name, display_name
-FROM orgs
-WHERE id = %s AND deleted_at IS NULL
-LIMIT 1
-`
 
 const insightsMigratorGetSettingsForOrgSelectSettingsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForOrg
@@ -107,7 +104,16 @@ ORDER BY id DESC
 LIMIT 1
 `
 
+const insightsMigratorGetSettingsForOrgSelectOrgQuery = `
+-- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForOrg
+SELECT name, display_name
+FROM orgs
+WHERE id = %s AND deleted_at IS NULL
+LIMIT 1
+`
+
 func (m *insightsMigrator) getGlobalSettings(ctx context.Context, tx *basestore.Store) (string, []settings, error) {
+	// Retrieve settings attached to not specific user or org
 	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetGlobalSettingsQuery)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to retrieve global settings")

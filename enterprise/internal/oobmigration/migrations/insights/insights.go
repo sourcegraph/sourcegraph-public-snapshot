@@ -6,15 +6,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// migrateInsights runs migrateInsight over each of the given values. The number of successful migrations
+// are returned, along with a list of errors that occurred on failing migrations. Each migration is ran in
+// a fresh transaction so that failures do not influence one another.
 func (m *insightsMigrator) migrateInsights(ctx context.Context, insights []searchInsight, batch string) (count int, err error) {
 	for _, insight := range insights {
 		if migrationErr := m.migrateInsight(ctx, insight, batch); migrationErr != nil {
@@ -29,15 +32,21 @@ func (m *insightsMigrator) migrateInsights(ctx context.Context, insights []searc
 
 func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchInsight, batch string) error {
 	if insight.ID == "" {
-		// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
-		// skippable error
-		log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromInsight(insight), "error msg", "insight failed to migrate due to missing id")
+		// Soft-fail this record
+		m.logger.Warn("missing insight identifier", log.String("owner", getOwnerName(insight.UserID, insight.OrgID)))
+		return nil
+	}
+	if insight.Repositories == nil && batch == "frontend" {
+		// soft-fail this record
+		m.logger.Error("missing insight repositories", log.String("owner", getOwnerName(insight.UserID, insight.OrgID)))
 		return nil
 	}
 
-	numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(insightsMigratorMigrateInsightsQuery, insight.ID)))
-	if err != nil || numInsights > 0 {
+	if numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(insightsMigratorMigrateInsightsQuery, insight.ID))); err != nil {
 		return errors.Wrap(err, "failed to count insight views")
+	} else if numInsights > 0 {
+		// Already migrated
+		return nil
 	}
 
 	tx, err := m.insightsStore.Transact(ctx)
@@ -48,8 +57,7 @@ func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchIns
 
 	var (
 		now                                = time.Now()
-		dataSeries                         = make([]insightSeries, len(insight.Series))
-		metadata                           = make([]insightViewSeriesMetadata, len(insight.Series))
+		seriesWithMetadata                 = make([]insightSeriesWithMetadata, 0, len(insight.Series))
 		includeRepoRegex, excludeRepoRegex *string
 	)
 	if insight.Filters != nil {
@@ -57,60 +65,48 @@ func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchIns
 		excludeRepoRegex = insight.Filters.ExcludeRepoRegexp
 	}
 
-	for i, timeSeries := range insight.Series {
-		series, ok := func() (insightSeries, bool) {
-			series := insightSeries{
-				query:              timeSeries.Query,
-				createdAt:          now,
-				oldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
-			}
-
-			switch batch {
-			case "frontend":
-				series.repositories = insight.Repositories
-				if series.repositories == nil {
-					// this shouldn't be possible, but if for some reason we get here there is a malformed schema
-					// we can't do anything to fix this, so skip this insight
-					log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromInsight(insight), "error msg", "insight failed to migrate due to missing repositories")
-					return insightSeries{}, false
-				}
-				interval := parseTimeInterval(insight)
-				series.sampleIntervalUnit = string(interval.unit)
-				series.sampleIntervalValue = interval.value
-				series.seriesID = ksuid.New().String() // this will cause some orphan records, but we can't use the query to match because of repo / time scope. We will purge orphan records at the end of this job.
-				series.justInTime = true
-				series.generationMethod = "SEARCH"
-				series.nextSnapshotAfter = nextSnapshot(now)
-				series.nextRecordingAfter = interval.StepForwards(now)
-
-			case "backend":
-				series.sampleIntervalUnit = "MONTH"
-				series.sampleIntervalValue = 1
-				series.nextRecordingAfter = nextRecording(now)
-				series.nextSnapshotAfter = nextSnapshot(now)
-				series.seriesID = ksuid.New().String()
-				series.justInTime = false
-				series.generationMethod = "SEARCH"
-			}
-
-			return series, true
-		}()
-		if !ok {
-			return nil
+	for _, timeSeries := range insight.Series {
+		series := insightSeries{
+			seriesID:           ksuid.New().String(),
+			query:              timeSeries.Query,
+			createdAt:          now,
+			oldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
+			generationMethod:   "SEARCH",
 		}
 
+		if batch == "frontend" {
+			intervalUnit := parseTimeIntervalUnit(insight)
+			intervalValue := parseTimeIntervalValue(insight)
+
+			series.repositories = insight.Repositories
+			series.sampleIntervalUnit = intervalUnit
+			series.sampleIntervalValue = intervalValue
+			series.justInTime = true
+			series.nextSnapshotAfter = nextSnapshot(now)
+			series.nextRecordingAfter = stepForward(now, intervalUnit, intervalValue)
+
+		} else {
+			series.sampleIntervalUnit = "MONTH"
+			series.sampleIntervalValue = 1
+			series.justInTime = false
+			series.nextSnapshotAfter = nextSnapshot(now)
+			series.nextRecordingAfter = nextRecording(now)
+		}
+
+		// Create individual insight series
 		migratedSeries, err := m.migrateSeries(ctx, tx, series, timeSeries, batch, now)
 		if err != nil {
 			return err
 		}
-		dataSeries[i] = migratedSeries
 
-		metadata[i] = insightViewSeriesMetadata{
-			label:  timeSeries.Name,
-			stroke: timeSeries.Stroke,
-		}
+		seriesWithMetadata = append(seriesWithMetadata, insightSeriesWithMetadata{
+			insightSeries: migratedSeries,
+			label:         timeSeries.Name,
+			stroke:        timeSeries.Stroke,
+		})
 	}
 
+	// Create insight view record
 	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		insightsMigratorMigrateInsightInsertViewQuery,
 		insight.Title,
@@ -119,27 +115,29 @@ func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchIns
 		includeRepoRegex,
 		excludeRepoRegex,
 	)))
-
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateInsightInsertViewGrantQuery, append([]any{viewID}, grantValues2(insight.UserID, insight.OrgID)...)...)); err != nil {
-		return err
+	if err != nil {
+		return errors.Wrap(err, "failed to insert view")
 	}
 
-	for i, insightSeries := range dataSeries {
+	// Create insight view series records
+	for _, seriesWithMetadata := range seriesWithMetadata {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			insightsMigratorMigrateInsightInsertViewSeriesQuery,
-			insightSeries.id,
+			seriesWithMetadata.id,
 			viewID,
-			metadata[i].label,
-			metadata[i].stroke,
+			seriesWithMetadata.label,
+			seriesWithMetadata.stroke,
 		)); err != nil {
-			return err
-		}
-
-		// Enable the series in case it had previously been soft-deleted
-		if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateInsightEnableSeriesQuery, insightSeries.seriesID)); err != nil {
-			return err
+			return errors.Wrap(err, "failed to insert view series")
 		}
 	}
+
+	// Create the insight view grant records
+	grantArgs := append([]any{viewID}, grantValues2(insight.UserID, insight.OrgID)...)
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateInsightInsertViewGrantQuery, grantArgs...)); err != nil {
+		return errors.Wrap(err, "failed to insert view grants")
+	}
+
 	return nil
 }
 
@@ -171,21 +169,16 @@ VALUES (%s, %s, %s, %s, %s, 'LINE')
 RETURNING id
 `
 
-const insightsMigratorMigrateInsightInsertViewGrantQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
-INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global)
-VALUES (%s, %s, %s, %s)
-`
-
 const insightsMigratorMigrateInsightInsertViewSeriesQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
 VALUES (%s, %s, %s, %s)
 `
 
-const insightsMigratorMigrateInsightEnableSeriesQuery = `
+const insightsMigratorMigrateInsightInsertViewGrantQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
-UPDATE insight_series SET deleted_at IS NULL WHERE series_id = %s
+INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global)
+VALUES (%s, %s, %s, %s)
 `
 
 func (m *insightsMigrator) migrateSeries(ctx context.Context, tx *basestore.Store, series insightSeries, timeSeries timeSeries, batch string, now time.Time) (insightSeries, error) {
@@ -196,7 +189,7 @@ func (m *insightsMigrator) migrateSeries(ctx context.Context, tx *basestore.Stor
 
 	if batch == "backend" {
 		if err := m.migrateBackendSeries(ctx, tx, series, timeSeries, now); err != nil {
-			return insightSeries{}, err // TODO - soft error
+			return insightSeries{}, err
 		}
 	}
 
@@ -213,7 +206,7 @@ func (m *insightsMigrator) getOrCreateSeries(ctx context.Context, tx *basestore.
 	))); err != nil {
 		return insightSeries{}, errors.Wrap(err, "failed to select series")
 	} else if ok {
-		// re-use existing series
+		// Re-use existing series
 		return existingSeries, nil
 	}
 
@@ -301,19 +294,32 @@ RETURNING id
 `
 
 func (m *insightsMigrator) migrateBackendSeries(ctx context.Context, tx *basestore.Store, series insightSeries, timeSeries timeSeries, now time.Time) error {
-	oldID := fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(timeSeries.Query))))
+	oldID := hashID(timeSeries.Query)
 
-	// Match/replace old series_points ids with the new series id
-	if numPointsUpdated, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insightsMigratorMigrateBackendSeriesUpdateSeriesPointsQuery, series.seriesID, oldID))); err != nil || numPointsUpdated == 0 {
-		return err
+	// Replace old series points with new series identifier
+	numPointsUpdated, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(
+		insightsMigratorMigrateBackendSeriesUpdateSeriesPointsQuery,
+		series.seriesID,
+		oldID,
+	)))
+	if err != nil {
+		// soft-error (migration txn is preserved)
+		m.logger.Error("failed to update series points", log.Error(err))
+		return nil
+	}
+	if numPointsUpdated == 0 {
+		// No records matched, continue - backfill will be required later
+		return nil
 	}
 
-	// Try to do a similar find-replace on the jobs in the queue
+	// Replace old jobs with new series identifier
 	if err := m.frontendStore.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateBackendSeriesUpdateJobsQuery, series.seriesID, oldID)); err != nil {
-		return err
+		// soft-error (migration txn is preserved)
+		m.logger.Error("failed to update seriesID on insights jobs", log.Error(err))
+		return nil
 	}
 
-	// Stamp the backfill_queued_at on the new series
+	// Update backfill_queued_at on the new series on success
 	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateBackendSeriesUpdateBackfillQueuedAtQuery, now, series.id)); err != nil {
 		return err
 	}
@@ -341,3 +347,34 @@ const insightsMigratorMigrateBackendSeriesUpdateBackfillQueuedAtQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateBackendSeries
 UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s
 `
+
+func nextSnapshot(current time.Time) time.Time {
+	year, month, day := current.In(time.UTC).Date()
+	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
+}
+
+func nextRecording(current time.Time) time.Time {
+	year, month, _ := current.In(time.UTC).Date()
+	return time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
+}
+
+func stepForward(now time.Time, intervalUnit string, intervalValue int) time.Time {
+	switch intervalUnit {
+	case "YEAR":
+		return now.AddDate(intervalValue, 0, 0)
+	case "MONTH":
+		return now.AddDate(0, intervalValue, 0)
+	case "WEEK":
+		return now.AddDate(0, 0, 7*intervalValue)
+	case "DAY":
+		return now.AddDate(0, 0, intervalValue)
+	case "HOUR":
+		return now.Add(time.Hour * time.Duration(intervalValue))
+	default:
+		return now
+	}
+}
+
+func hashID(query string) string {
+	return fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(query))))
+}
