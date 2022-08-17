@@ -13,7 +13,6 @@ import {
     SearchPatternTypeMutationProps,
     SubmitSearchProps,
 } from '@sourcegraph/search'
-import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -79,7 +78,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
             (settingsCascade.final &&
                 !isErrorLike(settingsCascade.final) &&
                 (settingsCascade.final['search.defaultPatternType'] as SearchPatternType)) ||
-            SearchPatternType.literal,
+            SearchPatternType.standard,
         [settingsCascade.final]
     )
 
@@ -126,7 +125,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
             <div className={styles.separator} />
             <CopyQueryButton
                 fullQuery={fullQuery}
-                keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
                 isMacPlatform={isMacPlatform()}
                 className={classNames(styles.toggle, styles.copyQueryButton)}
             />

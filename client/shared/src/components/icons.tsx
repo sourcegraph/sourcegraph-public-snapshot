@@ -7,7 +7,6 @@ import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 export interface IconProps {
     className?: string
     size?: number
-    'data-tooltip'?: string
 }
 
 function sizeProps(props: IconProps): { width: number; height: number; viewBox: string } {

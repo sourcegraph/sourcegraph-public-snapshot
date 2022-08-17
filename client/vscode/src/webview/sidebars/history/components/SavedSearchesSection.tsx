@@ -72,7 +72,7 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
             .streamSearch(query, {
                 // Debt: using defaults here. The saved search should override these, though.
                 caseSensitive: false,
-                patternType: SearchPatternType.literal,
+                patternType: SearchPatternType.standard,
                 version: LATEST_VERSION,
                 trace: undefined,
             })

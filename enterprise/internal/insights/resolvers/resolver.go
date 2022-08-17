@@ -107,6 +107,19 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 	}, nil
 }
 
+func (r *Resolver) SearchQueryInsights(ctx context.Context, args graphqlbackend.SearchQueryInsightsArgs) (graphqlbackend.SearchQueryInsightsResult, error) {
+	return newSearchQueryInsightUnionResolver(args.Query, args.PatternType)
+}
+
+func (r *Resolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
+
+	return &searchAggregateResolver{
+		baseInsightResolver: r.baseInsightResolver,
+		searchQuery:         args.Query,
+		patternType:         args.PatternType,
+	}, nil
+}
+
 // 🚨 SECURITY
 // only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
 // dashboards with a global grant.

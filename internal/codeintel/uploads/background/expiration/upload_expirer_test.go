@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	policyShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -36,6 +38,7 @@ func TestUploadExpirer(t *testing.T) {
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
 		metrics:       newMetrics(&observation.TestContext),
+		logger:        logtest.Scoped(t),
 	}
 
 	if err := uploadExpirer.Handle(context.Background()); err != nil {

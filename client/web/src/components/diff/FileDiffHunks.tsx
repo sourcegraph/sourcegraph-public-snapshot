@@ -8,6 +8,7 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
 import { isDefined, property } from '@sourcegraph/common'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import {
     DecorationMapByLine,
@@ -21,6 +22,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { FileDiffFields } from '../../graphql-operations'
+import { useBlameDecorations } from '../../repo/blame/useBlameDecorations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
 
@@ -79,10 +81,37 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
     /**
      * Decorations for the file at the two revisions of the diff
      */
-    const [decorations, setDecorations] = useState<Record<'head' | 'base', DecorationMapByLine>>({
-        head: new Map(),
-        base: new Map(),
+    const [decorations, setDecorations] = useState<Record<'head' | 'base', TextDocumentDecoration[]>>({
+        head: [],
+        base: [],
     })
+
+    const baseBlameDecorations = useBlameDecorations(
+        extensionInfo?.base?.filePath
+            ? {
+                  repoName: extensionInfo.base.repoName,
+                  commitID: extensionInfo.base.commitID,
+                  filePath: extensionInfo.base.filePath,
+              }
+            : undefined
+    )
+    const headBlameDecorations = useBlameDecorations(
+        extensionInfo?.head?.filePath
+            ? {
+                  repoName: extensionInfo.head.repoName,
+                  commitID: extensionInfo.head.commitID,
+                  filePath: extensionInfo.head.filePath,
+              }
+            : undefined
+    )
+
+    const mergedDecorations: Record<'head' | 'base', DecorationMapByLine> = useMemo(
+        () => ({
+            head: groupDecorationsByLine([...(headBlameDecorations || []), ...decorations.head]),
+            base: groupDecorationsByLine([...(baseBlameDecorations || []), ...decorations.base]),
+        }),
+        [decorations, baseBlameDecorations, headBlameDecorations]
+    )
 
     /** Emits whenever the ref callback for the code element is called */
     const codeElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
@@ -184,8 +213,8 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
 
                     tap(([baseDecorations, headDecorations]) => {
                         setDecorations({
-                            base: groupDecorationsByLine(baseDecorations && flattenDecorations(baseDecorations)),
-                            head: groupDecorationsByLine(headDecorations && flattenDecorations(headDecorations)),
+                            base: (baseDecorations && flattenDecorations(baseDecorations)) || [],
+                            head: (headDecorations && flattenDecorations(headDecorations)) || [],
                         })
                     })
                 ),
@@ -235,30 +264,34 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
                     {/* Always render base status bar even though it isn't displayed in unified mode
                     in order to prevent overloading the extension host with messages (`api.getStatusBarItems`) on
                     mode switch, which noticeably decreases status bar performance. */}
-                    <StatusBar
-                        getStatusBarItems={getBaseStatusBarItems}
-                        className={classNames(
-                            isSplitMode && 'flex-1 w-50',
-                            'border-bottom border-top-0',
-                            styles.statusBar
-                        )}
-                        statusBarItemClassName="mx-0"
-                        extensionsController={extensionInfo.extensionsController}
-                        location={location}
-                        badgeText="BASE"
-                    />
-                    <StatusBar
-                        getStatusBarItems={getHeadStatusBarItems}
-                        className={classNames(
-                            isSplitMode && 'w-50',
-                            'flex-1 border-bottom border-top-0',
-                            styles.statusBar
-                        )}
-                        statusBarItemClassName="mx-0"
-                        extensionsController={extensionInfo.extensionsController}
-                        location={location}
-                        badgeText="HEAD"
-                    />
+                    {extensionInfo.extensionsController !== null ? (
+                        <>
+                            <StatusBar
+                                getStatusBarItems={getBaseStatusBarItems}
+                                className={classNames(
+                                    isSplitMode && 'flex-1 w-50',
+                                    'border-bottom border-top-0',
+                                    styles.statusBar
+                                )}
+                                statusBarItemClassName="mx-0"
+                                extensionsController={extensionInfo.extensionsController}
+                                location={location}
+                                badgeText="BASE"
+                            />
+                            <StatusBar
+                                getStatusBarItems={getHeadStatusBarItems}
+                                className={classNames(
+                                    isSplitMode && 'w-50',
+                                    'flex-1 border-bottom border-top-0',
+                                    styles.statusBar
+                                )}
+                                statusBarItemClassName="mx-0"
+                                extensionsController={extensionInfo.extensionsController}
+                                location={location}
+                                badgeText="HEAD"
+                            />
+                        </>
+                    ) : null}
                 </div>
             )}
             <div className={classNames(styles.fileDiffHunks, className)} ref={nextBlobElement}>
@@ -299,7 +332,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
                                             persistLines={persistLines}
                                             key={hunk.oldRange.startLine}
                                             hunk={hunk}
-                                            decorations={decorations}
+                                            decorations={mergedDecorations}
                                         />
                                     ) : (
                                         <DiffHunk
@@ -309,7 +342,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
                                             persistLines={persistLines}
                                             key={hunk.oldRange.startLine}
                                             hunk={hunk}
-                                            decorations={decorations}
+                                            decorations={mergedDecorations}
                                         />
                                     )
                                 )}

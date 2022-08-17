@@ -80,7 +80,6 @@ export const ComputeInsightMapPicker: FC<ComputeInsightMapPickerProps> = props =
                     active={value === GroupByField.DATE}
                     value={GroupByField.DATE}
                     disabled={!hasTypeDiffOrCommit}
-                    data-tooltip={!hasTypeDiffOrCommit ? TOOLTIP_TEXT : undefined}
                     onClick={handleOptionClick}
                 >
                     date

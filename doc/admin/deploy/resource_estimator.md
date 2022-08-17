@@ -46,9 +46,21 @@
 
 Updating the form below will recalculate an estimate for the resources you can use to configure your Sourcegraph deployment.
 
-The output is estimated based on existing data we collected from current running deployments. Use the default values for services not listed below .
+Use the default values for services not listed below.
+
+## Limitations
+
+- The estimator does not support instances with more than:
+  - 10,000 users
+  - 50,000 repositories
+  - 5TB size of all repositories
+  - 10 monorepos
+
+> WARNING: The values are **not valid and should not be used as references** if any of the factors go beyond the supported limit.
 
 <form id="root"></form>
+
+> NOTE: The output is estimated based on existing data we collected from current running deployments. 
 
 ---
 
@@ -63,13 +75,6 @@ The output is estimated based on existing data we collected from current running
 #### Default setup
 
 - Please use the default setup of your deployment choice if you have less than 2,000 users and repositories combined. 
-
-#### Limitations
-- The estimator only provides an estimated total for instances with less than:
-    - 10,000 users
-    - 50,000 repositories
-    - 5TB size of all repositories
-    - 10 monorepos
 
 Please refer to our reference architecture docs (coming soon) or contact our team for large deployments.
 
@@ -87,4 +92,4 @@ Please refer to our reference architecture docs (coming soon) or contact our tea
 
 #### How does Sourcegraph scale?
 
-- [Click here to learn more about how each Sourcegraph service scales.](scale.md))
+- [Click here to learn more about how each Sourcegraph service scales.](scale.md)

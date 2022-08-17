@@ -68,5 +68,10 @@
     "path": "internal/usagestats",
     "prefix": "TestGetBatchChangesUsageStatistics",
     "reason": "Fixed up DB constraints, now the test inserts invalid test data."
+  },
+  {
+    "path": "dev/sg/internal/check",
+    "prefix": "RunnerInteractive",
+    "reason": "Flake was only fixed after 3.41, doesn't interact with databases anyway."
   }
 ]

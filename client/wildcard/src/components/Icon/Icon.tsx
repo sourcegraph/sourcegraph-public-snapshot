@@ -43,6 +43,19 @@ interface HiddenIconProps extends BaseIconProps {
 
 export type IconProps = HiddenIconProps | ScreenReaderIconProps
 
+/**
+ * Renders an Icon.
+ *
+ * We have two types of icons:
+ * - [Material design icons](https://materialdesignicons.com): These should be imported from `@mdi/js` and used as the `svgPath` prop.
+ * Example: `<Icon svgPath={mdiIcon} />`
+ *
+ * - Custom icons: We can use this directly by passing the icon component as the `as` prop.
+ * Example: `<Icon as={SourcegraphLogo} />`
+ *
+ * Note: In order to be accessible, we enforce that either an `aria-label` OR an `aria-hidden` prop is provided.
+ * If the icon is not decorative, and adds value to the users journey, we should use a descriptive `aria-label`.
+ */
 // eslint-disable-next-line react/display-name
 export const Icon = React.memo(
     React.forwardRef(function Icon({ children, className, size, role = 'img', inline = true, ...props }, reference) {

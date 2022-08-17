@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import { useHistory, useLocation } from 'react-router'
-import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
+import { BehaviorSubject, from, Observable, combineLatest, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
@@ -25,7 +25,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
+import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
@@ -140,8 +140,13 @@ export function useBuiltinTabbedPanelViews(builtinPanels: BuiltinTabbedPanelDefi
  */
 export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
+    const { extensionsController } = props
     const areExtensionsReady = useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
+        useMemo(
+            () =>
+                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : of(true),
+            [extensionsController]
+        )
     )
     const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesign.enabled', false)
     const isExperimentalReferencePanelEnabled =
@@ -174,67 +179,65 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     )
 
     const extensionPanels: PanelViewWithComponent[] | undefined = useObservable(
-        useMemo(
-            () =>
-                from(props.extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI =>
-                        combineLatest([
-                            wrapRemoteObservable(extensionHostAPI.getPanelViews()),
-                            wrapRemoteObservable(extensionHostAPI.getActiveViewComponentChanges()),
-                        ]).pipe(
-                            switchMap(async ([panelViews, viewer]) => {
-                                if ((await viewer?.type) !== 'CodeEditor') {
-                                    return undefined
-                                }
+        useMemo(() => {
+            if (extensionsController === null) {
+                return of([])
+            }
+            return from(extensionsController.extHostAPI).pipe(
+                switchMap(extensionHostAPI =>
+                    combineLatest([
+                        wrapRemoteObservable(extensionHostAPI.getPanelViews()),
+                        wrapRemoteObservable(extensionHostAPI.getActiveViewComponentChanges()),
+                    ]).pipe(
+                        switchMap(async ([panelViews, viewer]) => {
+                            if ((await viewer?.type) !== 'CodeEditor') {
+                                return undefined
+                            }
 
-                                const document = await (viewer as Remote<ExtensionCodeEditor>).document
+                            const document = await (viewer as Remote<ExtensionCodeEditor>).document
 
-                                return panelViews
-                                    .filter(panelView =>
-                                        panelView.selector !== null ? match(panelView.selector, document) : true
-                                    )
-                                    .filter(panelView =>
-                                        // If we use the new reference panel we don't want to display additional
-                                        // 'implementations_' panels
-                                        isExperimentalReferencePanelEnabled
-                                            ? !panelView.component?.locationProvider?.startsWith('implementations_')
-                                            : true
-                                    )
-                                    .map((panelView: PanelViewWithComponent) => {
-                                        const locationProviderID = panelView.component?.locationProvider
-                                        const maxLocations = panelView.component?.maxLocationResults
-                                        if (locationProviderID) {
-                                            const panelViewWithProvider: PanelViewWithComponent = {
-                                                ...panelView,
-                                                maxLocationResults: maxLocations,
-                                                locationProvider: wrapRemoteObservable(
-                                                    extensionHostAPI.getActiveCodeEditorPosition()
-                                                ).pipe(
-                                                    switchMap(parameters => {
-                                                        if (!parameters) {
-                                                            return [{ isLoading: false, result: [] }]
-                                                        }
+                            return panelViews
+                                .filter(panelView =>
+                                    panelView.selector !== null ? match(panelView.selector, document) : true
+                                )
+                                .filter(panelView =>
+                                    // If we use the new reference panel we don't want to display additional
+                                    // 'implementations_' panels
+                                    isExperimentalReferencePanelEnabled
+                                        ? !panelView.component?.locationProvider?.startsWith('implementations_')
+                                        : true
+                                )
+                                .map((panelView: PanelViewWithComponent) => {
+                                    const locationProviderID = panelView.component?.locationProvider
+                                    const maxLocations = panelView.component?.maxLocationResults
+                                    if (locationProviderID) {
+                                        const panelViewWithProvider: PanelViewWithComponent = {
+                                            ...panelView,
+                                            maxLocationResults: maxLocations,
+                                            locationProvider: wrapRemoteObservable(
+                                                extensionHostAPI.getActiveCodeEditorPosition()
+                                            ).pipe(
+                                                switchMap(parameters => {
+                                                    if (!parameters) {
+                                                        return [{ isLoading: false, result: [] }]
+                                                    }
 
-                                                        return wrapRemoteObservable(
-                                                            extensionHostAPI.getLocations(
-                                                                locationProviderID,
-                                                                parameters
-                                                            )
-                                                        )
-                                                    })
-                                                ),
-                                            }
-                                            return panelViewWithProvider
+                                                    return wrapRemoteObservable(
+                                                        extensionHostAPI.getLocations(locationProviderID, parameters)
+                                                    )
+                                                })
+                                            ),
                                         }
+                                        return panelViewWithProvider
+                                    }
 
-                                        return panelView
-                                    })
-                            })
-                        )
+                                    return panelView
+                                })
+                        })
                     )
-                ),
-            [isExperimentalReferencePanelEnabled, props.extensionsController]
-        )
+                )
+            )
+        }, [isExperimentalReferencePanelEnabled, extensionsController])
     )
 
     const panelViews = useMemo(() => [...(builtinTabbedPanels || []), ...(extensionPanels || [])], [
@@ -267,9 +270,13 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     )
 
     useEffect(() => {
-        const subscription = registerPanelToolbarContributions(props.extensionsController.extHostAPI)
+        if (extensionsController === null) {
+            return
+        }
+
+        const subscription = registerPanelToolbarContributions(extensionsController.extHostAPI)
         return () => subscription.unsubscribe()
-    }, [props.extensionsController])
+    }, [extensionsController])
 
     const handleActiveTab = useCallback(
         (index: number): void => {
@@ -300,18 +307,19 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 wrapperClassName={classNames(styles.panelHeader, 'sticky-top')}
                 actions={
                     <div className="align-items-center d-flex">
-                        {activeTab && (
+                        {activeTab && extensionsController !== null && (
                             <>
                                 {(activeTab.id === 'def' ||
                                     activeTab.id === 'references' ||
                                     activeTab.id.startsWith('implementations_')) && <ReferencesPanelFeedbackCta />}
                                 <ActionsNavItems
                                     {...props}
+                                    extensionsController={extensionsController}
                                     // TODO remove references to Bootstrap from shared, get class name from prop
                                     // This is okay for now because the Panel is currently only used in the webapp
                                     listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
                                     listItemClass="px-2 mx-2"
-                                    actionItemClass="font-weight-medium"
+                                    actionItemClass={classNames(styles.actionItemUnconstrained, 'font-weight-medium')}
                                     actionItemIconClass="icon-inline"
                                     menu={ContributableMenu.PanelToolbar}
                                     scope={{
@@ -325,16 +333,16 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                 />
                             </>
                         )}
-                        <Button
-                            onClick={handlePanelClose}
-                            variant="icon"
-                            className={classNames('ml-2', styles.dismissButton)}
-                            title="Close panel"
-                            data-tooltip="Close panel"
-                            data-placement="left"
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiClose} />
-                        </Button>
+                        <Tooltip content="Close panel" placement="left">
+                            <Button
+                                onClick={handlePanelClose}
+                                variant="icon"
+                                className={classNames('ml-2', styles.dismissButton)}
+                                title="Close panel"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                            </Button>
+                        </Tooltip>
                     </div>
                 }
             >
@@ -365,6 +373,8 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         </Tabs>
     )
 })
+
+TabbedPanelContent.displayName = 'TabbedPanelContent'
 
 /**
  * Temporary solution to code intel extensions all contributing the same panel actions.

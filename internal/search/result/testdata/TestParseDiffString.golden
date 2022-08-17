@@ -2,6 +2,22 @@
 	{
 		OrigName: "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss",
 		NewName:  "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss",
+		Hunks: []result.Hunk{{
+			OldStart: 1,
+			NewStart: 1,
+			OldCount: 2,
+			NewCount: 6,
+			Header:   "... +1",
+			Lines: []string{
+				"+.badge-wrapper {",
+				"+    font-size: 0.75rem;",
+				"+}",
+				"+",
+				" .telemetric-redirect {",
+				"-    display: inline !important;",
+				"+    font-size: 0.75rem;",
+			},
+		}},
 	},
 	{
 		OrigName: "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.tsx",
@@ -14,13 +30,6 @@
 				NewCount: 3,
 				Header:   "export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({",
 				Lines: []string{
-					"+.badge-wrapper {",
-					"+    font-size: 0.75rem;",
-					"+}",
-					"+",
-					" .telemetric-redirect {",
-					"-    display: inline !important;",
-					"+    font-size: 0.75rem;",
 					"     return (",
 					`-        <div className="px-2 py-1">`,
 					"+        <div className={classNames('px-2 py-1', styles.badgeWrapper)}>",
@@ -40,6 +49,36 @@
 					"                             Enabled",
 				},
 			},
+			{
+				OldStart: 65,
+				NewStart: 65,
+				OldCount: 3,
+				NewCount: 3,
+				Header:   "export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({",
+				Lines: []string{
+					"                     ) : summary.indexer?.url ? (",
+					`-                        <Badge variant="secondary" className={className}>`,
+					`+                        <Badge variant="secondary" small={true} className={className}>`,
+					"                             Configurable",
+				},
+			},
 		},
+	},
+	{
+		OrigName: "client/web/src/enterprise/codeintel/badge/components/RequestLink.module.scss",
+		NewName:  "client/web/src/enterprise/codeintel/badge/components/RequestLink.module.scss",
+		Hunks: []result.Hunk{{
+			OldStart: 1,
+			NewStart: 1,
+			OldCount: 3,
+			NewCount: 5,
+			Lines: []string{
+				" .language-request {",
+				"+    font-size: 0.75rem;",
+				"     font-weight: normal;",
+				"+    display: inline !important;",
+				" }",
+			},
+		}},
 	},
 }

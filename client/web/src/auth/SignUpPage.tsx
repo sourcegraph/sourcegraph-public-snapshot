@@ -25,7 +25,13 @@ export interface SignUpPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        'allowSignup' | 'experimentalFeatures' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders'
+        | 'allowSignup'
+        | 'experimentalFeatures'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'xhrHeaders'
+        | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
     >
 }
 

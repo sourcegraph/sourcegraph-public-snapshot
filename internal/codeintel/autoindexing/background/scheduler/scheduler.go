@@ -3,6 +3,8 @@ package scheduler
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -11,6 +13,7 @@ type scheduler struct {
 	autoindexingSvc *autoindexing.Service
 	dbStore         DBStore
 	policyMatcher   PolicyMatcher
+	logger          log.Logger
 }
 
 var _ goroutine.Handler = &scheduler{}

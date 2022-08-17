@@ -245,7 +245,7 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 //
 // The account will be locked out after consecutive failed attempts in a certain
 // period of time.
-func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter, r *http.Request) {
+func HandleSignIn(db database.DB, store LockoutStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
@@ -332,7 +332,7 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 	}
 }
 
-func HandleUnlockAccount(db database.DB, store LockoutStore) func(w http.ResponseWriter, r *http.Request) {
+func HandleUnlockAccount(_ database.DB, store LockoutStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 
@@ -398,7 +398,7 @@ func checkAccountLockout(store LockoutStore, user *types.User, event *database.S
 }
 
 // HandleCheckUsernameTaken checks availability of username for signup form
-func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func HandleCheckUsernameTaken(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username, err := auth.NormalizeUsername(vars["username"])

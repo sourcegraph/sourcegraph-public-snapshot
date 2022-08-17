@@ -13,8 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
@@ -36,7 +37,7 @@ import (
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }
@@ -75,6 +76,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
+	r.Header.Set("X-Uncompressed-Size", "21")
 
 	NewUploadHandler(
 		database.NewDB(logger, nil),
@@ -107,6 +109,9 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		}
 		if call.Arg1.Indexer != "lsif-go" {
 			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
+		}
+		if *call.Arg1.UncompressedSize != 21 {
+			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
 		}
 	}
 
@@ -230,6 +235,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
+	r.Header.Set("X-Uncompressed-Size", "50")
 
 	NewUploadHandler(
 		database.NewDB(logger, nil),
@@ -262,6 +268,9 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		}
 		if call.Arg1.Indexer != "lsif-go" {
 			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
+		}
+		if *call.Arg1.UncompressedSize != 50 {
+			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
 		}
 	}
 }
@@ -451,6 +460,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 		operations:  NewOperations(&observation.TestContext),
+		logger:      logtest.Scoped(t),
 	}
 	h.handleEnqueue(w, r)
 

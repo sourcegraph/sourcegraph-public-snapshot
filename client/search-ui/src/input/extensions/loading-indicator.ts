@@ -40,6 +40,10 @@ export function loadingIndicator({ timeout = DEFAULT_TIMEOUT }: { timeout?: numb
                     this.view.contentDOM.after(this.dom)
                 }
 
+                public destroy(): void {
+                    this.dom.remove()
+                }
+
                 public update(update: ViewUpdate): void {
                     const status = completionStatus(update.state)
                     if (status === 'pending') {

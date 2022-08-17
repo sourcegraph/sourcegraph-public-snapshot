@@ -93,7 +93,13 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 		return alert, err
 	}
 
-	generated := &alertobserver.ErrLuckyQueries{ProposedQueries: []*search.ProposedQuery{}}
+	var luckyAlertType alertobserver.LuckyAlertType
+	if initialResultSetSize == 0 {
+		luckyAlertType = alertobserver.LuckyAlertPure
+	} else {
+		luckyAlertType = alertobserver.LuckyAlertAdded
+	}
+	generated := &alertobserver.ErrLuckyQueries{Type: luckyAlertType, ProposedQueries: []*search.ProposedQuery{}}
 	var autoQ *autoQuery
 	for _, next := range f.generators {
 		for {

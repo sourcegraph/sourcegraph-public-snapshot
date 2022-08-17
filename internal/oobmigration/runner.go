@@ -60,10 +60,6 @@ func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext 
 	}
 }
 
-// ErrMigratorConflict occurs when multiple migrator instances are registered to the same
-// out-of-band migration identifier.
-var ErrMigratorConflict = errors.New("migrator already registered")
-
 // MigratorOptions configures the behavior of a registered migrator.
 type MigratorOptions struct {
 	// Interval specifies the time between invocations of an active migration.
@@ -81,7 +77,7 @@ func (r *Runner) SynchronizeMetadata(ctx context.Context) error {
 // returned if a migrator is already associated with this migration.
 func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) error {
 	if _, ok := r.migrators[id]; ok {
-		return ErrMigratorConflict
+		return errors.Newf("migrator %d already registered", id)
 	}
 
 	if options.Interval == 0 {
@@ -134,7 +130,7 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 
 	errs := make([]error, 0, len(migrations))
 	for _, migration := range migrations {
-		currentVersionCmpIntroduced := compareVersions(currentVersion, migration.Introduced)
+		currentVersionCmpIntroduced := CompareVersions(currentVersion, migration.Introduced)
 		if currentVersionCmpIntroduced == VersionOrderBefore && migration.Progress != 0 {
 			// Unfinished rollback: currentVersion before introduced version and progress > 0
 			errs = append(errs, newMigrationStatusError(migration.ID, 0, migration.Progress))
@@ -144,13 +140,13 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 			continue
 		}
 
-		firstVersionCmpDeprecated := compareVersions(firstVersion, *migration.Deprecated)
+		firstVersionCmpDeprecated := CompareVersions(firstVersion, *migration.Deprecated)
 		if firstVersionCmpDeprecated != VersionOrderBefore {
 			// Edge case: sourcegraph instance booted on or after deprecation version
 			continue
 		}
 
-		currentVersionCmpDeprecated := compareVersions(currentVersion, *migration.Deprecated)
+		currentVersionCmpDeprecated := CompareVersions(currentVersion, *migration.Deprecated)
 		if currentVersionCmpDeprecated != VersionOrderBefore && migration.Progress != 1 {
 			// Unfinished migration: currentVersion on or after deprecated version, progress < 1
 			errs = append(errs, newMigrationStatusError(migration.ID, 1, migration.Progress))

@@ -5,10 +5,10 @@ import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
 /**
@@ -52,7 +52,6 @@ export class ToggleLineWrap extends React.PureComponent<
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })
                 this.props.onDidUpdate(value)
-                DeprecatedTooltipController.forceUpdate()
             })
         )
 
@@ -75,14 +74,14 @@ export class ToggleLineWrap extends React.PureComponent<
     public render(): JSX.Element | null {
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
+                <RepoHeaderActionMenuItem file={true} onSelect={this.onClick}>
                     <Icon
                         as={this.state.value ? WrapDisabledIcon : undefined}
                         svgPath={!this.state.value ? mdiWrap : undefined}
                         aria-hidden={true}
                     />
                     <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
-                </RepoHeaderActionButtonLink>
+                </RepoHeaderActionMenuItem>
             )
         }
 
@@ -95,7 +94,6 @@ export class ToggleLineWrap extends React.PureComponent<
                 <span>
                     <RepoHeaderActionButtonLink
                         aria-label={this.state.value ? 'Disable' : 'Enable'}
-                        className="btn-icon"
                         file={false}
                         onSelect={this.onClick}
                     >

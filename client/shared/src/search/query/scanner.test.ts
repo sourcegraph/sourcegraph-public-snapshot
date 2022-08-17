@@ -248,7 +248,7 @@ describe('scanSearchQuery() with predicate', () => {
     })
 
     test('recognize `not` and other keywords in literal search where unquoted terms might appear to be quoted', () => {
-        expect(scanSearchQuery("'email is not allowed'", false, SearchPatternType.literal)).toMatchInlineSnapshot(
+        expect(scanSearchQuery("'email is not allowed'", false, SearchPatternType.standard)).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":6},"kind":1,"value":"\'email","delimited":false},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"pattern","range":{"start":7,"end":9},"kind":1,"value":"is","delimited":false},{"type":"whitespace","range":{"start":9,"end":10}},{"type":"keyword","value":"not","range":{"start":10,"end":13},"kind":"not"},{"type":"whitespace","range":{"start":13,"end":14}},{"type":"pattern","range":{"start":14,"end":22},"kind":1,"value":"allowed\'","delimited":false}]}'
         )
     })

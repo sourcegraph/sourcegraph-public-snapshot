@@ -339,7 +339,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         const links = isSiteAdmin ? roleLinks.admin : roleLinks.nonAdmin
 
         // no status messages
-        if (Array.isArray(noActivityOrStatus) && noActivityOrStatus.length === 0) {
+        if (
+            !window.context.sourcegraphDotComMode &&
+            Array.isArray(noActivityOrStatus) &&
+            noActivityOrStatus.length === 0
+        ) {
             return (
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
@@ -354,6 +358,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
         // no code hosts or no repos
         if (isNoActivityReason(noActivityOrStatus)) {
+            if (window.context.sourcegraphDotComMode) {
+                return []
+            }
             if (noActivityOrStatus === ExternalServiceNoActivityReasons.NoRepos) {
                 return (
                     <StatusMessagesNavItemEntry
@@ -430,7 +437,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             key={status.message}
                             message={status.message}
                             messageHint="Your repositories may not be up-to-date."
-                            linkTo={links.viewRepositories}
+                            linkTo={links.viewRepositories + '?status=failed-fetch'}
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="error"

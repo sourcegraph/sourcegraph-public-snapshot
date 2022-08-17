@@ -19,7 +19,6 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	gogithub "github.com/google/go-github/v31/github"
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -112,17 +111,15 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
-				}),
+				})),
 			}
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -154,16 +151,17 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 
 	service := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://ghe.sgdev.org",
 			Token: gheToken,
-		}),
+		})),
 	}
 
 	factory, save := newClientFactory(t, fixtureName)
 	defer save(t)
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), service, factory)
+	ctx := context.Background()
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), service, factory)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,21 +261,19 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 				t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
 			}
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://ghe.sgdev.org",
 					Token: gheToken,
-				}),
+				})),
 			}
 
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -308,7 +304,11 @@ func TestGithubSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
@@ -336,10 +336,8 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(database.NewMockExternalServiceStore(), &svc, test.schema, nil)
+			s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -528,15 +526,13 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindGitHub,
-				Config: marshalJSON(t, tc.conf),
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
 			}
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -565,13 +561,14 @@ func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 func TestGithubSource_WithAuthenticator(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
-		}),
+		})),
 	}
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+	ctx := context.Background()
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -613,13 +610,14 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
-		}),
+		})),
 	}
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+	ctx := context.Background()
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -636,15 +634,17 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 }
 
 func TestGithubSource_GetVersion(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("github.com", func(t *testing.T) {
 		svc := &types.ExternalService{
 			Kind: extsvc.KindGitHub,
-			Config: marshalJSON(t, &schema.GitHubConnection{
+			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 				Url: "https://github.com",
-			}),
+			})),
 		}
 
-		githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+		ctx := context.Background()
+		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -673,13 +673,14 @@ func TestGithubSource_GetVersion(t *testing.T) {
 
 		svc := &types.ExternalService{
 			Kind: extsvc.KindGitHub,
-			Config: marshalJSON(t, &schema.GitHubConnection{
+			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 				Url:   "https://ghe.sgdev.org",
 				Token: gheToken,
-			}),
+			})),
 		}
 
-		githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+		ctx := context.Background()
+		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -730,6 +731,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
 
 			q := repositoryQuery{
+				Logger:   logtest.Scoped(t),
 				Query:    tc.query,
 				First:    tc.first,
 				Limit:    tc.limit,
@@ -851,11 +853,11 @@ func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
 			svc := &types.ExternalService{
 				ID:             1,
 				Kind:           extsvc.KindGitHub,
-				Config:         test.config,
+				Config:         extsvc.NewUnencryptedConfig(test.config),
 				TokenExpiresAt: test.tokenExpiresAt,
 			}
 
-			gotToken, err := GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServices, svc, client, 1234)
+			gotToken, err := GetOrRenewGitHubAppInstallationAccessToken(ctx, logtest.Scoped(t), externalServices, svc, client, 1234)
 			require.NoError(t, err)
 			assert.Equal(t, wantToken, gotToken)
 

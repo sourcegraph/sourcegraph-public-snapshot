@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -81,5 +83,5 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 		return nil, err
 	}
 
-	return &externalServiceResolver{db: r.db, externalService: externalService}, nil
+	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}, nil
 }

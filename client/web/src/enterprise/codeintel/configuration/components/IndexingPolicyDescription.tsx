@@ -17,5 +17,5 @@ export const IndexingPolicyDescription: FunctionComponent<
             .
         </>
     ) : (
-        <span className="text-muted">Auto-indexing disabled.</span>
+        <span className="text-muted">Auto-indexing is disabled for this policy.</span>
     )

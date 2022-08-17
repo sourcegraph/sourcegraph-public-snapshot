@@ -23,7 +23,7 @@ import java.net.URI;
 import java.util.Optional;
 
 /**
- * Jetbrains IDE action to open a selected revision in Sourcegraph.
+ * JetBrains IDE action to open a selected revision in Sourcegraph.
  */
 public class OpenRevisionAction extends DumbAwareAction {
     private final Logger logger = Logger.getInstance(this.getClass());

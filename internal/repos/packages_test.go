@@ -14,7 +14,11 @@ func TestPackagesSource_GetRepo(t *testing.T) {
 	ctx := context.Background()
 
 	dummySrc := &dummyPackagesSource{}
-	src := &PackagesSource{src: dummySrc, svc: &types.ExternalService{ID: 1, Kind: extsvc.KindGoPackages}}
+	src := &PackagesSource{src: dummySrc, svc: &types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGoPackages,
+		Config: extsvc.NewEmptyConfig(),
+	}}
 
 	src.GetRepo(ctx, "go/github.com/sourcegraph-testing/go-repo-a")
 
@@ -22,8 +26,9 @@ func TestPackagesSource_GetRepo(t *testing.T) {
 		t.Fatalf("expected ParsePackageFromRepoName to be called, was not")
 	}
 
-	if !dummySrc.getPackageCalled {
-		t.Fatalf("expected GetPackage to be called, was not")
+	// Flip the condition below after https://github.com/sourcegraph/sourcegraph/issues/39653 has been fixed.
+	if dummySrc.getPackageCalled {
+		t.Fatalf("expected GetPackage to not be called, but it was called")
 	}
 }
 

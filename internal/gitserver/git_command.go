@@ -110,7 +110,7 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	cmd.Env = append(cmd.Env, "GIT_DIR="+gitPath)
 
 	err := cmd.Run()
-	exitStatus := -10810
+	exitStatus := -10810         // sentinel value to indicate not set
 	if cmd.ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}

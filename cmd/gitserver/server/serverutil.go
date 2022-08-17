@@ -102,7 +102,7 @@ type tlsConfig struct {
 	SSLCAInfo string
 }
 
-var tlsExternal = conf.Cached(func() any {
+var tlsExternal = conf.Cached[*tlsConfig](func() *tlsConfig {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
 
@@ -143,7 +143,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		if cmd.Env == nil {
 			cmd.Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+		configureRemoteGitCommand(cmd, tlsExternal())
 	}
 
 	var b interface {

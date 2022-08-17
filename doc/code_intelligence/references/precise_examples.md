@@ -1,6 +1,6 @@
-# Precise code intelligence examples
+# Precise code navigation examples
 
-The following repositories have precise code intelligence enabled:
+The following repositories have precise code navigation enabled:
 
 ## Go
 - [sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@1757b34fab070301db5cd221eaf7d6bf039d16d3/-/blob/enterprise/cmd/executor/internal/apiclient/client.go?L230:18&popover=pinned)

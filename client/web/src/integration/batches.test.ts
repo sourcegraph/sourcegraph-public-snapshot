@@ -369,11 +369,24 @@ function mockCommonGraphQLResponses(
                     username: 'alice',
                 },
                 name: 'test-batch-change',
-                namespace: {
-                    id: '1234',
-                    namespaceName: entityType === 'user' ? 'alice' : 'test-org',
-                    url: namespaceURL,
-                },
+                namespace:
+                    entityType === 'user'
+                        ? {
+                              __typename: 'User',
+                              id: '1234',
+                              displayName: null,
+                              namespaceName: 'alice',
+                              url: namespaceURL,
+                              username: 'alice',
+                          }
+                        : {
+                              __typename: 'Org',
+                              id: '1234',
+                              displayName: null,
+                              namespaceName: 'test-org',
+                              url: namespaceURL,
+                              name: 'test-org',
+                          },
                 diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
                 url: `${namespaceURL}/batch-changes/test-batch-change`,
                 viewerCanAdminister: true,
@@ -473,6 +486,7 @@ describe('Batches', () => {
             allBatchChanges: {
                 totalCount: 1,
             },
+            maxUnlicensedChangesets: 5,
         }),
     }
     const batchChangesListResults = {
@@ -589,10 +603,12 @@ describe('Batches', () => {
         })
     })
 
-    // Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/37233
-    describe.skip('Batch changes details', () => {
+    // Possibly flaky test. Removing .skip temporarily in order to figure
+    // out the root cause of this as we're unable to reproduce locally.
+    // See https://github.com/sourcegraph/sourcegraph/issues/37233
+    describe('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
-            it(`displays a single batch change for ${entityType}`, async () => {
+            it.skip(`displays a single batch change for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...batchChangeLicenseGraphQlResults,
@@ -610,6 +626,9 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 await percySnapshotWithVariants(driver.page, `Batch change details page ${entityType}`)
                 await accessibilityAudit(driver.page)
+
+                // we wait for the changesets to be loaded in the browser before proceeding
+                await driver.page.waitForSelector('.test-batches-expand-changeset')
 
                 await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.

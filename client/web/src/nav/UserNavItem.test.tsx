@@ -8,7 +8,7 @@ import sinon from 'sinon'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
@@ -59,6 +59,7 @@ describe('UserNavItem', () => {
                             showRepositorySection={true}
                             isLightTheme={true}
                             onThemePreferenceChange={() => undefined}
+                            showKeyboardShortcutsHelp={() => undefined}
                             themePreference={ThemePreference.Light}
                             authenticatedUser={USER}
                             showDotComMarketing={true}
@@ -76,6 +77,7 @@ describe('UserNavItem', () => {
                 showRepositorySection={true}
                 isLightTheme={true}
                 onThemePreferenceChange={() => undefined}
+                showKeyboardShortcutsHelp={() => undefined}
                 themePreference={ThemePreference.Light}
                 authenticatedUser={USER}
                 showDotComMarketing={true}

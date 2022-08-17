@@ -12,7 +12,6 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
-import { ConnectGitHubAppPage } from './org/settings/codeHosts/ConnectGitHubAppPage'
 import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
@@ -67,7 +66,7 @@ function passThroughToServer(): React.ReactNode {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = [
+export const routes: readonly LayoutRouteProps<any>[] = ([
     {
         path: PageRoutes.Index,
         render: props =>
@@ -179,10 +178,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: () => <InstallGitHubAppSuccessPage />,
     },
     {
-        path: PageRoutes.InstallGitHubAppSelectOrg,
-        render: props => <ConnectGitHubAppPage {...props} />,
-    },
-    {
         path: PageRoutes.Settings,
         render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
@@ -228,10 +223,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.Survey,
         render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
     },
-    {
-        path: PageRoutes.Extensions,
-        render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
-    },
+    window.context.enableLegacyExtensions
+        ? {
+              path: PageRoutes.Extensions,
+              render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
+          }
+        : undefined,
     {
         path: PageRoutes.Help,
         render: passThroughToServer,
@@ -245,4 +242,4 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.RepoContainer,
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
-]
+] as readonly (LayoutRouteProps<any> | undefined)[]).filter(Boolean) as readonly LayoutRouteProps<any>[]

@@ -213,7 +213,10 @@ query Repository($name: String!) {
 // PermissionsInfo contains permissions information of a repository from
 // GraphQL.
 type PermissionsInfo struct {
-	SyncedAt time.Time
+	SyncedAt     time.Time
+	UpdatedAt    time.Time
+	Permissions  []string
+	Unrestricted bool
 }
 
 // RepositoryPermissionsInfo returns permissions information of the given
@@ -228,6 +231,7 @@ query RepositoryPermissionsInfo($name: String!) {
 			syncedAt
 			updatedAt
 			permissions
+			unrestricted
 		}
 	}
 }
@@ -248,4 +252,21 @@ query RepositoryPermissionsInfo($name: String!) {
 	}
 
 	return resp.Data.Repository.PermissionsInfo, nil
+}
+
+func (c *Client) AddRepoKVP(repo string, key string, value *string) error {
+	const query = `
+mutation AddRepoKVP($repo: ID!, $key: String!, $value: String) {
+	addRepoKeyValuePair(repo: $repo, key: $key, value: $value) {
+		alwaysNil
+	}
+}
+`
+	variables := map[string]any{
+		"repo":  repo,
+		"key":   key,
+		"value": value,
+	}
+	var resp map[string]interface{}
+	return c.GraphQL("", query, variables, &resp)
 }

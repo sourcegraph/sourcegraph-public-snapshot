@@ -1205,6 +1205,10 @@ func TestEventLogs_LatestPing(t *testing.T) {
 		}
 	})
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	t.Run("with existing pings in database", func(t *testing.T) {
 		userID := int32(0)
 		timestamp := timeutil.Now()
@@ -1219,6 +1223,8 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				Source:          "test",
 				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value1"}`),
+				DeviceID:        ptr("device-id"),
+				InsertID:        ptr("insert-id"),
 			}, {
 				UserID:          0,
 				Name:            "ping",
@@ -1227,6 +1233,8 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				Source:          "test",
 				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value2"}`),
+				DeviceID:        ptr("device-id"),
+				InsertID:        ptr("insert-id"),
 			},
 		}
 		for _, event := range events {
@@ -1239,17 +1247,19 @@ func TestEventLogs_LatestPing(t *testing.T) {
 		if err != nil || gotPing == nil {
 			t.Fatal(err)
 		}
-		expectedPing := &types.Event{
+		expectedPing := &Event{
 			ID:              2,
 			Name:            events[1].Name,
 			URL:             events[1].URL,
-			UserID:          &userID,
+			UserID:          uint32(userID),
 			AnonymousUserID: events[1].AnonymousUserID,
 			Version:         version.Version(),
-			Argument:        string(events[1].Argument),
+			Argument:        events[1].Argument,
 			Source:          events[1].Source,
 			Timestamp:       timestamp,
 		}
+		expectedPing.DeviceID = ptr("device-id")
+		expectedPing.InsertID = ptr("insert-id") // set these values for test determinism
 		if diff := cmp.Diff(gotPing, expectedPing); diff != "" {
 			t.Fatal(diff)
 		}

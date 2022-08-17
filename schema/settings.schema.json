@@ -348,6 +348,30 @@
           "!go": {
             "pointer": true
           }
+        },
+        "enableLazyBlobSyntaxHighlighting": {
+          "description": "Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableLazyFileResultSyntaxHighlighting": {
+          "description": "Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "applySearchQuerySuggestionOnEnter": {
+          "description": "This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
@@ -449,9 +473,9 @@
       "default": 1
     },
     "search.defaultPatternType": {
-      "description": "The default pattern type (literal or regexp) that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.",
+      "description": "The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.",
       "type": "string",
-      "pattern": "literal|regexp|lucky"
+      "pattern": "standard|literal|regexp|lucky"
     },
     "search.defaultCaseSensitive": {
       "description": "Whether query patterns are treated case sensitively. Patterns are case insensitive by default.",

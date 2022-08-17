@@ -11,15 +11,19 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
       class="heroPage lessPadding"
     >
       <div
-        class="icon bg-transparent"
+        class="iconWrapper bg-transparent"
       >
         <a
+          aria-label="/search"
           class="anchorLink"
           href="/search"
         >
           <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline icon"
             fill="none"
             height="64"
+            role="img"
             viewBox="0 0 52 52"
             width="65"
             xmlns="http://www.w3.org/2000/svg"
@@ -42,7 +46,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
       <h1
         class="h1 title"
       >
-        Sign in to Sourcegraph Cloud
+        Sign in to Sourcegraph
       </h1>
       <div
         class="mb-4 pb-5 signinPageContainer"
@@ -117,7 +121,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               class="form-group"
             >
               <button
-                class="btn btnPrimary btn-block"
+                class="btn btnPrimary btnBlock"
                 type="submit"
               >
                 Sign in
@@ -143,7 +147,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btn-block"
+              class="btn btnSecondary btnBlock"
               href=""
             >
               <svg
@@ -189,11 +193,14 @@ exports[`SignInPage renders sign in page (server) 1`] = `
       class="heroPage lessPadding"
     >
       <div
-        class="icon bg-transparent"
+        class="iconWrapper bg-transparent"
       >
         <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline icon"
           fill="none"
           height="64"
+          role="img"
           viewBox="0 0 52 52"
           width="65"
           xmlns="http://www.w3.org/2000/svg"
@@ -215,7 +222,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
       <h1
         class="h1 title"
       >
-        Sign in to Sourcegraph Server
+        Sign in to Sourcegraph
       </h1>
       <div
         class="mb-4 pb-5 signinPageContainer"
@@ -290,7 +297,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               class="form-group"
             >
               <button
-                class="btn btnPrimary btn-block"
+                class="btn btnPrimary btnBlock"
                 type="submit"
               >
                 Sign in
@@ -316,7 +323,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btnSecondary btn-block"
+              class="btn btnSecondary btnBlock"
               href=""
             >
               <svg

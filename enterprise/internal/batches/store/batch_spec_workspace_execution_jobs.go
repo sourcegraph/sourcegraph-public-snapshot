@@ -135,29 +135,60 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx context.C
 	return s.Exec(ctx, q)
 }
 
+// DeleteBatchSpecWorkspaceExecutionJobsOpts options used to determine which jobs to delete.
+type DeleteBatchSpecWorkspaceExecutionJobsOpts struct {
+	IDs          []int64
+	WorkspaceIDs []int64
+}
+
 const deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:DeleteBatchSpecWorkspaceExecutionJobs
 DELETE FROM
 	batch_spec_workspace_execution_jobs
 WHERE
-	id = ANY (%s)
+	%s
 RETURNING id
 `
 
-// DeleteBatchSpecWorkspaceExecutionJobs
-func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, ids []int64) (err error) {
+// DeleteBatchSpecWorkspaceExecutionJobs deletes jobs based on the provided options.
+func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts DeleteBatchSpecWorkspaceExecutionJobsOpts) (err error) {
 	ctx, _, endObservation := s.operations.deleteBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr, pq.Array(ids))
+	if len(opts.IDs) == 0 && len(opts.WorkspaceIDs) == 0 {
+		return errors.New("invalid options: would delete all jobs")
+	}
+	if len(opts.IDs) > 0 && len(opts.WorkspaceIDs) > 0 {
+		return errors.New("invalid options: multiple options not supported")
+	}
+
+	q := getDeleteBatchSpecWorkspaceExecutionJobsQuery(&opts)
 	deleted, err := basestore.ScanInts(s.Query(ctx, q))
 	if err != nil {
 		return err
 	}
-	if len(deleted) != len(ids) {
-		return errors.Newf("wrong number of jobs deleted: %d instead of %d", len(deleted), len(ids))
+	numIds := len(opts.IDs) + len(opts.WorkspaceIDs)
+	if len(deleted) != numIds {
+		return errors.Newf("wrong number of jobs deleted: %d instead of %d", len(deleted), numIds)
 	}
 	return nil
+}
+
+func getDeleteBatchSpecWorkspaceExecutionJobsQuery(opts *DeleteBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+
+	if len(opts.IDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
+	}
+
+	if len(opts.WorkspaceIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = ANY (%s)", pq.Array(opts.WorkspaceIDs)))
+	}
+
+	return sqlf.Sprintf(
+		deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 // GetBatchSpecWorkspaceExecutionJobOpts captures the query options needed for getting a BatchSpecWorkspaceExecutionJob

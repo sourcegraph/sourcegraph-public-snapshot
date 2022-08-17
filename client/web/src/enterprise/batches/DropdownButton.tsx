@@ -46,7 +46,6 @@ export interface Props {
     actions: Action[]
     defaultAction?: number
     disabled?: boolean
-    dropdownMenuPosition?: 'left' | 'right'
     onLabel?: (label: string | undefined) => void
     placeholder?: string
     tooltip?: string

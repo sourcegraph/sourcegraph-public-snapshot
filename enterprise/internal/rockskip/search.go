@@ -250,7 +250,7 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 	defer parser.Close()
 
 	threadStatus.Tasklog.Start("ArchiveEach")
-	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
+	err = archiveEach(ctx, s.fetcher, string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
 		threadStatus.Tasklog.Start("parse")

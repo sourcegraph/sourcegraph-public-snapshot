@@ -13,7 +13,7 @@ import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionI
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Badge, Button, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
@@ -21,7 +21,8 @@ import { useCarousel } from '../../components/useCarousel'
 
 import styles from './StatusBar.module.scss'
 
-interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand' | 'registerCommand'> {
+interface StatusBarProps
+    extends RequiredExtensionsControllerProps<'extHostAPI' | 'executeCommand' | 'registerCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
     statusBarItemClassName?: string
@@ -219,7 +220,7 @@ const StatusBarItem: React.FunctionComponent<
             className?: string
             component?: JSX.Element
             location: H.Location
-        } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
+        } & RequiredExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
     >
 > = ({ statusBarItem, className, component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)

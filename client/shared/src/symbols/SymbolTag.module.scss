@@ -1,0 +1,32 @@
+.tag {
+    font-size: 0.75rem;
+    padding: 0.0625rem 0.25rem;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    color: var(--gray-01);
+    font-family: var(--code-font-family);
+
+    &--variable {
+        background-color: #005766;
+    }
+
+    &--module {
+        background-color: #237332;
+    }
+
+    &--function {
+        background-color: #0b70db;
+    }
+
+    &--type {
+        background-color: #a305e1;
+    }
+
+    &--class {
+        background-color: #f76707;
+    }
+
+    &--unknown {
+        background-color: #343a4d;
+    }
+}

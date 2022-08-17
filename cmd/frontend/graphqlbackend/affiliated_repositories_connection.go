@@ -8,6 +8,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -82,7 +84,7 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 		)
 		for _, svc := range svcs {
 			svcsByID[svc.ID] = svc
-			src, err := repos.NewSource(ctx, a.db, svc, cf)
+			src, err := repos.NewSource(ctx, log.Scoped("repos.Source", ""), a.db, svc, cf)
 			if err != nil {
 				a.err = err
 				return
@@ -190,6 +192,7 @@ type codeHostRepositoryResolver struct {
 	repo     *types.CodeHostRepository
 	codeHost *types.ExternalService
 	db       database.DB
+	logger   log.Logger
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
@@ -202,6 +205,7 @@ func (r *codeHostRepositoryResolver) Private() bool {
 
 func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
 	return &externalServiceResolver{
+		logger:          r.logger,
 		db:              r.db,
 		externalService: r.codeHost,
 	}

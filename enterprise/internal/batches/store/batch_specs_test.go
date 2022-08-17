@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -506,12 +505,12 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 	})
 
 	t.Run("GetBatchSpecDiffStat", func(t *testing.T) {
-		user := ct.CreateTestUser(t, s.DatabaseDB(), false)
-		admin := ct.CreateTestUser(t, s.DatabaseDB(), true)
-		repo1, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
-		repo2, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+		user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+		admin := bt.CreateTestUser(t, s.DatabaseDB(), true)
+		repo1, _ := bt.CreateTestRepo(t, ctx, s.DatabaseDB())
+		repo2, _ := bt.CreateTestRepo(t, ctx, s.DatabaseDB())
 		// Give access to repo1 but not repo2.
-		ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repo1.ID)
+		bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repo1.ID)
 
 		batchSpec := &btypes.BatchSpec{
 			UserID:          user.ID,
@@ -523,8 +522,8 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 
 		if err := s.CreateChangesetSpec(ctx,
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10},
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10, Spec: &batcheslib.ChangesetSpec{ExternalID: "123"}},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20, Spec: &batcheslib.ChangesetSpec{ExternalID: "123"}},
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -612,6 +611,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 				changesetSpec := &btypes.ChangesetSpec{
 					RepoID:      1,
 					BatchSpecID: batchSpec.ID,
+					Spec:        &batcheslib.ChangesetSpec{ExternalID: "123"},
 				}
 				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 					t.Fatal(err)
@@ -834,7 +834,7 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	user := bt.CreateTestUser(t, db, false)
 
 	// Create a batch spec with two changeset specs, one on each repo.
-	batchSpec := bt.CreateBatchSpec(t, ctx, s, "test", user.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, s, "test", user.ID, 0)
 	bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      globalRepo.ID,
@@ -849,7 +849,7 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	})
 
 	// Also create an empty batch spec, just for fun.
-	emptyBatchSpec := bt.CreateBatchSpec(t, ctx, s, "empty", user.ID)
+	emptyBatchSpec := bt.CreateBatchSpec(t, ctx, s, "empty", user.ID, 0)
 
 	// Set up repo permissions.
 	bt.MockRepoPermissions(t, db, user.ID, globalRepo.ID)

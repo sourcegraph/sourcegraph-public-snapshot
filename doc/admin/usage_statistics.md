@@ -1,5 +1,7 @@
 # Usage statistics
 
+> NOTE: With 3.42 we introduced an all new analytics experience for admins. More information can be found [here](./analytics.md).
+
 Sourcegraph records basic per-user usage statistics. To view analytics, visit the **Site admin > Usage stats** page. (The URL is `https://sourcegraph.example.com/site-admin/usage-statistics`.) This information is available via the GraphQL API to all viewers (not just site admins).
 
 Here you can see charts with counts of unique users by day, week, or months.

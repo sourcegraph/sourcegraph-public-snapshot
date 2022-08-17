@@ -3,7 +3,7 @@ package autoindexing
 import (
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -61,9 +61,12 @@ func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 	if pkg.Scheme != dependencies.NpmPackagesScheme {
 		return "", "", false
 	}
+
+	logger := log.Scoped("inferNpmRepositoryAndRevision", "")
 	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(pkg.Name))
+
 	if err != nil {
-		log15.Error("invalid npm package name in database", "error", err)
+		logger.Error("invalid npm package name in database", log.Error(err))
 		return "", "", false
 	}
 	return npmPkg.RepoName(), "v" + pkg.Version, true
@@ -74,9 +77,10 @@ func inferRustRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, 
 		return "", "", false
 	}
 
+	logger := log.Scoped("inferRustRepositoryAndRevision", "")
 	rustPkg, err := reposource.ParseRustVersionedPackage(pkg.Name)
 	if err != nil {
-		log15.Error("invalid rust package name in database", "error", err, "pkg", pkg.Name)
+		logger.Error("invalid rust package name in database", log.Error(err), log.String("pkg", pkg.Name))
 		return "", "", false
 	}
 
@@ -88,9 +92,11 @@ func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string
 		return "", "", false
 	}
 
+	logger := log.Scoped("inferPythonRepositoryAndRevision", "")
 	pythonPkg, err := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
+
 	if err != nil {
-		log15.Error("invalid python package name in database", "error", err, "pkg", pkg.Name)
+		logger.Error("invalid python package name in database", log.Error(err), log.String("pkg", pkg.Name))
 		return "", "", false
 	}
 

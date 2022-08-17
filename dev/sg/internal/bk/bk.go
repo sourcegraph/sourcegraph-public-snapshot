@@ -68,7 +68,7 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 
 // getTokenFromUser prompts the user for a slack OAuth token.
 func getTokenFromUser(out *std.Output) (string, error) {
-	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StylePending, `Please create and copy a new token from https://buildkite.com/user/api-access-tokens with the following scopes:
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion, `Please create and copy a new token from %shttps://buildkite.com/user/api-access-tokens%s with the following scopes:
 
 - Organization access to %q
 - read_artifacts
@@ -78,7 +78,7 @@ func getTokenFromUser(out *std.Output) (string, error) {
 - (optional) write_builds
 
 To use functionality that manipulates builds, you must also have the 'write_builds' scope.
-`, BuildkiteOrg))
+`, output.StyleOrange, output.StyleSuggestion, BuildkiteOrg))
 	return out.PromptPasswordf(os.Stdin, "Paste your token here:")
 }
 
@@ -126,15 +126,29 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number string) (*buildkite.Build, error) {
 	b, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
-		return nil, err
-	}
-	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
 			return nil, errors.New("no build found")
 		}
 		return nil, err
 	}
 	return b, nil
+}
+
+func (c *Client) GetBuildByCommit(ctx context.Context, pipeline string, commit string) (*buildkite.Build, error) {
+	b, _, err := c.bk.Builds.ListByPipeline(BuildkiteOrg, pipeline, &buildkite.BuildsListOptions{
+		Commit: commit,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no build found")
+		}
+		return nil, err
+	}
+	if len(b) == 0 {
+		return nil, errors.New("no build found")
+	}
+	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
+	return &b[0], nil
 }
 
 // ListArtifactsByBuildNumber queries the Buildkite API and retrieves all the artifacts for a particular build

@@ -6,8 +6,7 @@ import classNames from 'classnames'
 // eslint-disable-next-line no-restricted-imports
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { KEYBOARD_SHORTCUT_SHOW_HELP } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -29,8 +28,7 @@ import {
 
 import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { ThemePreference } from '../stores/themeState'
-import { ThemePreferenceProps } from '../theme'
+import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
@@ -41,27 +39,11 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
     >
     showDotComMarketing: boolean
-    keyboardShortcutForSwitchTheme?: KeyboardShortcut
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
-}
-
-/**
- * Triggers Keyboard Shortcut help when the button is clicked in the Menu Nav item
- */
-
-const showKeyboardShortcutsHelp = (): void => {
-    const keybinding = KEYBOARD_SHORTCUT_SHOW_HELP.keybindings[0]
-    const shiftKey = !!keybinding.held?.includes('Shift')
-    const altKey = !!keybinding.held?.includes('Alt')
-    const metaKey = !!keybinding.held?.includes('Meta')
-    const ctrlKey = !!keybinding.held?.includes('Control')
-
-    for (const key of keybinding.ordered) {
-        document.dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey, metaKey, ctrlKey, altKey }))
-    }
+    showKeyboardShortcutsHelp: () => void
 }
 
 /**
@@ -98,10 +80,11 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
 
     return (
         <>
-            {props.keyboardShortcutForSwitchTheme?.keybindings.map((keybinding, index) => (
+            {keyboardShortcutSwitchTheme?.keybindings.map((keybinding, index) => (
                 // `Shortcut` doesn't update its states when `onMatch` changes
                 // so we put `themePreference` in `key` binding to make it
                 <Shortcut key={`${themePreference}-${index}`} {...keybinding} onMatch={onThemeCycle} />
@@ -133,27 +116,18 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 Signed in as <strong>@{props.authenticatedUser.username}</strong>
                             </MenuHeader>
                             <MenuDivider className={styles.dropdownDivider} />
-                            <MenuLink
-                                className={styles.dropdownItem}
-                                as={Link}
-                                to={props.authenticatedUser.settingsURL!}
-                            >
+                            <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
                             {props.showRepositorySection && (
                                 <MenuLink
-                                    className={styles.dropdownItem}
                                     as={Link}
                                     to={`/users/${props.authenticatedUser.username}/settings/repositories`}
                                 >
                                     Your repositories
                                 </MenuLink>
                             )}
-                            <MenuLink
-                                className={styles.dropdownItem}
-                                as={Link}
-                                to={`/users/${props.authenticatedUser.username}/searches`}
-                            >
+                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
                             {isOpenBetaEnabled && (
@@ -213,12 +187,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     <MenuDivider className={styles.dropdownDivider} />
                                     <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
                                     {props.authenticatedUser.organizations.nodes.map(org => (
-                                        <MenuLink
-                                            className={styles.dropdownItem}
-                                            as={Link}
-                                            key={org.id}
-                                            to={org.settingsURL || org.url}
-                                        >
+                                        <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
                                             {org.displayName || org.name}
                                         </MenuLink>
                                     ))}
@@ -226,30 +195,23 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
                             {props.authenticatedUser.siteAdmin && (
-                                <MenuLink className={styles.dropdownItem} as={Link} to="/site-admin">
+                                <MenuLink as={Link} to="/site-admin">
                                     Site admin
                                 </MenuLink>
                             )}
-                            <MenuLink
-                                className={styles.dropdownItem}
-                                as={Link}
-                                to="/help"
-                                target="_blank"
-                                rel="noopener"
-                            >
+                            <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
                                 Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
-                            <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+                            <MenuItem onSelect={props.showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
                             {props.authenticatedUser.session?.canSignOut && (
-                                <MenuLink className={styles.dropdownItem} as={AnchorLink} to="/-/sign-out">
+                                <MenuLink as={AnchorLink} to="/-/sign-out">
                                     Sign out
                                 </MenuLink>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
                             {props.showDotComMarketing && (
                                 <MenuLink
-                                    className={styles.dropdownItem}
                                     as={AnchorLink}
                                     to="https://about.sourcegraph.com"
                                     target="_blank"
@@ -260,7 +222,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             )}
                             {codeHostIntegrationMessaging === 'browser-extension' && (
                                 <MenuLink
-                                    className={styles.dropdownItem}
                                     as={AnchorLink}
                                     to="/help/integration/browser_extension"
                                     target="_blank"

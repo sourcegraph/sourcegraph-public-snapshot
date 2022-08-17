@@ -16,9 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -80,7 +82,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, store.Handle(), &syncHandler{
+	worker, resetter := NewSyncWorker(ctx, s.Logger.Scoped("syncWorker", ""), store.Handle(), &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
@@ -635,6 +637,22 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
+
+		if conf.Get().ExperimentalFeatures != nil && conf.Get().ExperimentalFeatures.EnableWebhookRepoSync {
+			job := &webhookworker.Job{
+				RepoID:     int32(sourced.ID),
+				RepoName:   string(sourced.Name),
+				Org:        getOrgFromRepoName(sourced.Name),
+				ExtSvcID:   svc.ID,
+				ExtSvcKind: svc.Kind,
+			}
+
+			id, err := webhookworker.EnqueueJob(ctx, basestore.NewWithHandle(s.Store.Handle()), job)
+			if err != nil {
+				logger.Error("unable to enqueue webhook build job")
+			}
+			logger.Info("enqueued webhook build job", log.Int("ID", id))
+		}
 	}
 
 	// We don't delete any repos of site-level external services if there were any
@@ -911,4 +929,12 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
+}
+
+func getOrgFromRepoName(repoName api.RepoName) string {
+	parts := strings.Split(string(repoName), "/")
+	if len(parts) == 1 {
+		return string(repoName)
+	}
+	return parts[1]
 }

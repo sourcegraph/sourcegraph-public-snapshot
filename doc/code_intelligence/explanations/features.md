@@ -1,6 +1,6 @@
-# Code intelligence features
+# Code navigation features
 
-Using our [integrations](../../../integration/index.md), all code intelligence features are available everywhere you read code! This includes in browsers and GitHub pull requests.
+Using our [integrations](../../../integration/index.md), all code navigation features are available everywhere you read code! This includes in browsers and GitHub pull requests.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/extension-example.gif" width="450" style="margin-left:0;margin-right:0;"/>
 
@@ -37,11 +37,11 @@ The instructions to setup dependency navigation are different depending on what 
 * **Java, Scala, Kotlin**: Setup [auto-indexing](auto_indexing.md) and a [JVM dependencies code host](../../integration/jvm.md).
 * **JavaScript, TypeScript**: Setup [auto-indexing](auto_indexing.md) and a [npm dependencies code host](../../integration/npm.md).
 
-> NOTE: This feature is in Experimental phase and is not available for other language ecosystems at the moment.
+> NOTE: This feature is in Beta phase and is not available for other language ecosystems at the moment.
 
 ## Find implementations
 
-If precise code intelligence is enabled for your repositories, you can click on “Find Implementations” to navigate to a symbol’s interface definition. If you’re at the interface definition itself, clicking on “Find Implementations” will show all the places where the interface is being implemented, allowing you to explore how it’s being used by other users across repositories. It can also show which interfaces a struct implements.
+If precise code navigation is enabled for your repositories, you can click on “Find Implementations” to navigate to a symbol’s interface definition. If you’re at the interface definition itself, clicking on “Find Implementations” will show all the places where the interface is being implemented, allowing you to explore how it’s being used by other users across repositories. It can also show which interfaces a struct implements.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/find-impl.gif" width="450"/>
 
@@ -76,4 +76,4 @@ Once the symbols service has built an index for a commit, here's the query perfo
 - General regex queries `foo.*bar` are optimized to use an index when using [Rockskip](rockskip.md), otherwise the default implementation needs to scan every symbol
 - Path filtering `file:^cmd/` helps narrow the search space
 
-Search-based code intelligence uses exact matches `^foo$` and the symbols sidebar uses prefix matches on paths `file:^cmd/` to respond quickly.
+Search-based code navigation uses exact matches `^foo$` and the symbols sidebar uses prefix matches on paths `file:^cmd/` to respond quickly.

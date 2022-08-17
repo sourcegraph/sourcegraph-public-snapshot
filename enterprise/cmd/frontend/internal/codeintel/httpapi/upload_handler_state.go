@@ -3,9 +3,8 @@ package httpapi
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
@@ -34,6 +33,7 @@ type uploadState struct {
 	suppliedIndex     bool
 	index             int
 	done              bool
+	uncompressedSize  *int64
 }
 
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
@@ -42,6 +42,12 @@ var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 // This function should be used instead of reading directly from the request as the upload state's fields are
 // backfilled/denormalized from the database, depending on the type of request.
 func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Request) (uploadState, int, error) {
+	uncompressedSize := new(int64)
+	if size := r.Header.Get("X-Uncompressed-Size"); size != "" {
+		parsedSize, _ := strconv.ParseInt(size, 10, 64)
+		*uncompressedSize = parsedSize
+	}
+
 	uploadState := uploadState{
 		repositoryName:    getQuery(r, "repository"),
 		uploadID:          getQueryInt(r, "uploadId"),
@@ -55,6 +61,7 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 		suppliedIndex:     hasQuery(r, "index"),
 		index:             getQueryInt(r, "index"),
 		done:              hasQuery(r, "done"),
+		uncompressedSize:  uncompressedSize,
 	}
 
 	if uploadState.commit != "" && !revhashPattern.Match([]byte(uploadState.commit)) {
@@ -127,7 +134,7 @@ func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db databas
 			return 0, http.StatusInternalServerError, err
 		}
 
-		log15.Warn("Accepting LSIF upload with unresolvable commit", "reason", reason)
+		logger.Warn("Accepting LSIF upload with unresolvable commit", log.String("reason", reason))
 	}
 
 	return int(repo.ID), 0, nil

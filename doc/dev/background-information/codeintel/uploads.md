@@ -1,6 +1,6 @@
 # How indexes are processed
 
-An indexer produces a file containing the definition, reference, hover, and diagnostic data for a project. Users upload this index file to a Sourcegraph instance, which converts it into an internal format that can support [code intelligence queries](./queries.md).
+An indexer produces a file containing the definition, reference, hover, and diagnostic data for a project. Users upload this index file to a Sourcegraph instance, which converts it into an internal format that can support [code navigation queries](./queries.md).
 
 The sequence of actions required to upload and convert this data is shown below (click to enlarge).
 
@@ -31,7 +31,7 @@ Duplicate uploads (with the same repository, commit, and root) are removed to pr
 
 The repository is marked as _dirty_, which informs a process that runs periodically to re-calculate the set of uploads visible to each commit. This process will refresh the commit graph for this repository stored in Postgres.
 
-Finally, if the previous steps have all completed without error, the transaction is committed, moving the upload record from the `processing` state to the `completed` state, where it is made visible to the frontend to answer code intelligence queries. On success, the input file that was processed is deleted from the blob storage server. If an error does occur, the upload record is instead moved to the `errored` state and marked with a failure reason.
+Finally, if the previous steps have all completed without error, the transaction is committed, moving the upload record from the `processing` state to the `completed` state, where it is made visible to the frontend to answer code navigation queries. On success, the input file that was processed is deleted from the blob storage server. If an error does occur, the upload record is instead moved to the `errored` state and marked with a failure reason.
 
 ## Code appendix
 

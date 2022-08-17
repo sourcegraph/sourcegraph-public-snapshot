@@ -8,10 +8,14 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -60,6 +64,14 @@ type Options struct {
 	// ResourceOptions configures the resource limits of docker container and Firecracker
 	// virtual machines running on the executor.
 	ResourceOptions command.ResourceOptions
+
+	// NodeExporterEndpoint is the URL of the local node_exporter endpoint, without
+	// the /metrics path.
+	NodeExporterEndpoint string
+
+	// DockerRegsitryEndpoint is the URL of the intermediary caching docker registry,
+	// for scraping and forwarding metrics.
+	DockerRegistryNodeExporterEndpoint string
 }
 
 // NewWorker creates a worker that polls a remote job queue API for work. The returned
@@ -67,8 +79,9 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (worker goroutine.WaitableBackgroundRoutine) {
-	queueStore := apiclient.New(options.ClientOptions, observationContext)
+func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) goroutine.WaitableBackgroundRoutine {
+	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
+	queueStore := apiclient.New(options.ClientOptions, gatherer, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
 	if !connectToFrontend(queueStore, options) {

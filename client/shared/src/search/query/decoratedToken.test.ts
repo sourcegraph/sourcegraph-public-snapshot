@@ -136,7 +136,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('no decoration for literal', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.literal))))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.standard))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1485,41 +1485,6 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
-    test('highlight repo:dependencies predicate', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:dependencies(.*)')))).toMatchInlineSnapshot(`
-            [
-              {
-                "startIndex": 0,
-                "scopes": "field"
-              },
-              {
-                "startIndex": 4,
-                "scopes": "metaFilterSeparator"
-              },
-              {
-                "startIndex": 5,
-                "scopes": "metaPredicateNameAccess"
-              },
-              {
-                "startIndex": 17,
-                "scopes": "metaPredicateParenthesis"
-              },
-              {
-                "startIndex": 18,
-                "scopes": "metaRegexpCharacterSet"
-              },
-              {
-                "startIndex": 19,
-                "scopes": "metaRegexpRangeQuantifier"
-              },
-              {
-                "startIndex": 20,
-                "scopes": "metaPredicateParenthesis"
-              }
-            ]
-        `)
-    })
-
     test('highlight repo:has.description predicate', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.description(.*)')))).toMatchInlineSnapshot(`
             [
@@ -1557,6 +1522,84 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 23,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight repo:has predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has(key:value)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight repo:has.tag predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.tag(tag)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 16,
                 "scopes": "metaPredicateParenthesis"
               }
             ]

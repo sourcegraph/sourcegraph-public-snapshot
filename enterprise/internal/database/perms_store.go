@@ -1661,7 +1661,8 @@ func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age
 SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
 WHERE perms.repo_id IN
 	(SELECT repo.id FROM repo
-	 WHERE repo.deleted_at IS NULL)
+	 WHERE repo.deleted_at IS NULL
+	 AND repo.private = TRUE)
 AND %s
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s

@@ -149,7 +149,26 @@ export function fetchAllOrganizations(args: {
     )
 }
 
+const mirrorRepositoryInfoFieldsFragment = gql`
+    fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
+        cloned
+        cloneInProgress
+        updatedAt
+        lastError
+    }
+`
+
+const externalRepositoryFieldsFragment = gql`
+    fragment ExternalRepositoryFields on ExternalRepository {
+        serviceType
+        serviceID
+    }
+`
+
 const siteAdminRepositoryFieldsFragment = gql`
+    ${mirrorRepositoryInfoFieldsFragment}
+    ${externalRepositoryFieldsFragment}
+
     fragment SiteAdminRepositoryFields on Repository {
         id
         name
@@ -158,14 +177,10 @@ const siteAdminRepositoryFieldsFragment = gql`
         url
         isPrivate
         mirrorInfo {
-            cloned
-            cloneInProgress
-            updatedAt
-            lastError
+            ...MirrorRepositoryInfoFields
         }
         externalRepository {
-            serviceType
-            serviceID
+            ...ExternalRepositoryFields
         }
     }
 `
@@ -456,6 +471,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
     )
 }
 
+export const REPO_PAGE_POLL_INTERVAL = 5000
+
 export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     args: Partial<RepositoriesVariables>
 ): Observable<RepositoriesResult['repositories']> {
@@ -466,7 +483,7 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
                 result.nodes &&
                 result.nodes.length > 0 &&
                 result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
-            { delay: 5000 }
+            { delay: REPO_PAGE_POLL_INTERVAL }
         )
     )
 }
@@ -1098,3 +1115,16 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
         map(data => data.featureFlags)
     )
 }
+
+export const REPOSITORY_STATS = gql`
+    query RepositoryStats {
+        repositoryStats {
+            __typename
+            total
+            notCloned
+            cloned
+            cloning
+            failedFetch
+        }
+    }
+`

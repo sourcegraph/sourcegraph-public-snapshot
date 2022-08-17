@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/log"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -55,7 +57,9 @@ type UserExternalAccountsStore interface {
 	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
 
 	// Delete deletes a user external account.
-	Delete(ctx context.Context, id int32) error
+	Delete(ctx context.Context, ids ...int32) error
+
+	UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error
 
 	// ExecResult performs a query without returning any rows, but includes the
 	// result of the execution.
@@ -78,8 +82,8 @@ type UserExternalAccountsStore interface {
 	// CreateUserAndSave for that.
 	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
 
-	// TouchExpired sets the given user external account to be expired now.
-	TouchExpired(ctx context.Context, id int32) error
+	// TouchExpired sets the given user external accounts to be expired now.
+	TouchExpired(ctx context.Context, ids ...int32) error
 
 	// TouchLastValid sets last valid time of the given user external account to be now.
 	TouchLastValid(ctx context.Context, id int32) error
@@ -131,23 +135,18 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 }
 
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	var (
-		encrypted, keyID string
-	)
-
+	var encryptedAuthData, encryptedAccountData, keyID string
 	if data.AuthData != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return 0, err
 		}
-		data.AuthData = rawMessagePtr(encrypted)
 	}
 	if data.Data != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return 0, err
 		}
-		data.Data = rawMessagePtr(encrypted)
 	}
 
 	err = s.Handle().QueryRowContext(ctx, `
@@ -166,7 +165,7 @@ AND client_id = $3
 AND account_id = $4
 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data, keyID).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]any{spec}}
 	}
@@ -213,21 +212,18 @@ AND deleted_at IS NULL
 		return tx.Insert(ctx, userID, spec, data)
 	}
 
-	var encrypted, keyID string
-
+	var encryptedAuthData, encryptedAccountData, keyID string
 	if data.AuthData != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return err
 		}
-		data.AuthData = rawMessagePtr(encrypted)
 	}
 	if data.Data != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return err
 		}
-		data.Data = rawMessagePtr(encrypted)
 	}
 
 	// Update the external account (it exists).
@@ -247,7 +243,7 @@ AND client_id = %s
 AND account_id = %s
 AND user_id = %s
 AND deleted_at IS NULL
-`, data.AuthData, data.Data, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
+`, encryptedAuthData, encryptedAccountData, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
 	if err != nil {
 		return err
 	}
@@ -280,41 +276,39 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	return createdUser.ID, err
 }
 
-func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	var (
-		encrypted, keyID string
-		err              error
-	)
-
+func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
+	var encryptedAuthData, encryptedAccountData, keyID string
 	if data.AuthData != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return err
 		}
-		data.AuthData = rawMessagePtr(encrypted)
 	}
 	if data.Data != nil {
-		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return err
 		}
-		data.Data = rawMessagePtr(encrypted)
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.insert
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data, keyID))
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
 }
 
-func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
-	_, err := s.Handle().ExecContext(ctx, `
+func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int32) error {
+	idStrings := make([]string, len(ids))
+	for i, id := range ids {
+		idStrings[i] = strconv.Itoa(int(id))
+	}
+	_, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
-WHERE id = $1
-`, id)
+WHERE id IN (%s) 
+`, strings.Join(idStrings, ", ")))
 	return err
 }
 
@@ -330,8 +324,16 @@ WHERE id = $1
 	return err
 }
 
-func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	res, err := s.Handle().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) error {
+	idStrings := make([]string, len(ids))
+	for i, id := range ids {
+		idStrings[i] = strconv.Itoa(int(id))
+	}
+	res, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
+-- source: internal/database/external_accounts.go:UserExternalAccountsStore.Delete
+UPDATE user_external_accounts
+SET deleted_at=now()
+WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(idStrings, ", ")))
 	if err != nil {
 		return err
 	}
@@ -340,7 +342,7 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error 
 		return err
 	}
 	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]any{id}}
+		return userExternalAccountNotFoundError{[]any{ids}}
 	}
 	return nil
 }
@@ -350,12 +352,61 @@ type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
 	AccountID                        int64
+	AccountIDLike                    string
 
 	// Only one of these should be set
 	ExcludeExpired bool
 	OnlyExpired    bool
 
 	*LimitOffset
+}
+
+func (s *userExternalAccountsStore) UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error {
+	acctInstallations, err := s.List(ctx, ExternalAccountsListOptions{
+		ServiceType:    extsvc.TypeGitHubApp,
+		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
+		ExcludeExpired: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	validInstallations := []*extsvc.Account{}
+ACCTINSTALLATIONS:
+	for _, acctInstallation := range acctInstallations {
+		for _, installation := range installations {
+			installationID := strconv.FormatInt(*installation.ID, 10)
+			if acctInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
+				validInstallations = append(validInstallations, acctInstallation)
+				continue ACCTINSTALLATIONS
+			}
+		}
+		if err = s.Delete(ctx, acctInstallation.ID); err != nil {
+			return err
+		}
+	}
+
+INSTALLATIONS:
+	for _, installation := range installations {
+		installationID := strconv.FormatInt(*installation.ID, 10)
+		for _, validInstallation := range validInstallations {
+			if validInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
+				continue INSTALLATIONS
+			}
+		}
+		accountID := installationID + "/" + acct.AccountID
+		if err := s.Insert(ctx, acct.UserID, extsvc.AccountSpec{
+			ServiceType: extsvc.TypeGitHubApp,
+			ServiceID:   acct.ServiceID,
+			ClientID:    acct.ClientID,
+			AccountID:   accountID,
+		},
+			extsvc.AccountData{AuthData: nil, Data: nil},
+		); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
@@ -407,12 +458,12 @@ func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *
 	var results []*extsvc.Account
 	for rows.Next() {
 		var acct extsvc.Account
+		var authData, accountData sql.NullString
 		var keyID string
-		var authData, data sql.NullString
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&authData, &data,
+			&authData, &accountData,
 			&acct.CreatedAt, &acct.UpdatedAt,
 			&keyID,
 		); err != nil {
@@ -420,27 +471,10 @@ func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *
 		}
 
 		if authData.Valid {
-			decryptedAuthData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), authData.String, keyID)
-			if err != nil {
-				return nil, err
-			}
-
-			if decryptedAuthData != "" {
-				jAuthData := json.RawMessage(decryptedAuthData)
-				acct.AuthData = &jAuthData
-			}
+			acct.AuthData = extsvc.NewEncryptedData(authData.String, keyID, s.getEncryptionKey())
 		}
-
-		if data.Valid {
-			decryptedData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), data.String, keyID)
-			if err != nil {
-				return nil, err
-			}
-
-			if decryptedData != "" {
-				jData := json.RawMessage(decryptedData)
-				acct.Data = &jData
-			}
+		if accountData.Valid {
+			acct.Data = extsvc.NewEncryptedData(accountData.String, keyID, s.getEncryptionKey())
 		}
 
 		results = append(results, &acct)
@@ -472,49 +506,13 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	if opt.OnlyExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
 	}
+	if opt.AccountIDLike != "" {
+		conds = append(conds, sqlf.Sprintf("account_id LIKE %s", opt.AccountIDLike))
+	}
 
 	return conds
 }
 
-// MaybeEncrypt encrypts data with the given key returns the id of the key. If the key is nil, it returns the data unchanged.
-func MaybeEncrypt(ctx context.Context, key encryption.Key, data string) (maybeEncryptedData, keyID string, err error) {
-	var keyIdent string
-
-	if key != nil {
-		encrypted, err := key.Encrypt(ctx, []byte(data))
-		if err != nil {
-			return "", "", err
-		}
-		data = string(encrypted)
-		version, err := key.Version(ctx)
-		if err != nil {
-			return "", "", err
-		}
-		keyIdent = version.JSON()
-	}
-
-	return data, keyIdent, nil
-}
-
-// MaybeDecrypt decrypts data with the given key if keyIdent is not empty.
-func MaybeDecrypt(ctx context.Context, key encryption.Key, data, keyIdent string) (string, error) {
-	if keyIdent == "" {
-		// data is not encrypted, return plaintext
-		return data, nil
-	}
-	if data == "" {
-		return data, nil
-	}
-	if key == nil {
-		return data, errors.Errorf("couldn't decrypt encrypted data, key is nil")
-	}
-	decrypted, err := key.Decrypt(ctx, []byte(data))
-	if err != nil {
-		return data, err
-	}
-
-	return decrypted.Secret(), nil
-}
 func rawMessagePtr(s string) *json.RawMessage {
 	msg := json.RawMessage(s)
 	return &msg

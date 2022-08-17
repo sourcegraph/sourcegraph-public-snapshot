@@ -1,9 +1,9 @@
 /* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { Text } from '@sourcegraph/wildcard'
+import { Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { formatNumber } from '../utils'
 
@@ -13,18 +13,32 @@ interface ValueLegendItemProps {
     color: string
     description: string
     value: number
+    tooltip?: string
 }
 
-const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description }) => (
-    <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
-        <span style={{ color }} className={styles.count}>
-            {formatNumber(value)}
-        </span>
-        <Text as="span" alignment="center" className={styles.textWrap}>
-            {description}
-        </Text>
-    </div>
-)
+const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description, tooltip }) => {
+    const formattedNumber = useMemo(() => formatNumber(value), [value])
+    const unformattedNumber = `${value}`
+    return (
+        <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
+            <Tooltip content={formattedNumber !== unformattedNumber ? unformattedNumber : undefined}>
+                <span style={{ color }} className={styles.count}>
+                    {formattedNumber}
+                </span>
+            </Tooltip>
+            <Tooltip content={tooltip}>
+                <Text
+                    as="span"
+                    alignment="center"
+                    className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                >
+                    {description}
+                    {tooltip && <span className={styles.linkColor}>*</span>}
+                </Text>
+            </Tooltip>
+        </div>
+    )
+}
 
 export interface ValueLegendListProps {
     className?: string

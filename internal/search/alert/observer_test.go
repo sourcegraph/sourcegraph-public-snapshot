@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -74,10 +73,11 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	sr := Observer{
 		Logger: logger,
 		Db:     db,
-		SearchInputs: &run.SearchInputs{
+		Inputs: &search.Inputs{
 			OriginalQuery: searchQuery,
 			Query:         q,
 			UserSettings:  &schema.Settings{},
+			Features:      &search.Features{},
 		},
 	}
 

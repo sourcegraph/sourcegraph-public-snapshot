@@ -3,6 +3,8 @@ package expiration
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -11,6 +13,7 @@ type expirer struct {
 	policySvc     PolicyService
 	metrics       *metrics
 	policyMatcher PolicyMatcher
+	logger        log.Logger
 }
 
 var (

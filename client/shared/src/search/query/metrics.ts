@@ -45,7 +45,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
     let count_repo_contains_file = 0
     let count_repo_contains_content = 0
     let count_repo_contains_commit_after = 0
-    let count_repo_dependencies = 0
+    const count_repo_dependencies = 0
     let count_count_all = 0
     let count_non_global_context = 0
     let count_only_patterns = 0
@@ -132,12 +132,6 @@ export const collectMetrics = (query: string): Metrics | undefined => {
                                 break
                             case 'contains.commit.after':
                                 count_repo_contains_commit_after += 1
-                                break
-                            case 'deps':
-                                count_repo_dependencies += 1
-                                break
-                            case 'dependencies':
-                                count_repo_dependencies += 1
                                 break
                         }
                     }

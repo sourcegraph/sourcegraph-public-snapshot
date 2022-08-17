@@ -128,17 +128,18 @@ func main() {
 		}
 		fmt.Println(out)
 		fmt.Println("Slack\n---")
-		out, err = slackSummary(ctx, teammates, report, traceURL)
+		presenter, err := slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
 			logger.Fatal("can't render Slack post", log.Error(err))
 		}
-		fmt.Println(out)
+
+		fmt.Println(presenter.toString())
 	} else {
-		out, err := slackSummary(ctx, teammates, report, traceURL)
+		presenter, err := slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
 			logger.Fatal("can't render Slack post", log.Error(err))
 		}
-		err = postSlackUpdate(flags.SlackAnnounceWebhook, out)
+		err = postSlackUpdate(flags.SlackAnnounceWebhook, presenter)
 		if err != nil {
 			logger.Fatal("can't post Slack update", log.Error(err))
 		}

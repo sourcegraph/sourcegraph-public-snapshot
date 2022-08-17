@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -402,7 +402,7 @@ func validateSchemaState(
 
 type definitionWithStatus struct {
 	definition  definition.Definition
-	indexStatus storetypes.IndexStatus
+	indexStatus shared.IndexStatus
 }
 
 // partitionPendingMigrations partitions the given migrations into two sets: the set of pending
@@ -437,10 +437,10 @@ func partitionPendingMigrations(
 
 // getAndLogIndexStatus calls IndexStatus on the given store and returns the results. The result
 // is logged to the package-level logger.
-func getAndLogIndexStatus(ctx context.Context, schemaContext schemaContext, tableName, indexName string) (storetypes.IndexStatus, bool, error) {
+func getAndLogIndexStatus(ctx context.Context, schemaContext schemaContext, tableName, indexName string) (shared.IndexStatus, bool, error) {
 	indexStatus, exists, err := schemaContext.store.IndexStatus(ctx, tableName, indexName)
 	if err != nil {
-		return storetypes.IndexStatus{}, false, errors.Wrap(err, "failed to query state of index")
+		return shared.IndexStatus{}, false, errors.Wrap(err, "failed to query state of index")
 	}
 
 	logIndexStatus(schemaContext, tableName, indexName, indexStatus, exists)
@@ -448,7 +448,7 @@ func getAndLogIndexStatus(ctx context.Context, schemaContext schemaContext, tabl
 }
 
 // logIndexStatus logs the result of IndexStatus to the package-level logger.
-func logIndexStatus(schemaContext schemaContext, tableName, indexName string, indexStatus storetypes.IndexStatus, exists bool) {
+func logIndexStatus(schemaContext schemaContext, tableName, indexName string, indexStatus shared.IndexStatus, exists bool) {
 	schemaContext.logger.Info(
 		"Checked progress of index creation",
 		log.Object("result",
@@ -466,13 +466,13 @@ func logIndexStatus(schemaContext schemaContext, tableName, indexName string, in
 // renderIndexStatus returns a slice of interface pairs describing the given index status for use in a
 // call to logger. If the index is currently being created, the progress of the create operation will be
 // summarized.
-func renderIndexStatus(progress storetypes.IndexStatus) log.Field {
+func renderIndexStatus(progress shared.IndexStatus) log.Field {
 	if progress.Phase == nil {
 		return log.Object("index status", log.Bool("in-progress", false))
 	}
 
 	index := -1
-	for i, phase := range storetypes.CreateIndexConcurrentlyPhases {
+	for i, phase := range shared.CreateIndexConcurrentlyPhases {
 		if phase == *progress.Phase {
 			index = i
 			break
@@ -483,7 +483,7 @@ func renderIndexStatus(progress storetypes.IndexStatus) log.Field {
 		"index status",
 		log.Bool("in-progress", true),
 		log.String("phase", *progress.Phase),
-		log.String("phases", fmt.Sprintf("%d of %d", index, len(storetypes.CreateIndexConcurrentlyPhases))),
+		log.String("phases", fmt.Sprintf("%d of %d", index, len(shared.CreateIndexConcurrentlyPhases))),
 		log.String("lockers", fmt.Sprintf("%d of %d", progress.LockersDone, progress.LockersTotal)),
 		log.String("blocks", fmt.Sprintf("%d of %d", progress.BlocksDone, progress.BlocksTotal)),
 		log.String("tuples", fmt.Sprintf("%d of %d", progress.TuplesDone, progress.TuplesTotal)),

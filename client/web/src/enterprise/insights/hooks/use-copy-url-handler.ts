@@ -4,7 +4,7 @@ import copy from 'copy-to-clipboard'
 import { merge, Observable, of } from 'rxjs'
 import { delay, startWith, switchMapTo, tap } from 'rxjs/operators'
 
-import { DeprecatedTooltipController, useEventObservable } from '@sourcegraph/wildcard'
+import { useEventObservable } from '@sourcegraph/wildcard'
 
 type URLValue = string | undefined
 type useCopiedHandlerReturn = [(value?: URLValue) => void, boolean | undefined]
@@ -24,7 +24,6 @@ export function useCopyURLHandler(): useCopiedHandlerReturn {
                 clicks.pipe(
                     tap(copyDashboardURL),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => DeprecatedTooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyDashboardURL]

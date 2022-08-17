@@ -34,7 +34,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-tooltip="At least 500 results match this filter."
+      data-state="closed"
     >
       500+
     </span>
@@ -71,7 +71,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-tooltip="At least 241 results match this filter."
+      data-state="closed"
     >
       241
     </span>
@@ -123,7 +123,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-tooltip="At least 1 result matches this filter."
+      data-state="closed"
     >
       1
     </span>
@@ -170,7 +170,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-tooltip="At least 5 results match this filter."
+      data-state="closed"
     >
       5
     </span>
@@ -212,7 +212,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-tooltip="At least 201 results match this filter."
+      data-state="closed"
     >
       201+
     </span>
@@ -290,7 +290,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-tooltip="At least 5 results match this filter."
+      data-state="closed"
     >
       5
     </span>
@@ -332,7 +332,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-tooltip="At least 201 results match this filter."
+      data-state="closed"
     >
       201+
     </span>
