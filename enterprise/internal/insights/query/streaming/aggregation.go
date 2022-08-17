@@ -94,6 +94,9 @@ func TabulateAggregationMatches(tabulator AggregationTabulator, mode types.Searc
 				tabulator(nil, err)
 				continue
 			}
+			if count == 0 {
+				continue
+			}
 			current, _ := combined[key]
 			combined[key] = current + count
 		}
@@ -137,7 +140,7 @@ func newEventMatch(event streamhttp.EventMatch) *eventMatch {
 			RepoID:      match.RepositoryID,
 			Author:      match.AuthorName,
 			Date:        match.AuthorDate,
-			ResultCount: 1,
+			ResultCount: 1, //TODO(chwarwick): Verify that we want to count commits not matches in the commit
 		}
 	case *streamhttp.EventSymbolMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)
