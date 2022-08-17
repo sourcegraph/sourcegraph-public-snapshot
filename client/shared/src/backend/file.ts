@@ -5,7 +5,7 @@ import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
 
-import { HighlightedFileResult, HighlightedFileVariables } from '../graphql-operations'
+import { HighlightedFileResult, HighlightedFileVariables, HighlightResponseFormat } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
 import { makeRepoURI } from '../util/url'
 
@@ -17,6 +17,7 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
     (
         {
             platformContext,
+            format = HighlightResponseFormat.HTML_HIGHLIGHT,
             ...context
         }: FetchFileParameters & {
             platformContext: Pick<PlatformContext, 'requestGraphQL'>
@@ -32,13 +33,14 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                         $filePath: String!
                         $disableTimeout: Boolean!
                         $ranges: [HighlightLineRange!]!
+                        $format: HighlightResponseFormat!
                     ) {
                         repository(name: $repoName) {
                             commit(rev: $commitID) {
                                 file(path: $filePath) {
                                     isDirectory
                                     richHTML
-                                    highlight(disableTimeout: $disableTimeout) {
+                                    highlight(disableTimeout: $disableTimeout, format: $format) {
                                         aborted
                                         lineRanges(ranges: $ranges)
                                     }
@@ -47,7 +49,11 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                         }
                     }
                 `,
-                variables: { ...context, disableTimeout: !!context.disableTimeout },
+                variables: {
+                    ...context,
+                    format,
+                    disableTimeout: Boolean(context.disableTimeout),
+                },
                 mightContainPrivateInfo: true,
             })
             .pipe(
@@ -66,5 +72,5 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
         makeRepoURI(context) +
         `?disableTimeout=${String(context.disableTimeout)}&ranges=${context.ranges
             .map(range => `${range.startLine}:${range.endLine}`)
-            .join(',')}`
+            .join(',')}&format=${context.format}`
 )
