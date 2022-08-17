@@ -54,16 +54,7 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 		return errors.Wrap(err, "failed to insert view")
 	}
 
-	grantValues := func() []any {
-		if insight.UserID != nil {
-			return []any{viewID, *insight.UserID, nil, nil}
-		}
-		if insight.OrgID != nil {
-			return []any{viewID, nil, *insight.OrgID, nil}
-		}
-		return []any{viewID, nil, nil, true}
-	}()
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateLangstatsInsightInsertViewGrantQuery, grantValues...)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateLangstatsInsightInsertViewGrantQuery, append([]any{viewID}, grantValues2(insight.UserID, insight.OrgID))...)); err != nil {
 		return errors.Wrap(err, "failed to insert view grant")
 	}
 

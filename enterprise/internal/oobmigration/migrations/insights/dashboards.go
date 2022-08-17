@@ -39,16 +39,11 @@ func (m *insightsMigrator) migrateDashboard(ctx context.Context, dashboard setti
 	}
 	defer func() { err = tx.Done(err) }()
 
-	grantsQuery := func() *sqlf.Query {
-		if dashboard.UserID != nil {
-			return sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
-		}
-		if dashboard.OrgID != nil {
-			return sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
-		}
-		return sqlf.Sprintf("dg.global IS TRUE")
-	}()
-	count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insightsMigratorMigrateDashboardQuery, dashboard.Title, grantsQuery)))
+	count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		insightsMigratorMigrateDashboardQuery,
+		dashboard.Title,
+		grantQuery("dg", dashboard.UserID, dashboard.OrgID),
+	)))
 	if err != nil || count != 0 {
 		return errors.Wrap(err, "failed to count dashboards")
 	}
@@ -110,16 +105,7 @@ func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.St
 		}
 	}
 
-	grantValues := func() []any {
-		if userID != 0 {
-			return []any{dashboardID, userID, nil, nil}
-		}
-		if len(orgIDs) != 0 {
-			return []any{dashboardID, nil, orgIDs[0], nil}
-		}
-		return []any{dashboardID, nil, nil, true}
-	}()
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertGrantQuery, grantValues...)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertGrantQuery, append([]any{dashboardID}, grantValues(userID, orgIDs)...)...)); err != nil {
 		return errors.Wrap(err, "failed to insert dashboard grants")
 	}
 

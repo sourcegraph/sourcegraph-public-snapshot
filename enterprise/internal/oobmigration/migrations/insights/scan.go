@@ -22,7 +22,7 @@ var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s set
 	return s, err
 })
 
-var scanSeries = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s insightSeries, _ error) {
+var scanFirstSeries = basestore.NewFirstScanner(func(scanner dbutil.Scanner) (s insightSeries, _ error) {
 	err := scanner.Scan(
 		&s.id,
 		&s.seriesID,

@@ -132,15 +132,7 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 		return err
 	}
 
-	subjectName, settings, err := func() (string, []settings, error) {
-		if job.userID != nil {
-			return m.getSettingsForUser(ctx, tx, *job.userID)
-		}
-		if job.orgID != nil {
-			return m.getSettingsForOrg(ctx, tx, *job.orgID)
-		}
-		return m.getGlobalSettings(ctx, tx)
-	}()
+	subjectName, settings, err := m.getSettings(ctx, tx, job.userID, job.orgID)
 	if err != nil {
 		return err
 	}

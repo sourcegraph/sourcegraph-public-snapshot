@@ -9,8 +9,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore.Store, userId int) (string, []settings, error) {
-	users, err := scanUserOrOrgs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectUserQuery, userId)))
+func (m *insightsMigrator) getSettings(ctx context.Context, tx *basestore.Store, userID, orgID *int) (string, []settings, error) {
+	if userID != nil {
+		return m.getSettingsForUser(ctx, tx, *userID)
+	}
+
+	if orgID != nil {
+		return m.getSettingsForOrg(ctx, tx, *orgID)
+	}
+
+	return m.getGlobalSettings(ctx, tx)
+}
+
+func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore.Store, userID int) (string, []settings, error) {
+	users, err := scanUserOrOrgs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectUserQuery, userID)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to retrieve user by id")
 	}
@@ -19,7 +31,7 @@ func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore
 	}
 	user := users[0]
 
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userId)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userID)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to retrieve user settings")
 	}
@@ -54,8 +66,8 @@ ORDER BY id DESC
 LIMIT 1
 `
 
-func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.Store, orgId int) (string, []settings, error) {
-	orgs, err := scanUserOrOrgs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectOrgQuery, orgId)))
+func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.Store, orgID int) (string, []settings, error) {
+	orgs, err := scanUserOrOrgs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectOrgQuery, orgID)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to retrieve org by id")
 	}
@@ -64,7 +76,7 @@ func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.
 	}
 	org := orgs[0]
 
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectSettingsQuery, orgId)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectSettingsQuery, orgID)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to retrieve org settings")
 	}
