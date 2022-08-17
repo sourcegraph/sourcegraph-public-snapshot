@@ -13,6 +13,9 @@ type PatchedKeys = typeof PATCHED_HISTORY_METHODS[number]
  * Having top-level navigation allows grouping other spans in one trace bound to
  * the page view, which helps analyze data in Honeycomb. This experimental approach
  * will be improved based on our experience with events received from the production environment.
+ *
+ * Implementation is based on the `opentelemetry-instrumentation-user-interaction` instrumentation:
+ * https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/web/opentelemetry-instrumentation-user-interaction/src/instrumentation.ts#L377
  */
 export class HistoryInstrumentation extends InstrumentationBaseWeb {
     public static instrumentationName = '@sourcegraph/instrumentation-history'
