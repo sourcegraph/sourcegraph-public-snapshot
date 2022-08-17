@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -148,26 +146,15 @@ func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string
 }
 
 func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
-	var logger log.Logger
-
 	r, err := doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
 	}
+	defer func() { _ = r.Body.Close() }()
 
-	if r != nil {
-
-	}
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			logger.Error("oauth2: error closing body", log.Error(err))
-		}
-	}(r.Body)
-
 	if err != nil {
-		return nil, errors.Wrapf(err, "oauth2: cannot fetch token: %v")
+		return nil, errors.Wrap(err, "read body")
 	}
 
 	if code := r.StatusCode; code < 200 || code > 299 {
@@ -200,7 +187,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 		}
 		e := vals.Get("expires_in")
 		expires, _ := strconv.Atoi(e)
-		if expires != 0 {
+		if expires > 0 {
 			token.Expiry = time.Now().Add(time.Duration(expires) * time.Second)
 		}
 	default:
@@ -222,7 +209,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 			Expiry:       tj.expiry(),
 			Raw:          make(map[string]interface{}),
 		}
-		json.Unmarshal(body, &token.Raw) // no error checks for optional fields.
+		_ = json.Unmarshal(body, &token.Raw) // no error checks for optional fields.
 	}
 	if token.AccessToken == "" {
 		return nil, errors.New("oauth2: server response missing access_token")

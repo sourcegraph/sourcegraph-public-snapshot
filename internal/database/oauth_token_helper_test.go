@@ -78,25 +78,20 @@ func TestRefreshToken_ExternalServices(t *testing.T) {
 
 	externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, extSvc ...*types.ExternalService) error {
 		var result map[string]interface{}
-		_ = json.Unmarshal([]byte(extSvc[0].Config), &result)
-
-		if result["token.oauth.refresh"] != expectedRefreshToken {
-			t.Fatalf("got %v, want %v", result["token.oauth.refresh"], expectedRefreshToken)
-		}
-
+		err := json.Unmarshal([]byte(extSvc[0].Config), &result)
+		require.NoError(t, err)
+		assert.Equal(t, expectedRefreshToken, result["token.oauth.refresh"])
 		return nil
 	})
 
 	h := &RefreshTokenHelperForExternalService{DB: db, ExternalServiceID: 2, OauthRefreshToken: "refresh_token"}
 	newToken, err := h.RefreshToken(ctx, doer, ctxOauth)
-
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken)
 }
 
 func TestRefreshToken_ExternalAccounts(t *testing.T) {
 	ctx := context.Background()
-	ctxOauth := oauthutil.OAuthContext{}
 	db := NewMockDB()
 
 	externalAccounts := NewMockUserExternalAccountsStore()
@@ -143,8 +138,7 @@ func TestRefreshToken_ExternalAccounts(t *testing.T) {
 	expectedNewToken := "new-token"
 
 	h := &RefreshTokenHelperForExternalAccount{DB: db, ExternalAccountID: 1, OauthRefreshToken: "refresh_token"}
-	newToken, err := h.RefreshToken(ctx, doer, ctxOauth)
-
+	newToken, err := h.RefreshToken(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken)
 }

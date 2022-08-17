@@ -96,8 +96,8 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		nil,
 	)
 
-	mockedOauthCtx :=
-		&oauthutil.OAuthContext{
+	gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
+		return &oauthutil.OAuthContext{
 			ClientID:     "client",
 			ClientSecret: "client_sec",
 			Endpoint: oauth2.Endpoint{
@@ -106,8 +106,6 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 			},
 			Scopes: []string{"read_user"},
 		}
-	gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
-		return mockedOauthCtx
 	}
 	defer func() { gitlab.MockGetOAuthContext = nil }()
 

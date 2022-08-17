@@ -25,16 +25,19 @@ type RefreshTokenHelperForExternalService struct {
 }
 
 func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token string, err error) {
-	refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
-
 	defer func() {
 		success := err == nil
 		gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
 	}()
 
+	refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
+	if err != nil {
+		return "", errors.Wrap(err, "refresh token")
+	}
+
 	acct, err := r.DB.UserExternalAccounts().Get(ctx, r.ExternalAccountID)
 	if err != nil {
-		return "", errors.Wrap(err, "getting user external account")
+		return "", errors.Wrap(err, "get user external account")
 	}
 
 	acct.SetAuthData(refreshedToken)
@@ -54,29 +57,29 @@ func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context,
 
 	refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, r.OauthRefreshToken, oauthutil.AuthStyleInParams)
 	if err != nil {
-		return "", errors.Wrap(err, "refreshing token")
+		return "", errors.Wrap(err, "refresh token")
 	}
 
 	extsvc, err := r.DB.ExternalServices().GetByID(ctx, r.ExternalServiceID)
 	if err != nil {
-		return "", errors.Wrap(err, "getting external service")
+		return "", errors.Wrap(err, "get external service")
 	}
 
 	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.AccessToken, "token")
 	if err != nil {
-		return "", errors.Wrap(err, "updating OAuth token")
+		return "", errors.Wrap(err, "update OAuth token")
 	}
 	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
 	if err != nil {
-		return "", errors.Wrap(err, "updating OAuth refresh token")
+		return "", errors.Wrap(err, "update OAuth refresh token")
 	}
 	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
 	if err != nil {
-		return "", errors.Wrap(err, "updating OAuth token expiry")
+		return "", errors.Wrap(err, "update OAuth token expiry")
 	}
 	extsvc.UpdatedAt = time.Now()
 	if err := r.DB.ExternalServices().Upsert(ctx, extsvc); err != nil {
-		return "", errors.Wrap(err, "upserting external service")
+		return "", errors.Wrap(err, "upsert external service")
 	}
 
 	return refreshedToken.AccessToken, nil
