@@ -151,9 +151,10 @@ func (m *insightsMigrator) migrateSeries(ctx context.Context, insight searchInsi
 				if len(rows) > 0 {
 					// If the series already exists, we can re-use that series
 					return rows[0], nil
-				} else {
-					// If it's not a backend series, we just want to create it.
-					id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+				}
+
+				// If it's not a backend series, we just want to create it.
+				id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 						INSERT INTO insight_series (
 							series_id,
 							query,
@@ -175,30 +176,30 @@ func (m *insightsMigrator) migrateSeries(ctx context.Context, insight searchInsi
 						VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
 						RETURNING id
 					`,
-						temp.seriesID,
-						temp.query,
-						temp.createdAt,
-						temp.oldestHistoricalAt,
-						temp.lastRecordedAt,
-						temp.nextRecordingAfter,
-						temp.lastSnapshotAt,
-						temp.nextSnapshotAfter,
-						pq.Array(temp.repositories),
-						temp.sampleIntervalUnit,
-						temp.sampleIntervalValue,
-						temp.generatedFromCaptureGroups,
-						temp.justInTime,
-						temp.generationMethod,
-						temp.groupBy,
-					)))
-					if err != nil {
-						return insightSeries{}, errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", insight.ID, temp.seriesID)
-					}
-					temp.id = id
+					temp.seriesID,
+					temp.query,
+					temp.createdAt,
+					temp.oldestHistoricalAt,
+					temp.lastRecordedAt,
+					temp.nextRecordingAfter,
+					temp.lastSnapshotAt,
+					temp.nextSnapshotAfter,
+					pq.Array(temp.repositories),
+					temp.sampleIntervalUnit,
+					temp.sampleIntervalValue,
+					temp.generatedFromCaptureGroups,
+					temp.justInTime,
+					temp.generationMethod,
+					temp.groupBy,
+				)))
+				if err != nil {
+					return insightSeries{}, errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", insight.ID, temp.seriesID)
+				}
+				temp.id = id
 
-					// Also match/replace old series_points ids with the new series id
-					oldId := fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(timeSeries.Query))))
-					countUpdated, _, silentErr := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+				// Also match/replace old series_points ids with the new series id
+				oldId := fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(timeSeries.Query))))
+				countUpdated, _, silentErr := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 						WITH updated AS (
 							UPDATE series_points sp
 							SET series_id = %s
@@ -207,34 +208,34 @@ func (m *insightsMigrator) migrateSeries(ctx context.Context, insight searchInsi
 						)
 						SELECT count(*) FROM updated;
 					`,
-						temp.seriesID,
-						oldId,
-					)))
-					if silentErr != nil {
-						// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
-						log15.Error("error updating series_id for series_points", "series_id", temp.seriesID, "err", silentErr)
-					} else if countUpdated == 0 {
-						// If find-replace doesn't match any records, we still need to backfill, so just continue
-					} else {
-						// If the find-replace succeeded, we can do a similar find-replace on the jobs in the queue,
-						// and then stamp the backfill_queued_at on the new series.
+					temp.seriesID,
+					oldId,
+				)))
+				if silentErr != nil {
+					// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
+					log15.Error("error updating series_id for series_points", "series_id", temp.seriesID, "err", silentErr)
+				} else if countUpdated == 0 {
+					// If find-replace doesn't match any records, we still need to backfill, so just continue
+				} else {
+					// If the find-replace succeeded, we can do a similar find-replace on the jobs in the queue,
+					// and then stamp the backfill_queued_at on the new series.
 
-						if err := m.frontendStore.Exec(ctx, sqlf.Sprintf("update insights_query_runner_jobs set series_id = %s where series_id = %s", temp.seriesID, oldId)); err != nil {
-							// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
-							log15.Error("error updating series_id for jobs", "series_id", temp.seriesID, "err", errors.Wrap(err, "updateTimeSeriesJobReferences"))
-						} else {
-							if silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, temp.id)); silentErr != nil {
-								// If the stamp fails, skip it. It will just need to be calcuated again.
-								log15.Error("error updating backfill_queued_at", "series_id", temp.seriesID, "err", silentErr)
-							}
+					if err := m.frontendStore.Exec(ctx, sqlf.Sprintf("update insights_query_runner_jobs set series_id = %s where series_id = %s", temp.seriesID, oldId)); err != nil {
+						// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
+						log15.Error("error updating series_id for jobs", "series_id", temp.seriesID, "err", errors.Wrap(err, "updateTimeSeriesJobReferences"))
+					} else {
+						if silentErr := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s`, now, temp.id)); silentErr != nil {
+							// If the stamp fails, skip it. It will just need to be calcuated again.
+							log15.Error("error updating backfill_queued_at", "series_id", temp.seriesID, "err", silentErr)
 						}
 					}
-
-					return temp, nil
 				}
-			} else {
-				// If it's not a backend series, we just want to create it.
-				id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+
+				return temp, nil
+			}
+
+			// If it's not a backend series, we just want to create it.
+			id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
 					INSERT INTO insight_series (
 						series_id,
 						query,
@@ -256,28 +257,27 @@ func (m *insightsMigrator) migrateSeries(ctx context.Context, insight searchInsi
 					VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
 					RETURNING id
 				`,
-					temp.seriesID,
-					temp.query,
-					temp.createdAt,
-					temp.oldestHistoricalAt,
-					temp.lastRecordedAt,
-					temp.nextRecordingAfter,
-					temp.lastSnapshotAt,
-					temp.nextSnapshotAfter,
-					pq.Array(temp.repositories),
-					temp.sampleIntervalUnit,
-					temp.sampleIntervalValue,
-					temp.generatedFromCaptureGroups,
-					temp.justInTime,
-					temp.generationMethod,
-					temp.groupBy,
-				)))
-				if err != nil {
-					return insightSeries{}, errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", insight.ID, temp.seriesID)
-				}
-				temp.id = id
-				return temp, nil
+				temp.seriesID,
+				temp.query,
+				temp.createdAt,
+				temp.oldestHistoricalAt,
+				temp.lastRecordedAt,
+				temp.nextRecordingAfter,
+				temp.lastSnapshotAt,
+				temp.nextSnapshotAfter,
+				pq.Array(temp.repositories),
+				temp.sampleIntervalUnit,
+				temp.sampleIntervalValue,
+				temp.generatedFromCaptureGroups,
+				temp.justInTime,
+				temp.generationMethod,
+				temp.groupBy,
+			)))
+			if err != nil {
+				return insightSeries{}, errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", insight.ID, temp.seriesID)
 			}
+			temp.id = id
+			return temp, nil
 		}()
 		if err != nil {
 			return err
