@@ -206,14 +206,6 @@ type baseReplacer struct {
 	pattern  string
 }
 
-type literalReplacer struct {
-	baseReplacer
-}
-
-func newLiteralReplacer(plan searchquery.Plan) (*literalReplacer, error) {
-	return &literalReplacer{baseReplacer{original: plan}}, nil
-}
-
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
 	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
 		return searchquery.Pattern{
@@ -242,8 +234,13 @@ func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 	matches[0] = append(matches[0], "") // empty value for "total match"
 	matches[0] = append(matches[0], replacement)
 
-	return BasicQuery(replaceCaptureGroupsWithString(r.pattern, r.groups, matches, 1)), nil
+	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, matches, 1))
 }
+
+var (
+	multiplePatternErr        = errors.New("pattern replacement does not support queries with multiple patterns")
+	unsupportedPatternTypeErr = errors.New("pattern replacement is only supported for regexp patterns")
+)
 
 func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (PatternReplacer, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchType))
@@ -259,7 +256,7 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 		})
 	})
 	if len(patterns) > 1 {
-		return nil, errors.New("pattern replacement does not support queries with multiple patterns")
+		return nil, multiplePatternErr
 	}
 
 	pattern := patterns[0]
@@ -267,9 +264,8 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 		original: plan,
 		pattern:  pattern.Value,
 	}
-	log15.Info("annotations:", "labels", pattern.Annotation.Labels.String())
 	if !pattern.Annotation.Labels.IsSet(searchquery.Regexp) {
-		return nil, errors.New("pattern replacement is only supported for regexp patterns")
+		return nil, unsupportedPatternTypeErr
 	}
 
 	regexpGroups := findGroups(pattern.Value)
