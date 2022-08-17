@@ -123,7 +123,7 @@ type defaultFilters struct {
 type settingDashboard struct {
 	ID         string   `json:"id,omitempty"`
 	Title      string   `json:"title,omitempty"`
-	InsightIds []string `json:"insightIds,omitempty"`
+	InsightIDs []string `json:"insightIds,omitempty"`
 	UserID     *int32
 	OrgID      *int32
 }

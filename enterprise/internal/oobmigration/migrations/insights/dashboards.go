@@ -39,20 +39,21 @@ func (m *insightsMigrator) migrateDashboard(ctx context.Context, dashboard setti
 	}
 	defer func() { err = tx.Done(err) }()
 
-	var grantsQuery *sqlf.Query
-	if dashboard.UserID != nil {
-		grantsQuery = sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
-	} else if dashboard.OrgID != nil {
-		grantsQuery = sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
-	} else {
-		grantsQuery = sqlf.Sprintf("dg.global IS TRUE")
-	}
+	grantsQuery := func() *sqlf.Query {
+		if dashboard.UserID != nil {
+			return sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
+		}
+		if dashboard.OrgID != nil {
+			return sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
+		}
+		return sqlf.Sprintf("dg.global IS TRUE")
+	}()
 	count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insightsMigratorMigrateDashboardQuery, dashboard.Title, grantsQuery)))
 	if err != nil || count != 0 {
-		return err
+		return errors.Wrap(err, "failed to count dashboards")
 	}
 
-	return m.createDashboard(ctx, tx, dashboard.Title, dashboard.InsightIds, userID, orgIDs)
+	return m.createDashboard(ctx, tx, dashboard.Title, dashboard.InsightIDs, userID, orgIDs)
 }
 
 const insightsMigratorMigrateDashboardQuery = `
@@ -62,7 +63,17 @@ JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
 WHERE dashboard.title = %s AND %s
 `
 
-func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.Store, title string, insightReferences []string, userID int, orgIDs []int) (err error) {
+func (m *insightsMigrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightIDs []string, userID int, orgIDs []int) (err error) {
+	tx, err := m.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	return m.createDashboard(ctx, tx, specialCaseDashboardName(subjectName), insightIDs, userID, orgIDs)
+}
+
+func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.Store, title string, insightIDs []string, userID int, orgIDs []int) (err error) {
 	targetsUniqueIDs := make([]string, 0, len(orgIDs)+1)
 	if userID != 0 {
 		targetsUniqueIDs = append(targetsUniqueIDs, fmt.Sprintf("user-%d", userID))
@@ -71,43 +82,31 @@ func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.St
 		targetsUniqueIDs = append(targetsUniqueIDs, fmt.Sprintf("org-%d", orgID))
 	}
 
-	uniqueIDs := make([]string, 0, len(insightReferences))
-	for _, reference := range insightReferences {
-		id, _, err := basestore.ScanFirstString(m.insightsStore.Query(ctx, sqlf.Sprintf(
-			insightsMigratorCreateDashboardSelectQuery,
-			reference,
-			fmt.Sprintf("%s-%%(%s)%%", reference, strings.Join(targetsUniqueIDs, "|")),
-		)))
+	uniqueIDs := make([]string, 0, len(insightIDs))
+	for _, insightID := range insightIDs {
+		searchTerm := fmt.Sprintf("%s-%%(%s)%%", insightID, strings.Join(targetsUniqueIDs, "|"))
+		uniqueID, _, err := basestore.ScanFirstString(tx.Query(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardSelectQuery, insightID, searchTerm)))
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to retrieve unique id of insight view")
 		}
-		uniqueIDs = append(uniqueIDs, id)
+
+		uniqueIDs = append(uniqueIDs, uniqueID)
 	}
 
-	dashboardID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		insightsMigratorCreateDashboardInsertQuery,
-		title,
-	)))
+	dashboardID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertQuery, title)))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to insert dashboard")
 	}
 
-	indexedViewIDs := make([]*sqlf.Query, 0, len(uniqueIDs))
-	for i, viewID := range uniqueIDs {
-		indexedViewIDs = append(indexedViewIDs, sqlf.Sprintf(
-			"(%s, %s)",
-			viewID,
-			fmt.Sprintf("%d", i),
-		))
-	}
-	if len(indexedViewIDs) > 0 {
-		if err := tx.Exec(ctx, sqlf.Sprintf(
-			insightsMigratorCreateDashboardInsertInsightViewQuery,
-			dashboardID,
-			sqlf.Join(indexedViewIDs, ", "),
-			pq.Array(uniqueIDs),
-		)); err != nil {
-			return errors.Wrap(err, "AddViewsToDashboard")
+	if len(uniqueIDs) > 0 {
+		indexedUniqueIDs := make([]*sqlf.Query, 0, len(uniqueIDs))
+		for i, uniqueID := range uniqueIDs {
+			indexedUniqueIDs = append(indexedUniqueIDs, sqlf.Sprintf("(%s, %s)", uniqueID, fmt.Sprintf("%d", i)))
+		}
+		values := sqlf.Join(indexedUniqueIDs, ", ")
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertInsightViewQuery, dashboardID, values, pq.Array(uniqueIDs))); err != nil {
+			return errors.Wrap(err, "failed to insert dashboard insight view")
 		}
 	}
 
@@ -121,7 +120,7 @@ func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.St
 		return []any{dashboardID, nil, nil, true}
 	}()
 	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertGrantQuery, grantValues...)); err != nil {
-		return errors.Wrap(err, "AddDashboardGrants")
+		return errors.Wrap(err, "failed to insert dashboard grants")
 	}
 
 	return nil
@@ -129,12 +128,9 @@ func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.St
 
 const insightsMigratorCreateDashboardSelectQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/dashboards.go:createDashboard
-SELECT
-	unique_id
+SELECT unique_id
 FROM insight_view
-WHERE
-	unique_id = %s OR
-	unique_id SIMILAR TO %s
+WHERE unique_id = %s OR unique_id SIMILAR TO %s
 LIMIT 1
 `
 
@@ -148,9 +144,7 @@ RETURNING id
 const insightsMigratorCreateDashboardInsertInsightViewQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/dashboards.go:createDashboard
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
-SELECT
-	%s AS dashboard_id,
-	insight_view.id AS insight_view_id
+SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
 FROM insight_view
 JOIN (VALUES %s) AS ids (id, ordering) ON ids.id = insight_view.unique_id
 WHERE unique_id = ANY(%s)
@@ -163,19 +157,10 @@ const insightsMigratorCreateDashboardInsertGrantQuery = `
 INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
 `
 
-func (m *insightsMigrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, userID int, orgIDs []int) error {
-	tx, err := m.insightsStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
+func specialCaseDashboardName(subjectName string) string {
 	if subjectName != "Global" {
 		subjectName += "'s"
 	}
 
-	if err := m.createDashboard(ctx, tx, fmt.Sprintf("%s Insights", subjectName), insightReferences, userID, orgIDs); err != nil {
-		return errors.Wrap(err, "CreateSpecialCaseDashboard")
-	}
-	return nil
+	return fmt.Sprintf("%s Insights", subjectName)
 }

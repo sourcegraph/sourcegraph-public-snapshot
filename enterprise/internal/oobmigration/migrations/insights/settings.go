@@ -21,7 +21,7 @@ func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore
 
 	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userId)))
 	if err != nil {
-		return "", nil, err
+		return "", nil, errors.Wrap(err, "failed to retrieve user settings")
 	}
 
 	subjectName := user.name
@@ -65,7 +65,7 @@ func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.
 
 	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectSettingsQuery, orgId)))
 	if err != nil {
-		return "", nil, err
+		return "", nil, errors.Wrap(err, "failed to retrieve org settings")
 	}
 
 	subjectName := org.name
