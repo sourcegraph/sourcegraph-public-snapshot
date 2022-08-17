@@ -18,11 +18,12 @@ var errPermissionsUserMappingConflict = errors.New("The permissions user mapping
 // It uses `repo` as the table name to filter out repository IDs and should be
 // used as an AND condition in a complete SQL query.
 func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
-	authzAllowByDefault, authzProviders := authz.GetProviders()
+	authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 
 	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
 	// provider(s) and permissions user mapping are configured.
+	var authzAllowByDefault bool
 	if usePermissionsUserMapping {
 		if len(authzProviders) > 0 {
 			return nil, errPermissionsUserMappingConflict

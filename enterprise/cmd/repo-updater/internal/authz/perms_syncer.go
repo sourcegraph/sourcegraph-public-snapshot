@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	gh "github.com/google/go-github/v41/github"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -197,7 +198,7 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 // providersByServiceID returns a list of authz.Provider configured in the external services.
 // Keys are ServiceID, e.g. "https://github.com/".
 func (s *PermsSyncer) providersByServiceID() map[string]authz.Provider {
-	_, ps := authz.GetProviders()
+	ps := authz.GetProviders()
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
 		providers[p.ServiceID()] = p
@@ -208,7 +209,7 @@ func (s *PermsSyncer) providersByServiceID() map[string]authz.Provider {
 // providersByURNs returns a list of authz.Provider configured in the external services.
 // Keys are URN, e.g. "extsvc:github:1".
 func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
-	_, ps := authz.GetProviders()
+	ps := authz.GetProviders()
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
 		providers[p.URN()] = p

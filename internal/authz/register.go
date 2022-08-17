@@ -54,7 +54,7 @@ func SetProviders(authzAllowByDefault bool, z []Provider) {
 // GetProviders returns the current authz parameters. It is concurrency-safe.
 //
 // It blocks until SetProviders has been called at least once.
-func GetProviders() (authzAllowByDefault bool, providers []Provider) {
+func GetProviders() (providers []Provider) {
 	if !isTest {
 		<-authzProvidersReady
 	}
@@ -62,11 +62,11 @@ func GetProviders() (authzAllowByDefault bool, providers []Provider) {
 	defer authzMu.Unlock()
 
 	if authzProviders == nil {
-		return allowAccessByDefault, nil
+		return nil
 	}
 	providers = make([]Provider, len(authzProviders))
 	copy(providers, authzProviders)
-	return allowAccessByDefault, providers
+	return providers
 }
 
 var isTest = (func() bool {
