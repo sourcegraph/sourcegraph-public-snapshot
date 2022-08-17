@@ -15,6 +15,7 @@ export interface CategoricalLikeChart<Datum> {
     data: Datum[]
     getDatumValue: (datum: Datum) => number
     getDatumName: (datum: Datum) => string
+    getDatumHover?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink?: (datum: Datum) => string | undefined
     onDatumLinkClick?: (event: React.MouseEvent) => void

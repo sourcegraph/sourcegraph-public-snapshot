@@ -15,7 +15,7 @@ export type FeatureFlagName =
     | 'admin-analytics-disabled'
     | 'admin-analytics-cache-disabled'
     | 'ab-lucky-search' // To be removed at latest by 12/2022.
-    | 'user-management'
+    | 'user-management-disabled'
 
 interface OrgFlagOverride {
     orgID: string

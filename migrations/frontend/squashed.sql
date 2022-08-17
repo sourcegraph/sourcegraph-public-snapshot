@@ -797,7 +797,16 @@ CREATE TABLE changeset_specs (
     head_ref text,
     title text,
     external_id text,
-    fork_namespace citext
+    fork_namespace citext,
+    diff bytea,
+    base_rev text,
+    base_ref text,
+    body text,
+    published text,
+    commit_message text,
+    commit_author_name text,
+    commit_author_email text,
+    type text
 );
 
 CREATE TABLE changesets (

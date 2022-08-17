@@ -1,7 +1,7 @@
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
-import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from, EMPTY } from 'rxjs'
 import {
     catchError,
     delay,
@@ -50,6 +50,10 @@ export function getHoverActions(
     }: ExtensionsControllerProps<'extHostAPI'> & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
     hoverContext: HoveredToken & HoverContext
 ): Observable<ActionItemAction[]> {
+    if (extensionsController === null) {
+        return EMPTY
+    }
+
     return getHoverActionsContext(
         {
             platformContext,

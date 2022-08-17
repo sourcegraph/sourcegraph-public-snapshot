@@ -2,7 +2,7 @@ import React from 'react'
 
 import { debounce } from 'lodash'
 
-import { useMatchMedia } from '@sourcegraph/wildcard'
+import { useMatchMedia } from '../../hooks'
 
 import { useTabsState } from './context'
 

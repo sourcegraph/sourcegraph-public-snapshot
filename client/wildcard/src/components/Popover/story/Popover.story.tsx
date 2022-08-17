@@ -7,9 +7,9 @@ import { noop } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Button, Position } from '@sourcegraph/wildcard'
 
-import { Popover, PopoverContent, PopoverOpenEvent, PopoverTail, PopoverTrigger } from '..'
+import { Popover, PopoverContent, PopoverOpenEvent, PopoverTail, PopoverTrigger, Position } from '..'
+import { Button } from '../../Button'
 import { createRectangle, Point, Strategy } from '../tether'
 
 import styles from './Popover.story.module.scss'
