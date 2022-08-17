@@ -1,4 +1,3 @@
-import { boolean, select } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -35,17 +34,13 @@ const config: Meta = {
 
 export default config
 
-export const Unstarted: Story = () => (
+export const Unstarted: Story = args => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}
-                    batchSpec={
-                        boolean('Valid batch spec?', true)
-                            ? mockBatchSpec()
-                            : mockBatchSpec({ originalInput: 'not-valid' })
-                    }
+                    batchSpec={args.batchSpec ? mockBatchSpec() : mockBatchSpec({ originalInput: 'not-valid' })}
                     refetchBatchChange={() => Promise.resolve()}
                 >
                     <WorkspacesPreview />
@@ -54,18 +49,21 @@ export const Unstarted: Story = () => (
         )}
     </WebStory>
 )
+Unstarted.argTypes = {
+    batchSpec: {
+        name: 'Valid batch spec?',
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
+}
 
-export const UnstartedWithCachedConnectionResult: Story = () => (
+export const UnstartedWithCachedConnectionResult: Story = args => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}
-                    batchSpec={
-                        boolean('Valid batch spec?', true)
-                            ? mockBatchSpec()
-                            : mockBatchSpec({ originalInput: 'not-valid' })
-                    }
+                    batchSpec={args.batchSpec ? mockBatchSpec() : mockBatchSpec({ originalInput: 'not-valid' })}
                     refetchBatchChange={() => Promise.resolve()}
                 >
                     <WorkspacesPreview />
@@ -74,17 +72,18 @@ export const UnstartedWithCachedConnectionResult: Story = () => (
         )}
     </WebStory>
 )
+UnstartedWithCachedConnectionResult.argTypes = {
+    batchSpec: {
+        name: 'Valid batch spec?',
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
+}
 
 UnstartedWithCachedConnectionResult.storyName = 'unstarted, with cached connection result'
 
-export const QueuedInProgress: Story = () => {
-    const inProgressResolution = mockWorkspaceResolutionStatus(
-        select(
-            'Status',
-            [BatchSpecWorkspaceResolutionState.QUEUED, BatchSpecWorkspaceResolutionState.PROCESSING],
-            BatchSpecWorkspaceResolutionState.QUEUED
-        )
-    )
+export const QueuedInProgress: Story = args => {
+    const inProgressResolution = mockWorkspaceResolutionStatus(args.inProgressResolution)
 
     const inProgressConnectionMocks = new WildcardMockLink([
         {
@@ -119,11 +118,7 @@ export const QueuedInProgress: Story = () => {
                 <MockedTestProvider link={inProgressConnectionMocks}>
                     <BatchSpecContextProvider
                         batchChange={mockBatchChange()}
-                        batchSpec={
-                            boolean('Valid batch spec?', true)
-                                ? mockBatchSpec()
-                                : mockBatchSpec({ originalInput: 'not-valid' })
-                        }
+                        batchSpec={args.batchSpec ? mockBatchSpec() : mockBatchSpec({ originalInput: 'not-valid' })}
                         refetchBatchChange={() => Promise.resolve()}
                     >
                         <WorkspacesPreview />
@@ -132,18 +127,26 @@ export const QueuedInProgress: Story = () => {
             )}
         </WebStory>
     )
+}
+QueuedInProgress.argTypes = {
+    inProgressResolution: {
+        name: 'Status',
+        control: {
+            type: 'select',
+            options: [BatchSpecWorkspaceResolutionState.QUEUED, BatchSpecWorkspaceResolutionState.PROCESSING],
+        },
+        defaultValue: BatchSpecWorkspaceResolutionState.QUEUED,
+    },
+    batchSpec: {
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
 }
 
 QueuedInProgress.storyName = 'queued/in progress'
 
-export const QueuedInProgressWithCachedConnectionResult: Story = () => {
-    const inProgressResolution = mockWorkspaceResolutionStatus(
-        select(
-            'Status',
-            [BatchSpecWorkspaceResolutionState.QUEUED, BatchSpecWorkspaceResolutionState.PROCESSING],
-            BatchSpecWorkspaceResolutionState.QUEUED
-        )
-    )
+export const QueuedInProgressWithCachedConnectionResult: Story = args => {
+    const inProgressResolution = mockWorkspaceResolutionStatus(args.inProgressResolution)
 
     const inProgressConnectionMocks = new WildcardMockLink([
         {
@@ -188,16 +191,22 @@ export const QueuedInProgressWithCachedConnectionResult: Story = () => {
         </WebStory>
     )
 }
+QueuedInProgressWithCachedConnectionResult.argTypes = {
+    inProgressResolution: {
+        name: 'Status',
+        control: {
+            type: 'select',
+            options: [BatchSpecWorkspaceResolutionState.QUEUED, BatchSpecWorkspaceResolutionState.PROCESSING],
+        },
+        defaultValue: BatchSpecWorkspaceResolutionState.QUEUED,
+    },
+}
 
 QueuedInProgressWithCachedConnectionResult.storyName = 'queued/in progress, with cached connection result'
 
-export const FailedErrored: Story = () => {
+export const FailedErrored: Story = args => {
     const failedResolution = mockWorkspaceResolutionStatus(
-        select(
-            'Status',
-            [BatchSpecWorkspaceResolutionState.FAILED, BatchSpecWorkspaceResolutionState.ERRORED],
-            BatchSpecWorkspaceResolutionState.FAILED
-        ),
+        args.inProgressResolution,
         "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that."
     )
 
@@ -244,16 +253,22 @@ export const FailedErrored: Story = () => {
         </WebStory>
     )
 }
+FailedErrored.argTypes = {
+    inProgressResolution: {
+        name: 'Status',
+        control: {
+            type: 'select',
+            options: [BatchSpecWorkspaceResolutionState.FAILED, BatchSpecWorkspaceResolutionState.ERRORED],
+        },
+        defaultValue: BatchSpecWorkspaceResolutionState.FAILED,
+    },
+}
 
 FailedErrored.storyName = 'failed/errored'
 
-export const FailedErroredWithCachedConnectionResult: Story = () => {
+export const FailedErroredWithCachedConnectionResult: Story = args => {
     const failedResolution = mockWorkspaceResolutionStatus(
-        select(
-            'Status',
-            [BatchSpecWorkspaceResolutionState.FAILED, BatchSpecWorkspaceResolutionState.ERRORED],
-            BatchSpecWorkspaceResolutionState.FAILED
-        ),
+        args.inProgressResolution,
         "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that."
     )
 
@@ -299,6 +314,16 @@ export const FailedErroredWithCachedConnectionResult: Story = () => {
             )}
         </WebStory>
     )
+}
+FailedErroredWithCachedConnectionResult.argTypes = {
+    inProgressResolution: {
+        name: 'Status',
+        control: {
+            type: 'select',
+            options: [BatchSpecWorkspaceResolutionState.FAILED, BatchSpecWorkspaceResolutionState.ERRORED],
+        },
+        defaultValue: BatchSpecWorkspaceResolutionState.FAILED,
+    },
 }
 
 FailedErroredWithCachedConnectionResult.storyName = 'failed/errored, with cached connection result'

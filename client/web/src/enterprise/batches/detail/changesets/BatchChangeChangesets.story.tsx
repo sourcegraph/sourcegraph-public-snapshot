@@ -1,4 +1,3 @@
-import { boolean, select } from '@storybook/addon-knobs'
 import { Story, Meta, DecoratorFn } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
@@ -20,6 +19,12 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 const config: Meta = {
     title: 'web/batches/BatchChangeChangesets',
     decorators: [decorator],
+    argTypes: {
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 
 export default config
@@ -67,7 +72,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
     }
 }
 
-export const ListOfChangesets: Story = () => (
+export const ListOfChangesets: Story = args => (
     <WebStory>
         {props => (
             <MockedTestProvider link={mocks}>
@@ -78,7 +83,7 @@ export const ListOfChangesets: Story = () => (
                     extensionsController={undefined as any}
                     platformContext={undefined as any}
                     batchChangeID="batchid"
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
                     batchChangeState={BatchChangeState.OPEN}
                     isExecutionEnabled={false}
@@ -90,7 +95,7 @@ export const ListOfChangesets: Story = () => (
 
 ListOfChangesets.storyName = 'List of changesets'
 
-export const ListOfExpandedChangesets: Story = () => (
+export const ListOfExpandedChangesets: Story = args => (
     <WebStory>
         {props => (
             <MockedTestProvider link={mocks}>
@@ -101,7 +106,7 @@ export const ListOfExpandedChangesets: Story = () => (
                     extensionsController={undefined as any}
                     platformContext={undefined as any}
                     batchChangeID="batchid"
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     expandByDefault={true}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
                     batchChangeState={BatchChangeState.OPEN}
@@ -114,9 +119,8 @@ export const ListOfExpandedChangesets: Story = () => (
 
 ListOfExpandedChangesets.storyName = 'List of expanded changesets'
 
-export const DraftWithoutChangesets: Story = () => {
-    const options = Object.keys(BatchChangeState)
-    const batchChangeState = select('batchChangeState', options, BatchChangeState.DRAFT)
+export const DraftWithoutChangesets: Story = args => {
+    const batchChangeState = args.batchChangeState
 
     return (
         <WebStory>
@@ -133,12 +137,27 @@ export const DraftWithoutChangesets: Story = () => {
                         expandByDefault={true}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
                         batchChangeState={batchChangeState as BatchChangeState}
-                        isExecutionEnabled={boolean('isExecutionEnabled', true)}
+                        isExecutionEnabled={args.isExecutionEnabled}
                     />
                 </MockedTestProvider>
             )}
         </WebStory>
     )
+}
+DraftWithoutChangesets.argTypes = {
+    batchChangeState: {
+        control: { type: 'select', options: Object.keys(BatchChangeState) },
+        defaultValue: BatchChangeState.DRAFT,
+    },
+    isExecutionEnabled: {
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
+    viewerCanAdminister: {
+        table: {
+            disable: true,
+        },
+    },
 }
 
 DraftWithoutChangesets.storyName = 'Draft without changesets'

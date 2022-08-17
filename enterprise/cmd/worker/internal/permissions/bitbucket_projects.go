@@ -14,7 +14,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -30,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -106,7 +107,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	}
 
 	// get repos from the Bitbucket project
-	client, err := h.getBitbucketClient(svc)
+	client, err := h.getBitbucketClient(ctx, svc)
 	if err != nil {
 		return errors.Wrapf(err, "failed to build Bitbucket client for external service %d", svc.ID)
 	}
@@ -138,14 +139,18 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 }
 
 // getBitbucketClient creates a Bitbucket client for the given external service.
-func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(svc *types.ExternalService) (*bitbucketserver.Client, error) {
+func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(ctx context.Context, svc *types.ExternalService) (*bitbucketserver.Client, error) {
 	// for testing purpose
 	if h.client != nil {
 		return h.client, nil
 	}
 
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.BitbucketServerConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
@@ -196,8 +201,12 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 	}
 
 	// unmarshalling external service config
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var cfg schema.BitbucketServerConnection
-	if err := jsonc.Unmarshal(svc.Config, &cfg); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &cfg); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 

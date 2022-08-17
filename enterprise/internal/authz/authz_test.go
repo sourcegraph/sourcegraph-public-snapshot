@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,7 +71,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 	providersEqual := func(want ...authz.Provider) func(*testing.T, []authz.Provider) {
 		return func(t *testing.T, have []authz.Provider) {
-			if diff := cmp.Diff(want, have); diff != "" {
+			if diff := cmp.Diff(want, have, cmpopts.IgnoreInterfaces(struct{ database.DB }{})); diff != "" {
 				t.Errorf("authzProviders mismatch (-want +got):\n%s", diff)
 			}
 		}
@@ -477,14 +478,14 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 						for _, gl := range test.gitlabConnections {
 							svcs = append(svcs, &types.ExternalService{
 								Kind:   kind,
-								Config: mustMarshalJSONString(gl),
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(gl)),
 							})
 						}
 					case extsvc.KindBitbucketServer:
 						for _, bbs := range test.bitbucketServerConnections {
 							svcs = append(svcs, &types.ExternalService{
 								Kind:   kind,
-								Config: mustMarshalJSONString(bbs),
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
 							})
 						}
 					case extsvc.KindGitHub, extsvc.KindPerforce:

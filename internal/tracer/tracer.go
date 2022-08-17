@@ -31,8 +31,16 @@ type options struct {
 type TracerType string
 
 const (
-	None          TracerType = "none"
-	OpenTracing   TracerType = "opentracing"
+	None TracerType = "none"
+
+	// Jaeger and openTracing should be treated as analagous - the 'opentracing' moniker
+	// is for backwards compatibility only, 'jaeger' is more correct because we export
+	// Jaeger traces in 'opentracing' mode because 'opentracing' itself is an implementation
+	// detail, it does not have a wire protocol.
+	Jaeger      TracerType = "jaeger"
+	openTracing TracerType = "opentracing"
+
+	// OpenTelemetry exports traces over OTLP.
 	OpenTelemetry TracerType = "opentelemetry"
 )
 
@@ -40,7 +48,7 @@ const (
 // should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
 func (t TracerType) isSetByUser() bool {
 	switch t {
-	case OpenTracing, OpenTelemetry:
+	case openTracing, Jaeger, OpenTelemetry:
 		return true
 	}
 	return false
@@ -104,12 +112,13 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 			debug = tracingConfig.Debug
 
 			// If sampling policy is set, update the strategy and set our tracer to be
-			// OpenTracing by default.
+			// Jaeger by default.
 			previousPolicy := policy.GetTracePolicy()
 			switch p := policy.TracePolicy(tracingConfig.Sampling); p {
 			case policy.TraceAll, policy.TraceSelective:
 				policy.SetTracePolicy(p)
-				setTracer = OpenTracing // enable the defualt tracer type
+				// enable the defualt tracer type. TODO in 4.0, this should be OpenTelemetry
+				setTracer = Jaeger
 			default:
 				policy.SetTracePolicy(policy.TraceNone)
 			}
@@ -171,7 +180,7 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.
 	logger.Debug("configuring tracer")
 
 	switch opts.TracerType {
-	case OpenTracing:
+	case Jaeger, openTracing:
 		ot, closer, err := newJaegerTracer(logger, opts)
 		return ot, nil, closer, err
 

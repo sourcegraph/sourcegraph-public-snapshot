@@ -45,4 +45,4 @@ These are the main inputs for deciding the rank of a match. There is some minor 
 ## References
 
 - [RFC 359](https://docs.google.com/document/d/1EiD_dKkogqBNAbKN3BbanII4lQwROI7a0aGaZ7i-0AU/edit#heading=h.trqab8y0kufp): Search Result Ranking
-- Zoekt Design :: [Ranking](https://github.com/sourcegraph/zoekt/blob/master/doc/design.md#ranking)
+- Zoekt Design :: [Ranking](https://github.com/google/zoekt/blob/master/doc/design.md#ranking)

@@ -41,13 +41,13 @@ Follow the printed instructions, which will guide you through the installation o
 
 If you chose to run PostgreSQL and Redis **without Docker** (recommended) they should already be running. You can jump to the next section.
 
-If you chose to run Redis and PostgreSQL **with Docker** to then we need to run them:
+If you chose to run Redis and PostgreSQL **with Docker**, we need to run them:
 
 ```sh
 sg run redis-postgres
 ```
 
-Keep this process running in a terminal window to keep the databases running. Follow the rest of the instructions in another terminal.
+Keep this process running and follow the rest of the instructions in another terminal.
 
 ## Start Sourcegraph
 

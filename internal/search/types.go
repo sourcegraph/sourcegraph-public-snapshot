@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	zoektquery "github.com/google/zoekt/query"
 	otlog "github.com/opentracing/opentracing-go/log"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"

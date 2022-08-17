@@ -8,10 +8,10 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"

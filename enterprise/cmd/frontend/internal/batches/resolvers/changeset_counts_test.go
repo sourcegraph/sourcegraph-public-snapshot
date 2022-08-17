@@ -92,11 +92,11 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: bt.MarshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: gitHubToken,
 			Repos: []string{"sourcegraph/sourcegraph"},
-		}),
+		})),
 	}
 
 	err := esStore.Upsert(ctx, githubExtSvc)
@@ -104,7 +104,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatalf("Failed to Upsert external service: %s", err)
 	}
 
-	githubSrc, err := repos.NewGithubSource(logger, db.ExternalServices(), githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(ctx, logger, db.ExternalServices(), githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
