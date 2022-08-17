@@ -632,23 +632,6 @@ func TestRepos_StatisticsCounts(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1, Internal: true})
 
 	// Helper functions
-	setCloneStatus := func(t *testing.T, repo *types.Repo, status types.CloneStatus) {
-		t.Helper()
-		err := db.GitserverRepos().SetCloneStatus(ctx, repo.Name, status, "shard-1")
-		if err != nil {
-			t.Fatalf("failed to set clone status: %s", err)
-		}
-	}
-
-	setError := func(t *testing.T, repo *types.Repo, msg string) {
-		t.Helper()
-
-		err := db.GitserverRepos().SetLastError(ctx, repo.Name, msg, "shard-1")
-		if err != nil {
-			t.Fatalf("failed to set last error: %s", err)
-		}
-	}
-
 	deleteRepo := func(t *testing.T, repo *types.Repo) {
 		t.Helper()
 
@@ -694,8 +677,8 @@ func TestRepos_StatisticsCounts(t *testing.T) {
 	})
 
 	// 2 repos are being cloned
-	setCloneStatus(t, repos[0], types.CloneStatusCloning)
-	setCloneStatus(t, repos[1], types.CloneStatusCloning)
+	setGitserverRepoCloneStatus(t, db, repos[0].Name, types.CloneStatusCloning)
+	setGitserverRepoCloneStatus(t, db, repos[1].Name, types.CloneStatusCloning)
 
 	assertCounts(t, StatisticsCounts{
 		Total:     3,
@@ -704,7 +687,7 @@ func TestRepos_StatisticsCounts(t *testing.T) {
 	})
 
 	// 1 of them runs into error
-	setError(t, repos[2], "connection reset by pete")
+	setGitserverRepoLastError(t, db, repos[2].Name, "connection reset by pete")
 
 	assertCounts(t, StatisticsCounts{
 		Total:       3,
@@ -714,8 +697,8 @@ func TestRepos_StatisticsCounts(t *testing.T) {
 	})
 
 	// Cloned
-	setCloneStatus(t, repos[0], types.CloneStatusCloned)
-	setCloneStatus(t, repos[1], types.CloneStatusCloned)
+	setGitserverRepoCloneStatus(t, db, repos[0].Name, types.CloneStatusCloned)
+	setGitserverRepoCloneStatus(t, db, repos[1].Name, types.CloneStatusCloned)
 	assertCounts(t, StatisticsCounts{
 		Total:       3,
 		NotCloned:   1,

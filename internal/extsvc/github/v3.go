@@ -748,7 +748,7 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 // API docs: https://docs.github.com/en/rest/reference/apps#create-an-installation-access-token-for-an-app
 func (c *V3Client) CreateAppInstallationAccessToken(ctx context.Context, installationID int64) (*github.InstallationToken, error) {
 	var token github.InstallationToken
-	if _, err := c.post(ctx, fmt.Sprintf("/app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
+	if _, err := c.post(ctx, fmt.Sprintf("app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
 		return nil, err
 	}
 	return &token, nil

@@ -43,10 +43,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     sourcegraphDotComMode: boolean
 
-    githubAppCloudSlug: string
-
-    githubAppCloudClientID: string
-
     /**
      * siteID is the identifier of the Sourcegraph site.
      */

@@ -449,10 +449,7 @@ func TestSetCloneStatus(t *testing.T) {
 	})
 
 	// Set cloned
-	err := db.GitserverRepos().SetCloneStatus(ctx, repo.Name, types.CloneStatusCloned, "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
 
 	fromDB, err := db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
@@ -460,6 +457,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	gitserverRepo.CloneStatus = types.CloneStatusCloned
+	gitserverRepo.ShardID = shardID
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
@@ -477,9 +475,7 @@ func TestSetCloneStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.GitserverRepos().SetCloneStatus(ctx, repo2.Name, types.CloneStatusCloned, shardID); err != nil {
-		t.Fatal(err)
-	}
+	setGitserverRepoCloneStatus(t, db, repo2.Name, types.CloneStatusCloned)
 	fromDB, err = db.GitserverRepos().GetByID(ctx, repo2.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -494,9 +490,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	// Setting the same status again should not touch the row
-	if err := db.GitserverRepos().SetCloneStatus(ctx, repo2.Name, types.CloneStatusCloned, shardID); err != nil {
-		t.Fatal(err)
-	}
+	setGitserverRepoCloneStatus(t, db, repo2.Name, types.CloneStatusCloned)
 	after, err := db.GitserverRepos().GetByID(ctx, repo2.ID)
 	if err != nil {
 		t.Fatal(err)

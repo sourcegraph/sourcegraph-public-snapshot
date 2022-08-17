@@ -63,6 +63,7 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
       interfaces:
         - DBStore
+        - ReposStore
         - ExternalServiceStore
         - GitserverRepoStore
         - GitserverClient
