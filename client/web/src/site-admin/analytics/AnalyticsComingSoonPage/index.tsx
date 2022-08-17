@@ -18,7 +18,7 @@ export const AnalyticsComingSoonPage: React.FunctionComponent<RouteComponentProp
     }, [props.match.path])
     return (
         <>
-            <AnalyticsPageTitle>Analytics / {title}</AnalyticsPageTitle>
+            <AnalyticsPageTitle>{title}</AnalyticsPageTitle>
 
             <div className="d-flex flex-column justify-content-center align-items-center p-5">
                 <Icon
