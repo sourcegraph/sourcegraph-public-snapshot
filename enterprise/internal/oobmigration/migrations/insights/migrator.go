@@ -63,7 +63,7 @@ func (m *insightsMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	jobs, err := scanJobs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorUpQuery)))
+	jobs, err := scanJobs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorUpQuery, 100)))
 	if err != nil || len(jobs) == 0 {
 		return err
 	}
@@ -100,7 +100,7 @@ ORDER BY CASE
 	WHEN org_id IS NOT NULL THEN 2
 	WHEN user_id IS NOT NULL THEN 3
 END
-LIMIT 100
+LIMIT %s
 FOR UPDATE SKIP LOCKED
 `
 
