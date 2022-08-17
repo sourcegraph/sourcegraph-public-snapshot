@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Target = check.Category[*repo.State]
@@ -75,6 +76,7 @@ var Targets = []Target{
 	{
 		Name:        "svg",
 		Description: "Check svg assets",
+		Enabled:     disabled("reported as unreliable"),
 		Checks: []*linter{
 			checkSVGCompression(),
 		},
@@ -128,5 +130,12 @@ func yarnInstallFilter() run.LineMap {
 			return 0, nil
 		}
 		return dst.Write(line)
+	}
+}
+
+// disabled can be used to mark a category or check as disabled.
+func disabled(reason string) check.EnableFunc[*repo.State] {
+	return func(context.Context, *repo.State) error {
+		return errors.Newf("disabled: %s", reason)
 	}
 }
