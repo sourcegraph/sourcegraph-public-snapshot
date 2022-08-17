@@ -58,7 +58,7 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
             <figure>
                 {thumbnailElement}
                 <figcaption>
-                    <Button variant="link" type="button" onClick={onClick}>
+                    <Button variant="link" onClick={onClick}>
                         {title}
                     </Button>
                 </figcaption>
