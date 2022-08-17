@@ -60,6 +60,11 @@ func (o *Set) Append(ops ...Operation) {
 //
 // WARNING: two named sets cannot be merged!
 func (o *Set) Merge(set *Set) {
+	// In case we get an empty set
+	if set.isEmpty() {
+		return
+	}
+	// If set is named, validate
 	if set.isNamed() {
 		if o.isNamed() {
 			panic(fmt.Sprintf("cannot merge two named sets %q and %q", set.name, o.name))
@@ -97,6 +102,11 @@ func (o *Set) Apply(pipeline *bk.Pipeline) {
 			panic(fmt.Sprintf("invalid item at index %d", i))
 		}
 	}
+}
+
+// isEmpty indicates if this set has no items associated with it.
+func (o *Set) isEmpty() bool {
+	return len(o.items) == 0
 }
 
 var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")

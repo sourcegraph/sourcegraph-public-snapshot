@@ -149,6 +149,9 @@ const (
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
 	TypeGitHub = "github"
 
+	// TypeGitHubApp is used for GitHub App linked user external accounts.
+	TypeGitHubApp = "githubApp"
+
 	// TypeGitLab is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
 	// value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
 	TypeGitLab = "gitlab"
@@ -632,10 +635,10 @@ func (e ErrRateLimitUnsupported) Error() string {
 }
 
 const (
-	URNGitHubAppCloud = "GitHubAppCloud"
-	URNGitHubOAuth    = "GitHubOAuth"
-	URNGitLabOAuth    = "GitLabOAuth"
-	URNCodeIntel      = "CodeIntel"
+	URNGitHubApp   = "GitHubApp"
+	URNGitHubOAuth = "GitHubOAuth"
+	URNGitLabOAuth = "GitLabOAuth"
+	URNCodeIntel   = "CodeIntel"
 )
 
 // URN returns a unique resource identifier of an external service by given kind and ID.

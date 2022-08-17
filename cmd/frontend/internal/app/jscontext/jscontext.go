@@ -78,9 +78,7 @@ type JSContext struct {
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
-	SourcegraphDotComMode  bool   `json:"sourcegraphDotComMode"`
-	GitHubAppCloudSlug     string `json:"githubAppCloudSlug"`
-	GitHubAppCloudClientID string `json:"githubAppCloudClientID"`
+	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -177,13 +175,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
-	var githubAppCloudSlug string
-	var githubAppCloudClientID string
-	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
-		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
-		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
-	}
-
 	var enableLegacyExtensions = true
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -212,9 +203,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode:  envvar.SourcegraphDotComMode(),
-		GitHubAppCloudSlug:     githubAppCloudSlug,
-		GitHubAppCloudClientID: githubAppCloudClientID,
+		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
