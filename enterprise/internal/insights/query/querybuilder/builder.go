@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 
 	"github.com/grafana/regexp"
@@ -201,11 +199,6 @@ type PatternReplacer interface {
 	Replace(replacement string) (BasicQuery, error)
 }
 
-type baseReplacer struct {
-	original searchquery.Plan
-	pattern  string
-}
-
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
 	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
 		return searchquery.Pattern{
@@ -219,12 +212,12 @@ func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) 
 }
 
 type regexpReplacer struct {
-	baseReplacer
-	groups []group
+	original searchquery.Plan
+	pattern  string
+	groups   []group
 }
 
 func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
-	log15.Info("replacer", "groups", r.groups)
 	if len(r.groups) == 0 {
 		// replace the entire content field
 		return r.replaceContent(replacement)
@@ -260,15 +253,10 @@ func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (Pa
 	}
 
 	pattern := patterns[0]
-	br := baseReplacer{
-		original: plan,
-		pattern:  pattern.Value,
-	}
 	if !pattern.Annotation.Labels.IsSet(searchquery.Regexp) {
 		return nil, unsupportedPatternTypeErr
 	}
 
 	regexpGroups := findGroups(pattern.Value)
-
-	return &regexpReplacer{baseReplacer: br, groups: regexpGroups}, nil
+	return &regexpReplacer{original: plan, groups: regexpGroups, pattern: pattern.Value}, nil
 }
