@@ -201,7 +201,7 @@ export const renderMarkdown = (
                                 },
                             },
                         })
-                    } catch (any) {
+                    } catch (error) {
                         // this doesn't happen with benign base64 SVGs
                         cleaned = '<svg></svg>'
                     }
