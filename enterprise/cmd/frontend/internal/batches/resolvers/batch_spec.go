@@ -511,10 +511,6 @@ func (r *batchSpecResolver) Source() string {
 	return btypes.BatchSpecSourceLocal.ToGraphQL()
 }
 
-func (r *batchSpecResolver) UploadToken() string {
-	return "randell-token"
-}
-
 func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
 		if r.preloadedNamespace != nil {
