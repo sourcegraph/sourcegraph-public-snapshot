@@ -27,12 +27,19 @@ func (a *aggregated) Add(label string, count int32) {
 	// 2. We haven't hit the max buffer size. Add to our in-memory map and update the smallest result.
 	// 3. We don't have a match but have a better result than our smallest. Update the overflow by ejected smallest.
 	// 4. We don't have a match or a better result. Update the overflow by the hit count.
+	if a.resultBufferSize <= 0 {
+		return
+	}
 	if _, ok := a.Results[label]; !ok {
+		newResult := &Aggregate{label, count}
 		if len(a.Results) < a.resultBufferSize {
 			a.Results[label] = count
-			a.updateSmallestAggregate()
+			// The buffer size hasn't been reached yet so we can find the smallest item by direct
+			// comparison.
+			if newResult.Less(a.smallestResult) {
+				a.smallestResult = newResult
+			}
 		} else {
-			newResult := &Aggregate{label, count}
 			if a.smallestResult.Less(newResult) {
 				a.updateOtherCount(a.smallestResult.Count, 1)
 				delete(a.Results, a.smallestResult.Label)

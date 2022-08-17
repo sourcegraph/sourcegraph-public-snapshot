@@ -15,6 +15,17 @@ func TestAddAggregate(t *testing.T) {
 		want  aggregated
 	}{
 		{
+			name: "invalid buffer size does nothing",
+			have: aggregated{
+				resultBufferSize: -1,
+			},
+			value: "B",
+			count: 9,
+			want: aggregated{
+				resultBufferSize: -1,
+			},
+		},
+		{
 			name: "adds up other count",
 			have: aggregated{
 				resultBufferSize: 1,
