@@ -120,7 +120,7 @@ func getBuildTarget(cmd *cli.Context) (target targetBuild, err error) {
 
 	case commit != "":
 		// get the full commit
-		target.target, err = root.Run(sgrun.Cmd(context.Background(), "git rev-parse", commit)).String()
+		target.target, err = root.Run(sgrun.Cmd(cmd.Context, "git rev-parse", commit)).String()
 		if err != nil {
 			return
 		}
