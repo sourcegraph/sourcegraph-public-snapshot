@@ -51,7 +51,11 @@ func (a *aggregated) Add(label string, count int32) {
 		}
 	} else {
 		a.Results[label] += count
-		a.updateSmallestAggregate()
+		// We only need to update the smallest aggregate if this updates the smallestResult.
+		// Otherwise newCount > count > smallestResult.count
+		if a.smallestResult == nil || label == a.smallestResult.Label {
+			a.updateSmallestAggregate()
+		}
 	}
 }
 

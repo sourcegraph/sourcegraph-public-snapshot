@@ -174,6 +174,10 @@ func TestSortAggregate(t *testing.T) {
 	// Update another one.
 	a.Add("sg/2", 5)
 
+	// Update the smallest result, and then not.
+	a.Add("sg/3", 1)
+	a.Add("sg/will-eject", 1)
+
 	autogold.Want("other result count should be 9", int32(9)).Equal(t, a.OtherCount.ResultCount)
 	autogold.Want("other group count should be 2", int32(2)).Equal(t, a.OtherCount.GroupCount)
 
@@ -181,8 +185,8 @@ func TestSortAggregate(t *testing.T) {
 		{"sg/5", 60},
 		{"sg/4", 22},
 		{"sg/2", 15},
-		{"sg/will-eject", 12},
-		{"sg/3", 8},
+		{"sg/will-eject", 13},
+		{"sg/3", 9},
 	}
 	autogold.Want("SortAggregate should return DESC sorted list", want).Equal(t, a.SortAggregate())
 }
