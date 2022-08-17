@@ -91,8 +91,7 @@ SELECT
 		ELSE TRUE
 	END AS global,
 	migrated_insights,
-	migrated_dashboards,
-	runs
+	migrated_dashboards
 FROM insights_settings_migration_jobs
 WHERE completed_at IS NULL
 ORDER BY CASE

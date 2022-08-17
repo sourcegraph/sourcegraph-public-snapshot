@@ -20,7 +20,6 @@ type settingsMigrationJob struct {
 	Global             bool
 	MigratedInsights   int
 	MigratedDashboards int
-	Runs               int
 }
 
 type userOrOrg struct {
