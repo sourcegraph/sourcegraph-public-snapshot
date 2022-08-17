@@ -63,7 +63,7 @@ func (m *insightsMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	jobs, err := scanJobs(tx.Query(ctx, sqlf.Sprintf(upQuery)))
+	jobs, err := scanJobs(tx.Query(ctx, sqlf.Sprintf(insightsMigratorUpQuery)))
 	if err != nil || len(jobs) == 0 {
 		return err
 	}
@@ -81,7 +81,7 @@ func (m *insightsMigrator) Up(ctx context.Context) (err error) {
 	return err
 }
 
-const upQuery = `
+const insightsMigratorUpQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:Up
 SELECT
 	user_id,
@@ -132,7 +132,7 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 		if job.UserId != nil {
 			// when this is a user setting we need to load all of the organizations the user is a member of so that we can
 			// resolve insight ID collisions as if it were in a setting cascade
-			orgIDs, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(performMigrationForRowSelectOrgsQuery, *job.UserId)))
+			orgIDs, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationForRowSelectOrgsQuery, *job.UserId)))
 			if err != nil {
 				return 0, nil, err
 			}
@@ -242,14 +242,14 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 		return err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(performMigrationForRowUpdateJobQuery, time.Now(), cond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationForRowUpdateJobQuery, time.Now(), cond)); err != nil {
 		return errors.Wrap(err, "MarkCompleted")
 	}
 
 	return nil
 }
 
-const performMigrationForRowSelectOrgsQuery = `
+const insightsMigratorPerformMigrationForRowSelectOrgsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationForRow
 SELECT orgs.id
 FROM org_members
@@ -257,13 +257,13 @@ LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
 WHERE user_id = %s AND orgs.deleted_at IS NULL
 `
 
-const performMigrationForRowUpdateJobQuery = `
+const insightsMigratorPerformMigrationForRowUpdateJobQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationForRow
 UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
 
 func (m *insightsMigrator) getForUser(ctx context.Context, tx *basestore.Store, userId int) (string, []settings, error) {
-	users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(getForUserSelectUserQuery, userId)))
+	users, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForUserSelectUserQuery, userId)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "UserStoreGetByID")
 	}
@@ -275,11 +275,11 @@ func (m *insightsMigrator) getForUser(ctx context.Context, tx *basestore.Store, 
 		return "", nil, nil
 	}
 
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(getForUserSelectSettingsQuery, userId)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForUserSelectSettingsQuery, userId)))
 	return replaceIfEmpty(users[0].DisplayName, users[0].Name), settings, err
 }
 
-const getForUserSelectUserQuery = `
+const insightsMigratorGetForUserSelectUserQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForUser
 SELECT u.id, u.username, u.display_name
 FROM users u
@@ -287,7 +287,7 @@ WHERE id = %s AND deleted_at IS NULL
 LIMIT 1
 `
 
-const getForUserSelectSettingsQuery = `
+const insightsMigratorGetForUserSelectSettingsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForUser
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
@@ -301,7 +301,7 @@ ORDER BY id DESC LIMIT 1
 `
 
 func (m *insightsMigrator) getForOrg(ctx context.Context, tx *basestore.Store, orgId int) (string, []settings, error) {
-	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(getForOrgSelectOrgQuery, orgId)))
+	orgs, err := scanUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForOrgSelectOrgQuery, orgId)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "OrgStoreGetByID")
 	}
@@ -313,11 +313,11 @@ func (m *insightsMigrator) getForOrg(ctx context.Context, tx *basestore.Store, o
 		return "", nil, nil
 	}
 
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(getForOrgSelectSettingsQuery, orgId)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForOrgSelectSettingsQuery, orgId)))
 	return replaceIfEmpty(orgs[0].DisplayName, orgs[0].Name), settings, err
 }
 
-const getForOrgSelectOrgQuery = `
+const insightsMigratorGetForOrgSelectOrgQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForOrg
 SELECT id, name, display_name
 FROM orgs
@@ -325,7 +325,7 @@ WHERE id = %s AND deleted_at IS NULL
 LIMIT 1
 `
 
-const getForOrgSelectSettingsQuery = `
+const insightsMigratorGetForOrgSelectSettingsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForOrg
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
@@ -336,11 +336,11 @@ LIMIT 1
 `
 
 func (m *insightsMigrator) getForGlobal(ctx context.Context, tx *basestore.Store) (string, []settings, error) {
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(getForGlobalSelectSettingsQuery)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetForGlobalSelectSettingsQuery)))
 	return "Global", settings, err
 }
 
-const getForGlobalSelectSettingsQuery = `
+const insightsMigratorGetForGlobalSelectSettingsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:getForGlobal
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
@@ -373,7 +373,7 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 		return nil
 	}
 
-	numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(migrateLangStatsInsightQuery, insight.ID)))
+	numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(insightsMigratorMigrateLangStatsInsightQuery, insight.ID)))
 	if err != nil || numInsights > 0 {
 		return err
 	}
@@ -499,7 +499,7 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 	return nil
 }
 
-const migrateLangStatsInsightQuery = `
+const insightsMigratorMigrateLangStatsInsightQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:migrateLangStatsInsight
 SELECT COUNT(*)
 FROM (SELECT * FROM insight_view WHERE unique_id = %s ORDER BY unique_id) iv
