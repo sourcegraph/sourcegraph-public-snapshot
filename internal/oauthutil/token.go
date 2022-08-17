@@ -46,7 +46,8 @@ import (
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Token contains the credentials used during the flow to retrieve and refresh an expired token.
+// Token contains the credentials used during the flow to retrieve and refresh an
+// expired token.
 type Token struct {
 	AccessToken  string
 	TokenType    string
@@ -55,7 +56,7 @@ type Token struct {
 	Raw          interface{}
 }
 
-// tokenJSON represents the HTTP response
+// tokenJSON represents the HTTP response.
 type tokenJSON struct {
 	AccessToken      string         `json:"access_token"`
 	TokenType        string         `json:"token_type"`
@@ -102,11 +103,11 @@ const (
 	AuthStyleInHeader AuthStyle = 2
 )
 
-// newTokenRequest returns a new *http.Request to retrieve a new token
-// from tokenURL using the provided clientID, clientSecret, and POST
-// body parameters.
+// newTokenRequest returns a new *http.Request to retrieve a new token from
+// tokenURL using the provided clientID, clientSecret, and POST body parameters.
 //
-// If AuthStyleInParams is true, the provided values will be encoded in the POST body.
+// If AuthStyleInParams is true, the provided values will be encoded in the POST
+// body.
 func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*http.Request, error) {
 	v := url.Values{}
 	if authStyle == AuthStyleInParams {
@@ -128,6 +129,8 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthS
 	return req, nil
 }
 
+// RetrieveToken tries to retrieve a new access token in the given authentication
+// style.
 func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
 	req, err := newTokenRequest(oauthCtx, refreshToken, authStyle)
 	if err != nil {

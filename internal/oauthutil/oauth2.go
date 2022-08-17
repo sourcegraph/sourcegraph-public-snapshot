@@ -15,18 +15,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Endpoint represents an OAuth 2.0 provider's authorization and token endpoint
+// URLs.
 type Endpoint = oauth2.Endpoint
 
-// OAuthContext contains the configuration used in the requests to get a new token.
+// OAuthContext contains the configuration used in the requests to get a new
+// token.
 type OAuthContext struct {
 	// ClientID is the application's ID.
 	ClientID string
 	// ClientSecret is the application's secret.
 	ClientSecret string
-	// Endpoint contains the resource server's token endpoint
-	// URLs. These are constants specific to each server and are
-	// often available via site-specific packages, such as
-	// google.Endpoint or github.Endpoint.
+	// Endpoint contains the resource server's token endpoint URLs.
 	Endpoint Endpoint
 	// Scope specifies optional requested permissions.
 	Scopes []string
@@ -61,9 +61,11 @@ func getOAuthErrorDetails(body []byte) error {
 // TokenRefresher is a function to refresh and return the new OAuth token.
 type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthContext) (string, error)
 
-// DoRequest is a function that uses the Doer interface to make HTTP requests and to handle "401 Unauthorized" errors.
-// When the 401 error is due to a token being expired, it will use the TokenRefresher function to update the token.
-// If the token is updated successfully, a new request will be made. Only one retry is allowed.
+// DoRequest is a function that uses the httpcli.Doer interface to make HTTP
+// requests and to handle "401 Unauthorized" errors. When the 401 error is due to
+// a token being expired, it will use the supplied TokenRefresher function to
+// update the token. If the token is updated successfully, the same request will
+// be retried exactly once.
 func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx OAuthContext) (code int, header http.Header, body []byte, err error) {
 	for i := 0; i < 2; i++ {
 		if auther != nil {
