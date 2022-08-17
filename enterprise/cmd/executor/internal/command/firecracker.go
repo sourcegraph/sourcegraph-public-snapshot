@@ -73,7 +73,11 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 		Operation: operations.SetupFirecrackerStart,
 	}
 
-	if err := callWithInstrumentedLock(operations, logger, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
+	if options.FirecrackerOptions.UseRunlock {
+		if err := callWithInstrumentedLock(operations, logger, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
+			return errors.Wrap(err, "failed to start firecracker vm")
+		}
+	} else if err := runner.RunCommand(ctx, startCommand, logger); err != nil {
 		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
