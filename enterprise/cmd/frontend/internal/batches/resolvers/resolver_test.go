@@ -131,9 +131,9 @@ func TestCreateBatchSpec(t *testing.T) {
 	user := bt.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, cstore)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/create-batch-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -146,16 +146,17 @@ func TestCreateBatchSpec(t *testing.T) {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
 			Spec: &batcheslib.ChangesetSpec{
 				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+				ExternalID:     "123",
 			},
 			RepoID: repo.ID,
 			UserID: userID,
 		}
-		if err := cstore.CreateChangesetSpec(ctx, changesetSpecs[i]); err != nil {
+		if err := bstore.CreateChangesetSpec(ctx, changesetSpecs[i]); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
@@ -427,16 +428,16 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, cstore)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -469,7 +470,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cs, err := cstore.GetChangesetSpec(ctx, store.GetChangesetSpecOpts{RandID: randID})
+	cs, err := bstore.GetChangesetSpec(ctx, store.GetChangesetSpecOpts{RandID: randID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -517,9 +518,9 @@ func TestApplyBatchChange(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	repoStore := database.ReposWith(logger, cstore)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/apply-batch-change-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -547,7 +548,7 @@ func TestApplyBatchChange(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -555,15 +556,16 @@ func TestApplyBatchChange(t *testing.T) {
 		BatchSpecID: batchSpec.ID,
 		Spec: &batcheslib.ChangesetSpec{
 			BaseRepository: string(repoAPIID),
+			ExternalID:     "123",
 		},
 		RepoID: repo.ID,
 		UserID: userID,
 	}
-	if err := cstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -678,9 +680,9 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -765,9 +767,9 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
@@ -835,7 +837,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: bt.TestRawBatchSpec,
@@ -846,11 +848,11 @@ func TestCreateBatchChange(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -923,16 +925,16 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	repoStore := database.ReposWith(logger, cstore)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/apply-create-batch-change-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -967,8 +969,8 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 		// Create initial specs. Note that we have to append the test case name
 		// to the batch spec ID to avoid cross-contamination between the test
 		// cases.
-		batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "batch-spec-"+name, userID, 0)
-		changesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+		batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "batch-spec-"+name, userID, 0)
+		changesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
@@ -979,15 +981,15 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 		// be able to test that changeset specs attached to other batch specs
 		// cannot be modified, and that changeset specs with explicit published
 		// fields cause errors.
-		otherBatchSpec := bt.CreateBatchSpec(t, ctx, cstore, "other-batch-spec-"+name, userID, 0)
-		otherChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+		otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "other-batch-spec-"+name, userID, 0)
+		otherChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: otherBatchSpec.ID,
 			HeadRef:   "refs/heads/my-branch-2",
 		})
 
-		publishedChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+		publishedChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
@@ -1172,7 +1174,10 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 			for i := range changesetSpecs {
 				changesetSpecs[i] = &btypes.ChangesetSpec{
 					BatchSpecID: batchSpec.ID,
-					RepoID:      repo.ID,
+					Spec: &batcheslib.ChangesetSpec{
+						ExternalID: "123",
+					},
+					RepoID: repo.ID,
 				}
 				err = bstore.CreateChangesetSpec(ctx, changesetSpecs[i])
 				require.NoError(t, err)
@@ -1213,14 +1218,14 @@ func TestMoveBatchChange(t *testing.T) {
 	orgName := "move-batch-change-test"
 	orgID := bt.InsertTestOrg(t, db, orgName)
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:         bt.TestRawBatchSpec,
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1232,11 +1237,11 @@ func TestMoveBatchChange(t *testing.T) {
 		LastAppliedAt:   time.Now(),
 		NamespaceUserID: batchSpec.UserID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -1502,9 +1507,9 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -1634,10 +1639,10 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
-	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+	userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
@@ -1650,11 +1655,11 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
 	}
-	if err := cstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
+	if err := bstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
 		t.Fatal(err)
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -1720,26 +1725,26 @@ func TestCreateChangesetComments(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-comments", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-comments-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test-comments", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-comments-other", userID, otherBatchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-comments", userID, 0)
+	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-comments-other", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-comments", userID, batchSpec.ID)
+	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-comments-other", userID, otherBatchSpec.ID)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	changeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 	})
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -1822,27 +1827,27 @@ func TestReenqueueChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-reenqueue", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-reenqueue-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test-reenqueue", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-reenqueue-other", userID, otherBatchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-reenqueue", userID, 0)
+	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-reenqueue-other", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-reenqueue", userID, batchSpec.ID)
+	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-reenqueue-other", userID, otherBatchSpec.ID)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	changeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ReconcilerState:  btypes.ReconcilerStateFailed,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ReconcilerState:  btypes.ReconcilerStateFailed,
 	})
-	successfulChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	successfulChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
@@ -1850,7 +1855,7 @@ func TestReenqueueChangesets(t *testing.T) {
 		ExternalState:    btypes.ChangesetExternalStateOpen,
 	})
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -1932,29 +1937,29 @@ func TestMergeChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-merge", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-merge-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test-merge", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-merge-other", userID, otherBatchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-merge", userID, 0)
+	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-merge-other", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-merge", userID, batchSpec.ID)
+	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-merge-other", userID, otherBatchSpec.ID)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	changeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ReconcilerState:  btypes.ReconcilerStateCompleted,
 		ExternalState:    btypes.ChangesetExternalStateOpen,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ReconcilerState:  btypes.ReconcilerStateCompleted,
 		ExternalState:    btypes.ChangesetExternalStateOpen,
 	})
-	mergedChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	mergedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
@@ -1962,7 +1967,7 @@ func TestMergeChangesets(t *testing.T) {
 		ExternalState:    btypes.ChangesetExternalStateMerged,
 	})
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -2044,29 +2049,29 @@ func TestCloseChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-close", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
+	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close-other", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
+	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close-other", userID, otherBatchSpec.ID)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	changeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ReconcilerState:  btypes.ReconcilerStateCompleted,
 		ExternalState:    btypes.ChangesetExternalStateOpen,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ReconcilerState:  btypes.ReconcilerStateCompleted,
 		ExternalState:    btypes.ChangesetExternalStateOpen,
 	})
-	mergedChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	mergedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
@@ -2074,7 +2079,7 @@ func TestCloseChangesets(t *testing.T) {
 		ExternalState:    btypes.ChangesetExternalStateMerged,
 	})
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -2156,48 +2161,48 @@ func TestPublishChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-close", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
+	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close-other", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
+	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close-other", userID, otherBatchSpec.ID)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	publishableChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+	publishableChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: batchSpec.ID,
 		HeadRef:   "main",
 	})
-	unpublishableChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+	unpublishableChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: batchSpec.ID,
 		HeadRef:   "main",
 		Published: true,
 	})
-	otherChangesetSpec := bt.CreateChangesetSpec(t, ctx, cstore, bt.TestSpecOpts{
+	otherChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,
 		BatchSpec: otherBatchSpec.ID,
 		HeadRef:   "main",
 	})
-	publishableChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	publishableChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
 		ReconcilerState:  btypes.ReconcilerStateCompleted,
 		PublicationState: btypes.ChangesetPublicationStateUnpublished,
 		CurrentSpec:      publishableChangesetSpec.ID,
 	})
-	unpublishableChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	unpublishableChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
 		ReconcilerState:  btypes.ReconcilerStateCompleted,
 		PublicationState: btypes.ChangesetPublicationStateUnpublished,
 		CurrentSpec:      unpublishableChangesetSpec.ID,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      otherBatchChange.ID,
 		ReconcilerState:  btypes.ReconcilerStateCompleted,
@@ -2205,7 +2210,7 @@ func TestPublishChangesets(t *testing.T) {
 		CurrentSpec:      otherChangesetSpec.ID,
 	})
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -2286,10 +2291,10 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
-	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+	userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
@@ -2302,11 +2307,11 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
 	}
-	if err := cstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
+	if err := bstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
 		t.Fatal(err)
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 
 	if err != nil {
@@ -2383,8 +2388,8 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 	var response struct{ MaxUnlicensedChangesets int32 }
 	actorCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	r := &Resolver{store: cstore}
+	bstore := store.New(db, &observation.TestContext, nil)
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 	require.NoError(t, err)
 
@@ -2407,7 +2412,7 @@ func TestListBatchSpecs(t *testing.T) {
 	user := bt.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	batchSpecs := make([]*btypes.BatchSpec, 0, 10)
 
@@ -2424,14 +2429,14 @@ func TestListBatchSpecs(t *testing.T) {
 			batchSpec.CreatedFromRaw = true
 		}
 
-		if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+		if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 			t.Fatal(err)
 		}
 
 		batchSpecs = append(batchSpecs, batchSpec)
 	}
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)

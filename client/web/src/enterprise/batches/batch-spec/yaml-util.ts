@@ -363,8 +363,12 @@ export function quoteYAMLString(value: string): string {
         needsQuotes = true
 
         // We don't bail out here, we assume some characters in the value needs escaping,
-        // we set the value of `needsEscaping` to true
-        if (!isYAMLMap(ast) || ast.errors.length > 0) {
+        // we set the value of `needsEscaping` to true.
+        // Also, check if there are more than one mapping. If there are, then the string value has a colon in it and an
+        // unbalanced quote - for example, "name": "value
+        // The unbalanced quote tricks the second load to think it is valid YAML since the value is closed with the
+        // ending quote.
+        if (!isYAMLMap(ast) || ast.errors.length > 0 || ast.mappings.length > 1) {
             needsQuotes = false
             needsEscaping = true
         }

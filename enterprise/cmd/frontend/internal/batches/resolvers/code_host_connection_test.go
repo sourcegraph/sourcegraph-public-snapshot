@@ -37,7 +37,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	ghRepo, _ := bt.CreateTestRepo(t, ctx, db)
 	glRepos, _ := bt.CreateGitlabTestRepos(t, ctx, db, 1)
@@ -45,7 +45,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	bbsRepos, _ := bt.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
 		}
 		token := &auth.OAuthBearerToken{Token: "SOSECRET"}
-		if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
+		if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
 			t.Fatal(err)
 		}
 
@@ -156,7 +156,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	})
 
 	t.Run("User.BatchChangesCodeHosts", func(t *testing.T) {
-		userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
@@ -170,7 +170,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 			ExternalServiceType: bbsRepo.ExternalRepo.ServiceType,
 		}
 		token := &auth.OAuthBearerToken{Token: "SOSECRET"}
-		if err := cstore.CreateSiteCredential(ctx, siteCred, token); err != nil {
+		if err := bstore.CreateSiteCredential(ctx, siteCred, token); err != nil {
 			t.Fatal(err)
 		}
 

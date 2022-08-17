@@ -35,7 +35,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
-	github.com/derision-test/go-mockgen v1.3.3
+	github.com/derision-test/go-mockgen v1.3.4
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
@@ -79,7 +79,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
 	github.com/grafana-tools/sdk v0.0.0-20220203092117-edae16afa87b
-	github.com/grafana/regexp v0.0.0-20220304095617-2e8d9baf4ac2
+	github.com/grafana/regexp v0.0.0-20220304100321-149c8afcd6cb
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/graphql-go/graphql v0.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -93,6 +93,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/json-iterator/go v1.1.12
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.1
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
@@ -199,6 +200,8 @@ require (
 )
 
 require github.com/hmarr/codeowners v0.4.0
+
+require github.com/stretchr/objx v0.4.0 // indirect
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect

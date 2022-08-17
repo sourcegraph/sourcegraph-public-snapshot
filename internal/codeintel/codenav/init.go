@@ -22,7 +22,7 @@ var (
 
 // GetService creates or returns an already-initialized symbols service. If the service is
 // new, it will use the given database handle.
-func GetService(db, codeIntelDB database.DB, uploadSvc UploadService) *Service {
+func GetService(db, codeIntelDB database.DB, uploadSvc UploadService, gitserver GitserverClient) *Service {
 	svcOnce.Do(func() {
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
@@ -34,7 +34,7 @@ func GetService(db, codeIntelDB database.DB, uploadSvc UploadService) *Service {
 
 		store := store.New(db, oc("store"))
 		lsifstore := lsifstore.New(codeIntelDB, oc("lsifstore"))
-		svc = newService(store, lsifstore, uploadSvc, oc("service"))
+		svc = newService(store, lsifstore, uploadSvc, gitserver, oc("service"))
 	})
 
 	return svc

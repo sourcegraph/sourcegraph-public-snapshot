@@ -14,4 +14,9 @@
 .blob {
     flex: 1;
     position: relative;
+
+    &:focus-within {
+        outline: 0;
+        box-shadow: var(--focus-box-shadow);
+    }
 }

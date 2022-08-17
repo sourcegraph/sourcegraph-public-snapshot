@@ -42,7 +42,8 @@ import (
 func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
-		numHandlers = 1
+		// Default concurrency is set to 5.
+		numHandlers = 5
 	}
 
 	options := workerutil.WorkerOptions{
@@ -53,7 +54,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		Metrics:           metrics,
 	}
 
-	defaultRateLimit := rate.Limit(10.0)
+	defaultRateLimit := rate.Limit(20.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
 
 	limiter := ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit(), 1))

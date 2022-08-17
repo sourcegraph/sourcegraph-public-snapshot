@@ -17,6 +17,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.43.0
+
+### Added
+
 - Enforce 5-changeset limit for batch changes run server-side on an unlicensed instance. [#37834](https://github.com/sourcegraph/sourcegraph/issues/37834)
 - Changesets that are not associated with any batch changes can have a retention period set using the site configuration `batchChanges.changesetsRetention`. [#36188](https://github.com/sourcegraph/sourcegraph/pull/36188)
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
@@ -27,17 +45,25 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - **IMPORTANT: Search queries with patterns surrounded by** `/.../` **will now be interpreted as regular expressions.** Existing search links or code monitors are unaffected. In the rare event where older links rely on the literal meaning of `/.../`, the string will be automatically quoted it in a `content` filter, preserving the original meaning. If you happen to use an existing older link and want `/.../` to work as a regular expression, add `patterntype:standard` to the query. New queries and code monitors will interpret `/.../` as regular expressions. [#38141](https://github.com/sourcegraph/sourcegraph/pull/38141).
+- The password policy has been updated and is now part of the standard featureset configurable by site-admins. [#39213](https://github.com/sourcegraph/sourcegraph/pull/39213).
+- Replaced the `ALLOW_DECRYPT_MIGRATION` envvar with `ALLOW_DECRYPTION`. See [updated documentation](https://docs.sourcegraph.com/admin/config/encryption). [#39984](https://github.com/sourcegraph/sourcegraph/pull/39984)
+- Compute-powered insight now supports only one series custom colors for compute series bars [40038](https://github.com/sourcegraph/sourcegraph/pull/40038)
 
 ### Fixed
 
-- Fix issue in the streaming Compute API to return immediately when query parsing fails. [#39842](https://github.com/sourcegraph/sourcegraph/pull/39842)
-- Fix issue during conversion of just in time code insights to start backfilling data from the current time instead of the date the insight was created. [#39923](https://github.com/sourcegraph/sourcegraph/pull/39923)
 - Fix issue during code insight creation where selecting `"Run your insight over all your repositories"` reset the currently selected distance between data points. [#39261](https://github.com/sourcegraph/sourcegraph/pull/39261)
 - Fix issue where symbols in the side panel did not have file level permission filtering applied correctly. [#39592](https://github.com/sourcegraph/sourcegraph/pull/39592)
 
 ### Removed
 
 - The experimental dependencies search feature has been removed, including the `repo:deps(...)` search predicate and the site configuration options `codeIntelLockfileIndexing.enabled` and `experimentalFeatures.dependenciesSearch`. [#39742](https://github.com/sourcegraph/sourcegraph/pull/39742)
+
+## 3.42.2
+
+### Fixed
+
+- Fix issue with capture group insights to fail immediately if they contain invalid queries. [#39842](https://github.com/sourcegraph/sourcegraph/pull/39842)
+- Fix issue during conversion of just in time code insights to start backfilling data from the current time instead of the date the insight was created. [#39923](https://github.com/sourcegraph/sourcegraph/pull/39923)
 
 ## 3.42.1
 

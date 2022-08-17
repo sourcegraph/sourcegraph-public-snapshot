@@ -1,36 +1,30 @@
 package migrations
 
 import (
-	"os"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type TaggedMigrator interface {
+	oobmigration.Migrator
+	ID() int
+	Interval() time.Duration
+}
+
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	logger := log.Scoped("RegisterOSSMigrations", "")
-	// Run a background job to handle encryption of external service configuration.
-	extsvcMigrator := NewExternalServiceConfigMigratorWithDB(db)
-	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
-	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		return errors.Wrap(err, "failed to run external service encryption job")
-	}
+	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
+		NewExternalServiceWebhookMigratorWithDB(db, keyring.Default().ExternalServiceKey),
+	})
+}
 
-	// Run a background job to handle encryption of external service configuration.
-	extAccMigrator := NewExternalAccountsMigratorWithDB(logger, db)
-	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
-	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		return errors.Wrap(err, "failed to run user external account encryption job")
-	}
-
-	// Run a background job to calculate the has_webhooks field on external service records.
-	webhookMigrator := NewExternalServiceWebhookMigratorWithDB(db)
-	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		return errors.Wrap(err, "failed to run external service webhook job")
+func RegisterAll(outOfBandMigrationRunner *oobmigration.Runner, migrators []TaggedMigrator) error {
+	for _, migrator := range migrators {
+		if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: migrator.Interval()}); err != nil {
+			return err
+		}
 	}
 
 	return nil

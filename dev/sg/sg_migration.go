@@ -123,7 +123,7 @@ var (
 	leavesCommand = &cli.Command{
 		Name:        "leaves",
 		ArgsUsage:   "<commit>",
-		Usage:       "Identiy the migration leaves for the given commit",
+		Usage:       "Identify the migration leaves for the given commit",
 		Description: cliutil.ConstructLongHelp(),
 		Action:      leavesExec,
 	}

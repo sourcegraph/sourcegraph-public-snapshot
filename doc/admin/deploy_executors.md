@@ -148,7 +148,7 @@ This step imports the kernel image to avoid the executor having to import it whe
 ```bash
 # Change this to match the version of Ignite you're using.
 export IGNITE_VERSION=v0.10.0
-export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
+export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135-amd64"
 
 ignite kernel import --runtime docker "${KERNEL_IMAGE}"
 docker pull "weaveworks/ignite:${IGNITE_VERSION}"

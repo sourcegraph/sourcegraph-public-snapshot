@@ -10,6 +10,10 @@ The following jobs are defined by the `worker` service.
 
 This job runs [out of band migrations](migration.md#mout-of-band-migrations), which perform large data migrations in the background over time instead of synchronously during Sourcegraph instance updates.
 
+#### `codeintel-upload-backfiller`
+
+This job periodically checks for records with NULL attributes that need to be backfilled. Often these are values that require data from Git that wasn't (yet) resolvable at the time of a user upload.
+
 #### `codeintel-upload-janitor`
 
 This job will eventually (and partially) replace `codeintel-janitor`.
@@ -106,6 +110,10 @@ This job runs the workspace resolutions for batch specs. Used for batch changes 
 #### `gitserver-metrics`
 
 This job runs queries against the database pertaining to generate `gitserver` metrics. These queries are generally expensive to run and do not need to be run per-instance of `gitserver` so the worker allows them to only be run once per scrape.
+
+#### `record-encrypter`
+
+This job bulk encrypts existing data in the database when an encryption key is introduced, and decrypts it when instructed to do. See [encryption](./config/encryption.md) for additional details.
 
 ## Deploying workers
 

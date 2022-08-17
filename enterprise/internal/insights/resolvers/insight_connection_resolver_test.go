@@ -140,7 +140,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	externalService := &internalTypes.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
 	err := postgres.ExternalServices().Create(context.Background(), confGet, externalService)
 	if err != nil {
