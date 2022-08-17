@@ -4,6 +4,9 @@ import (
 	"sort"
 	"strings"
 
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/grafana/regexp"
 )
 
@@ -127,4 +130,70 @@ func peek(pattern string, currentIndex, peekOffset int) byte {
 		return 0
 	}
 	return pattern[peekOffset+currentIndex]
+}
+
+type PatternReplacer interface {
+	Replace(replacement string) (BasicQuery, error)
+}
+
+func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
+	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
+		return searchquery.Pattern{
+			Value:      replacement,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	return BasicQuery(searchquery.StringHuman(modified)), nil
+}
+
+type regexpReplacer struct {
+	original searchquery.Plan
+	pattern  string
+	groups   []group
+}
+
+func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
+	if len(r.groups) == 0 {
+		// replace the entire content field
+		return r.replaceContent(replacement)
+	}
+	var matches [][]string
+	matches = append(matches, make([]string, 0, 2))
+	matches[0] = append(matches[0], "") // empty value for "total match"
+	matches[0] = append(matches[0], replacement)
+
+	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, matches, 1))
+}
+
+var (
+	multiplePatternErr        = errors.New("pattern replacement does not support queries with multiple patterns")
+	unsupportedPatternTypeErr = errors.New("pattern replacement is only supported for regexp patterns")
+)
+
+func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (PatternReplacer, error) {
+	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchType))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse search query")
+	}
+	var patterns []searchquery.Pattern
+	searchquery.VisitPattern(plan.ToQ(), func(value string, negated bool, annotation searchquery.Annotation) {
+		patterns = append(patterns, searchquery.Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		})
+	})
+	if len(patterns) > 1 {
+		return nil, multiplePatternErr
+	}
+
+	pattern := patterns[0]
+	if !pattern.Annotation.Labels.IsSet(searchquery.Regexp) {
+		return nil, unsupportedPatternTypeErr
+	}
+
+	regexpGroups := findGroups(pattern.Value)
+	return &regexpReplacer{original: plan, groups: regexpGroups, pattern: pattern.Value}, nil
 }
