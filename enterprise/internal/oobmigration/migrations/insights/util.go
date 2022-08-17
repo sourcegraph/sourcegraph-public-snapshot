@@ -11,14 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
-// replaceIfEmpty will return a string where the first argument is given priority if non-empty.
-func replaceIfEmpty(firstChoice *string, replacement string) string {
-	if firstChoice == nil || *firstChoice == "" {
-		return replacement
-	}
-	return *firstChoice
-}
-
 func logDuplicates(insightIds []string) {
 	set := make(map[string]struct{}, len(insightIds))
 	for _, id := range insightIds {

@@ -12,7 +12,7 @@ var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j settingsMigra
 	return j, err
 })
 
-var scanUserOrOrg = basestore.NewSliceScanner(func(s dbutil.Scanner) (uo userOrOrg, _ error) {
+var scanUserOrOrgs = basestore.NewSliceScanner(func(s dbutil.Scanner) (uo userOrOrg, _ error) {
 	err := s.Scan(&uo.id, &uo.name, &uo.displayName)
 	return uo, err
 })
