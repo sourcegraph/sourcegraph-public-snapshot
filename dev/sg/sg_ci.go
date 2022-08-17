@@ -73,9 +73,9 @@ var ciTargetFlags = []cli.Flag{
 type buildTargetType string
 
 const (
-	buildTargetBranch buildTargetType = "branch"
-	buildTargetBuild  buildTargetType = "build"
-	buildTargetCommit buildTargetType = "commit"
+	buildTargetTypeBranch      buildTargetType = "branch"
+	buildTargetTypeBuildNumber buildTargetType = "build"
+	buildTargetTypeCommit      buildTargetType = "commit"
 )
 
 type targetBuild struct {
@@ -112,11 +112,11 @@ func getBuildTarget(cmd *cli.Context) (target targetBuild, err error) {
 	switch {
 	case branch != "":
 		target.target = branch
-		target.targetType = buildTargetBranch
+		target.targetType = buildTargetTypeBranch
 
 	case build != "":
 		target.target = build
-		target.targetType = buildTargetBuild
+		target.targetType = buildTargetTypeBuildNumber
 
 	case commit != "":
 		// get the full commit
@@ -124,29 +124,29 @@ func getBuildTarget(cmd *cli.Context) (target targetBuild, err error) {
 		if err != nil {
 			return
 		}
-		target.targetType = buildTargetCommit
+		target.targetType = buildTargetTypeCommit
 
 	default:
 		target.target, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
 		target.fromFlag = false
-		target.targetType = buildTargetBranch
+		target.targetType = buildTargetTypeBranch
 	}
 	return
 }
 
 func (t targetBuild) GetBuild(ctx context.Context, client *bk.Client) (build *buildkite.Build, err error) {
 	switch t.targetType {
-	case "branch":
+	case buildTargetTypeBranch:
 		build, err = client.GetMostRecentBuild(ctx, t.pipeline, t.target)
 		if err != nil {
 			return nil, errors.Newf("failed to get most recent build for branch %q: %w", t.target, err)
 		}
-	case "build":
+	case buildTargetTypeBuildNumber:
 		build, err = client.GetBuildByNumber(ctx, t.pipeline, t.target)
 		if err != nil {
 			return nil, errors.Newf("failed to find build number %q: %w", t.target, err)
 		}
-	case "commit":
+	case buildTargetTypeCommit:
 		build, err = client.GetBuildByCommit(ctx, t.pipeline, t.target)
 		if err != nil {
 			return nil, errors.Newf("failed to find build number %q: %w", t.target, err)
@@ -210,7 +210,7 @@ sg ci build --help
 			if err != nil {
 				return err
 			}
-			if target.targetType != buildTargetBranch {
+			if target.targetType != buildTargetTypeBranch {
 				// Should never happen because we only register the branch flag
 				return errors.New("target is not a branch")
 			}
@@ -330,7 +330,7 @@ sg ci build --help
 			// If we're not on a specific branch and not asking for a specific build,
 			// warn if build commit is not your local copy - we are building an
 			// unknown revision.
-			if !target.fromFlag && target.targetType == buildTargetBranch {
+			if !target.fromFlag && target.targetType == buildTargetTypeBranch {
 				commit, err := run.GitCmd("rev-parse", "HEAD")
 				if err != nil {
 					return err
