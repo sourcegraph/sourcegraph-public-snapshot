@@ -2,20 +2,22 @@ package graphqlbackend
 
 import (
 	"context"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 type repositoryStatsResolver struct {
+	db database.DB
+
 	gitDirBytes       uint64
 	indexedLinesCount uint64
 
-	total       int
-	cloned      int
-	cloning     int
-	notCloned   int
-	failedFetch int
+	statisticsCountsOnce sync.Once
+	statisticsCounts     database.StatisticsCounts
+	statisticsCountsErr  error
 }
 
 func (r *repositoryStatsResolver) GitDirBytes() BigInt {
@@ -26,11 +28,52 @@ func (r *repositoryStatsResolver) IndexedLinesCount() BigInt {
 	return BigInt{Int: int64(r.indexedLinesCount)}
 }
 
-func (r *repositoryStatsResolver) Total() int32       { return int32(r.total) }
-func (r *repositoryStatsResolver) Cloned() int32      { return int32(r.cloned) }
-func (r *repositoryStatsResolver) Cloning() int32     { return int32(r.cloning) }
-func (r *repositoryStatsResolver) NotCloned() int32   { return int32(r.notCloned) }
-func (r *repositoryStatsResolver) FailedFetch() int32 { return int32(r.failedFetch) }
+func (r *repositoryStatsResolver) Total(ctx context.Context) (int32, error) {
+	counts, err := r.computeStatisticsCounts(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(counts.Total), nil
+}
+
+func (r *repositoryStatsResolver) Cloned(ctx context.Context) (int32, error) {
+	counts, err := r.computeStatisticsCounts(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(counts.Cloned), nil
+}
+
+func (r *repositoryStatsResolver) Cloning(ctx context.Context) (int32, error) {
+	counts, err := r.computeStatisticsCounts(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(counts.Cloning), nil
+}
+
+func (r *repositoryStatsResolver) NotCloned(ctx context.Context) (int32, error) {
+	counts, err := r.computeStatisticsCounts(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(counts.NotCloned), nil
+}
+
+func (r *repositoryStatsResolver) FailedFetch(ctx context.Context) (int32, error) {
+	counts, err := r.computeStatisticsCounts(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(counts.FailedFetch), nil
+}
+
+func (r *repositoryStatsResolver) computeStatisticsCounts(ctx context.Context) (database.StatisticsCounts, error) {
+	r.statisticsCountsOnce.Do(func() {
+		r.statisticsCounts, r.statisticsCountsErr = r.db.Repos().StatisticsCounts(ctx)
+	})
+	return r.statisticsCounts, r.statisticsCountsErr
+}
 
 func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {
 	// 🚨 SECURITY: Only site admins may query repository statistics for the site.
@@ -44,18 +87,9 @@ func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsR
 		return nil, err
 	}
 
-	statisticsCounts, err := r.db.Repos().StatisticsCounts(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	return &repositoryStatsResolver{
+		db:                db,
 		gitDirBytes:       stats.GitDirBytes,
 		indexedLinesCount: stats.DefaultBranchNewLinesCount + stats.OtherBranchesNewLinesCount,
-		total:             statisticsCounts.Total,
-		cloned:            statisticsCounts.Cloned,
-		cloning:           statisticsCounts.Cloning,
-		notCloned:         statisticsCounts.NotCloned,
-		failedFetch:       statisticsCounts.FailedFetch,
 	}, nil
 }
