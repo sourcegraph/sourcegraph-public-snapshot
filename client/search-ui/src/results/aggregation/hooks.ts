@@ -40,7 +40,7 @@ function useSyncedWithURLState<State>(options: URLStateOptions<State>): SetState
     return [queryParameter, setNextState]
 }
 
-const AGGREGATION_MODE_URL_KEY = 'groupBy'
+export const AGGREGATION_MODE_URL_KEY = 'groupBy'
 
 const aggregationModeSerializer = (mode: AggregationModes): string => mode.toString()
 
@@ -74,7 +74,7 @@ export const useAggregationSearchMode = (): SetStateResult<AggregationModes> => 
     return [aggregationMode, setAggregationMode]
 }
 
-const AGGREGATION_UI_MODE_URL_KEY = 'groupByUI'
+export const AGGREGATION_UI_MODE_URL_KEY = 'groupByUI'
 
 const aggregationUIModeSerializer = (uiMode: AggregationUIMode): string => uiMode.toString()
 
