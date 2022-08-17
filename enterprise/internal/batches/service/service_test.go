@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -593,9 +594,8 @@ func TestService(t *testing.T) {
 			}
 
 			want := &btypes.ChangesetSpec{
-				ID:     5,
-				RandID: "25CD5gYmVce",
-				Typ:    btypes.ChangesetSpecTypeBranch,
+				ID:  5,
+				Typ: btypes.ChangesetSpecTypeBranch,
 				Diff: []byte(`diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
@@ -620,8 +620,6 @@ index e5af166..d44c3fc 100644
 				DiffStatDeleted:   1,
 				BaseRepoID:        1,
 				UserID:            1,
-				CreatedAt:         time.Now(),
-				UpdatedAt:         time.Now(),
 				BaseRev:           "d34db33f",
 				BaseRef:           "refs/heads/master",
 				HeadRef:           "refs/heads/my-branch",
@@ -633,7 +631,7 @@ index e5af166..d44c3fc 100644
 				CommitAuthorEmail: "mary@example.com",
 			}
 
-			if diff := cmp.Diff(want, spec); diff != "" {
+			if diff := cmp.Diff(want, spec, cmpopts.IgnoreFields(btypes.ChangesetSpec{}, "CreatedAt", "UpdatedAt", "RandID")); diff != "" {
 				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
 			}
 

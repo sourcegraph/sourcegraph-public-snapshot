@@ -306,7 +306,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		}
 
 		haveDiff := changesetSpec.Diff
-		if haveDiff != testDiff {
+		if !bytes.Equal(haveDiff, []byte(testDiff)) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
@@ -629,6 +629,7 @@ importChangesets:
 			UserID:      user.ID,
 			BaseRepoID:  repos[0].ID,
 			BatchSpecID: batchSpec.ID,
+			Typ:         btypes.ChangesetSpecTypeExisting,
 			ExternalID:  "123",
 			CreatedAt:   now,
 			UpdatedAt:   now,
@@ -686,6 +687,7 @@ importChangesets:
 			UserID:      user.ID,
 			BaseRepoID:  repos[0].ID,
 			BatchSpecID: batchSpec.ID,
+			Typ:         btypes.ChangesetSpecTypeExisting,
 			ExternalID:  "123",
 			CreatedAt:   now,
 			UpdatedAt:   now,

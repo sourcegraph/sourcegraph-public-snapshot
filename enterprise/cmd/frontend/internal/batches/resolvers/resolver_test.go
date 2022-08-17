@@ -551,6 +551,7 @@ func TestApplyBatchChange(t *testing.T) {
 		BatchSpecID: batchSpec.ID,
 		BaseRepoID:  repo.ID,
 		UserID:      userID,
+		Typ:         btypes.ChangesetSpecTypeExisting,
 		ExternalID:  "123",
 	}
 	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {

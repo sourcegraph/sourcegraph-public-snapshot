@@ -1,0 +1,1 @@
+ALTER TABLE changeset_specs ALTER COLUMN type DROP NOT NULL;
