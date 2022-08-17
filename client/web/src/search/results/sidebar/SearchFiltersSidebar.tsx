@@ -1,4 +1,4 @@
-import React, { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo } from 'react'
+import { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo, PropsWithChildren } from 'react'
 
 import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/search'
 import {
@@ -33,21 +33,18 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
 
     filters?: Filter[]
     selectedSearchContextSpec?: string
-
-    /** Content to render inside sidebar, but before other sections. */
-    prefixContent?: React.ReactNode
 }
 
-export const SearchFiltersSidebar: FC<SearchFiltersSidebarProps> = memo(props => {
+export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProps>> = memo(props => {
     const {
         query,
         filters,
         selectedSearchContextSpec,
         telemetryService,
         settingsCascade,
-        prefixContent,
         onNavbarQueryChange,
         onSearchSubmit,
+        children,
         ...attributes
     } = props
 
@@ -75,7 +72,7 @@ export const SearchFiltersSidebar: FC<SearchFiltersSidebarProps> = memo(props =>
 
     return (
         <SearchSidebar onClose={() => setSelectedTab(null)} {...attributes}>
-            {prefixContent}
+            {children}
 
             <SearchSidebarSection sectionId={SectionID.SEARCH_TYPES} header="Search Types">
                 {getSearchTypeLinks({

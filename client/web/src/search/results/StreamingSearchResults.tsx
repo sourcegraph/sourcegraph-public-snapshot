@@ -300,18 +300,14 @@ export const StreamingSearchResults: React.FunctionComponent<
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
                 onNavbarQueryChange={setQueryState}
                 onSearchSubmit={handleSidebarSearchSubmit}
-                prefixContent={useMemo(
-                    () => (
-                        <GettingStartedTour
-                            className="mb-1"
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            telemetryService={props.telemetryService}
-                            isAuthenticated={!!props.authenticatedUser}
-                        />
-                    ),
-                    [props.isSourcegraphDotCom, props.telemetryService, props.authenticatedUser]
-                )}
-            />
+            >
+                <GettingStartedTour
+                    className="mb-1"
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    telemetryService={props.telemetryService}
+                    isAuthenticated={!!props.authenticatedUser}
+                />
+            </SearchFiltersSidebar>
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
                 <SearchAggregationResult
