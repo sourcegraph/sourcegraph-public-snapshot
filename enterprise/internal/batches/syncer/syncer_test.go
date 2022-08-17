@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -158,6 +159,63 @@ func TestSyncerRun(t *testing.T) {
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("Sync not called")
 		}
+	})
+
+	t.Run("Sync due but reenqueued when namespace deleted", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+		now := time.Now()
+		updateCalled := false
+		syncStore := newTestStore()
+
+		syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
+			{
+				ChangesetID:       1,
+				UpdatedAt:         now.Add(-2 * maxSyncDelay),
+				LatestEvent:       now.Add(-2 * maxSyncDelay),
+				ExternalUpdatedAt: now.Add(-2 * maxSyncDelay),
+			},
+		}, nil)
+		syncStore.GetChangesetFunc.SetDefaultReturn(&btypes.Changeset{RepoID: 1, OwnedByBatchChangeID: 1}, nil)
+
+		rstore := database.NewMockRepoStore()
+		syncStore.ReposFunc.SetDefaultReturn(rstore)
+		rstore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/u/r"}, nil)
+
+		ess := database.NewMockExternalServiceStore()
+		ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			return []*types.ExternalService{{
+				ID:          1,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GitHub.com",
+				Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+			}}, nil
+		})
+		syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
+
+		// Return ErrDeletedNamespace to simulate that a namespace (user or org) has been deleted.
+		syncStore.GetBatchChangeFunc.SetDefaultReturn(nil, store.ErrDeletedNamespace)
+
+		syncStore.UpdateChangesetCodeHostStateFunc.SetDefaultHook(func(context.Context, *btypes.Changeset) error {
+			updateCalled = true
+			return nil
+		})
+
+		capturingLogger, export := logtest.Captured(t)
+		syncer := &changesetSyncer{
+			logger:           capturingLogger,
+			syncStore:        syncStore,
+			scheduleInterval: 10 * time.Minute,
+			metrics:          makeMetrics(&observation.TestContext),
+		}
+		syncer.Run(ctx)
+		assert.False(t, updateCalled)
+
+		// ensure the deleted namespace error is logged as a debug
+		captured := export()
+		assert.Greater(t, len(captured), 0)
+		assert.Equal(t, log.LevelDebug, captured[2].Level)
+		assert.Equal(t, "SyncChangeset skipping changeset: namespace deleted", captured[2].Message)
 	})
 }
 
