@@ -26,9 +26,13 @@ var (
 	_ ForkableChangesetSource = BitbucketCloudSource{}
 )
 
-func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.BitbucketCloudConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d", svc.ID)
 	}
 

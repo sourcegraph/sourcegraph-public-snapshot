@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -32,9 +33,8 @@ func NewSSHMigratorWithDB(db database.DB, key encryption.Key) *SSHMigrator {
 	}
 }
 
-func (m *SSHMigrator) ID() int {
-	return 2
-}
+func (m *SSHMigrator) ID() int                 { return 2 }
+func (m *SSHMigrator) Interval() time.Duration { return time.Second * 5 }
 
 // Progress returns the percentage (ranged [0, 1]) of external services without a marker
 // indicating that this migration has been applied to that row.

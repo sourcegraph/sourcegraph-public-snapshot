@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "rootDir": ".",
+    "outDir": "out",
+    "paths": {
+      "*": ["../shared/src/types/*", "*"],
+    },
+  },
+  "include": ["**/*", ".*"],
+  "references": [
+    {
+      "path": "../common",
+    },
+  ],
+}

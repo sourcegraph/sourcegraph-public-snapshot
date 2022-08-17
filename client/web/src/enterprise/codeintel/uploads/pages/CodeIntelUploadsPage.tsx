@@ -140,7 +140,7 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Code graph data uploads' }]}
-                description={`LSIF indexes uploaded to Sourcegraph from CI or from auto-indexing ${
+                description={`Indexes uploaded to Sourcegraph from CI or from auto-indexing ${
                     repo ? 'for this repository' : 'over all repositories'
                 }.`}
                 className="mb-3"

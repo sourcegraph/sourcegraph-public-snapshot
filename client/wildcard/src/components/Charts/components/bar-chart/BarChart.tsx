@@ -25,6 +25,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         height: outerHeight,
         data,
         stacked = false,
+        getDatumHover,
         getDatumName,
         getDatumValue,
         getDatumColor,
@@ -84,6 +85,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                         left={content.left}
                         stacked={stacked}
                         categories={categories}
+                        getDatumHover={getDatumHover}
                         getDatumName={getDatumName}
                         getDatumValue={getDatumValue}
                         getDatumColor={getDatumColor}

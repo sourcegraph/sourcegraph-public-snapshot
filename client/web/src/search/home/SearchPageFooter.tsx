@@ -134,15 +134,19 @@ export const SearchPageFooter: React.FunctionComponent<
                     >
                         Browser extensions
                     </Link>
-                    <span aria-hidden="true" className="border-right d-none d-md-inline" />
-                    <Link
-                        className="px-3"
-                        to="/extensions"
-                        target="_blank"
-                        onClick={() => logLinkClicked('SourcegraphExtensions')}
-                    >
-                        Sourcegraph extensions
-                    </Link>
+                    {window.context.enableLegacyExtensions ? (
+                        <>
+                            <span aria-hidden="true" className="border-right d-none d-md-inline" />
+                            <Link
+                                className="px-3"
+                                to="/extensions"
+                                target="_blank"
+                                onClick={() => logLinkClicked('SourcegraphExtensions')}
+                            >
+                                Sourcegraph extensions
+                            </Link>
+                        </>
+                    ) : null}
                     <span aria-hidden="true" className="border-right d-none d-md-inline" />
                 </span>
                 <span className="d-flex flex-row">

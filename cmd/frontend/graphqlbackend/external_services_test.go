@@ -331,7 +331,11 @@ func TestAddExternalService(t *testing.T) {
 
 		t.Run("org can still add external services", func(t *testing.T) {
 			svcs := []*types.ExternalService{
-				{Kind: extsvc.KindGitHub, NamespaceOrgID: orgID},
+				{
+					Kind:           extsvc.KindGitHub,
+					NamespaceOrgID: orgID,
+					Config:         extsvc.NewEmptyConfig(),
+				},
 			}
 
 			externalServices := database.NewMockExternalServiceStore()
@@ -353,7 +357,11 @@ func TestAddExternalService(t *testing.T) {
 
 		t.Run("org has reached the limit for a given kind of service", func(t *testing.T) {
 			svcs := []*types.ExternalService{
-				{Kind: extsvc.KindGitLab, NamespaceOrgID: orgID},
+				{
+					Kind:           extsvc.KindGitLab,
+					NamespaceOrgID: orgID,
+					Config:         extsvc.NewEmptyConfig(),
+				},
 			}
 
 			externalServices := database.NewMockExternalServiceStore()
@@ -434,7 +442,11 @@ func TestAddExternalService(t *testing.T) {
 
 		t.Run("user can still add external services", func(t *testing.T) {
 			svcs := []*types.ExternalService{
-				{Kind: extsvc.KindGitHub, NamespaceOrgID: orgID},
+				{
+					Kind:           extsvc.KindGitHub,
+					NamespaceOrgID: orgID,
+					Config:         extsvc.NewEmptyConfig(),
+				},
 			}
 
 			externalServices := database.NewMockExternalServiceStore()
@@ -456,7 +468,11 @@ func TestAddExternalService(t *testing.T) {
 
 		t.Run("user has reached the limit for a given kind of service", func(t *testing.T) {
 			svcs := []*types.ExternalService{
-				{Kind: extsvc.KindGitLab, NamespaceOrgID: orgID},
+				{
+					Kind:           extsvc.KindGitLab,
+					NamespaceOrgID: orgID,
+					Config:         extsvc.NewEmptyConfig(),
+				},
 			}
 
 			externalServices := database.NewMockExternalServiceStore()
@@ -530,7 +546,8 @@ func TestUpdateExternalService(t *testing.T) {
 			externalServices := database.NewMockExternalServiceStore()
 			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
-					ID: id,
+					ID:     id,
+					Config: extsvc.NewEmptyConfig(),
 				}, nil
 			})
 
@@ -559,6 +576,7 @@ func TestUpdateExternalService(t *testing.T) {
 				return &types.ExternalService{
 					ID:              id,
 					NamespaceUserID: userID,
+					Config:          extsvc.NewEmptyConfig(),
 				}, nil
 			})
 
@@ -590,6 +608,7 @@ func TestUpdateExternalService(t *testing.T) {
 				return &types.ExternalService{
 					ID:             id,
 					NamespaceOrgID: orgID,
+					Config:         extsvc.NewEmptyConfig(),
 				}, nil
 			})
 
@@ -625,6 +644,7 @@ func TestUpdateExternalService(t *testing.T) {
 				return &types.ExternalService{
 					ID:              id,
 					NamespaceUserID: userID,
+					Config:          extsvc.NewEmptyConfig(),
 				}, nil
 			})
 			externalServices.UpdateFunc.SetDefaultReturn(nil)
@@ -653,6 +673,7 @@ func TestUpdateExternalService(t *testing.T) {
 				return &types.ExternalService{
 					ID:             id,
 					NamespaceOrgID: orgID,
+					Config:         extsvc.NewEmptyConfig(),
 				}, nil
 			})
 
@@ -689,7 +710,8 @@ func TestUpdateExternalService(t *testing.T) {
 		externalServices := database.NewMockExternalServiceStore()
 		externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 			return &types.ExternalService{
-				ID: id,
+				ID:     id,
+				Config: extsvc.NewEmptyConfig(),
 			}, nil
 		})
 
@@ -731,13 +753,14 @@ func TestUpdateExternalService(t *testing.T) {
 				ID:              id,
 				NamespaceUserID: userID,
 				Kind:            extsvc.KindGitHub,
+				Config:          extsvc.NewEmptyConfig(),
 			}, nil
 		}
 		return &types.ExternalService{
 			ID:              id,
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     *cachedUpdate.DisplayName,
-			Config:          *cachedUpdate.Config,
+			Config:          extsvc.NewUnencryptedConfig(*cachedUpdate.Config),
 			NamespaceUserID: userID,
 		}, nil
 	})
@@ -784,7 +807,8 @@ func TestDeleteExternalService(t *testing.T) {
 			externalServices := database.NewMockExternalServiceStore()
 			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
-					ID: id,
+					ID:     id,
+					Config: extsvc.NewEmptyConfig(),
 				}, nil
 			})
 
@@ -811,6 +835,7 @@ func TestDeleteExternalService(t *testing.T) {
 				return &types.ExternalService{
 					ID:              id,
 					NamespaceUserID: userID,
+					Config:          extsvc.NewEmptyConfig(),
 				}, nil
 			})
 
@@ -840,6 +865,7 @@ func TestDeleteExternalService(t *testing.T) {
 				return &types.ExternalService{
 					ID:              id,
 					NamespaceUserID: userID,
+					Config:          extsvc.NewEmptyConfig(),
 				}, nil
 			})
 			externalServices.DeleteFunc.SetDefaultReturn(nil)
@@ -868,6 +894,7 @@ func TestDeleteExternalService(t *testing.T) {
 				return &types.ExternalService{
 					ID:             id,
 					NamespaceOrgID: orgID,
+					Config:         extsvc.NewEmptyConfig(),
 				}, nil
 			})
 
@@ -906,6 +933,7 @@ func TestDeleteExternalService(t *testing.T) {
 				return &types.ExternalService{
 					ID:             id,
 					NamespaceOrgID: orgID,
+					Config:         extsvc.NewEmptyConfig(),
 				}, nil
 			})
 			externalServices.DeleteFunc.SetDefaultReturn(nil)
@@ -934,6 +962,7 @@ func TestDeleteExternalService(t *testing.T) {
 		return &types.ExternalService{
 			ID:              id,
 			NamespaceUserID: 1,
+			Config:          extsvc.NewEmptyConfig(),
 		}, nil
 	})
 
@@ -1078,19 +1107,19 @@ func TestExternalServices(t *testing.T) {
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if opt.NamespaceUserID > 0 {
 			return []*types.ExternalService{
-				{ID: 1},
+				{ID: 1, Config: extsvc.NewEmptyConfig()},
 			}, nil
 		}
 
 		if opt.AfterID > 0 {
 			return []*types.ExternalService{
-				{ID: 2},
+				{ID: 2, Config: extsvc.NewEmptyConfig()},
 			}, nil
 		}
 
 		ess := []*types.ExternalService{
-			{ID: 1},
-			{ID: 2},
+			{ID: 1, Config: extsvc.NewEmptyConfig()},
+			{ID: 2, Config: extsvc.NewEmptyConfig()},
 		}
 		if opt.LimitOffset != nil {
 			return ess[:opt.LimitOffset.Limit], nil
@@ -1241,7 +1270,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 		{
 			name: "no limit set",
 			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1}}, nil
+				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
 			wantPageInfo: graphqlutil.HasNextPage(false),
 		},
@@ -1253,7 +1282,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 				},
 			},
 			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1}}, nil
+				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
 			wantPageInfo: graphqlutil.HasNextPage(false),
 		},
@@ -1265,7 +1294,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 				},
 			},
 			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1}}, nil
+				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
 			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
 				return 1, nil
@@ -1280,7 +1309,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 				},
 			},
 			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1}}, nil
+				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
 			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
 				return 2, nil
@@ -1323,7 +1352,9 @@ func TestSyncExternalService_ContextTimeout(t *testing.T) {
 	t.Cleanup(func() { s.Close() })
 
 	ctx := context.Background()
-	svc := &types.ExternalService{}
+	svc := &types.ExternalService{
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	err := backend.SyncExternalService(ctx, svc, 0*time.Millisecond, repoupdater.NewClient(s.URL))
 

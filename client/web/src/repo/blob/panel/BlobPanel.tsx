@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import * as H from 'history'
-import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
+import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 
 import {
@@ -89,15 +89,16 @@ export function useBlobPanelViews({
     // (for main thread -> ext host -> main thread roundtrip for editor position)
     const activeCodeEditorPositions = useMemo(() => new ReplaySubject<TextDocumentPositionParameters | null>(1), [])
     useObservable(
-        useMemo(
-            () =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
-                    tap(parameters => activeCodeEditorPositions.next(parameters)),
-                    mapTo(undefined)
-                ),
-            [activeCodeEditorPositions, extensionsController]
-        )
+        useMemo(() => {
+            if (extensionsController === null) {
+                return EMPTY
+            }
+            return from(extensionsController.extHostAPI).pipe(
+                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
+                tap(parameters => activeCodeEditorPositions.next(parameters)),
+                mapTo(undefined)
+            )
+        }, [activeCodeEditorPositions, extensionsController])
     )
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
@@ -202,7 +203,7 @@ export function useBlobPanelViews({
                 },
             ]
 
-            if (!experimentalReferencePanelEnabled) {
+            if (!experimentalReferencePanelEnabled && extensionsController !== null) {
                 panelDefinitions.push(
                     ...[
                         {

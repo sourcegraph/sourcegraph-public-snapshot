@@ -84,6 +84,25 @@ func Test_langPatterns(t *testing.T) {
 
 }
 
+func Test_symbolPatterns(t *testing.T) {
+	rule := transform{symbolPatterns}
+	test := func(input string) string {
+		return apply(input, rule)
+	}
+
+	cases := []string{
+		`context:global function`,
+		`context:global parse function`,
+	}
+
+	for _, c := range cases {
+		t.Run("symbol patterns", func(t *testing.T) {
+			autogold.Equal(t, autogold.Raw(test(c)))
+		})
+	}
+
+}
+
 func Test_typePatterns(t *testing.T) {
 	rule := transform{typePatterns}
 	test := func(input string) string {
