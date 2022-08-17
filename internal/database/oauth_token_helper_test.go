@@ -34,14 +34,14 @@ func TestRefreshToken_ExternalServices(t *testing.T) {
 		ID:          2,
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab",
-		Config: `{
+		Config: extsvc.NewUnencryptedConfig(`{
 			"url": "gitlab.com",
 			"token": "access-token",
 			"token.type": "oauth",
 			"token.oauth.refresh": "refresh-token",
 			"token.oauth.expiry": "123",
 			"projectQuery": ["projects?id_before=0"]
-		}`,
+		}`),
 	}
 
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -77,8 +77,11 @@ func TestRefreshToken_ExternalServices(t *testing.T) {
 	expectedRefreshToken := "new-refresh-token"
 
 	externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, extSvc ...*types.ExternalService) error {
+		config, err := extSvc[0].Config.Decrypt(ctx)
+		require.NoError(t, err)
+
 		var result map[string]interface{}
-		err := json.Unmarshal([]byte(extSvc[0].Config), &result)
+		err = json.Unmarshal([]byte(config), &result)
 		require.NoError(t, err)
 		assert.Equal(t, expectedRefreshToken, result["token.oauth.refresh"])
 		return nil
