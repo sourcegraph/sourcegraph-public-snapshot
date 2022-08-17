@@ -2,7 +2,7 @@ use std::fs;
 
 use rustyline::config::Configurer;
 use rustyline::Config;
-use sg_syntax::dump_document_range;
+use sg_syntax::dump_document_occurrences;
 use sg_syntax::make_highlight_config;
 use sg_syntax::treesitter_index_with_config;
 use sg_syntax::DocumentFileRange;
@@ -78,6 +78,6 @@ fn main() {
             }
         };
 
-        eprintln!("{}", dump_document_range(&document, &contents, &range));
+        eprintln!("{}", dump_document_occurrences(&document, &contents, &range));
     }
 }

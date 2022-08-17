@@ -1,13 +1,13 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 541
+assertion_line: 554
 expression: "dump_document(&document, &contents)"
 ---
   int main() {
 //^^^ IdentifierType
 //    ^^^^ IdentifierFunction
     return 0;
-//  ^^^^^^ IdentifierKeyword
+//  ^^^^^^ Keyword
 //         ^ NumericLiteral
 //          ^ PunctuationDelimiter
   }

@@ -1,7 +1,10 @@
+use anyhow::Result;
+
 use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
 use std::fmt::Write as _; // import without risk of name clashing
+use tree_sitter::{Parser, Query, QueryCursor};
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -10,7 +13,7 @@ use rocket::serde::json::Value as JsonValue;
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter as TSHighlighter};
 
 use crate::SourcegraphQuery;
-use scip::types::{Document, Occurrence, SyntaxKind};
+use scip::types::{Document, FoldingRange, FoldingRangeKind, Occurrence, SyntaxKind};
 use sg_macros::include_project_file_optional;
 
 #[rustfmt::skip]
@@ -102,6 +105,13 @@ macro_rules! create_configurations {
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
         create_configurations!( go, sql, c_sharp, jsonnet )
+    };
+
+    static ref FOLDS: HashMap<&'static str, String> = {
+        let mut m = HashMap::new();
+        m.insert("go", include_str!("../queries/go/folds.scm").to_string());
+
+        m
     };
 }
 
@@ -356,7 +366,7 @@ impl ScipEmitter {
 }
 
 pub fn dump_document(doc: &Document, source: &str) -> String {
-    dump_document_range(doc, source, &None)
+    dump_document_occurrences(doc, source, &None)
 }
 
 pub struct FileRange {
@@ -364,7 +374,11 @@ pub struct FileRange {
     pub end: usize,
 }
 
-pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
+pub fn dump_document_occurrences(
+    doc: &Document,
+    source: &str,
+    file_range: &Option<FileRange>,
+) -> String {
     let mut occurrences = doc.occurrences.clone();
     occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range));
     let mut occurrences = VecDeque::from(occurrences);
@@ -415,6 +429,182 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
                 }
             }
         }
+    }
+
+    result
+}
+
+#[allow(dead_code)]
+fn get_fold(content: &str, document: &mut Document) -> Result<()> {
+    let mut parser = Parser::new();
+    parser
+        .set_language(tree_sitter_go::language())
+        .expect("Error loading Go grammar");
+
+    let parsed = parser.parse(content, None).unwrap();
+
+    let query = FOLDS.get("go").unwrap();
+    let query = Query::new(tree_sitter_go::language(), query)?;
+    let mut cursor = QueryCursor::new();
+    let matches = cursor.matches(&query, parsed.root_node(), content.as_bytes());
+    for m in matches {
+        let cap = m.captures[0];
+        let r = cap.node.range();
+
+        if r.start_point.row == r.end_point.row {
+            continue;
+        }
+
+        let text = cap.node.utf8_text(content.as_bytes())?;
+        let text = match text.split_once("\n") {
+            Some((line, _)) => line,
+            None => text,
+        }
+        .to_string()
+            + "...";
+
+        document.folds.push(FoldingRange {
+            kind: FoldingRangeKind::FoldingRegion.into(),
+            text,
+            range: vec![
+                r.start_point.row as i32,
+                r.start_point.column as i32,
+                r.end_point.row as i32,
+                r.end_point.column as i32,
+            ],
+            ..Default::default()
+        });
+    }
+
+    // TODO: Should probably make sure that we don't have any single line ones here.
+    document
+        .folds
+        .dedup_by(|a, b| a.range[0] == b.range[0] && a.range[2] == a.range[2]);
+
+    Ok(())
+}
+
+const BOX_TOP: &'static str = "─";
+const BOX_SIDE: &'static str = "│ ";
+const BOX_TOP_LEFT: &'static str = "┌";
+const BOX_BOT_LEFT: &'static str = "└";
+const BOX_TOP_RIGHT: &'static str = "┐";
+const BOX_BOT_RIGHT: &'static str = "┘";
+
+#[allow(dead_code)]
+pub fn dump_document_folds(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
+    let folds = doc.folds.clone();
+    // folds.sort_by_key(|o| o.range);
+
+    let mut folds = VecDeque::from(folds);
+    let mut result = String::new();
+
+    let line_iterator: Box<dyn Iterator<Item = (usize, &str)>> = match file_range {
+        Some(range) => Box::new(
+            source
+                .lines()
+                .enumerate()
+                .skip(range.start - 1)
+                .take(range.end - range.start + 1),
+        ),
+        None => Box::new(source.lines().enumerate()),
+    };
+
+    let mut in_progress_folds = VecDeque::new();
+    let write_start_of_line = |result: &mut String| {
+        write!(result, "// ").unwrap();
+    };
+
+    let write_fold_prefix = |result: &mut String, fold_level: &usize| {
+        write!(result, "{}", BOX_SIDE.repeat(*fold_level)).unwrap();
+    };
+
+    let write_fold_start = |result: &mut String, fold_level: &usize, fold: &FoldingRange| {
+        let packed = PackedRange::from_vec(&fold.range);
+
+        write_fold_prefix(result, &(fold_level - 1));
+        writeln!(
+            result,
+            "{}{}{}(fold): {}",
+            BOX_TOP_LEFT,
+            BOX_TOP.repeat(packed.start_col as usize + 1),
+            BOX_TOP_RIGHT,
+            fold.text
+        )
+        .unwrap();
+        write_start_of_line(result);
+    };
+
+    let write_content = |result: &mut String, fold_level: &usize, line: &str| {
+        writeln!(
+            result,
+            "{}{}",
+            BOX_SIDE.repeat(*fold_level),
+            line.replace('\t', " ")
+        )
+        .unwrap();
+    };
+
+    let write_fold_end = |result: &mut String, fold_level: &usize, packed: &PackedRange| {
+        writeln!(
+            result,
+            "{}{}{}{}",
+            BOX_SIDE.repeat(*fold_level),
+            BOX_BOT_LEFT,
+            BOX_TOP.repeat(packed.end_col as usize),
+            BOX_BOT_RIGHT
+        )
+        .unwrap();
+    };
+
+    for (idx, line) in line_iterator {
+        let idx = idx as i32;
+
+        // let mut num_popped = 0;
+        // while let Some(end) = in_progress_folds.back() {
+        //     if *end != idx {
+        //         break;
+        //     }
+        //
+        //     in_progress_folds.pop_back();
+        //     let start_end_prefix = "║ ".repeat(fold_level - 1 - num_popped);
+        //     num_popped += 1;
+        //     result += "// ";
+        //     result += &start_end_prefix;
+        //     result += "╚\n";
+        // }
+
+        write_start_of_line(&mut result);
+        while let Some(fold) = folds.get(0) {
+            let range = PackedRange::from_vec(&fold.range);
+            if range.start_line != idx {
+                break;
+            }
+
+            let fold = folds.pop_front().unwrap();
+            in_progress_folds.push_back(range);
+
+            write_fold_start(&mut result, &in_progress_folds.len(), &fold);
+        }
+
+        write_content(&mut result, &in_progress_folds.len(), line);
+
+        while let Some(end) = in_progress_folds.back() {
+            if end.end_line != idx {
+                break;
+            }
+
+            let end = in_progress_folds.pop_back().unwrap();
+
+            write_start_of_line(&mut result);
+            write_fold_end(&mut result, &in_progress_folds.len(), &end);
+        }
+    }
+
+    while let Some(_) = in_progress_folds.back() {
+        let end = in_progress_folds.pop_back().unwrap();
+        write_start_of_line(&mut result);
+        write_fold_end(&mut result, &in_progress_folds.len(), &end);
     }
 
     result
@@ -509,6 +699,39 @@ SELECT * FROM my_table
                 dump_document(&document, &contents)
             );
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_fold_files() -> Result<()> {
+        let mut failed = vec![];
+        let dir = read_dir("./src/snapshots/folds/")?;
+        for entry in dir {
+            let entry = entry?;
+            let filepath = entry.path();
+            let mut file = File::open(&filepath)?;
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
+
+            let mut document = Document::default();
+            get_fold(&contents, &mut document).unwrap();
+
+            match std::panic::catch_unwind(|| {
+                insta::assert_snapshot!(
+                    filepath
+                        .to_str()
+                        .unwrap()
+                        .replace("/src/snapshots/folds", ""),
+                    dump_document_folds(&document, &contents, &None)
+                );
+            }) {
+                Ok(_) => {}
+                Err(_) => failed.push(entry),
+            }
+        }
+
+        assert!(failed.is_empty(), "Failed: {:?}", failed);
 
         Ok(())
     }

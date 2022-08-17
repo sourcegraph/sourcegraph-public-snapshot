@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 541
+assertion_line: 554
 expression: "dump_document(&document, &contents)"
 ---
   function $initHighlight(block, cls) {
@@ -9,23 +9,23 @@ expression: "dump_document(&document, &contents)"
 //                        ^^^^^ Identifier
 //                               ^^^ Identifier
     try {
-//  ^^^ IdentifierKeyword
+//  ^^^ Keyword
       if (cls.search(/\bno\-highlight\b/) != -1)
-//    ^^ IdentifierKeyword
+//    ^^ Keyword
 //        ^^^ Identifier
 //            ^^^^^^ Identifier
 //                   ^ StringLiteral
-//                    ^^ IdentifierKeyword
+//                    ^^ Keyword
 //                      ^^ StringLiteral
 //                        ^^ StringLiteralEscape
 //                          ^^^^^^^^^ StringLiteral
-//                                   ^^ IdentifierKeyword
+//                                   ^^ Keyword
 //                                     ^ StringLiteral
 //                                        ^^ IdentifierOperator
 //                                           ^ IdentifierOperator
 //                                            ^ NumericLiteral
         return process(block, true, 0x0F) +
-//      ^^^^^^ IdentifierKeyword
+//      ^^^^^^ Keyword
 //                     ^^^^^ Identifier
 //                            ^^^^ IdentifierBuiltin
 //                                  ^^^^ NumericLiteral
@@ -36,13 +36,13 @@ expression: "dump_document(&document, &contents)"
 //                            ^^ StringLiteral
 //                              ^ PunctuationDelimiter
     } catch (e) {
-//    ^^^^^ IdentifierKeyword
+//    ^^^^^ Keyword
 //           ^ Identifier
       /* handle exception */
 //    ^^^^^^^^^^^^^^^^^^^^^^ Comment
     }
     for (var i = 0 / 2; i < classes.length; i++) {
-//  ^^^ IdentifierKeyword
+//  ^^^ Keyword
 //       ^^^ IdentifierType
 //           ^ Identifier
 //             ^ IdentifierOperator
@@ -55,7 +55,7 @@ expression: "dump_document(&document, &contents)"
 //                                          ^ Identifier
 //                                           ^^ IdentifierOperator
       if (checkCondition(classes[i]) === undefined)
-//    ^^ IdentifierKeyword
+//    ^^ Keyword
 //        ^^^^^^^^^^^^^^ Identifier
 //                       ^^^^^^^ Identifier
 //                               ^ Identifier
@@ -67,7 +67,7 @@ expression: "dump_document(&document, &contents)"
     }
   
     return (
-//  ^^^^^^ IdentifierKeyword
+//  ^^^^^^ Keyword
       <div>
         <web-component>{block}</web-component>
 //                      ^^^^^ Identifier
@@ -76,7 +76,7 @@ expression: "dump_document(&document, &contents)"
   }
   
   export  $initHighlight;
-//^^^^^^ IdentifierKeyword
+//^^^^^^ Keyword
 //        ^^^^^^^^^^^^^^ Identifier
 //                      ^ PunctuationDelimiter
 

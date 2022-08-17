@@ -1607,8 +1607,7 @@ dependencies = [
 
 [[package]]
 name = "scip"
-version = "0.1.0"
-source = "git+https://github.com/sourcegraph/scip#7ff845ef5b78772f65463542d5f384967d329b2c"
+version = "0.1.1"
 dependencies = [
  "protobuf",
 ]

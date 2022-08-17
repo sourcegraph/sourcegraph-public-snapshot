@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 538
+assertion_line: 554
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -9,57 +9,57 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   
   using AngleSharp.Dom;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^^^^^^ IdentifierNamespace
 //                 ^^^ IdentifierNamespace
 //                    ^ PunctuationDelimiter
   using Bunit;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^ IdentifierNamespace
 //           ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^^^^^ IdentifierNamespace
 //                ^^^^^^^^^^ IdentifierNamespace
 //                           ^^^^^^^^^^ IdentifierNamespace
 //                                     ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components.Rendering;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^^^^^ IdentifierNamespace
 //                ^^^^^^^^^^ IdentifierNamespace
 //                           ^^^^^^^^^^ IdentifierNamespace
 //                                      ^^^^^^^^^ IdentifierNamespace
 //                                               ^ PunctuationDelimiter
   using System;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
   using System.Collections.Generic;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^^ IdentifierNamespace
 //             ^^^^^^^^^^^ IdentifierNamespace
 //                         ^^^^^^^ IdentifierNamespace
 //                                ^ PunctuationDelimiter
   using System.Linq;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^^ IdentifierNamespace
 //             ^^^^ IdentifierNamespace
 //                 ^ PunctuationDelimiter
   using System.Text.RegularExpressions;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^^ IdentifierNamespace
 //             ^^^^ IdentifierNamespace
 //                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace
 //                                    ^ PunctuationDelimiter
   using Xunit;
-//^^^^^ IdentifierKeyword
+//^^^^^ Keyword
 //      ^^^^^ IdentifierNamespace
 //           ^ PunctuationDelimiter
   namespace Radzen.Blazor.
 //^^^^^^^^^ IdentifierNamespace
   {
       public class DataGridTests
-//    ^^^^^^ IdentifierKeyword
+//    ^^^^^^ Keyword
 //           ^^^^^ IdentifierType
       {
           // Css classes tests
@@ -67,7 +67,7 @@ expression: "dump_document(&document, &contents)"
           [Fact]
 //         ^^^^ Identifier
           public void DataGrid_Renders_CssClass()
-//        ^^^^^^ IdentifierKeyword
+//        ^^^^^^ Keyword
 //               ^^^^ IdentifierType
 //                    ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
           {

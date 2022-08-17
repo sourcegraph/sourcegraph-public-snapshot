@@ -25,7 +25,8 @@ once_cell = "1.13.0"
 sg-macros = { path = "../sg-macros" }
 
 # Scip related items
-scip = { git = "https://github.com/sourcegraph/scip" }
+# scip = { git = "https://github.com/sourcegraph/scip" }
+scip = { path = "/home/tjdevries/sourcegraph/scip/bindings/rust" }
 protobuf = "3"
 
 # Tree-sitter Parsers

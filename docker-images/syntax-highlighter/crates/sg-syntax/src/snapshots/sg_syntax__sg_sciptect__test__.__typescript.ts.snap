@@ -1,13 +1,13 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 538
+assertion_line: 554
 expression: "dump_document(&document, &contents)"
 ---
   class MyClass {
 //^^^^^ IdentifierType
     public static myValue: string;
-//  ^^^^^^ IdentifierKeyword
-//         ^^^^^^ IdentifierKeyword
+//  ^^^^^^ Keyword
+//         ^^^^^^ Keyword
 //                ^^^^^^^ Identifier
 //                       ^ IdentifierOperator
 //                               ^ PunctuationDelimiter
@@ -24,18 +24,18 @@ expression: "dump_document(&document, &contents)"
     }
   }
   import fs = require("fs");
-//^^^^^^ IdentifierKeyword
+//^^^^^^ Keyword
 //       ^^ Identifier
 //          ^ IdentifierOperator
-//            ^^^^^^^ IdentifierKeyword
+//            ^^^^^^^ Keyword
 //                    ^^^^ StringLiteral
 //                         ^ PunctuationDelimiter
   module MyModule {
 //^^^^^^ IdentifierNamespace
     export interface MyInterface extends Other {
-//  ^^^^^^ IdentifierKeyword
+//  ^^^^^^ Keyword
 //         ^^^^^^^^^ IdentifierType
-//                               ^^^^^^^ IdentifierKeyword
+//                               ^^^^^^^ Keyword
       myProperty: any;
 //    ^^^^^^^^^^ Identifier
 //              ^ IdentifierOperator
@@ -43,7 +43,7 @@ expression: "dump_document(&document, &contents)"
     }
   }
   declare magicNumber number;
-//^^^^^^^ IdentifierKeyword
+//^^^^^^^ Keyword
 //        ^^^^^^^^^^^ Identifier
 //                    ^^^^^^ Identifier
 //                          ^ PunctuationDelimiter

@@ -12,7 +12,7 @@ use syntect::{
 
 mod sg_treesitter;
 pub use sg_treesitter::dump_document;
-pub use sg_treesitter::dump_document_range;
+pub use sg_treesitter::dump_document_occurrences;
 pub use sg_treesitter::index_language as treesitter_index;
 pub use sg_treesitter::index_language_with_config as treesitter_index_with_config;
 pub use sg_treesitter::lsif_highlight;

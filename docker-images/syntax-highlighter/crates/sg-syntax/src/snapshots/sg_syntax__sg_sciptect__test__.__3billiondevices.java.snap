@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 539
+assertion_line: 554
 expression: "dump_document(&document, &contents)"
 ---
   interface MyInterface 
@@ -16,7 +16,7 @@ expression: "dump_document(&document, &contents)"
 //                                    ^ PunctuationDelimiter
    
        default void default_Fun() 
-//     ^^^^^^^ IdentifierKeyword
+//     ^^^^^^^ Keyword
 //             ^^^^ IdentifierType
 //                  ^^^^^^^^^^^ IdentifierFunction
       { 
@@ -31,8 +31,8 @@ expression: "dump_document(&document, &contents)"
 //^^^^^ IdentifierType
   { 
        public static void main(String args[]) 
-//     ^^^^^^ IdentifierKeyword
-//            ^^^^^^ IdentifierKeyword
+//     ^^^^^^ Keyword
+//            ^^^^^^ Keyword
 //                   ^^^^ IdentifierType
 //                        ^^^^ IdentifierFunction
 //                                    ^^^^ Identifier
