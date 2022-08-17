@@ -620,3 +620,122 @@ func TestRepoStore_Metadata(t *testing.T) {
 	require.NoError(t, err)
 	require.ElementsMatch(t, expected, md)
 }
+
+func TestRepos_StatisticsCounts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1, Internal: true})
+
+	// Helper functions
+	setCloneStatus := func(t *testing.T, repo *types.Repo, status types.CloneStatus) {
+		t.Helper()
+		err := db.GitserverRepos().SetCloneStatus(ctx, repo.Name, status, "shard-1")
+		if err != nil {
+			t.Fatalf("failed to set clone status: %s", err)
+		}
+	}
+
+	setError := func(t *testing.T, repo *types.Repo, msg string) {
+		t.Helper()
+
+		err := db.GitserverRepos().SetLastError(ctx, repo.Name, msg, "shard-1")
+		if err != nil {
+			t.Fatalf("failed to set last error: %s", err)
+		}
+	}
+
+	deleteRepo := func(t *testing.T, repo *types.Repo) {
+		t.Helper()
+
+		err := db.Repos().Delete(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to delete repo: %s", err)
+		}
+	}
+
+	assertCounts := func(t *testing.T, want StatisticsCounts) {
+		t.Helper()
+
+		have, err := db.Repos().StatisticsCounts(ctx)
+		if err != nil {
+			t.Fatalf("failed to query repo statistics: %s", err)
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Errorf("wrong StatisticsCounts returned (-have +want):\n%s", diff)
+		}
+	}
+
+	// Start with base case: no repos
+	assertCounts(t, StatisticsCounts{
+		Total: 0,
+	})
+
+	// Create repos
+	repos := []*types.Repo{
+		{Name: "repo-1"},
+		{Name: "repo-2"},
+		{Name: "repo-3"},
+	}
+
+	for i, r := range repos {
+		repos[i] = mustCreate(ctx, t, db, r)
+	}
+
+	// No repo is cloned
+	assertCounts(t, StatisticsCounts{
+		Total:     3,
+		NotCloned: 3,
+	})
+
+	// 2 repos are being cloned
+	setCloneStatus(t, repos[0], types.CloneStatusCloning)
+	setCloneStatus(t, repos[1], types.CloneStatusCloning)
+
+	assertCounts(t, StatisticsCounts{
+		Total:     3,
+		NotCloned: 1,
+		Cloning:   2,
+	})
+
+	// 1 of them runs into error
+	setError(t, repos[2], "connection reset by pete")
+
+	assertCounts(t, StatisticsCounts{
+		Total:       3,
+		NotCloned:   1,
+		Cloning:     2,
+		FailedFetch: 1,
+	})
+
+	// Cloned
+	setCloneStatus(t, repos[0], types.CloneStatusCloned)
+	setCloneStatus(t, repos[1], types.CloneStatusCloned)
+	assertCounts(t, StatisticsCounts{
+		Total:       3,
+		NotCloned:   1,
+		Cloned:      2,
+		FailedFetch: 1,
+	})
+
+	// delete repos one by one
+	deleteRepo(t, repos[0])
+	assertCounts(t, StatisticsCounts{
+		Total:       2,
+		NotCloned:   1,
+		Cloned:      1,
+		FailedFetch: 1,
+	})
+
+	deleteRepo(t, repos[1])
+	assertCounts(t, StatisticsCounts{
+		Total:       1,
+		NotCloned:   1,
+		FailedFetch: 1,
+	})
+}
