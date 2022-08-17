@@ -203,6 +203,7 @@ export const renderMarkdown = (
                         })
                     } catch (error) {
                         // this doesn't happen with benign base64 SVGs
+                        console.error(error)
                         cleaned = '<svg></svg>'
                     }
 
