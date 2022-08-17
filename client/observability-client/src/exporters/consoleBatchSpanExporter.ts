@@ -2,7 +2,7 @@ import { Attributes } from '@opentelemetry/api'
 import { ExportResultCode, hrTimeToMilliseconds, ExportResult } from '@opentelemetry/core'
 import { SpanExporter, ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
-import { parseAttributes } from './utils'
+import { parseAttributes } from '../sdk/pareAttributes'
 
 interface FormattedSpan {
     name?: string
