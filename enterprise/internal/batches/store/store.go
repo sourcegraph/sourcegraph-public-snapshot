@@ -196,9 +196,7 @@ type operations struct {
 	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
 
-	createBatchSpecMount *observation.Operation
 	upsertBatchSpecMount *observation.Operation
-	updateBatchSpecMount *observation.Operation
 	deleteBatchSpecMount *observation.Operation
 	getBatchSpecMount    *observation.Operation
 	listBatchSpecMounts  *observation.Operation
@@ -340,9 +338,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
-			createBatchSpecMount: op("CreateBatchSpecMount"),
 			upsertBatchSpecMount: op("UpsertBatchSpecMount"),
-			updateBatchSpecMount: op("UpdateBatchSpecMount"),
 			deleteBatchSpecMount: op("DeleteBatchSpecMount"),
 			getBatchSpecMount:    op("GetBatchSpecMount"),
 			listBatchSpecMounts:  op("ListBatchSpecMounts"),
