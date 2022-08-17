@@ -71,7 +71,7 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 	seriesID := ksuid.New().String()
 
 	insightSeriesID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		insightsMigratorMigrateSeriesInsertSeriesQuery,
+		insightsMigratorMigrateLangStatsInsightInsertSeriesQuery,
 		seriesID,
 		now,
 		now.Add(-time.Hour*24*7*26), // 6 months
@@ -83,12 +83,12 @@ func (m *insightsMigrator) migrateLangStatsInsight(ctx context.Context, insight 
 		return errors.Wrap(err, "failed to insert series")
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateSeriesInsertViewSeriesQuery, insightSeriesID, viewID)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateLangStatsInsightInsertViewSeriesQuery, insightSeriesID, viewID)); err != nil {
 		return errors.Wrap(err, "failed to insert view series")
 	}
 
 	// Enable the series in case it had previously been soft-deleted
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateSeriesEnableSeriesQuery, seriesID)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateLangStatsInsightEnableSeriesQuery, seriesID)); err != nil {
 		return errors.Wrap(err, "failed to enable series")
 	}
 
@@ -118,7 +118,8 @@ RETURNING id
 
 const insightsMigratorMigrateLangstatsInsightInsertViewGrantQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/langstat.go:migrateLangStatsInsight
-INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
+INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global)
+VALUES (%s, %s, %s, %s)
 `
 
 // Note: these columns were never set
@@ -129,7 +130,7 @@ INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global) VALUES (
 //  - generated_from_capture_groups
 //  - group_by
 
-const insightsMigratorMigrateSeriesInsertSeriesQuery = `
+const insightsMigratorMigrateLangStatsInsightInsertSeriesQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/langstat.go:migrateLangStatsInsight
 	INSERT INTO insight_series (
 		series_id,
@@ -147,13 +148,13 @@ const insightsMigratorMigrateSeriesInsertSeriesQuery = `
 	RETURNING id
 `
 
-const insightsMigratorMigrateSeriesInsertViewSeriesQuery = `
+const insightsMigratorMigrateLangStatsInsightInsertViewSeriesQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/langstat.go:migrateLangStatsInsight
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
 VALUES (%s, %s, '', '')
 `
 
-const insightsMigratorMigrateSeriesEnableSeriesQuery = `
+const insightsMigratorMigrateLangStatsInsightEnableSeriesQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/langstat.go:migrateLangStatsInsight
 UPDATE insight_series SET deleted_at = NULL WHERE series_id = %s
 `
