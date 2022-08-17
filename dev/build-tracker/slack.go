@@ -50,7 +50,7 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 	return c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
 }
 
-func (c *NotificationClient) send(build *Build) error {
+func (c *NotificationClient) sendFailedBuild(build *Build) error {
 	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
@@ -185,7 +185,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
-			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf(":red_circle: Build %d failed", build.number()), true, false),
+			slack.NewTextBlockObject(slack.PlainTextType, generateSlackHeader(build), true, false),
 		),
 		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedSection}, nil, nil),
 		slack.NewSectionBlock(
@@ -235,4 +235,18 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 	}
 
 	return blocks, nil
+}
+
+func generateSlackHeader(build *Build) string {
+	header := fmt.Sprintf(":red_circle: Build %d failed", build.number())
+	switch build.ConsecutiveFailure {
+	case 0, 1: // no suffix
+	case 2:
+		header += " (2nd failure)"
+	case 3:
+		header += " (:exclamation: 3rd failure)"
+	default:
+		header += fmt.Sprintf(" (:bangbang: %dth failure)", build.ConsecutiveFailure)
+	}
+	return header
 }
