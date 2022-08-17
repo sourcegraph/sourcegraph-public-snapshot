@@ -17,8 +17,6 @@ import (
 func testStoreBatchSpecMounts(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	mounts := make([]*btypes.BatchSpecMount, 0, 5)
 
-	//logger := logtest.Scoped(t)
-
 	spec := &btypes.BatchSpec{
 		UserID:          int32(1234),
 		NamespaceUserID: int32(1234),
