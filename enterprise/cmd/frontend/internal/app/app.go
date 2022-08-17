@@ -179,23 +179,24 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 				svc = &types.ExternalService{
 					Kind:        extsvc.KindGitHub,
 					DisplayName: displayName,
-					Config: fmt.Sprintf(`
+					Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "repos": []
 }
-`, apiURL.String()),
+`, apiURL.String())),
 					CreatedAt: now,
 					UpdatedAt: now,
 				}
 
 				if setupAction == "request" {
-					newConfig, err := jsonc.Edit(svc.Config, true, "pending")
+					currentConfig, err := svc.Config.Decrypt(context.Background())
+					newConfig, err := jsonc.Edit(currentConfig, true, "pending")
 					if err != nil {
 						responseServerError("Failed to edit config", err)
 						return
 					}
-					svc.Config = newConfig
+					svc.Config = extsvc.NewUnencryptedConfig(newConfig)
 				} else if setupAction == "install" {
 					installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
 					if err != nil {
@@ -215,7 +216,8 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 					}
 
 					svc.DisplayName = displayName
-					newConfig, err := jsonc.Edit(svc.Config, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
+					currentConfig, err := svc.Config.Decrypt(context.Background())
+					newConfig, err := jsonc.Edit(currentConfig, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
 					if err != nil {
 						responseServerError("Failed to edit config", err)
 						return
@@ -224,7 +226,7 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 					if err != nil {
 						responseServerError("Failed to edit config", err)
 					}
-					svc.Config = newConfig
+					svc.Config = extsvc.NewUnencryptedConfig(newConfig)
 					svc.UpdatedAt = now
 					err = db.ExternalServices().Upsert(r.Context(), svc)
 					if err != nil {

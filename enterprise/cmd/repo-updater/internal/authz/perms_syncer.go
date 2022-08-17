@@ -331,7 +331,7 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 		return nil, nil
 	}
 
-	_, tok, err := github.GetExternalAccountData(&acct.AccountData)
+	_, tok, err := github.GetExternalAccountData(ctx, &acct.AccountData)
 
 	if err != nil {
 		return nil, err

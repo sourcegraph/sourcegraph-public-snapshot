@@ -77,13 +77,13 @@ func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
 		&types.ExternalService{
 			ID:   1,
 			Kind: extsvc.KindGitHub,
-			Config: `
+			Config: extsvc.NewUnencryptedConfig(`
 {
   "url": "https://github.com",
   "githubAppInstallationID": "21994992",
   "repos": [],
   "authorization": {},
-}`,
+}`),
 		},
 		nil,
 	)
