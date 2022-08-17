@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { FileDiffFields } from '../../graphql-operations'
@@ -189,11 +188,21 @@ const config: Meta = {
     title: 'web/diffs/FileDiffNode',
     decorators: [decorator],
     includeStories: ['AllUnifiedFileNode', 'AllSplitFileNode'],
+    argTypes: {
+        persistLines: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        lineNumbers: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 
 export default config
 
-export const AllUnifiedFileNode: Story = () => (
+export const AllUnifiedFileNode: Story = args => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">
@@ -202,8 +211,8 @@ export const AllUnifiedFileNode: Story = () => (
                         {...webProps}
                         diffMode="unified"
                         key={index}
-                        persistLines={boolean('persistLines', true)}
-                        lineNumbers={boolean('lineNumbers', true)}
+                        persistLines={args.persistLines}
+                        lineNumbers={args.lineNumbers}
                         node={node}
                         className="abcdef"
                     />
@@ -215,7 +224,7 @@ export const AllUnifiedFileNode: Story = () => (
 
 AllUnifiedFileNode.storyName = 'All unified file node states overview'
 
-export const AllSplitFileNode: Story = () => (
+export const AllSplitFileNode: Story = args => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">
@@ -224,8 +233,8 @@ export const AllSplitFileNode: Story = () => (
                         {...webProps}
                         diffMode="split"
                         key={index}
-                        persistLines={boolean('persistLines', true)}
-                        lineNumbers={boolean('lineNumbers', true)}
+                        persistLines={args.persistLines}
+                        lineNumbers={args.lineNumbers}
                         node={node}
                         className="abcdef"
                     />
