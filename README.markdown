@@ -111,12 +111,12 @@ Is your Sourcegraph instance behind a custom auth proxy? See [auth proxy configu
  - `src config` - manage global, org, and user settings
  - `src extsvc` - manage external services (repository configuration)
  - `src extensions` - manage extensions
- - `src code-intel` - manages Code Intelligence data
- - `src lsif` - manages LSIF data (DEPRECATED: use `src code-intel` instead)
+ - `src code-intel` - manages Code Intelligence data (deprecated alias: `src lsif`)
  - `src serve-git` - serves your local git repositories over HTTP for Sourcegraph to pull
  - `src version` - check version and guaranteed-compatible version for your Sourcegraph instance
 
 Run `src -h` and `src <subcommand> -h` for more detailed usage information.
+You can also read the [usage docs for the latest version of `src-cli`](https://docs.sourcegraph.com/cli/references) online.
 
 #### Optional: Renaming `src`
 
