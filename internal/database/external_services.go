@@ -858,10 +858,15 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Kind:   externalService.Kind,
 			Config: extsvc.NewUnencryptedConfig(rawConfig),
 		}
-		err = newSvc.UnredactConfig(ctx, externalService)
-		if err != nil {
+
+		if err := newSvc.UnredactConfig(ctx, externalService); err != nil {
 			return errors.Wrapf(err, "error unredacting config")
 		}
+		unredactedConfig, err := newSvc.Config.Decrypt(ctx)
+		if err != nil {
+			return err
+		}
+
 		cfg, err := newSvc.Configuration(ctx)
 		if err == nil {
 			hasWebhooks = configurationHasWebhooks(cfg)
@@ -876,7 +881,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		normalized, err = ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
 			ExternalServiceID: id,
 			Kind:              externalService.Kind,
-			Config:            rawConfig,
+			Config:            unredactedConfig,
 			AuthProviders:     ps,
 			NamespaceUserID:   externalService.NamespaceUserID,
 			NamespaceOrgID:    externalService.NamespaceOrgID,
@@ -889,11 +894,11 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		// Cloud, we always want to enforce repository permissions using OAuth to
 		// prevent unexpected resource leaking.
 		if envvar.SourcegraphDotComMode() {
-			rawConfig, err = upsertAuthorizationToExternalService(externalService.Kind, rawConfig)
+			unredactedConfig, err = upsertAuthorizationToExternalService(externalService.Kind, unredactedConfig)
 			if err != nil {
 				return err
 			}
-			newSvc.Config.Set(rawConfig)
+			newSvc.Config.Set(unredactedConfig)
 		}
 
 		encryptedConfig, keyID, err = newSvc.Config.Encrypt(ctx, e.getEncryptionKey())

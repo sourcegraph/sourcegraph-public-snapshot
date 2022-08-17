@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/zoekt"
+	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/web"
 
 	"github.com/sourcegraph/log/logtest"
 

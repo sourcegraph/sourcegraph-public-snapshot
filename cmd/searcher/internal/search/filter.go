@@ -6,7 +6,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/zoekt/ignore"
+	"github.com/google/zoekt/ignore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"

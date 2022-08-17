@@ -41,7 +41,7 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Clicking on a match opens the link in a new tab */
     openInNewTab?: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 

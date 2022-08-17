@@ -257,6 +257,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [searchContextsEnabled, showSearchContext])
 
+    const { extensionsController } = props
+
     return (
         <>
             <NavBar
@@ -362,10 +364,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </FeedbackPrompt>
                         </NavAction>
                     )}
-                    {props.authenticatedUser && (
+                    {props.authenticatedUser && extensionsController !== null && (
                         <NavAction>
                             <WebCommandListPopoverButton
                                 {...props}
+                                extensionsController={extensionsController}
                                 location={location}
                                 menu={ContributableMenu.CommandPalette}
                             />

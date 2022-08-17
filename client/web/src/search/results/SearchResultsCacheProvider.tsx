@@ -37,17 +37,20 @@ export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     query: string,
     options: StreamSearchOptions,
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null,
     telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
     const [cachedResults, setCachedResults] = useContext(SearchResultsCacheContext)
 
     const history = useHistory()
 
-    const transformedQuery = useMemo(() => transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI }), [
-        query,
-        extensionHostAPI,
-    ])
+    const transformedQuery = useMemo(
+        () =>
+            extensionHostAPI !== null
+                ? transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI })
+                : of(query),
+        [query, extensionHostAPI]
+    )
 
     const results = useObservable(
         useMemo(() => {

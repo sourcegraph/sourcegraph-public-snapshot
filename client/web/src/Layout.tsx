@@ -304,7 +304,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 platformContext={props.platformContext}
                 history={props.history}
             />
-            <GlobalDebug {...props} />
+            {props.extensionsController !== null ? (
+                <GlobalDebug {...props} extensionsController={props.extensionsController} />
+            ) : null}
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
