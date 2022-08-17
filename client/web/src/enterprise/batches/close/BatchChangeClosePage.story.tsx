@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { useMemo, useCallback } from '@storybook/addons'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
@@ -254,8 +253,8 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
-export const Overview: Story = () => {
-    const viewerCanAdminister = boolean('viewerCanAdminister', true)
+export const Overview: Story = args => {
+    const viewerCanAdminister = args.viewerCanAdminister
     const batchChange: BatchChangeFields = useMemo(
         () => ({
             ...batchChangeDefaults,
@@ -281,6 +280,12 @@ export const Overview: Story = () => {
             )}
         </WebStory>
     )
+}
+Overview.argTypes = {
+    viewerCanAdminister: {
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
 }
 
 export const NoOpenChangesets: Story = () => {

@@ -161,12 +161,13 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName: repo.name, commitID, filePath })
 
+    const { extensionsController } = props
     useEffect(() => {
-        if (!showCodeInsights) {
+        if (!showCodeInsights || extensionsController === null) {
             return
         }
 
-        const viewerIdPromise = props.extensionsController.extHostAPI
+        const viewerIdPromise = extensionsController.extHostAPI
             .then(extensionHostAPI =>
                 extensionHostAPI.addViewerIfNotExists({
                     type: 'DirectoryViewer',
@@ -180,7 +181,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             })
 
         return () => {
-            Promise.all([props.extensionsController.extHostAPI, viewerIdPromise])
+            Promise.all([extensionsController.extHostAPI, viewerIdPromise])
                 .then(([extensionHostAPI, viewerId]) => {
                     if (viewerId) {
                         return extensionHostAPI.removeViewer(viewerId)
@@ -189,7 +190,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 })
                 .catch(error => console.error('Error removing viewer from extension host:', error))
         }
-    }, [uri, showCodeInsights, props.extensionsController])
+    }, [uri, showCodeInsights, extensionsController])
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)

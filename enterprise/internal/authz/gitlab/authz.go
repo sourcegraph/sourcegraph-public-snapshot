@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -21,12 +22,13 @@ import (
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
 func NewAuthzProviders(
+	db database.DB,
 	cfg schema.SiteConfiguration,
 	conns []*types.GitLabConnection,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
+		p, err := newAuthzProvider(db, c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p != nil {
@@ -37,7 +39,7 @@ func NewAuthzProviders(
 	return ps, problems, warnings
 }
 
-func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
+func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
 	if a == nil {
 		return nil, nil
 	}
@@ -78,6 +80,7 @@ func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, to
 			BaseURL:   glURL,
 			Token:     token,
 			TokenType: tokenType,
+			DB:        db,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{
@@ -115,7 +118,7 @@ func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, to
 
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
-	return newOAuthProvider(op, nil)
+	return newOAuthProvider(op, nil, nil)
 }
 
 // NewSudoProvider is a mockable constructor for new SudoProvider instances.
@@ -126,6 +129,6 @@ var NewSudoProvider = func(op SudoProviderOp) authz.Provider {
 // ValidateAuthz validates the authorization fields of the given GitLab external
 // service config.
 func ValidateAuthz(cfg *schema.GitLabConnection, ps []schema.AuthProviders) error {
-	_, err := newAuthzProvider("", cfg.Authorization, cfg.Url, cfg.Token, gitlab.TokenType(cfg.TokenType), ps)
+	_, err := newAuthzProvider(nil, "", cfg.Authorization, cfg.Url, cfg.Token, gitlab.TokenType(cfg.TokenType), ps)
 	return err
 }

@@ -90,6 +90,7 @@ interface RepositoryCompareDiffPageProps
 /** A page with the file diffs in the comparison. */
 export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCompareDiffPageProps> {
     public render(): JSX.Element | null {
+        const { extensionsController } = this.props
         return (
             <div className="repository-compare-page">
                 <FileDiffConnection
@@ -98,16 +99,20 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     pluralNoun="changed files"
                     queryConnection={this.queryDiffs}
                     nodeComponent={FileDiffNode}
-                    nodeComponentProps={{
-                        ...this.props,
-                        extensionInfo: {
-                            base: { ...this.props.base, revision: this.props.base.revision || 'HEAD' },
-                            head: { ...this.props.head, revision: this.props.head.revision || 'HEAD' },
-                            hoverifier: this.props.hoverifier,
-                            extensionsController: this.props.extensionsController,
-                        },
-                        lineNumbers: true,
-                    }}
+                    nodeComponentProps={
+                        extensionsController !== null
+                            ? {
+                                  ...this.props,
+                                  extensionInfo: {
+                                      base: { ...this.props.base, revision: this.props.base.revision || 'HEAD' },
+                                      head: { ...this.props.head, revision: this.props.head.revision || 'HEAD' },
+                                      hoverifier: this.props.hoverifier,
+                                      extensionsController,
+                                  },
+                                  lineNumbers: true,
+                              }
+                            : undefined
+                    }
                     defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}

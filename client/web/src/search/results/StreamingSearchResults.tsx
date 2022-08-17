@@ -79,8 +79,9 @@ export const StreamingSearchResults: React.FunctionComponent<
         telemetryService,
         codeInsightsEnabled,
         isSourcegraphDotCom,
-        extensionsController: { extHostAPI: extensionHostAPI },
+        extensionsController,
     } = props
+    const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)

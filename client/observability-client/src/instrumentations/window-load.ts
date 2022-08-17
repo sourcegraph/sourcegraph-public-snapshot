@@ -10,6 +10,7 @@ import {
     getServerSideTraceParent,
     ActiveSpanConfig,
     InstrumentationBaseWeb,
+    SharedSpanName,
 } from '../sdk'
 
 import { WindowLoadSpanName } from './constants'
@@ -59,7 +60,7 @@ export class WindowLoadInstrumentation extends InstrumentationBaseWeb {
         // Casting is required until this issue is resolved: https://github.com/microsoft/TypeScript/issues/33866
         for (const resource of otperformance.getEntriesByType('resource') as PerformanceResourceTiming[]) {
             this.createFinishedSpan({
-                name: WindowLoadSpanName.RESOURCE_FETCH,
+                name: WindowLoadSpanName.ResourceFetch,
                 startTime: resource[PerformanceTimingNames.FETCH_START],
                 endTime: resource[PerformanceTimingNames.RESPONSE_END],
                 parentSpan,
@@ -76,7 +77,7 @@ export class WindowLoadInstrumentation extends InstrumentationBaseWeb {
         const rootContext = propagation.extract(ROOT_CONTEXT, { traceparent: getServerSideTraceParent() })
 
         const rootSpanConfig: ActiveSpanConfig = {
-            name: WindowLoadSpanName.WINDOW_LOAD,
+            name: SharedSpanName.WindowLoad,
             startTime: entries[PerformanceTimingNames.FETCH_START],
             context: rootContext,
             attributes: {
@@ -102,7 +103,7 @@ export class WindowLoadInstrumentation extends InstrumentationBaseWeb {
 
             this.addResourcesSpans(rootSpan)
             this.createFinishedSpan({
-                name: WindowLoadSpanName.DOCUMENT_FETCH,
+                name: WindowLoadSpanName.DocumentFetch,
                 startTime: entries[PerformanceTimingNames.FETCH_START],
                 endTime: entries[PerformanceTimingNames.RESPONSE_END],
                 networkEvents: entries,

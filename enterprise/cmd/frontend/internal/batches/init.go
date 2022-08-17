@@ -37,7 +37,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	})
 
 	// Initialize store.
-	cstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
+	bstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
 
 	// Initialize upload store
 	if err := config.Validate(); err != nil {
@@ -49,13 +49,13 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	}
 
 	// Register enterprise services.
-	enterpriseServices.BatchChangesResolver = resolvers.New(cstore)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
-	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(cstore)
-	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(cstore)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
+	enterpriseServices.BatchChangesResolver = resolvers.New(bstore)
+	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore)
+	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore)
+	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore)
+	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore)
 	operations := httpapi.NewOperations(observationContext)
-	enterpriseServices.BatchesMountHandler = httpapi.NewMountHandler(cstore, uploadStore, operations, false)
+	enterpriseServices.BatchesMountHandler = httpapi.NewMountHandler(bstore, uploadStore, operations, false)
 
 	return nil
 }

@@ -12,8 +12,7 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import isAbsoluteUrl from 'is-absolute-url'
 
-import { ConsoleBatchSpanExporter } from './exporters/consoleBatchSpanExporter'
-import { WindowLoadInstrumentation } from './instrumentations/window-load'
+import { ConsoleBatchSpanExporter, WindowLoadInstrumentation } from '@sourcegraph/observability-client'
 
 export function initOpenTelemetry(): void {
     const { openTelemetry, externalURL } = window.context

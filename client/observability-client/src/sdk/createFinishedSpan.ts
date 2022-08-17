@@ -16,7 +16,7 @@ export interface FinishedSpanConfig extends SpanOptions {
  *
  * See https://developer.mozilla.org/en-US/docs/Web/API/Performance
  */
-export function createFinishedSpan(tracer: Tracer, config: FinishedSpanConfig): Span | null {
+export function createFinishedSpan(tracer: Tracer, config: FinishedSpanConfig): Span {
     const {
         name,
         startTime,
@@ -26,10 +26,6 @@ export function createFinishedSpan(tracer: Tracer, config: FinishedSpanConfig): 
         networkEvents,
         ...restSpanOptions
     } = config
-
-    if (typeof startTime === 'undefined' || typeof endTime === 'undefined') {
-        return null
-    }
 
     const resultContext = parentSpan ? trace.setSpan(context.active(), parentSpan) : spanContext
 

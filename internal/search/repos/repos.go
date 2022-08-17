@@ -405,7 +405,7 @@ func (r *Resolver) normalizeRepoRefs(
 			trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
 			_, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 					return nil, err
 				}
 				reportMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{rev}})
@@ -635,7 +635,7 @@ func (r *Resolver) filterRepoHasFileContent(
 					for _, arg := range op.HasFileContent {
 						commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 						if err != nil {
-							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
+							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 								return err
 							}
 							addMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}})

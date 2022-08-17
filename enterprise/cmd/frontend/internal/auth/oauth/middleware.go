@@ -103,85 +103,31 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
-	mux.Handle("/get-user-orgs", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		logger := log.Scoped("get-user-orgs", "handler for getting github user orgs")
-
-		dotcomConfig := conf.SiteConfig().Dotcom
-		// if not on Sourcegraph.com with GitHub App enabled, this page does not exist
-		if !envvar.SourcegraphDotComMode() || !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
-			http.NotFound(w, req)
-			return
-		}
-
-		a := actor.FromContext(req.Context())
-		if !a.IsAuthenticated() {
-			http.Error(w, "Authentication failed. Could not find authenticated user.", http.StatusUnauthorized)
-			return
-		}
-
-		// Use the OAuth token stored in the user code host connection to fetch list of
-		// organizations the user belongs to
-		externalServices, err := db.ExternalServices().List(req.Context(), database.ExternalServicesListOptions{
-			NamespaceUserID: a.UID,
-			Kinds:           []string{extsvc.KindGitHub},
-		})
-		if err != nil {
-			logger.Error("Unexpected error while fetching user's external services.", log.Error(err))
-			http.Error(w, "Unexpected error while fetching GitHub connection.", http.StatusBadRequest)
-			return
-		}
-		if len(externalServices) != 1 {
-			http.Error(w, "User is supposed to have only one GitHub service connected.", http.StatusBadRequest)
-			return
-		}
-
-		ctx := req.Context()
-		esConfg, err := extsvc.ParseEncryptableConfig(ctx, "github", externalServices[0].Config)
-		if err != nil {
-			logger.Error("Unexpected error while parsing external service config.", log.Error(err))
-			http.Error(w, "Unexpected error while processing external service connection.", http.StatusBadRequest)
-			return
-		}
-
-		conn := esConfg.(*schema.GitHubConnection)
-		auther := &eauth.OAuthBearerToken{Token: conn.Token}
-		client := github.NewV3Client(logger,
-			extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
-
-		installs, err := client.GetUserInstallations(req.Context())
-		if err != nil {
-			logger.Error("Unexpected error while fetching app installs.", log.Error(err))
-			http.Error(w, "Unexpected error while fetching list of GitHub organizations.", http.StatusBadRequest)
-			return
-		}
-
-		err = json.NewEncoder(w).Encode(installs)
-		if err != nil {
-			logger.Error("Failed to encode the list of GitHub organizations.", log.Error(err))
-		}
-	}))
 	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		dotcomConfig := conf.SiteConfig().Dotcom
-		// if not on Sourcegraph.com with GitHub App enabled, this page does not exist
-		if !envvar.SourcegraphDotComMode() || !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
+		gitHubAppConfig := conf.SiteConfig().GitHubApp
+		if !repos.IsGitHubAppEnabled(gitHubAppConfig) {
 			http.NotFound(w, req)
 			return
 		}
-
-		state := req.URL.Query().Get("state")
-		http.Redirect(w, req, "/install-github-app-select-org?state="+state, http.StatusFound)
+		http.Redirect(w, req, "/install-github-app-success", http.StatusFound)
+		return
 	}))
 	mux.Handle("/get-github-app-installation", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		logger := log.Scoped("get-github-app-installation", "handler for getting github app installations")
 
-		dotcomConfig := conf.SiteConfig().Dotcom
+		var privateKey []byte
+		var appID string
+		var err error
 
-		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+		gitHubAppConfig := conf.SiteConfig().GitHubApp
+		privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
 		if err != nil {
 			logger.Error("Unexpected error while decoding GitHub App private key.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
+
+		appID = gitHubAppConfig.AppID
 
 		installationIDQueryUnecoded := req.URL.Query().Get("installation_id")
 
@@ -206,7 +152,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		auther, err := eauth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, privateKey)
+		auther, err := eauth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
 		if err != nil {
 			logger.Error("Unexpected error while creating Auth token.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
@@ -214,7 +160,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 
 		client := github.NewV3Client(logger,
-			extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
+			extsvc.URNGitHubApp, &url.URL{Host: "github.com"}, auther, nil)
 
 		installation, err := client.GetAppInstallation(req.Context(), installationID)
 		if err != nil {
