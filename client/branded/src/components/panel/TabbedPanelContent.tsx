@@ -37,11 +37,11 @@ import styles from './TabbedPanelContent.module.scss'
 
 interface TabbedPanelContentProps
     extends ExtensionsControllerProps,
-    PlatformContextProps,
-    SettingsCascadeProps,
-    ActivationProps,
-    TelemetryProps,
-    ThemeProps {
+        PlatformContextProps,
+        SettingsCascadeProps,
+        ActivationProps,
+        TelemetryProps,
+        ThemeProps {
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -253,18 +253,18 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         () =>
             panelViews
                 ? panelViews
-                    .map(
-                        (panelView): TabbedPanelItem => ({
-                            label: panelView.title,
-                            id: panelView.id,
-                            priority: panelView.priority,
-                            element: <PanelView {...props} panelView={panelView} location={location} />,
-                            hasLocations: !!panelView.locationProvider,
-                            trackTabClick: () => trackTabClick(panelView.title),
-                            matchesTabID: panelView.matchesTabID,
-                        })
-                    )
-                    .sort((a, b) => b.priority - a.priority)
+                      .map(
+                          (panelView): TabbedPanelItem => ({
+                              label: panelView.title,
+                              id: panelView.id,
+                              priority: panelView.priority,
+                              element: <PanelView {...props} panelView={panelView} location={location} />,
+                              hasLocations: !!panelView.locationProvider,
+                              trackTabClick: () => trackTabClick(panelView.title),
+                              matchesTabID: panelView.matchesTabID,
+                          })
+                      )
+                      .sort((a, b) => b.priority - a.priority)
                 : [],
         [location, panelViews, props, trackTabClick]
     )
