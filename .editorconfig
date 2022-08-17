@@ -8,9 +8,6 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 
-[migrations/frontend/squashed.sql]
-insert_final_newline = false
-
 [*.go]
 indent_style = tab
 

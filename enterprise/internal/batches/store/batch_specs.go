@@ -641,7 +641,6 @@ const getTotalDiffStatQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:GetTotalDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM
 	changeset_specs

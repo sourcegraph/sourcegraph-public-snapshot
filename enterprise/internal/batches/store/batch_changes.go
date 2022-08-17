@@ -480,7 +480,6 @@ var getBatchChangeDiffStatQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_changes.go:GetBatchChangeDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM
 	changesets
@@ -523,7 +522,6 @@ var getRepoDiffStatQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_changes.go:GetRepoDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
