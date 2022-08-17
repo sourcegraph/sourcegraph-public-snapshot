@@ -49,11 +49,11 @@ import (
 // Token contains the credentials used during the flow to retrieve and refresh an
 // expired token.
 type Token struct {
-	AccessToken  string
-	TokenType    string
-	RefreshToken string
-	Expiry       time.Time
-	Raw          interface{}
+	AccessToken  string    `json:"access_token"`
+	TokenType    string    `json:"token_type"`
+	RefreshToken string    `json:"refresh_token"`
+	Expiry       time.Time `json:"expiry"`
+	raw          interface{}
 }
 
 // tokenJSON represents the HTTP response.
@@ -186,7 +186,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 			AccessToken:  vals.Get("access_token"),
 			TokenType:    vals.Get("token_type"),
 			RefreshToken: vals.Get("refresh_token"),
-			Raw:          vals,
+			raw:          vals,
 		}
 		e := vals.Get("expires_in")
 		expires, _ := strconv.Atoi(e)
@@ -210,9 +210,9 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 			TokenType:    tj.TokenType,
 			RefreshToken: tj.RefreshToken,
 			Expiry:       tj.expiry(),
-			Raw:          make(map[string]interface{}),
+			raw:          make(map[string]interface{}),
 		}
-		_ = json.Unmarshal(body, &token.Raw) // no error checks for optional fields.
+		_ = json.Unmarshal(body, &token.raw) // no error checks for optional fields.
 	}
 	if token.AccessToken == "" {
 		return nil, errors.New("oauth2: server response missing access_token")

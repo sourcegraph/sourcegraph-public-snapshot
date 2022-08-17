@@ -5,15 +5,12 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/oauth2"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -28,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -36,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -252,19 +247,6 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 		}
 	}
 	return repoNames, nil
-}
-
-func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
-	url := strings.TrimSuffix(p.Url, "/")
-	return &oauth2.Config{
-		ClientID:     p.ClientID,
-		ClientSecret: p.ClientSecret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  url + "/oauth/authorize",
-			TokenURL: url + "/oauth/token",
-		},
-		Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
-	}
 }
 
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
