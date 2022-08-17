@@ -39,6 +39,8 @@ type Runner[Args any] struct {
 	// Concurrency controls the maximum number of checks across categories to evaluate at
 	// the same time - defaults to 10.
 	Concurrency int
+	// FailFast indicates if the runner should stop upon encountering the first error.
+	FailFast bool
 	// SuggestOnCheckFailure can be implemented to prompt the user to try certain things
 	// if a check fails. The suggestion string can be in Markdown.
 	SuggestOnCheckFailure SuggestFunc[Args]
@@ -199,6 +201,9 @@ var errSkipped = errors.New("skipped")
 // runAllCategoryChecks is the main entrypoint for running the checks in this runner.
 func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *runAllCategoryChecksResult {
 	var runAllSpan *analytics.Span
+	var cancelAll context.CancelFunc
+	ctx, cancelAll = context.WithCancel(ctx)
+	defer cancelAll()
 	ctx, runAllSpan = r.startSpan(ctx, "runAllCategoryChecks")
 	defer runAllSpan.End()
 
@@ -327,6 +332,13 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 						check.cachedCheckOutput = updateOutput.String()
 						span.Failed()
+
+						if r.FailFast {
+							// TODO if cancelled, do not log a bunch of rubbish from the other
+							// checks
+							cancelAll()
+						}
+
 						return err
 					}
 
