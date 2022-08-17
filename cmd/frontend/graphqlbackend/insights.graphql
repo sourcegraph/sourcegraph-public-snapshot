@@ -1223,13 +1223,13 @@ type SearchInsightLivePreviewSeries {
 
 extend type Query {
     """
-    Returns infomation about aggregate the potential results of a search query.
+    Returns information about aggregating the potential results of a search query.
     """
     searchQueryAggregate(query: String!, patternType: SearchPatternType!): SearchQueryAggregate
 }
 
 """
-Supported aggregtation modes for search aggregations
+Supported aggregation modes for search aggregations
 """
 enum SearchAggregationMode {
     REPO
@@ -1263,7 +1263,7 @@ type AggregationModeAvailability {
     """
     mode: SearchAggregationMode!
     """
-    Boolean indiciating if the mode is available
+    Boolean indicating if the mode is available
     """
     available: Boolean!
     """
@@ -1282,7 +1282,7 @@ type ExhaustiveSearchAggregationResult {
     groups: [AggregationGroup!]!
 
     """
-    Boolean indicating if the search query support being persisted as an insight on a dashboard
+    Boolean indicating if the search query supports being persisted as an insight on a dashboard
     """
     supportsPersistence: Boolean
     """
@@ -1291,7 +1291,7 @@ type ExhaustiveSearchAggregationResult {
     """
     otherResultCount: Int
     """
-    A count to represent the number of aggrgation groups that were not returned due to the requested LIMIT
+    A count to represent the number of aggregation groups that were not returned due to the requested LIMIT
     """
     otherGroupCount: Int
 }
@@ -1328,7 +1328,7 @@ type AggregationGroup {
     """
     label: String!
     """
-    The number serach results associated with this
+    The number of hits for this search
     """
     count: Int!
     """

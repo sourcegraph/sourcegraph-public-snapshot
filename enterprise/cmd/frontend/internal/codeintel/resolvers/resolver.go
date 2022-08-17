@@ -4,21 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
-
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	symbolsClient "github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -28,44 +18,35 @@ import (
 // by a symmetrics resolver in this package's graphql subpackage, which is exposed directly
 // by the API.
 type Resolver interface {
+	// TODO: Move to uploads resolver.
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]dbstore.Upload, error)
 	DeleteUploadByID(ctx context.Context, uploadID int) error
 	GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error)
+	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
+	UploadConnectionResolver(opts dbstore.GetUploadsOptions) *UploadsResolver
+	AuditLogsForUpload(ctx context.Context, id int) ([]dbstore.UploadLog, error)
+	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
+	// TODO: Move to autoindex service.
 	GetIndexByID(ctx context.Context, id int) (dbstore.Index, bool, error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
 	DeleteIndexByID(ctx context.Context, id int) error
-
-	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (dbstore.ConfigurationPolicy, bool, error)
-	CreateConfigurationPolicy(ctx context.Context, configurationPolicy dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy dbstore.ConfigurationPolicy) (err error)
-	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
-
 	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
 	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error)
 	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
-
-	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]dbstore.Index, error)
-	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
-	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
-	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
-	RetentionPolicyOverview(ctx context.Context, upload dbstore.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []RetentionPolicyMatchCandidate, totalCount int, err error)
-
-	AuditLogsForUpload(ctx context.Context, id int) ([]dbstore.UploadLog, error)
-
-	UploadConnectionResolver(opts dbstore.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts dbstore.GetIndexesOptions) *IndexesResolver
-	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
-	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
+	// TODO: Move to codenav service.
+	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
 	RequestLanguageSupport(ctx context.Context, userID int, language string) error
 	RequestedLanguageSupport(ctx context.Context, userID int) ([]string, error)
 
 	ExecutorResolver() executor.Resolver
+	CodeNavResolver() CodeNavResolver
+	PoliciesResolver() PoliciesResolver
 }
 
 type RepositorySummary struct {
@@ -76,67 +57,44 @@ type RepositorySummary struct {
 }
 
 type resolver struct {
-	db               database.DB
-	dbStore          DBStore
-	lsifStore        LSIFStore
-	gitserverClient  GitserverClient
-	policyMatcher    *policies.Matcher
-	indexEnqueuer    IndexEnqueuer
-	operations       *operations
+	dbStore       DBStore
+	lsifStore     LSIFStore
+	indexEnqueuer IndexEnqueuer
+	symbolsClient *symbolsClient.Client
+
 	executorResolver executor.Resolver
-	symbolsClient    *symbolsClient.Client
-
-	// See the same field on the QueryResolver struct
-	maximumIndexesPerMonikerSearch int
-
-	codenavResolver CodeNavResolver
+	codenavResolver  CodeNavResolver
+	policiesResolver PoliciesResolver
 }
 
 // NewResolver creates a new resolver with the given services.
 func NewResolver(
 	dbStore DBStore,
 	lsifStore LSIFStore,
-	gitserverClient GitserverClient,
-	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	symbolsClient *symbolsClient.Client,
-	maximumIndexesPerMonikerSearch int,
-	observationContext *observation.Context,
-	dbConn database.DB,
 	codenavResolver CodeNavResolver,
+	executorResolver executor.Resolver,
+	policiesResolver PoliciesResolver,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn, codenavResolver)
-}
-
-func newResolver(
-	dbStore DBStore,
-	lsifStore LSIFStore,
-	gitserverClient GitserverClient,
-	policyMatcher *policies.Matcher,
-	indexEnqueuer IndexEnqueuer,
-	symbolsClient *symbolsClient.Client,
-	maximumIndexesPerMonikerSearch int,
-	observationContext *observation.Context,
-	dbConn database.DB,
-	codenavResolver CodeNavResolver,
-) *resolver {
 	return &resolver{
-		db:                             dbConn,
-		dbStore:                        dbStore,
-		lsifStore:                      lsifStore,
-		gitserverClient:                gitserverClient,
-		policyMatcher:                  policyMatcher,
-		indexEnqueuer:                  indexEnqueuer,
-		symbolsClient:                  symbolsClient,
-		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
-		operations:                     newOperations(observationContext),
-		executorResolver:               executor.New(dbConn),
-		codenavResolver:                codenavResolver,
+		dbStore:       dbStore,
+		lsifStore:     lsifStore,
+		indexEnqueuer: indexEnqueuer,
+		symbolsClient: symbolsClient,
+
+		executorResolver: executorResolver,
+		codenavResolver:  codenavResolver,
+		policiesResolver: policiesResolver,
 	}
 }
 
 func (r *resolver) CodeNavResolver() CodeNavResolver {
 	return r.codenavResolver
+}
+
+func (r *resolver) PoliciesResolver() PoliciesResolver {
+	return r.policiesResolver
 }
 
 func (r *resolver) ExecutorResolver() executor.Resolver {
@@ -194,104 +152,6 @@ func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID i
 	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true, true)
 }
 
-const slowQueryResolverRequestThreshold = time.Second
-
-// QueryResolver determines the set of dumps that can answer code intel queries for the
-// given repository, commit, and path, then constructs a new query resolver instance which
-// can be used to answer subsequent queries.
-func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ QueryResolver, err error) {
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", int(args.Repo.ID)),
-			log.String("commit", string(args.Commit)),
-			log.String("path", args.Path),
-			log.Bool("exactPath", args.ExactPath),
-			log.String("indexer", args.ToolName),
-		},
-	})
-	defer endObservation()
-
-	repoId := int(args.Repo.ID)
-	commit := string(args.Commit)
-	cachedCommitChecker := newCachedCommitChecker(r.gitserverClient)
-	cachedCommitChecker.set(repoId, commit)
-
-	// Maintain a map from identifers to hydrated upload records from the database. We use
-	// this map as a quick lookup when constructing the resulting location set. Any additional
-	// upload records pulled back from the database while processing this page will be added
-	// to this map.
-	dumps, err := r.findClosestDumps(ctx, cachedCommitChecker, repoId, commit, args.Path, args.ExactPath, args.ToolName)
-	if err != nil || len(dumps) == 0 {
-		return nil, err
-	}
-
-	reqState := codenav.NewRequestState(
-		dumps,
-		authz.DefaultSubRepoPermsChecker,
-		gitserver.NewClient(r.db), args.Repo, commit, args.Path,
-		r.gitserverClient,
-		r.maximumIndexesPerMonikerSearch,
-		r.codenavResolver.GetHunkCacheSize(),
-	)
-
-	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.codenavResolver, *reqState), nil
-}
-
-func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
-	return r.dbStore.GetConfigurationPolicies(ctx, opts)
-}
-
-func (r *resolver) GetConfigurationPolicyByID(ctx context.Context, id int) (dbstore.ConfigurationPolicy, bool, error) {
-	return r.dbStore.GetConfigurationPolicyByID(ctx, id)
-}
-
-func (r *resolver) CreateConfigurationPolicy(ctx context.Context, configurationPolicy dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
-	policy, err := r.dbStore.CreateConfigurationPolicy(ctx, configurationPolicy)
-	if err != nil {
-		return policy, err
-	}
-
-	if err := r.updateReposMatchingPolicyPatterns(ctx, policy); err != nil {
-		return policy, err
-	}
-
-	return policy, nil
-}
-
-func (r *resolver) updateReposMatchingPolicyPatterns(ctx context.Context, policy dbstore.ConfigurationPolicy) error {
-	var patterns []string
-	if policy.RepositoryPatterns != nil {
-		patterns = *policy.RepositoryPatterns
-	}
-
-	if len(patterns) == 0 {
-		return nil
-	}
-
-	var repositoryMatchLimit *int
-	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
-		repositoryMatchLimit = &val
-	}
-
-	if err := r.dbStore.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *resolver) UpdateConfigurationPolicy(ctx context.Context, policy dbstore.ConfigurationPolicy) (err error) {
-	if err := r.dbStore.UpdateConfigurationPolicy(ctx, policy); err != nil {
-		return err
-	}
-
-	return r.updateReposMatchingPolicyPatterns(ctx, policy)
-}
-
-func (r *resolver) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error) {
-	return r.dbStore.DeleteConfigurationPolicyByID(ctx, id)
-}
-
 func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error) {
 	configuration, exists, err := r.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
@@ -328,42 +188,6 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	}
 
 	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
-}
-
-func (r *resolver) PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error) {
-	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
-		repositoryMatchLimit = &val
-
-		if offset+limit > *repositoryMatchLimit {
-			limit = *repositoryMatchLimit - offset
-		}
-	}
-
-	ids, totalCount, err := r.dbStore.RepoIDsByGlobPatterns(ctx, patterns, limit, offset)
-	if err != nil {
-		return nil, 0, nil, err
-	}
-
-	return ids, totalCount, repositoryMatchLimit, nil
-}
-
-func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error) {
-	policyMatches, err := r.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []dbstore.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
-	if err != nil {
-		return nil, err
-	}
-
-	namesByCommit := make(map[string][]string, len(policyMatches))
-	for commit, policyMatches := range policyMatches {
-		names := make([]string, 0, len(policyMatches))
-		for _, policyMatch := range policyMatches {
-			names = append(names, policyMatch.Name)
-		}
-
-		namesByCommit[commit] = names
-	}
-
-	return namesByCommit, nil
 }
 
 func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {

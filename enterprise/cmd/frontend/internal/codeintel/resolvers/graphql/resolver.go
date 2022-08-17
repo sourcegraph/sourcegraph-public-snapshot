@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -76,6 +77,14 @@ func (r *frankenResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 
 func (r *Resolver) ExecutorResolver() executor.Resolver {
 	return r.resolver.ExecutorResolver()
+}
+
+func (r *Resolver) CodeNavResolver() resolvers.CodeNavResolver {
+	return r.resolver.CodeNavResolver()
+}
+
+func (r *Resolver) PoliciesResolver() resolvers.PoliciesResolver {
+	return r.resolver.PoliciesResolver()
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
@@ -310,12 +319,13 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	resolver, err := r.resolver.QueryResolver(ctx, args)
-	if err != nil || resolver == nil {
+	codenav := r.resolver.CodeNavResolver()
+	gitBlobResolver, err := codenav.GitBlobLSIFDataResolverFactory(ctx, args.Repo, string(args.Commit), args.Path, args.ToolName, args.ExactPath)
+	if err != nil || gitBlobResolver == nil {
 		return nil, err
 	}
 
-	return NewQueryResolver(r.gitserver, resolver, r.resolver, r.locationResolver, errTracer), nil
+	return NewQueryResolver(r.gitserver, gitBlobResolver, r.resolver, r.locationResolver, errTracer), nil
 }
 
 func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitTreeEntryCodeIntelInfoArgs) (_ gql.GitBlobCodeIntelSupportResolver, err error) {
@@ -358,12 +368,17 @@ func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (
 		return nil, err
 	}
 
-	configurationPolicy, exists, err := r.resolver.GetConfigurationPolicyByID(ctx, int(configurationPolicyID))
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	configurationPolicy, exists, err := policyResolver.GetConfigurationPolicyByID(ctx, int(configurationPolicyID))
 	if err != nil || !exists {
 		return nil, err
 	}
+	cp := sharedConfigurationPoliciesToStoreConfigurationPolicies(configurationPolicy)
 
-	return NewConfigurationPolicyResolver(r.db, configurationPolicy, traceErrs), nil
+	return NewConfigurationPolicyResolver(r.db, cp, traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
@@ -385,7 +400,7 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 		pageSize = int(*args.First)
 	}
 
-	opts := store.GetConfigurationPoliciesOptions{
+	opts := shared.GetConfigurationPoliciesOptions{
 		Limit:  pageSize,
 		Offset: offset,
 	}
@@ -406,12 +421,17 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 		opts.ForIndexing = *args.ForIndexing
 	}
 
-	policies, totalCount, err := r.resolver.GetConfigurationPolicies(ctx, opts)
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	policies, totalCount, err := policyResolver.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.db, policies, totalCount, traceErrs), nil
+	p := sharedConfigurationPoliciesListToStoreConfigurationPoliciesList(policies)
+	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.db, p, totalCount, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -438,11 +458,16 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		repositoryID = &id
 	}
 
-	configurationPolicy, err := r.resolver.CreateConfigurationPolicy(ctx, store.ConfigurationPolicy{
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := shared.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      store.GitObjectType(args.Type),
+		Type:                      shared.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -450,12 +475,14 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-	})
+	}
+	configurationPolicy, err := policyResolver.CreateConfigurationPolicy(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewConfigurationPolicyResolver(r.db, configurationPolicy, traceErrs), nil
+	cp := sharedConfigurationPoliciesToStoreConfigurationPolicies(configurationPolicy)
+	return NewConfigurationPolicyResolver(r.db, cp, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -478,11 +505,15 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	if err := r.resolver.UpdateConfigurationPolicy(ctx, store.ConfigurationPolicy{
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	opts := shared.ConfigurationPolicy{
 		ID:                        int(id),
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      store.GitObjectType(args.Type),
+		Type:                      shared.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -490,7 +521,8 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-	}); err != nil {
+	}
+	if err := policyResolver.UpdateConfigurationPolicy(ctx, opts); err != nil {
 		return nil, err
 	}
 
@@ -513,7 +545,11 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	if err := r.resolver.DeleteConfigurationPolicyByID(ctx, int(id)); err != nil {
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := policyResolver.DeleteConfigurationPolicyByID(ctx, int(id)); err != nil {
 		return nil, err
 	}
 
@@ -610,19 +646,24 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 		pageSize = int(*args.First)
 	}
 
-	ids, totalCount, repositoryMatchLimit, err := r.resolver.PreviewRepositoryFilter(ctx, args.Patterns, pageSize, offset)
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
+	ids, totalCount, repositoryMatchLimit, err := policyResolver.GetPreviewRepositoryFilter(ctx, args.Patterns, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	resv := make([]*gql.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
 		repo, err := backend.NewRepos(r.locationResolver.logger, r.db).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}
 
-		resolvers = append(resolvers, gql.NewRepositoryResolver(r.db, repo))
+		resv = append(resv, gql.NewRepositoryResolver(r.db, repo))
 	}
 
 	limitedCount := totalCount
@@ -631,7 +672,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 	}
 
 	return &repositoryFilterPreviewResolver{
-		repositoryResolvers: resolvers,
+		repositoryResolvers: resv,
 		totalCount:          limitedCount,
 		offset:              offset,
 		totalMatches:        totalCount,
@@ -648,7 +689,12 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 		return nil, err
 	}
 
-	namesByRev, err := r.resolver.PreviewGitObjectFilter(ctx, int(repositoryID), store.GitObjectType(args.Type), args.Pattern)
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	namesByRev, err := policyResolver.GetPreviewGitObjectFilter(ctx, int(repositoryID), shared.GitObjectType(args.Type), args.Pattern)
 	if err != nil {
 		return nil, err
 	}

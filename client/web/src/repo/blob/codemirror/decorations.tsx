@@ -58,38 +58,50 @@ class TextDocumentDecorationManager implements PluginValue {
     private gutters: Map<string, { gutter: Extension; items: DecorationMapByLine }> = new Map()
     private reset: number | null = null
 
-    constructor(private readonly view: EditorView) {}
+    constructor(private readonly view: EditorView) {
+        this.updateDecorations(
+            view.state.facet(showTextDocumentDecorations),
+            view.state.facet(enableExtensionsDecorationsColumnView),
+            !view.state.facet(EditorView.darkTheme)
+        )
+    }
 
     public update(update: ViewUpdate): void {
         const currentDecorations = update.state.facet(showTextDocumentDecorations)
         const currentEnabledColumnView = update.state.facet(enableExtensionsDecorationsColumnView)
-        const isDarkTheme = update.state.facet(EditorView.darkTheme)
+        const isLightTheme = !update.state.facet(EditorView.darkTheme)
 
         if (
             update.startState.facet(showTextDocumentDecorations) !== currentDecorations ||
             update.startState.facet(enableExtensionsDecorationsColumnView) !== currentEnabledColumnView
         ) {
-            this.groupedDecorations = groupDecorations(currentDecorations, currentEnabledColumnView)
-            this.updateInlineDecorations(this.groupedDecorations.inline, !isDarkTheme)
-
-            if (this.updateGutters()) {
-                // We cannot synchronously dispatch another transaction during
-                // an update, so we schedule it but also cancel pending
-                // transactions should this be called multiple times in a row
-                if (this.reset !== null) {
-                    window.clearTimeout(this.reset)
-                }
-                this.reset = window.setTimeout(() => {
-                    this.view.dispatch({
-                        effects: decorationGutters.reconfigure(
-                            Array.from(this.gutters.values(), ({ gutter }) => gutter)
-                        ),
-                    })
-                }, 50)
-            }
-        } else if (update.viewportChanged || isDarkTheme !== update.startState.facet(EditorView.darkTheme)) {
-            this.updateInlineDecorations(this.groupedDecorations.inline, !isDarkTheme)
+            this.updateDecorations(currentDecorations, currentEnabledColumnView, isLightTheme)
+        } else if (update.viewportChanged || isLightTheme !== !update.startState.facet(EditorView.darkTheme)) {
+            this.updateInlineDecorations(this.groupedDecorations.inline, isLightTheme)
             // Updating column decorators is handled but the gutter extension itself
+        }
+    }
+
+    private updateDecorations(
+        specs: TextDocumentDecorationSpec[],
+        enableColumnView: boolean,
+        isLightTheme: boolean
+    ): void {
+        this.groupedDecorations = groupDecorations(specs, enableColumnView)
+        this.updateInlineDecorations(this.groupedDecorations.inline, isLightTheme)
+
+        if (this.updateGutters()) {
+            // We cannot synchronously dispatch another transaction during
+            // an update, so we schedule it but also cancel pending
+            // transactions should this be called multiple times in a row
+            if (this.reset !== null) {
+                window.clearTimeout(this.reset)
+            }
+            this.reset = window.setTimeout(() => {
+                this.view.dispatch({
+                    effects: decorationGutters.reconfigure(Array.from(this.gutters.values(), ({ gutter }) => gutter)),
+                })
+            }, 50)
         }
     }
 
@@ -288,6 +300,12 @@ const columnTheme = EditorView.theme({
     },
     [`.${lineDecoratorStyles.contents}::before`]: {
         content: 'attr(data-contents)',
+    },
+    [`.${columnDecoratorStyles.decoration}`]: {
+        padding: '0',
+    },
+    [`.${columnDecoratorStyles.item}`]: {
+        padding: '0 0.75rem',
     },
 })
 

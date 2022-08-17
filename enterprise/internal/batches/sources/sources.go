@@ -103,7 +103,7 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
-	css, err := buildChangesetSource(s.cf, extSvc)
+	css, err := buildChangesetSource(ctx, s.cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -304,7 +304,7 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 	})
 
 	for _, e := range es {
-		cfg, err := e.Configuration()
+		cfg, err := e.Configuration(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -335,16 +335,16 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 
 // buildChangesetSource get an authenticated ChangesetSource for the given repo
 // to load the changeset state from.
-func buildChangesetSource(cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
+func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
 	switch externalService.Kind {
 	case extsvc.KindGitHub:
-		return NewGithubSource(externalService, cf)
+		return NewGithubSource(ctx, externalService, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(externalService, cf)
+		return NewGitLabSource(ctx, externalService, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(externalService, cf)
+		return NewBitbucketServerSource(ctx, externalService, cf)
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(externalService, cf)
+		return NewBitbucketCloudSource(ctx, externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
@@ -441,7 +441,7 @@ func extractCloneURL(ctx context.Context, s database.ExternalServiceStore, repo 
 	for _, svc := range svcs {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
-		cloneURL, err := repos.CloneURL(log.Scoped("CloneURL", ""), svc.Kind, svc.Config, repo)
+		cloneURL, err := repos.EncryptableCloneURL(ctx, log.Scoped("CloneURL", ""), svc.Kind, svc.Config, repo)
 		if err != nil {
 			return "", err
 		}

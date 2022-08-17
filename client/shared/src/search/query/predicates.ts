@@ -28,19 +28,7 @@ export const PREDICATES: Access[] = [
             },
             {
                 name: 'has',
-                fields: [{ name: 'description' }],
-            },
-            {
-                name: 'dependencies',
-            },
-            {
-                name: 'deps',
-            },
-            {
-                name: 'dependents',
-            },
-            {
-                name: 'revdeps',
+                fields: [{ name: 'description' }, { name: 'tag' }],
             },
         ],
     },
@@ -178,26 +166,6 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'contains.commit.after(...)',
                 insertText: 'contains.commit.after(${1:1 month ago})',
-                asSnippet: true,
-            },
-            {
-                label: 'deps(...)',
-                insertText: 'deps(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'dependencies(...)',
-                insertText: 'dependencies(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'revdeps(...)',
-                insertText: 'revdeps(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'dependents(...)',
-                insertText: 'dependents(${1})',
                 asSnippet: true,
             },
             {

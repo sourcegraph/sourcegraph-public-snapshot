@@ -27,9 +27,13 @@ type GerritSource struct {
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
-func NewGerritSource(svc *types.ExternalService, cf *httpcli.Factory) (*GerritSource, error) {
+func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GerritSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GerritConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
