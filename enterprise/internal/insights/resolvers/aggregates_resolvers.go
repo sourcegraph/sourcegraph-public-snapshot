@@ -16,7 +16,6 @@ type searchAggregateResolver struct {
 
 func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphqlbackend.AggregationModeAvailabilityResolver {
 	resolvers := []graphqlbackend.AggregationModeAvailabilityResolver{}
-	for _, mode := range types.SearchAggregationModes {
 		resolvers = append(resolvers, newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, mode))
 	}
 	return resolvers
@@ -27,14 +26,13 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver()}, nil
 }
 
-func newAggregationModeAvailabilityResolver(searchQuery string, patternType string, mode types.SearchAggregationMode) graphqlbackend.AggregationModeAvailabilityResolver {
 	return &aggregationModeAvailabilityResolver{searchQuery: searchQuery, patternType: patternType, mode: mode}
 }
 
 type aggregationModeAvailabilityResolver struct {
 	searchQuery string
 	patternType string
-	mode        types.SearchAggregationMode
+
 }
 
 func (r *aggregationModeAvailabilityResolver) Mode() string {
@@ -95,7 +93,6 @@ type searchAggregationModeResultResolver struct {
 	baseInsightResolver
 	searchQuery  string
 	patternType  string
-	mode         types.SearchAggregationMode
 	isExhaustive bool
 }
 
