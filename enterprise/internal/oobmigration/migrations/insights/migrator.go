@@ -575,6 +575,3 @@ const insightsMigratormigrateSeriesInsertViewGrantQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:migarte{,LangStat}Series
 INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
 `
-
-//
-// Dashboard migration
