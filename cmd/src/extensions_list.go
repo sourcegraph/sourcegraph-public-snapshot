@@ -63,6 +63,7 @@ Examples:
       nodes {
         ...RegistryExtensionFields
       }
+      error
     }
   }
 }` + registryExtensionFragment
@@ -71,6 +72,7 @@ Examples:
 			ExtensionRegistry struct {
 				Extensions struct {
 					Nodes []Extension
+					Error string
 				}
 			}
 		}
@@ -79,6 +81,10 @@ Examples:
 			"query": api.NullString(*queryFlag),
 		}).Do(context.Background(), &result); err != nil || !ok {
 			return err
+		}
+
+		if result.ExtensionRegistry.Extensions.Error != "" {
+			return fmt.Errorf("%s", result.ExtensionRegistry.Extensions.Error)
 		}
 
 		for _, extension := range result.ExtensionRegistry.Extensions.Nodes {
