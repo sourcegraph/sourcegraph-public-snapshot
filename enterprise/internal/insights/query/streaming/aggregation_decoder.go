@@ -1,8 +1,6 @@
 package streaming
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
@@ -10,18 +8,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-const luckySearchAlertKind = "lucky-search-queries"
 
 type AggregationMatchResult struct {
 	Key   MatchKey
 	Count int
 }
 
+const ShardTimeoutSkippedReason = streamapi.ShardTimeout
+const LuckySearchAlertKind = "lucky-search-queries"
+
+type SearchSkipped struct {
+	Reason   string
+	Severity string
+}
+
+type SearchAlert struct {
+	Title string
+	Kind  string
+}
+
 type AggregationDecoderEvents struct {
-	StreamDecoderEvents
-	AdditionalSearchesExecuted bool
+	Skipped []SearchSkipped
+	Errors  []string
+	Alerts  []SearchAlert
 }
 
 type AggregationTabulator func(*AggregationMatchResult, error)
@@ -36,29 +47,17 @@ func AggregationDecoder(onMatches OnMatches) (streamhttp.FrontendStreamDecoder, 
 			if !progress.Done {
 				return
 			}
-			// Skipped elements are built progressively for a Progress update until it is Done, so
-			// we want to register its contents only once it is done.
 			for _, skipped := range progress.Skipped {
-				// ShardTimeout is a specific skipped event that we want to retry on. Currently
-				// we only retry on Alert events so this is why we add it there. This behaviour will
-				// be uniformised eventually.
-				if skipped.Reason == streamapi.ShardTimeout {
-					decoderEvents.Alerts = append(decoderEvents.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
-				} else {
-					decoderEvents.SkippedReasons = append(decoderEvents.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
-				}
+				decoderEvents.Skipped = append(decoderEvents.Skipped, SearchSkipped{Reason: string(skipped.Reason), Severity: string(skipped.Severity)})
 			}
 		},
 		OnMatches: onMatches,
 		OnAlert: func(ea *streamhttp.EventAlert) {
-			if ea.Kind == luckySearchAlertKind {
-				decoderEvents.AdditionalSearchesExecuted = true
-			}
 			if ea.Title == "No repositories found" {
 				// If we hit a case where we don't find a repository we don't want to error, just
 				// complete our search.
 			} else {
-				decoderEvents.Alerts = append(decoderEvents.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+				decoderEvents.Alerts = append(decoderEvents.Alerts, SearchAlert{Title: ea.Title, Kind: ea.Kind})
 			}
 		},
 		OnError: func(eventError *streamhttp.EventError) {
@@ -80,17 +79,15 @@ type eventMatch struct {
 
 func TabulateAggregationMatches(tabulator AggregationTabulator, mode types.SearchAggregationMode) (OnMatches, error) {
 
-	var modeCountFunc countFunc
+	modeCountTypes := map[types.SearchAggregationMode]countFunc{
+		types.REPO_AGGREGATION_MODE:   countRepo,
+		types.PATH_AGGREGATION_MODE:   countPath,
+		types.AUTHOR_AGGREGATION_MODE: countAuthor,
+	}
 
-	switch mode {
-	case types.REPO_AGGREGATION_MODE:
-		modeCountFunc = countRepo
-	case types.PATH_AGGREGATION_MODE:
-		modeCountFunc = countPath
-	case types.AUTHOR_AGGREGATION_MODE:
-		modeCountFunc = countAuthor
-	default:
-		return nil, errors.New("unsupported search aggregation mode")
+	modeCountFunc, ok := modeCountTypes[mode]
+	if !ok {
+		return nil, errors.Newf("unsupported search aggregation mode: %s", mode)
 	}
 
 	return func(matches []streamhttp.EventMatch) {
