@@ -36,9 +36,7 @@ func getDashboards(settings settings, logger log.Logger) (dashboards []settingDa
 
 func getLangStatsInsights(settings settings, logger log.Logger) (insights []langStatsInsight) {
 	visitFilteredJSONMap(settings, logger, "codeStatsInsights.", func(id string, body json.RawMessage) {
-		var insight langStatsInsight
-		insight.ID = makeUniqueID(id, settings)
-
+		insight := langStatsInsight{ID: makeUniqueID(id, settings)}
 		if err := json.Unmarshal(body, &insight); err != nil {
 			logger.Error("unrecognized insight schema", log.Error(err), log.String("owner", getOwnerName(settings.user, settings.org)))
 			return
@@ -54,9 +52,7 @@ func getLangStatsInsights(settings settings, logger log.Logger) (insights []lang
 
 func getFrontendInsights(settings settings, logger log.Logger) (insights []searchInsight) {
 	visitFilteredJSONMap(settings, logger, "searchInsights.", func(id string, body json.RawMessage) {
-		var insight searchInsight
-		insight.ID = makeUniqueID(id, settings)
-
+		insight := searchInsight{ID: makeUniqueID(id, settings)}
 		if err := json.Unmarshal(body, &insight); err != nil {
 			logger.Error("unrecognized insight schema", log.Error(err), log.String("owner", getOwnerName(settings.user, settings.org)))
 			return
@@ -73,9 +69,7 @@ func getFrontendInsights(settings settings, logger log.Logger) (insights []searc
 func getBackendInsights(settings settings, logger log.Logger) (insights []searchInsight) {
 	visitFilteredJSONMap(settings, logger, "insights.allrepos", func(_ string, val json.RawMessage) {
 		visitJSONMap(val, func(id string, body json.RawMessage) {
-			var insight searchInsight
-			insight.ID = makeUniqueID(id, settings)
-
+			insight := searchInsight{ID: makeUniqueID(id, settings)}
 			if err := json.Unmarshal(body, &insight); err != nil {
 				logger.Error("unrecognized insight schema", log.Error(err), log.String("owner", getOwnerName(settings.user, settings.org)))
 				return
