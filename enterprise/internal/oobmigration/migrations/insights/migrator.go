@@ -134,7 +134,7 @@ func (m *insightsMigrator) performMigrationJob(ctx context.Context, tx *basestor
 	}()
 
 	// Extract dashboards and insights from settings
-	subjectName, settings, err := m.getSettings(ctx, tx, job.userID, job.orgID)
+	subjectName, settings, err := m.getSettingsForJob(ctx, tx, job)
 	if err != nil {
 		return err
 	}
