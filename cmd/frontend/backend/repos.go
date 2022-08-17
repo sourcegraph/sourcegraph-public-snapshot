@@ -203,10 +203,9 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 		return s.cache.List(ctx)
 	}
 
-	trueP := true
-	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
-		Index:      &trueP,
-		OnlyCloned: true,
+	return s.store.ListIndexableRepos(ctx, database.ListIndexableReposOptions{
+		CloneStatus:    types.CloneStatusCloned,
+		IncludePrivate: true,
 	})
 }
 
