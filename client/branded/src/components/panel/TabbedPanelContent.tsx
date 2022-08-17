@@ -37,11 +37,11 @@ import styles from './TabbedPanelContent.module.scss'
 
 interface TabbedPanelContentProps
     extends ExtensionsControllerProps,
-        PlatformContextProps,
-        SettingsCascadeProps,
-        ActivationProps,
-        TelemetryProps,
-        ThemeProps {
+    PlatformContextProps,
+    SettingsCascadeProps,
+    ActivationProps,
+    TelemetryProps,
+    ThemeProps {
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -253,18 +253,18 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         () =>
             panelViews
                 ? panelViews
-                      .map(
-                          (panelView): TabbedPanelItem => ({
-                              label: panelView.title,
-                              id: panelView.id,
-                              priority: panelView.priority,
-                              element: <PanelView {...props} panelView={panelView} location={location} />,
-                              hasLocations: !!panelView.locationProvider,
-                              trackTabClick: () => trackTabClick(panelView.title),
-                              matchesTabID: panelView.matchesTabID,
-                          })
-                      )
-                      .sort((a, b) => b.priority - a.priority)
+                    .map(
+                        (panelView): TabbedPanelItem => ({
+                            label: panelView.title,
+                            id: panelView.id,
+                            priority: panelView.priority,
+                            element: <PanelView {...props} panelView={panelView} location={location} />,
+                            hasLocations: !!panelView.locationProvider,
+                            trackTabClick: () => trackTabClick(panelView.title),
+                            matchesTabID: panelView.matchesTabID,
+                        })
+                    )
+                    .sort((a, b) => b.priority - a.priority)
                 : [],
         [location, panelViews, props, trackTabClick]
     )
@@ -319,7 +319,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                     // This is okay for now because the Panel is currently only used in the webapp
                                     listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
                                     listItemClass="px-2 mx-2"
-                                    actionItemClass="font-weight-medium"
+                                    actionItemClass={classNames(styles.actionItemUnconstrained, 'font-weight-medium')}
                                     actionItemIconClass="icon-inline"
                                     menu={ContributableMenu.PanelToolbar}
                                     scope={{
@@ -373,6 +373,8 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         </Tabs>
     )
 })
+
+TabbedPanelContent.displayName = 'TabbedPanelContent'
 
 /**
  * Temporary solution to code intel extensions all contributing the same panel actions.
