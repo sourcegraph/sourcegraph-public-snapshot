@@ -184,7 +184,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
-	var enableLegacyExtensions = true
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -249,7 +248,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		EnableLegacyExtensions: enableLegacyExtensions,
+		EnableLegacyExtensions: *conf.ExperimentalFeatures().EnableLegacyExtensions,
 	}
 }
 
