@@ -2,13 +2,11 @@ package store
 
 import (
 	"context"
-	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -59,7 +57,7 @@ func (s *Store) UpsertBatchSpecMount(ctx context.Context, mount *btypes.BatchSpe
 }
 
 func (s *Store) upsertBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query, error) {
-	m.UpdatedAt = time.Now()
+	m.UpdatedAt = s.now()
 
 	if m.RandID == "" {
 		var err error
@@ -102,9 +100,8 @@ RETURNING %s`
 
 // DeleteBatchSpecMountOpts are the options to determine which BatchSpecMounts to delete.
 type DeleteBatchSpecMountOpts struct {
-	ID              int64
-	BatchSpecID     int64
-	BatchSpecRandID string
+	ID          int64
+	BatchSpecID int64
 }
 
 // DeleteBatchSpecMount deletes BatchSpecMounts that match the specified DeleteBatchSpecMountOpts.
@@ -118,7 +115,8 @@ func (s *Store) DeleteBatchSpecMount(ctx context.Context, opts DeleteBatchSpecMo
 		return errors.New("cannot delete entries without specifying an option")
 	}
 
-	return s.Store.Exec(ctx, deleteBatchSpecMountQuery(opts))
+	q := deleteBatchSpecMountQuery(opts)
+	return s.Store.Exec(ctx, q)
 }
 
 func deleteBatchSpecMountQuery(opts DeleteBatchSpecMountOpts) *sqlf.Query {
@@ -131,11 +129,6 @@ func deleteBatchSpecMountQuery(opts DeleteBatchSpecMountOpts) *sqlf.Query {
 
 	if opts.BatchSpecID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_spec_mounts.batch_spec_id = %s", opts.BatchSpecID))
-	}
-
-	if opts.BatchSpecRandID != "" {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN batch_spec ON batch_spec_mounts.batch_spec_id = batch_specs.id"))
-		preds = append(preds, sqlf.Sprintf("batch_specs.rand_id = %s", opts.BatchSpecRandID))
 	}
 
 	return sqlf.Sprintf(
@@ -219,14 +212,11 @@ type ListBatchSpecMountsOpts struct {
 }
 
 // CountBatchSpecMounts counts the number of BatchSpecMounts based on the provided ListBatchSpecMountsOpts.
-func (s *Store) CountBatchSpecMounts(ctx context.Context, opts ListBatchSpecMountsOpts) (count int64, err error) {
+func (s *Store) CountBatchSpecMounts(ctx context.Context, opts ListBatchSpecMountsOpts) (count int, err error) {
 	ctx, _, endObservation := s.operations.countBatchSpecMounts.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	q := countBatchSpecMountsQuery(opts)
-
-	count, _, err = basestore.ScanFirstInt64(s.Query(ctx, q))
-	return count, err
+	return s.queryCount(ctx, countBatchSpecMountsQuery(opts))
 }
 
 func countBatchSpecMountsQuery(opts ListBatchSpecMountsOpts) *sqlf.Query {
