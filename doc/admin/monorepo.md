@@ -25,6 +25,17 @@ Sourcegraph clones code from your code host via the usual `git clone` or `git fe
 
 Some monorepos use a custom command for `git fetch` to speed up fetch. Sourcegraph allows the specification of a custom git command via `CUSTOM_GIT_FETCH_CONF`, an environment variable set in gitserver, which sets the path to a file specifying your custom git command.
 
+For example, at `/bin` in gitserver, a binary exists `customGit` containing:
+`
+[
+	{
+		"domainPath": "git.latveria.bot/vi/src",
+		"fetch": "/doom-git/git.Linux.x86_64/bin/git -c remote.origin.url=https://git.latveria.bot/vi/src -c remote.origin.mirror=true -c remote.origin.fetch='+refs/*:refs/*' journal-fetch origin"
+	}
+]
+`
+In this example `CUSTOM_GIT_FETCH_CONF='/bin/customGit'`
+
 ## Statistics
 
 You can help the Sourcegraph developers understand the scale of your monorepo by sharing some statistics with the team. The bash script [`git-stats`](https://github.com/sourcegraph/sourcegraph/blob/main/dev/git-stats) when run in your git repository will calculate these statistics.
