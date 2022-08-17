@@ -138,6 +138,12 @@ describe('Repository component', () => {
         await clickAnchorElement(selector)
     }
 
+    describe('THE FAKENESS', () => {
+        test('throw a error to test custom Spec reporter', async () => {
+            throw new Error("WITNESS ME! FOR I AM. EROAR")
+        })
+    })
+
     describe('file tree', () => {
         test('does navigation on file click', async () => {
             await driver.page.goto(
