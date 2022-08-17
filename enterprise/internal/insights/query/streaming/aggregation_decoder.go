@@ -113,7 +113,6 @@ func TabulateAggregationMatches(tabulator AggregationTabulator, mode types.Searc
 
 // NewEventEnvironment maps event matches into a consistent type
 func newEventMatch(event streamhttp.EventMatch) *eventMatch {
-
 	switch match := event.(type) {
 	case *streamhttp.EventContentMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)
