@@ -318,6 +318,7 @@ var listBatchSpecMountQueryFmtstr = `
 SELECT %s FROM batch_spec_mounts
 %s
 WHERE %s
+ORDER BY id DESC
 `
 
 func scanBatchSpecMount(m *btypes.BatchSpecMount, s dbutil.Scanner) error {
