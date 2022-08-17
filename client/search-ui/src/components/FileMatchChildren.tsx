@@ -429,7 +429,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                             startLine={symbol.line - 1}
                             endLine={symbol.line}
                             fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
-                            fetchUnhighlightedFileRangeLines={
+                            fetchPlainTextFileRangeLines={
                                 enableLazyFileResultSyntaxHighlighting
                                     ? fetchUnhighlightedSymbolMatchLineRanges
                                     : undefined
@@ -475,7 +475,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
-                                    fetchUnhighlightedFileRangeLines={
+                                    fetchPlainTextFileRangeLines={
                                         enableLazyFileResultSyntaxHighlighting
                                             ? fetchUnhighlightedFileMatchLineRanges
                                             : undefined

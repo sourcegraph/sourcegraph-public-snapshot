@@ -43,7 +43,7 @@ interface Props extends Repo {
     fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
     /** A function to fetch the range of lines this code excerpt will display. It will be provided
      * the same start and end lines properties that were provided as component props */
-    fetchUnhighlightedFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
+    fetchPlainTextFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 
     viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
@@ -107,7 +107,7 @@ const visibilitySensorOffset = { bottom: -500 }
 export const CodeExcerpt: React.FunctionComponent<Props> = ({
     blobLines,
     fetchHighlightedFileRangeLines,
-    fetchUnhighlightedFileRangeLines,
+    fetchPlainTextFileRangeLines,
     startLine,
     endLine,
     highlightRanges,
@@ -116,14 +116,12 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     className,
     onCopy,
 }) => {
-    const [unhighlightedBlobLinesOrError, setUnhighlightedBlobLinesOrError] = useState<string[] | ErrorLike | null>(
-        null
-    )
+    const [plainTextBlobLinesOrError, setPlainTextBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
     const [highlightedBlobLinesOrError, setHighlightedBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
     const [isVisible, setIsVisible] = useState(false)
 
-    const blobLinesOrError = fetchUnhighlightedFileRangeLines
-        ? highlightedBlobLinesOrError || unhighlightedBlobLinesOrError
+    const blobLinesOrError = fetchPlainTextFileRangeLines
+        ? highlightedBlobLinesOrError || plainTextBlobLinesOrError
         : highlightedBlobLinesOrError
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
@@ -139,16 +137,16 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         [tableContainerElements]
     )
 
-    // Get the unhighlighted blob lines
+    // Get the plain text (unhighlighted) blob lines
     useEffect(() => {
         let subscription: Subscription | undefined
-        if (isVisible && fetchUnhighlightedFileRangeLines) {
-            subscription = fetchUnhighlightedFileRangeLines(startLine, endLine).subscribe(blobLinesOrError => {
-                setUnhighlightedBlobLinesOrError(blobLinesOrError)
+        if (isVisible && fetchPlainTextFileRangeLines) {
+            subscription = fetchPlainTextFileRangeLines(startLine, endLine).subscribe(blobLinesOrError => {
+                setPlainTextBlobLinesOrError(blobLinesOrError)
             })
         }
         return () => subscription?.unsubscribe()
-    }, [blobLines, endLine, fetchUnhighlightedFileRangeLines, isVisible, startLine])
+    }, [blobLines, endLine, fetchPlainTextFileRangeLines, isVisible, startLine])
 
     // Get the syntax highlighted blob lines
     useEffect(() => {
