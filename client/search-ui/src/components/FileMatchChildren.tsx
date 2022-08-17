@@ -147,6 +147,12 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
     }
 }
 
+/** Start line to use when fetching an entire file. */
+const ENTIRE_FILE_START_LINE = 0
+/** End line to use when fetching an entire file.
+ * For reference, this is a Mersenne prime number: https://en.wikipedia.org/wiki/2,147,483,647 */
+const ENTIRE_FILE_END_LINE = 2147483647
+
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     /**
@@ -158,7 +164,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final.experimentalFeatures?.enableFastResultLoading
     /**
-     * If lazyFileResultSYntaxHighlighting is enabled, we fetch plaintext
+     * If LazyFileResultSyntaxHighlighting is enabled, we fetch plaintext
      * line ranges _alongside_ the typical highlighted line ranges.
      */
     const enableLazyFileResultSyntaxHighlighting =
@@ -195,7 +201,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                               endLine: group.endLine,
                           })
                       )
-                    : [{ startLine: 0, endLine: 2147483647 }], // entire file
+                    : [{ startLine: ENTIRE_FILE_START_LINE, endLine: ENTIRE_FILE_END_LINE }], // entire file
             }).pipe(
                 map(lines => {
                     const endTime = Date.now()
@@ -213,7 +219,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         [fetchFileRangeMatches, optimizeHighlighting, grouped, telemetryService]
     )
 
-    const fetchUnhighlightedFileMatchLineRanges = React.useCallback(
+    const fetchPlainTextFileMatchLineRanges = React.useCallback(
         (startLine: number, endLine: number) =>
             fetchFileRangeMatches({
                 format: HighlightResponseFormat.HTML_PLAINTEXT,
@@ -224,7 +230,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                               endLine: group.endLine,
                           })
                       )
-                    : [{ startLine: 0, endLine: 2147483647 }], // entire file
+                    : [{ startLine: ENTIRE_FILE_START_LINE, endLine: ENTIRE_FILE_END_LINE }], // entire file
             }).pipe(
                 map(lines =>
                     optimizeHighlighting
@@ -250,7 +256,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                               endLine: symbol.line,
                           })
                       )
-                    : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                    : [{ startLine: ENTIRE_FILE_START_LINE, endLine: ENTIRE_FILE_END_LINE }], // entire file,
             }).pipe(
                 map(lines => {
                     const endTime = Date.now()
@@ -272,7 +278,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         [result, fetchFileRangeMatches, optimizeHighlighting, telemetryService]
     )
 
-    const fetchUnhighlightedSymbolMatchLineRanges = React.useCallback(
+    const fetchPlainTextSymbolMatchLineRanges = React.useCallback(
         (startLine: number, endLine: number) => {
             if (result.type !== 'symbol') {
                 return of([])
@@ -287,7 +293,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                               endLine: symbol.line,
                           })
                       )
-                    : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                    : [{ startLine: ENTIRE_FILE_START_LINE, endLine: ENTIRE_FILE_END_LINE }], // entire file,
             }).pipe(
                 map(lines =>
                     optimizeHighlighting
@@ -430,9 +436,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                             endLine={symbol.line}
                             fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
                             fetchPlainTextFileRangeLines={
-                                enableLazyFileResultSyntaxHighlighting
-                                    ? fetchUnhighlightedSymbolMatchLineRanges
-                                    : undefined
+                                enableLazyFileResultSyntaxHighlighting ? fetchPlainTextSymbolMatchLineRanges : undefined
                             }
                             viewerUpdates={viewerUpdates}
                             hoverifier={props.hoverifier}
@@ -477,7 +481,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
                                     fetchPlainTextFileRangeLines={
                                         enableLazyFileResultSyntaxHighlighting
-                                            ? fetchUnhighlightedFileMatchLineRanges
+                                            ? fetchPlainTextFileMatchLineRanges
                                             : undefined
                                     }
                                     blobLines={group.blobLines}
