@@ -254,9 +254,6 @@ UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
 
 //
-// Lang stat insights migration
-
-//
 // Insight migration
 
 func (m *insightsMigrator) migrateInsights(ctx context.Context, insights []searchInsight, batch string) (count int, err error) {
