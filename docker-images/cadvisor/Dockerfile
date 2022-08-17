@@ -14,6 +14,7 @@ LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 # hadolint ignore=SC2261
 RUN apk add --upgrade --no-cache apk-tools>=2.10.8-r0 krb5-libs>=1.18.4-r0 \
+    libtirpc>=1.3.2-r1 \
     busybox \
     wget
 

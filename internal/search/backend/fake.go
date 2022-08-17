@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 )
 
 // FakeSearcher is a zoekt.Searcher that returns a predefined search Result.

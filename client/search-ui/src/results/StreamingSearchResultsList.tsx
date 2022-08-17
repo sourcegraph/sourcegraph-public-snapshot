@@ -57,7 +57,7 @@ export interface StreamingSearchResultsListProps
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
     renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
 
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
     /**
      * Latest run query. Resets scroll visibility state when changed.

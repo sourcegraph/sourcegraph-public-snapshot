@@ -1,44 +1,70 @@
 package migrations
 
 import (
-	"time"
-
-	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
-	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
+	workercodeintel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
+	iambatches "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
 	codeinsightsmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 )
 
-type TaggedMigrator interface {
-	oobmigration.Migrator
+func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	frontendStore, err := frontendStore(db)
+	if err != nil {
+		return err
+	}
 
-	ID() int
-	Interval() time.Duration
+	codeIntelStore, err := codeIntelStore()
+	if err != nil {
+		return err
+	}
+
+	insightsStore, err := insightsStore()
+	if err != nil {
+		return err
+	}
+
+	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
+		iambatches.NewSubscriptionAccountNumberMigrator(frontendStore),
+		iambatches.NewLicenseKeyFieldsMigrator(frontendStore),
+		batches.NewSSHMigratorWithDB(frontendStore, keyring.Default().BatchChangesCredentialKey),
+		codeintel.NewDiagnosticsCountMigrator(codeIntelStore, 1000),
+		codeintel.NewDefinitionLocationsCountMigrator(codeIntelStore, 1000),
+		codeintel.NewReferencesLocationsCountMigrator(codeIntelStore, 1000),
+		codeintel.NewDocumentColumnSplitMigrator(codeIntelStore, 100),
+		codeintel.NewAPIDocsSearchMigrator(),
+		codeinsightsmigrations.NewMigrator(frontendStore, insightsStore),
+	})
 }
 
-func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	migrations := []TaggedMigrator{
-		NewSubscriptionAccountNumberMigrator(db),
-		NewLicenseKeyFieldsMigrator(db),
-	}
-	for _, migrator := range migrations {
-		if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: migrator.Interval()}); err != nil {
-			return err
-		}
+func frontendStore(db database.DB) (*basestore.Store, error) {
+	return basestore.NewWithHandle(db.Handle()), nil
+}
+
+func codeIntelStore() (*basestore.Store, error) {
+	lsifStore, err := workercodeintel.InitLSIFStore()
+	if err != nil {
+		return nil, err
 	}
 
-	if err := batchesmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
+	return lsifStore.Store, err
+}
+
+func insightsStore() (*basestore.Store, error) {
+	if !insights.IsEnabled() {
+		return nil, nil
 	}
 
-	if err := codeintelmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
+	db, err := insights.InitializeCodeInsightsDB("worker-oobmigrator")
+	if err != nil {
+		return nil, err
 	}
 
-	if err := codeinsightsmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	return nil
+	return basestore.NewWithHandle(db.Handle()), nil
 }
