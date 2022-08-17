@@ -107,13 +107,8 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	helper := database.RefreshTokenHelperForExternalAccount{
-		DB:                p.db,
-		ExternalAccountID: account.ID,
-		OauthRefreshToken: tok.RefreshToken,
-	}
-
-	client := p.clientProvider.NewClientWithTokenRefresher(&auth.OAuthBearerToken{Token: tok.AccessToken}, p.clientProvider.HTTPClient, helper.RefreshToken)
+	tokenRefresher := database.ExternalAccountTokenRefresher(p.db, account.ID, tok.RefreshToken)
+	client := p.clientProvider.NewClientWithTokenRefresher(&auth.OAuthBearerToken{Token: tok.AccessToken}, p.clientProvider.HTTPClient, tokenRefresher)
 	return listProjects(ctx, client)
 }
 

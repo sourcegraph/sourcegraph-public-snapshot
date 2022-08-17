@@ -104,8 +104,8 @@ func newGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc
 		return nil, err
 	}
 
-	helper := &database.RefreshTokenHelperForExternalService{DB: db, ExternalServiceID: svc.ID, OauthRefreshToken: c.TokenOauthRefresh}
-	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli, helper.RefreshToken)
+	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
+	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli, tokenRefresher)
 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {

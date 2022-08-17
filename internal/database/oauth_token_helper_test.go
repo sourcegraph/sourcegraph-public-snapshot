@@ -24,9 +24,8 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
-func TestRefreshToken_ExternalServices(t *testing.T) {
+func TestExternalServiceTokenRefresher(t *testing.T) {
 	ctx := context.Background()
-	ctxOauth := oauthutil.OAuthContext{}
 	db := NewMockDB()
 
 	externalServices := NewMockExternalServiceStore()
@@ -87,13 +86,12 @@ func TestRefreshToken_ExternalServices(t *testing.T) {
 		return nil
 	})
 
-	h := &RefreshTokenHelperForExternalService{DB: db, ExternalServiceID: 2, OauthRefreshToken: "refresh_token"}
-	newToken, err := h.RefreshToken(ctx, doer, ctxOauth)
+	newToken, err := ExternalServiceTokenRefresher(db, 2, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken)
 }
 
-func TestRefreshToken_ExternalAccounts(t *testing.T) {
+func TestExternalAccountTokenRefresher(t *testing.T) {
 	ctx := context.Background()
 	db := NewMockDB()
 
@@ -103,6 +101,9 @@ func TestRefreshToken_ExternalAccounts(t *testing.T) {
 			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 			AccountID:   "accountId",
+		},
+		AccountData: extsvc.AccountData{
+			AuthData: extsvc.NewUnencryptedData([]byte(``)),
 		},
 	}}
 
@@ -139,9 +140,7 @@ func TestRefreshToken_ExternalAccounts(t *testing.T) {
 	}
 
 	expectedNewToken := "new-token"
-
-	h := &RefreshTokenHelperForExternalAccount{DB: db, ExternalAccountID: 1, OauthRefreshToken: "refresh_token"}
-	newToken, err := h.RefreshToken(ctx, doer, oauthutil.OAuthContext{})
+	newToken, err := ExternalAccountTokenRefresher(db, 1, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken)
 }
