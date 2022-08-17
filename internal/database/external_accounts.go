@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/log"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -55,7 +57,9 @@ type UserExternalAccountsStore interface {
 	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
 
 	// Delete deletes a user external account.
-	Delete(ctx context.Context, id int32) error
+	Delete(ctx context.Context, ids ...int32) error
+
+	UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error
 
 	// ExecResult performs a query without returning any rows, but includes the
 	// result of the execution.
@@ -78,8 +82,8 @@ type UserExternalAccountsStore interface {
 	// CreateUserAndSave for that.
 	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
 
-	// TouchExpired sets the given user external account to be expired now.
-	TouchExpired(ctx context.Context, id int32) error
+	// TouchExpired sets the given user external accounts to be expired now.
+	TouchExpired(ctx context.Context, ids ...int32) error
 
 	// TouchLastValid sets last valid time of the given user external account to be now.
 	TouchLastValid(ctx context.Context, id int32) error
@@ -294,13 +298,17 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
 }
 
-func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
-	_, err := s.Handle().ExecContext(ctx, `
+func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int32) error {
+	idStrings := make([]string, len(ids))
+	for i, id := range ids {
+		idStrings[i] = strconv.Itoa(int(id))
+	}
+	_, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
-WHERE id = $1
-`, id)
+WHERE id IN (%s) 
+`, strings.Join(idStrings, ", ")))
 	return err
 }
 
@@ -316,8 +324,16 @@ WHERE id = $1
 	return err
 }
 
-func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	res, err := s.Handle().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) error {
+	idStrings := make([]string, len(ids))
+	for i, id := range ids {
+		idStrings[i] = strconv.Itoa(int(id))
+	}
+	res, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
+-- source: internal/database/external_accounts.go:UserExternalAccountsStore.Delete
+UPDATE user_external_accounts
+SET deleted_at=now()
+WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(idStrings, ", ")))
 	if err != nil {
 		return err
 	}
@@ -326,7 +342,7 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error 
 		return err
 	}
 	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]any{id}}
+		return userExternalAccountNotFoundError{[]any{ids}}
 	}
 	return nil
 }
@@ -336,12 +352,61 @@ type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
 	AccountID                        int64
+	AccountIDLike                    string
 
 	// Only one of these should be set
 	ExcludeExpired bool
 	OnlyExpired    bool
 
 	*LimitOffset
+}
+
+func (s *userExternalAccountsStore) UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error {
+	acctInstallations, err := s.List(ctx, ExternalAccountsListOptions{
+		ServiceType:    extsvc.TypeGitHubApp,
+		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
+		ExcludeExpired: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	validInstallations := []*extsvc.Account{}
+ACCTINSTALLATIONS:
+	for _, acctInstallation := range acctInstallations {
+		for _, installation := range installations {
+			installationID := strconv.FormatInt(*installation.ID, 10)
+			if acctInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
+				validInstallations = append(validInstallations, acctInstallation)
+				continue ACCTINSTALLATIONS
+			}
+		}
+		if err = s.Delete(ctx, acctInstallation.ID); err != nil {
+			return err
+		}
+	}
+
+INSTALLATIONS:
+	for _, installation := range installations {
+		installationID := strconv.FormatInt(*installation.ID, 10)
+		for _, validInstallation := range validInstallations {
+			if validInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
+				continue INSTALLATIONS
+			}
+		}
+		accountID := installationID + "/" + acct.AccountID
+		if err := s.Insert(ctx, acct.UserID, extsvc.AccountSpec{
+			ServiceType: extsvc.TypeGitHubApp,
+			ServiceID:   acct.ServiceID,
+			ClientID:    acct.ClientID,
+			AccountID:   accountID,
+		},
+			extsvc.AccountData{AuthData: nil, Data: nil},
+		); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
@@ -440,6 +505,9 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	}
 	if opt.OnlyExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
+	}
+	if opt.AccountIDLike != "" {
+		conds = append(conds, sqlf.Sprintf("account_id LIKE %s", opt.AccountIDLike))
 	}
 
 	return conds
