@@ -40,7 +40,10 @@ func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context,
 		return "", errors.Wrap(err, "get user external account")
 	}
 
-	acct.SetAuthData(refreshedToken)
+	err = acct.AuthData.Set(refreshedToken)
+	if err != nil {
+		return "", errors.Wrap(err, "set auth data")
+	}
 	_, err = r.DB.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
 	if err != nil {
 		return "", errors.Wrap(err, "save refreshed token")
@@ -65,18 +68,25 @@ func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context,
 		return "", errors.Wrap(err, "get external service")
 	}
 
-	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.AccessToken, "token")
+	config, err := extsvc.Config.Decrypt(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "decrypt old config")
+	}
+
+	config, err = jsonc.Edit(config, refreshedToken.AccessToken, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "update OAuth token")
 	}
-	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
+	config, err = jsonc.Edit(config, refreshedToken.RefreshToken, "token.oauth.refresh")
 	if err != nil {
 		return "", errors.Wrap(err, "update OAuth refresh token")
 	}
-	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
+	config, err = jsonc.Edit(config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
 	if err != nil {
 		return "", errors.Wrap(err, "update OAuth token expiry")
 	}
+	extsvc.Config.Set(config)
+
 	extsvc.UpdatedAt = time.Now()
 	if err := r.DB.ExternalServices().Upsert(ctx, extsvc); err != nil {
 		return "", errors.Wrap(err, "upsert external service")
