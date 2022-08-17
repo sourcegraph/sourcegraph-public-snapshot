@@ -36,7 +36,7 @@ func (a *aggregated) Add(label string, count int32) {
 			a.Results[label] = count
 			// The buffer size hasn't been reached yet so we can find the smallest item by direct
 			// comparison.
-			if newResult.Less(a.smallestResult) {
+			if a.smallestResult == nil || newResult.Less(a.smallestResult) {
 				a.smallestResult = newResult
 			}
 		} else {

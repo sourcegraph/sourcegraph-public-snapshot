@@ -104,6 +104,20 @@ func TestAddAggregate(t *testing.T) {
 				OtherCount:       OtherCount{ResultCount: 18, GroupCount: 2},
 			},
 		},
+		{
+			name: "first result becomes smallest result",
+			have: aggregated{
+				resultBufferSize: 1,
+				Results:          map[string]int32{},
+			},
+			value: "new",
+			count: 1,
+			want: aggregated{
+				resultBufferSize: 1,
+				Results:          map[string]int32{"new": 1},
+				smallestResult:   &Aggregate{"new", 1},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
