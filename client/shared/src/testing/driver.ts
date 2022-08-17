@@ -198,7 +198,7 @@ export class Driver {
                                 takeUntil(fromEvent(page, 'close'))
                             )
                         )
-                    )
+                    )  // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
                     .subscribe(formattedLine => console.log(formattedLine))
             )
         }
@@ -295,6 +295,7 @@ export class Driver {
         if (!this.keepBrowser) {
             await this.browser.close()
         }
+        // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
         console.log(
             '\n  Visited routes:\n' +
                 [
@@ -407,6 +408,7 @@ export class Driver {
         }
 
         // Navigate to the add external service page.
+        // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
         console.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await this.page.waitForSelector(`[data-test-external-service-card-link="${kind.toUpperCase()}"]`, {
@@ -800,6 +802,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
     if (process.getuid() === 0) {
         // TODO don't run as root in CI
+        // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
         console.warn('Running as root, disabling sandbox')
         args.push('--no-sandbox', '--disable-setuid-sandbox')
     }

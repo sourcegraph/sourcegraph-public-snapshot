@@ -67,6 +67,7 @@ describe('Core functionality regression test suite', () => {
             await driver.close()
         }
         if (screenshots.screenshots.length > 0) {
+            // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
             console.log(screenshots.verificationInstructions())
         }
     })

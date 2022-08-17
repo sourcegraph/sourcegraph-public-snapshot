@@ -13,6 +13,7 @@ import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable }
 import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
+import { logError } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import {
     fetchAutoDefinedSearchContexts,
@@ -238,7 +239,7 @@ export class SourcegraphWebApp extends React.Component<
                 })
             })
             .catch(error => {
-                console.error('Error initializing GraphQL client', error)
+                logError('Error initializing GraphQL client', error)
             })
 
         this.subscriptions.add(
@@ -295,7 +296,7 @@ export class SourcegraphWebApp extends React.Component<
         }
 
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
-            console.error('Error sending search context to extensions!', error)
+            logError('Error sending search context to extensions!', error)
         })
 
         this.userRepositoriesUpdates.next()
@@ -463,7 +464,7 @@ export class SourcegraphWebApp extends React.Component<
                 localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
 
                 this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
-                    console.error('Error sending search context to extensions', error)
+                    logError('Error sending search context to extensions', error)
                 })
             })
         )

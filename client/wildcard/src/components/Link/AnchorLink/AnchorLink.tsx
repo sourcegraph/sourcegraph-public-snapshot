@@ -2,7 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { useWildcardTheme } from '../../../hooks'
+import { useWildcardTheme } from '@sourcegraph/wildcard'
+
 import type { Link } from '../Link'
 
 import styles from './AnchorLink.module.scss'

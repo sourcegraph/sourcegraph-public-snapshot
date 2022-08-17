@@ -38,12 +38,15 @@ async function takeScreenshot({
     const screenshot = await page.screenshot({ path: filePath })
     if (process.env.CI) {
         // Print image with ANSI escape code for Buildkite: https://buildkite.com/docs/builds/images-in-log-output.
+        // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
         console.log(`\u001B]1338;url="artifact://${path.relative(repoRootDir, filePath)}";alt="Screenshot"\u0007`)
     } else if (process.env.TERM_PROGRAM === 'iTerm.app') {
         // Print image inline for iTerm2
         const nameBase64 = Buffer.from(fileName).toString('base64')
+        // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
         console.log(`\u001B]1337;File=name=${nameBase64};inline=1;width=500px:${screenshot.toString('base64')}\u0007`)
     } else {
+        // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
         console.log(`📸  Saved screenshot of failure to ${path.relative(process.cwd(), filePath)}`)
     }
 }

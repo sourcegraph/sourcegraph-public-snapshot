@@ -3,7 +3,7 @@ import { ReactElement } from 'react'
 import { mdiClose } from '@mdi/js'
 import { components, MultiValueRemoveProps } from 'react-select'
 
-import { Icon } from '../../Icon'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { MultiSelectOption } from './types'
 

@@ -8,7 +8,7 @@ import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError } from '@sourcegraph/common'
+import { asError, logError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     Container,
@@ -191,7 +191,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                         this.setState({ result, loading: false })
                         this.props.onDidUpdateReachability(result.error === null)
                     },
-                    error => console.log(error)
+                    error => logError(error)
                 )
         )
 

@@ -27,6 +27,7 @@ import {
     isDefined,
     isExactly,
     isNot,
+    logError,
     property,
 } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
@@ -408,7 +409,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                             } catch (error) {
                                 // An error during evaluation causes all of the contributions in the same entry to be
                                 // discarded.
-                                console.log('Discarding contributions: evaluating expressions or templates failed.', {
+                                logError('Discarding contributions: evaluating expressions or templates failed.', {
                                     contributions,
                                     error,
                                 })
@@ -456,7 +457,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                         return providerResultToObservable(provider.viewProvider.provideView(context))
                     }),
                     catchError((error: unknown) => {
-                        console.error('View provider errored:', error)
+                        logError('View provider errored:', error)
                         // Pass only primitive copied values because Error object is not
                         // cloneable in Firefox and Safari
                         const { message, name, stack } = asError(error)
@@ -576,7 +577,7 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
 ): Observable<MaybeLoadingResult<TMergedResult>> {
     const logError = (...args: any): void => {
         if (logErrors) {
-            console.error('Provider errored:', ...args)
+            logError('Provider errored:', ...args)
         }
     }
     const safeInvokeProvider = (provider: TRegisteredProvider): sourcegraph.ProviderResult<TProviderResult> => {
@@ -722,7 +723,7 @@ function callViewProviders<W extends ContributableViewContainer>(
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
                             defaultIfEmpty<sourcegraph.View | null | undefined>(null),
                             catchError((error: unknown): [ErrorLike] => {
-                                console.error('View provider errored:', error)
+                                logError('View provider errored:', error)
                                 // Pass only primitive copied values because Error object is not
                                 // cloneable in Firefox and Safari
                                 const { message, name, stack } = asError(error)

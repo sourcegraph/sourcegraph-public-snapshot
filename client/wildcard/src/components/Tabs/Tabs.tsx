@@ -15,7 +15,8 @@ import {
 } from '@reach/tabs'
 import classNames from 'classnames'
 
-import { useElementObscuredArea } from '../../hooks'
+import { useElementObscuredArea } from '@sourcegraph/wildcard'
+
 import { ForwardReferenceComponent } from '../../types'
 
 import { TabPanelIndexContext, TabsState, TabsStateContext, useTabsState } from './context'

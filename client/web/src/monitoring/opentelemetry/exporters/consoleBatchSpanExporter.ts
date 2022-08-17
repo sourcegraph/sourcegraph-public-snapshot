@@ -73,6 +73,7 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
         const formattedSpans = this.groupSpans(spans).map(this.nestSpans)
 
         for (const span of formattedSpans) {
+            // TODO - should remove console.debug or replace with logError function from @sourcegraph/commons
             console.debug(span)
         }
 

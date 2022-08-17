@@ -291,7 +291,6 @@ export const sendTestEmail = (id: Scalars['ID']): Observable<void> => {
         map(dataOrThrowErrors),
         map(data => {
             if (!data.resetTriggerQueryTimestamps) {
-                console.log('DATA', data)
                 throw createInvalidGraphQLMutationResponseError('ResetTriggerQueryTimestamps')
             }
         })

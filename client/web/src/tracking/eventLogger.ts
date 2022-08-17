@@ -98,6 +98,7 @@ export class EventLogger implements TelemetryService {
             this.log('BrowserExtensionConnectedToServer', args, args)
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+                // TODO - should remove console.debug or replace with logError function from @sourcegraph/commons
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
             }
         })
@@ -168,6 +169,7 @@ export class EventLogger implements TelemetryService {
 
     private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+            // TODO - should remove console.debug or replace with logError function from @sourcegraph/commons
             console.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }

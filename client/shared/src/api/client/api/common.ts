@@ -111,6 +111,7 @@ export const wrapRemoteObservable = <T>(
 export const finallyReleaseProxy = <T>() => (source: Observable<T> & Partial<ProxySubscribed>): Observable<T> => {
     const { proxySubscription } = source
     if (!proxySubscription) {
+        // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
         console.warn('finallyReleaseProxy() used on Observable without proxy subscription')
         return source
     }

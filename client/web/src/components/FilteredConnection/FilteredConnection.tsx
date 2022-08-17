@@ -19,7 +19,7 @@ import {
     share,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logError } from '@sourcegraph/common'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
@@ -357,7 +357,7 @@ export class FilteredConnection<
                         }
                         this.setState({ connectionOrError, ...rest })
                     },
-                    error => console.error(error)
+                    error => logError(error)
                 )
         )
 

@@ -8,6 +8,7 @@ import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -423,7 +424,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         try {
             restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
         } catch (error) {
-            console.error(error)
+            logError(error)
             this.setState({ saving: false, error })
         }
 
@@ -447,7 +448,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             try {
                 await refreshSiteFlags().toPromise()
             } catch (error) {
-                console.error(error)
+                logError(error)
             }
         }
         this.setState({ restartToApply })

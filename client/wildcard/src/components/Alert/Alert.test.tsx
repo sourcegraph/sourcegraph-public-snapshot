@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { H4 } from '../Typography'
+import { H4 } from '@sourcegraph/wildcard'
 
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'

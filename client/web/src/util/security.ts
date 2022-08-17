@@ -73,8 +73,6 @@ export function getPasswordRequirements(
     let requirements: string = 'At least ' + context.authMinPasswordLength.toString() + ' characters'
 
     if (passwordPolicyReference?.enabled) {
-        console.log('Using enhanced password policy.')
-
         if (
             passwordPolicyReference.numberOfSpecialCharacters &&
             passwordPolicyReference.numberOfSpecialCharacters > 0

@@ -6,5 +6,11 @@ module.exports = {
     ...baseConfig.parserOptions,
     project: [__dirname + '/tsconfig.json', __dirname + '/src/testing/tsconfig.json'],
   },
-  overrides: baseConfig.overrides,
+  overrides: [
+    ...baseConfig.overrides,
+    {
+      files: ['dev/**.js'],
+      rules: { 'no-console': 'off' },
+    },
+  ],
 }

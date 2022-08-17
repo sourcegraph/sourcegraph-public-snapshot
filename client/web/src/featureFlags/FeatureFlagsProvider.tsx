@@ -2,6 +2,8 @@ import React, { createContext, useEffect, useMemo } from 'react'
 
 import { Observable, of, throwError } from 'rxjs'
 
+import { logError } from '@sourcegraph/common'
+
 import { requestGraphQL } from '../backend/graphql'
 
 import { FeatureFlagName } from './featureFlags'
@@ -36,13 +38,14 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
                 } else if ([0, 'false'].includes(value)) {
                     setFeatureFlagOverride(flagName, false)
                 } else {
+                    // TODO - should remove or replace with logError function from @sourcegraph/commons
                     console.warn(
                         `[FeatureFlagsLocalOverrideAgent]: can not override feature flag "${flagName}" with value "${value}". Only boolean values are supported.`
                     )
                 }
             }
         } catch (error) {
-            console.error(error)
+            logError(error)
         }
     }, [])
     return null

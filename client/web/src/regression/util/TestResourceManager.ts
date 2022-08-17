@@ -1,4 +1,4 @@
-import { asError } from '@sourcegraph/common'
+import { asError, logError } from '@sourcegraph/common'
 
 export type ResourceDestructor = () => Promise<void>
 
@@ -63,14 +63,13 @@ export class TestResourceManager {
             try {
                 await resource.destroy()
             } catch (error) {
-                console.error(
+                logError(
                     `Error when destroying resource ${resource.type} ${JSON.stringify(resource.name)}: ${
                         asError(error).message
                     }`
                 )
                 continue
             }
-            console.log(`Test resource destroyed: ${resource.type} ${JSON.stringify(resource.name)}`)
         }
     }
 }

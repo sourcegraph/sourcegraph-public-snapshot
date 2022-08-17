@@ -10,6 +10,7 @@ import { initializeExtensionHostTest } from './test-helpers'
 const noopMain = pretendRemote<ClientAPI>({
     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
     getScriptURLForExtension: () => undefined,
+    // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
     logExtensionMessage: (...data) => console.log(...data),
 })
 

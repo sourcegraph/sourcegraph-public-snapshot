@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
+import { asError, ErrorLike, pluralize, encodeURIPathComponent, logError } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -134,7 +134,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
     useEffect(() => {
         if (!blobInfoOrError) {
-            console.error('error')
+            logError('error')
         }
     }, [blobInfoOrError])
 

@@ -4,7 +4,7 @@ import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logError } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 
 import { ClientAPI } from '../client/api/api'
@@ -285,18 +285,21 @@ export function createExtensionAPIFactory(
         // These were removed, but keep them here so that calls from old extensions do not throw
         // an exception and completely break.
         registerTypeDefinitionProvider: () => {
+            // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
             console.warn(
                 'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
             )
             return { unsubscribe: () => undefined }
         },
         registerImplementationProvider: () => {
+            // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
             console.warn(
                 'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
             )
             return { unsubscribe: () => undefined }
         },
         registerCompletionItemProvider: (): sourcegraph.Unsubscribable => {
+            // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
             console.warn('sourcegraph.languages.registerCompletionItemProvider was removed.')
             return { unsubscribe: () => undefined }
         },
@@ -336,7 +339,7 @@ export function createExtensionAPIFactory(
                         clientAPI
                             .logExtensionMessage(`🧩 %c${extensionID}`, 'background-color: lightgrey;', ...data)
                             .catch(error => {
-                                console.error('Error sending extension message to main thread:', error)
+                                logError('Error sending extension message to main thread:', error)
                             })
                     }
                 },

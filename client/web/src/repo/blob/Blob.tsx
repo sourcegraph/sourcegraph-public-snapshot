@@ -54,6 +54,7 @@ import {
     toPositionOrRangeQueryParameter,
     addLineRangeQueryParameter,
     formatSearchParameters,
+    logError,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -532,7 +533,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                               subscriptions.add(() => {
                                   extensionHostAPI
                                       .removeViewer(viewerId)
-                                      .catch(error => console.error('Error removing viewer from extension host', error))
+                                      .catch(error => logError('Error removing viewer from extension host', error))
                               })
 
                               viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
@@ -608,7 +609,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 viewerData.extensionHostAPI
                                     .setEditorSelections(viewerData.viewerId, lprToSelectionsZeroIndexed(position))
                                     .catch(error =>
-                                        console.error('Error updating editor selections on extension host', error)
+                                        logError('Error updating editor selections on extension host', error)
                                     )
                             })
                         )

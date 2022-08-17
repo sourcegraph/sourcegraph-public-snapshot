@@ -37,7 +37,7 @@ import {
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logError } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 
 import { elementOverlaps, scrollRectangleIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
@@ -563,6 +563,7 @@ export function createHoverifier<C extends object, D, A>({
                     if (target) {
                         part = dom.getDiffCodePart?.(target)
                     } else {
+                        // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
                         console.warn('Could not find target for position in file', position)
                     }
                 }
@@ -904,7 +905,7 @@ export function createHoverifier<C extends object, D, A>({
             // Get the document highlights for that position
             return from(getDocumentHighlights(position)).pipe(
                 catchError(error => {
-                    console.error(error)
+                    logError(error)
                     return []
                 }),
                 map(documentHighlights => ({

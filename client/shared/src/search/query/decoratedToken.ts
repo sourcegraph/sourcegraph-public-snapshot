@@ -949,6 +949,7 @@ const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | u
     if (!matches) {
         return undefined
     }
+    // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
     console.log(matches)
 
     return [

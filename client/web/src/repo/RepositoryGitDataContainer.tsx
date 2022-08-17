@@ -6,7 +6,7 @@ import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, logError } from '@sourcegraph/common'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -101,7 +101,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                 )
                 .subscribe(
                     () => this.setState({ gitDataPresentOrError: true }),
-                    error => console.error(error)
+                    error => logError(error)
                 )
         )
         this.propsUpdates.next(this.props)

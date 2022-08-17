@@ -4,6 +4,7 @@ import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { logError } from '@sourcegraph/common'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Alert, Icon, H2, Text, Tooltip, Container } from '@sourcegraph/wildcard'
@@ -126,11 +127,11 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     useEffect(() => {
         refreshSiteFlags()
             .toPromise()
-            .then(null, error => console.error(error))
+            .then(null, error => logError(error))
         return () => {
             refreshSiteFlags()
                 .toPromise()
-                .then(null, error => console.error(error))
+                .then(null, error => logError(error))
         }
     }, [])
     const queryRepositories = useCallback(

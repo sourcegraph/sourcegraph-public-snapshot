@@ -142,6 +142,7 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<Se
 
         const firstCommit = search.results.results[0]
         if (search.results.results.length === 0 || firstCommit?.__typename !== 'CommitSearchResult') {
+            // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
             console.warn(`No result for ${commitQueries[index_]}`)
 
             return { commit: null, date }

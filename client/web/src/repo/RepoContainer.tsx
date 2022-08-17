@@ -11,7 +11,7 @@ import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil, logError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
@@ -295,7 +295,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     })
                 )
                 .catch(error => {
-                    console.error('Error adding workspace root', error)
+                    logError('Error adding workspace root', error)
                 })
         }
 
@@ -305,7 +305,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 extensionsController.extHostAPI
                     .then(extensionHostAPI => extensionHostAPI.removeWorkspaceRoot(workspaceRootUri))
                     .catch(error => {
-                        console.error('Error removing workspace root', error)
+                        logError('Error removing workspace root', error)
                     })
             }
         }

@@ -1,6 +1,8 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
+import { logError } from '@sourcegraph/common'
+
 import { JsonDocument, JsonOccurrence, SyntaxKind } from '../../../lsif/lsif-typed'
 import { BlobInfo } from '../Blob'
 
@@ -50,7 +52,7 @@ function createHighlightTable(json: string | undefined): HighlightIndex {
 
         return { occurrences, lineIndex }
     } catch {
-        console.error(`Unable to process SCIP highlight data: ${json}`)
+        logError(`Unable to process SCIP highlight data: ${json}`)
         return { occurrences: [], lineIndex }
     }
 }

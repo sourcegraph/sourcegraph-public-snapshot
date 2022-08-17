@@ -1,7 +1,7 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { filter, mergeMap, take, tap } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, logError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 
 import { authRequired } from '../auth'
@@ -63,5 +63,5 @@ refreshSiteFlags()
     .toPromise()
     .then(
         () => undefined,
-        error => console.error(error)
+        error => logError(error)
     )

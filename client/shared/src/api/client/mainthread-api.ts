@@ -169,6 +169,7 @@ export const initMainThreadAPI = (
             return proxySubscribable(getEnabledExtensions(platformContext))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
+         // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
         logExtensionMessage: (...data) => console.log(...data),
     }
 

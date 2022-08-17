@@ -109,6 +109,7 @@ export function waitForRepo(
                               if (isErrorLike(error) && error.message === 'Repo exists') {
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
+                                      // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
                                       console.log(
                                           `Waiting for ${repoName} to be removed (attempt ${
                                               retryCount + 1
@@ -151,7 +152,7 @@ export function waitForRepo(
                                           `Waiting for ${repoName} to finish cloning (attempt ${
                                               retryCount + 1
                                           } of ${numberRetries})`
-                                      )
+                                      ) // TODO
                                   }
                                   return timer(retryPeriod)
                               }
@@ -267,6 +268,7 @@ export async function updateExternalService(
             map(dataOrThrowErrors),
             tap(({ updateExternalService: { warning } }) => {
                 if (warning) {
+                     // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
                     console.warn('updateExternalService warning:', warning)
                 }
             })

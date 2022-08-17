@@ -13,7 +13,8 @@ export const buildTimerPlugin: esbuild.Plugin = {
         build.onStart(() => {
             buildStarted = Date.now()
         })
-        build.onEnd(() => console.log(`# esbuild: build took ${Date.now() - buildStarted}ms`))
+        // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
+        build.onEnd(() => console.log(`# esbuild: build took ${Date.now() - buildStarted}ms`)) 
     },
 }
 

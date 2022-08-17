@@ -1,7 +1,7 @@
 import { EMPTY, Observable, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, logError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -155,7 +155,7 @@ batchedEvents
             return EMPTY
         }),
         catchError(error => {
-            console.error('Error logging events:', error)
+            logError('Error logging events:', error)
             return []
         })
     )

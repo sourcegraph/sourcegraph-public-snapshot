@@ -17,6 +17,7 @@ import {
     isDefined,
     memoizeObservable,
     property,
+    logError,
 } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -238,7 +239,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logError(error)
                 )
         )
         this.componentUpdates.next(this.props)

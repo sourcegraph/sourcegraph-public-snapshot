@@ -16,7 +16,7 @@ import { filter, map, catchError, switchMap, distinctUntilChanged, startWith, sh
 import { TextDocumentDecorationType } from 'sourcegraph'
 
 import { DocumentHighlight, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
+import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed, logError } from '@sourcegraph/common'
 import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -104,14 +104,14 @@ export function sourcegraphExtensions({
         })
     ).pipe(
         catchError(() => {
-            console.error('Unable to initialize extensions context')
+            logError('Unable to initialize extensions context')
             return EMPTY
         }),
         map(([viewerId, extensionHostAPI]) => {
             subscriptions.add(() => {
                 extensionHostAPI
                     .removeViewer(viewerId)
-                    .catch(error => console.error('Error removing viewer from extension host', error))
+                    .catch(error => logError('Error removing viewer from extension host', error))
             })
 
             return {
@@ -233,7 +233,7 @@ class SelectionManager implements PluginValue {
         this.subscription = combineLatest([context, this.nextSelection]).subscribe(([context, selection]) => {
             context.extensionHostAPI
                 .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(selection ?? {}))
-                .catch(error => console.error('Error updating editor selections on extension host', error))
+                .catch(error => logError('Error updating editor selections on extension host', error))
         })
     }
 

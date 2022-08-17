@@ -6,6 +6,7 @@ import * as _monaco from 'monaco-editor' // type only
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
+import { logError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -245,7 +246,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             const action = this.editor.getAction(id)
             action.run().then(
                 () => undefined,
-                error => console.error(error)
+                error => logError(error)
             )
         } else {
             alert('Wait for editor to load before running action.')

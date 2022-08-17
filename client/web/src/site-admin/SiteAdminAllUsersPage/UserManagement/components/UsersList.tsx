@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logError } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce, Link, Tooltip } from '@sourcegraph/wildcard'
 
@@ -51,7 +52,7 @@ export const UsersList: React.FunctionComponent = () => {
     })
 
     const reload = useCallback(() => {
-        refetch(variables).catch(console.error)
+        refetch(variables).catch(logError)
     }, [refetch, variables])
 
     const {
@@ -311,7 +312,7 @@ function useUserListActions(reload: () => void): UseUserListActionReturnType {
             ),
             isError: true,
         })
-        console.error(error)
+        logError(error)
     }, [])
 
     const createOnSuccess = useCallback(
