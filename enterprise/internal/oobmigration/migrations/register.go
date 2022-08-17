@@ -1,12 +1,12 @@
 package migrations
 
 import (
-	workercodeintel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
-	iambatches "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
-	codeinsightsmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -31,15 +31,15 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 	}
 
 	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
-		iambatches.NewSubscriptionAccountNumberMigrator(frontendStore),
-		iambatches.NewLicenseKeyFieldsMigrator(frontendStore),
+		iam.NewSubscriptionAccountNumberMigrator(frontendStore),
+		iam.NewLicenseKeyFieldsMigrator(frontendStore),
 		batches.NewSSHMigratorWithDB(frontendStore, keyring.Default().BatchChangesCredentialKey),
 		codeintel.NewDiagnosticsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewDefinitionLocationsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewReferencesLocationsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewDocumentColumnSplitMigrator(codeIntelStore, 100),
 		codeintel.NewAPIDocsSearchMigrator(),
-		codeinsightsmigrations.NewMigrator(frontendStore, insightsStore),
+		insights.NewMigrator(frontendStore, insightsStore),
 	})
 }
 
@@ -48,7 +48,7 @@ func frontendStore(db database.DB) (*basestore.Store, error) {
 }
 
 func codeIntelStore() (*basestore.Store, error) {
-	lsifStore, err := workercodeintel.InitLSIFStore()
+	lsifStore, err := workerCodeIntel.InitLSIFStore()
 	if err != nil {
 		return nil, err
 	}
@@ -57,11 +57,11 @@ func codeIntelStore() (*basestore.Store, error) {
 }
 
 func insightsStore() (*basestore.Store, error) {
-	if !insights.IsEnabled() {
+	if !internalInsights.IsEnabled() {
 		return nil, nil
 	}
 
-	db, err := insights.InitializeCodeInsightsDB("worker-oobmigrator")
+	db, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
 	if err != nil {
 		return nil, err
 	}
