@@ -3,7 +3,9 @@ package authz
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -24,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -249,6 +253,37 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
+func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *extsvc.Account) ([]gh.Installation, error) {
+	if acct.ServiceType != extsvc.TypeGitHub {
+		return nil, nil
+	}
+
+	_, tok, err := github.GetExternalAccountData(ctx, &acct.AccountData)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if tok == nil {
+		return nil, nil
+	}
+
+	apiURL, err := url.Parse(acct.ServiceID)
+	if err != nil {
+		return nil, err
+	}
+	apiURL, _ = github.APIRoot(apiURL)
+	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
+		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil)
+
+	installations, err := ghClient.GetUserInstallations(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return installations, nil
+}
+
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
 // connections) to list all accessible private repositories on code hosts for
 // the given user.
@@ -348,6 +383,10 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 
 	for _, acct := range accts {
+		if acct.ServiceType == extsvc.TypeGitHubApp {
+			continue
+		}
+
 		acctLogger := logger.With(log.Int32("acct.ID", acct.ID))
 
 		provider := byServiceID[acct.ServiceID]
@@ -358,6 +397,20 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
+		}
+
+		acctLogger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
+
+		installations, err := s.getUserGitHubAppInstallations(ctx, acct)
+
+		// These errors aren't fatal, so we continue with the normal flow
+		// even if things go wrong.
+		if err != nil && installations != nil {
+			if err := s.db.UserExternalAccounts().UpdateGitHubAppInstallations(ctx, acct, installations); err != nil {
+				acctLogger.Warn("failed to update GitHub App installation access", log.Error(err))
+			}
+		} else if err != nil {
+			acctLogger.Warn("failed to fetch GitHub App installations", log.Error(err))
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
@@ -375,6 +428,24 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			if unauthorized || accountSuspended || forbidden {
 				// These are fatal errors that mean we should continue as if the account no
 				// longer has any access.
+				linkedAccts, err := s.db.UserExternalAccounts().List(ctx,
+					database.ExternalAccountsListOptions{
+						ServiceType:   extsvc.TypeGitHubApp,
+						AccountIDLike: fmt.Sprintf("%%/%s", acct.AccountID),
+					},
+				)
+				if err != nil {
+					return nil, nil, errors.Wrapf(err, "list linked accounts for %d", acct.ID)
+				}
+
+				linkedAcctIDs := make([]int32, len(linkedAccts))
+				for i, linkedAcct := range linkedAccts {
+					linkedAcctIDs[i] = linkedAcct.ID
+				}
+				if err = accounts.TouchExpired(ctx, linkedAcctIDs...); err != nil {
+					return nil, nil, errors.Wrapf(err, "set expired for external accounts %v", linkedAcctIDs)
+				}
+
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
@@ -880,6 +951,23 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 				ServiceID:   provider.ServiceID(),
 				AccountIDs:  accountIDs,
 			})
+
+			if provider.ServiceType() == extsvc.TypeGitHub {
+				linkedAccountIDsToUserIDs, err := s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
+					ServiceType: extsvc.TypeGitHubApp,
+					ServiceID:   provider.ServiceID(),
+					AccountIDs:  accountIDs,
+				})
+				if err == nil {
+					for k, v := range linkedAccountIDsToUserIDs {
+						accountIDsToUserIDs[k] = v
+					}
+				} else {
+					// Only log in case of error, as there can still be valid permissions syncing.
+					logger.Warn("error fetching linked accounts", log.Error(err))
+				}
+			}
+
 			if err != nil {
 				return errors.Wrap(err, "get user IDs by external accounts")
 			}

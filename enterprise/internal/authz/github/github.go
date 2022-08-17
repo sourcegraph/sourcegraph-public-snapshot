@@ -35,6 +35,8 @@ type Provider struct {
 	// soon as we have verified our approach works and is reliable, at which point the fix will
 	// become the default behaviour.
 	enableGithubInternalRepoVisibility bool
+
+	InstallationID *int64
 }
 
 type ProviderOptions struct {
@@ -44,6 +46,7 @@ type ProviderOptions struct {
 
 	BaseToken      string
 	GroupsCacheTTL time.Duration
+	IsApp          bool
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
@@ -432,7 +435,12 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		}
 
 		for _, u := range users {
-			addUserToRepoPerms(extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10)))
+			userID := strconv.FormatInt(u.DatabaseID, 10)
+			if p.InstallationID != nil {
+				userID = strconv.FormatInt(*p.InstallationID, 10) + "/" + userID
+			}
+
+			addUserToRepoPerms(extsvc.AccountID(userID))
 		}
 	}
 
