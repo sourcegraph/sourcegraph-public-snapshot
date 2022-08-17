@@ -28,7 +28,7 @@ import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum } from '../utils'
+import { formatNumber, StandardDatum } from '../utils'
 
 import { CODEINTEL_STATISTICS } from './queries'
 
@@ -186,6 +186,36 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     const repos = data?.site.analytics.repos
     const groupingLabel = startCase(grouping.value.toLowerCase())
 
+    const eventsData: { name: string; kind: Kind; value: number }[] = [
+        { name: 'Java', kind: 'search-based', value: 90 },
+        { name: 'Java', kind: 'precise', value: 30 },
+        { name: 'Go', kind: 'search-based', value: 30 },
+        { name: 'Go', kind: 'precise', value: 10 },
+    ]
+
+    const topRepos: {
+        name: string
+        events: number
+        hoursSaved: number
+        preciseEnabled: boolean
+        preciseNavigation: string
+    }[] = [
+        {
+            name: 'github.com/gorilla/mux',
+            events: 10000,
+            hoursSaved: 10,
+            preciseEnabled: true,
+            preciseNavigation: '80% Precise coverage for Go, set up precise navigation for Python',
+        },
+        {
+            name: 'github.com/sourcegraph/sourcegraph',
+            events: 2000,
+            hoursSaved: 5,
+            preciseEnabled: false,
+            preciseNavigation: 'Set up precise navigation for Java',
+        },
+    ]
+
     return (
         <>
             <AnalyticsPageTitle>Code intel</AnalyticsPageTitle>
@@ -255,14 +285,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                                         stacked={true}
                                         width={width}
                                         height={300}
-                                        data={
-                                            [
-                                                { name: 'Java', kind: 'search-based', value: 90 },
-                                                { name: 'Java', kind: 'precise', value: 30 },
-                                                { name: 'Go', kind: 'search-based', value: 30 },
-                                                { name: 'Go', kind: 'precise', value: 10 },
-                                            ] as { name: string; kind: Kind; value: number }[]
-                                        }
+                                        data={eventsData}
                                         getDatumColor={value => color(value.kind)}
                                         getDatumValue={value => value.value}
                                         getDatumName={value => value.name}
@@ -275,6 +298,23 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                             <div className={styles.percent}>30%</div>
                             <div>Precise code navigation</div>
                         </div>
+                    </div>
+                    <H4 className="my-3">Top repositories</H4>
+                    <div className={styles.repos}>
+                        <div className="text-muted text-nowrap">{/* Repository */}</div>
+                        <div className="text-center text-muted text-nowrap">Events</div>
+                        <div className="text-center text-muted text-nowrap">Hours saved</div>
+                        <div className="text-center text-muted text-nowrap">Precise enabled</div>
+                        <div className="text-muted text-nowrap">Precise navigation</div>
+                        {topRepos.map((repo, index) => (
+                            <React.Fragment key={index}>
+                                <td className="text-muted">{repo.name}</td>
+                                <td className="text-center font-weight-bold">{formatNumber(repo.events)}</td>
+                                <td className="text-center font-weight-bold">{repo.hoursSaved}</td>
+                                <td className="text-center font-weight-bold">{repo.preciseEnabled ? 'Yes' : 'No'}</td>
+                                <td>{repo.preciseNavigation}</td>
+                            </React.Fragment>
+                        ))}
                     </div>
                 </div>
             </Card>
