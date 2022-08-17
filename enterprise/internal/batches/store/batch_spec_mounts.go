@@ -306,7 +306,7 @@ func listBatchSpecMountsQuery(opts ListBatchSpecMountsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listBatchSpecMountQueryFmtstr,
+		listBatchSpecMountQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(batchSpecMountColumns, ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
@@ -317,7 +317,8 @@ var listBatchSpecMountQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_mounts.go:ListBatchSpecMounts
 SELECT %s FROM batch_spec_mounts
 %s
-WHERE %s`
+WHERE %s
+`
 
 func scanBatchSpecMount(m *btypes.BatchSpecMount, s dbutil.Scanner) error {
 	return s.Scan(
