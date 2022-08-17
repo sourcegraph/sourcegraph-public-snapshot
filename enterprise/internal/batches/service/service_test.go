@@ -595,32 +595,30 @@ func TestService(t *testing.T) {
 			want := &btypes.ChangesetSpec{
 				ID:     5,
 				RandID: "25CD5gYmVce",
-				Typ:    "branch",
-				Diff: `
-                               diff --git INSTALL.md INSTALL.md
-                               index e5af166..d44c3fc 100644
-                               --- INSTALL.md
-                               +++ INSTALL.md
-                               @@ -3,10 +3,10 @@
-                                Line 1
-                                Line 2
-                                Line 3
-                               -Line 4
-                               +This is cool: Line 4
-                                Line 5
-                                Line 6
-                               -Line 7
-                               -Line 8
-                               +Another Line 7
-                               +Foobar Line 8
-                                Line 9
-                                Line 10
-                               `,
+				Typ:    btypes.ChangesetSpecTypeBranch,
+				Diff: []byte(`diff --git INSTALL.md INSTALL.md
+index e5af166..d44c3fc 100644
+--- INSTALL.md
++++ INSTALL.md
+@@ -3,10 +3,10 @@
+ Line 1
+ Line 2
+ Line 3
+-Line 4
++This is cool: Line 4
+ Line 5
+ Line 6
+-Line 7
+-Line 8
++Another Line 7
++Foobar Line 8
+ Line 9
+ Line 10
+`),
 				DiffStatAdded:     1,
 				DiffStatChanged:   2,
 				DiffStatDeleted:   1,
 				BaseRepoID:        1,
-				HeadRepoID:        1,
 				UserID:            1,
 				CreatedAt:         time.Now(),
 				UpdatedAt:         time.Now(),

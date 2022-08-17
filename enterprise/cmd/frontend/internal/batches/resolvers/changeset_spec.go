@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -75,7 +76,7 @@ func (r *changesetSpecResolver) ID() graphql.ID {
 }
 
 func (r *changesetSpecResolver) Type() string {
-	return string(r.changesetSpec.Typ)
+	return strings.ToUpper(string(r.changesetSpec.Typ))
 }
 
 func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend.ChangesetDescription, error) {
@@ -137,7 +138,7 @@ type changesetDescriptionResolver struct {
 }
 
 func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlbackend.ExistingChangesetReferenceResolver, bool) {
-	if r.spec.Typ == btypes.ChangesetSpecTypeImporting {
+	if r.spec.Typ == btypes.ChangesetSpecTypeExisting {
 		return r, true
 	}
 	return nil, false
@@ -177,14 +178,14 @@ func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {
 }
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repoResolver, r.spec.BaseRev, r.spec.Diff)
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repoResolver, r.spec.BaseRev, string(r.spec.Diff))
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {
 	return []graphqlbackend.GitCommitDescriptionResolver{&gitCommitDescriptionResolver{
 		store:       r.store,
 		message:     r.spec.CommitMessage,
-		diff:        r.spec.Diff,
+		diff:        string(r.spec.Diff),
 		authorName:  r.spec.CommitAuthorName,
 		authorEmail: r.spec.CommitAuthorEmail,
 	}}

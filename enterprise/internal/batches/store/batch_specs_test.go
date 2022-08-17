@@ -611,7 +611,8 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 				changesetSpec := &btypes.ChangesetSpec{
 					BaseRepoID:  1,
 					BatchSpecID: batchSpec.ID,
-					Spec:        &batcheslib.ChangesetSpec{ExternalID: "123"},
+					ExternalID:  "123",
+					Typ:         btypes.ChangesetSpecTypeExisting,
 				}
 				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 					t.Fatal(err)

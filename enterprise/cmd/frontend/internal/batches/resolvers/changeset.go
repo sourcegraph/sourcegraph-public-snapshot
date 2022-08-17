@@ -291,7 +291,7 @@ func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btyp
 		return nil, err
 	}
 
-	if spec.Typ == btypes.ChangesetSpecTypeImporting {
+	if spec.Typ == btypes.ChangesetSpecTypeExisting {
 		return nil, errors.New("ChangesetSpec imports a changeset")
 	}
 
@@ -465,7 +465,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			r.store.DatabaseDB(),
 			r.repoResolver,
 			desc.BaseRev,
-			desc.Diff,
+			string(desc.Diff),
 		)
 	}
 

@@ -15,7 +15,6 @@ type TestSpecOpts struct {
 	ID        int64
 	User      int32
 	Repo      api.RepoID
-	HeadRepo  api.RepoID
 	BatchSpec int64
 
 	// If this is non-blank, the changesetSpec will be an import/track spec for
@@ -66,13 +65,12 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 		Title:             opts.Title,
 		Body:              opts.Body,
 		CommitMessage:     opts.CommitMessage,
-		Diff:              opts.CommitDiff,
+		Diff:              []byte(opts.CommitDiff),
 		CommitAuthorEmail: opts.CommitAuthorEmail,
 		CommitAuthorName:  opts.CommitAuthorName,
 		DiffStatAdded:     TestChangsetSpecDiffStat.Added,
 		DiffStatChanged:   TestChangsetSpecDiffStat.Changed,
 		DiffStatDeleted:   TestChangsetSpecDiffStat.Deleted,
-		HeadRepoID:        opts.HeadRepo,
 		Typ:               opts.Typ,
 	}
 
@@ -93,7 +91,7 @@ func CreateChangesetSpec(
 
 	spec := BuildChangesetSpec(t, opts)
 	if spec.ExternalID != "" {
-		spec.Typ = btypes.ChangesetSpecTypeImporting
+		spec.Typ = btypes.ChangesetSpecTypeExisting
 	} else {
 		spec.Typ = btypes.ChangesetSpecTypeBranch
 	}

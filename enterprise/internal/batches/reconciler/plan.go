@@ -1,6 +1,7 @@
 package reconciler
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -304,7 +305,7 @@ func compareChangesetSpecs(previous, current *btypes.ChangesetSpec, uiPublicatio
 	// Diff
 	currentDiff := current.Diff
 	previousDiff := previous.Diff
-	if previousDiff != currentDiff {
+	if !bytes.Equal(previousDiff, currentDiff) {
 		delta.DiffChanged = true
 	}
 

@@ -623,7 +623,7 @@ func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *pro
 		BaseCommit: api.CommitID(spec.BaseRev),
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.
-		Patch:     spec.Diff + "\n",
+		Patch:     string(spec.Diff) + "\n",
 		TargetRef: spec.HeadRef,
 
 		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it

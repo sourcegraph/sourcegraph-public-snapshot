@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // Comparing the IDs is good enough, no need to bloat the tests here.
@@ -48,6 +49,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		t.Fatal(err)
 	}
 
+	// The diff may contain non ascii, cover for this.
+	testDiff := []byte("git diff here\\x20")
+
 	changesetSpecs := make(btypes.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
 		c := &btypes.ChangesetSpec{
@@ -67,8 +71,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			c.Body = "The body"
 			c.Published = batcheslib.PublishedValue{Val: false}
 			c.CommitMessage = "Test message"
-			// The diff may contain non ascii, cover for this.
-			c.Diff = "git diff here\\x20"
+			c.Diff = testDiff
 			c.CommitAuthorName = "name"
 			c.CommitAuthorEmail = "email"
 			c.Typ = btypes.ChangesetSpecTypeBranch

@@ -1464,7 +1464,8 @@ func TestRepositoryPermissions(t *testing.T) {
 				DiffStatAdded:   4,
 				DiffStatChanged: 4,
 				DiffStatDeleted: 4,
-				Spec:            &batcheslib.ChangesetSpec{ExternalID: "123"},
+				ExternalID:      "123",
+				Typ:             btypes.ChangesetSpecTypeExisting,
 			}
 			if err := bstore.CreateChangesetSpec(ctx, c); err != nil {
 				t.Fatal(err)

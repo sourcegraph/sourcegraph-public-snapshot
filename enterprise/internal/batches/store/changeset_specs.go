@@ -46,7 +46,6 @@ var changesetSpecInsertColumns = []string{
 	"commit_author_name",
 	"commit_author_email",
 	"type",
-	"migrated",
 }
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
@@ -66,11 +65,11 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.external_id",
 	"changeset_specs.head_ref",
 	"changeset_specs.title",
-	"changeset_specs.head_repo_id",
 	"changeset_specs.base_rev",
 	"changeset_specs.base_ref",
 	"changeset_specs.body",
 	"changeset_specs.published",
+	"changeset_specs.diff",
 	"changeset_specs.commit_message",
 	"changeset_specs.commit_author_name",
 	"changeset_specs.commit_author_email",
@@ -117,21 +116,18 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.CreatedAt,
 				c.UpdatedAt,
 				c.ForkNamespace,
-				dbutil.NullString{S: c.ExternalID},
-				dbutil.NullString{S: c.HeadRef},
-				dbutil.NullString{S: c.Title},
-				dbutil.NullString{S: c.BaseRev},
-				dbutil.NullString{S: c.BaseRef},
-				dbutil.NullString{S: c.Body},
+				dbutil.NewNullString(c.ExternalID),
+				dbutil.NewNullString(c.HeadRef),
+				dbutil.NewNullString(c.Title),
+				dbutil.NewNullString(c.BaseRev),
+				dbutil.NewNullString(c.BaseRef),
+				dbutil.NewNullString(c.Body),
 				published,
-				dbutil.NullString{S: c.Diff},
-				dbutil.NullString{S: c.CommitMessage},
-				dbutil.NullString{S: c.CommitAuthorName},
-				dbutil.NullString{S: c.CommitAuthorEmail},
+				c.Diff,
+				dbutil.NewNullString(c.CommitMessage),
+				dbutil.NewNullString(c.CommitAuthorName),
+				dbutil.NewNullString(c.CommitAuthorEmail),
 				c.Typ,
-				// Records created through this code path are always using the new
-				// schema, so mark it as migrated right away.
-				true,
 			); err != nil {
 				return err
 			}
@@ -155,58 +151,6 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 		inserter,
 	)
 }
-
-func (s *Store) MigrateChangesetSpec(ctx context.Context, spec *btypes.ChangesetSpec) (err error) {
-	ctx, _, endObservation := s.operations.migrateChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int64("ID", spec.ID),
-	}})
-	defer endObservation(1, observation.Args{})
-	published, err := json.Marshal(spec.Published)
-	if err != nil {
-		return err
-	}
-
-	// TODO: Read from spec column.
-	q := sqlf.Sprintf(
-		migrateChangesetSpecQueryFmtstr,
-		nullStringColumn(spec.ExternalID),
-		nullStringColumn(spec.HeadRef),
-		nullStringColumn(spec.Title),
-		nullInt32Column(int32(spec.HeadRepoID)),
-		nullStringColumn(spec.BaseRev),
-		nullStringColumn(spec.BaseRef),
-		nullStringColumn(spec.Body),
-		published,
-		nullStringColumn(spec.CommitMessage),
-		nullStringColumn(spec.CommitAuthorName),
-		nullStringColumn(spec.CommitAuthorEmail),
-		spec.Typ,
-		spec.ID,
-	)
-
-	return s.Exec(ctx, q)
-}
-
-var migrateChangesetSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:MigrateChangesetSpec
-UPDATE
-	changeset_specs
-SET
-	external_id = %s,
-	head_ref = %s,
-	title = %s,
-	head_repo_id = %s,
-	base_rev = %s,
-	base_ref = %s,
-	body = %s,
-	published = %s,
-	commit_message = %s,
-	commit_author_name = %s,
-	commit_author_email = %s,
-	type = %s
-WHERE
-	id = %s
-`
 
 // UpdateChangesetSpecBatchSpecID updates the given ChangesetSpecs to be owned by the given batch spec.
 func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, batchSpec int64) (err error) {
@@ -600,7 +544,6 @@ func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
 
 func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 	var published []byte
-	var headRepoID int32
 	var typ string
 	err := s.Scan(
 		&c.ID,
@@ -617,11 +560,11 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &c.ExternalID},
 		&dbutil.NullString{S: &c.HeadRef},
 		&dbutil.NullString{S: &c.Title},
-		&dbutil.NullInt32{N: &headRepoID},
 		&dbutil.NullString{S: &c.BaseRev},
 		&dbutil.NullString{S: &c.BaseRef},
 		&dbutil.NullString{S: &c.Body},
 		&published,
+		&c.Diff,
 		&dbutil.NullString{S: &c.CommitMessage},
 		&dbutil.NullString{S: &c.CommitAuthorName},
 		&dbutil.NullString{S: &c.CommitAuthorEmail},
@@ -631,7 +574,6 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		return errors.Wrap(err, "scanning changeset spec")
 	}
 
-	c.HeadRepoID = api.RepoID(headRepoID)
 	c.Typ = btypes.ChangesetSpecType(typ)
 
 	if err := json.Unmarshal(published, &c.Published); err != nil {
