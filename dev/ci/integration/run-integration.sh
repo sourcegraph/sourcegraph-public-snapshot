@@ -22,19 +22,18 @@ export CONTAINER="sourcegraph-${IDENT}"
 
 function docker_cleanup() {
   echo "--- docker cleanup"
-  echo "!!!! NOT DOING ANYTHING"
-  # if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
-  #   # shellcheck disable=SC2046
-  #   docker rm -f $(docker ps -aq)
-  # fi
-  # if [[ $(docker images -q | wc -l) -gt 0 ]]; then
-  #   # shellcheck disable=SC2046
-  #   docker rmi -f $(docker images -q)
-  # fi
-  # docker volume prune -f
-  #
-  # echo "--- Deleting $DATA"
-  # rm -rf "$DATA"
+  if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rm -f $(docker ps -aq)
+  fi
+  if [[ $(docker images -q | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rmi -f $(docker images -q)
+  fi
+  docker volume prune -f
+
+  echo "--- Deleting $DATA"
+  rm -rf "$DATA"
 }
 
 # Do a pre-run cleanup
