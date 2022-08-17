@@ -15,10 +15,8 @@ import (
 const LuckySearchAlert = "lucky search triggered additional search queries"
 
 type AggregationMatchResult struct {
-	RepoID   int
-	RepoName string
-	Group    string
-	Count    int
+	Key   MatchKey
+	Count int
 }
 
 type AggregationTabulator func(*AggregationMatchResult, error)
@@ -88,8 +86,19 @@ func TabulateAggregationMatches(tabulator AggregationTabulator, mode types.Searc
 	}
 
 	return func(matches []streamhttp.EventMatch) {
+		combined := map[MatchKey]int{}
 		for _, match := range matches {
-			tabulator(modeCountFunc(match))
+			key, count, err := modeCountFunc(match)
+			// delegate error handling to the passed in tabulator
+			if err != nil {
+				tabulator(nil, err)
+				continue
+			}
+			current, _ := combined[key]
+			combined[key] = current + count
+		}
+		for key, count := range combined {
+			tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)
 		}
 	}, nil
 }
@@ -144,56 +153,57 @@ func newEventMatch(event streamhttp.EventMatch) *eventMatch {
 	}
 }
 
-type countFunc func(streamhttp.EventMatch) (*AggregationMatchResult, error)
+type countFunc func(streamhttp.EventMatch) (MatchKey, int, error)
+type MatchKey struct {
+	Repo   string
+	RepoID int32
+	Group  string
+}
 
-func countRepo(r streamhttp.EventMatch) (*AggregationMatchResult, error) {
+func countRepo(r streamhttp.EventMatch) (MatchKey, int, error) {
 	match := newEventMatch(r)
 	if match.Repo != "" {
-		return &AggregationMatchResult{
-			RepoID:   int(match.RepoID),
-			RepoName: match.Repo,
-			Group:    match.Repo,
-			Count:    match.ResultCount,
-		}, nil
+		return MatchKey{
+			RepoID: match.RepoID,
+			Repo:   match.Repo,
+			Group:  match.Repo,
+		}, match.ResultCount, nil
 	}
-	return nil, nil
+	return MatchKey{}, 0, nil
 }
 
-func countLang(r streamhttp.EventMatch) (*AggregationMatchResult, error) {
+func countLang(r streamhttp.EventMatch) (MatchKey, int, error) {
 	match := newEventMatch(r)
 	if match.Lang != "" {
-		return &AggregationMatchResult{
-			RepoID:   int(match.RepoID),
-			RepoName: match.Repo,
-			Group:    match.Lang,
-			Count:    match.ResultCount,
-		}, nil
+		return MatchKey{
+			RepoID: match.RepoID,
+			Repo:   match.Repo,
+			Group:  match.Lang,
+		}, match.ResultCount, nil
 	}
-	return nil, nil
+	return MatchKey{}, 0, nil
 }
 
-func countPath(r streamhttp.EventMatch) (*AggregationMatchResult, error) {
+func countPath(r streamhttp.EventMatch) (MatchKey, int, error) {
 	match := newEventMatch(r)
 	if match.Path != "" {
-		return &AggregationMatchResult{
-			RepoID:   int(match.RepoID),
-			RepoName: match.Repo,
-			Group:    match.Path,
-			Count:    match.ResultCount,
-		}, nil
+		return MatchKey{
+			RepoID: match.RepoID,
+			Repo:   match.Repo,
+			Group:  match.Path,
+		}, match.ResultCount, nil
 	}
-	return nil, nil
+	return MatchKey{}, 0, nil
 }
 
-func countAuthor(r streamhttp.EventMatch) (*AggregationMatchResult, error) {
+func countAuthor(r streamhttp.EventMatch) (MatchKey, int, error) {
 	match := newEventMatch(r)
 	if match.Author != "" {
-		return &AggregationMatchResult{
-			RepoID:   int(match.RepoID),
-			RepoName: match.Repo,
-			Group:    match.Author,
-			Count:    match.ResultCount,
-		}, nil
+		return MatchKey{
+			RepoID: match.RepoID,
+			Repo:   match.Repo,
+			Group:  match.Author,
+		}, match.ResultCount, nil
 	}
-	return nil, nil
+	return MatchKey{}, 0, nil
 }

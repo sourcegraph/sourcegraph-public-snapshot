@@ -8,6 +8,6 @@ func (r *testAggregator) AddResult(result *AggregationMatchResult, err error) {
 	if err != nil {
 		return
 	}
-	current, _ := r.results[result.Group]
-	r.results[result.Group] = result.Count + current
+	current, _ := r.results[result.Key.Group]
+	r.results[result.Key.Group] = result.Count + current
 }
