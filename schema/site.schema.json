@@ -1400,6 +1400,32 @@
       "type": "string",
       "group": "Sourcegraph Enterprise license"
     },
+    "gitHubApp": {
+      "description": "The config options for Sourcegraph GitHub App.",
+      "type": "object",
+      "properties": {
+        "slug": {
+          "description": "The slug of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "appID": {
+          "description": "The app ID of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "privateKey": {
+          "description": "The base64-encoded private key of the GitHub App for Sourcegraph.",
+          "type": "string"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The Client ID of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        }
+      }
+    },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
@@ -1408,32 +1434,6 @@
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
           "group": "Sourcegraph.com"
-        },
-        "githubApp.cloud": {
-          "description": "The config options for Sourcegraph Cloud GitHub App.",
-          "type": "object",
-          "properties": {
-            "slug": {
-              "description": "The slug of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
-            },
-            "appID": {
-              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
-            },
-            "privateKey": {
-              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
-              "type": "string"
-            },
-            "clientID": {
-              "type": "string",
-              "description": "The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
-            },
-            "clientSecret": {
-              "type": "string",
-              "description": "The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
-            }
-          }
         }
       },
       "group": "Sourcegraph.com"

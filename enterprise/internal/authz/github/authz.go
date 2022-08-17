@@ -114,16 +114,17 @@ func newAuthzProvider(
 	}
 
 	if c.GithubAppInstallationID != "" {
-		dotcomConfig := conf.SiteConfig().Dotcom
-		if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
-			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph Cloud is not enabled")
-		}
-
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
-		return newAppProvider(externalServicesStore, c.ExternalService, c.GitHubConnection.URN, baseURL, dotcomConfig.GithubAppCloud.AppID, dotcomConfig.GithubAppCloud.PrivateKey, installationID, nil)
+
+		gitHubAppConfig := conf.SiteConfig().GitHubApp
+		if repos.IsGitHubAppEnabled(gitHubAppConfig) {
+			return newAppProvider(externalServicesStore, c.ExternalService, c.GitHubConnection.URN, baseURL, gitHubAppConfig.AppID, gitHubAppConfig.PrivateKey, installationID, nil)
+		}
+
+		return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
 	}
 
 	// Disable by default for now
