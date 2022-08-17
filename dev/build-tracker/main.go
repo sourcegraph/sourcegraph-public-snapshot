@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
+
+	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,6 +28,7 @@ type Server struct {
 	store        *BuildStore
 	bkToken      string
 	notifyClient *NotificationClient
+	http         *http.Server
 }
 
 type config struct {
@@ -61,12 +65,53 @@ func configFromEnv() (*config, error) {
 // NewServer creatse a new server to listen for Buildkite webhook events.
 func NewServer(logger log.Logger, c config) *Server {
 	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
-	return &Server{
+	server := &Server{
 		logger:       logger,
 		store:        NewBuildStore(logger),
 		bkToken:      c.BuildkiteToken,
 		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
 	}
+
+	r := mux.NewRouter()
+	r.HandleFunc("/buildkite", server.handleEvent)
+	r.HandleFunc("/healthz", server.handleHealthz)
+
+	debug := mux.NewRouter()
+	debug.HandleFunc("/{buildNumber}", server.handleGetBuild)
+
+	r.Handle("/debug", debug)
+
+	server.http = &http.Server{
+		Handler: r,
+	}
+
+	return server
+}
+
+func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+
+	buildNumParam, ok := vars["buildNumber"]
+	if !ok {
+		s.logger.Error("request received with no buildNumber path parameter", log.String("route", req.URL.Path))
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	buildNum, err := strconv.Atoi(buildNumParam)
+	if err != nil {
+		s.logger.Error("invalid build number parameter received", log.String("buildNumParam", buildNumParam))
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	s.logger.Info("retrieving build", log.Int("buildNumber", buildNum))
+	build := s.store.GetByBuildNumber(buildNum)
+	if build == nil {
+		s.logger.Debug("no build found", log.Int("buildNumber", buildNum))
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	s.logger.Debug("encoding build", log.Int("buildNumber", buildNum))
+	json.NewEncoder(w).Encode(build)
 }
 
 // handleEvent handles an event received from the http listener. A event is valid when:
@@ -180,13 +225,6 @@ func (s *Server) processEvent(event *Event) {
 }
 
 // Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
-func (s *Server) Serve() error {
-	http.HandleFunc("/buildkite", s.handleEvent)
-	http.HandleFunc("/healthz", s.handleHealthz)
-	s.logger.Info("listening on :8080")
-	return http.ListenAndServe(":8080", nil)
-}
-
 func main() {
 	sync := log.Init(log.Resource{
 		Name:      "BuildTracker",
@@ -204,7 +242,7 @@ func main() {
 
 	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
 	defer stopFn()
-	if err := server.Serve(); err != nil {
+	if err := server.http.ListenAndServer(":8080"); err != nil {
 		logger.Fatal("server exited with error", log.Error(err))
 	}
 }
