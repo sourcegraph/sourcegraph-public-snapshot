@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 
 import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
@@ -7,19 +7,7 @@ import { Observable } from 'rxjs'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Button,
-    Link,
-    Alert,
-    Icon,
-    H2,
-    Text,
-    Tooltip,
-    Container,
-    Card,
-    CardBody,
-    LoadingSpinner,
-} from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
 import {
@@ -36,6 +24,7 @@ import {
 } from '../graphql-operations'
 import { refreshSiteFlags } from '../site/backend'
 
+import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning, REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo as RepoMirrorInfo } from './components/RepoMirrorInfo'
@@ -152,10 +141,60 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         }
     }, [])
 
-    const [pollRepositoryStats, setPollRepositoryStats] = useState(true)
-    const { data, loading, error } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {
-        pollInterval: pollRepositoryStats ? REPO_PAGE_POLL_INTERVAL : 0,
-    })
+    const { data, loading, error, startPolling, stopPolling } = useQuery<
+        RepositoryStatsResult,
+        RepositoryStatsVariables
+    >(REPOSITORY_STATS, {})
+
+    useEffect(() => {
+        if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
+            startPolling(REPO_PAGE_POLL_INTERVAL)
+        } else {
+            stopPolling()
+        }
+    }, [data, startPolling, stopPolling])
+
+    const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
+        if (!data) {
+            return undefined
+        }
+        return [
+            {
+                value: data.repositoryStats.total,
+                description: 'Repositories',
+                color: 'var(--purple)',
+                tooltip: 'Total number of repositories in the Sourcegraph instance.',
+            },
+            {
+                value: data.repositoryStats.notCloned,
+                description: 'Not cloned',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that haven not been cloned yet.',
+            },
+            {
+                value: data.repositoryStats.cloning,
+                description: 'Cloning',
+                color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that are currently being cloned.',
+            },
+            {
+                value: data.repositoryStats.cloned,
+                description: 'Cloned',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been cloned.',
+            },
+            {
+                value: data.repositoryStats.failedFetch,
+                description: 'Failed',
+                color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories where the last syncing attempt produced an error.',
+            },
+        ]
+    }, [data])
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
@@ -163,10 +202,6 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         []
     )
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
-
-    if (!error && !loading && data && data.repositoryStats.total !== 0 && data.repositoryStats.cloning === 0) {
-        setPollRepositoryStats(false)
-    }
 
     return (
         <div className="site-admin-repositories-page">
@@ -185,61 +220,14 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 </Link>
                 .
             </Text>
-            {error && !loading && (
-                <Alert variant="warning" as="p">
-                    {error.message}
-                </Alert>
-            )}
-            {loading && !error && <LoadingSpinner />}
-            {!loading && !error && data && (
-                <div className="d-flex justify-content-between text-center">
-                    <Card className="flex-grow-1">
-                        <CardBody>
-                            <span className={styles.repoStatsNumber}>{data.repositoryStats.total}</span>
-                            <Text className="mb-0">Repositories</Text>
-                        </CardBody>
-                    </Card>
-                    <Card className="flex-grow-1">
-                        <CardBody>
-                            <span className={styles.repoStatsNumber}>{data.repositoryStats.notCloned}</span>
-                            <Text className="mb-0">Not cloned</Text>
-                        </CardBody>
-                    </Card>
-                    <Card className="flex-grow-1">
-                        <CardBody>
-                            <span
-                                className={classNames(
-                                    styles.repoStatsNumber,
-                                    data.repositoryStats.cloning > 0 && 'text-success'
-                                )}
-                            >
-                                {data.repositoryStats.cloning}
-                            </span>
-                            <Text className="mb-0">Cloning</Text>
-                        </CardBody>
-                    </Card>
-                    <Card className="flex-grow-1">
-                        <CardBody>
-                            <span className={styles.repoStatsNumber}>{data.repositoryStats.cloned}</span>
-                            <Text className="mb-0">Cloned</Text>
-                        </CardBody>
-                    </Card>
-                    <Card className="flex-grow-1">
-                        <CardBody>
-                            <span
-                                className={classNames(
-                                    styles.repoStatsNumber,
-                                    data.repositoryStats.failedFetch > 0 && 'text-warning'
-                                )}
-                            >
-                                {data.repositoryStats.failedFetch}
-                            </span>
-                            <Text className="mb-0">Failed clone/fetch</Text>
-                        </CardBody>
-                    </Card>
-                </div>
-            )}
             <Container className="mb-3">
+                {error && !loading && (
+                    <Alert variant="warning" as="p">
+                        {error.message}
+                    </Alert>
+                )}
+                {loading && !error && <LoadingSpinner />}
+                {legends && <ValueLegendList className="mb-3" items={legends} />}
                 <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                     className="mb-0"
                     listClassName="list-group list-group-flush mt-3"
