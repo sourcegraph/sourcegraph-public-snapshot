@@ -1,14 +1,15 @@
-import { FC } from 'react'
+import { FC, HTMLAttributes } from 'react'
 
 import { mdiArrowCollapse, mdiPlus } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 
-import { H2, Button, Icon } from '@sourcegraph/wildcard'
+import { Button, H2, Icon } from '@sourcegraph/wildcard'
 
 import { AggregationChart } from './AggregationChart'
 import { AggregationModeControls } from './AggregationModeControls'
-import { useAggregationSearchMode } from './hooks'
+import { useAggregationSearchMode, useAggregationUIMode } from './hooks'
 import { LANGUAGE_USAGE_DATA, LanguageUsageDatum } from './search-aggregation-mock-data'
+import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
 
@@ -17,16 +18,21 @@ const getColor = (datum: LanguageUsageDatum): string => datum.fill
 const getLink = (datum: LanguageUsageDatum): string => datum.linkURL
 const getName = (datum: LanguageUsageDatum): string => datum.name
 
-interface SearchAggregationResultProps {}
+interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {}
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
+    const [, setAggregationUIMode] = useAggregationUIMode()
 
     return (
-        <section>
+        <section {...props}>
             <header className={styles.header}>
                 <H2 className="m-0">Group results by</H2>
-                <Button variant="secondary" outline={true}>
+                <Button
+                    variant="secondary"
+                    outline={true}
+                    onClick={() => setAggregationUIMode(AggregationUIMode.Sidebar)}
+                >
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowCollapse} />
                     Collapse
                 </Button>

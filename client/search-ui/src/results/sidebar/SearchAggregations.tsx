@@ -5,7 +5,13 @@ import { ParentSize } from '@visx/responsive'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
-import { AggregationChart, AggregationModeControls, useAggregationSearchMode } from '../aggregation'
+import {
+    AggregationChart,
+    AggregationModeControls,
+    AggregationUIMode,
+    useAggregationSearchMode,
+    useAggregationUIMode,
+} from '../aggregation'
 import { LANGUAGE_USAGE_DATA, LanguageUsageDatum } from '../aggregation/search-aggregation-mock-data'
 
 import styles from './SearchAggregations.module.scss'
@@ -19,10 +25,21 @@ interface SearchAggregationsProps {}
 
 export const SearchAggregations: FC<SearchAggregationsProps> = props => {
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
+    const [aggregationUIMode, setAggregationUIMode] = useAggregationUIMode()
+
+    // Hide search aggregation side panel when we're showing the full UI mode
+    if (aggregationUIMode !== AggregationUIMode.Sidebar) {
+        return null
+    }
 
     return (
         <article className="pt-2">
-            <AggregationModeControls className="mb-3" mode={aggregationMode} onModeChange={setAggregationMode} />
+            <AggregationModeControls
+                size="sm"
+                className="mb-3"
+                mode={aggregationMode}
+                onModeChange={setAggregationMode}
+            />
 
             <ParentSize className={styles.chartContainer}>
                 {parent => (
@@ -40,7 +57,13 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
             </ParentSize>
 
             <footer className={styles.actions}>
-                <Button variant="secondary" size="sm" outline={true} className={styles.detailsAction}>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    outline={true}
+                    className={styles.detailsAction}
+                    onClick={() => setAggregationUIMode(AggregationUIMode.SearchPage)}
+                >
                     <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
                 </Button>
 
