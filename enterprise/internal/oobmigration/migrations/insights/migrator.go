@@ -160,102 +160,86 @@ func (m *insightsMigrator) performMigrationForRow(ctx context.Context, tx *bases
 	if err != nil {
 		return err
 	}
-	if len(settings) == 0 {
-		if job.UserId != nil {
-			// If the user doesn't exist, just mark the job complete.
-			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE user_id = %s`, *job.UserId)); err != nil {
-				return errors.Wrap(err, "MarkCompleted")
+	if len(settings) != 0 {
+		dashboards, langStatsInsights, frontendInsights, backendInsights := getInsightsFromSettings(settings[0])
+		totalDashboards := len(dashboards)
+
+		// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
+		// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
+		// to reconstruct the special case user / org / global dashboard
+		totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
+		allDefinedInsightIds := make([]string, 0, totalInsights)
+		for _, insight := range langStatsInsights {
+			allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
+		}
+		for _, insight := range frontendInsights {
+			allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
+		}
+		for _, insight := range backendInsights {
+			allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
+		}
+		logDuplicates(allDefinedInsightIds)
+
+		if totalInsights != job.MigratedInsights {
+			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond)); err != nil {
+				return err
+			}
+
+			var (
+				migratedInsightsCount  int
+				insightMigrationErrors error
+			)
+			for _, f := range []func(ctx context.Context) (int, error){
+				func(ctx context.Context) (int, error) { return m.migrateLangStatsInsights(ctx, langStatsInsights) },
+				func(ctx context.Context) (int, error) { return m.migrateInsights(ctx, frontendInsights, "frontend") },
+				func(ctx context.Context) (int, error) { return m.migrateInsights(ctx, backendInsights, "backend") },
+			} {
+				count, err := f(ctx)
+				insightMigrationErrors = errors.Append(insightMigrationErrors, err)
+				migratedInsightsCount += count
+			}
+
+			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s`, migratedInsightsCount, cond)); err != nil {
+				return errors.Append(insightMigrationErrors, err)
+			}
+
+			if totalInsights != migratedInsightsCount {
+				return insightMigrationErrors
 			}
 		}
-		if job.OrgId != nil {
-			// If the org doesn't exist, just mark the job complete.
-			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET completed_at = NOW() WHERE org_id = %s`, *job.OrgId)); err != nil {
-				return errors.Wrap(err, "MarkCompleted")
+
+		if totalDashboards != job.MigratedDashboards {
+			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s`, totalDashboards, cond)); err != nil {
+				return err
+			}
+
+			var (
+				migratedDashboardsCount  int
+				dashboardMigrationErrors error
+			)
+			for _, f := range []func(ctx context.Context) (int, error){
+				func(ctx context.Context) (int, error) { return m.migrateDashboards(ctx, dashboards, userID, orgIDs) },
+			} {
+				count, err := f(ctx)
+				dashboardMigrationErrors = errors.Append(dashboardMigrationErrors, err)
+				migratedDashboardsCount += count
+			}
+
+			if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s`, migratedDashboardsCount, cond)); err != nil {
+				return err
+			}
+
+			if totalDashboards != migratedDashboardsCount {
+				return dashboardMigrationErrors
 			}
 		}
 
-		// If this settings object no longer exists, skip it.
-		return nil
-	}
-
-	dashboards, langStatsInsights, frontendInsights, backendInsights := getInsightsFromSettings(settings[0])
-	totalDashboards := len(dashboards)
-
-	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
-	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
-	// to reconstruct the special case user / org / global dashboard
-	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
-	allDefinedInsightIds := make([]string, 0, totalInsights)
-	for _, insight := range langStatsInsights {
-		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
-	}
-	for _, insight := range frontendInsights {
-		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
-	}
-	for _, insight := range backendInsights {
-		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
-	}
-	logDuplicates(allDefinedInsightIds)
-
-	if totalInsights != job.MigratedInsights {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s`, totalInsights, cond)); err != nil {
+		if err := m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, userID, orgIDs); err != nil {
 			return err
 		}
-
-		var (
-			migratedInsightsCount  int
-			insightMigrationErrors error
-		)
-		for _, f := range []func(ctx context.Context) (int, error){
-			func(ctx context.Context) (int, error) { return m.migrateLangStatsInsights(ctx, langStatsInsights) },
-			func(ctx context.Context) (int, error) { return m.migrateInsights(ctx, frontendInsights, "frontend") },
-			func(ctx context.Context) (int, error) { return m.migrateInsights(ctx, backendInsights, "backend") },
-		} {
-			count, err := f(ctx)
-			insightMigrationErrors = errors.Append(insightMigrationErrors, err)
-			migratedInsightsCount += count
-		}
-
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s`, migratedInsightsCount, cond)); err != nil {
-			return errors.Append(insightMigrationErrors, err)
-		}
-
-		if totalInsights != migratedInsightsCount {
-			return insightMigrationErrors
-		}
 	}
 
-	if totalDashboards != job.MigratedDashboards {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s`, totalDashboards, cond)); err != nil {
-			return err
-		}
-
-		var (
-			migratedDashboardsCount  int
-			dashboardMigrationErrors error
-		)
-		for _, f := range []func(ctx context.Context) (int, error){
-			func(ctx context.Context) (int, error) { return m.migrateDashboards(ctx, dashboards, userID, orgIDs) },
-		} {
-			count, err := f(ctx)
-			dashboardMigrationErrors = errors.Append(dashboardMigrationErrors, err)
-			migratedDashboardsCount += count
-		}
-
-		if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s`, migratedDashboardsCount, cond)); err != nil {
-			return err
-		}
-
-		if totalDashboards != migratedDashboardsCount {
-			return dashboardMigrationErrors
-		}
-	}
-
-	if err := m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, userID, orgIDs); err != nil {
-		return err
-	}
-
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationForRowUpdateJobQuery, now, cond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationForRowUpdateJobQuery, time.Now(), cond)); err != nil {
 		return errors.Wrap(err, "MarkCompleted")
 	}
 
