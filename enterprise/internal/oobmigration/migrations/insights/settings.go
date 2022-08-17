@@ -9,9 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// getSettings retrieves the current settings from the database. A subject name relating to the settings will
-// also be returned. If the user or organization identifiers are set, the most specific relevant settings will
-// be returned (users > orgs > global settings).
+// getSettingsForJob retrieves the current settings from the database. A subject name relating to the settings
+// will also be returned. If the user or organization identifiers are set, the most specific relevant settings
+// will be returned (users > orgs > global settings).
 func (m *insightsMigrator) getSettingsForJob(ctx context.Context, tx *basestore.Store, job insightsMigrationJob) (string, []settings, error) {
 	if job.userID != nil {
 		return m.getSettingsForUser(ctx, tx, *job.userID)
