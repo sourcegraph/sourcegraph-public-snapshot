@@ -43,7 +43,7 @@ func (m *insightsMigrator) migrateDashboard(ctx context.Context, job insightsMig
 	if count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		insightsMigratorMigrateDashboardQuery,
 		dashboard.Title,
-		grantQuery("dg", dashboard.UserID, dashboard.OrgID),
+		dashboardGrantCondition(dashboard),
 	))); err != nil {
 		return errors.Wrap(err, "failed to count dashboards")
 	} else if count != 0 {
@@ -97,7 +97,7 @@ func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.St
 	}
 
 	// Create dashboard grants
-	grantArgs := append([]any{dashboardID}, grantValues2(job.userID, job.orgID)...)
+	grantArgs := append([]any{dashboardID}, grantTiple(job.userID, job.orgID)...)
 	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertGrantQuery, grantArgs...)); err != nil {
 		return errors.Wrap(err, "failed to insert dashboard grants")
 	}
@@ -135,3 +135,13 @@ const insightsMigratorCreateDashboardInsertGrantQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/dashboards.go:createDashboard
 INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
 `
+
+func dashboardGrantCondition(dashboard settingDashboard) *sqlf.Query {
+	if dashboard.UserID != nil {
+		return sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
+	} else if dashboard.OrgID != nil {
+		return sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
+	} else {
+		return sqlf.Sprintf("dg.global IS TRUE")
+	}
+}

@@ -133,7 +133,7 @@ func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchIns
 	}
 
 	// Create the insight view grant records
-	grantArgs := append([]any{viewID}, grantValues2(insight.UserID, insight.OrgID)...)
+	grantArgs := append([]any{viewID}, grantTiple(insight.UserID, insight.OrgID)...)
 	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateInsightInsertViewGrantQuery, grantArgs...)); err != nil {
 		return errors.Wrap(err, "failed to insert view grants")
 	}
@@ -348,6 +348,29 @@ const insightsMigratorMigrateBackendSeriesUpdateBackfillQueuedAtQuery = `
 UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s
 `
 
+func getOwnerName(userID, orgID *int32) string {
+	if userID != nil {
+		return fmt.Sprintf("user id %d", *userID)
+	} else if orgID != nil {
+		return fmt.Sprintf("org id %d", *orgID)
+	} else {
+		return "global"
+	}
+}
+
+func grantTiple(userID, orgID *int32) []any {
+	if userID != nil {
+		return []any{*userID, nil, nil}
+	} else if orgID != nil {
+		return []any{nil, *orgID, nil}
+	} else {
+		return []any{nil, nil, true}
+	}
+}
+
+func hashID(query string) string {
+	return fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(query))))
+}
 func nextSnapshot(current time.Time) time.Time {
 	year, month, day := current.In(time.UTC).Date()
 	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
@@ -373,8 +396,4 @@ func stepForward(now time.Time, intervalUnit string, intervalValue int) time.Tim
 	default:
 		return now
 	}
-}
-
-func hashID(query string) string {
-	return fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(query))))
 }
