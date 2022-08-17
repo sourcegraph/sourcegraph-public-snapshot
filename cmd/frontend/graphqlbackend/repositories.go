@@ -20,11 +20,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+type RepositoriesQueryBaseArgs struct {
+}
+
 type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
 	Query       *string
 	Names       *[]string
 	Cloned      bool
+	CloneStatus *string
 	NotCloned   bool
 	Indexed     bool
 	NotIndexed  bool
@@ -65,6 +69,10 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		}
 
 		opt.Cursors = append(opt.Cursors, &cursor)
+	}
+
+	if args.CloneStatus != nil {
+		opt.CloneStatus = types.ParseCloneStatusFromGraphQL(*args.CloneStatus)
 	}
 
 	opt.FailedFetch = args.FailedFetch
@@ -251,7 +259,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		return &v
 	}
 
-	if !r.cloned || !r.notCloned {
+	if !r.cloned || !r.notCloned || r.opt.CloneStatus != types.CloneStatusUnknown {
 		// Don't support counting if filtering by clone status.
 		return nil, nil
 	}
