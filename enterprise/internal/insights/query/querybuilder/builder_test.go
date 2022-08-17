@@ -3,6 +3,10 @@ package querybuilder
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/hexops/autogold"
+
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -422,6 +426,92 @@ func TestIsSingleRepoQueryMultipleSteps(t *testing.T) {
 				t.Errorf("%s failed (want/got): %s", test.name, diff)
 			}
 
+		})
+	}
+}
+
+func TestLiteralReplacer_Replace(t *testing.T) {
+	tests := []struct {
+		query string
+		value string
+		want  autogold.Value
+	}{
+		{
+			query: "match repo:myrepo lang:go",
+			value: "Match",
+			want:  autogold.Want("replace literal in implicit content field", "repo:myrepo lang:go Match"),
+		},
+		{
+			query: "content:match repo:myrepo lang:go",
+			value: "Match",
+			want:  autogold.Want("replace literal in explicit content field", "repo:myrepo lang:go content:Match"),
+		},
+		{
+			query: "(content:match repo:myrepo lang:go) and (lang:ts match)",
+			value: "Match",
+			want:  autogold.Want("compound query replacement", "repo:myrepo lang:go lang:ts (content:Match AND Match)"),
+		},
+		{
+			query: "(content:match repo:myrepo lang:go file:place2) or (lang:ts file:place1 match)",
+			value: "Match",
+			want:  autogold.Want("disjoint queries", "(repo:myrepo lang:go file:place2 content:Match OR lang:ts file:place1 Match)"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			// replacer, err := newLiteralReplacer(BasicQuery(test.query))
+			// require.NoError(t, err)
+			//
+			// got, err := replacer.Replace(test.value)
+			// require.NoError(t, err)
+			//
+			// test.want.Equal(t, string(got))
+		})
+	}
+}
+
+func TestNewPatternReplacer(t *testing.T) {
+
+	//
+	// new, err := replacer.Replace("asdf")
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	// t.Log(new)
+}
+
+func TestReplaceIt(t *testing.T) {
+	tests := []struct {
+		query       string
+		replacement string
+		want        autogold.Value
+		wantErr     error
+		searchType  query.SearchType
+	}{
+		{
+			query:       "/replaceme/",
+			replacement: "replace",
+			want:        autogold.Want("replace_1", BasicQuery("/replace/")),
+			wantErr:     nil,
+			searchType:  query.SearchTypeStandard,
+		},
+		{
+			query:       "/replace(me)/",
+			replacement: "you",
+			want:        autogold.Want("replace_2", BasicQuery("replace(?:you)")),
+			wantErr:     nil,
+			searchType:  query.SearchTypeStandard,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			replacer, err := NewPatternReplacer(BasicQuery(test.query), test.searchType)
+			if err != nil {
+				require.ErrorIs(t, err, test.wantErr)
+			}
+			got, err := replacer.Replace(test.replacement)
+			test.want.Equal(t, got)
 		})
 	}
 }
