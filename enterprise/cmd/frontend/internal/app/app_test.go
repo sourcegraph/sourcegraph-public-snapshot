@@ -112,14 +112,14 @@ func TestNewGitHubAppSetupHandler(t *testing.T) {
 			assert.Equal(t, extsvc.KindGitHub, svc.Kind)
 			assert.Equal(t, "GitHub (abc-org)", svc.DisplayName)
 
-			wantConfig := `
+			wantConfig := extsvc.NewUnencryptedConfig(`
 {
   "url": "https://github.com",
   "repos": [],
   "githubAppInstallationID": "21994992",
   "pending": false
 }
-`
+`)
 			assert.Equal(t, wantConfig, svc.Config)
 			return nil
 		})

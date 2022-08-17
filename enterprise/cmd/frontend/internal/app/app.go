@@ -191,6 +191,10 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 
 				if setupAction == "request" {
 					currentConfig, err := svc.Config.Decrypt(context.Background())
+					if err != nil {
+						responseServerError("Failed to edit config", err)
+						return
+					}
 					newConfig, err := jsonc.Edit(currentConfig, true, "pending")
 					if err != nil {
 						responseServerError("Failed to edit config", err)
@@ -217,6 +221,10 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 
 					svc.DisplayName = displayName
 					currentConfig, err := svc.Config.Decrypt(context.Background())
+					if err != nil {
+						responseServerError("Failed to edit config", err)
+						return
+					}
 					newConfig, err := jsonc.Edit(currentConfig, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
 					if err != nil {
 						responseServerError("Failed to edit config", err)
