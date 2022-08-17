@@ -2,11 +2,11 @@ package authz
 
 import (
 	"context"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"net/url"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
