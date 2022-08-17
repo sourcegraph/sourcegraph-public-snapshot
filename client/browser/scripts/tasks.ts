@@ -192,9 +192,6 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
     manifest.web_accessible_resources = manifest.web_accessible_resources || []
     manifest.web_accessible_resources.push('extensions/*')
 
-    // Revert the CSP to default, in order to remove the `blob` policy exception.
-    delete manifest.content_security_policy
-
     delete manifest.$schema
 
     if (environment === 'prod' && useUtcVersion) {

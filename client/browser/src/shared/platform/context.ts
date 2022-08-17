@@ -56,6 +56,8 @@ export function createPlatformContext(
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
     const { requestGraphQL, getBrowserGraphQLClient } = createGraphQLHelpers(sourcegraphURL, isExtension)
 
+    const shouldUseInlineExtensionsObservable = shouldUseInlineExtensions(requestGraphQL)
+
     const context: BrowserPlatformContext = {
         /**
          * The active settings cascade.
@@ -119,18 +121,27 @@ export function createPlatformContext(
         createExtensionHost: () => createExtensionHost({ assetsURL }),
         getScriptURLForExtension: () => {
             if (isInPage) {
-                // inline extensions have fixed scriptURLs
                 return undefined
             }
-            // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
-            // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
-            // with a CSP that allowlists https://* in script-src (see
-            // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
-            // add-ons have an even stricter restriction.)
+
             return bundleURLs =>
-                Promise.allSettled(bundleURLs.map(bundleURL => background.createBlobURL(bundleURL))).then(results =>
-                    results.map(result => (result.status === 'rejected' ? asError(result.reason) : result.value))
-                )
+                shouldUseInlineExtensionsObservable.toPromise().then(shouldUseInlineExtensions => {
+                    if (shouldUseInlineExtensions) {
+                        // inline extensions have fixed scriptURLs
+                        return bundleURLs
+                    }
+
+                    // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
+                    // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
+                    // with a CSP that allowlists https://* in script-src (see
+                    // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
+                    // add-ons have an even stricter restriction.)
+                    return Promise.allSettled(
+                        bundleURLs.map(bundleURL => background.createBlobURL(bundleURL))
+                    ).then(results =>
+                        results.map(result => (result.status === 'rejected' ? asError(result.reason) : result.value))
+                    )
+                })
         },
         urlToFile: ({ rawRepoName, ...target }, context) => {
             // We don't always resolve the rawRepoName, e.g. if there are multiple definitions.
@@ -147,7 +158,7 @@ export function createPlatformContext(
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
             : new ExtensionStorageSubject('sideloadedExtensionURL', null),
         getStaticExtensions: () =>
-            shouldUseInlineExtensions(requestGraphQL).pipe(
+            shouldUseInlineExtensionsObservable.pipe(
                 switchMap(shouldUseInline => (shouldUseInline ? getInlineExtensions() : of(undefined)))
             ),
     }
