@@ -163,7 +163,7 @@ export const renderMarkdown = (
                 },
             },
             transformTags: {
-                object (tagName, attribs) {
+                object(tagName, attribs) {
                     if (!attribs.data.includes('base64,')) {
                         return {
                             tagName,
@@ -171,33 +171,40 @@ export const renderMarkdown = (
                         }
                     }
 
-                    const b64object = attribs.data.split('base64,')[1]
+                    // Anchor tags can be used to invalidate base64 and bypass filters
+                    const b64object = attribs.data.split('base64,')[1].split('#')[0]
+                    let cleaned
 
-                    const cleaned = sanitize(window.atob(b64object), {
-                        allowedTags: sanitize.defaults.allowedTags.concat([
-                            'svg',
-                            'xmlns',
-                            'path',
-                            'picture',
-                            'circle',
-                            'pattern',
-                            'rect',
-                        ]),
-                        allowedAttributes: {
-                            svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
-                            rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
-                            path: ['d', ...svgPresentationAttributes],
-                            circle: ['cx', 'cy', ...svgPresentationAttributes],
-                        },
-                        allowedStyles: {
-                            svg: {
-                                flex: ALL_VALUES_ALLOWED,
-                                'flex-grow': ALL_VALUES_ALLOWED,
-                                'flex-shrink': ALL_VALUES_ALLOWED,
-                                'flex-basis': ALL_VALUES_ALLOWED,
+                    try {
+                        cleaned = sanitize(window.atob(b64object), {
+                            allowedTags: sanitize.defaults.allowedTags.concat([
+                                'svg',
+                                'xmlns',
+                                'path',
+                                'picture',
+                                'circle',
+                                'pattern',
+                                'rect',
+                            ]),
+                            allowedAttributes: {
+                                svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
+                                rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
+                                path: ['d', ...svgPresentationAttributes],
+                                circle: ['cx', 'cy', ...svgPresentationAttributes],
                             },
-                        },
-                    })
+                            allowedStyles: {
+                                svg: {
+                                    flex: ALL_VALUES_ALLOWED,
+                                    'flex-grow': ALL_VALUES_ALLOWED,
+                                    'flex-shrink': ALL_VALUES_ALLOWED,
+                                    'flex-basis': ALL_VALUES_ALLOWED,
+                                },
+                            },
+                        })
+                    } catch (any) {
+                        // this doesn't happen with benign base64 SVGs
+                        cleaned = '<svg></svg>'
+                    }
 
                     return {
                         tagName,
