@@ -73,6 +73,7 @@ func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
 	databaseDB := database.NewDB(logger, db)
+	repoStore := database.ReposWith(logger, databaseDB)
 	extSvcStore := databaseDB.ExternalServices()
 	gitserverRepoStore := databaseDB.GitserverRepos()
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
@@ -83,7 +84,7 @@ func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewDependencySyncScheduler(dbStoreShim, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
-		indexing.NewDependencyIndexingScheduler(dbStoreShim, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
+		indexing.NewDependencyIndexingScheduler(dbStoreShim, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
 	}
 
 	return routines, nil
