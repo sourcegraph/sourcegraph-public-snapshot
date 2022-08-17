@@ -30,14 +30,15 @@ describe('VS Code extension', () => {
         )
     })
 
-    afterEach(async () => {
-        // Close Remote File
-        await vsCodeDriver.page.waitForSelector('.tabs-container .active .tab-actions', { visible: true })
-        await vsCodeDriver.page.click('.tabs-container .active .tab-actions', { delay: 50 })
-        // Close Search Panel
-        await vsCodeDriver.page.waitForSelector('.tabs-container .active .tab-actions', { visible: true })
-        await vsCodeDriver.page.click('.tabs-container .active .tab-actions', { delay: 50 })
-    })
+    // This will be fixed and re-enabled in https://github.com/sourcegraph/sourcegraph/issues/40366
+    // afterEach(async () => {
+    //     // Close Remote File
+    //     await vsCodeDriver.page.waitForSelector('.tabs-container .active .tab-actions', { visible: true })
+    //     await vsCodeDriver.page.click('.tabs-container .active .tab-actions', { delay: 50 })
+    //     // Close Search Panel
+    //     await vsCodeDriver.page.waitForSelector('.tabs-container .active .tab-actions', { visible: true })
+    //     await vsCodeDriver.page.click('.tabs-container .active .tab-actions', { delay: 50 })
+    // })
 
     // Debt: reset VS Code extension state between test cases in `afterEach` once we
     // have multiple tests. This will likely involve just closing the search panel.
@@ -139,22 +140,21 @@ describe('VS Code extension', () => {
             throw new Error('Timeout waiting for search results to render after viewing repo page')
         }
 
-        // This will be fixed and re-enabled in https://github.com/sourcegraph/sourcegraph/issues/40366
-        // // Open remote file from search results
-        // try {
-        //     await searchPanelFrame.waitForSelector('.test-search-result strong', { visible: true })
-        //     await searchPanelFrame.click('.test-search-result strong', { delay: 100 })
-        // } catch {
-        //     throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
-        // }
+        // Open remote file from search results
+        try {
+            await searchPanelFrame.waitForSelector('.test-search-result strong', { visible: true })
+            await searchPanelFrame.click('.test-search-result strong', { delay: 100 })
+        } catch {
+            throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
+        }
 
-        // await vsCodeDriver.page.waitForTimeout(10000)
+        await vsCodeDriver.page.waitForTimeout(10000)
 
-        // // Look for file title
-        // const remoteFileTitle = await vsCodeDriver.page.title()
-        // if (!remoteFileTitle.includes('bool_or_string_test.go')) {
-        //     throw new Error('Timeout waiting for remote file to render')
-        // }
+        // Look for file title
+        const remoteFileTitle = await vsCodeDriver.page.title()
+        if (!remoteFileTitle.includes('bool_or_string_test.go')) {
+            throw new Error('Timeout waiting for remote file to render')
+        }
     })
 
     // Potential future test cases:
