@@ -34,7 +34,7 @@ For example, at `/bin` in gitserver, a binary exists `customGit` containing:
 	}
 ]
 ```
-In this example `CUSTOM_GIT_FETCH_CONF='/bin/customGit'`
+In this example `CUSTOM_GIT_FETCH_CONF='/etc/customGitFetchConf.json'`
 
 ## Statistics
 
