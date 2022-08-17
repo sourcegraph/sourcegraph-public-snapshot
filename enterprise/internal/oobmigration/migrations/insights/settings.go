@@ -50,7 +50,8 @@ WHERE user_id = %s AND EXISTS (
 	FROM users
 	WHERE id = %s AND deleted_at IS NULL
 )
-ORDER BY id DESC LIMIT 1
+ORDER BY id DESC
+LIMIT 1
 `
 
 func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.Store, orgId int) (string, []settings, error) {

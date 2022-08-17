@@ -41,7 +41,12 @@ func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchIns
 const insightsMigratorMigrateInsightsQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
 SELECT COUNT(*)
-FROM (SELECT * FROM insight_view WHERE unique_id = %s ORDER BY unique_id) iv
+FROM (
+	SELECT *
+	FROM insight_view
+	WHERE unique_id = %s
+	ORDER BY unique_id
+) iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE i.deleted_at IS NULL
