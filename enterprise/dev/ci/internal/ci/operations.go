@@ -319,8 +319,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
 
-	addVsceIntegrationTests(pipeline)
-
 	// Add pipeline step for each chunk of web integrations files.
 	for i, chunkTestFiles := range chunkedTestFiles {
 		stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
