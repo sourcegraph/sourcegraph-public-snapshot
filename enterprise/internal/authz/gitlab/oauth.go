@@ -108,7 +108,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 	}
 
 	tokenRefresher := database.ExternalAccountTokenRefresher(p.db, account.ID, tok.RefreshToken)
-	client := p.clientProvider.NewClientWithTokenRefresher(&auth.OAuthBearerToken{Token: tok.AccessToken}, p.clientProvider.HTTPClient, tokenRefresher)
+	client := p.clientProvider.NewClientWithTokenRefresher(&auth.OAuthBearerToken{Token: tok.AccessToken}, tokenRefresher)
 	return listProjects(ctx, client)
 }
 
