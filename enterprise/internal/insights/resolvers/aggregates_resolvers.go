@@ -4,19 +4,9 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-type SearchAggregationMode string
-
-const (
-	REPO_AGGREGATION_MODE          SearchAggregationMode = "REPO"
-	PATH_AGGREGATION_MODE          SearchAggregationMode = "PATH"
-	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
-	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
-)
-
-var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE}
 
 type searchAggregateResolver struct {
 	baseInsightResolver
@@ -26,7 +16,7 @@ type searchAggregateResolver struct {
 
 func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphqlbackend.AggregationModeAvailabilityResolver {
 	resolvers := []graphqlbackend.AggregationModeAvailabilityResolver{}
-	for _, mode := range SearchAggregationModes {
+	for _, mode := range types.SearchAggregationModes {
 		resolvers = append(resolvers, newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, mode))
 	}
 	return resolvers
@@ -37,14 +27,14 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver()}, nil
 }
 
-func newAggregationModeAvailabilityResolver(searchQuery string, patternType string, mode SearchAggregationMode) graphqlbackend.AggregationModeAvailabilityResolver {
+func newAggregationModeAvailabilityResolver(searchQuery string, patternType string, mode types.SearchAggregationMode) graphqlbackend.AggregationModeAvailabilityResolver {
 	return &aggregationModeAvailabilityResolver{searchQuery: searchQuery, patternType: patternType, mode: mode}
 }
 
 type aggregationModeAvailabilityResolver struct {
 	searchQuery string
 	patternType string
-	mode        SearchAggregationMode
+	mode        types.SearchAggregationMode
 }
 
 func (r *aggregationModeAvailabilityResolver) Mode() string {
@@ -105,7 +95,7 @@ type searchAggregationModeResultResolver struct {
 	baseInsightResolver
 	searchQuery  string
 	patternType  string
-	mode         SearchAggregationMode
+	mode         types.SearchAggregationMode
 	isExhaustive bool
 }
 
