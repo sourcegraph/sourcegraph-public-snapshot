@@ -72,11 +72,11 @@ type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisio
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
-    PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
-    TelemetryProps,
-    HoverThresholdProps,
-    ExtensionsControllerProps,
-    ThemeProps {
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        TelemetryProps,
+        HoverThresholdProps,
+        ExtensionsControllerProps,
+        ThemeProps {
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
 
@@ -761,13 +761,13 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
 const CollapsibleRepoLocationGroup: React.FunctionComponent<
     React.PropsWithChildren<
         ActiveLocationProps &
-        CollapseProps &
-        SearchTokenProps & {
-            filter: string | undefined
-            navigateToUrl: (url: string) => void
-            repoLocationGroup: RepoLocationGroup
-            openByDefault: boolean
-        }
+            CollapseProps &
+            SearchTokenProps & {
+                filter: string | undefined
+                navigateToUrl: (url: string) => void
+                repoLocationGroup: RepoLocationGroup
+                openByDefault: boolean
+            }
     >
 > = ({
     repoLocationGroup,
@@ -780,63 +780,63 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     handleOpenChange,
     searchToken,
 }) => {
-        const repoUrl = `/${repoLocationGroup.repoName}`
-        const open = isOpen(repoLocationGroup.repoName) ?? openByDefault
+    const repoUrl = `/${repoLocationGroup.repoName}`
+    const open = isOpen(repoLocationGroup.repoName) ?? openByDefault
 
-        return (
-            <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoLocationGroup.repoName, isOpen)}>
-                <div className={styles.repoLocationGroup}>
-                    <CollapseHeader
-                        as={Button}
-                        aria-expanded={open}
-                        aria-label={`Repository ${repoLocationGroup.repoName}`}
-                        type="button"
-                        className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
-                    >
-                        <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
-                        <small>
-                            <Link
-                                to={repoUrl}
-                                onClick={event => {
-                                    event.preventDefault()
-                                    navigateToUrl(repoUrl)
-                                }}
-                                className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
-                            >
-                                {displayRepoName(repoLocationGroup.repoName)}
-                            </Link>
-                        </small>
-                    </CollapseHeader>
+    return (
+        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoLocationGroup.repoName, isOpen)}>
+            <div className={styles.repoLocationGroup}>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={open}
+                    aria-label={`Repository ${repoLocationGroup.repoName}`}
+                    type="button"
+                    className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
+                >
+                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
+                    <small>
+                        <Link
+                            to={repoUrl}
+                            onClick={event => {
+                                event.preventDefault()
+                                navigateToUrl(repoUrl)
+                            }}
+                            className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
+                        >
+                            {displayRepoName(repoLocationGroup.repoName)}
+                        </Link>
+                    </small>
+                </CollapseHeader>
 
-                    <CollapsePanel id={repoLocationGroup.repoName}>
-                        {repoLocationGroup.referenceGroups.map(group => (
-                            <CollapsibleLocationGroup
-                                key={group.path + group.repoName}
-                                searchToken={searchToken}
-                                group={group}
-                                isActiveLocation={isActiveLocation}
-                                setActiveLocation={setActiveLocation}
-                                filter={filter}
-                                handleOpenChange={(id, isOpen) => handleOpenChange(repoLocationGroup.repoName + id, isOpen)}
-                                isOpen={id => isOpen(repoLocationGroup.repoName + id)}
-                                navigateToUrl={navigateToUrl}
-                            />
-                        ))}
-                    </CollapsePanel>
-                </div>
-            </Collapse>
-        )
-    }
+                <CollapsePanel id={repoLocationGroup.repoName}>
+                    {repoLocationGroup.referenceGroups.map(group => (
+                        <CollapsibleLocationGroup
+                            key={group.path + group.repoName}
+                            searchToken={searchToken}
+                            group={group}
+                            isActiveLocation={isActiveLocation}
+                            setActiveLocation={setActiveLocation}
+                            filter={filter}
+                            handleOpenChange={(id, isOpen) => handleOpenChange(repoLocationGroup.repoName + id, isOpen)}
+                            isOpen={id => isOpen(repoLocationGroup.repoName + id)}
+                            navigateToUrl={navigateToUrl}
+                        />
+                    ))}
+                </CollapsePanel>
+            </div>
+        </Collapse>
+    )
+}
 
 const CollapsibleLocationGroup: React.FunctionComponent<
     React.PropsWithChildren<
         ActiveLocationProps &
-        CollapseProps &
-        SearchTokenProps & {
-            group: LocationGroup
-            filter: string | undefined
-            navigateToUrl: (url: string) => void
-        }
+            CollapseProps &
+            SearchTokenProps & {
+                group: LocationGroup
+                filter: string | undefined
+                navigateToUrl: (url: string) => void
+            }
     >
 > = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, navigateToUrl }) => {
     let highlighted = [group.path]
