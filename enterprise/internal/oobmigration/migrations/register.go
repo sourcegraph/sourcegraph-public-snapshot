@@ -14,9 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
@@ -44,16 +47,24 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 }
 
 func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRunner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
-	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase() // TODO - get from config
+	codeIntelDB, err := connections.EnsureNewCodeIntelDB(
+		conf.ServiceConnections().CodeIntelPostgresDSN,
+		"migrator",
+		&observation.TestContext,
+	)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to connect to codeintel database: %s", err)
 	}
 
-	var codeInsightsDB edb.InsightsDB
+	var codeInsightsDB *sql.DB
 	if internalInsights.IsEnabled() {
-		codeInsightsDB, err = internalInsights.InitializeCodeInsightsDB("migrator-oobmigrator") // TODO - get from config
+		codeInsightsDB, err = connections.EnsureNewCodeInsightsDB(
+			conf.ServiceConnections().CodeInsightsDSN,
+			"migrator",
+			&observation.TestContext,
+		)
 		if err != nil {
-			return err
+			return errors.Errorf("failed to connect to codeintel database: %s", err)
 		}
 	}
 
@@ -66,7 +77,7 @@ func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRu
 	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
-		insightsStore:  basestore.NewWithHandle(codeInsightsDB.Handle()),
+		insightsStore:  basestore.NewWithHandle(basestore.NewHandleWithDB(codeInsightsDB, sql.TxOptions{})),
 		keyring:        keyring,
 	})
 }
