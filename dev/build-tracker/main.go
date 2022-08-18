@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -27,7 +26,7 @@ const DefaultChannel = "#william-buildchecker-webhook-test"
 type Server struct {
 	logger       log.Logger
 	store        *BuildStore
-	bkToken      string
+	config       *config
 	notifyClient *NotificationClient
 	http         *http.Server
 }
@@ -37,6 +36,8 @@ type config struct {
 	SlackToken     string
 	GithubToken    string
 	SlackChannel   string
+	Production     bool
+	DebugPassword  string
 }
 
 func configFromEnv() (*config, error) {
@@ -60,6 +61,18 @@ func configFromEnv() (*config, error) {
 		c.SlackChannel = DefaultChannel
 	}
 
+	err = envVar("BUILDTRACKER_PRODUCTION", &c.Production)
+	if err != nil {
+		c.Production = false
+	}
+
+	if c.Production {
+		_ = envVar("BUILDTRACKER_DEBUG_PASSWORD", &c.DebugPassword)
+		if c.DebugPassword == "" {
+			return nil, errors.New("BT_DEBUG_PASSWORD is required when BT_PRODUCTION is true")
+		}
+	}
+
 	return &c, nil
 }
 
@@ -69,7 +82,7 @@ func NewServer(logger log.Logger, c config) *Server {
 	server := &Server{
 		logger:       logger,
 		store:        NewBuildStore(logger),
-		bkToken:      c.BuildkiteToken,
+		config:       &c,
 		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
 	}
 
@@ -90,6 +103,22 @@ func NewServer(logger log.Logger, c config) *Server {
 }
 
 func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
+	if s.config.Production {
+		user, pass, ok := req.BasicAuth()
+		if !ok {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if user != "devx" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if pass != s.config.DebugPassword {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+	}
 	vars := mux.Vars(req)
 
 	buildNumParam, ok := vars["buildNumber"]
@@ -107,9 +136,7 @@ func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
 	}
 
 	s.logger.Info("retrieving build", log.Int("buildNumber", buildNum))
-	println(buildNum)
 	build := s.store.GetByBuildNumber(buildNum)
-	fmt.Printf("----> %v\n", build)
 	if build == nil {
 		s.logger.Debug("no build found", log.Int("buildNumber", buildNum))
 		w.WriteHeader(http.StatusNotFound)
@@ -133,7 +160,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 	if !ok || len(h) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
-	} else if h[0] != s.bkToken {
+	} else if h[0] != s.config.BuildkiteToken {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -244,10 +271,18 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to get config from env", log.Error(err))
 	}
+	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", serverConf.SlackChannel), log.Bool("Production", serverConf.Production)))
 	server := NewServer(logger, *serverConf)
 
 	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
 	defer stopFn()
+
+	if server.config.Production {
+		server.logger.Info("server is in production mode!")
+	} else {
+		server.logger.Info("server is in development mode!")
+	}
+
 	if err := server.http.ListenAndServe(); err != nil {
 		logger.Fatal("server exited with error", log.Error(err))
 	}

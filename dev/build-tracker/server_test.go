@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,25 +10,38 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetBuild(t *testing.T) {
 	logger := logtest.Scoped(t)
-	server := NewServer(logger, config{})
 
 	req, _ := http.NewRequest(http.MethodGet, "/-/debug/1234", nil)
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 
-	t.Run("404 for build that does not exist", func(t *testing.T) {
+	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
+		server := NewServer(logger, config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
-		if rec.Result().StatusCode != 404 {
-			t.Errorf("expected 404 status code for build that does not exist")
-		}
+		require.Equal(t, http.StatusUnauthorized, rec.Result().StatusCode)
+
+		req.SetBasicAuth("devx", "this is the wrong password")
+		server.handleGetBuild(rec, req)
+
+		require.Equal(t, http.StatusUnauthorized, rec.Result().StatusCode)
 	})
 
-	t.Run("200 for build that does exist", func(t *testing.T) {
+	t.Run("404 for build that does not exist", func(t *testing.T) {
+		server := NewServer(logger, config{})
+		rec := httptest.NewRecorder()
+		server.handleGetBuild(rec, req)
+
+		require.Equal(t, 404, rec.Result().StatusCode)
+	})
+
+	t.Run("get marshalled json for build", func(t *testing.T) {
+		server := NewServer(logger, config{})
 		rec := httptest.NewRecorder()
 
 		num := 1234
@@ -65,18 +79,29 @@ func TestGetBuild(t *testing.T) {
 			Job: job.Job,
 		}
 
-		server.store.builds[event.buildNumber()] = event.build()
-
-		t.Logf("+%v\n", server.store.builds)
-		t.Logf("+%v\n", server.store.builds[1234])
+		expected := event.build()
+		server.store.builds[event.buildNumber()] = expected
 
 		server.handleGetBuild(rec, req)
 
-		if rec.Result().StatusCode != 200 {
-			t.Errorf("expected status 200 but got %d", rec.Result().StatusCode)
-		}
+		require.Equal(t, 200, rec.Result().StatusCode)
+
+		var result Build
+		err := json.NewDecoder(rec.Body).Decode(&result)
+		require.NoError(t, err)
+		require.Equal(t, *expected, result)
 	})
 
+	t.Run("200 with valid credentials in production mode", func(t *testing.T) {
+		server := NewServer(logger, config{Production: true, DebugPassword: "this is a test"})
+		rec := httptest.NewRecorder()
+
+		req.SetBasicAuth("devx", server.config.DebugPassword)
+		server.store.builds[1234] = (&Event{}).build()
+		server.handleGetBuild(rec, req)
+
+		require.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	})
 }
 
 func TestOldBuildsGetDeleted(t *testing.T) {
