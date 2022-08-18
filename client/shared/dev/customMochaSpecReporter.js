@@ -1,6 +1,8 @@
-const mocha = require('mocha')
 const { Console } = require('console')
 const fs = require('fs')
+
+const mocha = require('mocha')
+
 const originalConsoleLog = mocha.reporters.Base.consoleLog
 
 // SpecFileReporter is a custom Mocha reporter (https://mochajs.org/api/reporters_base.js.html) which behaves
@@ -30,8 +32,10 @@ class SpecFileReporter extends mocha.reporters.Spec {
       this.title = process.env.BUILDKIATE_LABEL
     }
 
-    if (this.buildkite === true && typeof process.env.BUILDKITE_LABEL === 'undefined') {
-      console.warn(`In Buildkite but BUILDKITE_LABEL not found in environment. Using title '${this.title}'`)
+    if (this.buildkite === true && typeof process.env.BUILDKITE_LABEL === undefined) {
+      console.warn(
+        `In Buildkite but BUILDKITE_LABEL not found in environment. Using title '${this.title || 'placeholder'}'`
+      )
     }
   }
 
@@ -43,16 +47,18 @@ class SpecFileReporter extends mocha.reporters.Spec {
     // We only output the epilogue to a file when we're in BUILDKITE and there are failures
     if (this.buildkite === true && this.failures.length > 0) {
       const customConsole = new Console({
-        stdout: fs.createWriteStream(`./annotations/mocha-test-output-${this.title}`),
+        stdout: fs.createWriteStream(`./annotations/mocha-test-output-${this.title || 'placeholder'}`),
       })
       // We now want the Spec reporter (aka epilogue) to be written to a file, but Spec uses the console defined on Base!
       // So we swap out the consoleLog defined on Base with our customLog one
       // https://sourcegraph.com/github.com/mochajs/mocha/-/blob/lib/reporters/base.js?L43:5
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       mocha.reporters.Base.consoleLog = customConsole.log
       // Generate report using custom logger
       // https://mochajs.org/api/reporters_base.js.html#line367
       super.epilogue()
       // The report has been written to a file, so now we swap the consoleLog back to the originalConsole logger
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       mocha.reporters.Base.consoleLog = originalConsoleLog
     }
   }
