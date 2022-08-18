@@ -10,23 +10,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/batches"
 )
 
+func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	store := basestore.NewWithHandle(db.Handle())
+
+	// TODO - get from config
+	keyring := keyring.Default()
+
+	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
+		batches.NewExternalServiceWebhookMigratorWithDB(store, keyring.ExternalServiceKey, 50),
+	})
+}
+
 type TaggedMigrator interface {
 	oobmigration.Migrator
 	ID() int
 	Interval() time.Duration
-}
-
-func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	frontendStore, err := frontendStore(db)
-	if err != nil {
-		return err
-	}
-
-	extsvcKey := keyring.Default().ExternalServiceKey
-
-	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
-		batches.NewExternalServiceWebhookMigratorWithDB(frontendStore, extsvcKey, 50),
-	})
 }
 
 func RegisterAll(outOfBandMigrationRunner *oobmigration.Runner, migrators []TaggedMigrator) error {
@@ -41,8 +39,4 @@ func RegisterAll(outOfBandMigrationRunner *oobmigration.Runner, migrators []Tagg
 	}
 
 	return nil
-}
-
-func frontendStore(db database.DB) (*basestore.Store, error) {
-	return basestore.NewWithHandle(db.Handle()), nil
 }

@@ -15,38 +15,34 @@ import (
 )
 
 func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	frontendStore, err := frontendStore(db)
-	if err != nil {
-		return err
-	}
+	store := basestore.NewWithHandle(db.Handle())
 
+	// TODO - get from config
+	keyring := keyring.Default()
+
+	// TODO - get from config
 	codeIntelStore, err := codeIntelStore()
 	if err != nil {
 		return err
 	}
 
+	// TODO - get from config
 	insightsStore, err := insightsStore()
 	if err != nil {
 		return err
 	}
 
-	batchesCredentialKey := keyring.Default().BatchChangesCredentialKey
-
 	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
-		iam.NewSubscriptionAccountNumberMigrator(frontendStore, 500),
-		iam.NewLicenseKeyFieldsMigrator(frontendStore, 500),
-		batches.NewSSHMigratorWithDB(frontendStore, batchesCredentialKey, 5),
+		iam.NewSubscriptionAccountNumberMigrator(store, 500),
+		iam.NewLicenseKeyFieldsMigrator(store, 500),
+		batches.NewSSHMigratorWithDB(store, keyring.BatchChangesCredentialKey, 5),
 		codeintel.NewDiagnosticsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewDefinitionLocationsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewReferencesLocationsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewDocumentColumnSplitMigrator(codeIntelStore, 100),
 		codeintel.NewAPIDocsSearchMigrator(),
-		insights.NewMigrator(frontendStore, insightsStore),
+		insights.NewMigrator(store, insightsStore),
 	})
-}
-
-func frontendStore(db database.DB) (*basestore.Store, error) {
-	return basestore.NewWithHandle(db.Handle()), nil
 }
 
 func codeIntelStore() (*basestore.Store, error) {
