@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
@@ -22,18 +21,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+func RegisterEnterpriseMigrations(
+	ctx context.Context,
+	db database.DB,
+	outOfBandMigrationRunner *oobmigration.Runner,
+) error {
 	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase()
 	if err != nil {
 		return err
 	}
 
-	var codeInsightsDB edb.InsightsDB
+	var insightsStore *basestore.Store
 	if internalInsights.IsEnabled() {
-		codeInsightsDB, err = internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
+		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
 		if err != nil {
 			return err
 		}
+
+		insightsStore = basestore.NewWithHandle(codeInsightsDB.Handle())
 	}
 
 	keyring := keyring.Default()
@@ -41,12 +46,17 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
-		insightsStore:  basestore.NewWithHandle(codeInsightsDB.Handle()),
+		insightsStore:  insightsStore,
 		keyring:        &keyring,
 	})
 }
 
-func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRunner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
+func RegisterEnterpriseMigrationsFromConfig(
+	ctx context.Context,
+	db database.DB,
+	outOfBandMigrationRunner *oobmigration.Runner,
+	conf conftypes.UnifiedQuerier,
+) error {
 	codeIntelDB, err := connections.EnsureNewCodeIntelDB(
 		conf.ServiceConnections().CodeIntelPostgresDSN,
 		"migrator",
@@ -56,9 +66,9 @@ func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRu
 		return errors.Errorf("failed to connect to codeintel database: %s", err)
 	}
 
-	var codeInsightsDB *sql.DB
+	var insightsStore *basestore.Store
 	if internalInsights.IsEnabled() {
-		codeInsightsDB, err = connections.EnsureNewCodeInsightsDB(
+		codeInsightsDB, err := connections.EnsureNewCodeInsightsDB(
 			conf.ServiceConnections().CodeInsightsDSN,
 			"migrator",
 			&observation.TestContext,
@@ -66,9 +76,10 @@ func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRu
 		if err != nil {
 			return errors.Errorf("failed to connect to codeintel database: %s", err)
 		}
+
+		insightsStore = basestore.NewWithHandle(basestore.NewHandleWithDB(codeInsightsDB, sql.TxOptions{}))
 	}
 
-	ctx := context.Background()
 	keyring, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {
 		return err
@@ -77,7 +88,7 @@ func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRu
 	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
-		insightsStore:  basestore.NewWithHandle(basestore.NewHandleWithDB(codeInsightsDB, sql.TxOptions{})),
+		insightsStore:  insightsStore,
 		keyring:        keyring,
 	})
 }

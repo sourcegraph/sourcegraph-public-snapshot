@@ -22,12 +22,20 @@ import (
 
 // migrator configures an out of band migration runner process to execute in the background.
 type migrator struct {
-	registerMigrators func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error
+	registerMigrators func(
+		ctx context.Context,
+		db database.DB,
+		outOfBandMigrationRunner *oobmigration.Runner,
+	) error
 }
 
 var _ job.Job = &migrator{}
 
-func NewMigrator(registerMigrators func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) job.Job {
+func NewMigrator(registerMigrators func(
+	ctx context.Context,
+	db database.DB,
+	outOfBandMigrationRunner *oobmigration.Runner,
+) error) job.Job {
 	return &migrator{
 		registerMigrators: registerMigrators,
 	}
@@ -59,7 +67,7 @@ func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine
 		return nil, errors.Wrap(err, "failed to synchronized out of band migration metadata")
 	}
 
-	if err := m.registerMigrators(db, outOfBandMigrationRunner); err != nil {
+	if err := m.registerMigrators(ctx, db, outOfBandMigrationRunner); err != nil {
 		return nil, err
 	}
 

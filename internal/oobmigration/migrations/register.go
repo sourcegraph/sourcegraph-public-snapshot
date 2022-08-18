@@ -12,7 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/batches"
 )
 
-func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+func RegisterOSSMigrations(
+	ctx context.Context,
+	db database.DB,
+	outOfBandMigrationRunner *oobmigration.Runner,
+) error {
 	keyring := keyring.Default()
 
 	return registerOSSMigrations(outOfBandMigrationRunner, migratorDependencies{
@@ -21,8 +25,12 @@ func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigratio
 	})
 }
 
-func RegisterOSSMigrationsFromConfig(db database.DB, outOfBandMigrationRunner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
-	ctx := context.Background()
+func RegisterOSSMigrationsFromConfig(
+	ctx context.Context,
+	db database.DB,
+	outOfBandMigrationRunner *oobmigration.Runner,
+	conf conftypes.UnifiedQuerier,
+) error {
 	keyring, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {
 		return err
