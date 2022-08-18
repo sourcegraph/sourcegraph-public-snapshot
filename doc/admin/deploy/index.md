@@ -22,11 +22,11 @@ It does not provide multi-machine capability such as high availability, but will
 
 Kubernetes is recommended for non-standard deployments where Docker Compose is not a viable option. 
 
-This path will require advanced knowledge of Kubernetes. For team's without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead. 
+This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead. 
 
 Helm provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience.
 
-If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For team's without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead. 
+If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead. 
 
 
 ## Reference repositories
