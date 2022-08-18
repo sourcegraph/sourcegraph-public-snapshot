@@ -3,6 +3,7 @@ package migrations
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -11,6 +12,13 @@ import (
 )
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	return registerOSSMigrations(outOfBandMigrationRunner, migratorDependencies{
+		store:   basestore.NewWithHandle(db.Handle()),
+		keyring: keyring.Default(),
+	})
+}
+
+func RegisterOSSMigrationsFromConfig(db database.DB, outOfBandMigrationRunner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
 	return registerOSSMigrations(outOfBandMigrationRunner, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
 		keyring: keyring.Default(), // TODO - get from config

@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -15,6 +16,25 @@ import (
 )
 
 func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	codeIntelStore, err := codeIntelStore()
+	if err != nil {
+		return err
+	}
+
+	insightsStore, err := insightsStore()
+	if err != nil {
+		return err
+	}
+
+	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
+		store:          basestore.NewWithHandle(db.Handle()),
+		codeIntelStore: codeIntelStore,
+		insightsStore:  insightsStore,
+		keyring:        keyring.Default(),
+	})
+}
+
+func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRunner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
 	codeIntelStore, err := codeIntelStore() // TODO - get from config
 	if err != nil {
 		return err
