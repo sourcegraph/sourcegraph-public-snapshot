@@ -2,6 +2,8 @@ package resolvers
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -44,6 +46,7 @@ func (r *aggregationModeAvailabilityResolver) Mode() string {
 func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
 		types.REPO_AGGREGATION_MODE: canAggregateByRepo,
+		// types.PATH_AGGREGATION_MODE: canAggregateByPath,
 	}
 	canAggregateByFunc, ok := checkByMode[r.mode]
 	if !ok {
@@ -55,13 +58,25 @@ func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 type canAggregateBy func(searchQuery, patternType string) bool
 
 func canAggregateByRepo(searchQuery, patternType string) bool {
-	// It would only not make sense to aggregate by repo when a single repo: parameter is specified
-	// but does it make sense not to display the option?
+	// We can always aggregate by repo.
 	return true
 }
 
-func canAggregateByFile(searchQuery, patternType string) bool {
-	return false
+func canAggregateByPath(searchQuery, patternType string) bool {
+	// We don't need to validate the searchQuery is valid as search have their own validation which would get triggered,
+	// we just want to grab the query plan parameters.
+	plan, _ := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	// cannot aggregate over:
+	// - searches by commit or repo
+	for _, parameter := range parameters {
+		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
+			if parameter.Value == "commit" || parameter.Value == "repo" {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
