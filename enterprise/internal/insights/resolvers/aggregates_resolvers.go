@@ -12,7 +12,7 @@ import (
 )
 
 const searchTimeLimitSeconds = 2
-const aggregationBufferSize = 2
+const aggregationBufferSize = 500
 
 type searchAggregateResolver struct {
 	baseInsightResolver
