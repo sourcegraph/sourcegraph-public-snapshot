@@ -4,13 +4,13 @@ import classNames from 'classnames'
 
 import { Button, ButtonGroup } from '@sourcegraph/wildcard'
 
-import { AggregationModes } from './types'
+import { AggregationMode } from './types'
 
 import styles from './AggregationModeControls.module.scss'
 
 interface AggregationModeControlsProps extends HTMLAttributes<HTMLDivElement> {
-    mode: AggregationModes
-    onModeChange: (nextMode: AggregationModes) => void
+    mode: AggregationMode
+    onModeChange: (nextMode: AggregationMode) => void
     size?: 'sm' | 'lg'
 }
 
@@ -18,13 +18,18 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
     const { mode, onModeChange, size, className, ...attributes } = props
 
     return (
-        <ButtonGroup {...attributes} className={classNames(className, { [styles.aggregationGroupSm]: size === 'sm' })}>
+        <ButtonGroup
+            {...attributes}
+            aria-label="Aggregation mode picker"
+            className={classNames(className, { [styles.aggregationGroupSm]: size === 'sm' })}
+        >
             <Button
                 className={styles.aggregationTypeControl}
                 variant="secondary"
                 size={size}
-                outline={mode !== AggregationModes.Repository}
-                onClick={() => onModeChange(AggregationModes.Repository)}
+                outline={mode !== AggregationMode.Repository}
+                data-testid="repo-aggregation-mode"
+                onClick={() => onModeChange(AggregationMode.Repository)}
             >
                 Repo
             </Button>
@@ -33,8 +38,9 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                 className={styles.aggregationTypeControl}
                 variant="secondary"
                 size={size}
-                outline={mode !== AggregationModes.FilePath}
-                onClick={() => onModeChange(AggregationModes.FilePath)}
+                outline={mode !== AggregationMode.FilePath}
+                data-testid="file-aggregation-mode"
+                onClick={() => onModeChange(AggregationMode.FilePath)}
             >
                 File
             </Button>
@@ -43,8 +49,9 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                 className={styles.aggregationTypeControl}
                 variant="secondary"
                 size={size}
-                outline={mode !== AggregationModes.Author}
-                onClick={() => onModeChange(AggregationModes.Author)}
+                outline={mode !== AggregationMode.Author}
+                data-testid="author-aggregation-mode"
+                onClick={() => onModeChange(AggregationMode.Author)}
             >
                 Author
             </Button>
@@ -52,8 +59,9 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                 className={styles.aggregationTypeControl}
                 variant="secondary"
                 size={size}
-                outline={mode !== AggregationModes.CaptureGroups}
-                onClick={() => onModeChange(AggregationModes.CaptureGroups)}
+                outline={mode !== AggregationMode.CaptureGroups}
+                data-testid="captureGroup-aggregation-mode"
+                onClick={() => onModeChange(AggregationMode.CaptureGroups)}
             >
                 Capture group
             </Button>

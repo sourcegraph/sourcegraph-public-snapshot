@@ -31,6 +31,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                 <Button
                     variant="secondary"
                     outline={true}
+                    aria-label="Close aggregation full UI mode"
                     onClick={() => setAggregationUIMode(AggregationUIMode.Sidebar)}
                 >
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowCollapse} />

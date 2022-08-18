@@ -2,11 +2,12 @@ import { useCallback, useMemo } from 'react'
 
 import { useHistory, useLocation } from 'react-router'
 
-import { AggregationModes, AggregationUIMode } from './types'
+import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
+import { AggregationMode, AggregationUIMode } from './types'
 
-interface URLStateOptions<State> {
+interface URLStateOptions<State, SerializedState> {
     urlKey: string
-    deserializer: (value: string | null) => State
+    deserializer: (value: SerializedState | null) => State
     serializer: (state: State) => string
 }
 
@@ -16,17 +17,18 @@ type SetStateResult<State> = [state: State, dispatch: (state: State) => void]
  * React hook analog standard react useState hook but with synced value with URL
  * through URL query parameter.
  */
-function useSyncedWithURLState<State>(options: URLStateOptions<State>): SetStateResult<State> {
+function useSyncedWithURLState<State, SerializedState>(
+    options: URLStateOptions<State, SerializedState>
+): SetStateResult<State> {
     const { urlKey, serializer, deserializer } = options
     const history = useHistory()
     const { search } = useLocation()
 
     const urlSearchParameters = useMemo(() => new URLSearchParams(search), [search])
-    const queryParameter = useMemo(() => deserializer(urlSearchParameters.get(urlKey)), [
-        urlSearchParameters,
-        urlKey,
-        deserializer,
-    ])
+    const queryParameter = useMemo(
+        () => deserializer((urlSearchParameters.get(urlKey) as unknown) as SerializedState),
+        [urlSearchParameters, urlKey, deserializer]
+    )
 
     const setNextState = useCallback(
         (nextState: State) => {
@@ -40,23 +42,23 @@ function useSyncedWithURLState<State>(options: URLStateOptions<State>): SetState
     return [queryParameter, setNextState]
 }
 
-export const AGGREGATION_MODE_URL_KEY = 'groupBy'
+type SerializedAggregationMode = `${AggregationMode}`
 
-const aggregationModeSerializer = (mode: AggregationModes): string => mode.toString()
+const aggregationModeSerializer = (mode: AggregationMode): SerializedAggregationMode => `${mode}`
 
-const aggregationModeDeserializer = (serializedValue: string | null): AggregationModes => {
+const aggregationModeDeserializer = (serializedValue: SerializedAggregationMode | null): AggregationMode => {
     switch (serializedValue) {
         case 'repo':
-            return AggregationModes.Repository
+            return AggregationMode.Repository
         case 'file':
-            return AggregationModes.FilePath
+            return AggregationMode.FilePath
         case 'author':
-            return AggregationModes.Author
+            return AggregationMode.Author
         case 'captureGroup':
-            return AggregationModes.CaptureGroups
+            return AggregationMode.CaptureGroups
 
         default:
-            return AggregationModes.Repository
+            return AggregationMode.Repository
     }
 }
 
@@ -64,7 +66,7 @@ const aggregationModeDeserializer = (serializedValue: string | null): Aggregatio
  * Shared state hook for syncing aggregation type state between different UI trough
  * ULR query param {@link AGGREGATION_MODE_URL_KEY}
  */
-export const useAggregationSearchMode = (): SetStateResult<AggregationModes> => {
+export const useAggregationSearchMode = (): SetStateResult<AggregationMode> => {
     const [aggregationMode, setAggregationMode] = useSyncedWithURLState({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
@@ -74,11 +76,10 @@ export const useAggregationSearchMode = (): SetStateResult<AggregationModes> => 
     return [aggregationMode, setAggregationMode]
 }
 
-export const AGGREGATION_UI_MODE_URL_KEY = 'groupByUI'
+type SerializedAggregationUIMode = `${AggregationUIMode}`
+const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => `${uiMode}`
 
-const aggregationUIModeSerializer = (uiMode: AggregationUIMode): string => uiMode.toString()
-
-const aggregationUIModeDeserializer = (serializedValue: string | null): AggregationUIMode => {
+const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIMode | null): AggregationUIMode => {
     switch (serializedValue) {
         case 'searchPage':
             return AggregationUIMode.SearchPage

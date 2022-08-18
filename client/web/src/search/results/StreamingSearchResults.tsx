@@ -289,7 +289,7 @@ export const StreamingSearchResults: React.FunctionComponent<
             />
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
-                <SearchAggregationResult className={styles.contents} />
+                <SearchAggregationResult aria-label="Aggregation results panel" className={styles.contents} />
             )}
 
             {aggregationUIMode !== AggregationUIMode.SearchPage && (

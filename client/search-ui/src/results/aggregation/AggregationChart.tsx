@@ -5,7 +5,7 @@ import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 
 import { BarChart, BarChartProps } from '@sourcegraph/wildcard'
 
-import { AggregationModes } from './types'
+import { AggregationMode } from './types'
 
 /**
  * AggregationChart sets these props internally, and we don't expose them
@@ -15,7 +15,7 @@ type PredefinedBarProps = 'pixelsPerXTick' | 'pixelsPerYTick' | 'maxAngleXTick' 
 type SharedBarProps<Datum> = Omit<BarChartProps<Datum>, PredefinedBarProps>
 
 interface AggregationChartProps<Datum> extends SharedBarProps<Datum> {
-    mode: AggregationModes
+    mode: AggregationMode
 }
 
 export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): ReactElement {
@@ -86,12 +86,12 @@ const getTruncatedTickFromTheEnd = (tick: string): string =>
  * github.com/sourcegraph/sourcegraph -> ...urcegraph/sourcegraph
  * ```
  */
-const getTruncationFormatter = (aggregationMode: AggregationModes): ((tick: string) => string) => {
+const getTruncationFormatter = (aggregationMode: AggregationMode): ((tick: string) => string) => {
     switch (aggregationMode) {
         // These types possible have long labels with the same pattern at the start of the string,
         // so we truncate their labels from the end
-        case AggregationModes.Repository:
-        case AggregationModes.FilePath:
+        case AggregationMode.Repository:
+        case AggregationMode.FilePath:
             return getTruncatedTickFromTheEnd
 
         default:

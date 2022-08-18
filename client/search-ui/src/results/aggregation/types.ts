@@ -1,4 +1,4 @@
-export enum AggregationModes {
+export enum AggregationMode {
     Repository = 'repo',
     FilePath = 'file',
     Author = 'author',

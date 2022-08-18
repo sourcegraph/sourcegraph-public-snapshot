@@ -62,6 +62,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                     size="sm"
                     outline={true}
                     className={styles.detailsAction}
+                    data-testid="expand-aggregation-ui"
                     onClick={() => setAggregationUIMode(AggregationUIMode.SearchPage)}
                 >
                     <Icon aria-hidden={true} svgPath={mdiArrowExpand} /> Expand
