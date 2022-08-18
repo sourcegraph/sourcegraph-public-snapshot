@@ -39,14 +39,16 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	aggreationMode := types.SearchAggregationMode(args.Mode)
 	supported, reason := aggreagtionModeSupported(r.searchQuery, r.patternType, aggreationMode)
 	if !supported {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason)}, nil
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggreationMode)}, nil
 	}
 
 	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
 	// This includes a timeout in the search that is a second longer than the context we will cancel as a fail safe
 	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimeLimitSeconds+1)
 	if err != nil {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver("search query could not be expanded for aggregation")}, nil
+		return &searchAggregationResultResolver{
+			resolver: newSearchAggregationNotAvailableResolver("search query could not be expanded for aggregation", aggreationMode),
+		}, nil
 	}
 
 	cappedAggregator := streaming.NewLimitedAggregator(aggregationBufferSize)
@@ -60,7 +62,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	}
 	onMatchFunc, err := streaming.TabulateAggregationMatches(tabulationFunc, aggreationMode)
 	if err != nil {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(err.Error())}, nil
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(err.Error(), aggreationMode)}, nil
 	}
 	decoder, searchEvents := streaming.AggregationDecoder(onMatchFunc)
 
@@ -71,12 +73,12 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		if errors.Is(err, context.Canceled) {
 			reason = "search did not complete in time"
 		}
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason)}, nil
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggreationMode)}, nil
 	}
 
 	successful, failureReason := searchSuccessful(searchEvents, tabulationErrors)
 	if !successful {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason)}, nil
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggreationMode)}, nil
 	}
 
 	results := buildResults(cappedAggregator, int(args.Limit), aggreationMode, r.searchQuery)
@@ -217,16 +219,23 @@ func (r *searchAggregationResultResolver) ToSearchAggregationNotAvailable() (gra
 	return res, ok
 }
 
-func newSearchAggregationNotAvailableResolver(reason string) graphqlbackend.SearchAggregationNotAvailable {
-	return &searchAggregationNotAvailableResolver{}
+func newSearchAggregationNotAvailableResolver(reason string, mode types.SearchAggregationMode) graphqlbackend.SearchAggregationNotAvailable {
+	return &searchAggregationNotAvailableResolver{
+		reason: reason,
+		mode:   mode,
+	}
 }
 
 type searchAggregationNotAvailableResolver struct {
 	reason string
+	mode   types.SearchAggregationMode
 }
 
 func (r *searchAggregationNotAvailableResolver) Reason() string {
 	return r.reason
+}
+func (r *searchAggregationNotAvailableResolver) Mode() string {
+	return string(r.mode)
 }
 
 // Resolver to calculate aggregations for a combination of search query, pattern type, aggregation mode
@@ -263,4 +272,8 @@ func (r *searchAggregationModeResultResolver) ApproximateOtherGroupCount() (*int
 func (r *searchAggregationModeResultResolver) SupportsPersistence() (*bool, error) {
 	supported := false
 	return &supported, nil
+}
+
+func (r *searchAggregationModeResultResolver) Mode() (string, error) {
+	return string(r.mode), nil
 }
