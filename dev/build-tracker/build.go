@@ -11,12 +11,18 @@ import (
 // Build keeps track of a buildkite.Build and it's associated jobs and pipeline.
 // See BuildStore for where jobs are added to the build.
 type Build struct {
-	buildkite.Build
-	Pipeline *Pipeline
-	Jobs     map[string]Job
+	// Build is the buildkite.Build currently being executed by buildkite on a particular Pipeline
+	buildkite.Build `json:"build"`
+
+	// Pipeline is a wrapped buildkite.Pipeline that is running this build.
+	Pipeline *Pipeline `json:"pipeline"`
+
+	// Jobs is a map that keeps track of all the buildkite.Jobs associated with this build.
+	// Each job is wrapped to allow for safer access to fields of the buildkite.Jobs. The name of the job is used as the key
+	Jobs map[string]Job `json:"jobs"`
 
 	// ConsecutiveFailure indicates whether this build is the nth consecutive failure.
-	ConsecutiveFailure int
+	ConsecutiveFailure int `json:"consecutiveFailures"`
 }
 
 func (b *Build) hasFailed() bool {
@@ -86,7 +92,7 @@ func (j *Job) failed() bool {
 
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
 type Pipeline struct {
-	buildkite.Pipeline
+	buildkite.Pipeline `json:"pipeline"`
 }
 
 func (p *Pipeline) name() string {
@@ -99,10 +105,14 @@ func (p *Pipeline) name() string {
 // Event contains information about a buildkite event. Each event contains the build, pipeline, and job. Note that when the event
 // is `build.*` then Job will be empty.
 type Event struct {
-	Name     string             `json:"event"`
-	Build    buildkite.Build    `json:"build,omitempty"`
+	// Name is the name of the buildkite event that got triggered
+	Name string `json:"event"`
+	// Build is the buildkite.Build that triggered this event
+	Build buildkite.Build `json:"build,omitempty"`
+	// Pipeline is the buildkite.Pipeline that is running the build that triggered this event
 	Pipeline buildkite.Pipeline `json:"pipeline,omitempty"`
-	Job      buildkite.Job      `json:"job,omitempty"`
+	// Job is the current job being executed by the Build. When the event is not a job event variant, then this job will be empty
+	Job buildkite.Job `json:"job,omitempty"`
 }
 
 func (b *Event) build() *Build {
