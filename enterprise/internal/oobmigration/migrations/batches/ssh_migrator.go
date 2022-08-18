@@ -215,7 +215,17 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 
 const sshMigratorSelectQuery = `
 -- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
-SELECT id, credential, encryption_key_id FROM user_credentials WHERE domain = %s AND ssh_migration_applied = %s ORDER BY ID LIMIT %s FOR UPDATE
+SELECT
+	id,
+	credential,
+	encryption_key_id
+FROM user_credentials
+WHERE
+	domain = %s AND
+	ssh_migration_applied = %s
+ORDER BY ID
+LIMIT %s
+FOR UPDATE
 `
 
 const sshMigratorUpdateQuery = `
