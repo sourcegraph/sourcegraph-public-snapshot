@@ -3,6 +3,7 @@ package testing
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -41,7 +42,11 @@ func (k ByteaTestKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, er
 }
 
 func (k ByteaTestKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(ciphertext[1:]))
+	if len(ciphertext) < 4 || string(ciphertext[:4]) != "\\x20" {
+		return nil, errors.New("incorrect prefix")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(string(ciphertext[4:]))
 	s := encryption.NewSecret(string(decoded))
 	return &s, err
 }
