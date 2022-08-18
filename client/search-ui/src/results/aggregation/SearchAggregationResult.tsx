@@ -20,19 +20,23 @@ const getName = (datum: LanguageUsageDatum): string => datum.name
 
 interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {}
 
-export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
+export const SearchAggregationResult: FC<SearchAggregationResultProps> = attributes => {
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const [, setAggregationUIMode] = useAggregationUIMode()
 
+    const handleCollapseClick = (): void => {
+        setAggregationUIMode(AggregationUIMode.Sidebar)
+    }
+
     return (
-        <section {...props}>
+        <section {...attributes}>
             <header className={styles.header}>
                 <H2 className="m-0">Group results by</H2>
                 <Button
                     variant="secondary"
                     outline={true}
                     aria-label="Close aggregation full UI mode"
-                    onClick={() => setAggregationUIMode(AggregationUIMode.Sidebar)}
+                    onClick={handleCollapseClick}
                 >
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowCollapse} />
                     Collapse
