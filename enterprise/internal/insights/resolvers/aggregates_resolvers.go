@@ -12,7 +12,7 @@ import (
 )
 
 const searchTimeLimitSeconds = 2
-const aggregationBufferSize = 500
+const aggregationBufferSize = 2
 
 type searchAggregateResolver struct {
 	baseInsightResolver
@@ -145,7 +145,8 @@ func (r *AggregationGroup) Query() (*string, error) {
 func buildResults(aggregator streaming.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string) aggregationResults {
 	sorted := aggregator.SortAggregate()
 	groups := make([]graphqlbackend.AggregationGroup, 0, limit)
-	var otherResults, otherGroups int
+	otherResults := aggregator.OtherResults().ResultCount
+	otherGroups := aggregator.OtherResults().GroupCount
 
 	for i := 0; i < len(sorted); i++ {
 		if i < limit {
@@ -156,14 +157,14 @@ func buildResults(aggregator streaming.LimitedAggregator, limit int, mode types.
 			})
 		} else {
 			otherGroups++
-			otherResults += int(sorted[i].Count)
+			otherResults += sorted[i].Count
 		}
 	}
 
 	return aggregationResults{
 		groups:           groups,
-		otherResultCount: otherResults,
-		otherGroupCount:  otherGroups,
+		otherResultCount: int(otherResults),
+		otherGroupCount:  int(otherGroups),
 	}
 }
 
