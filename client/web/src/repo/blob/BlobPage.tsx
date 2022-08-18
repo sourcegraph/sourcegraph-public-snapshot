@@ -50,7 +50,7 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
-import { Blob, BlobInfo } from './Blob'
+import { Blob, BlobInfo, BlobProps } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
@@ -71,6 +71,7 @@ interface Props
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
+        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
@@ -483,6 +484,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         role="region"
                         ariaLabel="File blob"
                         blameDecorations={blameDecorations}
+                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                     />
                 </TraceSpanProvider>
             )}

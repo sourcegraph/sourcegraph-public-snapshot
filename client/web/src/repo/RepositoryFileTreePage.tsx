@@ -12,6 +12,7 @@ import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
+import { BlobProps } from './blob/Blob'
 import { BlobPage } from './blob/BlobPage'
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -24,7 +25,8 @@ export interface RepositoryFileTreePageProps
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
             spec: string
-        }> {}
+        }>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'> {}
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
@@ -112,21 +114,20 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                     <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
                     <ErrorBoundary location={context.location}>
                         {objectType === 'blob' ? (
-                            <>
-                                <TraceSpanProvider name="BlobPage">
-                                    <BlobPage
-                                        {...context}
-                                        {...repoRevisionProps}
-                                        repoID={repo.id}
-                                        repoName={repo.name}
-                                        repoUrl={repo.url}
-                                        mode={mode}
-                                        repoHeaderContributionsLifecycleProps={
-                                            context.repoHeaderContributionsLifecycleProps
-                                        }
-                                    />
-                                </TraceSpanProvider>
-                            </>
+                            <TraceSpanProvider name="BlobPage">
+                                <BlobPage
+                                    {...context}
+                                    {...repoRevisionProps}
+                                    repoID={repo.id}
+                                    repoName={repo.name}
+                                    repoUrl={repo.url}
+                                    mode={mode}
+                                    repoHeaderContributionsLifecycleProps={
+                                        context.repoHeaderContributionsLifecycleProps
+                                    }
+                                    onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                                />
+                            </TraceSpanProvider>
                         ) : (
                             <TreePage
                                 {...props}

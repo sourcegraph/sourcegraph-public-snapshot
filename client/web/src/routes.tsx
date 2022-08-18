@@ -13,6 +13,7 @@ import type { LayoutProps } from './Layout'
 import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
 import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
+import { BlobProps } from './repo/blob/Blob'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
@@ -36,7 +37,8 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BreadcrumbsProps,
         BreadcrumbSetters,
         CodeIntelligenceProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        Pick<BlobProps, 'onHandleFuzzyFinder'> {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
