@@ -39,7 +39,16 @@ const commands = {
 try {
     // Get the latest release version nubmer of the last release from VS Code Marketplace using the vsce cli tool
     const response = childProcess.execSync(commands.vscode_info).toString()
-    const latestVersion: string = JSON.parse(response).versions[0].version
+    /*
+        `vscode_info` command output is extension info prepended by command name and arguments, e.g.
+        $ /Users/taras/projects/sourcegraph/node_modules/.bin/vsce show sourcegraph.sourcegraph --json
+        {
+            ...json
+        }
+        We cut everything before the json object so that we can parse it as json.
+    */
+    const trimmedResponse = response.substring(response.indexOf('{'))
+    const latestVersion: string = JSON.parse(trimmedResponse).versions[0].version
     if (hasTokens && (version === latestVersion || !semver.valid(latestVersion) || !semver.valid(version))) {
         throw new Error(
             version === latestVersion
