@@ -47,6 +47,7 @@ func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
 		types.REPO_AGGREGATION_MODE: canAggregateByRepo,
 		// types.PATH_AGGREGATION_MODE: canAggregateByPath,
+		// types.AUTHOR_AGGREGATION_MODE: canAggregateByAuthor,
 	}
 	canAggregateByFunc, ok := checkByMode[r.mode]
 	if !ok {
@@ -77,6 +78,21 @@ func canAggregateByPath(searchQuery, patternType string) bool {
 		}
 	}
 	return true
+}
+
+func canAggregateByAuthor(searchQuery, patternType string) bool {
+	plan, _ := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	// can only aggregate over type:diff and select/type:commit searches.
+	// users can make searches like `type:commit fix select:repo` but assume a faulty search like that is on them.
+	for _, parameter := range parameters {
+		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
+			if parameter.Value == "diff" || parameter.Value == "commit" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
