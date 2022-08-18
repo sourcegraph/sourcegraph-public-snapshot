@@ -271,6 +271,7 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 			Namespace:       "executor",
 			DescriptionRoot: "Executor jobs",
 
+			// if updating this, also update in NewExecutorProcessorGroup
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "executor",
 				MetricDescriptionRoot: "unprocessed executor job",
@@ -304,6 +305,12 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		Filters:               filters,
 	}
 
+	queueConstructorOptions := ObservableConstructorOptions{
+		MetricNameRoot:        "executor",
+		MetricDescriptionRoot: "unprocessed executor job",
+		By:                    []string{"queue"},
+	}
+
 	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
@@ -313,7 +320,15 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:    NoAlertsOption("none"),
+			Total: CriticalOption(
+				monitoring.Alert().
+					CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
+					LessOrEqual(0).
+					// ~5min for scale-from-zero + processing time
+					// as we dont have figures for in-flight jobs,
+					// only completed
+					For(time.Minute*15),
+				`possibleSolution string`),
 			Duration: NoAlertsOption("none"),
 			Errors:   NoAlertsOption("none"),
 			ErrorRate: CriticalOption(

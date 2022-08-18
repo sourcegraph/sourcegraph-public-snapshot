@@ -78,6 +78,28 @@ func (workerutilConstructor) LastOverTimeErrorRate(containerName string, lookbac
 	return Standard.LastOverTimeErrorRate(containerName, lookbackWindow, options)
 }
 
+// QueueForwardProgress creates a queue-based workerutil-specific query that yields 0 when the queue is non-empty but the
+// number of processed records is zero.
+// This should be combined with a reasonable time threshold to account for cloud VM startup time + job processing time, as
+// we don't track in-flight jobs today, only 'completed'.
+func (workerutilConstructor) QueueForwardProgress(containerName string, handlerOptions, queueOptions ObservableConstructorOptions) string {
+	handlerFilters := makeFilters(handlerOptions.JobLabel, containerName, handlerOptions.Filters...)
+	handlerBy, _ := makeBy(handlerOptions.By...)
+
+	queueFilters := makeFilters(queueOptions.JobLabel, containerName, queueOptions.Filters...)
+	queueBy, _ := makeBy(queueOptions.By...)
+
+	return fmt.Sprintf(`
+		(
+			sum%[1]s(increase(src_%[2]s_processor_total{%[3]s}[5m]))
+			+ (sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m])))
+			OR vector(0)
+		) == 0
+			AND
+		(sum%[4]s(src_%[5]s_total{%[6]s})) > 0
+	`, handlerBy, handlerOptions.MetricNameRoot, handlerFilters, queueBy, queueOptions.MetricNameRoot, queueFilters)
+}
+
 type WorkerutilGroupOptions struct {
 	GroupConstructorOptions
 	SharedObservationGroupOptions
