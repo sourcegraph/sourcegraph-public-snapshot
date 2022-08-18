@@ -6350,7 +6350,7 @@ type AnalyticsExtensionsResult {
     """
     jetbrains: AnalyticsStatItem!
     """
-    VsCode IDE extension search events.
+    VSCode IDE extension search events.
     """
     vscode: AnalyticsStatItem!
     """
