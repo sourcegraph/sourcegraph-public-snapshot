@@ -30,7 +30,7 @@ func TestSubscriptionAccountNumberMigrator(t *testing.T) {
 	require.NoError(t, err)
 
 	// Ensure there is no progress before migration
-	migrator := NewSubscriptionAccountNumberMigrator(basestore.NewWithHandle(db.Handle()))
+	migrator := NewSubscriptionAccountNumberMigrator(basestore.NewWithHandle(db.Handle()), 500)
 	progress, err := migrator.Progress(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, progress)

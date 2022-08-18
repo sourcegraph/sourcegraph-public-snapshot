@@ -19,17 +19,17 @@ import (
 type externalServiceWebhookMigrator struct {
 	logger    log.Logger
 	store     *basestore.Store
-	BatchSize int
 	key       encryption.Key
+	batchSize int
 }
 
 var _ oobmigration.Migrator = &externalServiceWebhookMigrator{}
 
-func NewExternalServiceWebhookMigratorWithDB(db database.DB, key encryption.Key) *externalServiceWebhookMigrator {
+func NewExternalServiceWebhookMigratorWithDB(db database.DB, key encryption.Key, batchSize int) *externalServiceWebhookMigrator {
 	return &externalServiceWebhookMigrator{
 		logger:    log.Scoped("ExternalServiceWebhookMigrator", ""),
 		store:     basestore.NewWithHandle(db.Handle()),
-		BatchSize: 50,
+		batchSize: batchSize,
 		key:       key,
 	}
 }
@@ -79,7 +79,7 @@ func (m *externalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 		Kind, Config string
 	}
 	svcs, err := func() (svcs []svc, err error) {
-		rows, err := tx.Query(ctx, sqlf.Sprintf(externalServiceWebhookMigratorSelectQuery, m.BatchSize))
+		rows, err := tx.Query(ctx, sqlf.Sprintf(externalServiceWebhookMigratorSelectQuery, m.batchSize))
 		if err != nil {
 			return nil, err
 		}

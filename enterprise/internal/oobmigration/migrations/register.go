@@ -28,10 +28,12 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 		return err
 	}
 
+	batchesCredentialKey := keyring.Default().BatchChangesCredentialKey
+
 	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
-		iam.NewSubscriptionAccountNumberMigrator(frontendStore),
-		iam.NewLicenseKeyFieldsMigrator(frontendStore),
-		batches.NewSSHMigratorWithDB(frontendStore, keyring.Default().BatchChangesCredentialKey),
+		iam.NewSubscriptionAccountNumberMigrator(frontendStore, 500),
+		iam.NewLicenseKeyFieldsMigrator(frontendStore, 500),
+		batches.NewSSHMigratorWithDB(frontendStore, batchesCredentialKey, 5),
 		codeintel.NewDiagnosticsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewDefinitionLocationsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewReferencesLocationsCountMigrator(codeIntelStore, 1000),

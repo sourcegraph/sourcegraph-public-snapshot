@@ -17,18 +17,18 @@ import (
 type SSHMigrator struct {
 	logger    log.Logger
 	store     *basestore.Store
-	BatchSize int
 	key       encryption.Key
+	batchSize int
 }
 
 var _ oobmigration.Migrator = &SSHMigrator{}
 
-func NewSSHMigratorWithDB(store *basestore.Store, key encryption.Key) *SSHMigrator {
+func NewSSHMigratorWithDB(store *basestore.Store, key encryption.Key, batchSize int) *SSHMigrator {
 	return &SSHMigrator{
 		logger:    log.Scoped("SSHMigrator", ""),
 		store:     store,
-		BatchSize: 5,
 		key:       key,
+		batchSize: batchSize,
 	}
 }
 
@@ -162,7 +162,7 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 		Credential string
 	}
 	credentials, err := func() (credentials []credential, err error) {
-		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorSelectQuery, "batches", sshMigrationsApplied, m.BatchSize))
+		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorSelectQuery, "batches", sshMigrationsApplied, m.batchSize))
 		if err != nil {
 			return nil, err
 		}

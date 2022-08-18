@@ -168,7 +168,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		createExternalServices(t, ctx, db)
 
 		key := et.TestKey{}
-		m := NewExternalServiceWebhookMigratorWithDB(db, key)
+		m := NewExternalServiceWebhookMigratorWithDB(db, key, 50)
 
 		// By default, all the external services should have non-NULL
 		// has_webhooks.
@@ -189,9 +189,9 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		es := db.ExternalServices()
 
 		key := et.TestKey{}
-		m := NewExternalServiceWebhookMigratorWithDB(db, key)
+		m := NewExternalServiceWebhookMigratorWithDB(db, key, 50)
 		// Ensure that we have to run two Ups.
-		m.BatchSize = len(initSvcs) - 1
+		m.batchSize = len(initSvcs) - 1
 
 		// To start with, there should be nothing to do, as Upsert will have set
 		// has_webhooks already. Let's make sure nothing happens successfully.

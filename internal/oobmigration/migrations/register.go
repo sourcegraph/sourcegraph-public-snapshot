@@ -16,8 +16,10 @@ type TaggedMigrator interface {
 }
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	extsvcKey := keyring.Default().ExternalServiceKey
+
 	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
-		batches.NewExternalServiceWebhookMigratorWithDB(db, keyring.Default().ExternalServiceKey),
+		batches.NewExternalServiceWebhookMigratorWithDB(db, extsvcKey, 50),
 	})
 }
 
