@@ -15,43 +15,42 @@ import (
 )
 
 func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	return registerEnterpriseMigrations(
-		db,
-		outOfBandMigrationRunner,
-	)
+	codeIntelStore, err := codeIntelStore() // TODO - get from config
+	if err != nil {
+		return err
+	}
+
+	insightsStore, err := insightsStore() // TODO - get from config
+	if err != nil {
+		return err
+	}
+
+	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
+		store:          basestore.NewWithHandle(db.Handle()),
+		codeIntelStore: codeIntelStore,
+		insightsStore:  insightsStore,
+		keyring:        keyring.Default(), // TODO - get from config
+	})
 }
 
-func registerEnterpriseMigrations(
-	db database.DB,
-	outOfBandMigrationRunner *oobmigration.Runner,
-) error {
-	store := basestore.NewWithHandle(db.Handle())
+type dependencies struct {
+	store          *basestore.Store
+	codeIntelStore *basestore.Store
+	insightsStore  *basestore.Store
+	keyring        keyring.Ring
+}
 
-	// TODO - get from config
-	keyring := keyring.Default()
-
-	// TODO - get from config
-	codeIntelStore, err := codeIntelStore()
-	if err != nil {
-		return err
-	}
-
-	// TODO - get from config
-	insightsStore, err := insightsStore()
-	if err != nil {
-		return err
-	}
-
+func registerEnterpriseMigrations(outOfBandMigrationRunner *oobmigration.Runner, deps dependencies) error {
 	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
-		iam.NewSubscriptionAccountNumberMigrator(store, 500),
-		iam.NewLicenseKeyFieldsMigrator(store, 500),
-		batches.NewSSHMigratorWithDB(store, keyring.BatchChangesCredentialKey, 5),
-		codeintel.NewDiagnosticsCountMigrator(codeIntelStore, 1000),
-		codeintel.NewDefinitionLocationsCountMigrator(codeIntelStore, 1000),
-		codeintel.NewReferencesLocationsCountMigrator(codeIntelStore, 1000),
-		codeintel.NewDocumentColumnSplitMigrator(codeIntelStore, 100),
+		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
+		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
+		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
+		codeintel.NewDiagnosticsCountMigrator(deps.codeIntelStore, 1000),
+		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000),
+		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000),
+		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100),
 		codeintel.NewAPIDocsSearchMigrator(),
-		insights.NewMigrator(store, insightsStore),
+		insights.NewMigrator(deps.store, deps.insightsStore),
 	})
 }
 

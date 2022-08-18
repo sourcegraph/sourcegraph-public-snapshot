@@ -11,23 +11,20 @@ import (
 )
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	return registerOSSMigrations(
-		db,
-		outOfBandMigrationRunner,
-	)
+	return registerOSSMigrations(outOfBandMigrationRunner, migratorDependencies{
+		store:   basestore.NewWithHandle(db.Handle()),
+		keyring: keyring.Default(), // TODO - get from config
+	})
 }
 
-func registerOSSMigrations(
-	db database.DB,
-	outOfBandMigrationRunner *oobmigration.Runner,
-) error {
-	store := basestore.NewWithHandle(db.Handle())
+type migratorDependencies struct {
+	store   *basestore.Store
+	keyring keyring.Ring
+}
 
-	// TODO - get from config
-	keyring := keyring.Default()
-
+func registerOSSMigrations(outOfBandMigrationRunner *oobmigration.Runner, deps migratorDependencies) error {
 	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
-		batches.NewExternalServiceWebhookMigratorWithDB(store, keyring.ExternalServiceKey, 50),
+		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
 	})
 }
 
