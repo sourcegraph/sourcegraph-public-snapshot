@@ -1,6 +1,6 @@
 # Detect and track patterns with automatically generated data series 
 
-> Note: "Detect and track patterns" insights are available in Sourcegraph 3.35 and above. In Sourcegraph 3.35 this feature is in its earliest version. Stability and additional features coming in following releases.
+> :point_up: "Detect and track patterns" insights are available in Sourcegraph 3.35 and above.
 
 Code Insights with automatically generated data series allow you to "detect and track patterns" and versions within your codebase. You can use these insights to track versions of languages, packages, terraform, docker images, or anything else that can be captured with a [regular expression capture group](#regular-expression-capture-group-resources).
 
