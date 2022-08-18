@@ -42,17 +42,17 @@ func (r *aggregationModeAvailabilityResolver) Mode() string {
 }
 
 func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
-	checkByMode := map[types.SearchAggregationMode]canAggregate{
+	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
 		types.REPO_AGGREGATION_MODE: canAggregateByRepo,
 	}
-	canAggregateFunc, ok := checkByMode[r.mode]
+	canAggregateByFunc, ok := checkByMode[r.mode]
 	if !ok {
 		return false, errors.Newf("mode %q not recognised", r.mode)
 	}
-	return canAggregateFunc(r.searchQuery, r.patternType), nil
+	return canAggregateByFunc(r.searchQuery, r.patternType), nil
 }
 
-type canAggregate func(searchQuery, patternType string) bool
+type canAggregateBy func(searchQuery, patternType string) bool
 
 func canAggregateByRepo(searchQuery, patternType string) bool {
 	// It would only not make sense to aggregate by repo when a single repo: parameter is specified
