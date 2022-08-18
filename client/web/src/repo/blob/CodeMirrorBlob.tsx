@@ -29,7 +29,7 @@ import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './code
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
-    EditorView.editable.of(true),
+    EditorView.editable.of(false),
     EditorView.contentAttributes.of({
         // This is required to make the blob view focusable and to make
         // triggering the in-document search (see below) work when Mod-f is
