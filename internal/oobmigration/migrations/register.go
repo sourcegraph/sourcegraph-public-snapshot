@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/batches"
@@ -16,10 +17,15 @@ type TaggedMigrator interface {
 }
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	frontendStore, err := frontendStore(db)
+	if err != nil {
+		return err
+	}
+
 	extsvcKey := keyring.Default().ExternalServiceKey
 
 	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
-		batches.NewExternalServiceWebhookMigratorWithDB(db, extsvcKey, 50),
+		batches.NewExternalServiceWebhookMigratorWithDB(frontendStore, extsvcKey, 50),
 	})
 }
 
@@ -35,4 +41,8 @@ func RegisterAll(outOfBandMigrationRunner *oobmigration.Runner, migrators []Tagg
 	}
 
 	return nil
+}
+
+func frontendStore(db database.DB) (*basestore.Store, error) {
+	return basestore.NewWithHandle(db.Handle()), nil
 }
