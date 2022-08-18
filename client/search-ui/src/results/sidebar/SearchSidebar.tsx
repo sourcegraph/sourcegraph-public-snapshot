@@ -27,6 +27,7 @@ import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from
 import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
 import { RevisionsProps } from './revisions'
+import { SearchAggregations } from './SearchAggregations'
 import { getSearchReferenceFactory } from './SearchReference'
 import { SearchSidebarSection } from './SearchSidebarSection'
 import { getSearchTypeLinks } from './SearchTypeLink'
@@ -57,6 +58,11 @@ export interface SearchSidebarProps
      * Used e.g. in the VS Code extension to update search query state.
      */
     forceButton?: boolean
+
+    /**
+     * Enables search compute-based aggregations filter panel
+     */
+    enableSearchAggregation?: boolean
 }
 
 const selectFromQueryState = ({
@@ -73,7 +79,7 @@ const selectFromQueryState = ({
     submitSearch,
 })
 
-export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<SearchSidebarProps>> = props => {
+export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
     const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
@@ -169,6 +175,18 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     if (collapsedSections) {
         body = (
             <>
+                {props.enableSearchAggregation && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.GROUPED_BY}
+                        className={styles.item}
+                        header="Aggregate results by"
+                        startCollapsed={collapsedSections?.[SectionID.GROUPED_BY]}
+                        onToggle={persistToggleState}
+                    >
+                        <SearchAggregations />
+                    </SearchSidebarSection>
+                )}
+
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_TYPES}
                     className={styles.item}

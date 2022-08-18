@@ -173,7 +173,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Search</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Search</AnalyticsPageTitle>
 
             <Card className="p-3">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">

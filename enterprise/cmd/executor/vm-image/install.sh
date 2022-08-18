@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -ex -o nounset -o pipefail
 
-export IGNITE_VERSION=v0.10.0
+export IGNITE_VERSION=v0.10.1
 export CNI_VERSION=v0.9.1
-export RUNTIME_IMAGE="weaveworks/ignite:${IGNITE_VERSION}"
+export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
 export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135-amd64"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
@@ -81,7 +81,7 @@ function install_ignite() {
   apt-get install -y mount tar binutils e2fsprogs openssh-client dmsetup
 
   # Download and install ignite binary.
-  curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
+  curl -sfLo ignite https://github.com/sourcegraph/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
 }

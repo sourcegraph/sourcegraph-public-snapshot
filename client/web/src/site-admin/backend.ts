@@ -429,20 +429,18 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             query Repositories(
                 $first: Int
                 $query: String
-                $cloned: Boolean
-                $notCloned: Boolean
                 $indexed: Boolean
                 $notIndexed: Boolean
                 $failedFetch: Boolean
+                $cloneStatus: CloneStatus
             ) {
                 repositories(
                     first: $first
                     query: $query
-                    cloned: $cloned
-                    notCloned: $notCloned
                     indexed: $indexed
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
+                    cloneStatus: $cloneStatus
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
@@ -457,19 +455,20 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             ${siteAdminRepositoryFieldsFragment}
         `,
         {
-            cloned: args.cloned ?? true,
-            notCloned: args.notCloned ?? true,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             failedFetch: args.failedFetch ?? false,
             first: args.first ?? null,
             query: args.query ?? null,
+            cloneStatus: args.cloneStatus ?? null,
         }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.repositories)
     )
 }
+
+export const REPO_PAGE_POLL_INTERVAL = 5000
 
 export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     args: Partial<RepositoriesVariables>
@@ -481,7 +480,7 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
                 result.nodes &&
                 result.nodes.length > 0 &&
                 result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
-            { delay: 5000 }
+            { delay: REPO_PAGE_POLL_INTERVAL }
         )
     )
 }
@@ -1113,3 +1112,16 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
         map(data => data.featureFlags)
     )
 }
+
+export const REPOSITORY_STATS = gql`
+    query RepositoryStats {
+        repositoryStats {
+            __typename
+            total
+            notCloned
+            cloned
+            cloning
+            failedFetch
+        }
+    }
+`

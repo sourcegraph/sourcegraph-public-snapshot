@@ -73,6 +73,31 @@ func mustCreate(ctx context.Context, t *testing.T, db DB, repo *types.Repo) *typ
 	return repo
 }
 
+func setGitserverRepoCloneStatus(t *testing.T, db DB, name api.RepoName, s types.CloneStatus) {
+	t.Helper()
+
+	if err := db.GitserverRepos().SetCloneStatus(context.Background(), name, s, shardID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func setGitserverRepoLastChanged(t *testing.T, db DB, name api.RepoName, last time.Time) {
+	t.Helper()
+
+	if err := db.GitserverRepos().SetLastFetched(context.Background(), name, GitserverFetchData{LastFetched: last, LastChanged: last}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg string) {
+	t.Helper()
+
+	err := db.GitserverRepos().SetLastError(context.Background(), name, msg, shardID)
+	if err != nil {
+		t.Fatalf("failed to set last error: %s", err)
+	}
+}
+
 func repoNamesFromRepos(repos []*types.Repo) []types.MinimalRepo {
 	rnames := make([]types.MinimalRepo, 0, len(repos))
 	for _, repo := range repos {
@@ -659,22 +684,6 @@ func TestRepos_List_fork(t *testing.T) {
 	}
 }
 
-func setGitserverRepoCloneStatus(t *testing.T, db DB, name api.RepoName, s types.CloneStatus) {
-	t.Helper()
-
-	if err := db.GitserverRepos().SetCloneStatus(context.Background(), name, s, ""); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func setGitserverRepoLastChanged(t *testing.T, db DB, name api.RepoName, last time.Time) {
-	t.Helper()
-
-	if err := db.GitserverRepos().SetLastFetched(context.Background(), name, GitserverFetchData{LastFetched: last, LastChanged: last}); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestRepos_List_FailedSync(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -717,19 +726,35 @@ func TestRepos_List_cloned(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r"})
-	yours := mustCreate(ctx, t, db, &types.Repo{Name: "b/r"})
-	setGitserverRepoCloneStatus(t, db, yours.Name, types.CloneStatusCloned)
+	var repos []*types.Repo
+	for _, data := range []struct {
+		repo        *types.Repo
+		cloneStatus types.CloneStatus
+	}{
+		{repo: &types.Repo{Name: "repo-0"}, cloneStatus: types.CloneStatusNotCloned},
+		{repo: &types.Repo{Name: "repo-1"}, cloneStatus: types.CloneStatusCloned},
+		{repo: &types.Repo{Name: "repo-2"}, cloneStatus: types.CloneStatusCloning},
+	} {
+		repo := mustCreate(ctx, t, db, data.repo)
+		setGitserverRepoCloneStatus(t, db, repo.Name, data.cloneStatus)
+		repos = append(repos, repo)
+	}
 
 	tests := []struct {
 		name string
 		opt  ReposListOptions
 		want []*types.Repo
 	}{
-		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, []*types.Repo{yours}},
-		{"NoCloned", ReposListOptions{NoCloned: true}, []*types.Repo{mine}},
+		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, []*types.Repo{repos[1]}},
+		{"NoCloned", ReposListOptions{NoCloned: true}, []*types.Repo{repos[0], repos[2]}},
 		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, nil},
-		{"Default", ReposListOptions{}, append(append([]*types.Repo(nil), mine), yours)},
+		{"Default", ReposListOptions{}, repos},
+		{"CloneStatus=Cloned", ReposListOptions{CloneStatus: types.CloneStatusCloned}, []*types.Repo{repos[1]}},
+		{"CloneStatus=NotCloned", ReposListOptions{CloneStatus: types.CloneStatusNotCloned}, []*types.Repo{repos[0]}},
+		{"CloneStatus=Cloning", ReposListOptions{CloneStatus: types.CloneStatusCloning}, []*types.Repo{repos[2]}},
+		// These don't make sense, but we test that both conditions are used
+		{"OnlyCloned && CloneStatus=Cloning", ReposListOptions{OnlyCloned: true, CloneStatus: types.CloneStatusCloning}, nil},
+		{"NoCloned && CloneStatus=Cloned", ReposListOptions{NoCloned: true, CloneStatus: types.CloneStatusCloned}, nil},
 	}
 
 	for _, test := range tests {

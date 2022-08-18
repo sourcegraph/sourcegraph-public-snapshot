@@ -66,7 +66,7 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 		sudoToken: op.SudoToken,
 
 		urn:               op.URN,
-		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli, nil),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		authnConfigID:     op.AuthnConfigID,

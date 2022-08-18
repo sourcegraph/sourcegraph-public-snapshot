@@ -38,9 +38,9 @@ func TestBatchSpecResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, cstore)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/batch-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -59,7 +59,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 	spec.UserID = userID
 	spec.NamespaceOrgID = orgID
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -71,7 +71,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	changesetSpec.UserID = userID
 	changesetSpec.RepoID = repo.ID
 
-	if err := cstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -83,11 +83,11 @@ func TestBatchSpecResolver(t *testing.T) {
 		LastAppliedAt:  time.Now(),
 		BatchSpecID:    spec.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 	sup.UserID = userID
 	sup.NamespaceOrgID = orgID
-	if err := cstore.CreateBatchSpec(ctx, sup); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 
@@ -198,7 +198,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	// If the superseding batch spec was created by a different user, then we
 	// shouldn't return it.
 	sup.UserID = adminID
-	if err := cstore.UpdateBatchSpec(ctx, sup); err != nil {
+	if err := bstore.UpdateBatchSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 
@@ -219,7 +219,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the creator and check that the batch spec is still retrievable.
-	err = database.UsersWith(logger, cstore).Delete(ctx, userID)
+	err = database.UsersWith(logger, bstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -239,7 +239,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the creator and check that the batch spec is still retrievable.
-	err = database.UsersWith(logger, cstore).HardDelete(ctx, userID)
+	err = database.UsersWith(logger, bstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

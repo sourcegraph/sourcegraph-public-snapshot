@@ -1,5 +1,4 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { number, text } from '@storybook/addon-knobs'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -43,10 +42,13 @@ export const HEADERS_PLAIN = [
     },
 ]
 
-export const webhookLogNode = (overrides?: Partial<WebhookLogFields>): WebhookLogFields => ({
+export const webhookLogNode = (
+    defaultArguments: Pick<WebhookLogFields, 'receivedAt' | 'statusCode'>,
+    overrides?: Partial<WebhookLogFields>
+): WebhookLogFields => ({
     id: overrides?.id ?? 'ID',
-    receivedAt: overrides?.receivedAt ?? text('received at', '2021-11-07T19:31:00Z'),
-    statusCode: overrides?.statusCode ?? number('status code', 204, { min: 100, max: 599 }),
+    receivedAt: overrides?.receivedAt ?? defaultArguments.receivedAt,
+    statusCode: overrides?.statusCode ?? defaultArguments.statusCode,
     externalService: overrides?.externalService ?? null,
     request: overrides?.request ?? {
         headers: HEADERS_JSON,
@@ -63,7 +65,6 @@ export const webhookLogNode = (overrides?: Partial<WebhookLogFields>): WebhookLo
 
 export const buildExternalServices = (count: number): WebhookLogPageHeaderExternalService[] => {
     const services: WebhookLogPageHeaderExternalService[] = []
-    count = number('external service count', count)
 
     for (let index = 0; index < count; index++) {
         const name = `External service ${index}`
@@ -90,7 +91,7 @@ export const buildHeaderMock = (
                     nodes: buildExternalServices(externalServiceCount),
                 },
                 webhookLogs: {
-                    totalCount: number('errored webhook count', webhookLogCount),
+                    totalCount: webhookLogCount,
                 },
             },
         },
