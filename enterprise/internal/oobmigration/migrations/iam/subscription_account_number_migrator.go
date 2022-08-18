@@ -1,4 +1,4 @@
-package migrations
+package iam
 
 import (
 	"context"
@@ -6,20 +6,21 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 type subscriptionAccountNumberMigrator struct {
-	store *basestore.Store
+	store     *basestore.Store
+	batchSize int
 }
 
 var _ oobmigration.Migrator = &subscriptionAccountNumberMigrator{}
 
-func NewSubscriptionAccountNumberMigrator(db database.DB) *subscriptionAccountNumberMigrator {
+func NewSubscriptionAccountNumberMigrator(store *basestore.Store, batchSize int) *subscriptionAccountNumberMigrator {
 	return &subscriptionAccountNumberMigrator{
-		store: basestore.NewWithHandle(db.Handle()),
+		store:     store,
+		batchSize: batchSize,
 	}
 }
 
@@ -43,7 +44,7 @@ FROM
 `
 
 func (m *subscriptionAccountNumberMigrator) Up(ctx context.Context) (err error) {
-	return m.store.Exec(ctx, sqlf.Sprintf(subscriptionAccountNumberMigratorUpQuery))
+	return m.store.Exec(ctx, sqlf.Sprintf(subscriptionAccountNumberMigratorUpQuery, m.batchSize))
 }
 
 const subscriptionAccountNumberMigratorUpQuery = `
@@ -55,7 +56,7 @@ WITH candidates AS (
 	FROM product_subscriptions
 	JOIN users ON product_subscriptions.user_id = users.id
 	WHERE product_subscriptions.account_number IS NULL
-	LIMIT 500
+	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 )
 UPDATE product_subscriptions

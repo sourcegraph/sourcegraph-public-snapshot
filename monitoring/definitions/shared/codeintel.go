@@ -332,36 +332,6 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 	})
 }
 
-// src_executor_run_lock_wait_total
-// src_executor_run_lock_held_total
-func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName string) monitoring.Group {
-	constructor := func(metricNameRoot, legend string) Observable {
-		filters := makeFilters("sg_job", containerName)
-		return Observable{
-			Name:        metricNameRoot + "_total",
-			Description: fmt.Sprintf("milliseconds %s every 5m", legend),
-			Owner:       monitoring.ObservableOwnerCodeIntel,
-			Query:       fmt.Sprintf(`sum(increase(src_%s_total{%s}[5m]))`, metricNameRoot, filters),
-			Panel:       monitoring.Panel().LegendFormat(legend).Unit(monitoring.Milliseconds),
-		}
-	}
-
-	return monitoring.Group{
-		Title:  "Run lock contention",
-		Hidden: true,
-		Rows: []monitoring.Row{
-			{
-				constructor("executor_run_lock_wait", "wait").WithNoAlerts(`
-					Number of milliseconds spent waiting for the run lock every 5m
-				`).Observable(),
-				constructor("executor_run_lock_held", "held").WithNoAlerts(`
-					Number of milliseconds spent holding for the run lock every 5m
-				`).Observable(),
-			},
-		},
-	}
-}
-
 // src_apiworker_command_total
 // src_apiworker_command_duration_seconds_bucket
 // src_apiworker_command_errors_total

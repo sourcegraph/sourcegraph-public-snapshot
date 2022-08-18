@@ -127,7 +127,7 @@ describe('Settings', () => {
 
             // Assert mutation is done when save button is clicked
             const overrideSettingsVariables = await testContext.waitForGraphQLRequest(async () => {
-                await driver.findElementWithText('Save changes', { action: 'click' })
+                await driver.findElementWithText('Save', { action: 'click' })
             }, 'OverwriteSettings')
 
             assert.deepStrictEqual(overrideSettingsVariables, {

@@ -127,18 +127,8 @@ func TestSetupFirecracker(t *testing.T) {
 	operations := NewOperations(&observation.TestContext)
 
 	logger := NewMockLogger()
-	logEntry := NewMockLogEntry()
-	logger.LogFunc.SetDefaultHook(func(_ string, _ []string) LogEntry { return logEntry })
 	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/proj", options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
-	}
-
-	if len(logger.LogFunc.History()) != 1 {
-		t.Error("logger not called")
-	}
-
-	if len(logEntry.CloseFunc.History()) != 1 {
-		t.Error("log handle not closed")
 	}
 
 	var actual []string

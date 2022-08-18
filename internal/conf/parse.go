@@ -61,6 +61,7 @@ var requireRestart = []string{
 	"insights.commit.indexer.interval",
 	"codeIntelAutoIndexing.enabled",
 	"permissions.syncUsersMaxConcurrency",
+	"gitHubApp",
 }
 
 // needRestartToApply determines if a restart is needed to apply the changes

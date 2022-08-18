@@ -1,4 +1,4 @@
-package migrations
+package iam
 
 import (
 	"context"
@@ -10,21 +10,22 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 type licenseKeyFieldsMigrator struct {
-	store *basestore.Store
+	store     *basestore.Store
+	batchSize int
 }
 
 var _ oobmigration.Migrator = &licenseKeyFieldsMigrator{}
 
-func NewLicenseKeyFieldsMigrator(db database.DB) *licenseKeyFieldsMigrator {
+func NewLicenseKeyFieldsMigrator(store *basestore.Store, batchSize int) *licenseKeyFieldsMigrator {
 	return &licenseKeyFieldsMigrator{
-		store: basestore.NewWithHandle(db.Handle()),
+		store:     store,
+		batchSize: batchSize,
 	}
 }
 
@@ -55,7 +56,7 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	licenseKeys, err := func() (_ map[string]string, err error) {
-		rows, err := tx.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorSelectQuery, 500))
+		rows, err := tx.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorSelectQuery, m.batchSize))
 		if err != nil {
 			return nil, err
 		}

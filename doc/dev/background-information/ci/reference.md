@@ -33,7 +33,6 @@ The default run type.
   - Upload build trace
 
 - Pipeline for `DatabaseSchema` changes:
-  - **Linters and static analysis**: 
   - **DB backcompat tests**: Backcompat test (all), Backcompat test (internal/codeintel/stores/dbstore), Backcompat test (internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
   - Upload build trace
 
@@ -46,16 +45,13 @@ The default run type.
   - Upload build trace
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
-  - **Linters and static analysis**: 
   - Upload build trace
 
 - Pipeline for `CIScripts` changes:
-  - **Linters and static analysis**: 
   - **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 - Pipeline for `Terraform` changes:
-  - **Linters and static analysis**: 
   - Upload build trace
 
 - Pipeline for `SVG` changes:
@@ -67,7 +63,6 @@ The default run type.
   - Upload build trace
 
 - Pipeline for `DockerImages` changes:
-  - **Linters and static analysis**: 
   - **Test builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build opentelemetry-collector, Build server, Build sg
   - **Scan test builds**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan minio, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan opentelemetry-collector, Scan server, Scan sg
   - Upload build trace

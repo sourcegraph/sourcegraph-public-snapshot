@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -13,6 +14,9 @@ type Build struct {
 	buildkite.Build
 	Pipeline *Pipeline
 	Jobs     map[string]Job
+
+	// ConsecutiveFailure indicates whether this build is the nth consecutive failure.
+	ConsecutiveFailure int
 }
 
 func (b *Build) hasFailed() bool {
@@ -86,6 +90,9 @@ type Pipeline struct {
 }
 
 func (p *Pipeline) name() string {
+	if p == nil {
+		return ""
+	}
 	return strp(p.Name)
 }
 
@@ -133,15 +140,24 @@ func (b *Event) buildNumber() int {
 // in a Build and added to the map. When the event contains a Job the corresponding job is retrieved from the map and added to the Job it is for.
 type BuildStore struct {
 	logger log.Logger
+
 	builds map[int]*Build
-	m      sync.RWMutex
+	// consecutiveFailures tracks how many consecutive build failed events has been
+	// received by pipeline and branch
+	consecutiveFailures map[string]int
+
+	// m locks all writes to BuildStore properties.
+	m sync.RWMutex
 }
 
 func NewBuildStore(logger log.Logger) *BuildStore {
 	return &BuildStore{
 		logger: logger.Scoped("store", "stores all the buildkite builds"),
-		builds: make(map[int]*Build),
-		m:      sync.RWMutex{},
+
+		builds:              make(map[int]*Build),
+		consecutiveFailures: make(map[string]int),
+
+		m: sync.RWMutex{},
 	}
 }
 
@@ -154,9 +170,22 @@ func (s *BuildStore) Add(event *Event) {
 		build = event.build()
 		s.builds[event.buildNumber()] = build
 	}
-	// if the build is finished replace the original build with the replaced one since it will be more up to date
-	build.Build = event.Build
-	build.Pipeline = event.pipeline()
+
+	// if the build is finished replace the original build with the replaced one since it
+	// will be more up to date, and tack on some finalized data
+	if event.isBuildFinished() {
+		build.Build = event.Build
+		build.Pipeline = event.pipeline()
+
+		// Track consecutive failures by pipeline + branch
+		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.name(), build.branch())
+		if build.hasFailed() {
+			s.consecutiveFailures[failuresKey] += 1
+			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
+		} else {
+			s.consecutiveFailures[failuresKey] = 1
+		}
+	}
 
 	wrappedJob := event.job()
 	if wrappedJob.name() != "" {
