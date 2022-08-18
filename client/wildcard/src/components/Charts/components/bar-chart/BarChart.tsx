@@ -13,7 +13,7 @@ import { getGroupedCategories } from './utils/get-grouped-categories'
 
 const DEFAULT_LINK_GETTER = (): null => null
 
-interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVGSVGElement> {
+export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVGSVGElement> {
     width: number
     height: number
     stacked?: boolean
