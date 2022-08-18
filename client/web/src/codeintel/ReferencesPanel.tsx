@@ -18,6 +18,7 @@ import {
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -639,6 +640,7 @@ const SideBlob: React.FunctionComponent<
         [useCodeMirror, history, panelHistory]
     )
 
+    const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -647,6 +649,8 @@ const SideBlob: React.FunctionComponent<
             repository: props.activeLocation.repo,
             commit: props.activeLocation.commitID,
             path: props.activeLocation.file,
+            format: highlightFormat,
+            html: highlightFormat === HighlightResponseFormat.HTML_HIGHLIGHT,
         },
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -685,7 +689,7 @@ const SideBlob: React.FunctionComponent<
         return <>Nothing found</>
     }
 
-    const { html, aborted } = data?.repository?.commit?.blob?.highlight
+    const { html, aborted, lsif } = data?.repository?.commit?.blob?.highlight
     if (aborted) {
         return (
             <Text alignment="center" className="text-warning">
@@ -707,7 +711,8 @@ const SideBlob: React.FunctionComponent<
             wrapCode={true}
             className={styles.sideBlobCode}
             blobInfo={{
-                html,
+                html: html ?? '',
+                lsif: lsif ?? '',
                 content: props.activeLocation.content,
                 filePath: props.activeLocation.file,
                 repoName: props.activeLocation.repo,
