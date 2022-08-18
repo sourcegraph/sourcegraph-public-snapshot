@@ -15,6 +15,16 @@ import (
 )
 
 func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	return registerEnterpriseMigrations(
+		db,
+		outOfBandMigrationRunner,
+	)
+}
+
+func registerEnterpriseMigrations(
+	db database.DB,
+	outOfBandMigrationRunner *oobmigration.Runner,
+) error {
 	store := basestore.NewWithHandle(db.Handle())
 
 	// TODO - get from config
