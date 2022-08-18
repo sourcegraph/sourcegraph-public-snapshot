@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	zoekt "github.com/google/zoekt/query"
+	zoekt "github.com/sourcegraph/zoekt/query"
 )
 
 func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Features, typ search.IndexedRequestType) (q zoekt.Q, err error) {

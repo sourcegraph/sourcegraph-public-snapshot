@@ -370,8 +370,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		}
 
 		if _, ok := categoriesSkipped[i]; ok {
-			r.Output.WriteSkippedf("%s %s[SKIPPED. Reason: %s]%s", summaryStr,
-				output.StyleBold, categoriesSkipped[i], output.StyleReset)
+			r.Output.WriteSkippedf("%s %s[SKIPPED]%s",
+				summaryStr, output.StyleBold, output.StyleReset)
 			results.skipped = append(results.skipped, i)
 			continue
 		}

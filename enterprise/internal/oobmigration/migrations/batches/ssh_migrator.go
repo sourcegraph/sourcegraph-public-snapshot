@@ -9,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -24,10 +23,10 @@ type SSHMigrator struct {
 
 var _ oobmigration.Migrator = &SSHMigrator{}
 
-func NewSSHMigratorWithDB(db database.DB, key encryption.Key) *SSHMigrator {
+func NewSSHMigratorWithDB(store *basestore.Store, key encryption.Key) *SSHMigrator {
 	return &SSHMigrator{
 		logger:    log.Scoped("SSHMigrator", ""),
-		store:     basestore.NewWithHandle(db.Handle()),
+		store:     store,
 		BatchSize: 5,
 		key:       key,
 	}
