@@ -1,0 +1,20 @@
+.chart-container {
+    min-height: 12rem;
+    width: 100%;
+}
+
+.actions {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.aggregation-type-control {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+}
+
+.details-action {
+    margin-right: auto;
+}
