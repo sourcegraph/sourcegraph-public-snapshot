@@ -59,6 +59,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { BlameContextProvider } from './blame/useBlameVisibility'
+import { BlobProps } from './blob/Blob'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -124,6 +125,7 @@ interface RepoContainerProps
         ActivationProps,
         ThemeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -463,6 +465,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                         // must exactly match how the revision was encoded in the URL
                                         routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                         useActionItemsBar={useActionItemsBar}
+                                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                     />
                                 )}
                             />
