@@ -602,8 +602,8 @@ func (s *Syncer) SyncExternalService(
 			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
 
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
-
-			if fatal(err) {
+			// Fatal error and override is not set, stop the sync.
+			if !res.NonFatalError && fatal(err) {
 				// Delete all external service repos of this external service
 				seen = map[api.RepoID]struct{}{}
 				break
