@@ -12,14 +12,15 @@
 }
 
 .chart-container {
-    max-height: 400px;
-    max-width: 960px;
+    min-height: 26rem;
+    max-height: 26rem;
+    max-width: 60rem;
 }
 
 .list-result {
+    max-width: 60rem;
     margin-top: 1.5rem;
     list-style: none;
-    max-width: 960px;
     padding: 0;
 }
 
