@@ -14,6 +14,10 @@ const ExternalServicePage = lazyComponent(
     () => import('../components/externalServices/ExternalServicePage'),
     'ExternalServicePage'
 )
+const GitHubAppSetupPage = lazyComponent(
+    () => import('../components/externalServices/GitHubAppSetupPage'),
+    'GitHubAppSetupPage'
+)
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -54,6 +58,11 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
+        path: '/external-services/github-app',
+        render: () => <GitHubAppSetupPage />,
+        exact: true,
+    },
+    {
         path: '/external-services/:id',
         render: ({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }> & SiteAdminAreaRouteContext) => (
             <ExternalServicePage
@@ -77,10 +86,7 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/users',
         exact: true,
-        render: lazyComponent(
-            () => import('./SiteAdminAllUsersPage/FeatureFlaggedUsersPage'),
-            'FeatureFlaggedUsersPage'
-        ),
+        render: lazyComponent(() => import('./SiteAdminAllUsersPage'), 'SiteAdminAllUsersPage'),
     },
     {
         path: '/users/new',
