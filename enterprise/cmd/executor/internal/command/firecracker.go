@@ -6,8 +6,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -73,11 +71,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 		Operation: operations.SetupFirecrackerStart,
 	}
 
-	if options.FirecrackerOptions.UseRunlock {
-		if err := callWithInstrumentedLock(operations, logger, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
-			return errors.Wrap(err, "failed to start firecracker vm")
-		}
-	} else if err := runner.RunCommand(ctx, startCommand, logger); err != nil {
+	if err := runner.RunCommand(ctx, startCommand, logger); err != nil {
 		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
@@ -93,40 +87,6 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 	}
 
 	return nil
-}
-
-// We've recently seen issues with concurent VM creation. It's likely we
-// can do better here and run an empty VM at application startup, but I
-// want to do this quick and dirty to see if we can raise our concurrency
-// without other issues.
-//
-// https://github.com/weaveworks/ignite/issues/559
-// Following up in https://github.com/sourcegraph/sourcegraph/issues/21377.
-var igniteRunLock sync.Mutex
-
-// callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
-// and active portions of this method are emitted as prometheus metrics.
-func callWithInstrumentedLock(operations *Operations, logger Logger, f func() error) error {
-	handle := logger.Log("setup.firecracker.runlock", nil)
-
-	lockRequestedAt := time.Now()
-
-	igniteRunLock.Lock()
-
-	lockAcquiredAt := time.Now()
-
-	handle.Finalize(0)
-	handle.Close()
-
-	err := f()
-
-	lockReleasedAt := time.Now()
-
-	igniteRunLock.Unlock()
-
-	operations.RunLockWaitTotal.Add(float64(lockAcquiredAt.Sub(lockRequestedAt) / time.Millisecond))
-	operations.RunLockHeldTotal.Add(float64(lockReleasedAt.Sub(lockAcquiredAt) / time.Millisecond))
-	return err
 }
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
