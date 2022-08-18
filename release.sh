@@ -12,7 +12,7 @@ case "$REPLY" in
     ;;
 esac
 
-if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
   echo "\$VERSION is not in MAJOR.MINOR.PATCH format"
   exit 1
 fi
