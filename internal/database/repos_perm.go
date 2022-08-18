@@ -18,7 +18,7 @@ var errPermissionsUserMappingConflict = errors.New("The permissions user mapping
 // It uses `repo` as the table name to filter out repository IDs and should be
 // used as an AND condition in a complete SQL query.
 func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
-	authzAllowByDefault, authzProviders := authz.GetProviders()
+	authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 
 	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
@@ -27,20 +27,17 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 		if len(authzProviders) > 0 {
 			return nil, errPermissionsUserMappingConflict
 		}
-		authzAllowByDefault = false
 	}
 
 	authenticatedUserID := int32(0)
 	a := actor.FromContext(ctx)
 
-	// Authz is bypassed when the request is coming from an internal actor or
-	// there is no authz provider configured and access to all repositories are
-	// allowed by default. Authz can be bypassed by site admins unless
-	// conf.AuthEnforceForSiteAdmins is set to "true".
+	// Authz is bypassed when the request is coming from an internal actor. Authz can be
+	// bypassed by site admins unless conf.AuthEnforceForSiteAdmins is set to "true".
 	//
 	// 🚨 SECURITY: internal requests bypass authz provider permissions checks,
 	// so correctness is important here.
-	bypassAuthz := a.IsInternal() || (authzAllowByDefault && len(authzProviders) == 0)
+	bypassAuthz := a.IsInternal()
 	if !bypassAuthz && a.IsAuthenticated() {
 		currentUser, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
