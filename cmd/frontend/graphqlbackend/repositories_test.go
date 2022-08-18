@@ -14,11 +14,9 @@ import (
 
 func TestRepositories(t *testing.T) {
 	mockRepos := []*types.Repo{
-		{Name: "repo1"},
-		{Name: "repo2"},
-		{
-			Name: "repo3",
-		},
+		{Name: "repo1"}, // not_cloned
+		{Name: "repo2"}, // cloning
+		{Name: "repo3"}, // cloned
 	}
 
 	repos := database.NewMockRepoStore()
@@ -27,6 +25,16 @@ func TestRepositories(t *testing.T) {
 			return mockRepos[0:2], nil
 		}
 		if opt.OnlyCloned {
+			return mockRepos[2:], nil
+		}
+
+		if opt.CloneStatus == types.CloneStatusNotCloned {
+			return mockRepos[:1], nil
+		}
+		if opt.CloneStatus == types.CloneStatusCloning {
+			return mockRepos[1:2], nil
+		}
+		if opt.CloneStatus == types.CloneStatusCloned {
 			return mockRepos[2:], nil
 		}
 
@@ -40,12 +48,14 @@ func TestRepositories(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 
+	schema := mustParseGraphQLSchema(t, db)
+
 	t.Run("not as a site admin", func(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: schema,
 				Query: `
 				{
 					repositories {
@@ -84,7 +94,7 @@ func TestRepositories(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: schema,
 				Query: `
 				{
 					repositories {
@@ -109,7 +119,7 @@ func TestRepositories(t *testing.T) {
 			`,
 			},
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: schema,
 				// cloned and notCloned are true by default
 				// this test ensures the behavior is the same
 				// when setting them explicitly
@@ -137,7 +147,7 @@ func TestRepositories(t *testing.T) {
 			`,
 			},
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: schema,
 				Query: `
 				{
 					repositories(first: 2) {
@@ -159,7 +169,7 @@ func TestRepositories(t *testing.T) {
 			`,
 			},
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: schema,
 				Query: `
 				{
 					repositories(cloned: false) {
@@ -181,7 +191,7 @@ func TestRepositories(t *testing.T) {
 			`,
 			},
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: schema,
 				Query: `
 				{
 					repositories(notCloned: false) {
@@ -202,7 +212,7 @@ func TestRepositories(t *testing.T) {
 			`,
 			},
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: schema,
 				Query: `
 				{
 					repositories(notCloned: false, cloned: false) {
@@ -217,6 +227,69 @@ func TestRepositories(t *testing.T) {
 						"nodes": [
 							{ "name": "repo1" },
 							{ "name": "repo2" }
+						],
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+			},
+			{
+				Schema: schema,
+				Query: `
+				{
+					repositories(cloneStatus: CLONED) {
+						nodes { name }
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo3" }
+						],
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+			},
+			{
+				Schema: schema,
+				Query: `
+				{
+					repositories(cloneStatus: CLONING) {
+						nodes { name }
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo2" }
+						],
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+			},
+			{
+				Schema: schema,
+				Query: `
+				{
+					repositories(cloneStatus: NOT_CLONED) {
+						nodes { name }
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo1" }
 						],
 						"pageInfo": {"hasNextPage": false}
 					}

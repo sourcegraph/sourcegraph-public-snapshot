@@ -726,19 +726,35 @@ func TestRepos_List_cloned(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r"})
-	yours := mustCreate(ctx, t, db, &types.Repo{Name: "b/r"})
-	setGitserverRepoCloneStatus(t, db, yours.Name, types.CloneStatusCloned)
+	var repos []*types.Repo
+	for _, data := range []struct {
+		repo        *types.Repo
+		cloneStatus types.CloneStatus
+	}{
+		{repo: &types.Repo{Name: "repo-0"}, cloneStatus: types.CloneStatusNotCloned},
+		{repo: &types.Repo{Name: "repo-1"}, cloneStatus: types.CloneStatusCloned},
+		{repo: &types.Repo{Name: "repo-2"}, cloneStatus: types.CloneStatusCloning},
+	} {
+		repo := mustCreate(ctx, t, db, data.repo)
+		setGitserverRepoCloneStatus(t, db, repo.Name, data.cloneStatus)
+		repos = append(repos, repo)
+	}
 
 	tests := []struct {
 		name string
 		opt  ReposListOptions
 		want []*types.Repo
 	}{
-		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, []*types.Repo{yours}},
-		{"NoCloned", ReposListOptions{NoCloned: true}, []*types.Repo{mine}},
+		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, []*types.Repo{repos[1]}},
+		{"NoCloned", ReposListOptions{NoCloned: true}, []*types.Repo{repos[0], repos[2]}},
 		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, nil},
-		{"Default", ReposListOptions{}, append(append([]*types.Repo(nil), mine), yours)},
+		{"Default", ReposListOptions{}, repos},
+		{"CloneStatus=Cloned", ReposListOptions{CloneStatus: types.CloneStatusCloned}, []*types.Repo{repos[1]}},
+		{"CloneStatus=NotCloned", ReposListOptions{CloneStatus: types.CloneStatusNotCloned}, []*types.Repo{repos[0]}},
+		{"CloneStatus=Cloning", ReposListOptions{CloneStatus: types.CloneStatusCloning}, []*types.Repo{repos[2]}},
+		// These don't make sense, but we test that both conditions are used
+		{"OnlyCloned && CloneStatus=Cloning", ReposListOptions{OnlyCloned: true, CloneStatus: types.CloneStatusCloning}, nil},
+		{"NoCloned && CloneStatus=Cloned", ReposListOptions{NoCloned: true, CloneStatus: types.CloneStatusCloned}, nil},
 	}
 
 	for _, test := range tests {

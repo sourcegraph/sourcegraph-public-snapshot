@@ -1239,6 +1239,10 @@ type Query {
         """
         cloned: Boolean = true
         """
+        Include only repositories of the given clone status.
+        """
+        cloneStatus: CloneStatus
+        """
         Include repositories that are not yet cloned and for which cloning is not in progress.
         """
         notCloned: Boolean = true
@@ -7491,4 +7495,13 @@ type WebhookLogHeader {
     The header values.
     """
     values: [String!]!
+}
+
+"""
+The clone status of a repository.
+"""
+enum CloneStatus {
+    NOT_CLONED
+    CLONING
+    CLONED
 }
