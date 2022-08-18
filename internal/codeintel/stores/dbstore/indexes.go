@@ -2,7 +2,6 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -127,11 +126,6 @@ var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount
 
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
-
-// scanFirstIndexInterface scans a slice of indexes from the return value of `*Store.query` and returns the first.
-func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstIndex(rows, err)
-}
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err error) {
