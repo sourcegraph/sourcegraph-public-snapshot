@@ -30,6 +30,7 @@ type Config struct {
 	KeepWorkspaces                bool
 	DockerHostMountPath           string
 	UseFirecracker                bool
+	UseFirecrackerRunlock         bool
 	JobNumCPUs                    int
 	JobMemory                     string
 	FirecrackerDiskSpace          string
@@ -49,6 +50,7 @@ func (c *Config) Load() {
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", "true", "Whether to isolate commands in virtual machines.")
+	c.UseFirecrackerRunlock = c.GetBool("EXECUTOR_USE_FIRECRACKER_RUNLOCK", "true", "Whether to limit concurrency on VM spawns to 1.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for virtual machines.")
 	c.FirecrackerKernelImage = c.Get("EXECUTOR_FIRECRACKER_KERNEL_IMAGE", "sourcegraph/ignite-kernel:5.10.135-amd64", "The base image containing the kernel binary to use for virtual machines.")
 	c.VMStartupScriptPath = c.GetOptional("EXECUTOR_VM_STARTUP_SCRIPT_PATH", "A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.")
@@ -121,6 +123,7 @@ func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
 		Image:               c.FirecrackerImage,
 		KernelImage:         c.FirecrackerKernelImage,
 		VMStartupScriptPath: c.VMStartupScriptPath,
+		UseRunlock:          c.UseFirecrackerRunlock,
 	}
 }
 
