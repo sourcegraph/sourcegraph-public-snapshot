@@ -1,21 +1,22 @@
-package resolvers
+package graphql
 
 import (
 	"context"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 )
 
 // IndexesResolver wraps store.GetIndexes so that the underlying function can be
 // invoked lazily and its results memoized.
 type IndexesResolver struct {
-	dbStore DBStore
-	opts    store.GetIndexesOptions
-	once    sync.Once
+	svc  *autoindexing.Service
+	opts shared.GetIndexesOptions
+	once sync.Once
 	//
-	Indexes    []store.Index
+	Indexes    []shared.Index
 	TotalCount int
 	NextOffset *int
 	err        error
@@ -23,8 +24,8 @@ type IndexesResolver struct {
 
 // NewIndexesResolver creates a new IndexesResolver which wil invoke store.GetIndexes
 // with the given options.
-func NewIndexesResolver(dbStore DBStore, opts store.GetIndexesOptions) *IndexesResolver {
-	return &IndexesResolver{dbStore: dbStore, opts: opts}
+func NewIndexesResolver(svc *autoindexing.Service, opts shared.GetIndexesOptions) *IndexesResolver {
+	return &IndexesResolver{svc: svc, opts: opts}
 }
 
 // Resolve ensures that store.GetIndexes has been invoked. This function returns the
@@ -36,7 +37,7 @@ func (r *IndexesResolver) Resolve(ctx context.Context) error {
 }
 
 func (r *IndexesResolver) resolve(ctx context.Context) error {
-	indexes, totalCount, err := r.dbStore.GetIndexes(ctx, r.opts)
+	indexes, totalCount, err := r.svc.GetIndexes(ctx, r.opts)
 	if err != nil {
 		return err
 	}

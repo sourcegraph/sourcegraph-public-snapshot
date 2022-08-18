@@ -20,7 +20,7 @@ import (
 // paths and clean up that occupied (but useless) space. The output is of this method is
 // ordered by repository ID then by commit.
 func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	ctx, trace, endObservation := s.operations.staleSourcedCommits.With(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
