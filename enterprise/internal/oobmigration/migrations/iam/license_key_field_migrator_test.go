@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -19,29 +20,24 @@ func TestLicenseKeyFieldsMigrator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := basestore.NewWithHandle(db.Handle())
 
 	// Set up test data
-	alice, err := db.Users().Create(ctx, database.NewUser{Username: "alice"})
+	userID, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`INSERT INTO users(username, display_name, created_at) VALUES(%s, %s, NOW()) RETURNING id`, "alice", "alice")))
 	require.NoError(t, err)
 
-	var subscriptionID string
-	err = db.QueryRowContext(ctx, `INSERT INTO product_subscriptions(id, user_id) VALUES(gen_random_uuid(), $1) RETURNING id`, alice.ID).Scan(&subscriptionID)
+	subscriptionID, _, err := basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf(`INSERT INTO product_subscriptions(id, user_id) VALUES(gen_random_uuid(), %s) RETURNING id`, userID)))
 	require.NoError(t, err)
 	require.NotEmpty(t, subscriptionID)
 
-	var licenseID string
-	err = db.QueryRowContext(ctx, `
-INSERT INTO product_licenses(id, product_subscription_id, license_key)
-VALUES(gen_random_uuid(), $1, $2)
-RETURNING id
-`,
+	licenseID, _, err := basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf(`INSERT INTO product_licenses(id, product_subscription_id, license_key) VALUES(gen_random_uuid(), %s, %s) RETURNING id`,
 		subscriptionID,
 		`eyJzaWciOnsiRm9ybWF0Ijoic3NoLXJzYSIsIkJsb2IiOiIuLi4iLCJSZXN0IjpudWxsfSwiaW5mbyI6ImV5SjJJam94TENKdUlqcGJNVEk0TERrd0xESTBOaXd5TkRRc05qWXNNVFFzTWpVMUxEZ3hYU3dpZENJNld5SmtaWFlpWFN3aWRTSTZPQ3dpWlNJNklqSXdNak10TURZdE1ERlVNVFk2TWpnNk16WmFJbjA9In0`,
-	).Scan(&licenseID)
+	)))
 	require.NoError(t, err)
 
 	// Ensure there is no progress before migration
-	migrator := NewLicenseKeyFieldsMigrator(basestore.NewWithHandle(db.Handle()))
+	migrator := NewLicenseKeyFieldsMigrator(store, 500)
 	progress, err := migrator.Progress(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, progress)
@@ -55,12 +51,13 @@ RETURNING id
 	require.Equal(t, 1.0, progress)
 
 	// Ensure data are at desired states
-	var licenseVersion int
-	var licenseTags []string
-	var licenseUserCount int
-	var licenseExpiresAt time.Time
-	err = db.QueryRowContext(ctx, `SELECT license_version, license_tags, license_user_count, license_expires_at FROM product_licenses WHERE id = $1`, licenseID).
-		Scan(&licenseVersion, pq.Array(&licenseTags), &licenseUserCount, &licenseExpiresAt)
+	var (
+		licenseVersion   int
+		licenseTags      []string
+		licenseUserCount int
+		licenseExpiresAt time.Time
+	)
+	err = store.QueryRow(ctx, sqlf.Sprintf(`SELECT license_version, license_tags, license_user_count, license_expires_at FROM product_licenses WHERE id = %s`, licenseID)).Scan(&licenseVersion, pq.Array(&licenseTags), &licenseUserCount, &licenseExpiresAt)
 	require.NoError(t, err)
 	assert.Equal(t, 1, licenseVersion)
 	assert.Equal(t, []string{"dev"}, licenseTags)

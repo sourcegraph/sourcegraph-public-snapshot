@@ -16,14 +16,20 @@ type TaggedMigrator interface {
 }
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	extsvcKey := keyring.Default().ExternalServiceKey
+
 	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
-		batches.NewExternalServiceWebhookMigratorWithDB(db, keyring.Default().ExternalServiceKey),
+		batches.NewExternalServiceWebhookMigratorWithDB(db, extsvcKey, 50),
 	})
 }
 
 func RegisterAll(outOfBandMigrationRunner *oobmigration.Runner, migrators []TaggedMigrator) error {
 	for _, migrator := range migrators {
-		if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: migrator.Interval()}); err != nil {
+		if err := outOfBandMigrationRunner.Register(
+			migrator.ID(),
+			migrator,
+			oobmigration.MigratorOptions{Interval: migrator.Interval()},
+		); err != nil {
 			return err
 		}
 	}

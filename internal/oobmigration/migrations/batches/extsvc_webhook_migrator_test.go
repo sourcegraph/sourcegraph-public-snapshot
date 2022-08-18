@@ -6,16 +6,13 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -26,66 +23,66 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	createExternalServices := func(t *testing.T, ctx context.Context, db database.DB) []*types.ExternalService {
-		t.Helper()
-		var svcs []*types.ExternalService
+	var testExtSvcs = []struct {
+		kind        string
+		hasWebhooks bool
+		cfg         any
+	}{
+		{kind: "AWSCODECOMMIT", cfg: schema.AWSCodeCommitConnection{}},
+		{kind: "BITBUCKETSERVER", cfg: schema.BitbucketServerConnection{}},
+		{kind: "BITBUCKETCLOUD", cfg: schema.BitbucketCloudConnection{}},
+		{kind: "GITHUB", cfg: schema.GitHubConnection{}},
+		{kind: "GITLAB", cfg: schema.GitLabConnection{}},
+		{kind: "GITOLITE", cfg: schema.GitoliteConnection{}},
+		{kind: "PERFORCE", cfg: schema.PerforceConnection{}},
+		{kind: "PHABRICATOR", cfg: schema.PhabricatorConnection{}},
+		{kind: "JVMPACKAGES", cfg: schema.JVMPackagesConnection{}},
+		{kind: "OTHER", cfg: schema.OtherExternalServiceConnection{}},
+		{kind: "BITBUCKETSERVER", hasWebhooks: true, cfg: schema.BitbucketServerConnection{
+			Plugin: &schema.BitbucketServerPlugin{
+				Webhooks: &schema.BitbucketServerPluginWebhooks{
+					DisableSync: false,
+					Secret:      "this is a secret",
+				},
+			},
+		}},
+		{kind: "GITHUB", hasWebhooks: true, cfg: schema.GitHubConnection{
+			Webhooks: []*schema.GitHubWebhook{
+				{
+					Org:    "org",
+					Secret: "this is also a secret",
+				},
+			},
+		}},
+		{kind: "GITLAB", hasWebhooks: true, cfg: schema.GitLabConnection{
+			Webhooks: []*schema.GitLabWebhook{
+				{Secret: "this is yet another secret"},
+			},
+		}},
+	}
 
-		es := db.ExternalServices()
-		basestore := basestore.NewWithHandle(db.Handle())
+	createExternalServices := func(t *testing.T, ctx context.Context, store *basestore.Store) {
+		t.Helper()
 
 		// Create a trivial external service of each kind, as well as duplicate
 		// services for the external service kinds that support webhooks.
-		for _, svc := range []struct {
-			kind string
-			cfg  any
-		}{
-			{kind: extsvc.KindAWSCodeCommit, cfg: schema.AWSCodeCommitConnection{}},
-			{kind: extsvc.KindBitbucketServer, cfg: schema.BitbucketServerConnection{}},
-			{kind: extsvc.KindBitbucketCloud, cfg: schema.BitbucketCloudConnection{}},
-			{kind: extsvc.KindGitHub, cfg: schema.GitHubConnection{}},
-			{kind: extsvc.KindGitLab, cfg: schema.GitLabConnection{}},
-			{kind: extsvc.KindGitolite, cfg: schema.GitoliteConnection{}},
-			{kind: extsvc.KindPerforce, cfg: schema.PerforceConnection{}},
-			{kind: extsvc.KindPhabricator, cfg: schema.PhabricatorConnection{}},
-			{kind: extsvc.KindJVMPackages, cfg: schema.JVMPackagesConnection{}},
-			{kind: extsvc.KindOther, cfg: schema.OtherExternalServiceConnection{}},
-
-			{kind: extsvc.KindBitbucketServer, cfg: schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						DisableSync: false,
-						Secret:      "this is a secret",
-					},
-				},
-			}},
-			{kind: extsvc.KindGitHub, cfg: schema.GitHubConnection{
-				Webhooks: []*schema.GitHubWebhook{
-					{
-						Org:    "org",
-						Secret: "this is also a secret",
-					},
-				},
-			}},
-			{kind: extsvc.KindGitLab, cfg: schema.GitLabConnection{
-				Webhooks: []*schema.GitLabWebhook{
-					{Secret: "this is yet another secret"},
-				},
-			}},
-		} {
+		for _, svc := range testExtSvcs {
 			buf, err := json.MarshalIndent(svc.cfg, "", "  ")
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			svcs = append(svcs, &types.ExternalService{
-				Kind:        svc.kind,
-				DisplayName: svc.kind,
-				Config:      extsvc.NewUnencryptedConfig(string(buf)),
-			})
-		}
-
-		if err := es.Upsert(ctx, svcs...); err != nil {
-			t.Fatal(err)
+			if err := store.Exec(ctx, sqlf.Sprintf(`
+				INSERT INTO external_services (kind, display_name, config, created_at, has_webhooks)
+				VALUES (%s, %s, %s, NOW(), %s)
+			`,
+				svc.kind,
+				svc.kind,
+				string(buf),
+				svc.hasWebhooks,
+			)); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		// Add one more external service with invalid JSON, which was once
@@ -94,68 +91,41 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		//
 		// We'll have to do this the old fashioned way, since Create now
 		// actually checks the validity of the configuration.
-		row := basestore.QueryRow(
+		if err := store.Exec(
 			ctx,
 			sqlf.Sprintf(`
-				INSERT INTO
-					external_services
-					(
-						kind,
-						display_name,
-						config,
-						has_webhooks
-					)
-					VALUES (%s, %s, %s, %s)
-				RETURNING
-					id
-				`,
-				extsvc.KindOther,
+				INSERT INTO external_services (kind, display_name, config, created_at, has_webhooks)
+				VALUES (%s, %s, %s, NOW(), %s)
+			`,
+				"OTHER",
 				"other",
 				"invalid JSON",
 				false,
 			),
-		)
-		var id int64
-		if err := row.Scan(&id); err != nil {
+		); err != nil {
 			t.Fatal(err)
 		}
-		svc, err := es.GetByID(ctx, id)
-		if err != nil {
-			t.Fatal(err)
-		}
-		svcs = append(svcs, svc)
 
-		// We'll also add another external service that is deleted, and
-		// shouldn't count.
-		if err := basestore.Exec(
+		// We'll also add another external service that is deleted, and shouldn't count.
+		if err := store.Exec(
 			ctx,
 			sqlf.Sprintf(`
-				INSERT INTO
-					external_services
-					(
-						kind,
-						display_name,
-						config,
-						deleted_at
-					)
-					VALUES (%s, %s, %s, NOW())
-				`,
-				extsvc.KindOther,
+				INSERT INTO external_services (kind, display_name, config, deleted_at)
+				VALUES (%s, %s, %s, NOW())
+			`,
+				"OTHER",
 				"deleted",
 				"{}",
 			),
 		); err != nil {
 			t.Fatal(err)
 		}
-
-		return svcs
 	}
 
-	clearHasWebhooks := func(t *testing.T, ctx context.Context, db database.DB) {
+	clearHasWebhooks := func(t *testing.T, ctx context.Context, store *basestore.Store) {
 		t.Helper()
 
-		basestore := basestore.NewWithHandle(db.Handle())
-		if err := basestore.Exec(
+		if err := store.Exec(
 			ctx,
 			sqlf.Sprintf("UPDATE external_services SET has_webhooks = NULL"),
 		); err != nil {
@@ -165,10 +135,11 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 
 	t.Run("Progress", func(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		createExternalServices(t, ctx, db)
+		store := basestore.NewWithHandle(db.Handle())
+		createExternalServices(t, ctx, store)
 
 		key := et.TestKey{}
-		m := NewExternalServiceWebhookMigratorWithDB(db, key)
+		m := NewExternalServiceWebhookMigratorWithDB(db, key, 50)
 
 		// By default, all the external services should have non-NULL
 		// has_webhooks.
@@ -177,7 +148,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		assert.EqualValues(t, 1., progress)
 
 		// Now we'll clear that flag and ensure the progress drops to zero.
-		clearHasWebhooks(t, ctx, db)
+		clearHasWebhooks(t, ctx, store)
 		progress, err = m.Progress(ctx)
 		assert.Nil(t, err)
 		assert.EqualValues(t, 0., progress)
@@ -185,13 +156,15 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 
 	t.Run("Up", func(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		initSvcs := createExternalServices(t, ctx, db)
-		es := db.ExternalServices()
+		store := basestore.NewWithHandle(db.Handle())
+		createExternalServices(t, ctx, store)
+		// Count the invalid JSON, not the deleted one
+		numInitSvcs := len(testExtSvcs) + 1
 
 		key := et.TestKey{}
-		m := NewExternalServiceWebhookMigratorWithDB(db, key)
+		m := NewExternalServiceWebhookMigratorWithDB(db, key, 50)
 		// Ensure that we have to run two Ups.
-		m.BatchSize = len(initSvcs) - 1
+		m.batchSize = numInitSvcs - 1
 
 		// To start with, there should be nothing to do, as Upsert will have set
 		// has_webhooks already. Let's make sure nothing happens successfully.
@@ -199,48 +172,29 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 
 		// Now we'll clear out the has_webhooks flags and re-run Up. This should
 		// update all but one of the external services.
-		clearHasWebhooks(t, ctx, db)
+		clearHasWebhooks(t, ctx, store)
 		assert.Nil(t, m.Up(ctx))
 
 		// Do we really have one external service left?
-		after, err := es.List(ctx, database.ExternalServicesListOptions{})
+		numWebhooksNull, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NULL`)))
 		assert.Nil(t, err)
-		assert.Len(t, excludeExternalServicesWithCachedWebhooks(after), 1)
+		assert.Equal(t, 1, numWebhooksNull)
 
 		// Now we'll do the last one.
 		assert.Nil(t, m.Up(ctx))
-		after, err = es.List(ctx, database.ExternalServicesListOptions{})
+		numWebhooksNull, _, err = basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NULL`)))
 		assert.Nil(t, err)
-		assert.Empty(t, excludeExternalServicesWithCachedWebhooks(after))
+		assert.Equal(t, 0, numWebhooksNull)
 
 		// Finally, let's make sure we have the expected number of each: we
 		// should have three records with has_webhooks = true, and the rest
 		// should be has_webhooks = false.
-		svcs, err := es.List(ctx, database.ExternalServicesListOptions{})
+		numWebhooksTrue, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS TRUE`)))
 		assert.Nil(t, err)
+		assert.EqualValues(t, 3, numWebhooksTrue)
 
-		hasWebhooks := 0
-		noWebhooks := 0
-		for _, svc := range svcs {
-			assert.NotNil(t, svc.HasWebhooks)
-			if *svc.HasWebhooks {
-				hasWebhooks += 1
-			} else {
-				noWebhooks += 1
-			}
-		}
-
-		assert.EqualValues(t, 3, hasWebhooks)
-		assert.EqualValues(t, len(initSvcs)-3, noWebhooks)
+		numWebhooksFalse, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS FALSE`)))
+		assert.Nil(t, err)
+		assert.EqualValues(t, numInitSvcs-3, numWebhooksFalse)
 	})
-}
-
-func excludeExternalServicesWithCachedWebhooks(services []*types.ExternalService) []*types.ExternalService {
-	filtered := []*types.ExternalService{}
-	for _, svc := range services {
-		if svc.HasWebhooks == nil {
-			filtered = append(filtered, svc)
-		}
-	}
-	return filtered
 }

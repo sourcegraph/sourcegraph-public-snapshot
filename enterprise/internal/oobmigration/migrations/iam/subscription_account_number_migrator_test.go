@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,20 +18,21 @@ func TestSubscriptionAccountNumberMigrator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := basestore.NewWithHandle(db.Handle())
 
 	// Set up test data
-	alice, err := db.Users().Create(ctx, database.NewUser{Username: "alice"}) // A username without account number shouldn't fail
+	aliceID, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`INSERT INTO users(username, display_name, created_at) VALUES(%s, %s, NOW()) RETURNING id`, "alice", "alice")))
 	require.NoError(t, err)
-	bob, err := db.Users().Create(ctx, database.NewUser{Username: "bob-11033746"})
+	bobID, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`INSERT INTO users(username, display_name, created_at) VALUES(%s, %s, NOW()) RETURNING id`, "bob-11033746", "bob")))
 	require.NoError(t, err)
 
-	_, err = db.ExecContext(ctx, `INSERT INTO product_subscriptions(id, user_id) VALUES(gen_random_uuid(), $1)`, alice.ID)
+	err = store.Exec(ctx, sqlf.Sprintf(`INSERT INTO product_subscriptions(id, user_id) VALUES(gen_random_uuid(), %s)`, aliceID))
 	require.NoError(t, err)
-	_, err = db.ExecContext(ctx, `INSERT INTO product_subscriptions(id, user_id) VALUES(gen_random_uuid(), $1)`, bob.ID)
+	err = store.Exec(ctx, sqlf.Sprintf(`INSERT INTO product_subscriptions(id, user_id) VALUES(gen_random_uuid(), %s)`, bobID))
 	require.NoError(t, err)
 
 	// Ensure there is no progress before migration
-	migrator := NewSubscriptionAccountNumberMigrator(basestore.NewWithHandle(db.Handle()))
+	migrator := NewSubscriptionAccountNumberMigrator(store, 500)
 	progress, err := migrator.Progress(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, progress)
@@ -45,11 +47,11 @@ func TestSubscriptionAccountNumberMigrator(t *testing.T) {
 
 	// Ensure data are at desired states
 	var accountNumber string
-	err = db.QueryRowContext(ctx, `SELECT account_number FROM product_subscriptions WHERE user_id = $1`, alice.ID).Scan(&accountNumber)
+	accountNumber, _, err = basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf(`SELECT account_number FROM product_subscriptions WHERE user_id = %s`, aliceID)))
 	require.NoError(t, err)
 	assert.Empty(t, accountNumber)
 
-	err = db.QueryRowContext(ctx, `SELECT account_number FROM product_subscriptions WHERE user_id = $1`, bob.ID).Scan(&accountNumber)
+	accountNumber, _, err = basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf(`SELECT account_number FROM product_subscriptions WHERE user_id = %s`, bobID)))
 	require.NoError(t, err)
 	assert.Equal(t, "11033746", accountNumber)
 }
