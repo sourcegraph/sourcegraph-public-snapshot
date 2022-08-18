@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Client is the client used to communicate with an API.
+// Client is the client used to communicate with a remote job queue API.
 type Client struct {
 	options         Options
 	client          *BaseClient
