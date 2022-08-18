@@ -29,6 +29,7 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { FuzzyFinder } from './components/fuzzyFinder/FuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
@@ -61,6 +62,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
@@ -129,6 +131,23 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
+
+    const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
+    const fuzzyFinderShortcut = useKeyboardShortcut('fuzzyFinder')
+    const [retainFuzzyFinderCache, setRetainFuzzyFinderCache] = useState(true)
+
+    let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
+    if (fuzzyFinder === undefined) {
+        // Happens even when `"default": true` is defined in
+        // settings.schema.json.
+        fuzzyFinder = true
+    }
+
+    useEffect(() => {
+        if (!isRepositoryRelatedPage && isFuzzyFinderVisible) {
+            setIsFuzzyFinderVisible(false)
+        }
+    }, [isRepositoryRelatedPage, isFuzzyFinderVisible])
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
     const { history, selectedSearchContextSpec, location, setSelectedSearchContextSpec } = props
@@ -208,6 +227,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
+        onHandleFuzzyFinder: setIsFuzzyFinderVisible,
     }
 
     return (
@@ -251,6 +271,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                    onHandleFuzzyFinder={setIsFuzzyFinderVisible}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
@@ -309,6 +330,28 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             ) : null}
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
+            )}
+            {fuzzyFinderShortcut?.keybindings.map((keybinding, index) => (
+                <Shortcut
+                    key={index}
+                    {...keybinding}
+                    onMatch={() => {
+                        setIsFuzzyFinderVisible(true)
+                        setRetainFuzzyFinderCache(true)
+                        const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
+                        input?.focus()
+                        input?.select()
+                    }}
+                />
+            ))}
+            {isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
+                <FuzzyFinder
+                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                    isVisible={isFuzzyFinderVisible}
+                    telemetryService={props.telemetryService}
+                    location={props.location}
+                    setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
+                />
             )}
         </div>
     )
