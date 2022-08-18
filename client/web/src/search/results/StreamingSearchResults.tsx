@@ -85,14 +85,15 @@ export const StreamingSearchResults: React.FunctionComponent<
         extensionsController,
     } = props
 
+    // Feature flags
     // Log lucky search events. To be removed at latest by 12/2022.
     const [luckySearchEnabled] = useFeatureFlag('ab-lucky-search')
     const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
+    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     // Global state
-    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
