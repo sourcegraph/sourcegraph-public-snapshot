@@ -13,7 +13,7 @@ export const buildTimerPlugin: esbuild.Plugin = {
         build.onStart(() => {
             buildStarted = Date.now()
         })
-        build.onEnd(() => signale.info(`# esbuild: build took ${Date.now() - buildStarted}ms`))
+        build.onEnd(() => console.log(`# esbuild: build took ${Date.now() - buildStarted}ms`))
     },
 }
 
