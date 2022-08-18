@@ -533,6 +533,13 @@ func ParseCloneStatus(s string) CloneStatus {
 	}
 }
 
+// ParseCloneStatusFromGraphQL converts the raw value of the GraphQL enum
+// CloneStatus into the corresponding CloneStatus defined here. If the GraphQL
+// value can't be matched to a CloneStatus, CloneStatusUnknown is returned.
+func ParseCloneStatusFromGraphQL(s string) CloneStatus {
+	return ParseCloneStatus(strings.ToLower(s))
+}
+
 // GitserverRepo  represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
