@@ -216,6 +216,12 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         },
     ]
 
+    const preciseFraction = data
+        ? data.site.analytics.codeIntel.preciseEvents.summary.totalCount /
+          (data.site.analytics.codeIntel.preciseEvents.summary.totalCount +
+              data.site.analytics.codeIntel.searchBasedEvents.summary.totalCount)
+        : undefined
+
     return (
         <>
             <AnalyticsPageTitle>Code intel</AnalyticsPageTitle>
@@ -295,7 +301,9 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                             )}
                         </ChartContainer>
                         <div className={styles.percentContainer}>
-                            <div className={styles.percent}>30%</div>
+                            <div className={styles.percent}>
+                                {preciseFraction ? (100 * preciseFraction).toFixed(1) : '...'}%
+                            </div>
                             <div>Precise code navigation</div>
                         </div>
                     </div>
