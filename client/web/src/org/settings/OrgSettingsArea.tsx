@@ -81,7 +81,7 @@ export const OrgSettingsArea: React.FunctionComponent<React.PropsWithChildren<Pr
     }
 
     const showOrgCode = data?.organizationFeatureFlagValue || false
-    const showOrgDeletion = true || orgDeletionFlag.data?.organizationFeatureFlagValue || false
+    const showOrgDeletion = orgDeletionFlag.data?.organizationFeatureFlagValue || false
 
     return (
         <div className="d-flex">
@@ -116,7 +116,7 @@ export const OrgSettingsArea: React.FunctionComponent<React.PropsWithChildren<Pr
                                                 </>
                                             }
                                         />
-                                        {props.org.viewerIsMember && showOrgDeletion && (
+                                        {props.isSourcegraphDotCom && props.org.viewerIsMember && showOrgDeletion && (
                                             <DeleteOrg {...routeComponentProps} {...props} />
                                         )}
                                     </div>
