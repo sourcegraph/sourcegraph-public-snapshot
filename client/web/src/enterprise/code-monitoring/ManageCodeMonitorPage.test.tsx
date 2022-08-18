@@ -19,6 +19,16 @@ import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockCodeMonitorFields, mockUser } from './testing/util'
 
 describe('ManageCodeMonitorPage', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     const history = H.createMemoryHistory()
     history.location.pathname = '/code-monitoring/test-monitor-id'
     const props = {

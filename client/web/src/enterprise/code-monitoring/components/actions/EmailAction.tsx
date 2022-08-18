@@ -10,8 +10,6 @@ import { ActionProps } from '../FormActionArea'
 
 import { ActionEditor } from './ActionEditor'
 
-const emailConfigured = window.context.emailEnabled
-
 export const SEND_TEST_EMAIL = gql`
     mutation SendTestEmail($namespace: ID!, $description: String!, $email: MonitorEmailInput!) {
         triggerTestEmailAction(namespace: $namespace, description: $description, email: $email) {
@@ -95,6 +93,7 @@ export const EmailAction: React.FunctionComponent<React.PropsWithChildren<Action
         : undefined
     const testState = loading ? 'loading' : called && !error ? 'called' : error || undefined
 
+    const emailConfigured = window.context.emailEnabled
     const emailNotConfiguredMessage = !emailConfigured ? (
         !action ? (
             <>
