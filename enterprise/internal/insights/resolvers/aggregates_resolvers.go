@@ -42,7 +42,26 @@ func (r *aggregationModeAvailabilityResolver) Mode() string {
 }
 
 func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
-	return false, nil
+	checkByMode := map[types.SearchAggregationMode]canAggregate{
+		types.REPO_AGGREGATION_MODE: canAggregateByRepo,
+	}
+	canAggregateFunc, ok := checkByMode[r.mode]
+	if !ok {
+		return false, errors.Newf("mode %q not recognised", r.mode)
+	}
+	return canAggregateFunc(r.searchQuery, r.patternType), nil
+}
+
+type canAggregate func(searchQuery, patternType string) bool
+
+func canAggregateByRepo(searchQuery, patternType string) bool {
+	// It would only not make sense to aggregate by repo when a single repo: parameter is specified
+	// but does it make sense not to display the option?
+	return true
+}
+
+func canAggregateByFile(searchQuery, patternType string) bool {
+	return false
 }
 
 func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
