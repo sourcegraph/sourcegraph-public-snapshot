@@ -104,6 +104,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/privacy',
         exact: true,
         render: lazyComponent(() => import('./privacy/UserSettingsPrivacyPage'), 'UserSettingsPrivacyPage'),
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/repositories',

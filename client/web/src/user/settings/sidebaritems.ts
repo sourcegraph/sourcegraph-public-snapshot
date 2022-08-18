@@ -57,6 +57,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Privacy',
         to: '/privacy',
         exact: true,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         label: 'Product research',
