@@ -847,6 +847,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     const fileUrl = group.locations[group.locations.length - 1].url.split('?')[0]
     const open = isOpen(group.path) ?? true
 
+    const printedLines = new Set()
+
     return (
         <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
             <div className={styles.locationGroup}>
@@ -899,8 +901,10 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 <CollapsePanel id={group.repoName + group.path} className="ml-0">
                     <div className={styles.locationContainer}>
                         <ul className="list-unstyled mb-0">
-                            {group.locations.map(reference => {
+                            {group.locations.map((reference, index) => {
                                 const className = isActiveLocation(reference) ? styles.locationActive : ''
+
+                                const { before, after } = getContextLines(reference)
 
                                 const locationLine = getLineContent(reference)
                                 const lineWithHighlightedToken = locationLine.prePostToken ? (
@@ -938,11 +942,36 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                             data-test-reference-url={reference.url}
                                             className={styles.locationLink}
                                         >
+                                            {before &&
+                                                !printedLines.has(before.lineNumber) &&
+                                                printedLines.add(before.lineNumber) && (
+                                                    <>
+                                                        {index > 0 && <hr />}
+                                                        <span className={styles.locationLinkLineNumber}>
+                                                            {before.lineNumber}
+                                                            {': '}
+                                                        </span>
+                                                        <Code>{before.line}</Code>
+                                                        <br />
+                                                    </>
+                                                )}
                                             <span className={styles.locationLinkLineNumber}>
                                                 {(reference.range?.start?.line ?? 0) + 1}
                                                 {': '}
                                             </span>
                                             {lineWithHighlightedToken}
+                                            {after &&
+                                                !printedLines.has(after.lineNumber) &&
+                                                printedLines.add(after.lineNumber) && (
+                                                    <>
+                                                        <br />
+                                                        <span className={styles.locationLinkLineNumber}>
+                                                            {after.lineNumber}
+                                                            {': '}
+                                                        </span>
+                                                        <Code>{after.line}</Code>
+                                                    </>
+                                                )}
                                         </Button>
                                     </li>
                                 )
@@ -968,21 +997,44 @@ export const getLineContent = (location: Location): LocationLine => {
         if (range.end.line === range.start.line) {
             return {
                 prePostToken: {
-                    pre: line.slice(0, range.start.character).trimStart(),
+                    pre: line.slice(0, range.start.character),
                     token: line.slice(range.start.character, range.end.character),
                     post: line.slice(range.end.character),
                 },
-                line: line.trimStart(),
+                line,
             }
         }
         return {
             prePostToken: {
-                pre: line.slice(0, range.start.character).trimStart(),
+                pre: line.slice(0, range.start.character),
                 token: line.slice(range.start.character),
                 post: '',
             },
-            line: line.trimStart(),
+            line,
         }
+    }
+    return {}
+}
+
+interface ContextLines {
+    before?: { lineNumber: number; line: string }
+    after?: { lineNumber: number; line: string }
+}
+
+export const getContextLines = (location: Location): ContextLines => {
+    const range = location.range
+    if (range !== undefined) {
+        // TODO: This needs to handle end-of-file/start-of-file correctly
+        let result: ContextLines = {}
+        const before = location.lines[range.start.line - 1]
+        if (before !== undefined) {
+            result.before = { lineNumber: range.start.line, line: before }
+        }
+        const after = location.lines[range.end.line + 1]
+        if (after !== undefined) {
+            result.after = { lineNumber: range.end.line + 2, line: after }
+        }
+        return result
     }
     return {}
 }
