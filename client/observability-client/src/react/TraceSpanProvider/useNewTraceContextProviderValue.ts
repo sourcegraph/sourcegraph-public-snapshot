@@ -7,6 +7,12 @@ import { TraceContext, reactManualTracer } from '../constants'
 
 import type { TraceSpanProviderProps } from './TraceSpanProvider'
 
+/**
+ * Use `customContext` if provided, otherwise use `parentContext`.
+ * If no `parentContext` is available, use the current navigation context.
+ *
+ * It allows binding of all react spans to the parent span or the recent navigation event.
+ */
 function getRelevantContext(parentContext: Context, customContext?: Context): Context {
     if (customContext) {
         return customContext
@@ -25,6 +31,10 @@ interface NewTraceContextProviderValue {
     traceContextProviderValue: { context: Context }
 }
 
+/**
+ * Creates the new OpenTelemetry tracing span on the first component render call.
+ * Uses span provided by the `TraceContext` as a parent span for the new span.
+ */
 export function useNewTraceContextProviderValue(
     options: Omit<TraceSpanProviderProps, 'children'>
 ): NewTraceContextProviderValue {
@@ -42,6 +52,7 @@ export function useNewTraceContextProviderValue(
             newContext,
             traceContextProviderValue: { context: newContext },
         }
+        // We want to create a new span only on the first component render call.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 }

@@ -212,23 +212,15 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     mapTo(true),
                     startWith(false),
                     switchMap(disableTimeout =>
-                        createActiveSpan(
-                            reactManualTracer,
-                            { name: 'highlightedBlobInfoOrError', parentSpan: span },
-                            fetchSpan => {
-                                const result = fetchBlob({
-                                    repoName,
-                                    commitID,
-                                    filePath,
-                                    disableTimeout,
-                                    format: enableCodeMirror
-                                        ? HighlightResponseFormat.JSON_SCIP
-                                        : HighlightResponseFormat.HTML_HIGHLIGHT,
-                                })
-                                fetchSpan.end()
-                                return result
-                            }
-                        )
+                        fetchBlob({
+                            repoName,
+                            commitID,
+                            filePath,
+                            disableTimeout,
+                            format: enableCodeMirror
+                                ? HighlightResponseFormat.JSON_SCIP
+                                : HighlightResponseFormat.HTML_HIGHLIGHT,
+                        })
                     ),
                     map(blob => {
                         if (blob === null) {
@@ -260,7 +252,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, commitID, filePath, mode, enableCodeMirror, span]
+            [repoName, revision, commitID, filePath, mode, enableCodeMirror]
         )
     )
 
