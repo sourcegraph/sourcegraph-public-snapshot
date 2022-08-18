@@ -7,7 +7,7 @@ import { TraceContext, reactManualTracer } from '../constants'
 
 import type { TraceSpanProviderProps } from './TraceSpanProvider'
 
-function getFinalContext(parentContext: Context, customContext?: Context): Context {
+function getRelevantContext(parentContext: Context, customContext?: Context): Context {
     if (customContext) {
         return customContext
     }
@@ -32,7 +32,7 @@ export function useNewTraceContextProviderValue(
 
     return useMemo(() => {
         const { name, options: spanOptions, context: customContext } = options
-        const parentContext = getFinalContext(providedParentContext, customContext)
+        const parentContext = getRelevantContext(providedParentContext, customContext)
 
         const newSpan = reactManualTracer.startSpan(name, spanOptions, parentContext)
         const newContext = trace.setSpan(parentContext, newSpan)

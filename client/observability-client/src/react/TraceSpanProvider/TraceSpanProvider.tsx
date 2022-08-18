@@ -2,6 +2,7 @@ import { PropsWithChildren, useEffect, FunctionComponent } from 'react'
 
 import { SpanOptions, Context } from '@opentelemetry/api'
 
+import { IS_OPEN_TELEMETRY_TRACING_ENABLED } from '../../constants'
 import { TraceContext } from '../constants'
 
 import { useNewTraceContextProviderValue } from './useNewTraceContextProviderValue'
@@ -12,8 +13,9 @@ export type TraceSpanProviderProps = PropsWithChildren<{
     context?: Context
 }>
 
-export const TraceSpanProvider: FunctionComponent<TraceSpanProviderProps> = props => {
+let TraceSpanProvider: FunctionComponent<TraceSpanProviderProps> = props => {
     const { children, ...restProps } = props
+
     const { newSpan, traceContextProviderValue } = useNewTraceContextProviderValue(restProps)
 
     useEffect(() => {
@@ -23,3 +25,11 @@ export const TraceSpanProvider: FunctionComponent<TraceSpanProviderProps> = prop
 
     return <TraceContext.Provider value={traceContextProviderValue}>{children}</TraceContext.Provider>
 }
+
+if (!IS_OPEN_TELEMETRY_TRACING_ENABLED) {
+    TraceSpanProvider = function NoopTraceSpanProvider({ children }) {
+        return <>{children}</>
+    }
+}
+
+export { TraceSpanProvider }

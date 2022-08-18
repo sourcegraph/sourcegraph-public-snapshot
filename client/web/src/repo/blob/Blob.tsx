@@ -879,7 +879,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     className={styles.blobStatusBarBody}
                     statusBarRef={nextStatusBarElement}
                     hideWhileInitializing={true}
-                    isBlobPage={false}
+                    isBlobPage={true}
                 />
             )}
         </>
