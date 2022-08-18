@@ -53,6 +53,8 @@ interface Props<T extends object>
         saveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveToolbarProps & T>>
     }
 
+    explanation?: JSX.Element
+
     history: H.History
 }
 
@@ -157,6 +159,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                         monacoRef={this.monacoRef}
                     />
                 </React.Suspense>
+                {this.props.explanation && this.props.explanation}
                 {this.props.canEdit && saveToolbar}
             </div>
         )
