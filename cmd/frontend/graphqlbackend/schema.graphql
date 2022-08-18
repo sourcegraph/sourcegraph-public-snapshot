@@ -1263,6 +1263,7 @@ type Query {
         """
         descending: Boolean = false
     ): RepositoryConnection!
+
     """
     Looks up a Phabricator repository by name.
     """
@@ -7172,6 +7173,29 @@ type RepositoryStats {
     The number of lines indexed
     """
     indexedLinesCount: BigInt!
+
+    """
+    The number of all repositories in the instance, without soft-deleted or blocked repositories.
+    """
+    total: Int!
+    """
+    The number of cloned repositories in the instance. This number might be
+    higher than 'total', if soft-deleted repositories haven't been cleaned up
+    yet.
+    """
+    cloned: Int!
+    """
+    The number of repositories in the instance that are currently being cloned.
+    """
+    cloning: Int!
+    """
+    The number of repositories in the instance that not cloned yet.
+    """
+    notCloned: Int!
+    """
+    The number of repositories where initial cloning or subsequent fetching resulted in an error.
+    """
+    failedFetch: Int!
 }
 
 """

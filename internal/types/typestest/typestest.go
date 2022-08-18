@@ -113,7 +113,7 @@ func MakeExternalServices() types.ExternalServices {
 	githubSvc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -121,7 +121,7 @@ func MakeExternalServices() types.ExternalServices {
 	gitlabSvc := types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab - Test",
-		Config:      `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -129,7 +129,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
-		Config:      `{"url": "https://bitbucket.com", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -137,7 +137,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
-		Config:      `{"url": "https://bitbucket.com", "username": "foo", "appPassword": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "foo", "appPassword": "abc"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -145,7 +145,7 @@ func MakeExternalServices() types.ExternalServices {
 	awsSvc := types.ExternalService{
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS Code - Test",
-		Config:      `{"region": "eu-west-1", "accessKeyID": "key", "secretAccessKey": "secret", "gitCredentials": {"username": "foo", "password": "bar"}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"region": "eu-west-1", "accessKeyID": "key", "secretAccessKey": "secret", "gitCredentials": {"username": "foo", "password": "bar"}}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -153,7 +153,7 @@ func MakeExternalServices() types.ExternalServices {
 	otherSvc := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other - Test",
-		Config:      `{"url": "https://other.com", "repos": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://other.com", "repos": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -161,7 +161,7 @@ func MakeExternalServices() types.ExternalServices {
 	gitoliteSvc := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite - Test",
-		Config:      `{"prefix": "foo", "host": "bar"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"prefix": "foo", "host": "bar"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -188,14 +188,14 @@ func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalSer
 		services = append(services, &types.ExternalService{
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     "Github - User",
-			Config:          `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
 			CreatedAt:       now,
 			UpdatedAt:       now,
 			NamespaceUserID: userID,
 		}, &types.ExternalService{
 			Kind:            extsvc.KindGitLab,
 			DisplayName:     "GitLab - User",
-			Config:          `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
+			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
 			CreatedAt:       now,
 			UpdatedAt:       now,
 			NamespaceUserID: userID,
@@ -205,14 +205,14 @@ func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalSer
 		services = append(services, &types.ExternalService{
 			Kind:           extsvc.KindGitHub,
 			DisplayName:    "Github - Org",
-			Config:         `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+			Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
 			CreatedAt:      now,
 			UpdatedAt:      now,
 			NamespaceOrgID: orgID,
 		}, &types.ExternalService{
 			Kind:           extsvc.KindGitLab,
 			DisplayName:    "GitLab - Org",
-			Config:         `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
+			Config:         extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
 			CreatedAt:      now,
 			UpdatedAt:      now,
 			NamespaceOrgID: orgID,

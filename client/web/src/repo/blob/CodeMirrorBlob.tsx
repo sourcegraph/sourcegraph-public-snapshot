@@ -153,13 +153,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
-            sourcegraphExtensions({
-                blobInfo,
-                initialSelection: position,
-                extensionsController,
-                disableStatusBar,
-                disableDecorations,
-            }),
+            extensionsController !== null
+                ? sourcegraphExtensions({
+                      blobInfo,
+                      initialSelection: position,
+                      extensionsController,
+                      disableStatusBar,
+                      disableDecorations,
+                  })
+                : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
             settingsCompartment.of(settings),

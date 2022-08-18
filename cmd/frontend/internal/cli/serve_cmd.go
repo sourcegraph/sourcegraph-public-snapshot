@@ -351,7 +351,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 			NewComputeStreamHandler:   enterprise.NewComputeStreamHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
-		enterprise.NewGitHubAppCloudSetupHandler,
+		enterprise.NewGitHubAppSetupHandler,
 	)
 	httpServer := &http.Server{
 		Handler:      externalHandler,

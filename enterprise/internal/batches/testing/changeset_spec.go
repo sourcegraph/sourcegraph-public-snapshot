@@ -59,6 +59,7 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 		BatchSpecID: opts.BatchSpec,
 		Spec: &batcheslib.ChangesetSpec{
 			BaseRepository: string(graphqlbackend.MarshalRepositoryID(opts.Repo)),
+			HeadRepository: string(graphqlbackend.MarshalRepositoryID(opts.Repo)),
 
 			BaseRev: opts.BaseRev,
 			BaseRef: opts.BaseRef,

@@ -258,6 +258,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const { extensionsController } = this.props
+
         return (
             <div
                 data-testid="repository-commit-page"
@@ -297,22 +299,25 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             nodeComponent={FileDiffNode}
                             nodeComponentProps={{
                                 ...this.props,
-                                extensionInfo: {
-                                    base: {
-                                        repoName: this.props.repo.name,
-                                        repoID: this.props.repo.id,
-                                        revision: commitParentOrEmpty(this.state.commitOrError),
-                                        commitID: commitParentOrEmpty(this.state.commitOrError),
-                                    },
-                                    head: {
-                                        repoName: this.props.repo.name,
-                                        repoID: this.props.repo.id,
-                                        revision: this.state.commitOrError.oid,
-                                        commitID: this.state.commitOrError.oid,
-                                    },
-                                    hoverifier: this.hoverifier,
-                                    extensionsController: this.props.extensionsController,
-                                },
+                                extensionInfo:
+                                    extensionsController !== null
+                                        ? {
+                                              base: {
+                                                  repoName: this.props.repo.name,
+                                                  repoID: this.props.repo.id,
+                                                  revision: commitParentOrEmpty(this.state.commitOrError),
+                                                  commitID: commitParentOrEmpty(this.state.commitOrError),
+                                              },
+                                              head: {
+                                                  repoName: this.props.repo.name,
+                                                  repoID: this.props.repo.id,
+                                                  revision: this.state.commitOrError.oid,
+                                                  commitID: this.state.commitOrError.oid,
+                                              },
+                                              hoverifier: this.hoverifier,
+                                              extensionsController,
+                                          }
+                                        : undefined,
                                 lineNumbers: true,
                                 diffMode: this.state.diffMode,
                             }}
@@ -326,9 +331,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                         />
                     </>
                 )}
-                {this.state.hoverOverlayProps && (
+                {this.state.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...this.props}
+                        extensionsController={extensionsController}
                         {...this.state.hoverOverlayProps}
                         nav={url => this.props.history.push(url)}
                         hoveredTokenElement={this.state.hoveredTokenElement}

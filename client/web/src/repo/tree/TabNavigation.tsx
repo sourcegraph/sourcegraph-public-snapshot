@@ -47,7 +47,7 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
                 outline={true}
                 as={Link}
             >
-                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Graph
+                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Graph data
             </Button>
         )}
         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}

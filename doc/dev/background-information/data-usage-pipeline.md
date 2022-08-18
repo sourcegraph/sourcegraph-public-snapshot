@@ -25,16 +25,21 @@ Only events that [exist in an allow list](https://sourcegraph.sourcegraph.com/gi
 postgres database in the table `event_logs_export_allowlist`.
 
 #### Adding to the allow list
-1. Create a migration using the sg tool `sg migration add -db=frontend your_migration_name_goes_here`
-2. In the generated `up.sql` add the SQL required to insert events
-```postgresql
-insert into event_logs_export_allowlist (event_name) values (''), ('') on conflict do nothing;
+Modifying the allow list is performed using database migrations. To simplify this process and ensure consistency, use the [sg](https://docs.sourcegraph.com/dev/background-information/sg) tool:
+``` shell
+sg telemetry allowlist add --migration [event]
 ```
-3. In the generated `down.sql` add the SQL required to remove the events previously added.
-```postgresql
-delete from event_logs_export_allowlist where event_name in ('', '');
+
+``` shell
+sg telemetry allowlist remove --migration [event]
 ```
-4. Create a pull request and get a review from the Data Engineering team.
+
+If you want to modify many events you can pass a file of newline delimited event names using `xargs`:
+``` shell
+cat /location/of/my/events/file | xargs sg telemetry allowlist add --migration
+```
+
+Create a pull request and get a review from the Data Engineering team.
 
 
 #### Determine if an event is in the allow list

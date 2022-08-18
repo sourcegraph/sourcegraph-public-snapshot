@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -518,31 +517,4 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
 		}
 	}
-}
-
-func storeDumpToSymbolDump(storeDumps []dbstore.Dump) []shared.Dump {
-	dumps := make([]shared.Dump, 0, len(storeDumps))
-	for _, d := range storeDumps {
-		dumps = append(dumps, shared.Dump{
-			ID:                d.ID,
-			Commit:            d.Commit,
-			Root:              d.Root,
-			VisibleAtTip:      d.VisibleAtTip,
-			UploadedAt:        d.UploadedAt,
-			State:             d.State,
-			FailureMessage:    d.FailureMessage,
-			StartedAt:         d.StartedAt,
-			FinishedAt:        d.FinishedAt,
-			ProcessAfter:      d.ProcessAfter,
-			NumResets:         d.NumResets,
-			NumFailures:       d.NumFailures,
-			RepositoryID:      d.RepositoryID,
-			RepositoryName:    d.RepositoryName,
-			Indexer:           d.Indexer,
-			IndexerVersion:    d.IndexerVersion,
-			AssociatedIndexID: d.AssociatedIndexID,
-		})
-	}
-
-	return dumps
 }

@@ -73,6 +73,31 @@ func mustCreate(ctx context.Context, t *testing.T, db DB, repo *types.Repo) *typ
 	return repo
 }
 
+func setGitserverRepoCloneStatus(t *testing.T, db DB, name api.RepoName, s types.CloneStatus) {
+	t.Helper()
+
+	if err := db.GitserverRepos().SetCloneStatus(context.Background(), name, s, shardID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func setGitserverRepoLastChanged(t *testing.T, db DB, name api.RepoName, last time.Time) {
+	t.Helper()
+
+	if err := db.GitserverRepos().SetLastFetched(context.Background(), name, GitserverFetchData{LastFetched: last, LastChanged: last}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg string) {
+	t.Helper()
+
+	err := db.GitserverRepos().SetLastError(context.Background(), name, msg, shardID)
+	if err != nil {
+		t.Fatalf("failed to set last error: %s", err)
+	}
+}
+
 func repoNamesFromRepos(repos []*types.Repo) []types.MinimalRepo {
 	rnames := make([]types.MinimalRepo, 0, len(repos))
 	for _, repo := range repos {
@@ -211,7 +236,7 @@ func TestRepos_Get(t *testing.T) {
 	service := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -357,7 +382,7 @@ func TestRepos_List(t *testing.T) {
 	service := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -436,7 +461,7 @@ func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 	userExternalService := types.ExternalService{
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "Github - User-owned",
-		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 		CreatedAt:       now,
 		UpdatedAt:       now,
 		NamespaceUserID: user.ID,
@@ -473,7 +498,7 @@ func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 	siteExternalService := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Site-owned",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -538,7 +563,7 @@ func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
 	orgExternalService := types.ExternalService{
 		Kind:           extsvc.KindGitHub,
 		DisplayName:    "Github - Org-owned",
-		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 		CreatedAt:      now,
 		UpdatedAt:      now,
 		NamespaceOrgID: org.ID,
@@ -575,7 +600,7 @@ func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
 	siteExternalService := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Site-owned",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -656,22 +681,6 @@ func TestRepos_List_fork(t *testing.T) {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, append(append([]*types.Repo(nil), mine...), yours...), repos)
-	}
-}
-
-func setGitserverRepoCloneStatus(t *testing.T, db DB, name api.RepoName, s types.CloneStatus) {
-	t.Helper()
-
-	if err := db.GitserverRepos().SetCloneStatus(context.Background(), name, s, ""); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func setGitserverRepoLastChanged(t *testing.T, db DB, name api.RepoName, last time.Time) {
-	t.Helper()
-
-	if err := db.GitserverRepos().SetLastFetched(context.Background(), name, GitserverFetchData{LastFetched: last, LastChanged: last}); err != nil {
-		t.Fatal(err)
 	}
 }
 
@@ -1327,7 +1336,7 @@ func TestRepos_ListMinimalRepos(t *testing.T) {
 	service := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -1881,7 +1890,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind:        extsvc.KindPerforce,
 		DisplayName: "Perforce - Test",
-		Config:      `{"p4.port": "ssl:111.222.333.444:1666", "p4.user": "admin", "p4.passwd": "pa$$word", "depots": [], "repositoryPathPattern": "perforce/{depot}"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"p4.port": "ssl:111.222.333.444:1666", "p4.user": "admin", "p4.passwd": "pa$$word", "depots": [], "repositoryPathPattern": "perforce/{depot}"}`),
 	}
 	if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
 		t.Fatal(err)
@@ -2314,7 +2323,7 @@ func initUserAndRepo(t *testing.T, ctx context.Context, db DB) (*types.User, *ty
 	service := types.ExternalService{
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "Github - Test",
-		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 		CreatedAt:       now,
 		UpdatedAt:       now,
 		NamespaceUserID: user.ID,
