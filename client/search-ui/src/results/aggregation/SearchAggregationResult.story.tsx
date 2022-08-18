@@ -6,9 +6,6 @@ import { SearchAggregationResult } from './SearchAggregationResult'
 
 const config: Meta = {
     title: 'search-ui/results/SearchAggregationResult',
-    parameters: {
-        chromatic: { viewports: [544, 577, 993], disableSnapshot: false },
-    },
 }
 
 export default config
