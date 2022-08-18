@@ -174,7 +174,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Code intel</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Code intel</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">

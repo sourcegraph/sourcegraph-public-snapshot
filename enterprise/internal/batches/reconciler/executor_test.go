@@ -47,13 +47,13 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, et.TestKey{}, clock)
+	bstore := store.NewWithClock(db, &observation.TestContext, et.TestKey{}, clock)
 
 	admin := bt.CreateTestUser(t, db, true)
 	ctx = actor.WithActor(ctx, actor.FromUser(admin.ID))
 
 	repo, extSvc := bt.CreateTestRepo(t, ctx, db)
-	bt.CreateTestSiteCredential(t, cstore, repo)
+	bt.CreateTestSiteCredential(t, bstore, repo)
 
 	state := bt.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: repo.Name,
@@ -560,8 +560,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "executor-test-batch-change", admin.ID, 0)
-			batchChange := bt.CreateBatchChange(t, ctx, cstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
+			batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "executor-test-batch-change", admin.ID, 0)
+			batchChange := bt.CreateBatchChange(t, ctx, bstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *btypes.ChangesetSpec
@@ -572,7 +572,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				specOpts.User = admin.ID
 				specOpts.Repo = repo.ID
 				specOpts.BatchSpec = batchSpec.ID
-				changesetSpec = bt.CreateChangesetSpec(t, ctx, cstore, specOpts)
+				changesetSpec = bt.CreateChangesetSpec(t, ctx, bstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
@@ -589,7 +589,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
-			changeset := bt.CreateChangeset(t, ctx, cstore, changesetOpts)
+			changeset := bt.CreateChangeset(t, ctx, bstore, changesetOpts)
 
 			// Setup gitserver dependency.
 			gitClient := &bt.FakeGitserverClient{ResponseErr: tc.gitClientErr}
@@ -624,7 +624,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Ensure we reset the state of the repo after executing the plan.
 			t.Cleanup(func() {
 				repo.Archived = false
-				_, err := repos.NewStore(logtest.Scoped(t), cstore.DatabaseDB()).UpdateRepo(ctx, repo)
+				_, err := repos.NewStore(logtest.Scoped(t), bstore.DatabaseDB()).UpdateRepo(ctx, repo)
 				require.NoError(t, err)
 			})
 
@@ -636,7 +636,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				sourcer,
 				// Don't actually sleep for the sake of testing.
 				true,
-				cstore,
+				bstore,
 				tc.plan,
 			)
 			if err != nil {
@@ -704,7 +704,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
 			}
-			bt.ReloadAndAssertChangeset(t, ctx, cstore, changeset, assertions)
+			bt.ReloadAndAssertChangeset(t, ctx, bstore, changeset, assertions)
 
 			// Assert that the body included a backlink if needed. We'll do
 			// more detailed unit tests of decorateChangesetBody elsewhere;
@@ -743,14 +743,14 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, &observation.TestContext, et.TestKey{})
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	commonHeadRef := "refs/heads/collision"
 
 	// Create a published changeset.
-	bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repo.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ExternalBranch:   commonHeadRef,
@@ -769,7 +769,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = bt.BuildChangeset(bt.TestChangesetOpts{Repo: repo.ID})
 
-	err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, bstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -784,7 +784,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	cstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, &observation.TestContext, et.TestKey{})
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	changesetSpec := bt.BuildChangesetSpec(t, bt.TestSpecOpts{
@@ -804,7 +804,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationClose)
 
-		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, cstore, plan)
+		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
 		if err != ourError {
 			t.Fatalf("executePlan did not return expected error: %s", err)
 		}
@@ -817,7 +817,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationDetach)
 
-		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, cstore, plan)
+		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
 		if err != nil {
 			t.Fatalf("executePlan returned unexpected error: %s", err)
 		}
@@ -830,21 +830,21 @@ func TestLoadChangesetSource(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-	cstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, &observation.TestContext, et.TestKey{})
 
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, 0)
-	adminBatchChange := bt.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
-	userBatchChange := bt.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "reconciler-test-batch-change", admin.ID, 0)
+	adminBatchChange := bt.CreateBatchChange(t, ctx, bstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
+	userBatchChange := bt.CreateBatchChange(t, ctx, bstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
 	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
@@ -856,7 +856,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("imported changeset uses site-credential when exists", func(t *testing.T) {
-		if err := cstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
+		if err := bstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
 		}, token); err != nil {
@@ -867,7 +867,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		})
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
@@ -881,7 +881,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	t.Run("owned by missing batch change", func(t *testing.T) {
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 1234,
 		}, repo)
 		if err == nil {
@@ -892,7 +892,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	t.Run("owned by admin user without credential", func(t *testing.T) {
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if !errors.Is(err, errMissingCredentials{repo: string(repo.Name)}) {
@@ -903,7 +903,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	t.Run("owned by normal user without credential", func(t *testing.T) {
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err == nil {
@@ -912,7 +912,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by admin user with credential", func(t *testing.T) {
-		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		if _, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              admin.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -923,7 +923,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -935,7 +935,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by normal user with credential", func(t *testing.T) {
-		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		if _, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -949,7 +949,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -961,7 +961,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by user without credential falls back to site-credential", func(t *testing.T) {
-		if err := cstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
+		if err := bstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
 		}, token); err != nil {
@@ -973,7 +973,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 		fakeSource := &stesting.FakeChangesetSource{}
 		sourcer := stesting.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, bstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -990,7 +990,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, &observation.TestContext, et.TestKey{})
 
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
@@ -1134,7 +1134,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.credentials != nil {
-				cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+				cred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 					Domain:              database.UserCredentialDomainBatches,
 					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
@@ -1143,11 +1143,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				defer func() { cstore.UserCredentials().Delete(ctx, cred.ID) }()
+				defer func() { bstore.UserCredentials().Delete(ctx, cred.ID) }()
 			}
 
-			batchSpec := bt.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, 0)
-			batchChange := bt.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, batchSpec.ID)
+			batchSpec := bt.CreateBatchSpec(t, ctx, bstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, 0)
+			batchChange := bt.CreateBatchChange(t, ctx, bstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, batchSpec.ID)
 
 			plan.Changeset = &btypes.Changeset{
 				OwnedByBatchChangeID: batchChange.ID,
@@ -1169,7 +1169,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				gitClient,
 				sourcer,
 				true,
-				cstore,
+				bstore,
 				plan,
 			)
 

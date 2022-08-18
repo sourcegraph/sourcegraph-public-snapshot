@@ -3,24 +3,17 @@
 package ci
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
-	"github.com/slack-go/slack"
-
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
@@ -325,28 +318,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Validate generated pipeline have unique keys
 	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
 		return nil, err
-	}
-
-	// Add a notify block
-	if c.RunType.Is(runtype.MainBranch) {
-		ctx := context.Background()
-
-		// Slack client for retriving Slack profile data, not for making the request - for
-		// more details, see the config.Notify docstring.
-		slc := slack.New(c.Notify.SlackToken)
-
-		// For now, we use an unauthenticated GitHub client because `sourcegraph/sourcegraph`
-		// is a public repository.
-		ghc := github.NewClient(http.DefaultClient)
-
-		// Get teammate based on GitHub author of commit
-		teammates := team.NewTeammateResolver(ghc, slc)
-		tm, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", c.Commit)
-		if err != nil {
-			pipeline.AddFailureSlackNotify(c.Notify.Channel, "", errors.Newf("failed to get Slack user: %w", err))
-		} else {
-			pipeline.AddFailureSlackNotify(c.Notify.Channel, tm.SlackID, nil)
-		}
 	}
 
 	return pipeline, nil

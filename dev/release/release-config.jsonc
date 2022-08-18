@@ -15,7 +15,7 @@
     "captainGitHubUsername": "coury-clark",
     // Release versions
     "previousRelease": "3.42.2",
-    "upcomingRelease": "3.43",
+    "upcomingRelease": "3.43.0",
     "oneWorkingWeekBeforeRelease": "15 August 2022 10:00 PST",
     "threeWorkingDaysBeforeRelease": "17 August 2022 10:00 PST",
     "releaseDate": "22 August 2022 10:00 PST",

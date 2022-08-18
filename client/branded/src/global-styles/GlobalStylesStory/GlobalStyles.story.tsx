@@ -5,7 +5,6 @@
 import { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { number } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import 'storybook-addon-designs'
@@ -577,49 +576,66 @@ export const ListGroups: Story = () => (
 
 ListGroups.storyName = 'List groups'
 
-export const Meter: Story = () => {
-    const min = number('min', 0)
-    const max = number('max', 1)
-    const high = number('high', 0.8)
-    const low = number('low', 0.2)
-    const optimum = number('optimum', 1)
-    const value = number('value', 0.1)
-
-    return (
-        <>
-            <H1>Meter</H1>
-            <Text>
-                The HTML{' '}
-                <Link
-                    to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Code>{'<meter>'}</Code>
-                </Link>{' '}
-                element represents either a scalar value within a known range or a fractional value.
-            </Text>
-            <H2>Examples</H2>
-            <hr />
-            <div className="pb-3">
-                <H3>Optimum</H3>
-                <meter min={0} max={1} optimum={1} value={1} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <H3>Sub optimum</H3>
-                <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <H3>Sub sub optimum</H3>
-                <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <H3>Customize with knobs</H3>
-                <meter min={min} max={max} high={high} low={low} optimum={optimum} value={value} />
-            </div>
-        </>
-    )
+export const Meter: Story = args => (
+    <>
+        <H1>Meter</H1>
+        <Text>
+            The HTML{' '}
+            <Link
+                to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <Code>{'<meter>'}</Code>
+            </Link>{' '}
+            element represents either a scalar value within a known range or a fractional value.
+        </Text>
+        <H2>Examples</H2>
+        <hr />
+        <div className="pb-3">
+            <H3>Optimum</H3>
+            <meter min={0} max={1} optimum={1} value={1} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Sub optimum</H3>
+            <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Sub sub optimum</H3>
+            <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Customize with controls</H3>
+            <meter {...args} />
+        </div>
+    </>
+)
+Meter.argTypes = {
+    min: {
+        type: 'number',
+        defaultValue: 0,
+    },
+    max: {
+        type: 'number',
+        defaultValue: 1,
+    },
+    high: {
+        type: 'number',
+        defaultValue: 0.8,
+    },
+    low: {
+        type: 'number',
+        defaultValue: 0.2,
+    },
+    optimum: {
+        type: 'number',
+        defaultValue: 1,
+    },
+    value: {
+        type: 'number',
+        defaultValue: 0.1,
+    },
 }
