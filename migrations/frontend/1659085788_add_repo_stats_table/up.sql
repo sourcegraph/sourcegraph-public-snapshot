@@ -5,11 +5,7 @@
 -- repo_statistics holds statistics for the repo table (hence the singular
 -- "repo" in the name)
 CREATE TABLE IF NOT EXISTS repo_statistics (
-  -- We only allow one row in this table.
-  id bool PRIMARY KEY DEFAULT TRUE,
-  -- Constraint ensures that the `id` must be true and `PRIMARY KEY` ensures
-  -- that it's unique.
-  CONSTRAINT id CHECK (id),
+  id serial NOT NULL PRIMARY KEY,
 
   total         BIGINT NOT NULL DEFAULT 0,
   soft_deleted  BIGINT NOT NULL DEFAULT 0,
@@ -27,9 +23,8 @@ COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT
 COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
 
 -- Insert initial values into repo_statistics table
-INSERT INTO repo_statistics (id, total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
+INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
 VALUES (
-  TRUE,
   (SELECT COUNT(*) FROM repo WHERE deleted_at is NULL     AND blocked IS NULL),
   (SELECT COUNT(*) FROM repo WHERE deleted_at is NOT NULL AND blocked IS NULL),
   (
@@ -76,21 +71,13 @@ VALUES (
     AND
       gr.last_error IS NOT NULL
   )
-)
-ON CONFLICT(id) DO UPDATE
-SET
-  total        = repo_statistics.total        + excluded.total,
-  soft_deleted = repo_statistics.soft_deleted + excluded.soft_deleted,
-  not_cloned   = repo_statistics.not_cloned   + excluded.not_cloned,
-  cloning      = repo_statistics.cloning      + excluded.cloning,
-  cloned       = repo_statistics.cloned       + excluded.cloned,
-  failed_fetch = repo_statistics.failed_fetch + excluded.failed_fetch
-;
+);
 
 -- UPDATE
 CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
+      -- Insert diff of changes
       INSERT INTO
         repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
       VALUES (
@@ -117,14 +104,6 @@ CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigg
           (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
         )
       )
-      ON CONFLICT(id) DO UPDATE
-      SET
-        total        = repo_statistics.total        + excluded.total,
-        soft_deleted = repo_statistics.soft_deleted + excluded.soft_deleted,
-        not_cloned   = repo_statistics.not_cloned   + excluded.not_cloned,
-        cloning      = repo_statistics.cloning      + excluded.cloning,
-        cloned       = repo_statistics.cloned       + excluded.cloned,
-        failed_fetch = repo_statistics.failed_fetch + excluded.failed_fetch
       ;
       RETURN NULL;
   END
@@ -147,13 +126,7 @@ CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_insert() RETURNS trigg
         -- New repositories are always not_cloned by default, so we can count them as not cloned here
         (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL)
         -- New repositories never have last_error set, so we can also ignore those here
-      )
-      ON CONFLICT(id) DO UPDATE
-      SET
-        total        = repo_statistics.total        + excluded.total,
-        soft_deleted = repo_statistics.soft_deleted + excluded.soft_deleted,
-        not_cloned   = repo_statistics.not_cloned   + excluded.not_cloned
-      ;
+      );
       RETURN NULL;
   END
 $$;
@@ -167,15 +140,17 @@ FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert();
 CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
-      UPDATE repo_statistics
-      SET
-        total        = repo_statistics.total        - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
-        soft_deleted = repo_statistics.soft_deleted - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
-        not_cloned   = repo_statistics.not_cloned   - (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'not_cloned'),
-        cloning      = repo_statistics.cloning      - (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloning'),
-        cloned       = repo_statistics.cloned       - (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloned'),
-        failed_fetch = repo_statistics.failed_fetch - (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
-      WHERE id = TRUE;
+      INSERT INTO
+        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
+      VALUES (
+        -- Insert negative counts
+        (SELECT -COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT -COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'not_cloned'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloning'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloned'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+      );
       RETURN NULL;
   END
 $$;
@@ -281,38 +256,29 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS
       FROM moved
       WHERE moved.shard_id = grs.shard_id;
 
-      WITH diffs (not_cloned_diff, cloning_diff, cloned_diff, failed_fetch_diff) AS (
-        VALUES
+      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch)
+      VALUES (
         (
-          (
-            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')
-            -
-            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')
-          ),
-          (
-            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')
-            -
-            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')
-          ),
-          (
-            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')
-            -
-            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')
-          ),
-          (
-            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)
-            -
-            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)
-          )
+          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')
+          -
+          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')
+        ),
+        (
+          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')
+          -
+          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')
+        ),
+        (
+          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')
+          -
+          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')
+        ),
+        (
+          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)
+          -
+          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)
         )
-      )
-      UPDATE repo_statistics
-      SET
-        not_cloned   = repo_statistics.not_cloned   + (SELECT not_cloned_diff FROM diffs),
-        cloning      = repo_statistics.cloning      + (SELECT cloning_diff FROM diffs),
-        cloned       = repo_statistics.cloned       + (SELECT cloned_diff FROM diffs),
-        failed_fetch = repo_statistics.failed_fetch + (SELECT failed_fetch_diff FROM diffs)
-      WHERE id = TRUE;
+      );
 
       RETURN NULL;
   END
