@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -142,7 +143,7 @@ type BuildStore struct {
 
 	builds map[int]*Build
 	// consecutiveFailures tracks how many consecutive build failed events has been
-	// received by pipeline
+	// received by pipeline and branch
 	consecutiveFailures map[string]int
 
 	// m locks all writes to BuildStore properties.
@@ -175,11 +176,14 @@ func (s *BuildStore) Add(event *Event) {
 	if event.isBuildFinished() {
 		build.Build = event.Build
 		build.Pipeline = event.pipeline()
+
+		// Track consecutive failures by pipeline + branch
+		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.name(), build.branch())
 		if build.hasFailed() {
-			s.consecutiveFailures[build.Pipeline.name()] += 1
-			build.ConsecutiveFailure = s.consecutiveFailures[build.Pipeline.name()]
+			s.consecutiveFailures[failuresKey] += 1
+			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
 		} else {
-			s.consecutiveFailures[build.Pipeline.name()] = 1
+			s.consecutiveFailures[failuresKey] = 1
 		}
 	}
 
