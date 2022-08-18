@@ -16,6 +16,8 @@ export const esbuildDevelopmentServer = async (
     listenAddress: { host: string; port: number },
     configureProxy: (app: express.Application) => void
 ): Promise<void> => {
+    const start = performance.now()
+
     // One-time build (these files only change when the monaco-editor npm package is changed, which
     // is rare enough to ignore here).
     await buildMonaco(STATIC_ASSETS_PATH)
@@ -48,7 +50,7 @@ export const esbuildDevelopmentServer = async (
     // eslint-disable-next-line @typescript-eslint/return-await
     return await new Promise<void>((resolve, reject) => {
         proxyServer.once('listening', () => {
-            signale.success('esbuild server is ready')
+            signale.success(`esbuild server is ready after ${Math.round(performance.now() - start)}ms`)
             printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}`])
             esbuildStopped.finally(() => proxyServer.close(error => (error ? reject(error) : resolve())))
         })
