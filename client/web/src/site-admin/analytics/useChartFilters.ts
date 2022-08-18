@@ -1,6 +1,5 @@
-import { useState } from 'react'
-
 import { AnalyticsDateRange, AnalyticsGrouping } from '../../graphql-operations'
+import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
 
 type IAggregation = 'count' | 'uniqueUsers'
@@ -33,23 +32,22 @@ interface IResult {
 }
 
 export function useChartFilters(props: IProps): IResult {
-    const [aggregation, setAggregation] = useState<IAggregation>(props.aggregation || 'count')
-    const [dateRange, setDateRange] = useState<AnalyticsDateRange>(
-        props.dateRange || AnalyticsDateRange.LAST_THREE_MONTHS
-    )
-    const [grouping, setGrouping] = useState<AnalyticsGrouping>(props.grouping || AnalyticsGrouping.WEEKLY)
+    const [data, setData] = useURLSyncedState({
+        dateRange: props.dateRange || AnalyticsDateRange.LAST_THREE_MONTHS,
+        aggregation: props.aggregation || 'count',
+        grouping: props.grouping || AnalyticsGrouping.WEEKLY,
+    })
 
     return {
         dateRange: {
-            value: dateRange,
+            value: data.dateRange,
             label: 'Date range',
             onChange: value => {
-                setDateRange(value)
-                if (value === AnalyticsDateRange.LAST_WEEK) {
-                    setGrouping(AnalyticsGrouping.DAILY)
-                } else {
-                    setGrouping(AnalyticsGrouping.WEEKLY)
-                }
+                setData({
+                    dateRange: value,
+                    grouping:
+                        value === AnalyticsDateRange.LAST_WEEK ? AnalyticsGrouping.DAILY : AnalyticsGrouping.WEEKLY,
+                })
                 eventLogger.log(`AdminAnalytics${props.name}DateRange${value}`)
             },
             items: [
@@ -59,9 +57,9 @@ export function useChartFilters(props: IProps): IResult {
             ],
         },
         aggregation: {
-            selected: aggregation,
+            selected: data.aggregation,
             onChange: value => {
-                setAggregation(value)
+                setData({ aggregation: value })
                 eventLogger.log(`AdminAnalytics${props.name}Aggregate${value === 'count' ? 'Totals' : 'Uniques'}`)
             },
             items: [
@@ -78,10 +76,10 @@ export function useChartFilters(props: IProps): IResult {
             ],
         },
         grouping: {
-            value: grouping,
+            value: data.grouping,
             label: 'Display as',
             onChange: value => {
-                setGrouping(value)
+                setData({ grouping: value })
                 eventLogger.log(`AdminAnalytics${props.name}DisplayAs${value}`)
             },
             items: [

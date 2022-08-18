@@ -357,6 +357,14 @@
             "pointer": true
           }
         },
+        "enableLazyFileResultSyntaxHighlighting": {
+          "description": "Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "applySearchQuerySuggestionOnEnter": {
           "description": "This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)",
           "type": "boolean",

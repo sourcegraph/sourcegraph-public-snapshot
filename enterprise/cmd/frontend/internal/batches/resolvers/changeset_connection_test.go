@@ -32,9 +32,9 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, cstore)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-connection-test", newGitHubExternalService(t, esStore))
 	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, esStore))
@@ -47,7 +47,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,11 +59,11 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		LastAppliedAt:   time.Now(),
 		BatchSpecID:     spec.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
-	changeset1 := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset1 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
@@ -72,7 +72,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		BatchChange:         batchChange.ID,
 	})
 
-	changeset2 := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset2 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "12345",
@@ -84,7 +84,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		BatchChange:         batchChange.ID,
 	})
 
-	changeset3 := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset3 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "56789",
@@ -95,7 +95,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		OwnedByBatchChange:  batchChange.ID,
 		BatchChange:         batchChange.ID,
 	})
-	changeset4 := bt.CreateChangeset(t, ctx, cstore, bt.TestChangesetOpts{
+	changeset4 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:                inaccessibleRepo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "987651",
@@ -107,12 +107,12 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		BatchChange:         batchChange.ID,
 	})
 
-	addChangeset(t, ctx, cstore, changeset1, batchChange.ID)
-	addChangeset(t, ctx, cstore, changeset2, batchChange.ID)
-	addChangeset(t, ctx, cstore, changeset3, batchChange.ID)
-	addChangeset(t, ctx, cstore, changeset4, batchChange.ID)
+	addChangeset(t, ctx, bstore, changeset1, batchChange.ID)
+	addChangeset(t, ctx, bstore, changeset2, batchChange.ID)
+	addChangeset(t, ctx, bstore, changeset3, batchChange.ID)
+	addChangeset(t, ctx, bstore, changeset4, batchChange.ID)
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

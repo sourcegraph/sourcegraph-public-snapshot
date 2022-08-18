@@ -1,4 +1,4 @@
-package migrations
+package iam
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -22,9 +21,9 @@ type licenseKeyFieldsMigrator struct {
 
 var _ oobmigration.Migrator = &licenseKeyFieldsMigrator{}
 
-func NewLicenseKeyFieldsMigrator(db database.DB) *licenseKeyFieldsMigrator {
+func NewLicenseKeyFieldsMigrator(store *basestore.Store) *licenseKeyFieldsMigrator {
 	return &licenseKeyFieldsMigrator{
-		store: basestore.NewWithHandle(db.Handle()),
+		store: store,
 	}
 }
 
