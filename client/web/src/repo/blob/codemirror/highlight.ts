@@ -47,8 +47,8 @@ function createHighlightTable(json: string | undefined): HighlightIndex {
         }
 
         return { occurrences, lineIndex }
-    } catch (e) {
-        console.error(`Unable to process SCIP highlight data: ${json}`, e)
+    } catch (error) {
+        console.error(`Unable to process SCIP highlight data: ${json}`, error)
         return { occurrences: [], lineIndex }
     }
 }
@@ -121,8 +121,8 @@ class SyntaxHighlightManager implements PluginValue {
                     builder.add(from, to, decoration)
                 }
             }
-        } catch (e) {
-            console.error('Failed to compute decorations from SCIP occurrences', e)
+        } catch (error) {
+            console.error('Failed to compute decorations from SCIP occurrences', error)
         }
         return builder.finish()
     }
