@@ -10,9 +10,9 @@ import (
 // Build keeps track of a buildkite.Build and it's associated jobs and pipeline.
 // See BuildStore for where jobs are added to the build.
 type Build struct {
-	buildkite.Build
-	Pipeline *Pipeline
-	Jobs     map[string]Job
+	buildkite.Build `json:"build"`
+	Pipeline        *Pipeline      `json:"pipeline"`
+	Jobs            map[string]Job `json:"jobs"`
 }
 
 func (b *Build) hasFailed() bool {
@@ -82,7 +82,7 @@ func (j *Job) failed() bool {
 
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
 type Pipeline struct {
-	buildkite.Pipeline
+	buildkite.Pipeline `json:"pipeline"`
 }
 
 func (p *Pipeline) name() string {

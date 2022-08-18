@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -72,17 +73,17 @@ func NewServer(logger log.Logger, c config) *Server {
 		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
 	}
 
+	// Register routes the the server will be responding too
 	r := mux.NewRouter()
-	r.HandleFunc("/buildkite", server.handleEvent)
-	r.HandleFunc("/healthz", server.handleHealthz)
+	r.Path("/buildkite").HandlerFunc(server.handleEvent).Methods(http.MethodPost)
+	r.Path("/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
 
-	debug := mux.NewRouter()
-	debug.HandleFunc("/{buildNumber}", server.handleGetBuild)
-
-	r.Handle("/debug", debug)
+	debug := r.PathPrefix("/-/debug").Subrouter()
+	debug.Path("/{buildNumber}").HandlerFunc(server.handleGetBuild).Methods(http.MethodGet)
 
 	server.http = &http.Server{
 		Handler: r,
+		Addr:    ":8080",
 	}
 
 	return server
@@ -95,23 +96,28 @@ func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		s.logger.Error("request received with no buildNumber path parameter", log.String("route", req.URL.Path))
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	buildNum, err := strconv.Atoi(buildNumParam)
 	if err != nil {
 		s.logger.Error("invalid build number parameter received", log.String("buildNumParam", buildNumParam))
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	s.logger.Info("retrieving build", log.Int("buildNumber", buildNum))
+	println(buildNum)
 	build := s.store.GetByBuildNumber(buildNum)
+	fmt.Printf("----> %v\n", build)
 	if build == nil {
 		s.logger.Debug("no build found", log.Int("buildNumber", buildNum))
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
-
 	s.logger.Debug("encoding build", log.Int("buildNumber", buildNum))
 	json.NewEncoder(w).Encode(build)
+	w.WriteHeader(http.StatusOK)
 }
 
 // handleEvent handles an event received from the http listener. A event is valid when:
@@ -242,7 +248,7 @@ func main() {
 
 	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
 	defer stopFn()
-	if err := server.http.ListenAndServer(":8080"); err != nil {
+	if err := server.http.ListenAndServe(); err != nil {
 		logger.Fatal("server exited with error", log.Error(err))
 	}
 }
