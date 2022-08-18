@@ -2,8 +2,10 @@ package migrations
 
 import (
 	"context"
+	"database/sql"
 
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
@@ -18,35 +20,41 @@ import (
 )
 
 func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	codeIntelStore, err := codeIntelStore()
+	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase()
 	if err != nil {
 		return err
 	}
 
-	insightsStore, err := insightsStore()
-	if err != nil {
-		return err
+	var codeInsightsDB edb.InsightsDB
+	if internalInsights.IsEnabled() {
+		codeInsightsDB, err = internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
+		if err != nil {
+			return err
+		}
 	}
 
 	keyring := keyring.Default()
 
 	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
-		codeIntelStore: codeIntelStore,
-		insightsStore:  insightsStore,
+		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
+		insightsStore:  basestore.NewWithHandle(codeInsightsDB.Handle()),
 		keyring:        &keyring,
 	})
 }
 
 func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRunner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
-	codeIntelStore, err := codeIntelStore() // TODO - get from config
+	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase() // TODO - get from config
 	if err != nil {
 		return err
 	}
 
-	insightsStore, err := insightsStore() // TODO - get from config
-	if err != nil {
-		return err
+	var codeInsightsDB edb.InsightsDB
+	if internalInsights.IsEnabled() {
+		codeInsightsDB, err = internalInsights.InitializeCodeInsightsDB("migrator-oobmigrator") // TODO - get from config
+		if err != nil {
+			return err
+		}
 	}
 
 	ctx := context.Background()
@@ -57,8 +65,8 @@ func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRu
 
 	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
-		codeIntelStore: codeIntelStore,
-		insightsStore:  insightsStore,
+		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
+		insightsStore:  basestore.NewWithHandle(codeInsightsDB.Handle()),
 		keyring:        keyring,
 	})
 }
@@ -82,26 +90,4 @@ func registerEnterpriseMigrations(outOfBandMigrationRunner *oobmigration.Runner,
 		codeintel.NewAPIDocsSearchMigrator(),
 		insights.NewMigrator(deps.store, deps.insightsStore),
 	})
-}
-
-func codeIntelStore() (*basestore.Store, error) {
-	lsifStore, err := workerCodeIntel.InitLSIFStore()
-	if err != nil {
-		return nil, err
-	}
-
-	return lsifStore.Store, err
-}
-
-func insightsStore() (*basestore.Store, error) {
-	if !internalInsights.IsEnabled() {
-		return nil, nil
-	}
-
-	db, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
-	if err != nil {
-		return nil, err
-	}
-
-	return basestore.NewWithHandle(db.Handle()), nil
 }
