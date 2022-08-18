@@ -176,16 +176,11 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     filePath: result.path,
                     disableTimeout: false,
                     format: args.format,
-                    ranges: grouped.map(
-                        (group): IHighlightLineRange => ({
-                            startLine: group.startLine,
-                            endLine: group.endLine,
-                        })
-                    ),
+                    ranges: args.ranges,
                 },
                 false
             ),
-        [result, fetchHighlightedFileLineRanges, grouped]
+        [result, fetchHighlightedFileLineRanges]
     )
 
     const fetchHighlightedFileMatchLineRanges = React.useCallback(
