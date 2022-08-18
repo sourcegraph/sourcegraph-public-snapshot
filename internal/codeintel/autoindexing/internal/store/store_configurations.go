@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 
 	"github.com/keegancsmith/sqlf"

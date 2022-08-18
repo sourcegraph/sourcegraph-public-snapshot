@@ -3,9 +3,10 @@ package autoindexing
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"sort"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
@@ -22,6 +23,7 @@ func init() {
 	maximumRepositoriesInspectedPerSecond = rate.Inf
 	maximumIndexJobsPerInferredConfiguration = 50
 }
+
 func TestQueueIndexesExplicit(t *testing.T) {
 	config := `{
 		"shared_steps": [
@@ -467,7 +469,6 @@ func TestQueueIndexesForPackage(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repoID int, versionString string) (api.CommitID, error) {
 		if repoID != 42 || versionString != "4e7eeb0f8a96" {
-
 			t.Errorf("unexpected (repoID, versionString) (%v, %v) supplied to EnqueueRepoUpdate", repoID, versionString)
 		}
 		return "c42", nil

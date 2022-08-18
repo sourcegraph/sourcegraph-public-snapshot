@@ -2,8 +2,9 @@ package store
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
