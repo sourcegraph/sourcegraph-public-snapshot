@@ -168,7 +168,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
                 ) : (
                     license.userCount - actualUserCount < 0 && (
                         <Alert variant="warning">
-                            You have exceeded your licensed users.{' '}
+                            Nick Snyder You have exceeded your licensed users.{' '}
                             <Link to="/site-admin/license">View your license details</Link> or{' '}
                             <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
                                 upgrade your license
