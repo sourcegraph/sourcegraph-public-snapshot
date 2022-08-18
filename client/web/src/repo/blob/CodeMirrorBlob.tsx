@@ -57,7 +57,7 @@ const staticExtensions: Extension = [
     keymap.of(searchKeymap),
 ]
 
-// Compartments are used to reconfigure some parts of the editor withoug
+// Compartments are used to reconfigure some parts of the editor without
 // affecting others.
 
 // Compartment to update various smaller settings
@@ -66,6 +66,28 @@ const settingsCompartment = new Compartment()
 const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
+
+// See CodeMirrorQueryInput for a detailed comment about the pattern that's used
+// below. The CodeMirror search bar uses a similar pattern to support global
+// shortcuts (including Mod-k) while the search bar is focused.
+const [callbacksField, setCallbacks] = createUpdateableField<Pick<BlobProps, 'onHandleFuzzyFinder'>>(
+    { onHandleFuzzyFinder: () => {} },
+    callbacks => [
+        keymap.of([
+            {
+                key: 'Mod-k',
+                run: view => {
+                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
+                    if (onHandleFuzzyFinder) {
+                        onHandleFuzzyFinder(true)
+                        return true
+                    }
+                    return false
+                },
+            },
+        ]),
+    ]
+)
 
 export const Blob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -83,6 +105,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // Reference panel specific props
         disableStatusBar,
         disableDecorations,
+        onHandleFuzzyFinder,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -150,6 +173,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const extensions = useMemo(
         () => [
             staticExtensions,
+            callbacksField,
             selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
@@ -178,6 +202,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         updateValueOnChange: false,
         updateOnExtensionChange: false,
     })
+
+    useEffect(() => {
+        if (editor) {
+            setCallbacks(editor, { onHandleFuzzyFinder })
+        }
+    }, [editor, onHandleFuzzyFinder])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {

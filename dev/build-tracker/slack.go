@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -164,8 +165,8 @@ func slackMention(teammate *team.Teammate, build *Build) string {
 func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
 	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
-	failedSection := fmt.Sprintf("%s\n\n", commitLink(msg, build.commit()))
-	failedSection += "*Failed jobs*\n\n"
+	failedSection := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
+	failedSection += "*Failed jobs:*\n\n"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
 			failedSection += fmt.Sprintf("• %s", *j.Name)
@@ -186,6 +187,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		slack.NewHeaderBlock(
 			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf(":red_circle: Build %d failed", build.number()), true, false),
 		),
+		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedSection}, nil, nil),
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
@@ -194,28 +196,6 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 			},
 			nil,
 		),
-		&slack.DividerBlock{
-			Type: slack.MBTDivider,
-		},
-		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedSection}, nil, nil),
-		&slack.DividerBlock{
-			Type: slack.MBTDivider,
-		},
-		slack.NewSectionBlock(
-			&slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: `:books: *More information on flakes*
-• *<https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flakey tests>*
-• *<https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flakey client steps and how to fix them>*
-
-_:sourcegraph: disable flakes on sight and save your fellow teammate some time!_`,
-			},
-			nil,
-			nil,
-		),
-		&slack.DividerBlock{
-			Type: slack.MBTDivider,
-		},
 		slack.NewActionBlock(
 			"",
 			[]slack.BlockElement{
@@ -233,9 +213,24 @@ _:sourcegraph: disable flakes on sight and save your fellow teammate some time!_
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
 					URL:  "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake ?"},
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake?"},
 				},
 			}...,
+		),
+
+		&slack.DividerBlock{Type: slack.MBTDivider},
+
+		slack.NewSectionBlock(
+			&slack.TextBlockObject{
+				Type: slack.MarkdownType,
+				Text: `:books: *More information on flakes*
+• <https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flakey tests>
+• <https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flakey client steps and how to fix them>
+
+_Disable flakes on sight and save your fellow teammate some time!_`,
+			},
+			nil,
+			nil,
 		),
 	}
 

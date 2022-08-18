@@ -4,6 +4,7 @@ import { scaleBand, scaleLinear } from '@visx/scale'
 import { ScaleBand } from 'd3-scale'
 import { noop } from 'lodash'
 
+import { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core/components/SvgRoot'
 import { CategoricalLikeChart } from '../../types'
 
@@ -16,6 +17,14 @@ interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVG
     width: number
     height: number
     stacked?: boolean
+
+    // TODO: Move these specific only to the axis label UI props to the axis components
+    // see https://github.com/sourcegraph/sourcegraph/issues/40009
+    pixelsPerYTick?: number
+    pixelsPerXTick?: number
+    maxAngleXTick?: number
+    getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
+    getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
 }
 
@@ -24,8 +33,13 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         width: outerWidth,
         height: outerHeight,
         data,
+        pixelsPerYTick,
+        pixelsPerXTick,
+        maxAngleXTick,
         stacked = false,
         getDatumHover,
+        getScaleXTicks,
+        getTruncatedXTick,
         getDatumName,
         getDatumValue,
         getDatumColor,
@@ -69,8 +83,13 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
 
     return (
         <SvgRoot {...attributes} width={outerWidth} height={outerHeight} xScale={xScale} yScale={yScale}>
-            <SvgAxisLeft />
-            <SvgAxisBottom />
+            <SvgAxisLeft pixelsPerTick={pixelsPerYTick} />
+            <SvgAxisBottom
+                pixelsPerTick={pixelsPerXTick}
+                maxRotateAngle={maxAngleXTick}
+                getTruncatedTick={getTruncatedXTick}
+                getScaleTicks={getScaleXTicks}
+            />
 
             <SvgContent<ScaleBand<string>, any>>
                 {({ yScale, xScale, content }) => (

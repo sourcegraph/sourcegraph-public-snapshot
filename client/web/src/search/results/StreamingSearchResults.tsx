@@ -83,6 +83,7 @@ export const StreamingSearchResults: React.FunctionComponent<
     } = props
     const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
 
+    const [enableSearchAggregations] = useFeatureFlag('search-aggregation-filters', false)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -255,6 +256,7 @@ export const StreamingSearchResults: React.FunctionComponent<
             <SidebarButtonStrip className={styles.sidebarButtonStrip} />
 
             <SearchSidebar
+                enableSearchAggregation={enableSearchAggregations}
                 activation={props.activation}
                 caseSensitive={caseSensitive}
                 patternType={patternType}

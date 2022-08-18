@@ -1,4 +1,4 @@
-package migrations
+package batches
 
 import (
 	"context"
@@ -16,17 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type ExternalServiceWebhookMigrator struct {
+type externalServiceWebhookMigrator struct {
 	logger    log.Logger
 	store     *basestore.Store
 	BatchSize int
 	key       encryption.Key
 }
 
-var _ oobmigration.Migrator = &ExternalServiceWebhookMigrator{}
+var _ oobmigration.Migrator = &externalServiceWebhookMigrator{}
 
-func NewExternalServiceWebhookMigratorWithDB(db database.DB, key encryption.Key) *ExternalServiceWebhookMigrator {
-	return &ExternalServiceWebhookMigrator{
+func NewExternalServiceWebhookMigratorWithDB(db database.DB, key encryption.Key) *externalServiceWebhookMigrator {
+	return &externalServiceWebhookMigrator{
 		logger:    log.Scoped("ExternalServiceWebhookMigrator", ""),
 		store:     basestore.NewWithHandle(db.Handle()),
 		BatchSize: 50,
@@ -34,17 +34,12 @@ func NewExternalServiceWebhookMigratorWithDB(db database.DB, key encryption.Key)
 	}
 }
 
-func (m *ExternalServiceWebhookMigrator) ID() int {
-	return 13
-}
-
-func (m *ExternalServiceWebhookMigrator) Interval() time.Duration {
-	return time.Second * 3
-}
+func (m *externalServiceWebhookMigrator) ID() int                 { return 13 }
+func (m *externalServiceWebhookMigrator) Interval() time.Duration { return time.Second * 3 }
 
 // Progress returns the percentage (ranged [0, 1]) of external services with a
 // populated has_webhooks column.
-func (m *ExternalServiceWebhookMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *externalServiceWebhookMigrator) Progress(ctx context.Context) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(externalServiceWebhookMigratorProgressQuery)))
 	return progress, err
 }
@@ -62,7 +57,7 @@ FROM
 
 // Up loads a set of external services without a populated has_webhooks column and
 // updates that value by looking at that external service's configuration values.
-func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
+func (m *externalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 	var parseErrs error
 
 	tx, err := m.store.Transact(ctx)
@@ -174,7 +169,7 @@ const externalServiceWebhookMigratorUpdateQuery = `
 UPDATE external_services SET has_webhooks = %s WHERE id = %s
 `
 
-func (*ExternalServiceWebhookMigrator) Down(context.Context) error {
+func (*externalServiceWebhookMigrator) Down(context.Context) error {
 	// non-destructive
 	return nil
 }

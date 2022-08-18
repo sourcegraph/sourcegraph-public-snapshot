@@ -132,6 +132,7 @@ export interface BlobProps
     ariaLabel?: string
 
     blameDecorations?: TextDocumentDecoration[]
+    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {

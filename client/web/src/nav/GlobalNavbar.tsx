@@ -96,6 +96,7 @@ interface Props
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
+    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 /**

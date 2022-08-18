@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/zoekt"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"

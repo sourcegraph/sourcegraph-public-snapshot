@@ -1,9 +1,11 @@
 import { ReactElement } from 'react'
 
-import { H3 } from '../../../../Typography'
+import { H3, Text } from '../../../../Typography'
 import { DEFAULT_FALLBACK_COLOR } from '../../../constants'
 import { TooltipList, TooltipListItem } from '../../../core'
 import { Category } from '../utils/get-grouped-categories'
+
+import styles from './TooltipContent.module.scss'
 
 interface BarTooltipContentProps<Datum> {
     category: Category<Datum>
@@ -19,9 +21,23 @@ export function BarTooltipContent<Datum>(props: BarTooltipContentProps<Datum>): 
     const getName = getDatumHover ?? getDatumName
     const activeDatumHover = getName(activeBar)
 
+    // Handle a special case when we don't have any multiple datum per group
+    if (category.data.length === 1) {
+        const datum = category.data[0]
+        const name = getDatumName(datum)
+        const value = getDatumValue(datum)
+
+        return (
+            <Text className={styles.oneLineTooltip}>
+                <span>{name}</span>
+                <span>{value}</span>
+            </Text>
+        )
+    }
+
     return (
         <>
-            {category.data.length > 1} <H3>{category.id}</H3>
+            <H3>{category.id}</H3>
             <TooltipList>
                 {category.data.map(item => {
                     const hover = getName(item)
