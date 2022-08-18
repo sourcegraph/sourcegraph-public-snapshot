@@ -11,6 +11,99 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
+// TODO: Is renamed_files intentionally omitted from the docs?
+func TestValidateBatchSpecTemplate(t *testing.T) {
+	tests := []struct {
+		name            string
+		batchSpec       string
+		wantValid       bool
+		validationError *error
+	}{
+		{
+			name: "all valid template variables",
+			batchSpec: `name: valid-batch-spec
+on:
+  - repository: github.com/fake/fake
+
+steps:
+  - run: |
+		${{ repository.search_result_paths }}
+		${{ repository.name }}
+		${{ batch_change.name }}
+		${{ batch_change.description }}
+		${{ previous_step.modified_files }}
+		${{ previous_step.added_files }}
+		${{ previous_step.deleted_files }}
+		${{ previous_step.renamed_files }}
+		${{ previous_step.stdout }}
+		${{ previous_step.stderr}}
+		${{ step.modified_files }}
+		${{ step.added_files }}
+		${{ step.deleted_files }}
+		${{ step.renamed_files }}
+		${{ step.stdout}}
+		${{ step.stderr}}
+		${{ steps.modified_files }}
+		${{ steps.added_files }}
+		${{ steps.deleted_files }}
+		${{ steps.renamed_files }}
+		${{ steps.path }}
+	container: my-container
+
+changesetTemplate:
+  title: |
+	${{ repository.search_result_paths }}
+	${{ repository.name }}
+	${{ repository.branch }}
+	${{ batch_change.name }}
+	${{ batch_change.description }}
+	${{ steps.modified_files }}
+	${{ steps.added_files }}
+	${{ steps.deleted_files }}
+	${{ steps.renamed_files }}
+	${{ steps.path }}
+	${{ batch_change_link }}
+	body: I'm a changeset yay!
+	branch: my-branch
+	commit:
+		message: I'm a changeset yay!
+	`,
+			wantValid: true,
+		},
+
+		{
+			name: "invalid step template variables",
+			batchSpec: `name: invalid-batch-spec
+on:
+  - repository: github.com/fake/fake
+
+steps:
+  - run: |
+		${{ repository.unknown }}
+	container: my-container
+
+changesetTemplate:
+  title: ${{ repository.unknown }}
+	body: I'm a changeset yay!
+	branch: my-branch
+	commit:
+		message: I'm a changeset yay!
+	`,
+			wantValid: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			gotValid, err := ValidateBatchSpecTemplate("testing", tc.batchSpec)
+
+			if tc.wantValid != gotValid {
+				t.Fatalf("expected valid: %v, got valid: %v, %s", tc.wantValid, gotValid, err)
+			}
+		})
+	}
+}
+
 var testChanges = git.Changes{
 	Modified: []string{"go.mod"},
 	Added:    []string{"main.go.swp"},
@@ -212,6 +305,12 @@ ${{ steps.path }}
 []
 
 `,
+		},
+		{
+			name:    "typo 1 level deep in template variable",
+			stepCtx: &StepContext{},
+			run:     `${{ repository.search_resalt_paths }}`,
+			want:    "fake",
 		},
 	}
 
