@@ -131,7 +131,6 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
         return (
             <div className={this.props.className || ''}>
-                {this.props.canEdit && saveToolbar}
                 {this.props.actions && (
                     <div className={adminConfigurationStyles.actionGroups}>
                         <div className={adminConfigurationStyles.actions}>
@@ -158,6 +157,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                         monacoRef={this.monacoRef}
                     />
                 </React.Suspense>
+                {this.props.canEdit && saveToolbar}
             </div>
         )
     }
