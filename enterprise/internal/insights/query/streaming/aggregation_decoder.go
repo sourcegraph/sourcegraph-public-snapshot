@@ -121,7 +121,7 @@ func newEventMatch(event streamhttp.EventMatch) *eventMatch {
 			RepoID:      match.RepositoryID,
 			Path:        match.Path,
 			Lang:        lang,
-			ResultCount: len(match.ChunkMatches),
+			ResultCount: len(match.LineMatches),
 		}
 	case *streamhttp.EventPathMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)
