@@ -23,7 +23,7 @@ func TestRepoStatistics(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	s := RepoStatisticsWith(basestore.NewWithHandle(db.Handle()))
+	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
 	shards := []string{
 		"shard-1",
@@ -41,9 +41,9 @@ func TestRepoStatistics(t *testing.T) {
 
 	createTestRepos(ctx, t, db, repos)
 
-	assertRepoStatistics(t, ctx, s, repoStatistics{
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
 		Total: 6, NotCloned: 6, SoftDeleted: 0,
-	}, []gitserverReposStatistics{
+	}, []GitserverReposStatistics{
 		{ShardID: "", Total: 6, NotCloned: 6},
 	})
 
@@ -51,9 +51,9 @@ func TestRepoStatistics(t *testing.T) {
 	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
 
-	assertRepoStatistics(t, ctx, s, repoStatistics{
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
 		Total: 6, SoftDeleted: 0, NotCloned: 4, Cloning: 2,
-	}, []gitserverReposStatistics{
+	}, []GitserverReposStatistics{
 		{ShardID: "", Total: 4, NotCloned: 4},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 	})
@@ -65,9 +65,9 @@ func TestRepoStatistics(t *testing.T) {
 	setCloneStatus(t, db, repos[4].Name, shards[2], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloning)
 
-	assertRepoStatistics(t, ctx, s, repoStatistics{
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
 		Total: 6, SoftDeleted: 0, Cloning: 6,
-	}, []gitserverReposStatistics{
+	}, []GitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 2, Cloning: 2},
@@ -76,9 +76,9 @@ func TestRepoStatistics(t *testing.T) {
 
 	// Move from shards[0] to shards[2] and change status
 	setCloneStatus(t, db, repos[2].Name, shards[2], types.CloneStatusCloned)
-	assertRepoStatistics(t, ctx, s, repoStatistics{
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
 		Total: 6, SoftDeleted: 0, Cloning: 5, Cloned: 1,
-	}, []gitserverReposStatistics{
+	}, []GitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 1, Cloning: 1},
@@ -92,9 +92,9 @@ func TestRepoStatistics(t *testing.T) {
 	deletedRepoName := queryRepoName(t, ctx, s, repos[2].ID)
 
 	// Deletion is reflected in repoStatistics
-	assertRepoStatistics(t, ctx, s, repoStatistics{
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
 		Total: 5, SoftDeleted: 1, Cloning: 5,
-	}, []gitserverReposStatistics{
+	}, []GitserverReposStatistics{
 		// But gitserverReposStatistics is unchanged
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
@@ -106,10 +106,10 @@ func TestRepoStatistics(t *testing.T) {
 	// to be set to not_cloned:
 	setCloneStatus(t, db, deletedRepoName, shards[2], types.CloneStatusNotCloned)
 
-	assertRepoStatistics(t, ctx, s, repoStatistics{
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
 		// Global stats are unchanged
 		Total: 5, SoftDeleted: 1, Cloning: 5,
-	}, []gitserverReposStatistics{
+	}, []GitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2},
 		{ShardID: shards[1], Total: 1, Cloning: 1},
@@ -120,10 +120,10 @@ func TestRepoStatistics(t *testing.T) {
 	// Now we set errors on 2 non-deleted repositories
 	setLastError(t, db, repos[0].Name, shards[0], "internet broke repo-1")
 	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-3")
-	assertRepoStatistics(t, ctx, s, repoStatistics{
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
 		// Only FailedFetch changed
 		Total: 5, SoftDeleted: 1, Cloning: 5, FailedFetch: 2,
-	}, []gitserverReposStatistics{
+	}, []GitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
 		{ShardID: shards[1], Total: 1, Cloning: 1, FailedFetch: 1},
@@ -131,10 +131,10 @@ func TestRepoStatistics(t *testing.T) {
 	})
 	// Now we move a repo and set an error
 	setLastError(t, db, repos[1].Name, shards[1], "internet broke repo-2")
-	assertRepoStatistics(t, ctx, s, repoStatistics{
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
 		// Only FailedFetch changed
 		Total: 5, SoftDeleted: 1, Cloning: 5, FailedFetch: 3,
-	}, []gitserverReposStatistics{
+	}, []GitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 1, Cloning: 1, FailedFetch: 1},
 		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 2},
@@ -150,7 +150,7 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	s := RepoStatisticsWith(basestore.NewWithHandle(db.Handle()))
+	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
 	shards := []string{
 		"shard-1",
@@ -177,10 +177,10 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 	setLastError(t, db, repos[0].Name, shards[0], "internet broke repo-1")
 	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-3")
 	// Safety check that the counts are right:
-	wantRepoStatistics := repoStatistics{
+	wantRepoStatistics := RepoStatistics{
 		Total: 6, Cloning: 6, FailedFetch: 2,
 	}
-	wantGitserverReposStatistics := []gitserverReposStatistics{
+	wantGitserverReposStatistics := []GitserverReposStatistics{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
 		{ShardID: shards[1], Total: 2, Cloning: 2},
@@ -253,7 +253,7 @@ func setLastError(t *testing.T, db DB, repoName api.RepoName, shard string, msg 
 	}
 }
 
-func assertRepoStatistics(t *testing.T, ctx context.Context, s *repoStatisticsStore, wantRepoStats repoStatistics, wantGitserverStats []gitserverReposStatistics) {
+func assertRepoStatistics(t *testing.T, ctx context.Context, s RepoStatisticsStore, wantRepoStats RepoStatistics, wantGitserverStats []GitserverReposStatistics) {
 	t.Helper()
 
 	haveRepoStats, err := s.GetRepoStatistics(ctx)

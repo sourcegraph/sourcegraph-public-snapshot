@@ -2489,9 +2489,9 @@ Indexes:
 
 # Table "public.repo_statistics"
 ```
-    Column    |  Type   | Collation | Nullable | Default 
---------------+---------+-----------+----------+---------
- id           | boolean |           | not null | true
+    Column    |  Type   | Collation | Nullable |                   Default                   
+--------------+---------+-----------+----------+---------------------------------------------
+ id           | integer |           | not null | nextval('repo_statistics_id_seq'::regclass)
  total        | bigint  |           | not null | 0
  soft_deleted | bigint  |           | not null | 0
  not_cloned   | bigint  |           | not null | 0
@@ -2500,8 +2500,6 @@ Indexes:
  failed_fetch | bigint  |           | not null | 0
 Indexes:
     "repo_statistics_pkey" PRIMARY KEY, btree (id)
-Check constraints:
-    "id" CHECK (id)
 
 ```
 
