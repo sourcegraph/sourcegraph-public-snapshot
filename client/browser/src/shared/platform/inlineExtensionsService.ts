@@ -14,8 +14,8 @@ const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false afte
 
 /**
  * Determine which extensions should be loaded:
- *   - inline (bundled with the browser extension)
- *   - or from the extensions registry (if `enableLegacyExtensions` experimental feature value is set to `true`).
+ * - inline (bundled with the browser extension)
+ * - or from the extensions registry (if `enableLegacyExtensions` experimental feature value is set to `true`).
  */
 export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<boolean> =>
     requestGraphQL<GQL.IQuery>({
