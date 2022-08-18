@@ -392,10 +392,7 @@ func createBitbucketProjectPermissionsStore(s basestore.ShareableStore, cfg *con
 		Name:              "explicit_permissions_bitbucket_projects_jobs_store",
 		TableName:         "explicit_permissions_bitbucket_projects_jobs",
 		ColumnExpressions: database.BitbucketProjectPermissionsColumnExpressions,
-		Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-			j, ok, err := database.ScanFirstBitbucketProjectPermissionsJob(rows, err)
-			return j, ok, err
-		},
+		Scan:              dbworkerstore.BuildWorkerScan(database.ScanBitbucketProjectPermissionJob),
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        cfg.WorkerRetryInterval,
 		MaxNumRetries:     5,

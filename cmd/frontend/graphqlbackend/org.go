@@ -457,6 +457,7 @@ type ListOrgRepositoriesArgs struct {
 	First              *int32
 	Query              *string
 	After              *string
+	CloneStatus        *string
 	Cloned             bool
 	NotCloned          bool
 	Indexed            bool

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -134,11 +133,6 @@ var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCoun
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
-
-// scanFirstUploadRecord scans a slice of uploads from the return value of `*Store.query` and returns the first.
-func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstUpload(rows, err)
-}
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {

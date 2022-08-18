@@ -10,6 +10,8 @@ exporters:
     gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
   - import: go.opentelemetry.io/collector/exporter/otlphttpexporter
     gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+  - import: go.opentelemetry.io/collector/exporter/loggingexporter
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
 
   # Contrib exporters - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter
   - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter v$OTEL_COLLECTOR_VERSION"

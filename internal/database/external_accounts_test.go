@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -566,4 +568,153 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 			t.Fatalf("Want 1 external accounts but got %d", len(accts))
 		}
 	})
+}
+
+func TestExternalAccounts_DeleteList(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "xa",
+		ServiceID:   "xb",
+		ClientID:    "xc",
+		AccountID:   "xd",
+	}
+
+	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	spec.ServiceID = "xb2"
+	require.NoError(t, err)
+	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+	require.NoError(t, err)
+	spec.ServiceID = "xb3"
+	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+	require.NoError(t, err)
+
+	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+	require.NoError(t, err)
+	require.Equal(t, 3, len(accts))
+
+	acctIds := []int32{}
+	for _, acct := range accts {
+		acctIds = append(acctIds, acct.ID)
+	}
+
+	err = db.UserExternalAccounts().Delete(ctx, acctIds...)
+	require.NoError(t, err)
+
+	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(accts))
+}
+
+func TestExternalAccounts_UpdateGitHubAppInstallations(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "github",
+		ServiceID:   "https://github.com/",
+		ClientID:    "Iv1.efc1dc24dbdefa09",
+		AccountID:   "1234",
+	}
+
+	var installationID1 int64 = 6789
+	var installationID2 int64 = 3456
+	var installationID3 int64 = 7658
+	installations := []gh.Installation{
+		{
+			ID: &installationID1,
+		},
+		{
+			ID: &installationID2,
+		},
+		{
+			ID: &installationID3,
+		},
+	}
+
+	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	require.NoError(t, err)
+	acct, err := db.UserExternalAccounts().Get(ctx, 1)
+	require.NoError(t, err)
+	spec.ServiceType = extsvc.TypeGitHubApp
+	spec.AccountID = "9876/1234"
+	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+	require.NoError(t, err)
+	spec.AccountID = "6789/1234"
+	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+	require.NoError(t, err)
+
+	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+	require.NoError(t, err)
+	require.Equal(t, 3, len(accts))
+
+	acctIds := []int32{}
+	for _, acct := range accts {
+		acctIds = append(acctIds, acct.ID)
+	}
+
+	err = db.UserExternalAccounts().UpdateGitHubAppInstallations(ctx, acct, installations)
+	require.NoError(t, err)
+
+	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+	require.NoError(t, err)
+	require.Equal(t, 4, len(accts))
+}
+
+func TestExternalAccounts_TouchExpiredList(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "xa",
+		ServiceID:   "xb",
+		ClientID:    "xc",
+		AccountID:   "xd",
+	}
+
+	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	spec.ServiceID = "xb2"
+	require.NoError(t, err)
+	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+	require.NoError(t, err)
+	spec.ServiceID = "xb3"
+	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+	require.NoError(t, err)
+
+	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+	require.NoError(t, err)
+	require.Equal(t, 3, len(accts))
+
+	acctIds := []int32{}
+	for _, acct := range accts {
+		acctIds = append(acctIds, acct.ID)
+	}
+
+	err = db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
+	require.NoError(t, err)
+
+	// Confirm all accounts are expired
+	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, OnlyExpired: true})
+	require.NoError(t, err)
+	require.Equal(t, 3, len(accts))
+
+	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, ExcludeExpired: true})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(accts))
 }

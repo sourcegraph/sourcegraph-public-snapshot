@@ -1,5 +1,4 @@
 import { action } from '@storybook/addon-actions'
-import { boolean, number, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -11,13 +10,35 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 
 const config: Meta = {
     title: 'web/batches/batch-spec/edit/workspaces-preview/ImportingChangesetsPreviewList',
-    decorators: [decorator, withKnobs],
+    decorators: [decorator],
+    argTypes: {
+        count: {
+            name: 'Count',
+            control: { type: 'number' },
+            defaultValue: 1,
+        },
+        isStale: {
+            name: 'Stale',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+        hasNextPage: {
+            name: 'Has Next Page',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+        loading: {
+            name: 'Loading',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+    },
 }
 
 export default config
 
-export const ImportingChangesetsPreviewListStory: Story = () => {
-    const count = number('Count', 1)
+export const ImportingChangesetsPreviewListStory: Story = args => {
+    const count = args.count
     return (
         <WebStory>
             {props => (
@@ -34,11 +55,11 @@ export const ImportingChangesetsPreviewListStory: Story = () => {
                                 endCursor: null,
                             },
                         },
-                        hasNextPage: boolean('Has Next Page', false),
+                        hasNextPage: args.hasNextPage,
                         fetchMore: action('Fetch More'),
-                        loading: boolean('Loading', false),
+                        loading: args.loading,
                     }}
-                    isStale={boolean('Is Stale', false)}
+                    isStale={args.isStale}
                     {...props}
                 />
             )}

@@ -26,6 +26,9 @@ func registryExtensionByIDInt32(ctx context.Context, db database.DB, id int32) (
 	if conf.Extensions() == nil {
 		return nil, graphqlbackend.ErrExtensionsDisabled
 	}
+	if err := frontendregistry.ExtensionRegistryReadEnabled(); err != nil {
+		return nil, err
+	}
 	x, err := stores.Extensions(db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -36,6 +39,9 @@ func registryExtensionByIDInt32(ctx context.Context, db database.DB, id int32) (
 
 func extensionRegistryCreateExtension(ctx context.Context, db database.DB, args *graphqlbackend.ExtensionRegistryCreateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
 	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
+		return nil, err
+	}
+	if err := frontendregistry.ExtensionRegistryWriteEnabled(); err != nil {
 		return nil, err
 	}
 
@@ -68,6 +74,9 @@ func viewerCanAdministerExtension(ctx context.Context, db database.DB, id fronte
 }
 
 func extensionRegistryUpdateExtension(ctx context.Context, db database.DB, args *graphqlbackend.ExtensionRegistryUpdateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
+	if err := frontendregistry.ExtensionRegistryWriteEnabled(); err != nil {
+		return nil, err
+	}
 	id, err := frontendregistry.UnmarshalRegistryExtensionID(args.Extension)
 	if err != nil {
 		return nil, err
@@ -85,6 +94,9 @@ func extensionRegistryUpdateExtension(ctx context.Context, db database.DB, args 
 }
 
 func extensionRegistryDeleteExtension(ctx context.Context, db database.DB, args *graphqlbackend.ExtensionRegistryDeleteExtensionArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := frontendregistry.ExtensionRegistryWriteEnabled(); err != nil {
+		return nil, err
+	}
 	id, err := frontendregistry.UnmarshalRegistryExtensionID(args.Extension)
 	if err != nil {
 		return nil, err
@@ -103,6 +115,9 @@ func extensionRegistryDeleteExtension(ctx context.Context, db database.DB, args 
 
 func extensionRegistryPublishExtension(ctx context.Context, db database.DB, args *graphqlbackend.ExtensionRegistryPublishExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
 	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
+		return nil, err
+	}
+	if err := frontendregistry.ExtensionRegistryWriteEnabled(); err != nil {
 		return nil, err
 	}
 

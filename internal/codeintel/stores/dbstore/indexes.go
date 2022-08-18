@@ -1,13 +1,11 @@
 package dbstore
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -76,14 +74,6 @@ func scanIndex(s dbutil.Scanner) (index Index, err error) {
 	}
 
 	return index, nil
-}
-
-// scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
-var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
-
-// scanFirstIndexInterface scans a slice of indexes from the return value of `*Store.query` and returns the first.
-func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstIndex(rows, err)
 }
 
 const indexAssociatedUploadIDQueryFragment = `
