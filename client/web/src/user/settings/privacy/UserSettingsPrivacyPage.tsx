@@ -87,7 +87,7 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<React.PropsWithChi
                         Save
                     </Button>
                 </div>
-                <div className="d-flex justify-content-start mb-3">
+                <div className="d-flex justify-content-start">
                     <Text>
                         Learn more about{' '}
                         <Link to="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud#how-secure-is-sourcegraph-cloud-can-sourcegraph-see-my-code">
