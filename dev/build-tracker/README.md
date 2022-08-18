@@ -23,4 +23,11 @@ To run the tests execute `go test .`
 
 ### Notification testing
 
-To test the notifications that get sent over slack you can pass the flag `-RunIntegrationTest` as part of your test invocation i.e. `SLACK_TOKEN='my valid token' go test . -RunIntegrationTest`. In addition to the flag, you also need a valid slack token defined in your environment variables as `SLACK_TOKEN`.
+To test the notifications that get sent over slack you can pass the flag `-RunIntegrationTest` as part of your test invocation, with some required configuration:
+
+```sh
+export SLACK_TOKEN='my valid token'
+export BUILDKITE_WEBHOOK_TOKEN='optional'
+export GITHUB_TOKEN='optional'
+go test . -RunIntegrationTest
+````

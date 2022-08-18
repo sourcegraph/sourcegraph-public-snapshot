@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/batches"
 )
 
 type TaggedMigrator interface {
@@ -16,7 +17,7 @@ type TaggedMigrator interface {
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
 	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
-		NewExternalServiceWebhookMigratorWithDB(db, keyring.Default().ExternalServiceKey),
+		batches.NewExternalServiceWebhookMigratorWithDB(db, keyring.Default().ExternalServiceKey),
 	})
 }
 

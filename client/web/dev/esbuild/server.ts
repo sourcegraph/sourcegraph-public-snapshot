@@ -7,6 +7,8 @@ import signale from 'signale'
 
 import { STATIC_ASSETS_PATH, buildMonaco } from '@sourcegraph/build-config'
 
+import { HTTPS_WEB_SERVER_URL, printSuccessBanner } from '../utils'
+
 import { BUILD_OPTIONS } from './build'
 import { assetPathPrefix } from './manifestPlugin'
 
@@ -47,6 +49,7 @@ export const esbuildDevelopmentServer = async (
     return await new Promise<void>((resolve, reject) => {
         proxyServer.once('listening', () => {
             signale.success('esbuild server is ready')
+            printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}`])
             esbuildStopped.finally(() => proxyServer.close(error => (error ? reject(error) : resolve())))
         })
         proxyServer.once('error', error => reject(error))

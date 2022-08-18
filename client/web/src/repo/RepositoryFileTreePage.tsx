@@ -11,6 +11,7 @@ import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
+import { BlobProps } from './blob/Blob'
 import { BlobPage } from './blob/BlobPage'
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -23,7 +24,8 @@ export interface RepositoryFileTreePageProps
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
             spec: string
-        }> {}
+        }>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'> {}
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
@@ -117,6 +119,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
+                                    onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                 />
                             </>
                         ) : (
