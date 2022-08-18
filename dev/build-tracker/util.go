@@ -43,6 +43,8 @@ func envVar[T any](name string, target *T) error {
 		{
 			*p = value
 		}
+	default:
+		panic(errors.Newf("unsuporrted target type %T", target))
 	}
 
 	return nil
