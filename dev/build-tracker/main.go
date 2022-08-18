@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -125,7 +126,7 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 func (s *Server) notifyIfFailed(build *Build) error {
 	if build.hasFailed() {
 		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number)))
-		return s.notifyClient.send(build)
+		return s.notifyClient.sendFailedBuild(build)
 	}
 
 	s.logger.Info("build has not failed", log.Int("buildNumber", intp(build.Number)))
