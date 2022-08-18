@@ -403,7 +403,7 @@ export const ReferencesList: React.FunctionComponent<
                             aria-hidden={true}
                             as={canShowSpinner ? LoadingSpinner : undefined}
                             svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
-                            size="sm"
+                            size="md"
                             className={styles.filterIcon}
                         />
                     </small>
