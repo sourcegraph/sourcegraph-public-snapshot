@@ -2,6 +2,7 @@ package template
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"sort"
 	"strings"
@@ -39,6 +40,23 @@ var builtins = template.FuncMap{
 	},
 }
 
+func ValidateBatchSpecTemplate(name, tmpl string) (bool, error) {
+	// TODO: Outputs????
+	emptyStepCtx := &StepContext{}
+	emptyCSTmplCtx := &ChangesetTemplateContext{}
+
+	// fmt.Printf("step func map: %v", emptyStepCtx.ToFuncMap())
+	fmt.Printf("changeset template func map: %v", emptyCSTmplCtx.ToFuncMap())
+
+	// Try to create template with "dummy funcs" and parse the spec to determine if template variables are okay or not
+	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(emptyStepCtx.ToFuncMap()).Funcs(emptyCSTmplCtx.ToFuncMap()).Parse(tmpl)
+	if err != nil {
+		return false, errors.Wrapf(err, "validating batch spec template: %v", t)
+	}
+
+	return true, nil
+}
+
 func isTrueOutput(output interface{ String() string }) bool {
 	return strings.TrimSpace(output.String()) == "true"
 }
@@ -57,7 +75,7 @@ func EvalStepCondition(condition string, stepCtx *StepContext) (bool, error) {
 }
 
 func RenderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
-	t, err := template.New(name).Delims(startDelim, endDelim).Funcs(builtins).Funcs(stepCtx.ToFuncMap()).Parse(tmpl)
+	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(stepCtx.ToFuncMap()).Parse(tmpl)
 	if err != nil {
 		return errors.Wrap(err, "parsing step run")
 	}
@@ -243,7 +261,7 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 func RenderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateContext) (string, error) {
 	var out bytes.Buffer
 
-	t, err := template.New(name).Delims(startDelim, endDelim).Funcs(builtins).Funcs(tmplCtx.ToFuncMap()).Parse(tmpl)
+	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(tmplCtx.ToFuncMap()).Parse(tmpl)
 	if err != nil {
 		return "", err
 	}
