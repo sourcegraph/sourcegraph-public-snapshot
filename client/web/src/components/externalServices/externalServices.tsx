@@ -31,7 +31,7 @@ import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
-import { ExternalServiceKind } from '../../graphql-operations'
+import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { PerforceIcon } from '../PerforceIcon'
 
@@ -1421,14 +1421,15 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
-    goModules: GO_MODULES,
-    pythonPackages: PYTHON_PACKAGES,
-    rustPackages: RUST_PACKAGES,
+    
+    ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.goPackages === 'enabled' ? { goModules: GO_MODULES } : {}),
+    ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? {} : { jvmPackages: JVM_PACKAGES }),
+    ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? {} : { npmPackages: NPM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
-    ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
     ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
-    ...(window.context?.experimentalFeatures?.npmPackages === 'disabled' ? {} : { npmPackages: NPM_PACKAGES }),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1451,10 +1452,17 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
     [ExternalServiceKind.PERFORCE]: PERFORCE,
     [ExternalServiceKind.GERRIT]: GERRIT,
+    [ExternalServiceKind.PAGURE]: PAGURE,
     [ExternalServiceKind.GOMODULES]: GO_MODULES,
     [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
-    [ExternalServiceKind.PAGURE]: PAGURE,
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,
     [ExternalServiceKind.PYTHONPACKAGES]: PYTHON_PACKAGES,
     [ExternalServiceKind.RUSTPACKAGES]: RUST_PACKAGES,
+}
+
+export const externalRepoIcon = (
+    externalRepo: ExternalRepositoryFields
+): React.ComponentType<{ className?: string }> | undefined => {
+    const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
+    return defaultExternalServices[externalServiceKind]?.icon ?? undefined
 }
