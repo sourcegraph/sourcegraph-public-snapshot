@@ -12,7 +12,12 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import isAbsoluteUrl from 'is-absolute-url'
 
-import { ConsoleBatchSpanExporter, WindowLoadInstrumentation } from '@sourcegraph/observability-client'
+import {
+    ConsoleBatchSpanExporter,
+    WindowLoadInstrumentation,
+    HistoryInstrumentation,
+    SharedSpanStoreProcessor,
+} from '@sourcegraph/observability-client'
 
 export function initOpenTelemetry(): void {
     const { openTelemetry, externalURL } = window.context
@@ -31,7 +36,9 @@ export function initOpenTelemetry(): void {
         // As per spec non-signal-specific configuration should have signal-specific paths appended.
         // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#endpoint-urls-for-otlphttp
         const collectorExporter = new OTLPTraceExporter({ url: url + '/v1/traces' })
+
         provider.addSpanProcessor(new BatchSpanProcessor(collectorExporter))
+        provider.addSpanProcessor(new SharedSpanStoreProcessor())
 
         // Enable the console exporter only in the development environment.
         if (process.env.NODE_ENV === 'development') {
@@ -48,6 +55,7 @@ export function initOpenTelemetry(): void {
             instrumentations: [
                 (new FetchInstrumentation() as unknown) as InstrumentationOption,
                 new WindowLoadInstrumentation(),
+                new HistoryInstrumentation(),
             ],
         })
     }
