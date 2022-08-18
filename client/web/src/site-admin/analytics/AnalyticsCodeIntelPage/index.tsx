@@ -186,13 +186,6 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     const repos = data?.site.analytics.repos
     const groupingLabel = startCase(grouping.value.toLowerCase())
 
-    const eventsData: { name: string; kind: Kind; value: number }[] = [
-        { name: 'Java', kind: 'search-based', value: 90 },
-        { name: 'Java', kind: 'precise', value: 30 },
-        { name: 'Go', kind: 'search-based', value: 30 },
-        { name: 'Go', kind: 'precise', value: 10 },
-    ]
-
     const topRepos: {
         name: string
         events: number
@@ -279,34 +272,36 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 </div>
                 <div>
                     <H4 className="my-3">Events by language</H4>
-                    <div className={styles.events}>
-                        <ChartContainer className={styles.chart} labelX="Languages" labelY="Events">
-                            {width => (
-                                <>
-                                    <LegendList>
-                                        <LegendItem color={color('precise')} name="precise" />
-                                        <LegendItem color={color('search-based')} name="search-based" />
-                                    </LegendList>
-                                    <BarChart
-                                        stacked={true}
-                                        width={width}
-                                        height={300}
-                                        data={eventsData}
-                                        getDatumColor={value => color(value.kind)}
-                                        getDatumValue={value => value.value}
-                                        getDatumName={value => value.name}
-                                        getDatumHover={value => `${value.name} ${value.kind}`}
-                                    />
-                                </>
-                            )}
-                        </ChartContainer>
-                        <div className={styles.percentContainer}>
-                            <div className={styles.percent}>
-                                {preciseFraction ? (100 * preciseFraction).toFixed(1) : '...'}%
+                    {data && (
+                        <div className={styles.events}>
+                            <ChartContainer className={styles.chart} labelX="Languages" labelY="Events">
+                                {width => (
+                                    <>
+                                        <LegendList>
+                                            <LegendItem color={color('precise')} name="precise" />
+                                            <LegendItem color={color('search-based')} name="search-based" />
+                                        </LegendList>
+                                        <BarChart
+                                            stacked={true}
+                                            width={width}
+                                            height={300}
+                                            data={data.site.analytics.codeIntelByLanguage}
+                                            getDatumColor={value => color(value.precision)}
+                                            getDatumValue={value => value.count}
+                                            getDatumName={value => value.language}
+                                            getDatumHover={value => `${value.language} ${value.precision}`}
+                                        />
+                                    </>
+                                )}
+                            </ChartContainer>
+                            <div className={styles.percentContainer}>
+                                <div className={styles.percent}>
+                                    {preciseFraction ? (100 * preciseFraction).toFixed(1) : '...'}%
+                                </div>
+                                <div>Precise code navigation</div>
                             </div>
-                            <div>Precise code navigation</div>
                         </div>
-                    </div>
+                    )}
                     <H4 className="my-3">Top repositories</H4>
                     <div className={styles.repos}>
                         <div className="text-muted text-nowrap">{/* Repository */}</div>
@@ -334,10 +329,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     )
 }
 
-type Kind = 'precise' | 'search-based'
-
-const color = (kind: Kind): string => {
-    switch (kind) {
+const color = (precision: string): string => {
+    switch (precision) {
         case 'precise':
             return 'rgb(255, 184, 109)'
         case 'search-based':
