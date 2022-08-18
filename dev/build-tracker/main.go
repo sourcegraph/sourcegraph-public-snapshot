@@ -69,7 +69,7 @@ func configFromEnv() (*config, error) {
 	if c.Production {
 		_ = envVar("BUILDTRACKER_DEBUG_PASSWORD", &c.DebugPassword)
 		if c.DebugPassword == "" {
-			return nil, errors.New("BT_DEBUG_PASSWORD is required when BT_PRODUCTION is true")
+			return nil, errors.New("BUILDTRACKER_DEBUG_PASSWORD is required when BUILDTRACKER_PRODUCTION is true")
 		}
 	}
 
