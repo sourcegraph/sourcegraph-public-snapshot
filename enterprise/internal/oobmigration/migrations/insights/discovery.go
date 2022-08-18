@@ -1,6 +1,4 @@
-// Re-purposed and copied methods from discovery and other related methods.
-
-package migration
+package insights
 
 import (
 	"context"
