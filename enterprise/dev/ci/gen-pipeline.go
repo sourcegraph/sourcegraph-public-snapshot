@@ -45,7 +45,8 @@ func main() {
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWith(log.SentrySink{
 		ClientOptions: sentry.ClientOptions{
-			Dsn: "CI_SENRTY_DSN",
+			Dsn:        "CI_SENRTY_DSN",
+			SampleRate: 0,
 		},
 	}))
 	defer liblog.Sync()

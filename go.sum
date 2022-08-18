@@ -2027,8 +2027,8 @@ github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df h1:VaS8k40GiN
 github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
-github.com/sourcegraph/log v0.0.0-20220801160541-4bb2be059082 h1:XLozb4vpQnHco6hdJS3tjWJkEJd1fTiEgGucRbqlmIU=
-github.com/sourcegraph/log v0.0.0-20220801160541-4bb2be059082/go.mod h1:zWEPlKrWBUVpko/tOgDS+qrp7BmzaCcmUrh9+ver1iQ=
+github.com/sourcegraph/log v0.0.0-20220818075705-a73424c8bbf9 h1:5BzCls0tdAx2EVVxQlVQKowvr31Y5v5iQAIur47XsWo=
+github.com/sourcegraph/log v0.0.0-20220818075705-a73424c8bbf9/go.mod h1:zWEPlKrWBUVpko/tOgDS+qrp7BmzaCcmUrh9+ver1iQ=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=

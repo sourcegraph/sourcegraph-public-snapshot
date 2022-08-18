@@ -30,6 +30,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		return nil, err
 	}
 
+	return nil, errors.New("🐘💨 Test sentry ERAWR")
 	// Common build env
 	env := map[string]string{
 		// Build meta
