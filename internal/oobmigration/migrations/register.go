@@ -1,6 +1,7 @@
 package migrations
 
 import (
+	"context"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -12,22 +13,30 @@ import (
 )
 
 func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	keyring := keyring.Default()
+
 	return registerOSSMigrations(outOfBandMigrationRunner, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
-		keyring: keyring.Default(),
+		keyring: &keyring,
 	})
 }
 
 func RegisterOSSMigrationsFromConfig(db database.DB, outOfBandMigrationRunner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
+	ctx := context.Background()
+	keyring, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
+	if err != nil {
+		return err
+	}
+
 	return registerOSSMigrations(outOfBandMigrationRunner, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
-		keyring: keyring.Default(), // TODO - get from config
+		keyring: keyring,
 	})
 }
 
 type migratorDependencies struct {
 	store   *basestore.Store
-	keyring keyring.Ring
+	keyring *keyring.Ring
 }
 
 func registerOSSMigrations(outOfBandMigrationRunner *oobmigration.Runner, deps migratorDependencies) error {

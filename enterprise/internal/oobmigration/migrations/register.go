@@ -1,6 +1,8 @@
 package migrations
 
 import (
+	"context"
+
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
@@ -26,11 +28,13 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 		return err
 	}
 
+	keyring := keyring.Default()
+
 	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: codeIntelStore,
 		insightsStore:  insightsStore,
-		keyring:        keyring.Default(),
+		keyring:        &keyring,
 	})
 }
 
@@ -45,11 +49,17 @@ func RegisterEnterpriseMigrationsFromConfig(db database.DB, outOfBandMigrationRu
 		return err
 	}
 
+	ctx := context.Background()
+	keyring, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
+	if err != nil {
+		return err
+	}
+
 	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: codeIntelStore,
 		insightsStore:  insightsStore,
-		keyring:        keyring.Default(), // TODO - get from config
+		keyring:        keyring,
 	})
 }
 
@@ -57,7 +67,7 @@ type dependencies struct {
 	store          *basestore.Store
 	codeIntelStore *basestore.Store
 	insightsStore  *basestore.Store
-	keyring        keyring.Ring
+	keyring        *keyring.Ring
 }
 
 func registerEnterpriseMigrations(outOfBandMigrationRunner *oobmigration.Runner, deps dependencies) error {
