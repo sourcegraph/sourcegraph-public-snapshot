@@ -25,6 +25,22 @@ type Build struct {
 	ConsecutiveFailure int `json:"consecutiveFailures"`
 }
 
+// updateFromEvent updates the current build with the build and pipeline from the event. Care is taken
+// to ensure the author is retained as the build from the event might not have an author, whereas the original build
+// does!
+func (b *Build) updateFromEvent(e *Event) {
+	old := b.Build
+
+	b.Build = e.Build
+	// sometimes (typically when a build is retried) the "new" build won't have the author in it.
+	// so we make sure to retain the author, if the new build does not contain one!
+	// TODO(burmudar): maybe we should just always preserve the old author ?
+	if b.Build.Author == nil || b.Build.Author.Name == "" || b.Build.Author.Email == "" {
+		b.Build.Author = old.Author
+	}
+	b.Pipeline = e.pipeline()
+}
+
 func (b *Build) hasFailed() bool {
 	return b.state() == "failed"
 }
@@ -184,8 +200,7 @@ func (s *BuildStore) Add(event *Event) {
 	// if the build is finished replace the original build with the replaced one since it
 	// will be more up to date, and tack on some finalized data
 	if event.isBuildFinished() {
-		build.Build = event.Build
-		build.Pipeline = event.pipeline()
+		build.updateFromEvent(event)
 
 		// Track consecutive failures by pipeline + branch
 		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.name(), build.branch())
@@ -197,6 +212,7 @@ func (s *BuildStore) Add(event *Event) {
 		}
 	}
 
+	// Keep track of the job, if there is one
 	wrappedJob := event.job()
 	if wrappedJob.name() != "" {
 		build.Jobs[wrappedJob.name()] = *wrappedJob
