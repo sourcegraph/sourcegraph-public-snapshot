@@ -12,6 +12,8 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Fixes
 
+- Fix an issue that prevented search results on some older Sourcegraph instance versions to not render properly [pull/40621](https://github.com/sourcegraph/sourcegraph/pull/40621)
+
 ## 2.2.8
 
 ### Changes
