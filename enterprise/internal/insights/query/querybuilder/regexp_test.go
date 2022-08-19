@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/regexp"
 )
@@ -144,5 +144,95 @@ func Test_replaceCaptureGroupsWithString(t *testing.T) {
 		pattern := `(?:hello)(?:friend)`
 		got := replaceCaptureGroupsWithString(pattern, findGroups(pattern), "no")
 		require.Equal(t, pattern, got)
+	})
+}
+
+func TestReplace_Valid(t *testing.T) {
+	tests := []struct {
+		query       string
+		replacement string
+		want        autogold.Value
+		searchType  query.SearchType
+	}{
+		{
+			query:       "/replaceme/",
+			replacement: "replace",
+			want:        autogold.Want("replace_1", BasicQuery("/replace/")),
+			searchType:  query.SearchTypeStandard,
+		},
+		{
+			query:       "/replace(me)/",
+			replacement: "you",
+			want:        autogold.Want("replace_2", BasicQuery("/replace(?:you)/")),
+			searchType:  query.SearchTypeStandard,
+		},
+		{
+			query:       "/replaceme/",
+			replacement: "replace",
+			want:        autogold.Want("replace_3", BasicQuery("/replace/")),
+			searchType:  query.SearchTypeLucky,
+		},
+		{
+			query:       "/replace(me)/",
+			replacement: "you",
+			want:        autogold.Want("replace_4", BasicQuery("/replace(?:you)/")),
+			searchType:  query.SearchTypeLucky,
+		},
+		{
+			query:       "/b(u)tt(er)/",
+			replacement: "e",
+			want:        autogold.Want("ensure only one group is replaced", BasicQuery("/b(?:e)tt(er)/")),
+			searchType:  query.SearchTypeStandard,
+		},
+		{
+			query:       "/b(?:u)(tt)(er)/",
+			replacement: "dd",
+			want:        autogold.Want("ensure only one group is replaced after non-capturing group", BasicQuery("/b(?:u)(?:dd)(er)/")),
+			searchType:  query.SearchTypeStandard,
+		},
+		{
+			query:       "replaceme",
+			replacement: "replace",
+			want:        autogold.Want("regexp_type_1", BasicQuery("/replace/")),
+			searchType:  query.SearchTypeRegex,
+		},
+		{
+			query:       "replace(me)",
+			replacement: "you",
+			want:        autogold.Want("regexp_type_2", BasicQuery("/replace(?:you)/")),
+			searchType:  query.SearchTypeRegex,
+		},
+		{
+			query:       `\/insight[s]\/`,
+			replacement: "you",
+			want:        autogold.Want("escaped slashes in regexp without group", BasicQuery("/you/")),
+			searchType:  query.SearchTypeRegex,
+		},
+		{
+			query:       `\/insi(g)ht[s]\/`,
+			replacement: "ggg",
+			want:        autogold.Want("escaped slashes in regexp with group", BasicQuery("/\\/insi(?:ggg)ht[s]\\//")),
+			searchType:  query.SearchTypeRegex,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			replacer, err := NewPatternReplacer(BasicQuery(test.query), test.searchType)
+			require.NoError(t, err)
+
+			got, err := replacer.Replace(test.replacement)
+			test.want.Equal(t, got)
+		})
+	}
+}
+
+func TestReplace_Invalid(t *testing.T) {
+	t.Run("multiple patterns", func(t *testing.T) {
+		_, err := NewPatternReplacer("/replace(me)/ or asdf", query.SearchTypeStandard)
+		require.ErrorIs(t, err, multiplePatternErr)
+	})
+	t.Run("literal pattern", func(t *testing.T) {
+		_, err := NewPatternReplacer("asdf", query.SearchTypeStandard)
+		require.ErrorIs(t, err, unsupportedPatternTypeErr)
 	})
 }
