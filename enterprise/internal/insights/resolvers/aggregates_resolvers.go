@@ -221,10 +221,10 @@ func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, erro
 
 func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
-		types.REPO_AGGREGATION_MODE: canAggregateByRepo,
+		types.REPO_AGGREGATION_MODE:   canAggregateByRepo,
+		types.PATH_AGGREGATION_MODE:   canAggregateByPath,
+		types.AUTHOR_AGGREGATION_MODE: canAggregateByAuthor,
 		// TODO(insights): these paths should be uncommented as they are implemented. Logic for allowing the aggregation should be double-checked.
-		// types.PATH_AGGREGATION_MODE: canAggregateByPath,
-		// types.AUTHOR_AGGREGATION_MODE: canAggregateByAuthor,
 		// types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
 	}
 	canAggregateByFunc, ok := checkByMode[mode]
