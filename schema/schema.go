@@ -1762,6 +1762,8 @@ type Settings struct {
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
 	// SearchUppercase description: REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.
 	SearchUppercase *bool `json:"search.uppercase,omitempty"`
+	// OpenInEditor description: Group of settings related to opening files in an editor.
+	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
 }
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
@@ -1859,6 +1861,21 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
 	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
+}
+
+type SettingsOpenInEditor struct {
+	EditorId                string            `json:"editorId,omitempty"`
+	ProjectPathsDefault     string            `json:"projectPaths.default,omitempty"`
+	ProjectPathsLinux       string            `json:"projectPaths.linux,omitempty"`
+	ProjectPathsMac         string            `json:"projectPaths.mac,omitempty"`
+	ProjectPathsWindows     string            `json:"projectPaths.windows,omitempty"`
+	Replacements            map[string]string `json:"replacements,omitempty"`
+	JetBrainsForceApi       string            `json:"jetBrains.forceApi,omitempty"`
+	VSCodeIsBasePathUNCPath bool              `json:"vscode.isBasePathUNCPath,omitempty"`
+	VSCodeUseInsiders       bool              `json:"vscode.useInsiders,omitempty"`
+	VSCodeUseSSH            bool              `json:"vscode.useSSH,omitempty"`
+	VSCodeRemoteHostForSSH  string            `json:"vscode.remoteHostForSSH,omitempty"`
+	CustomUrlPattern        string            `json:"custom.urlPattern,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

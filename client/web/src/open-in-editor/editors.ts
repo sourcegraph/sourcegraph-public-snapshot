@@ -76,4 +76,3 @@ export type EditorId = typeof supportedEditors[number]['id']
 export function getEditor(editorId: EditorId): Editor | undefined {
     return supportedEditors.find(editor => editor.id === editorId)
 }
-
