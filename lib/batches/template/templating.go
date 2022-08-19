@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -54,11 +55,25 @@ func ValidateBatchSpecTemplate(name, spec string) (bool, error) {
 	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(emptyStepCtx.ToFuncMap()).Funcs(emptyCSTmplCtx.ToFuncMap()).Parse(spec)
 
 	if err != nil {
-		return false, errors.Wrapf(err, "validating batch spec template: %v", t)
+		// Attempt to extract the specific template variable field that caused the error
+		// to provide a clearer message.
+		errorRe := regexp.MustCompile(`(?i)function "(?P<key>[^"]+)" not defined`)
+		if matches := errorRe.FindStringSubmatch(err.Error()); len(matches) > 0 {
+			return false, errors.New(fmt.Sprintf("validating batch spec template: unknown templating variable: '%s'", matches[1]))
+		}
+		// If we couldn't give a more specific error, fall back on the one from text/template.
+		return false, errors.Wrap(err, "validating batch spec template")
 	}
 
 	var out bytes.Buffer
 	if err = t.Execute(&out, &StepContext{}); err != nil {
+		// Attempt to extract the specific template variable fields that caused the error
+		// to provide a clearer message.
+		errorRe := regexp.MustCompile(`(?i)at <(?P<outer>[^>]+)>:.*for key "(?P<inner>[^"]+)"`)
+		if matches := errorRe.FindStringSubmatch(err.Error()); len(matches) > 0 {
+			return false, errors.New(fmt.Sprintf("validating batch spec template: unknown templating variable: '%s.%s'", matches[1], matches[2]))
+		}
+		// If we couldn't give a more specific error, fall back on the one from text/template.
 		return false, errors.Wrap(err, "validating batch spec template")
 	}
 
