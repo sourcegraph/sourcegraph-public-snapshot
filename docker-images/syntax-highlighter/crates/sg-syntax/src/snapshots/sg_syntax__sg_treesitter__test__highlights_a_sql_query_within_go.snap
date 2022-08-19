@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 467
 expression: "dump_document(&document, src)"
 ---
   package main
@@ -11,6 +10,7 @@ expression: "dump_document(&document, src)"
 //^^^^^ IdentifierKeyword
 //      ^^^^^^^^^^ IdentifierConstant
 //                 ^ IdentifierOperator
+//                   ^ StringLiteral 2:19..4:1
   SELECT * FROM my_table
   `
 

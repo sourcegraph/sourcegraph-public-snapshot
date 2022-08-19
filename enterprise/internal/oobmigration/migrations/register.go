@@ -32,6 +32,13 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 
 	batchesCredentialKey := keyring.Default().BatchChangesCredentialKey
 
+	var insightsMigrator migrations.TaggedMigrator
+	if internalInsights.IsEnabled() {
+		insightsMigrator = insights.NewMigrator(frontendStore, insightsStore)
+	} else {
+		insightsMigrator = insights.NewMigratorNoOp()
+	}
+
 	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(frontendStore, 500),
 		iam.NewLicenseKeyFieldsMigrator(frontendStore, 500),
@@ -41,7 +48,7 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 		codeintel.NewReferencesLocationsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewDocumentColumnSplitMigrator(codeIntelStore, 100),
 		codeintel.NewAPIDocsSearchMigrator(),
-		insights.NewMigrator(frontendStore, insightsStore),
+		insightsMigrator,
 	})
 }
 

@@ -1,14 +1,12 @@
 package store
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -25,9 +23,7 @@ var bulkOperationWorkerStoreOpts = dbworkerstore.Options{
 	TableName:         "changeset_jobs",
 	ColumnExpressions: changesetJobColumns.ToSqlf(),
 
-	Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-		return scanFirstChangesetJob(rows, err)
-	},
+	Scan: dbworkerstore.BuildWorkerScan(buildRecordScanner(scanChangesetJob)),
 
 	OrderByExpression: sqlf.Sprintf("changeset_jobs.state = 'errored', changeset_jobs.updated_at DESC"),
 

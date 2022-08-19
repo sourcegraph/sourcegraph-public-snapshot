@@ -473,6 +473,7 @@ type ExhaustiveSearchAggregationResultResolver interface {
 	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
 	OtherGroupCount() (*int32, error)
+	Mode() (string, error)
 }
 
 type NonExhaustiveSearchAggregationResultResolver interface {
@@ -480,6 +481,7 @@ type NonExhaustiveSearchAggregationResultResolver interface {
 	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
 	ApproximateOtherGroupCount() (*int32, error)
+	Mode() (string, error)
 }
 
 type AggregationGroup interface {
@@ -490,6 +492,7 @@ type AggregationGroup interface {
 
 type SearchAggregationNotAvailable interface {
 	Reason() string
+	Mode() string
 }
 
 type SearchAggregationResultResolver interface {
