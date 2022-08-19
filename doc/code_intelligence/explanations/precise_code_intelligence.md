@@ -20,8 +20,6 @@ Precise code navigation relies on
 [LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md)
 (Language Server Index Format) data to deliver precomputed code navigation. It provides fast and highly accurate code navigation but needs to be periodically generated and uploaded to your Sourcegraph instance. Precise code navigation is an opt-in feature: repositories for which you have not uploaded indexes will continue to use the search-based code navigation.
 
-> NOTE: Precise code navigation using LSIF is supported in Sourcegraph 3.8 and up.
-
 ## Getting started
 
 See the [how-to guides](../how-to/index.md) to get started with precise code navigation.
@@ -47,13 +45,7 @@ This can happen in the following scenarios:
 - The line containing the symbol was created or edited between the nearest indexed commit and the commit being browsed.
 - The _Find references_ panel may include search-based results, but only after all of the precise results have been displayed. This ensures every symbol has useful code navigation.
 
-## More about LSIF
+## More about SCIP
 
-- [Writing an LSIF indexer](writing_an_indexer.md)
-- [Adding LSIF to many repositories](../how-to/adding_lsif_to_many_repos.md)
-
-To learn more, check out our lightning talk about LSIF from GopherCon 2019 or the [introductory blog post](https://about.sourcegraph.com/go/code-intelligence-with-lsif):
-
-<div class="video-container">
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/fMIRKRj_A88" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div>
+- [Writing an SCIP indexer](writing_an_indexer.md)
+<!-- - [Adding LSIF to many repositories](../how-to/adding_lsif_to_many_repos.md) -->
