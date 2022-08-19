@@ -11,11 +11,10 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import {
-    useExistingSpan,
+    useCurrentSpan,
     TraceSpanProvider,
     createActiveSpan,
     reactManualTracer,
-    setRenderAttributes,
 } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
@@ -93,7 +92,7 @@ interface BlobPageInfo extends BlobInfo {
 }
 
 export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const span = useExistingSpan()
+    const { span, setSpanRenderAttributes } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
@@ -309,7 +308,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 : 'code'
     }
 
-    setRenderAttributes(span, {
+    setSpanRenderAttributes({
         isSearchNotebook: Boolean(isSearchNotebook),
         renderMode,
         enableCodeMirror,

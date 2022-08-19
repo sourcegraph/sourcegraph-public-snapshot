@@ -3,7 +3,7 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
-import { TraceSpanProvider, useExistingSpan, setRenderAttributes } from '@sourcegraph/observability-client'
+import { TraceSpanProvider, useCurrentSpan } from '@sourcegraph/observability-client'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
@@ -36,7 +36,7 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 export const RepositoryFileTreePage: React.FunctionComponent<
     React.PropsWithChildren<RepositoryFileTreePageProps>
 > = props => {
-    const span = useExistingSpan()
+    const { setSpanRenderAttributes } = useCurrentSpan()
     const {
         repo,
         resolvedRev: { commitID, defaultBranch },
@@ -57,7 +57,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
     const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
     const mode = getModeFromPath(filePath)
 
-    setRenderAttributes(span, {
+    setSpanRenderAttributes({
         mode,
         objectType,
     })
