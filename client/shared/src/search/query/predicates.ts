@@ -67,6 +67,11 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
     if (path.length === 0) {
         return tree
     }
+    // repo:contains() is not supported, use repo:contains.file() or repo:contains.path()
+    if (path.length === 1 && path[0] === 'contains') {
+        return undefined
+    }
+
     const subtree = tree.find(value => value.name === path[0])
     if (!subtree) {
         return undefined
