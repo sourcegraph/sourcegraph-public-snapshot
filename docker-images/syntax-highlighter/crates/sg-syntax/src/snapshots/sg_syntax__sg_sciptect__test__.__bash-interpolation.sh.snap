@@ -1,0 +1,14 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+expression: "dump_document(&document, &contents)"
+---
+  #!/bin/sh
+// ^^^^^^^^ Comment
+  
+  export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
+//^^^^^^ IdentifierKeyword
+//       ^^^^^^^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                           ^^^^^^^^^^^^^^ Identifier
+

@@ -1,0 +1,38 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+expression: "dump_document(&document, &contents)"
+---
+  @import '@reach/dialog/styles.css';
+//^^^^^^^ IdentifierKeyword
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  
+  :root {
+      --modal-body-padding: 1.5rem;
+//                         ^^^^ NumericLiteral
+//                             ^^^ IdentifierKeyword
+  }
+  
+  [data-reach-dialog-overlay] {
+      background-color: var(--modal-bg);
+//                      ^^^ IdentifierKeyword
+  }
+  
+  
+  /*
+//^^ Comment 11:0..13:3
+   * Positions
+   */
+  .center,
+  .top-third {
+      transform: translate(-50%, -50%);
+      position: absolute;
+      top: 50%;
+//        ^^^ NumericLiteral
+//           ^ IdentifierKeyword
+      margin: 0;
+//           ^^ NumericLiteral
+      left: 50%;
+//         ^^^ NumericLiteral
+//            ^ IdentifierKeyword
+  }
+
