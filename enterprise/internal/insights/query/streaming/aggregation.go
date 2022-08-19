@@ -7,7 +7,7 @@ import (
 type LimitedAggregator interface {
 	Add(label string, count int32)
 	SortAggregate() []*Aggregate
-	OtherResults() OtherCount
+	OtherCounts() OtherCount
 }
 
 func NewLimitedAggregator(bufferSize int) LimitedAggregator {
@@ -110,7 +110,7 @@ func (a limitedAggregator) SortAggregate() []*Aggregate {
 	return aggregateSlice
 }
 
-func (a *limitedAggregator) OtherResults() OtherCount {
+func (a *limitedAggregator) OtherCounts() OtherCount {
 	return a.OtherCount
 }
 

@@ -12,6 +12,8 @@ import (
 )
 
 const searchTimeLimitSeconds = 2
+
+//TODO: move to a setting
 const aggregationBufferSize = 500
 
 type searchAggregateResolver struct {
@@ -30,16 +32,16 @@ func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphq
 
 func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphqlbackend.AggregationsArgs) (graphqlbackend.SearchAggregationResultResolver, error) {
 	// Steps:
-	// 1. - Get default mode (currently defaulted in gql to REPO)
-	// 2. - Validate mode supported
+	// 1. - If no mode get the default mode (currently defaulted in gql to REPO)
+	// 2. - Validate mode can be used supported
 	// 3. - Modify search query (timeout: & count:)
 	// 3. - Run Search
 	// 4. - Check search for errors/alerts
 	// 5 -  Generate correct resolver pass search results if valid
-	aggreationMode := types.SearchAggregationMode(args.Mode)
-	supported, reason := aggreagtionModeSupported(r.searchQuery, r.patternType, aggreationMode)
+	aggregationMode := types.SearchAggregationMode(args.Mode)
+	supported, reason := aggregationModeSupported(r.searchQuery, r.patternType, aggregationMode)
 	if !supported {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggreationMode)}, nil
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggregationMode)}, nil
 	}
 
 	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
@@ -47,7 +49,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimeLimitSeconds+1)
 	if err != nil {
 		return &searchAggregationResultResolver{
-			resolver: newSearchAggregationNotAvailableResolver("search query could not be expanded for aggregation", aggreationMode),
+			resolver: newSearchAggregationNotAvailableResolver("search query could not be expanded for aggregation", aggregationMode),
 		}, nil
 	}
 
@@ -60,42 +62,44 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		}
 		cappedAggregator.Add(amr.Key.Group, int32(amr.Count))
 	}
-	onMatchFunc, err := streaming.TabulateAggregationMatches(tabulationFunc, aggreationMode)
+	onMatchFunc, err := streaming.TabulateAggregationMatches(tabulationFunc, aggregationMode)
 	if err != nil {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(err.Error(), aggreationMode)}, nil
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(err.Error(), aggregationMode)}, nil
 	}
 	decoder, searchEvents := streaming.AggregationDecoder(onMatchFunc)
 
-	requestContext, _ := context.WithTimeout(ctx, time.Minute*searchTimeLimitSeconds)
+	// This request context limits the total time search runs and returns in a manner that allows knowing if the search completed
+	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*searchTimeLimitSeconds)
+	defer cancelReqContext()
 	err = streaming.Search(requestContext, string(modifiedQuery), &r.patternType, decoder)
 	if err != nil {
 		reason := "unable to run search"
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			reason = "search did not complete in time"
 		}
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggreationMode)}, nil
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggregationMode)}, nil
 	}
 
 	successful, failureReason := searchSuccessful(searchEvents, tabulationErrors)
 	if !successful {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggreationMode)}, nil
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
 	}
 
-	results := buildResults(cappedAggregator, int(args.Limit), aggreationMode, r.searchQuery)
+	results := buildResults(cappedAggregator, int(args.Limit), aggregationMode, r.searchQuery)
 
 	return &searchAggregationResultResolver{resolver: &searchAggregationModeResultResolver{
 		baseInsightResolver: r.baseInsightResolver,
 		searchQuery:         r.searchQuery,
 		patternType:         r.patternType,
-		mode:                aggreationMode,
+		mode:                aggregationMode,
 		results:             results,
-		isExhaustive:        cappedAggregator.OtherResults().GroupCount == 0,
+		isExhaustive:        cappedAggregator.OtherCounts().GroupCount == 0,
 	}}, nil
 
 }
 
 // Temporary placeholder to limit mode to only REPO
-func aggreagtionModeSupported(searchQuery, patternType string, mode types.SearchAggregationMode) (bool, string) {
+func aggregationModeSupported(searchQuery, patternType string, mode types.SearchAggregationMode) (bool, string) {
 	if mode == types.REPO_AGGREGATION_MODE {
 		return true, ""
 	}
@@ -145,8 +149,8 @@ func (r *AggregationGroup) Query() (*string, error) {
 func buildResults(aggregator streaming.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string) aggregationResults {
 	sorted := aggregator.SortAggregate()
 	groups := make([]graphqlbackend.AggregationGroup, 0, limit)
-	otherResults := aggregator.OtherResults().ResultCount
-	otherGroups := aggregator.OtherResults().GroupCount
+	otherResults := aggregator.OtherCounts().ResultCount
+	otherGroups := aggregator.OtherCounts().GroupCount
 
 	for i := 0; i < len(sorted); i++ {
 		if i < limit {
