@@ -71,16 +71,19 @@ func RegisterEnterpriseMigrationsFromConfig(ctx context.Context, db database.DB,
 		insightsStore = basestore.NewWithHandle(basestore.NewHandleWithDB(codeInsightsDB, sql.TxOptions{}))
 	}
 
-	keyring, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
+	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {
 		return err
+	}
+	if keys == nil {
+		keys = &keyring.Ring{}
 	}
 
 	return registerEnterpriseMigrations(runner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
-		keyring:        keyring,
+		keyring:        keys,
 	})
 }
 

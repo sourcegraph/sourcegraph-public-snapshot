@@ -22,14 +22,17 @@ func RegisterOSSMigrations(ctx context.Context, db database.DB, runner *oobmigra
 }
 
 func RegisterOSSMigrationsFromConfig(ctx context.Context, db database.DB, runner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
-	keyring, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
+	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {
 		return err
+	}
+	if keys == nil {
+		keys = &keyring.Ring{}
 	}
 
 	return registerOSSMigrations(runner, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
-		keyring: keyring,
+		keyring: keys,
 	})
 }
 
