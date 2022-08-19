@@ -53,7 +53,7 @@ func main() {
 	defer liblog.Sync()
 
 	logger = log.Scoped("gen-pipeline", "generates the pipeline for ci")
-	logger.Info("👀", log.String("Dsn", os.Getenv("CI_SENTRY_DSN")[:5]))
+	fmt.Printf("👀 %s", os.Getenv("CI_SENTRY_DSN")[:5])
 
 	if docs {
 		renderPipelineDocs(os.Stdout)
