@@ -48,6 +48,7 @@ func (r *aggregationModeAvailabilityResolver) Mode() string {
 func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
 		types.REPO_AGGREGATION_MODE: canAggregateByRepo,
+		// TODO(insights): these paths should be uncommented as they are implemented. Logic for allowing the aggregation should be double-checked.
 		// types.PATH_AGGREGATION_MODE: canAggregateByPath,
 		// types.AUTHOR_AGGREGATION_MODE: canAggregateByAuthor,
 		// types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
