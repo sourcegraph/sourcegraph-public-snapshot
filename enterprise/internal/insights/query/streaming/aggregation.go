@@ -4,7 +4,20 @@ import (
 	"sort"
 )
 
-type aggregated struct {
+type LimitedAggregator interface {
+	Add(label string, count int32)
+	SortAggregate() []*Aggregate
+	OtherCounts() OtherCount
+}
+
+func NewLimitedAggregator(bufferSize int) LimitedAggregator {
+	return &limitedAggregator{
+		resultBufferSize: bufferSize,
+		Results:          map[string]int32{},
+	}
+}
+
+type limitedAggregator struct {
 	resultBufferSize int
 	smallestResult   *Aggregate
 	Results          map[string]int32
@@ -22,7 +35,7 @@ type OtherCount struct {
 }
 
 // Add performs best-effort aggregation for a (label, count) search result.
-func (a *aggregated) Add(label string, count int32) {
+func (a *limitedAggregator) Add(label string, count int32) {
 	// 1. We have a match in our in-memory map. Update and update the smallest result.
 	// 2. We haven't hit the max buffer size. Add to our in-memory map and update the smallest result.
 	// 3. We don't have a match but have a better result than our smallest. Update the overflow by ejected smallest.
@@ -60,7 +73,7 @@ func (a *aggregated) Add(label string, count int32) {
 }
 
 // findSmallestAggregate finds the result with the smallest count and returns it.
-func (a *aggregated) findSmallestAggregate() *Aggregate {
+func (a *limitedAggregator) findSmallestAggregate() *Aggregate {
 	var smallestAggregate *Aggregate
 	for label, count := range a.Results {
 		tempSmallest := &Aggregate{label, count}
@@ -71,20 +84,20 @@ func (a *aggregated) findSmallestAggregate() *Aggregate {
 	return smallestAggregate
 }
 
-func (a *aggregated) updateSmallestAggregate() {
+func (a *limitedAggregator) updateSmallestAggregate() {
 	smallestResult := a.findSmallestAggregate()
 	if smallestResult != nil {
 		a.smallestResult = smallestResult
 	}
 }
 
-func (a *aggregated) updateOtherCount(resultCount, groupCount int32) {
+func (a *limitedAggregator) updateOtherCount(resultCount, groupCount int32) {
 	a.OtherCount.ResultCount += resultCount
 	a.OtherCount.GroupCount += groupCount
 }
 
 // SortAggregate sorts aggregated results into a slice of descending order.
-func (a aggregated) SortAggregate() []*Aggregate {
+func (a limitedAggregator) SortAggregate() []*Aggregate {
 	aggregateSlice := make([]*Aggregate, 0, len(a.Results))
 	for val, count := range a.Results {
 		aggregateSlice = append(aggregateSlice, &Aggregate{val, count})
@@ -95,6 +108,10 @@ func (a aggregated) SortAggregate() []*Aggregate {
 	})
 
 	return aggregateSlice
+}
+
+func (a *limitedAggregator) OtherCounts() OtherCount {
+	return a.OtherCount
 }
 
 func (a *Aggregate) Less(b *Aggregate) bool {

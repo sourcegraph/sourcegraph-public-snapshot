@@ -1250,6 +1250,10 @@ type ExhaustiveSearchAggregationResult {
     A count to represent the number of aggregation groups that were not returned due to the requested LIMIT
     """
     otherGroupCount: Int
+    """
+    The SearchAggregationMode the results relate to
+    """
+    mode: SearchAggregationMode!
 }
 
 """
@@ -1273,6 +1277,10 @@ type NonExhaustiveSearchAggregationResult {
     An approximate count of the total number of aggregation groups that were not available in the values list
     """
     approximateOtherGroupCount: Int
+    """
+    The SearchAggregationMode the results relate to
+    """
+    mode: SearchAggregationMode!
 }
 
 """
@@ -1309,4 +1317,8 @@ type SearchAggregationNotAvailable {
     The reason a search aggregation is not available
     """
     reason: String!
+    """
+    The SearchAggregationMode that is unavailable
+    """
+    mode: SearchAggregationMode!
 }

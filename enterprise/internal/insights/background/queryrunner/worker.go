@@ -89,7 +89,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		seriesCache:     sharedCache,
 		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
 			decoder, streamResults := streaming.TabulationDecoder()
-			err := streaming.Search(ctx, query, decoder)
+			err := streaming.Search(ctx, query, nil, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
 			}
