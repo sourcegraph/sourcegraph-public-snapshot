@@ -40,18 +40,19 @@ var builtins = template.FuncMap{
 	},
 }
 
-func ValidateBatchSpecTemplate(name, tmpl string) (bool, error) {
-	// TODO: Outputs????
+func ValidateBatchSpecTemplate(name, spec string) (bool, error) {
 	emptyStepCtx := &StepContext{}
 	emptyCSTmplCtx := &ChangesetTemplateContext{}
 
-	// fmt.Printf("step func map: %v", emptyStepCtx.ToFuncMap())
-	fmt.Printf("changeset template func map: %v", emptyCSTmplCtx.ToFuncMap())
+	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(emptyStepCtx.ToFuncMap()).Funcs(emptyCSTmplCtx.ToFuncMap()).Parse(spec)
 
-	// Try to create template with "dummy funcs" and parse the spec to determine if template variables are okay or not
-	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(emptyStepCtx.ToFuncMap()).Funcs(emptyCSTmplCtx.ToFuncMap()).Parse(tmpl)
 	if err != nil {
 		return false, errors.Wrapf(err, "validating batch spec template: %v", t)
+	}
+
+	var out bytes.Buffer
+	if err = t.Execute(&out, &StepContext{}); err != nil {
+		return false, errors.Wrap(err, "validating batch spec template")
 	}
 
 	return true, nil
