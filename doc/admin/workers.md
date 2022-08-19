@@ -107,6 +107,10 @@ This job runs the workspace resolutions for batch specs. Used for batch changes 
 
 This job runs queries against the database pertaining to generate `gitserver` metrics. These queries are generally expensive to run and do not need to be run per-instance of `gitserver` so the worker allows them to only be run once per scrape.
 
+#### `repo-statistics-compactor`
+
+This job periodically cleans up the `repo_statistics` table by rolling up all rows into a single row.
+
 #### `record-encrypter`
 
 This job bulk encrypts existing data in the database when an encryption key is introduced, and decrypts it when instructed to do. See [encryption](./config/encryption.md) for additional details.
