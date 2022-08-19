@@ -9,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/stretchr/testify/require"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/grafana/regexp"
 )
 

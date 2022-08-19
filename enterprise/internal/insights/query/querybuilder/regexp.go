@@ -3,7 +3,10 @@ package querybuilder
 import (
 	"strings"
 
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
+
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // replaceCaptureGroupsWithString will replace the first capturing group in a regexp
@@ -135,12 +138,8 @@ func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 		// replace the entire content field if there would be no submatch
 		return r.replaceContent(replacement)
 	}
-	var matches [][]string
-	matches = append(matches, make([]string, 0, 2))
-	matches[0] = append(matches[0], "") // empty value for "total match"
-	matches[0] = append(matches[0], replacement)
 
-	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, matches, 1))
+	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, replacement))
 }
 
 var (
