@@ -34,10 +34,6 @@ This job periodically indexes file contents at a syntactic level to build an ind
 
 This job will eventually replace `codeintel-auto-indexing`.
 
-#### `codeintel-dependencies`
-
-This job periodically indexes and resolves the lockfiles found in repositories to build an index of dependencies and dependents.
-
 #### `codeintel-policies-repository-matcher`
 
 This job periodically updates an index of policy repository patterns to matching repository names.
