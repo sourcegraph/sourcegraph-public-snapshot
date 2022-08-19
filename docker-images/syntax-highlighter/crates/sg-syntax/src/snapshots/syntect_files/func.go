@@ -9,6 +9,9 @@ func main() {
 	char := '1'
 	string := "hello\n"
 	bool := true
+	multilineString := `hello
+	world
+this is my poem`
 
 	var null_was_a_mistake *int
 	null_was_a_mistake = nil

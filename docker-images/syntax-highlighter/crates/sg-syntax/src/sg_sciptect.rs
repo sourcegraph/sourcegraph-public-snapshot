@@ -272,6 +272,7 @@ impl<'a> DocumentGenerator<'a> {
 
                             match match_scope_to_kind(&scope) {
                                 Some(kind) => {
+                                    println!("KIND {sscope:50} {kind:?}", sscope=format!("{}", scope));
                                     let partial_hl = HighlightStart::some(row, character, kind);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
                                     {
@@ -284,6 +285,7 @@ impl<'a> DocumentGenerator<'a> {
                                     };
                                 }
                                 None => {
+                                    println!("KIND {}", scope);
                                     unhandled_scopes.insert(scope);
                                     highlight_manager.push_empty();
                                 }
@@ -524,12 +526,17 @@ int main() {
 
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
+                println!("LETSGO ");
         let ss = SyntaxSet::load_defaults_newlines();
         let mut failed = vec![];
 
         let dir = read_dir("./src/snapshots/syntect_files/")?;
         for entry in dir {
             let entry = entry?;
+            if !entry.file_name().to_str().unwrap().ends_with(".go") {
+                continue;
+            } else {
+            }
             let filepath = entry.path();
             let mut file = File::open(&filepath)?;
             let mut contents = String::new();
