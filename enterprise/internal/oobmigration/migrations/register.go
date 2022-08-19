@@ -101,6 +101,13 @@ type dependencies struct {
 }
 
 func registerEnterpriseMigrations(outOfBandMigrationRunner *oobmigration.Runner, deps dependencies) error {
+	var insightsMigrator migrations.TaggedMigrator
+	if deps.insightsStore != nil {
+		insightsMigrator = insights.NewMigrator(deps.store, deps.insightsStore)
+	} else {
+		insightsMigrator = insights.NewMigratorNoOp()
+	}
+
 	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
@@ -110,6 +117,6 @@ func registerEnterpriseMigrations(outOfBandMigrationRunner *oobmigration.Runner,
 		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000),
 		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100),
 		codeintel.NewAPIDocsSearchMigrator(),
-		insights.NewMigrator(deps.store, deps.insightsStore),
+		insightsMigrator,
 	})
 }

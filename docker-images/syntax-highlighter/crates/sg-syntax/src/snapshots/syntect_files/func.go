@@ -7,8 +7,11 @@ func main() {
 
 	x := 1234
 	char := '1'
-	string := "hello\n"
+	aString := "hello\n"
 	bool := true
+	multilineString := `hello
+	world
+this is my poem` + aString
 
 	var null_was_a_mistake *int
 	null_was_a_mistake = nil

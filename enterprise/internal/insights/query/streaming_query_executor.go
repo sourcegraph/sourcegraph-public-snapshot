@@ -84,7 +84,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			}
 
 			decoder, tabulationResult := streaming.TabulationDecoder()
-			err = streaming.Search(ctx, modified.String(), decoder)
+			err = streaming.Search(ctx, modified.String(), nil, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
 			}
