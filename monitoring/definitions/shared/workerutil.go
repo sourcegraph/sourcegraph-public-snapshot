@@ -88,11 +88,7 @@ func (workerutilConstructor) QueueForwardProgress(containerName string, handlerO
 	queueBy, _ := makeBy(queueOptions.By...)
 
 	return fmt.Sprintf(`
-		(
-			sum%[1]s(increase(src_%[2]s_processor_total{%[3]s}[5m]))
-			+ (sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m])))
-			OR vector(0)
-		) == 0
+		(sum%[1]s(src_%[2]s_total{%[3]s}) OR vector(0)) == 0
 			AND
 		(sum%[4]s(src_%[5]s_total{%[6]s})) > 0
 	`, handlerBy, handlerOptions.MetricNameRoot, handlerFilters, queueBy, queueOptions.MetricNameRoot, queueFilters)

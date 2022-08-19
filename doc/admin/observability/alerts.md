@@ -5926,17 +5926,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> executor: less than 0 handler operations every 5m for 5m0s
+- <span class="badge badge-critical">critical</span> executor: less than 0 handler operations every 5m for 15m0s
 
 <details>
 <summary>Technical details</summary>
 
 Custom alert query: `
-		(
-			sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))
-			+ (sum(increase(src_executor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m])))
-			OR vector(0)
-		) == 0
+		(sum(src_executor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}) OR vector(0)) == 0
 			AND
 		(sum by (queue)(src_executor_total{job=~"^sourcegraph-executors.*"})) > 0
 	`
@@ -5945,7 +5941,9 @@ Custom alert query: `
 
 **Next steps**
 
-- possibleSolution string
+- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+- If the VMs are booted, are they processing anything? We don`t track number of in-progress active jobs today,
+so the alert would only subside once a completed (successful or failed) job is reported.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-executor-processor-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -5970,7 +5968,7 @@ Custom alert query: `
 <details>
 <summary>Technical details</summary>
 
-Custom alert query: `last_over_time(sum(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"})[5h:]) / (last_over_time(sum(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"})[5h:]) + last_over_time(sum(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"})[5h:])) * 100`
+Custom alert query: `last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100`
 
 </details>
 

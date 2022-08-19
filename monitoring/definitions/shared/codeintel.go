@@ -324,13 +324,11 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 				monitoring.Alert().
 					CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
 					LessOrEqual(0).
-					// ~5min for scale-from-zero + processing time as we dont have figures for in-flight jobs, only completed
-					For(time.Minute*15),
+					// ~5min for scale-from-zero
+					For(time.Minute*5),
 				`
 				- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
-				- If the VMs are booted, are they processing anything? We don't track number of in-progress active jobs today,
-				so the alert would only subside once a completed (successful or failed) job is reported.
-				`),
+			`),
 			Duration: NoAlertsOption("none"),
 			Errors:   NoAlertsOption("none"),
 			ErrorRate: CriticalOption(
