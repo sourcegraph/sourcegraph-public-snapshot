@@ -1,13 +1,48 @@
 package migrations
 
 import (
+	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/batches"
 )
+
+func RegisterOSSMigrations(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
+	keyring := keyring.Default()
+
+	return registerOSSMigrations(runner, migratorDependencies{
+		store:   basestore.NewWithHandle(db.Handle()),
+		keyring: &keyring,
+	})
+}
+
+func RegisterOSSMigrationsFromConfig(ctx context.Context, db database.DB, runner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
+	keyring, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
+	if err != nil {
+		return err
+	}
+
+	return registerOSSMigrations(runner, migratorDependencies{
+		store:   basestore.NewWithHandle(db.Handle()),
+		keyring: keyring,
+	})
+}
+
+type migratorDependencies struct {
+	store   *basestore.Store
+	keyring *keyring.Ring
+}
+
+func registerOSSMigrations(runner *oobmigration.Runner, deps migratorDependencies) error {
+	return RegisterAll(runner, []TaggedMigrator{
+		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
+	})
+}
 
 type TaggedMigrator interface {
 	oobmigration.Migrator
@@ -15,17 +50,9 @@ type TaggedMigrator interface {
 	Interval() time.Duration
 }
 
-func RegisterOSSMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	extsvcKey := keyring.Default().ExternalServiceKey
-
-	return RegisterAll(outOfBandMigrationRunner, []TaggedMigrator{
-		batches.NewExternalServiceWebhookMigratorWithDB(db, extsvcKey, 50),
-	})
-}
-
-func RegisterAll(outOfBandMigrationRunner *oobmigration.Runner, migrators []TaggedMigrator) error {
+func RegisterAll(runner *oobmigration.Runner, migrators []TaggedMigrator) error {
 	for _, migrator := range migrators {
-		if err := outOfBandMigrationRunner.Register(
+		if err := runner.Register(
 			migrator.ID(),
 			migrator,
 			oobmigration.MigratorOptions{Interval: migrator.Interval()},
