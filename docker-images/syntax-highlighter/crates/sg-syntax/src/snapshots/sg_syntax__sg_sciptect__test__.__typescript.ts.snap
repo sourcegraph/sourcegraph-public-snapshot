@@ -1,10 +1,9 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 538
 expression: "dump_document(&document, &contents)"
 ---
   class MyClass {
-//^^^^^ IdentifierType
+//^^^^^ IdentifierKeyword
     public static myValue: string;
 //  ^^^^^^ IdentifierKeyword
 //         ^^^^^^ IdentifierKeyword
@@ -12,7 +11,7 @@ expression: "dump_document(&document, &contents)"
 //                       ^ IdentifierOperator
 //                               ^ PunctuationDelimiter
     constructor(init: string) {
-//  ^^^^^^^^^^^ IdentifierType
+//  ^^^^^^^^^^^ IdentifierKeyword
 //              ^^^^ Identifier
 //                  ^ IdentifierOperator
       this.myValue = init;
@@ -34,7 +33,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^ IdentifierNamespace
     export interface MyInterface extends Other {
 //  ^^^^^^ IdentifierKeyword
-//         ^^^^^^^^^ IdentifierType
+//         ^^^^^^^^^ IdentifierKeyword
 //                               ^^^^^^^ IdentifierKeyword
       myProperty: any;
 //    ^^^^^^^^^^ Identifier
@@ -49,8 +48,37 @@ expression: "dump_document(&document, &contents)"
 //                          ^ PunctuationDelimiter
   myArray.forEach(() => { }); // fat arrow syntax
 //^^^^^^^ Identifier
-//                   ^^ IdentifierType
+//                   ^^ IdentifierKeyword
 //                          ^ PunctuationDelimiter
 //                            ^^ Comment
 //                              ^^^^^^^^^^^^^^^^^ Comment
+  const oneOf = (a:number): number => a + 1
+//^^^^^ IdentifierKeyword
+//      ^^^^^ IdentifierFunction
+//            ^ IdentifierOperator
+//               ^ Identifier
+//                ^ IdentifierOperator
+//                        ^ IdentifierOperator
+//                                 ^^ IdentifierKeyword
+//                                    ^ Identifier
+//                                      ^ IdentifierOperator
+//                                        ^ NumericLiteral
+  export const x = 42
+//^^^^^^ IdentifierKeyword
+//       ^^^^^ IdentifierKeyword
+//             ^ Identifier
+//               ^ IdentifierOperator
+//                 ^^ NumericLiteral
+  export let y = 42
+//^^^^^^ IdentifierKeyword
+//       ^^^ IdentifierKeyword
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^^ NumericLiteral
+  export var z = 42
+//^^^^^^ IdentifierKeyword
+//       ^^^ IdentifierKeyword
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^^ NumericLiteral
 

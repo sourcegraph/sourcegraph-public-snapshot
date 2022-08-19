@@ -11,7 +11,7 @@ expression: "dump_document(&document, &contents)"
 //^^^ Identifier
 //   ^ IdentifierOperator
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//      ^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
 //                                ^ NumericLiteral
 //                                 ^^ IdentifierOperator
 //                                   ^ NumericLiteral
@@ -20,20 +20,20 @@ expression: "dump_document(&document, &contents)"
 //         ^ IdentifierOperator
 //          ^^ StringLiteral 4:10..9:19
    git diff origin/main -- foobar.md |
-// ^^^ Identifier
+// ^^^ IdentifierFunction
 //                     ^^^ IdentifierOperator
 //                                   ^ IdentifierOperator
    # some comment
 // ^ Comment
 //  ^^^^^^^^^^^^^ Comment
    grep ^+ |
-// ^^^^ Identifier
+// ^^^^ IdentifierFunction
 //         ^ IdentifierOperator
    # more sed
 // ^ Comment
 //  ^^^^^^^^^ Comment
    sed 's/#readme//')
-// ^^^ Identifier
+// ^^^ IdentifierFunction
 //     ^^^^^^^^^^^^^ StringLiteral
   echo "$OUT"
 //     ^^^^^^ StringLiteral
@@ -45,7 +45,7 @@ expression: "dump_document(&document, &contents)"
 //     ^^^^^^ StringLiteral
 //       ^^^ Identifier
 //            ^ IdentifierOperator
-//              ^^^^ Identifier
+//              ^^^^ IdentifierFunction
 //                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   if [ "$OUT" != '0' ]; then
 //^^ IdentifierKeyword

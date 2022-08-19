@@ -12,7 +12,7 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^ StringLiteral
   
   int main() {
-//^^^ IdentifierType
+//^^^ IdentifierKeyword
 //    ^^^^ IdentifierFunction
       syntect::Exception::raise("oops");
 //                              ^^^^^^ StringLiteral

@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 539
 expression: "dump_document(&document, &contents)"
 ---
   @requires_authorization(roles=["ADMIN"])
@@ -22,7 +21,7 @@ expression: "dump_document(&document, &contents)"
 //                              ^ IdentifierOperator
 //                               ^ NumericLiteral
       r'''A docstring'''
-//    ^ IdentifierType
+//    ^ IdentifierKeyword
 //     ^^^^^^^^^^^^^^^^^ Comment
       if param1 > param2: # interesting
 //    ^^ IdentifierKeyword
@@ -41,7 +40,7 @@ expression: "dump_document(&document, &contents)"
 //                              ^ NumericLiteral
 //                                ^ IdentifierOperator
 //                                  ^^^^ NumericLiteral
-//                                      ^ IdentifierType
+//                                      ^ IdentifierKeyword
 //                                         ^^ IdentifierOperator
 //                                            ^^^^ IdentifierBuiltin
   

@@ -1,10 +1,9 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 541
 expression: "dump_document(&document, &contents)"
 ---
   function $initHighlight(block, cls) {
-//^^^^^^^^ IdentifierType
+//^^^^^^^^ IdentifierKeyword
 //         ^^^^^^^^^^^^^^ IdentifierFunction
 //                        ^^^^^ Identifier
 //                               ^^^ Identifier
@@ -13,7 +12,7 @@ expression: "dump_document(&document, &contents)"
       if (cls.search(/\bno\-highlight\b/) != -1)
 //    ^^ IdentifierKeyword
 //        ^^^ Identifier
-//            ^^^^^^ Identifier
+//            ^^^^^^ IdentifierFunction
 //                   ^ StringLiteral
 //                    ^^ IdentifierKeyword
 //                      ^^ StringLiteral
@@ -43,7 +42,7 @@ expression: "dump_document(&document, &contents)"
     }
     for (var i = 0 / 2; i < classes.length; i++) {
 //  ^^^ IdentifierKeyword
-//       ^^^ IdentifierType
+//       ^^^ IdentifierKeyword
 //           ^ Identifier
 //             ^ IdentifierOperator
 //               ^ NumericLiteral
@@ -56,7 +55,7 @@ expression: "dump_document(&document, &contents)"
 //                                           ^^ IdentifierOperator
       if (checkCondition(classes[i]) === undefined)
 //    ^^ IdentifierKeyword
-//        ^^^^^^^^^^^^^^ Identifier
+//        ^^^^^^^^^^^^^^ IdentifierFunction
 //                       ^^^^^^^ Identifier
 //                               ^ Identifier
 //                                   ^^^ IdentifierOperator

@@ -1,68 +1,74 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 539
 expression: "dump_document(&document, &contents)"
 ---
-  interface MyInterface 
-//^^^^^^^^^ IdentifierType
-  { 
-       void abstract_func(int x,int y); 
-//     ^^^^ IdentifierType
+  interface MyInterface
+//^^^^^^^^^ IdentifierKeyword
+  {
+       void abstract_func(int x,int y);
+//     ^^^^ IdentifierKeyword
 //          ^^^^^^^^^^^^^ IdentifierFunction
-//                        ^^^ IdentifierType
+//                        ^^^ IdentifierKeyword
 //                            ^ Identifier
-//                              ^^^ IdentifierType
+//                              ^^^ IdentifierKeyword
 //                                  ^ Identifier
 //                                    ^ PunctuationDelimiter
-   
-       default void default_Fun() 
+  
+       default void default_Fun()
 //     ^^^^^^^ IdentifierKeyword
-//             ^^^^ IdentifierType
+//             ^^^^ IdentifierKeyword
 //                  ^^^^^^^^^^^ IdentifierFunction
-      { 
-           System.out.println("This is default method"); 
-//                    ^^^^^^^ Identifier
+      {
+           System.out.println("This is default method");
+//                    ^^^^^^^ IdentifierFunction
 //                            ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                     ^ PunctuationDelimiter
-      } 
-  } 
-   
-  class Main 
-//^^^^^ IdentifierType
-  { 
-       public static void main(String args[]) 
+      }
+  }
+  
+  class Main
+//^^^^^ IdentifierKeyword
+  {
+       public static void main(String args[])
 //     ^^^^^^ IdentifierKeyword
 //            ^^^^^^ IdentifierKeyword
-//                   ^^^^ IdentifierType
+//                   ^^^^ IdentifierKeyword
 //                        ^^^^ IdentifierFunction
 //                                    ^^^^ Identifier
 //                                        ^^ PunctuationBracket
-      { 
+      {
           //lambda expression
 //        ^^^^^^^^^^^^^^^^^^^ Comment
-          MyInterface fobj = (int x, int y)->System.out.println(x+y); 
+          MyInterface fobj = (int x, int y)->System.out.println(x+y);
 //                         ^ IdentifierOperator
-//                            ^^^ IdentifierType
+//                            ^^^ IdentifierKeyword
 //                                ^ Identifier
-//                                   ^^^ IdentifierType
+//                                   ^^^ IdentifierKeyword
 //                                       ^ Identifier
-//                                         ^^ IdentifierType
-//                                                      ^^^^^^^ Identifier
+//                                         ^^ IdentifierKeyword
+//                                                      ^^^^^^^ IdentifierFunction
 //                                                               ^ IdentifierOperator
 //                                                                  ^ PunctuationDelimiter
-   
+  
           System.out.print("The result = ");
-//                   ^^^^^ Identifier
+//                   ^^^^^ IdentifierFunction
 //                         ^^^^^^^^^^^^^^^ StringLiteral
 //                                         ^ PunctuationDelimiter
-          fobj.abstract_func(5,5); 
-//             ^^^^^^^^^^^^^ Identifier
+          fobj.abstract_func(5,5);
+//             ^^^^^^^^^^^^^ IdentifierFunction
 //                           ^ NumericLiteral
 //                             ^ NumericLiteral
 //                               ^ PunctuationDelimiter
           fobj.default_Fun();
-//             ^^^^^^^^^^^ Identifier
+//             ^^^^^^^^^^^ IdentifierFunction
 //                          ^ PunctuationDelimiter
-      } 
+      }
+      String format(String x) {
+//           ^^^^^^ IdentifierFunction
+//                         ^ Identifier
+          return x;
+//        ^^^^^^ IdentifierKeyword
+//                ^ PunctuationDelimiter
+      }
   }
 

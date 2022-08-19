@@ -55,7 +55,7 @@ expression: "dump_document(&document, &contents)"
   
    fmt.Println(x, char, string, bool, null_was_a_mistake)
 // ^^^ Identifier
-//     ^^^^^^^ Identifier
+//     ^^^^^^^ IdentifierFunction
 //             ^ Identifier
 //                ^^^^ Identifier
 //                      ^^^^^^ Identifier

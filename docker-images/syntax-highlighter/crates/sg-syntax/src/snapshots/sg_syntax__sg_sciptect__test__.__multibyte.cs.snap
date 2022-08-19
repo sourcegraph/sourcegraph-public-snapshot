@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 538
 expression: "dump_document(&document, &contents)"
 ---
   using System;
@@ -13,24 +12,24 @@ expression: "dump_document(&document, &contents)"
   {
       public void Something()
 //    ^^^^^^ IdentifierKeyword
-//           ^^^^ IdentifierType
+//           ^^^^ IdentifierKeyword
 //                ^^^^^^^^^ IdentifierFunction
       {
           var x = "世界";
-//        ^^^ IdentifierType
+//        ^^^ IdentifierKeyword
 //            ^ Identifier
 //              ^ IdentifierOperator
 //                ^^^^ StringLiteral
 //                    ^ PunctuationDelimiter
           var y = "世界 Hello, 世界";
-//        ^^^ IdentifierType
+//        ^^^ IdentifierKeyword
 //            ^ Identifier
 //              ^ IdentifierOperator
 //                ^^^^^^^^^^^^^^ StringLiteral
 //                              ^ PunctuationDelimiter
   
           var emoji = "🥳";
-//        ^^^ IdentifierType
+//        ^^^ IdentifierKeyword
 //            ^^^^^ Identifier
 //                  ^ IdentifierOperator
 //                    ^^^ StringLiteral

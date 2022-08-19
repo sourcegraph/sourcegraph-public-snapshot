@@ -55,6 +55,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("entity.name.function"), IdentifierFunction),
             (scope("keyword.operator"), IdentifierOperator),
             (scope("keyword"), IdentifierKeyword),
+            (scope("variable.function"), IdentifierFunction),
             (scope("variable"), Identifier),
             (scope("constant.character.escape"), StringLiteralEscape),
             (scope("string"), StringLiteral),
@@ -64,7 +65,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.modifier.array"), PunctuationBracket),
             (scope("storage.modifier"), IdentifierKeyword),
             (scope("storage.type.namespace"), IdentifierNamespace),
-            (scope("storage.type"), IdentifierType),
+            (scope("storage.type"), IdentifierKeyword),
             (scope("support.type.builtin"), IdentifierBuiltinType),
             (scope("meta.path"), IdentifierNamespace),
             //
@@ -272,6 +273,8 @@ impl<'a> DocumentGenerator<'a> {
 
                             match match_scope_to_kind(&scope) {
                                 Some(kind) => {
+                                    // println!("SCOPE {row:>3}:{character:<2} {:<50} {kind:?}", format!("{scope}"));
+                                    // println!("KIND {:<30} {kind:?}", format!("{scope}"));
                                     let partial_hl = HighlightStart::some(row, character, kind);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
                                     {
