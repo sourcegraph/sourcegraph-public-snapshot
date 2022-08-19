@@ -125,7 +125,6 @@ export const renderMarkdown = (
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
                 source: ['srcset', 'media'],
                 // Support SVGs for code insights.
-                object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
                 svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
                 rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
                 path: ['d', ...svgPresentationAttributes],
@@ -160,72 +159,6 @@ export const renderMarkdown = (
                     'flex-grow': ALL_VALUES_ALLOWED,
                     'flex-shrink': ALL_VALUES_ALLOWED,
                     'flex-basis': ALL_VALUES_ALLOWED,
-                },
-            },
-            transformTags: {
-                object(tagName, attribs) {
-                    if (attribs.data.toLowerCase().includes(';base64,')) {
-                        return {
-                            tagName,
-                            attribs: {
-                                data: encodeURI('<svg></svg>'),
-                                type: attribs.type,
-                            },
-                        }
-                    }
-
-                    const index = attribs.data.indexOf(',')
-                    let data: string
-                    let data_prefix = ''
-
-                    if (index > -1) {
-                        const data_split = attribs.data.split(',')
-                        data_prefix = data_split[0] + ','
-                        data = data_split[1]
-                    } else {
-                        data = attribs.data
-                    }
-                    let cleaned
-
-                    try {
-                        cleaned = sanitize(decodeURI(data), {
-                            allowedTags: sanitize.defaults.allowedTags.concat([
-                                'svg',
-                                'path',
-                                'picture',
-                                'circle',
-                                'pattern',
-                                'rect',
-                            ]),
-                            allowedAttributes: {
-                                svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
-                                rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
-                                path: ['d', ...svgPresentationAttributes],
-                                circle: ['cx', 'cy', ...svgPresentationAttributes],
-                            },
-                            allowedStyles: {
-                                svg: {
-                                    flex: ALL_VALUES_ALLOWED,
-                                    'flex-grow': ALL_VALUES_ALLOWED,
-                                    'flex-shrink': ALL_VALUES_ALLOWED,
-                                    'flex-basis': ALL_VALUES_ALLOWED,
-                                },
-                            },
-                        })
-                    } catch (error) {
-                        // this doesn't happen with benign SVGs
-                        console.error(error)
-                        cleaned = '<svg></svg>'
-                    }
-
-                    return {
-                        tagName,
-                        attribs: {
-                            // reconstruct cleaned SVG
-                            data: data_prefix + encodeURIComponent(cleaned),
-                            type: attribs.type,
-                        },
-                    }
                 },
             },
         }
