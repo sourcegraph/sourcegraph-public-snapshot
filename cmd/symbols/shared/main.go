@@ -44,7 +44,11 @@ func Main(setup SetupFunc) {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, sglog.NewSentrySinkWith(sglog.SentrySink{
+        ClientOptions: sentrylib.ClientOptions{
+            SampleRate: 0.2,
+        },
+    },) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	conf.Init()
