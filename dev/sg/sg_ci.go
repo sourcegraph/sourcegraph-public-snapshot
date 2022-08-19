@@ -16,6 +16,8 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
+	sgrun "github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
@@ -46,6 +48,11 @@ var (
 		Aliases: []string{"n"}, // 'n' for number, because 'b' is taken
 		Usage:   "Override branch detection with a specific build `number`",
 	}
+	ciCommitFlag = cli.StringFlag{
+		Name:    "commit",
+		Aliases: []string{"c"},
+		Usage:   "Override branch detection with the latest build for `commit`",
+	}
 	ciPipelineFlag = cli.StringFlag{
 		Name:    "pipeline",
 		Aliases: []string{"p"},
@@ -59,10 +66,20 @@ var (
 var ciTargetFlags = []cli.Flag{
 	&ciBranchFlag,
 	&ciBuildFlag,
+	&ciCommitFlag,
 	&ciPipelineFlag,
 }
 
+type buildTargetType string
+
+const (
+	buildTargetTypeBranch      buildTargetType = "branch"
+	buildTargetTypeBuildNumber buildTargetType = "build"
+	buildTargetTypeCommit      buildTargetType = "commit"
+)
+
 type targetBuild struct {
+	targetType buildTargetType
 	// target identifier - could br a branch or a build
 	target string
 	// buildkite pipeline to query
@@ -70,8 +87,6 @@ type targetBuild struct {
 
 	// Whether or not the target is set from a flag
 	fromFlag bool
-	// Whether or not the target is a branch
-	isBranch bool
 }
 
 // getBuildTarget returns a targetBuild that can be used to retrieve details about a
@@ -87,37 +102,57 @@ func getBuildTarget(cmd *cli.Context) (target targetBuild, err error) {
 	var (
 		branch = ciBranchFlag.Get(cmd)
 		build  = ciBuildFlag.Get(cmd)
+		commit = ciCommitFlag.Get(cmd)
 	)
 	if branch != "" && build != "" {
 		return target, errors.New("branch and build cannot both be set")
 	}
 
 	target.fromFlag = true
-	target.isBranch = true
 	switch {
 	case branch != "":
 		target.target = branch
+		target.targetType = buildTargetTypeBranch
+
 	case build != "":
 		target.target = build
-		target.isBranch = false
+		target.targetType = buildTargetTypeBuildNumber
+
+	case commit != "":
+		// get the full commit
+		target.target, err = root.Run(sgrun.Cmd(cmd.Context, "git rev-parse", commit)).String()
+		if err != nil {
+			return
+		}
+		target.targetType = buildTargetTypeCommit
+
 	default:
 		target.target, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
 		target.fromFlag = false
+		target.targetType = buildTargetTypeBranch
 	}
 	return
 }
 
 func (t targetBuild) GetBuild(ctx context.Context, client *bk.Client) (build *buildkite.Build, err error) {
-	if t.isBranch {
+	switch t.targetType {
+	case buildTargetTypeBranch:
 		build, err = client.GetMostRecentBuild(ctx, t.pipeline, t.target)
 		if err != nil {
 			return nil, errors.Newf("failed to get most recent build for branch %q: %w", t.target, err)
 		}
-	} else {
+	case buildTargetTypeBuildNumber:
 		build, err = client.GetBuildByNumber(ctx, t.pipeline, t.target)
 		if err != nil {
 			return nil, errors.Newf("failed to find build number %q: %w", t.target, err)
 		}
+	case buildTargetTypeCommit:
+		build, err = client.GetBuildByCommit(ctx, t.pipeline, t.target)
+		if err != nil {
+			return nil, errors.Newf("failed to find build number %q: %w", t.target, err)
+		}
+	default:
+		panic("bad target type " + t.targetType)
 	}
 	return
 }
@@ -175,7 +210,7 @@ sg ci build --help
 			if err != nil {
 				return err
 			}
-			if !target.isBranch {
+			if target.targetType != buildTargetTypeBranch {
 				// Should never happen because we only register the branch flag
 				return errors.New("target is not a branch")
 			}
@@ -295,7 +330,7 @@ sg ci build --help
 			// If we're not on a specific branch and not asking for a specific build,
 			// warn if build commit is not your local copy - we are building an
 			// unknown revision.
-			if !target.fromFlag && target.isBranch {
+			if !target.fromFlag && target.targetType == buildTargetTypeBranch {
 				commit, err := run.GitCmd("rev-parse", "HEAD")
 				if err != nil {
 					return err

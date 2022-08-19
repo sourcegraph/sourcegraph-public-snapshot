@@ -1,77 +1,47 @@
 package querybuilder
 
 import (
-	"sort"
 	"strings"
-
-	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/grafana/regexp"
 )
 
-// replaceCaptureGroupsWithString will replace capturing groups in a regexp
-// pattern with their respective literal matches. This is somewhat an inverse
+// replaceCaptureGroupsWithString will replace the first capturing group in a regexp
+// pattern with a replacement literal. This is somewhat an inverse
 // operation of capture groups, with the goal being to produce a new regexp that
 // can match a specific instance of a captured value. For example, given the
-// pattern `(\w+)-(\w+)` and the text `cat-cow dog-pig` this would generate a
-// new regexp `(?:cat|dog)-(?:cow|pig)` The maxGroup argument allows
-// control over how many capture groups are replaced (up to and including capture group N, indexed at 1). If the value is
-// negative all capture groups will be replaced. Each capture group that is replaced will be converted
-// into a non-capturing group containing the literal matches.
-func replaceCaptureGroupsWithString(pattern string, groups []group, matches [][]string, maxGroup int) string {
+// pattern `(\w+)-(\w+)` and the replacement `cat` this would generate a
+// new regexp `(?:cat)-(\w+)` The capture group that is replaced will be converted
+// into a non-capturing group containing the literal replacement.
+func replaceCaptureGroupsWithString(pattern string, groups []group, replacement string) string {
 	if len(groups) < 1 {
-		return pattern
-	} else if len(matches) == 0 || len(matches[0]) == 0 {
 		return pattern
 	}
 	var sb strings.Builder
 
-	capturing := make([]group, 0, len(groups))
-	for _, g := range groups {
-		if g.capturing {
-			capturing = append(capturing, g)
-		}
-	}
-
-	// groups need to be in stable order
-	sort.Slice(capturing, func(i, j int) bool {
-		return capturing[i].start < capturing[j].start
-	})
-	// todo handle nested groups by generating a set of non-overlapping groups
-
-	// pivot the matches from [match][group_number] to [group_number][match] to more easily reference the set of literals
-	pivotMatches := make([][]string, len(matches[0]))
-	for i := range pivotMatches {
-		pivotMatches[i] = make([]string, 0, len(matches))
-	}
-	for _, match := range matches {
-		for inner, literal := range match {
-			pivotMatches[inner] = append(pivotMatches[inner], regexp.QuoteMeta(literal))
-		}
-	}
-
-	if maxGroup < 0 {
-		// even though the length of groups isn't necessarily the number of matched
-		// groups we can still use that as the max index here. The iteration will
-		// effectively become the minimum of this and the actual length. We
-		maxGroup = len(capturing)
-	}
-	offset := 0
-	for groupIndex, group := range capturing {
-		if !group.capturing {
+	// extract the first capturing group by finding the capturing group with the smallest group number
+	var firstCapturing *group
+	for i := range groups {
+		current := groups[i]
+		if !current.capturing {
 			continue
-		} else if groupIndex > (maxGroup - 1) {
-			// the -1 offset is because we reference regexp groups with submatches starting at 1, whereas the array offset is 0
-			break
 		}
-		sb.WriteString(pattern[offset:group.start])
-		sb.WriteString("(?:")
-		sb.WriteString(strings.Join(pivotMatches[group.number], "|"))
-		sb.WriteString(")")
-		offset = group.end + 1
+		if firstCapturing == nil || current.number < firstCapturing.number {
+			firstCapturing = &current
+		}
 	}
-	if offset < len(pattern) {
+	if firstCapturing == nil {
+		return pattern
+	}
+
+	offset := 0
+	sb.WriteString(pattern[offset:firstCapturing.start])
+	sb.WriteString("(?:")
+	sb.WriteString(regexp.QuoteMeta(replacement))
+	sb.WriteString(")")
+	offset = firstCapturing.end + 1
+
+	if firstCapturing.end+1 < len(pattern) {
 		// this will copy the rest of the pattern if the last group isn't the end of the pattern string
 		sb.WriteString(pattern[offset:])
 	}
@@ -116,6 +86,12 @@ func findGroups(pattern string) (groups []group) {
 			opens = append(opens, g)
 
 		} else if pattern[i] == ')' && !inCharClass {
+			if len(opens) == 0 {
+				// this shouldn't happen if we are parsing a well formed regexp since it
+				// effectively means we have encountered a closing parenthesis without a
+				// corresponding open, but for completeness here this will no-op
+				return nil
+			}
 			current := opens[len(opens)-1]
 			current.end = i
 			groups = append(groups, current)

@@ -60,10 +60,6 @@ func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext 
 	}
 }
 
-// ErrMigratorConflict occurs when multiple migrator instances are registered to the same
-// out-of-band migration identifier.
-var ErrMigratorConflict = errors.New("migrator already registered")
-
 // MigratorOptions configures the behavior of a registered migrator.
 type MigratorOptions struct {
 	// Interval specifies the time between invocations of an active migration.
@@ -81,7 +77,7 @@ func (r *Runner) SynchronizeMetadata(ctx context.Context) error {
 // returned if a migrator is already associated with this migration.
 func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) error {
 	if _, ok := r.migrators[id]; ok {
-		return ErrMigratorConflict
+		return errors.Newf("migrator %d already registered", id)
 	}
 
 	if options.Interval == 0 {

@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/zoekt"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

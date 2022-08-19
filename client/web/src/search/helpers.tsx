@@ -1,4 +1,5 @@
 import { SubmitSearchParameters } from '@sourcegraph/search'
+import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from '@sourcegraph/search-ui'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -6,6 +7,13 @@ import { SearchType } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
+
+/**
+ * By default {@link submitSearch} overrides all existing query parameters.
+ * This breaks all functionality that is built on top of URL query params and history
+ * state. This list of query keys will be preserved between searches.
+ */
+const PRESERVED_QUERY_PARAMETERS = ['trace', AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY]
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -29,13 +37,16 @@ export function submitSearch({
         searchParameters
     )
 
-    // Check if `trace` is set in the query parameters, and retain it if present.
     const existingParameters = new URLSearchParams(history.location.search)
-    const traceParameter = existingParameters.get('trace')
-    if (traceParameter !== null) {
-        const parameters = new URLSearchParams(searchQueryParameter)
-        parameters.set('trace', traceParameter)
-        searchQueryParameter = parameters.toString()
+
+    for (const key of PRESERVED_QUERY_PARAMETERS) {
+        const queryParameter = existingParameters.get(key)
+
+        if (queryParameter !== null) {
+            const parameters = new URLSearchParams(searchQueryParameter)
+            parameters.set(key, queryParameter)
+            searchQueryParameter = parameters.toString()
+        }
     }
 
     // Go to search results page

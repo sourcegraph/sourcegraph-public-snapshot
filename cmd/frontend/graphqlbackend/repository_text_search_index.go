@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
-	"github.com/google/zoekt/stream"
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegraph/zoekt/stream"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"

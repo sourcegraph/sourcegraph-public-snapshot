@@ -1,8 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 491
 expression: "dump_document(&document, &contents)"
-
 ---
   // Original:
 //^^^^^^^^^^^^ Comment
@@ -11,67 +9,67 @@ expression: "dump_document(&document, &contents)"
   
   using AngleSharp.Dom;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^^^^^ IdentifierModule
+//      ^^^^^^^^^^ IdentifierNamespace
 //                ^ PunctuationDelimiter
-//                 ^^^ IdentifierModule
+//                 ^^^ IdentifierNamespace
 //                    ^ PunctuationDelimiter
   using Bunit;
 //^^^^^ IdentifierKeyword
-//      ^^^^^ IdentifierModule
+//      ^^^^^ IdentifierNamespace
 //           ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^^^^ IdentifierModule
+//      ^^^^^^^^^ IdentifierNamespace
 //               ^ PunctuationDelimiter
-//                ^^^^^^^^^^ IdentifierModule
+//                ^^^^^^^^^^ IdentifierNamespace
 //                          ^ PunctuationDelimiter
-//                           ^^^^^^^^^^ IdentifierModule
+//                           ^^^^^^^^^^ IdentifierNamespace
 //                                     ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components.Rendering;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^^^^ IdentifierModule
+//      ^^^^^^^^^ IdentifierNamespace
 //               ^ PunctuationDelimiter
-//                ^^^^^^^^^^ IdentifierModule
+//                ^^^^^^^^^^ IdentifierNamespace
 //                          ^ PunctuationDelimiter
-//                           ^^^^^^^^^^ IdentifierModule
+//                           ^^^^^^^^^^ IdentifierNamespace
 //                                     ^ PunctuationDelimiter
-//                                      ^^^^^^^^^ IdentifierModule
+//                                      ^^^^^^^^^ IdentifierNamespace
 //                                               ^ PunctuationDelimiter
   using System;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierModule
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
   using System.Collections.Generic;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierModule
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
-//             ^^^^^^^^^^^ IdentifierModule
+//             ^^^^^^^^^^^ IdentifierNamespace
 //                        ^ PunctuationDelimiter
-//                         ^^^^^^^ IdentifierModule
+//                         ^^^^^^^ IdentifierNamespace
 //                                ^ PunctuationDelimiter
   using System.Linq;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierModule
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
-//             ^^^^ IdentifierModule
+//             ^^^^ IdentifierNamespace
 //                 ^ PunctuationDelimiter
   using System.Text.RegularExpressions;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierModule
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
-//             ^^^^ IdentifierModule
+//             ^^^^ IdentifierNamespace
 //                 ^ PunctuationDelimiter
-//                  ^^^^^^^^^^^^^^^^^^ IdentifierModule
+//                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace
 //                                    ^ PunctuationDelimiter
   using Xunit;
 //^^^^^ IdentifierKeyword
-//      ^^^^^ IdentifierModule
+//      ^^^^^ IdentifierNamespace
 //           ^ PunctuationDelimiter
   namespace Radzen.Blazor.
 //^^^^^^^^^ IdentifierKeyword
-//          ^^^^^^ IdentifierModule
+//          ^^^^^^ IdentifierNamespace
 //                ^ PunctuationDelimiter
-//                 ^^^^^^ IdentifierModule
+//                 ^^^^^^ IdentifierNamespace
 //                       ^ PunctuationDelimiter
   {
       public class DataGridTests
@@ -122,7 +120,9 @@ expression: "dump_document(&document, &contents)"
 //                                                                   ^ IdentifierOperator
 //                                                                     ^^^^^^^^^^^^^^^^^ Identifier
 //                                                                                      ^^ IdentifierOperator
+//                                                                                         Identifier 23:88..24:12
               {
+//              Identifier 24:13..25:32
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
 //                                ^ PunctuationDelimiter
 //                                 ^^^ IdentifierFunction
@@ -169,6 +169,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                                                            ^ Identifier
 //                                                                                                                              ^ Identifier
 //                                                                                                                                 ^ PunctuationDelimiter
+//                                                                                                                                   Identifier 25:130..26:32
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
 //                                ^ PunctuationDelimiter
 //                                 ^^^ IdentifierFunction
@@ -184,7 +185,9 @@ expression: "dump_document(&document, &contents)"
 //                                                                    ^ Identifier
 //                                                                     ^^^^^^^^ Identifier
 //                                                                             ^^ IdentifierOperator
+//                                                                                Identifier 26:79..27:16
                   {
+//                  Identifier 27:17..28:27
                       builder.OpenComponent(0, typeof(RadzenGridColumn<dynamic>));
 //                           ^ PunctuationDelimiter
 //                            ^^^^^^^^^^^^^ IdentifierFunction
@@ -197,6 +200,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                     ^^^^^^^ IdentifierType
 //                                                                            ^ IdentifierOperator
 //                                                                               ^ PunctuationDelimiter
+//                                                                                 Identifier 28:80..29:27
                       builder.AddAttribute(1, "Property", "Id");
 //                           ^ PunctuationDelimiter
 //                            ^^^^^^^^^^^^ IdentifierFunction
@@ -212,12 +216,15 @@ expression: "dump_document(&document, &contents)"
 //                                                         ^^ StringLiteral
 //                                                           ^ StringLiteral
 //                                                             ^ PunctuationDelimiter
+//                                                               Identifier 29:62..30:27
                       builder.CloseComponent();
 //                           ^ PunctuationDelimiter
 //                            ^^^^^^^^^^^^^^ IdentifierFunction
 //                                            ^ PunctuationDelimiter
+//                                              Identifier 30:45..31:16
                   });
 //                  ^ PunctuationDelimiter
+//                    Identifier 31:19..32:12
               });
 //              ^ PunctuationDelimiter
   
@@ -256,7 +263,9 @@ expression: "dump_document(&document, &contents)"
 //                                                                   ^ IdentifierOperator
 //                                                                     ^^^^^^^^^^^^^^^^^ Identifier
 //                                                                                      ^^ IdentifierOperator
+//                                                                                         Identifier 38:88..39:12
               {
+//              Identifier 39:13..40:32
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
 //                                ^ PunctuationDelimiter
 //                                 ^^^ IdentifierFunction
@@ -303,6 +312,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                                                            ^ Identifier
 //                                                                                                                              ^ Identifier
 //                                                                                                                                 ^ PunctuationDelimiter
+//                                                                                                                                   Identifier 40:130..41:32
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
 //                                ^ PunctuationDelimiter
 //                                 ^^^ IdentifierFunction
@@ -318,7 +328,9 @@ expression: "dump_document(&document, &contents)"
 //                                                                    ^ Identifier
 //                                                                     ^^^^^^^^ Identifier
 //                                                                             ^^ IdentifierOperator
+//                                                                                Identifier 41:79..42:16
                   {
+//                  Identifier 42:17..43:27
                       builder.OpenComponent(0, typeof(RadzenGridColumn<dynamic>));
 //                           ^ PunctuationDelimiter
 //                            ^^^^^^^^^^^^^ IdentifierFunction
@@ -331,6 +343,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                     ^^^^^^^ IdentifierType
 //                                                                            ^ IdentifierOperator
 //                                                                               ^ PunctuationDelimiter
+//                                                                                 Identifier 43:80..44:27
                       builder.AddAttribute(1, "Property", "Id");
 //                           ^ PunctuationDelimiter
 //                            ^^^^^^^^^^^^ IdentifierFunction
@@ -346,12 +359,15 @@ expression: "dump_document(&document, &contents)"
 //                                                         ^^ StringLiteral
 //                                                           ^ StringLiteral
 //                                                             ^ PunctuationDelimiter
+//                                                               Identifier 44:62..45:27
                       builder.CloseComponent();
 //                           ^ PunctuationDelimiter
 //                            ^^^^^^^^^^^^^^ IdentifierFunction
 //                                            ^ PunctuationDelimiter
+//                                              Identifier 45:45..46:16
                   });
 //                  ^ PunctuationDelimiter
+//                    Identifier 46:19..47:12
               });
 //              ^ PunctuationDelimiter
   
@@ -406,6 +422,7 @@ expression: "dump_document(&document, &contents)"
               Assert.Contains(@"
 //                  ^ PunctuationDelimiter
 //                   ^^^^^^^^ IdentifierFunction
+//                            ^^ StringLiteral 53:28..55:1
   Lorem Ipsum
   ", component.Markup);
 // ^ PunctuationDelimiter

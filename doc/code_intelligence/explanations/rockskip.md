@@ -8,7 +8,7 @@ Rockskip is an alternative symbol indexing and query engine for the symbol servi
 
 ![hover popover spinner](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/hover-popover-spinner.png)
 
-If you regularly see the above error or slow hover popovers (when not using LSIF), it probably means that the default implementation (which copies SQLite DBs for each commit) is not fast enough and that Rockskip might help.
+If you regularly see the above error or slow hover popovers (when not using precise navigation), it probably means that the default implementation (which copies SQLite DBs for each commit) is not fast enough and that Rockskip might help.
 
 A very rough way to gauge if Rockskip will help is if your repository has a 2GB+ `.git` directory, 50K+ commits, or 50K+ files in the working tree.
 

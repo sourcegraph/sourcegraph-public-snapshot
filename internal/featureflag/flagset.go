@@ -1,6 +1,7 @@
 package featureflag
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -20,6 +21,14 @@ func (f EvaluatedFlagSet) String() string {
 		}
 	}
 	return sb.String()
+}
+
+func (f EvaluatedFlagSet) Json() json.RawMessage {
+	js, err := json.Marshal(f)
+	if err != nil {
+		return []byte{}
+	}
+	return js
 }
 
 // Feature flags for the current actor

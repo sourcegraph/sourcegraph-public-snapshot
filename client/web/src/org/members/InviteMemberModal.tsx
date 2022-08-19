@@ -90,7 +90,7 @@ export const InviteMemberModal: React.FunctionComponent<React.PropsWithChildren<
         <Modal className={styles.modal} onDismiss={dismissWithLogging} position="center" aria-label={title}>
             <div className="d-flex flex-row align-items-end">
                 <H3>{title}</H3>
-                <Button className={classNames('btn-icon', styles.closeButton)} onClick={dismissWithLogging}>
+                <Button className={styles.closeButton} onClick={dismissWithLogging}>
                     <VisuallyHidden>Close</VisuallyHidden>
                     <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
                 </Button>
@@ -140,7 +140,7 @@ export const InvitedNotification: React.FunctionComponent<React.PropsWithChildre
             <div>They will receive an email shortly. You can also send them this personal invite link:</div>
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
+        <Button variant="icon" title="Dismiss" onClick={onDismiss}>
             <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>

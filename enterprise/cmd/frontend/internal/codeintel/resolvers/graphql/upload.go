@@ -119,10 +119,17 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *gql.
 		term = *args.Query
 	}
 
-	matches, totalCount, err := r.resolver.RetentionPolicyOverview(ctx, r.upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
+	policyResolver, err := r.resolver.PoliciesResolver().PolicyResolverFactory(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	upload := sharedPoliciesUploadsToStoreUpload(r.upload)
+	m, totalCount, err := policyResolver.GetRetentionPolicyOverview(ctx, upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	matches := sharedRetentionPolicyToStoreRetentionPolicy(m)
 
 	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.db, r.resolver, matches, totalCount, r.traceErrs), nil
 }

@@ -9,20 +9,69 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type Exporter interface {
-	// Export accepts an ExportRequest and returns bytes of a zip archive
+	// Export accepts an ExportRequest and returns io.Reader of a zip archive
 	// with requested data.
-	Export(ctx context.Context, request ExportRequest) ([]byte, error)
+	Export(ctx context.Context, request ExportRequest) (io.Reader, error)
 }
 
 var _ Exporter = &DataExporter{}
+
+var GlobalExporter Exporter
 
 type DataExporter struct {
 	logger           log.Logger
 	configProcessors map[string]Processor[ConfigRequest]
 	dbProcessors     map[string]Processor[Limit]
+}
+
+type ConfigRequest struct {
+}
+
+type DBQueryRequest struct {
+	TableName string `json:"tableName"`
+	Count     Limit  `json:"count"`
+}
+
+type Limit int
+
+func (l Limit) getOrDefault(defaultValue int) int {
+	if l == 0 {
+		return defaultValue
+	}
+	return int(l)
+}
+
+func NewDataExporter(db database.DB, logger log.Logger) Exporter {
+	return &DataExporter{
+		logger: logger,
+		configProcessors: map[string]Processor[ConfigRequest]{
+			"siteConfig": &SiteConfigProcessor{
+				logger: logger,
+				Type:   "siteConfig",
+			},
+			"codeHostConfig": &CodeHostConfigProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "codeHostConfig",
+			},
+		},
+		dbProcessors: map[string]Processor[Limit]{
+			"external_services": ExtSvcQueryProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "external_services",
+			},
+			"external_service_repos": ExtSvcQueryProcessor{
+				db:     db,
+				logger: logger,
+				Type:   "external_services",
+			},
+		},
+	}
 }
 
 type ExportRequest struct {
@@ -37,11 +86,11 @@ type ExportRequest struct {
 // this directory is zipped in the end)
 // 2) ExportRequest is read and each corresponding processor is invoked
 // 3) Tmp directory is zipped after all the Processors finished their job
-func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byte, error) {
+func (e *DataExporter) Export(ctx context.Context, request ExportRequest) (io.Reader, error) {
 	// 1) creating a tmp dir
 	dir, err := os.MkdirTemp(os.TempDir(), "export-*")
 	if err != nil {
-		e.logger.Fatal("Error during code tmp dir creation", log.Error(err))
+		e.logger.Fatal("error during code tmp dir creation", log.Error(err))
 	}
 	defer os.RemoveAll(dir)
 
@@ -101,5 +150,5 @@ func (e *DataExporter) Export(ctx context.Context, request ExportRequest) ([]byt
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return &buf, nil
 }

@@ -8,7 +8,7 @@ The **"Dependencies"** sections give a short, high-level overview of dependencie
 
 You can click on each component to jump to its respective code repository or subtree. <a href="./architecture.svg" target="_blank">Open in new tab</a>
 
-<!-- 
+<!--
 Auto-generated from ./doc/dev/background-information/architecture/architecture.dot
 Run cd ./doc/dev/background-information/architecture && ./generate.sh to update the .svg
 -->
@@ -124,7 +124,7 @@ For code insights being run just-in-time in the client, the performance of code 
 These insights are relatively fast as long as the scope doesn't include many repositories (or large monorepos), but performance degrades when trying to include a lot of repositories. Insights
 that are processed in the background are rate limited and will perform approximately 28,000 queries per hour when fully saturated on default settings.
 
-There is also a feature flag left over from the original development of the early stage product that we retained in case a customer who doesn't purchase it ever has a justified need to disable insights. You can set `"experimentalFeatures": { "codeInsights": false }` in your settings to disable insights. 
+There is also a feature flag left over from the original development of the early stage product that we retained in case a customer who doesn't purchase it ever has a justified need to disable insights. You can set `"experimentalFeatures": { "codeInsights": false }` in your settings to disable insights.
 
 If you want to learn more about code insights:
 
@@ -206,6 +206,8 @@ If you want to learn more about native integrations:
   - Uses the GraphQL API to resolve repositories and revisions on code hosts
 
 ## Sourcegraph extension API
+
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../../extensions/deprecation.md).
 
 The Sourcegraph extension API allows developers to write extensions that extend the functionality of Sourcegraph.
 

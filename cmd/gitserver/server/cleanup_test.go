@@ -469,6 +469,92 @@ func TestCleanupExpired(t *testing.T) {
 	}
 }
 
+func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
+	initRepos := func(root string) (repoExists string, repoNotExists string) {
+		repoExists = path.Join(root, "repo-exists", ".git")
+		repoNotExists = path.Join(root, "repo-not-exists", ".git")
+		for _, path := range []string{
+			repoExists, repoNotExists,
+		} {
+			cmd := exec.Command("git", "--bare", "init", path)
+			if err := cmd.Run(); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return repoExists, repoNotExists
+	}
+
+	mockGitServerRepos := database.NewMockGitserverRepoStore()
+	mockGitServerRepos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.GitserverRepo, error) {
+		if strings.Contains(string(name), "repo-exists") {
+			return &types.GitserverRepo{}, nil
+		} else {
+			return nil, errors.Newf("gitserver repo not found")
+		}
+	})
+	mockRepos := database.NewMockRepoStore()
+	mockRepos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
+
+	mockDB := database.NewMockDB()
+	mockDB.GitserverReposFunc.SetDefaultReturn(mockGitServerRepos)
+	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
+
+	initServer := func(root string) *Server {
+		remote := path.Join(root, "remote", ".git")
+
+		return &Server{
+			Logger:   logtest.Scoped(t),
+			ReposDir: root,
+			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
+				return remote, nil
+			},
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
+			DB:                mockDB,
+			skipCloneForTests: true,
+			Hostname:          "gitserver-0",
+		}
+	}
+
+	t.Run("Nothing happens if env var is not set", func(t *testing.T) {
+		root := t.TempDir()
+		repoExists, repoNotExists := initRepos(root)
+		s := initServer(root)
+		s.testSetup(t)
+		s.DB = mockDB
+
+		s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+
+		// nothing should happen if test env not declared to true
+		if _, err := os.Stat(repoExists); err != nil {
+			t.Fatalf("repo dir does not exist anymore %s", repoExists)
+		}
+		if _, err := os.Stat(repoNotExists); err != nil {
+			t.Fatalf("repo dir does not exist anymore %s", repoNotExists)
+		}
+	})
+
+	t.Run("Should delete the repo dir that is not defined in DB", func(t *testing.T) {
+		mockRemoveNonExistingReposConfig(true)
+		defer mockRemoveNonExistingReposConfig(false)
+		root := t.TempDir()
+		repoExists, repoNotExists := initRepos(root)
+		s := initServer(root)
+		s.testSetup(t)
+		s.DB = mockDB
+
+		s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+
+		if _, err := os.Stat(repoNotExists); err == nil {
+			t.Fatal("repo not existing in DB was not removed")
+		}
+		if _, err := os.Stat(repoExists); err != nil {
+			t.Fatal("repo existing in DB does not exist on disk anymore")
+		}
+	})
+}
+
 // TestCleanupOldLocks checks whether cleanupRepos removes stale lock files. It
 // does not check whether each job in cleanupRepos finishes successfully, nor
 // does it check if other files or directories have been created.

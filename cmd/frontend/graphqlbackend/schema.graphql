@@ -214,6 +214,10 @@ type Mutation {
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
     """
+    Bulk "deleteUser" action.
+    """
+    deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
+    """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
@@ -536,6 +540,10 @@ type Mutation {
     """
     invalidateSessionsByID(userID: ID!): EmptyResponse
     """
+    Bulk "invalidateSessionsByID" action.
+    """
+    invalidateSessionsByIDs(userIDs: [ID!]!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 
@@ -760,6 +768,21 @@ type Mutation {
     Site-admin or owner of the external service only.
     """
     syncExternalService(id: ID!): EmptyResponse!
+
+    """
+    Associate a new key-value pair with a repo.
+    """
+    addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Update a key-value pair associated with a repo.
+    """
+    updateRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+
+    """
+    Delete a key-value pair associated with a repo.
+    """
+    deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
 }
 
 """
@@ -1216,6 +1239,10 @@ type Query {
         """
         cloned: Boolean = true
         """
+        Include only repositories of the given clone status.
+        """
+        cloneStatus: CloneStatus
+        """
         Include repositories that are not yet cloned and for which cloning is not in progress.
         """
         notCloned: Boolean = true
@@ -1240,6 +1267,7 @@ type Query {
         """
         descending: Boolean = false
     ): RepositoryConnection!
+
     """
     Looks up a Phabricator repository by name.
     """
@@ -2824,6 +2852,26 @@ type Repository implements Node & GenericSearchResultInterface {
     The star count the repository has in the code host.
     """
     stars: Int!
+
+    """
+    A set of user-defined key-value pairs associated with the repo.
+    """
+    keyValuePairs: [KeyValuePair!]!
+}
+
+"""
+A key-value pair
+"""
+type KeyValuePair {
+    """
+    The non-nullable key.
+    """
+    key: String!
+
+    """
+    The nullable value. A null value indicates this key-value pair should be treated as a tag.
+    """
+    value: String
 }
 
 """
@@ -4319,6 +4367,24 @@ type GitTree implements TreeEntry {
 }
 
 """
+The format and highlighting to use when requesting highlighting information for a file.
+"""
+enum HighlightResponseFormat {
+    """
+    HTML formatted file content without syntax highlighting.
+    """
+    HTML_PLAINTEXT
+    """
+    HTML formatted file content with syntax highlighting.
+    """
+    HTML_HIGHLIGHT
+    """
+    SCIP highlighting information as JSON.
+    """
+    JSON_SCIP
+}
+
+"""
 A file.
 In a future version of Sourcegraph, a repository's files may be distinct from a repository's blobs
 (for example, to support searching/browsing generated files that aren't committed and don't exist
@@ -4385,9 +4451,9 @@ interface File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
 
@@ -4452,9 +4518,9 @@ type VirtualFile implements File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
 
@@ -4557,9 +4623,9 @@ type GitBlob implements TreeEntry & File2 {
         """
         highlightLongLines: Boolean = false
         """
-        Return un-highlighted blob contents that are only formatted as a table for use in our blob views.
+        Specifies which format/highlighting technique to use.
         """
-        formatOnly: Boolean = false
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -5688,6 +5754,37 @@ type Site implements SettingsSubject {
     analytics: Analytics!
 
     """
+    List all users.
+    """
+    users(
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+        """
+        Returns users who have been active in a given period of time.
+        """
+        siteAdmin: Boolean
+        """
+        Returns users that contain filter in the username field.
+        """
+        username: String
+        """
+        Returns users that contain filter in the email field.
+        """
+        email: String
+        """
+        Returns users for the given lastActive enum period.
+        When omitted does NOT apply and returns for all period available.
+        """
+        lastActivePeriod: SiteUsersLastActivePeriod
+        """
+        Returns either deleted or not deleted users. Returns all users when omitted.
+        """
+        deleted: Boolean
+    ): SiteUsers!
+
+    """
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
     is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
@@ -6245,6 +6342,25 @@ type AnalyticsBatchChangesResult {
 }
 
 """
+Extentions analytics.
+"""
+type AnalyticsExtensionsResult {
+    """
+    JetBrains IDE plugin search events.
+    """
+    jetbrains: AnalyticsStatItem!
+    """
+    VSCode IDE extension search events.
+    """
+    vscode: AnalyticsStatItem!
+    """
+    Browser (chrome, firefox, safari) extensions code navigation events.
+    This includes events like "Go to Def", "Find ref" and "Find implementation"
+    """
+    browser: AnalyticsStatItem!
+}
+
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -6272,6 +6388,120 @@ type Analytics {
     Batch changes statistics
     """
     batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
+    """
+    Extensions statistics
+    """
+    extensions(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsExtensionsResult!
+}
+
+"""
+Site user.
+"""
+type SiteUser {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    User's username.
+    """
+    username: String!
+    """
+    User's primary email.
+    """
+    email: String
+    """
+    User's display name
+    """
+    displayName: String
+    """
+    The datetime when user was created in the system.
+    """
+    createdAt: String!
+    """
+    The datetime when user was last active.
+    """
+    lastActiveAt: String
+    """
+    The datetime when user was deleted.
+    """
+    deletedAt: String
+    """
+    Whether user is site admin or not.
+    """
+    siteAdmin: Boolean!
+    """
+    Total number of user's event_logs.
+    """
+    eventsCount: Float!
+}
+
+"""
+SiteUserOrderBy enumerates the ways a users list can be ordered.
+"""
+enum SiteUserOrderBy {
+    USERNAME
+    """
+    User's primary email.
+    """
+    EMAIL
+    """
+    The total number of user's event_logs.
+    """
+    EVENTS_COUNT
+    """
+    The last event_log datetime.
+    """
+    LAST_ACTIVE_AT
+    """
+    The datetime when user was added to the system.
+    """
+    CREATED_AT
+    """
+    The datetime when user was soft deleted.
+    """
+    DELETED_AT
+    """
+    Whether the user is site admin or not.
+    """
+    SITE_ADMIN
+}
+
+"""
+SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
+"""
+enum SiteUsersLastActivePeriod {
+    ALL
+    TODAY
+    THIS_WEEK
+    THIS_MONTH
+}
+
+"""
+Site users.
+"""
+type SiteUsers {
+    """
+    User total count.
+    """
+    totalCount: Float!
+    """
+    List of users.
+    """
+    nodes(
+        """
+        Returns the first n users from the list.
+        """
+        first: Int
+        """
+        Returns users ordered by a given column.
+        """
+        orderBy: SiteUserOrderBy
+        """
+        Returns ordered users in descending order provided by orderBy field.
+        """
+        descending: Boolean
+    ): [SiteUser!]!
 }
 
 """
@@ -6970,6 +7200,29 @@ type RepositoryStats {
     The number of lines indexed
     """
     indexedLinesCount: BigInt!
+
+    """
+    The number of all repositories in the instance, without soft-deleted or blocked repositories.
+    """
+    total: Int!
+    """
+    The number of cloned repositories in the instance. This number might be
+    higher than 'total', if soft-deleted repositories haven't been cleaned up
+    yet.
+    """
+    cloned: Int!
+    """
+    The number of repositories in the instance that are currently being cloned.
+    """
+    cloning: Int!
+    """
+    The number of repositories in the instance that not cloned yet.
+    """
+    notCloned: Int!
+    """
+    The number of repositories where initial cloning or subsequent fetching resulted in an error.
+    """
+    failedFetch: Int!
 }
 
 """
@@ -7242,4 +7495,13 @@ type WebhookLogHeader {
     The header values.
     """
     values: [String!]!
+}
+
+"""
+The clone status of a repository.
+"""
+enum CloneStatus {
+    NOT_CLONED
+    CLONING
+    CLONED
 }

@@ -10,7 +10,14 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
-- `Internal:` Automate release step for Open-VSX registry [issues/37704](https://github.com/sourcegraph/sourcegraph/issues/37704)
+### Fixes
+
+## 2.2.8
+
+### Changes
+
+- `Internal:` Automate release step for Open-VSX registry: [issues/37704](https://github.com/sourcegraph/sourcegraph/issues/37704)
+- Remove integrations banners and corresponding pings: [issues/38625](https://github.com/sourcegraph/sourcegraph/issues/38625), [pull/38715](https://github.com/sourcegraph/sourcegraph/pull/38715), [pull/38862](https://github.com/sourcegraph/sourcegraph/pull/38862)
 
 ### Fixes
 

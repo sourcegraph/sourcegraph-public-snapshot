@@ -6,18 +6,17 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ParsedRepoURI, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { BlobFileFields, BlobResult, BlobVariables } from '../../graphql-operations'
+import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
 
-function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean; formatOnly?: boolean }): string {
-    return `${makeRepoURI(parsed)}?disableTimeout=${parsed.disableTimeout}&formatOnly=${parsed.formatOnly}`
+function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean; format?: string }): string {
+    return `${makeRepoURI(parsed)}?disableTimeout=${parsed.disableTimeout}&=${parsed.format}`
 }
-
 interface FetchBlobArguments {
     repoName: string
     commitID: string
     filePath: string
     disableTimeout?: boolean
-    formatOnly?: boolean
+    format?: HighlightResponseFormat
 }
 
 export const fetchBlob = memoizeObservable(
@@ -26,16 +25,24 @@ export const fetchBlob = memoizeObservable(
         commitID,
         filePath,
         disableTimeout = false,
-        formatOnly = false,
-    }: FetchBlobArguments): Observable<BlobFileFields | null> =>
-        requestGraphQL<BlobResult, BlobVariables>(
+        format = HighlightResponseFormat.HTML_HIGHLIGHT,
+    }: FetchBlobArguments): Observable<BlobFileFields | null> => {
+        // We only want to include HTML data if explicitly requested. We always
+        // include LSIF because this is used for languages that are configured
+        // to be processed with tree sitter (and is used when explicitly
+        // requested via JSON_SCIP).
+        const html =
+            format === HighlightResponseFormat.HTML_PLAINTEXT || format === HighlightResponseFormat.HTML_HIGHLIGHT
+
+        return requestGraphQL<BlobResult, BlobVariables>(
             gql`
                 query Blob(
                     $repoName: String!
                     $commitID: String!
                     $filePath: String!
                     $disableTimeout: Boolean!
-                    $formatOnly: Boolean!
+                    $format: HighlightResponseFormat!
+                    $html: Boolean!
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID) {
@@ -49,14 +56,14 @@ export const fetchBlob = memoizeObservable(
                 fragment BlobFileFields on File2 {
                     content
                     richHTML
-                    highlight(disableTimeout: $disableTimeout, formatOnly: $formatOnly) {
+                    highlight(disableTimeout: $disableTimeout, format: $format) {
                         aborted
-                        html
+                        html @include(if: $html)
                         lsif
                     }
                 }
             `,
-            { repoName, commitID, filePath, disableTimeout, formatOnly }
+            { repoName, commitID, filePath, disableTimeout, format, html }
         ).pipe(
             map(dataOrThrowErrors),
             map(data => {
@@ -65,6 +72,7 @@ export const fetchBlob = memoizeObservable(
                 }
                 return data.repository.commit.file
             })
-        ),
+        )
+    },
     fetchBlobCacheKey
 )
