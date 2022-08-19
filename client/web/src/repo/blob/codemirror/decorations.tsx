@@ -212,22 +212,17 @@ function longestColumnDecorations(mappedDecorations: DecorationMapByLine | undef
     return result
 }
 
-const getCellsByLine = (line: number): HTMLElement[] =>
-    [
-        document.querySelector<HTMLElement>(`.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`),
-        document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`),
-    ].filter(Boolean)
+const getCellsByLine = (line: number): HTMLElement[] => {
+    const lineCell = document.querySelector<HTMLElement>(
+        `.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`
+    )
+    const codeCell = document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`)
+}
 
-// const selectRow = (line: number): void => {
-//     for (const cell of getCellsByLine(line)) {
-//         cell.classList.add('selected-line')
-//     }
-// }
-// const deselectRow = (line: number): void => {
-//     for (const cell of getCellsByLine(line)) {
-//         cell.classList.remove('selected-line')
-//     }
-// }
+const getLineNumberCell = (line: number): HTMLElement | null =>
+    document.querySelector<HTMLElement>(`.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`)
+const getCodeCell = (line: number): HTMLElement | null =>
+    document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`)
 
 /**
  * Widget class for rendering column Sourcegrpah text document decorations inside
@@ -269,24 +264,30 @@ class ColumnDecoratorMarker extends GutterMarker {
         return this.container
     }
 
+    private getDecorationCell = (): HTMLElement | null | undefined => this.container?.closest('.cm-gutterElement')
+
     private selectRow = (line: number): void => {
-        const decorationCell = this.container?.closest('.cm-gutterElement')
-        if (!decorationCell) {
+        const lineNumberCell = getLineNumberCell(line)
+        const decorationCell = this.getDecorationCell()
+        const codeCell = getCodeCell(line)
+        if (!lineNumberCell || !decorationCell || !codeCell) {
             return
         }
 
-        for (const cell of [...getCellsByLine(line), decorationCell]) {
+        for (const cell of [lineNumberCell, decorationCell, codeCell]) {
             cell.classList.add('highlighted-line')
         }
     }
 
     private deselectRow = (line: number): void => {
-        const decorationCell = this.container?.closest('.cm-gutterElement')
-        if (!decorationCell) {
+        const lineNumberCell = getLineNumberCell(line)
+        const decorationCell = this.getDecorationCell()
+        const codeCell = getCodeCell(line)
+        if (!lineNumberCell || !decorationCell || !codeCell) {
             return
         }
 
-        for (const cell of [...getCellsByLine(line), decorationCell]) {
+        for (const cell of [lineNumberCell, decorationCell, codeCell]) {
             cell.classList.remove('highlighted-line')
         }
     }
