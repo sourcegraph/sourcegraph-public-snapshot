@@ -6,7 +6,7 @@ import {
     ResolveRepoAndRevisionVariables,
     UsePreciseCodeIntelForPositionResult,
     UsePreciseCodeIntelForPositionVariables,
-} from 'src/graphql-operations'
+} from '../graphql-operations'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -91,8 +91,8 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
         commit,
         path,
         repository: repoName,
-        format: HighlightResponseFormat.JSON_SCIP,
-        html: false,
+        format: HighlightResponseFormat.HTML_HIGHLIGHT,
+        html: true,
     }
 
     return {
