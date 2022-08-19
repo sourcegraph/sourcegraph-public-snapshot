@@ -28,7 +28,6 @@ import (
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/orgrepos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -57,7 +56,6 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"codemonitors":   codemonitors.Init,
 	"dotcom":         dotcom.Init,
 	"searchcontexts": searchcontexts.Init,
-	"enterprise":     orgrepos.Init,
 	"notebooks":      notebooks.Init,
 	"compute":        compute.Init,
 }
