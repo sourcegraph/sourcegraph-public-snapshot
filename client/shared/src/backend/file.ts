@@ -9,6 +9,9 @@ import { HighlightedFileResult, HighlightedFileVariables, HighlightResponseForma
 import { PlatformContext } from '../platform/context'
 import { makeRepoURI } from '../util/url'
 
+// @ts-ignore
+const IS_VSCE = typeof window.acquireVsCodeApi === 'function'
+
 /**
  * Fetches the specified highlighted file line ranges (`FetchFileParameters.ranges`) and returns
  * them as a list of ranges, each describing a list of lines in the form of HTML table '<tr>...</tr>'.
@@ -23,37 +26,65 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
             platformContext: Pick<PlatformContext, 'requestGraphQL'>
         },
         force?: boolean
-    ): Observable<string[][]> =>
-        platformContext
+    ): Observable<string[][]> => {
+        return platformContext
             .requestGraphQL<HighlightedFileResult, HighlightedFileVariables>({
-                request: gql`
-                    query HighlightedFile(
-                        $repoName: String!
-                        $commitID: String!
-                        $filePath: String!
-                        $disableTimeout: Boolean!
-                        $ranges: [HighlightLineRange!]!
-                        $format: HighlightResponseFormat!
-                    ) {
-                        repository(name: $repoName) {
-                            commit(rev: $commitID) {
-                                file(path: $filePath) {
-                                    isDirectory
-                                    richHTML
-                                    highlight(disableTimeout: $disableTimeout, format: $format) {
-                                        aborted
-                                        lineRanges(ranges: $ranges)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                `,
-                variables: {
-                    ...context,
-                    format,
-                    disableTimeout: Boolean(context.disableTimeout),
-                },
+                request: !IS_VSCE
+                    ? gql`
+                          query HighlightedFile(
+                              $repoName: String!
+                              $commitID: String!
+                              $filePath: String!
+                              $disableTimeout: Boolean!
+                              $ranges: [HighlightLineRange!]!
+                              $format: HighlightResponseFormat!
+                          ) {
+                              repository(name: $repoName) {
+                                  commit(rev: $commitID) {
+                                      file(path: $filePath) {
+                                          isDirectory
+                                          richHTML
+                                          highlight(disableTimeout: $disableTimeout, format: $format) {
+                                              aborted
+                                              lineRanges(ranges: $ranges)
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      `
+                    : gql`
+                          query HighlightedFile(
+                              $repoName: String!
+                              $commitID: String!
+                              $filePath: String!
+                              $disableTimeout: Boolean!
+                              $ranges: [HighlightLineRange!]!
+                          ) {
+                              repository(name: $repoName) {
+                                  commit(rev: $commitID) {
+                                      file(path: $filePath) {
+                                          isDirectory
+                                          richHTML
+                                          highlight(disableTimeout: $disableTimeout) {
+                                              aborted
+                                              lineRanges(ranges: $ranges)
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      `,
+                variables: !IS_VSCE
+                    ? {
+                          ...context,
+                          format,
+                          disableTimeout: Boolean(context.disableTimeout),
+                      }
+                    : ({
+                          ...context,
+                          disableTimeout: Boolean(context.disableTimeout),
+                      } as any),
                 mightContainPrivateInfo: true,
             })
             .pipe(
@@ -67,7 +98,8 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                     }
                     return file.highlight.lineRanges
                 })
-            ),
+            )
+    },
     context =>
         makeRepoURI(context) +
         `?disableTimeout=${String(context.disableTimeout)}&ranges=${context.ranges
