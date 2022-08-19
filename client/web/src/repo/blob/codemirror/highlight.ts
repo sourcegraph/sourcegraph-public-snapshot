@@ -19,15 +19,15 @@ interface HighlightIndex {
  * NOTE: This assumes that the data is sorted and does not contain overlapping
  * ranges.
  */
-function createHighlightTable(json: string | undefined): HighlightIndex {
+function createHighlightTable(info: BlobInfo): HighlightIndex {
     const lineIndex: (number | undefined)[] = []
 
-    if (!json) {
+    if (!info.lsif) {
         return { occurrences: [], lineIndex }
     }
 
     try {
-        const occurrences = Occurrence.fromJson(json)
+        const occurrences = Occurrence.fromInfo(info)
         let previousEndline: number | undefined
 
         for (let index = 0; index < occurrences.length; index++) {
@@ -48,7 +48,7 @@ function createHighlightTable(json: string | undefined): HighlightIndex {
 
         return { occurrences, lineIndex }
     } catch (error) {
-        console.error(`Unable to process SCIP highlight data: ${json}`, error)
+        console.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
         return { occurrences: [], lineIndex }
     }
 }
@@ -136,6 +136,6 @@ export const syntaxHighlight = Facet.define<BlobInfo, HighlightIndex>({
     static: true,
     compareInput: (blobInfoA, blobInfoB) => blobInfoA.lsif === blobInfoB.lsif,
     combine: blobInfos =>
-        blobInfos[0]?.lsif ? createHighlightTable(blobInfos[0].lsif) : { occurrences: [], lineIndex: [] },
+        blobInfos[0]?.lsif ? createHighlightTable(blobInfos[0]) : { occurrences: [], lineIndex: [] },
     enables: ViewPlugin.fromClass(SyntaxHighlightManager, { decorations: plugin => plugin.decorations }),
 })
