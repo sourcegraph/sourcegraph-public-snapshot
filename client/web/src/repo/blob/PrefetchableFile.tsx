@@ -18,6 +18,7 @@ interface PrefetchableFileProps {
 /**
  * A wrapper component that supports pre-fetching file revisions on hover.
  * Note: This is currently experimental, and should only be enabled through
+ * the `enableSidebarFilePrefetch ` feature flag.
  */
 export const PrefetchableFile = React.forwardRef(function PrefetchableFile(
     { revision, filePath, repoName, prefetch, as: Component = 'div', ...rest },
