@@ -16,6 +16,7 @@ expression: "dump_document(&document, &contents)"
   REPO_LINT=$(
 //^^^^^^^^^ Identifier
 //         ^ IdentifierOperator
+//          ^^ StringLiteral 3:10..8:19
    git diff origin/main -- foobar.md |
 // ^^^ Identifier
 //                     ^^^ IdentifierOperator

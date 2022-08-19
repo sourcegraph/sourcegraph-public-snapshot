@@ -23,6 +23,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                           ^ IdentifierOperator
   
   /***
+//^^^^ Comment 6:0..12:3
    *  Example use:
    *
    *  val (b, g, r) = mat.at<UByte>(50, 50).v3c
@@ -62,6 +63,7 @@ expression: "dump_document(&document, &contents)"
   
   
   /**
+//^^^ Comment 21:0..24:3
    * Implementation of [DataAccess] which handles access and interactions with file and data
    * under scoped storage via the MediaStore API.
    */
