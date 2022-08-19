@@ -59,7 +59,7 @@ interface FileProps extends ThemeProps {
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
     const { commitID, repoName } = useTreeRootContext()
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableLazyBlobSyntaxHighlighting ?? false)
+    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSidebarFilePrefetch ?? false)
 
     const renderedFileDecorations = (
         <FileDecorator
