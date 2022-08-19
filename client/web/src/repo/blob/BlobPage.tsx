@@ -112,7 +112,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
-    }, [repoName, commitID, filePath, renderMode, props.telemetryService, span])
+    }, [repoName, commitID, filePath, renderMode, props.telemetryService])
 
     useNotepad(
         useMemo(
