@@ -31,13 +31,6 @@ const GET_STARTED_INFO_QUERY = gql`
             membersCount
             invitesCount
         }
-        repoCount: node(id: $organization) {
-            ... on Org {
-                total: repositories(cloned: true, notCloned: true) {
-                    totalCount(precise: true)
-                }
-            }
-        }
         extServices: externalServices(namespace: $organization) {
             totalCount
         }
@@ -63,10 +56,6 @@ export const calculateLeftGetStartedSteps = (info: OrgSummary | undefined, orgNa
 
     let leftSteps = 0
     if (info.membersSummary.invitesCount === 0 && info.membersSummary.membersCount < 2) {
-        leftSteps += 1
-    }
-    if (info.repoCount.total.totalCount === 0) {
-        setSearchStep(orgName, 'incomplete')
         leftSteps += 1
     }
     if (info.extServices.totalCount === 0) {
@@ -105,7 +94,6 @@ export const showGetStartPage = (
 
     const firstStepsPending =
         (info.membersSummary.membersCount === 1 && info.membersSummary.invitesCount === 0) ||
-        info.repoCount.total.totalCount === 0 ||
         info.extServices.totalCount === 0
     let searchStatusPending = true
     try {
