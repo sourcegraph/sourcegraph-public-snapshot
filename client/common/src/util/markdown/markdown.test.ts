@@ -96,6 +96,25 @@ describe('renderMarkdown', () => {
         expect(renderMarkdown(input)).toBe(`<p>${input}</p>\n`)
     })
 
+    it('filters XSS from <svg> tags', () => {
+        const input_prefix =
+            '<svg viewbox="10 10 10 10" width="100"><rect x="37.5" y="7.5" width="675.0" height="16.875" fill="#e05d44" stroke="white" stroke-width="1">'
+        const xss = '<script>alert(1)</script>'
+        const input_suffix = '<title>/</title></rect></svg>'
+        expect(renderMarkdown(input_prefix + xss + input_suffix)).toBe(`<p>${input_prefix + input_suffix}</p>\n`)
+    })
+
+    it('filters base64 encoded <svg> tags', () => {
+        const input_prefix =
+            '<svg viewbox="10 10 10 10" width="100"><rect x="37.5" y="7.5" width="675.0" height="16.875" fill="#e05d44" stroke="white" stroke-width="1">'
+        const input_suffix = '<title>/</title></rect></svg>'
+        const input_base64 = window.btoa(input_prefix + '<script>alert(1)</script>' + input_suffix)
+        const object = `<object type="image/svg+xml" data="data:image/svg+xml;base64,${input_base64}"></object>`
+        expect(renderMarkdown(object)).toBe(
+            '<p><object data="%3Csvg%3E%3C/svg%3E" type="image/svg+xml"></object></p>\n'
+        )
+    })
+
     describe('allowDataUriLinksAndDownloads option', () => {
         const MARKDOWN_WITH_DOWNLOAD = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
         test('default disabled', () => {

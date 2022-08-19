@@ -164,22 +164,33 @@ export const renderMarkdown = (
             },
             transformTags: {
                 object(tagName, attribs) {
-                    if (!attribs.data.includes('base64,')) {
+                    if (attribs.data.toLowerCase().includes(';base64,')) {
                         return {
                             tagName,
-                            attribs,
+                            attribs: {
+                                data: encodeURI('<svg></svg>'),
+                                type: attribs.type,
+                            },
                         }
                     }
 
-                    // Anchor tags can be used to invalidate base64 and bypass filters
-                    const b64object = attribs.data.split('base64,')[1].split('#')[0]
+                    const index = attribs.data.indexOf(',')
+                    let data: string
+                    let data_prefix = ''
+
+                    if (index > -1) {
+                        const data_split = attribs.data.split(',')
+                        data_prefix = data_split[0] + ','
+                        data = data_split[1]
+                    } else {
+                        data = attribs.data
+                    }
                     let cleaned
 
                     try {
-                        cleaned = sanitize(window.atob(b64object), {
+                        cleaned = sanitize(decodeURI(data), {
                             allowedTags: sanitize.defaults.allowedTags.concat([
                                 'svg',
-                                'xmlns',
                                 'path',
                                 'picture',
                                 'circle',
@@ -202,7 +213,7 @@ export const renderMarkdown = (
                             },
                         })
                     } catch (error) {
-                        // this doesn't happen with benign base64 SVGs
+                        // this doesn't happen with benign SVGs
                         console.error(error)
                         cleaned = '<svg></svg>'
                     }
@@ -210,9 +221,9 @@ export const renderMarkdown = (
                     return {
                         tagName,
                         attribs: {
+                            // reconstruct cleaned SVG
+                            data: data_prefix + encodeURIComponent(cleaned),
                             type: attribs.type,
-                            // reconstruct cleaned base64 blob
-                            data: 'data:image/svg+xml;base64,' + window.btoa(cleaned),
                         },
                     }
                 },
