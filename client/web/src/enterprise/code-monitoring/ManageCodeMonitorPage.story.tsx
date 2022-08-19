@@ -13,9 +13,9 @@ const config: Meta = {
 
 export default config
 
-export const ManageCodeMonitorPageStory: Story = () => (
-    window.context.emailEnabled = true
+window.context.emailEnabled = true
 
+export const ManageCodeMonitorPageStory: Story = () => (
     <WebStory>
         {props => (
             <ManageCodeMonitorPage
