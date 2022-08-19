@@ -159,7 +159,7 @@ describe('FormTriggerArea', () => {
         })
     }
 
-    test('Append patternType:literal if no patternType is present', async () => {
+    test('Append patternType:literal if no patternType is present', () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
@@ -178,7 +178,7 @@ describe('FormTriggerArea', () => {
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test type:diff repo:test patternType:literal')
     })
 
-    test('Do not append patternType:literal if patternType is present', async () => {
+    test('Do not append patternType:literal if patternType is present', () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
