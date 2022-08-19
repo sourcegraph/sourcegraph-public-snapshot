@@ -4,7 +4,7 @@ import isAbsoluteUrl from 'is-absolute-url'
 import iterate from 'iterare'
 import { uniqueId } from 'lodash'
 import ReactDOM from 'react-dom'
-import { BehaviorSubject, ReplaySubject, Subject } from 'rxjs'
+import { BehaviorSubject, ReplaySubject } from 'rxjs'
 
 import { isDefined, property } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
@@ -131,8 +131,6 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
             }
         }, [codeViewElements, decorations, extensionID])
 
-        const popoverOpenSubject = useMemo(() => new Subject<string>(), [])
-
         if (!portalNodes?.size) {
             return null
         }
@@ -142,12 +140,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                 {iterate(portalNodes)
                     .map(([portalRoot, lineDecorations]) =>
                         ReactDOM.createPortal(
-                            <ColumnDecoratorContents
-                                lineDecorations={lineDecorations}
-                                isLightTheme={isLightTheme}
-                                portalRoot={portalRoot}
-                                popoverOpenSubject={popoverOpenSubject}
-                            />,
+                            <ColumnDecoratorContents lineDecorations={lineDecorations} isLightTheme={isLightTheme} />,
                             portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
                         )
                     )
@@ -176,7 +169,13 @@ interface PopoverEventHandlers {
 const usePopover = (
     id: string,
     timeout: number = 1000
-): { popoverId?: string; eventHandlers: PopoverEventHandlers } => {
+): {
+    popoverId?: string
+    open: () => void
+    close: () => void
+    closeWithTimeout: () => void
+    resetTimeout: () => void
+} => {
     const popoverId = useObservable(currentPopoverId)
 
     const open = useCallback(() => currentPopoverId.next(id), [id])
@@ -198,40 +197,22 @@ const usePopover = (
         }
     }, [])
 
-    const eventHandlers = useMemo(
-        () => ({
-            popoverTrigger: {
-                onFocus: open,
-                onBlur: close,
-                onMouseEnter: open,
-                onMouseLeave: closeWithTimeout,
-            },
-            popoverContent: {
-                onMouseEnter: resetTimeout,
-                onMouseLeave: close,
-            },
-        }),
-        [open, close, closeWithTimeout, resetTimeout]
-    )
-
-    return { popoverId, eventHandlers }
+    return { popoverId, open, close, closeWithTimeout, resetTimeout }
 }
 
-// TODO: select/deselct row on hover/focus
+// TODO: select/deselect row on hover/focus
 
 export const ColumnDecoratorContents: React.FunctionComponent<{
     lineDecorations: TextDocumentDecoration[] | undefined
     isLightTheme: boolean
-    portalRoot?: HTMLElement
-    popoverOpenSubject: Subject<string>
 }> = ({ lineDecorations, isLightTheme }) => {
     const key = useMemo(() => uniqueId(), [])
 
-    const { popoverId, eventHandlers } = usePopover(key)
+    const { popoverId, open, close, closeWithTimeout, resetTimeout } = usePopover(key)
 
     const isOpen = popoverId === key
 
-    const onPopoverOpenChange = useCallback(() => (isOpen ? close() : open()), [isOpen])
+    const onPopoverOpenChange = useCallback(() => (isOpen ? close() : open()), [isOpen, close, open])
 
     return (
         <>
@@ -249,7 +230,10 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
                             target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
                             // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
                             rel="noreferrer noopener"
-                            {...eventHandlers.popoverTrigger}
+                            onFocus={open}
+                            onBlur={close}
+                            onMouseEnter={open}
+                            onMouseLeave={closeWithTimeout}
                         >
                             <span
                                 className={styles.contents}
@@ -262,7 +246,8 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
                             targetPadding={createRectangle(0, 0, 10, 10)}
                             position={Position.top}
                             focusLocked={false}
-                            {...eventHandlers.popoverContent}
+                            onMouseEnter={resetTimeout}
+                            onMouseLeave={close}
                         >
                             {attachment.hoverMessage}
                         </PopoverContent>
