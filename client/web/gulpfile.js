@@ -155,7 +155,7 @@ async function webpackDevelopmentServer() {
     }
     compilationDoneOnce = true
 
-    signale.info(`Webpack server is ready after ${Math.round(performance.now()-start)}ms`)
+    signale.info(`Webpack server is ready after ${Math.round(performance.now() - start)}ms`)
     printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}`])
   })
 
