@@ -1,5 +1,6 @@
 import { MockedResponse } from '@apollo/client/testing'
 import {
+    HighlightResponseFormat,
     LocationFields,
     ReferencesPanelHighlightedBlobVariables,
     ResolveRepoAndRevisionVariables,
@@ -90,6 +91,8 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
         commit,
         path,
         repository: repoName,
+        format: HighlightResponseFormat.JSON_SCIP,
+        html: false,
     }
 
     return {
