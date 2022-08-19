@@ -2,11 +2,11 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // RepoStatistics represents the contents of the single row in the
@@ -23,7 +23,7 @@ type RepoStatistics struct {
 // gitserverRepoStatistics represents the contents of the
 // gitserver_repo_statistics table, where each gitserver shard should have a
 // separate row and gitserver_repos that haven't been assigned a shard yet have an empty ShardID.
-type GitserverReposStatistics struct {
+type GitserverReposStatistic struct {
 	ShardID     string
 	Total       int
 	NotCloned   int
@@ -38,7 +38,7 @@ type RepoStatisticsStore interface {
 
 	GetRepoStatistics(ctx context.Context) (RepoStatistics, error)
 	CompactRepoStatistics(ctx context.Context) error
-	GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistics, error)
+	GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistic, error)
 }
 
 // repoStatisticsStore is responsible for data stored in the repo_statistics
@@ -111,14 +111,9 @@ SELECT
 FROM deleted;
 `
 
-func (s *repoStatisticsStore) GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistics, error) {
+func (s *repoStatisticsStore) GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistic, error) {
 	rows, err := s.Query(ctx, sqlf.Sprintf(getGitserverReposStatisticsQueryFmtStr))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	return scanGitserverReposStatistics(rows)
+	return scanGitserverReposStatistics(rows, err)
 }
 
 const getGitserverReposStatisticsQueryFmtStr = `
@@ -133,22 +128,22 @@ SELECT
 FROM gitserver_repos_statistics
 `
 
-func scanGitserverReposStatistics(rows *sql.Rows) ([]GitserverReposStatistics, error) {
-	var out []GitserverReposStatistics
-	for rows.Next() {
-		gs := GitserverReposStatistics{}
-		err := rows.Scan(
-			&gs.ShardID,
-			&gs.Total,
-			&gs.NotCloned,
-			&gs.Cloning,
-			&gs.Cloned,
-			&gs.FailedFetch,
-		)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, gs)
+var scanGitserverReposStatistics = basestore.NewSliceScanner(scanGitserverReposStatistic)
+
+func scanGitserverReposStatistic(s dbutil.Scanner) (GitserverReposStatistic, error) {
+	var gs = GitserverReposStatistic{}
+	err := s.Scan(&gs.ShardID, &gs.Total, &gs.NotCloned, &gs.Cloning, &gs.Cloned, &gs.FailedFetch)
+	if err != nil {
+		return gs, err
 	}
-	return out, nil
+	return gs, nil
+}
+
+func scanRepoStatistics(s dbutil.Scanner) (RepoStatistics, error) {
+	var rs RepoStatistics
+	err := s.Scan(&rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned, &rs.FailedFetch)
+	if err != nil {
+		return rs, err
+	}
+	return rs, nil
 }
