@@ -403,7 +403,7 @@ export const ReferencesList: React.FunctionComponent<
                             aria-hidden={true}
                             as={canShowSpinner ? LoadingSpinner : undefined}
                             svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
-                            size="sm"
+                            size="md"
                             className={styles.filterIcon}
                         />
                     </small>
@@ -885,7 +885,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                     group.path
                                 )}{' '}
                             </Link>
-                            <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            <span className={classNames('ml-2 text-muted', styles.cardHeaderSmallText)}>
                                 ({group.locations.length}{' '}
                                 {pluralize('occurrence', group.locations.length, 'occurrences')})
                             </span>
