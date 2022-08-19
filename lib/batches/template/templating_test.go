@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TODO: Is renamed_files intentionally omitted from the docs?
@@ -80,24 +81,35 @@ func TestValidateBatchSpecTemplate(t *testing.T) {
 			wantValid: true,
 		},
 		{
-			name: "invalid step template variables",
-			batchSpec: `name: invalid-batch-spec
-on:
-  - repository: github.com/fake/fake
-
-steps:
-  - run: |
-		${{ repository.unknown }}
-	container: my-container
-
-changesetTemplate:
-  title: ${{ repository.unknown }}
-	body: I'm a changeset yay!
-	branch: my-branch
-	commit:
-		message: I'm a changeset yay!
-	`,
+			name:      "invalid step template variable",
+			batchSpec: `${{ resipotory.search_result_paths }}`,
 			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'resipotory'"),
+		},
+		{
+			name:      "invalid step template variable, 1 level nested",
+			batchSpec: `${{ repository.search_resalt_paths }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'repository.search_resalt_paths'"),
+		},
+		{
+			name:      "invalid changeset template variable",
+			batchSpec: `${{ batch_chang_link }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'batch_chang_link'"),
+		},
+		{
+			name:      "invalid changeset template variable, 1 level nested",
+			batchSpec: `${{ steps.mofidied_files }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'steps.mofidied_files'"),
+		},
+		{
+			name:      "escaped templating (github expression syntax) is ignored",
+			batchSpec: `${{ "${{ ignore_me }}" }}`,
+			wantValid: true,
+		},
+		{
 			name:      "output variables are ignored",
 			batchSpec: `${{ outputs.IDontExist }} ${{OUTPUTS.anotherOne}}`,
 			wantValid: true,
@@ -112,10 +124,25 @@ changesetTemplate:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			gotValid, err := ValidateBatchSpecTemplate("testing", tc.batchSpec)
+			gotValid, gotErr := ValidateBatchSpecTemplate("testing", tc.batchSpec)
+
+			// TODO: Testing
+			// t.Fatal("test")
 
 			if tc.wantValid != gotValid {
-				t.Fatalf("expected valid: %v, got valid: %v, %s", tc.wantValid, gotValid, err)
+				t.Fatalf("unexpected valid status. want valid=%t, got valid=%t\nerror message: %s", tc.wantValid, gotValid, gotErr)
+			}
+
+			if tc.wantErr == nil && gotErr != nil {
+				t.Fatalf("unexpected non-nil error.\nwant=nil\n---\ngot=%s", gotErr)
+			}
+
+			if tc.wantErr != nil && gotErr == nil {
+				t.Fatalf("unexpected nil error.\nwant=%s\n---\ngot=nil", tc.wantErr)
+			}
+
+			if tc.wantErr != nil && gotErr != nil && tc.wantErr.Error() != gotErr.Error() {
+				t.Fatalf("unexpected error message\nwant=%s\n---\ngot=%s", tc.wantErr, gotErr)
 			}
 		})
 	}
