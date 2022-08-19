@@ -42,6 +42,7 @@ func main() {
 	if !exists {
 		panic("CI_SENTRY_DSN not found in env")
 	}
+	fmt.Printf("🍀 %d 🍀\n", len(dsn))
 
 	liblog := log.Init(log.Resource{
 		Name:       "buildkite-ci",
