@@ -2,11 +2,10 @@ package migrations
 
 import (
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -25,8 +24,7 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 		return err
 	}
 
-	insightsStore, err := insightsStore()
-	if err != nil {
+	if err := insights.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
 		return err
 	}
 
@@ -41,7 +39,6 @@ func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 		codeintel.NewReferencesLocationsCountMigrator(codeIntelStore, 1000),
 		codeintel.NewDocumentColumnSplitMigrator(codeIntelStore, 100),
 		codeintel.NewAPIDocsSearchMigrator(),
-		insights.NewMigrator(frontendStore, insightsStore),
 	})
 }
 
@@ -56,17 +53,4 @@ func codeIntelStore() (*basestore.Store, error) {
 	}
 
 	return lsifStore.Store, err
-}
-
-func insightsStore() (*basestore.Store, error) {
-	if !internalInsights.IsEnabled() {
-		return nil, nil
-	}
-
-	db, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
-	if err != nil {
-		return nil, err
-	}
-
-	return basestore.NewWithHandle(db.Handle()), nil
 }
