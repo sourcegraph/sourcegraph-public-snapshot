@@ -21,11 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func RegisterEnterpriseMigrations(
-	ctx context.Context,
-	db database.DB,
-	outOfBandMigrationRunner *oobmigration.Runner,
-) error {
+func RegisterEnterpriseMigrations(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase()
 	if err != nil {
 		return err
@@ -43,7 +39,7 @@ func RegisterEnterpriseMigrations(
 
 	keyring := keyring.Default()
 
-	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
+	return registerEnterpriseMigrations(runner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
@@ -51,12 +47,7 @@ func RegisterEnterpriseMigrations(
 	})
 }
 
-func RegisterEnterpriseMigrationsFromConfig(
-	ctx context.Context,
-	db database.DB,
-	outOfBandMigrationRunner *oobmigration.Runner,
-	conf conftypes.UnifiedQuerier,
-) error {
+func RegisterEnterpriseMigrationsFromConfig(ctx context.Context, db database.DB, runner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
 	codeIntelDB, err := connections.EnsureNewCodeIntelDB(
 		conf.ServiceConnections().CodeIntelPostgresDSN,
 		"migrator",
@@ -85,7 +76,7 @@ func RegisterEnterpriseMigrationsFromConfig(
 		return err
 	}
 
-	return registerEnterpriseMigrations(outOfBandMigrationRunner, dependencies{
+	return registerEnterpriseMigrations(runner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
@@ -100,7 +91,7 @@ type dependencies struct {
 	keyring        *keyring.Ring
 }
 
-func registerEnterpriseMigrations(outOfBandMigrationRunner *oobmigration.Runner, deps dependencies) error {
+func registerEnterpriseMigrations(runner *oobmigration.Runner, deps dependencies) error {
 	var insightsMigrator migrations.TaggedMigrator
 	if deps.insightsStore != nil {
 		insightsMigrator = insights.NewMigrator(deps.store, deps.insightsStore)
@@ -108,7 +99,7 @@ func registerEnterpriseMigrations(outOfBandMigrationRunner *oobmigration.Runner,
 		insightsMigrator = insights.NewMigratorNoOp()
 	}
 
-	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
+	return migrations.RegisterAll(runner, []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
 		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),

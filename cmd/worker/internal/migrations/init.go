@@ -22,20 +22,12 @@ import (
 
 // migrator configures an out of band migration runner process to execute in the background.
 type migrator struct {
-	registerMigrators func(
-		ctx context.Context,
-		db database.DB,
-		outOfBandMigrationRunner *oobmigration.Runner,
-	) error
+	registerMigrators oobmigration.RegisterMigratorsFunc
 }
 
 var _ job.Job = &migrator{}
 
-func NewMigrator(registerMigrators func(
-	ctx context.Context,
-	db database.DB,
-	outOfBandMigrationRunner *oobmigration.Runner,
-) error) job.Job {
+func NewMigrator(registerMigrators oobmigration.RegisterMigratorsFunc) job.Job {
 	return &migrator{
 		registerMigrators: registerMigrators,
 	}

@@ -38,11 +38,7 @@ import (
 const addr = ":3189"
 
 // Start runs the worker.
-func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
-	ctx context.Context,
-	db database.DB,
-	outOfBandMigrationRunner *oobmigration.Runner,
-) error) error {
+func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations oobmigration.RegisterMigratorsFunc) error {
 	registerMigrations := composeRegisterMigrations(migrations.RegisterOSSMigrations, registerEnterpriseMigrations)
 
 	builtins := map[string]job.Job{
@@ -277,28 +273,14 @@ func jobNames(jobs map[string]job.Job) []string {
 	return names
 }
 
-func composeRegisterMigrations(
-	fns ...func(
-		ctx context.Context,
-		db database.DB,
-		outOfBandMigrationRunner *oobmigration.Runner,
-	) error,
-) func(
-	ctx context.Context,
-	db database.DB,
-	outOfBandMigrationRunner *oobmigration.Runner,
-) error {
-	return func(
-		ctx context.Context,
-		db database.DB,
-		outOfBandMigrationRunner *oobmigration.Runner,
-	) error {
+func composeRegisterMigrations(fns ...oobmigration.RegisterMigratorsFunc) oobmigration.RegisterMigratorsFunc {
+	return func(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 		for _, fn := range fns {
 			if fn == nil {
 				continue
 			}
 
-			if err := fn(ctx, db, outOfBandMigrationRunner); err != nil {
+			if err := fn(ctx, db, runner); err != nil {
 				return err
 			}
 		}
