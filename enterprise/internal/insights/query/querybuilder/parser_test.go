@@ -13,7 +13,7 @@ func TestParseAndValidateQuery(t *testing.T) {
 		fail  bool
 	}{
 		{
-			"invalid query",
+			"invalid parameter type",
 			"select:repo test fork:only.",
 			true,
 		},

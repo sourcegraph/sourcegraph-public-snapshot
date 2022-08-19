@@ -25,13 +25,9 @@ func searchTypeFromString(pt string) query.SearchType {
 }
 
 func ParseAndValidateQuery(q string, patternType string) (query.Plan, error) {
-	nodes, err := query.Parse(q, query.SearchType(searchTypeFromString(patternType)))
+	plan, err := query.Pipeline(query.Init(q, searchTypeFromString(patternType)))
 	if err != nil {
-		return nil, errors.Wrapf(err, "Parse")
-	}
-	plan := query.BuildPlan(nodes)
-	if err := query.ValidatePlan(plan); err != nil {
-		return nil, errors.Wrapf(err, "ValidatePlan")
+		return nil, errors.Wrapf(err, "Pipeline")
 	}
 	return plan, nil
 }
