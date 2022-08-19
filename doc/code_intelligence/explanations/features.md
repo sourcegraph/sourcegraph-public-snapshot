@@ -24,7 +24,7 @@ When you select 'Find references' from the popover, a panel will be shown at the
 
 > NOTE: When a particular token returns a large number of references, we truncate the results to < 500 to optimize for browser loading speed. We are planning to improve this in the future with the ability to view it as a search so that users can utilize the powerful filtering of Sourcegraph's search to find the references they are looking for.
 
-## Dependency navigation
+## <span class="badge badge-beta">Beta</span> Dependency navigation
 
 Dependency navigation enables "Find references" and "Go to definition" to show usages across multiple repositories, including transitive dependencies.
 For example, the animation below demonstrates how to trigger "Find references" in the repository `github.com/Netflix/Hystrix` and navigate to results in the Java standard library (JDK).
@@ -37,7 +37,7 @@ The instructions to setup dependency navigation are different depending on what 
 * **Java, Scala, Kotlin**: Setup [auto-indexing](auto_indexing.md) and a [JVM dependencies code host](../../integration/jvm.md).
 * **JavaScript, TypeScript**: Setup [auto-indexing](auto_indexing.md) and a [npm dependencies code host](../../integration/npm.md).
 
-> NOTE: This feature is in Beta phase and is not available for other language ecosystems at the moment.
+> NOTE: This feature is in beta and is not available for other language ecosystems at the moment.
 
 ## Find implementations
 
