@@ -4,7 +4,7 @@ import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
 import * as H from 'history'
-import { BehaviorSubject, of } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import {
@@ -27,6 +27,7 @@ import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeeds
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
 import styles from './SearchConsolePage.module.scss'
+import { useExperimentalFeatures } from '../stores'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
@@ -44,6 +45,7 @@ interface SearchConsolePageProps
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
     const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
+    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -62,13 +64,12 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         let query = parseSearchURLQuery(props.location.search)
         query = query?.replace(/\/\/.*/g, '') || ''
 
-        return extensionHostAPI !== null
-            ? transformSearchQuery({
-                  query,
-                  extensionHostAPIPromise: extensionHostAPI,
-              })
-            : of(query)
-    }, [props.location.search, extensionHostAPI])
+        return transformSearchQuery({
+            query,
+            extensionHostAPIPromise: extensionHostAPI,
+            extensionsAsCoreFeatures,
+        })
+    }, [props.location.search, extensionHostAPI, extensionsAsCoreFeatures])
 
     const autocompletion = useMemo(
         () =>

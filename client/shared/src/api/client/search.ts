@@ -16,10 +16,22 @@ const TRANSFORM_QUERY_TIMEOUT = 3000
 export function transformSearchQuery({
     query,
     extensionHostAPIPromise,
+    extensionsAsCoreFeatures,
 }: {
     query: string
-    extensionHostAPIPromise: Promise<Remote<FlatExtensionHostAPI>>
+    extensionHostAPIPromise: null | Promise<Remote<FlatExtensionHostAPI>>
+    extensionsAsCoreFeatures: undefined | boolean
 }): Observable<string> {
+    // We apply any non-extension transform before we send the query to the
+    // extensions since we want these to take presedence over the extensions.
+    if (extensionsAsCoreFeatures) {
+        query = goImportsTransformer(query)
+    }
+
+    if (extensionHostAPIPromise === null) {
+        return of(query)
+    }
+
     return from(extensionHostAPIPromise).pipe(
         switchMap(extensionHostAPI =>
             // Since we won't re-compute on subsequent extension activation, ensure that
@@ -47,4 +59,24 @@ export function transformSearchQuery({
             return of(query)
         })
     )
+}
+
+function goImportsTransformer(query: string): string {
+    const goImportsRegex = /\bgo.imports:([^\s]*)/
+    if (query.match(goImportsRegex)) {
+        // Get package name
+        const pkgFilter = query.match(goImportsRegex)
+        const pkg = pkgFilter && pkgFilter.length >= 1 ? pkgFilter[1] : ''
+
+        // Package imported in grouped import statements
+        const matchPackage = '^\\t"[^\\s]*' + pkg + '[^\\s]*"$'
+        // Match packages with aliases
+        const matchAlias = '\\t[\\w/]*\\s"[^\\s]*' + pkg + '[^\\s]*"$'
+        // Match packages in single import statement
+        const matchSingle = 'import\\s"[^\\s]*' + pkg + '[^\\s]*"$'
+        const finalRegex = `(${matchPackage}|${matchAlias}|${matchSingle}) lang:go `
+
+        return query.replace(goImportsRegex, finalRegex)
+    }
+    return query
 }

@@ -44,6 +44,7 @@ import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventH
 import { Notebook, CopyNotebookProps } from '.'
 
 import styles from './NotebookComponent.module.scss'
+import { useExperimentalFeatures } from '../../stores'
 
 export interface NotebookComponentProps
     extends SearchStreamingProps,
@@ -110,13 +111,15 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         settingsCascade,
         outlineContainerElement,
     }) => {
+        const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
         const notebook = useMemo(
             () =>
                 new Notebook(initialBlocks, {
                     extensionHostAPI: extensionsController !== null ? extensionsController.extHostAPI : null,
                     fetchHighlightedFileLineRanges,
+                    extensionsAsCoreFeatures,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController]
+            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController, extensionsAsCoreFeatures]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)
