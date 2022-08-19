@@ -399,14 +399,6 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		IntegrationUniquesMonth: 11,
 		IntegrationUniquesWeek:  7,
 		IntegrationUniquesDay:   5,
-		ManageUniquesMonth:      9,
-		CodeUniquesMonth:        8,
-		VerifyUniquesMonth:      8,
-		MonitorUniquesMonth:     0,
-		ManageUniquesWeek:       6,
-		CodeUniquesWeek:         4,
-		VerifyUniquesWeek:       4,
-		MonitorUniquesWeek:      0,
 	}
 	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
 		t.Fatal(diff)

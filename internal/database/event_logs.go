@@ -723,14 +723,6 @@ func (l *eventLogStore) siteUsage(ctx context.Context, now time.Time) (summary t
 		&summary.IntegrationUniquesMonth,
 		&summary.IntegrationUniquesWeek,
 		&summary.IntegrationUniquesDay,
-		&summary.ManageUniquesMonth,
-		&summary.CodeUniquesMonth,
-		&summary.VerifyUniquesMonth,
-		&summary.MonitorUniquesMonth,
-		&summary.ManageUniquesWeek,
-		&summary.CodeUniquesWeek,
-		&summary.VerifyUniquesWeek,
-		&summary.MonitorUniquesWeek,
 	)
 
 	return summary, err
@@ -754,61 +746,6 @@ SELECT
   	AS integration_uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND source = 'CODEHOSTINTEGRATION')
   	AS integration_uniques_day,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE month = current_month AND name LIKE 'ViewSiteAdmin%%%%'
-  ) AS manage_uniques_month,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE month = current_month AND name IN (
-      'ViewRepository',
-      'ViewBlob',
-      'ViewTree',
-      'SearchResultsQueried'
-    )
-  ) AS code_uniques_month,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE month = current_month AND name IN (
-      'SavedSearchEmailClicked',
-      'SavedSearchSlackClicked',
-      'SavedSearchEmailNotificationSent'
-    )
-  ) AS verify_uniques_month,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE month = current_month AND name IN (
-      'DiffSearchResultsQueried'
-    )
-  ) AS monitor_uniques_month,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE week = current_week AND name LIKE 'ViewSiteAdmin%%%%'
-  ) AS manage_uniques_week,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE week = current_week AND name IN (
-      'ViewRepository',
-      'ViewBlob',
-      'ViewTree',
-      'SearchResultsQueried'
-    )
-  ) AS code_uniques_week,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE week = current_week AND name IN (
-      'SavedSearchEmailClicked',
-      'SavedSearchSlackClicked',
-      'SavedSearchEmailNotificationSent'
-    )
-  ) AS verify_uniques_week,
-
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE week = current_week AND name IN (
-      'DiffSearchResultsQueried'
-    )
-  ) AS monitor_uniques_week
-
 FROM (
   -- This sub-query is here to avoid re-doing this work above on each aggregation.
   SELECT
