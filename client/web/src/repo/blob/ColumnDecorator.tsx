@@ -1,9 +1,9 @@
-import React, { useLayoutEffect } from 'react'
+import React, { useLayoutEffect, useState, useRef, useMemo, useEffect } from 'react'
 
 import isAbsoluteUrl from 'is-absolute-url'
 import iterate from 'iterare'
 import ReactDOM from 'react-dom'
-import { ReplaySubject } from 'rxjs'
+import { ReplaySubject, Subject } from 'rxjs'
 
 import { isDefined, property } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
@@ -13,9 +13,10 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Popover, PopoverContent, PopoverTrigger, Position, Button, createRectangle } from '@sourcegraph/wildcard'
 
 import styles from './ColumnDecorator.module.scss'
+import { uniqueId } from 'lodash'
 
 export interface LineDecoratorProps extends ThemeProps {
     extensionID: string
@@ -123,6 +124,8 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
             }
         }, [codeViewElements, decorations, extensionID])
 
+        const popoverOpenSubject = useMemo(() => new Subject<string>(), [])
+
         if (!portalNodes?.size) {
             return null
         }
@@ -136,6 +139,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                 lineDecorations={lineDecorations}
                                 isLightTheme={isLightTheme}
                                 portalRoot={portalRoot}
+                                popoverOpenSubject={popoverOpenSubject}
                             />,
                             portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
                         )
@@ -150,42 +154,93 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
     lineDecorations: TextDocumentDecoration[] | undefined
     isLightTheme: boolean
     portalRoot?: HTMLElement
-}> = ({ lineDecorations, isLightTheme, portalRoot }) => (
-    <>
-        {lineDecorations?.filter(property('after', isDefined)).map(decoration => {
-            const attachment = decoration.after
-            const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+    popoverOpenSubject: Subject<string>
+}> = ({ lineDecorations, isLightTheme, portalRoot, popoverOpenSubject }) => {
+    const key = useMemo(() => uniqueId(), [])
+    const [isOpen, setIsOpen] = useState(false)
+    const timeoutRef = useRef<Timeout | null>(null)
 
-            return (
-                <Tooltip
-                    content={attachment.hoverMessage}
-                    key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${
-                        portalRoot?.dataset.line ?? ''
-                    }`}
-                >
-                    <LinkOrSpan
-                        className={styles.item}
-                        style={{ color: style.color }}
-                        to={attachment.linkURL}
-                        // Use target to open external URLs
-                        target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
-                        // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                        rel="noreferrer noopener"
-                        onMouseEnter={selectRow}
-                        onMouseLeave={deselectRow}
-                        onFocus={selectRow}
-                        onBlur={deselectRow}
+    useEffect(() => {
+        const subscriber = popoverOpenSubject.subscribe((value: string) => {
+            console.log(value)
+            if (value !== key) {
+                setIsOpen(false)
+            }
+        })
+        return () => subscriber.unsubscribe()
+    }, [popoverOpenSubject, key])
+
+    const onOpen = () => {
+        popoverOpenSubject.next(key)
+        setIsOpen(true)
+    }
+    const onClose = () => {
+        setIsOpen(false)
+    }
+
+    return (
+        <>
+            {lineDecorations?.filter(property('after', isDefined)).map(decoration => {
+                const attachment = decoration.after
+                const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+
+                return (
+                    <div
+                        onMouseLeave={() => {
+                            timeoutRef.current = setTimeout(() => onClose(), 1000)
+                        }}
+                        onMouseEnter={() => {
+                            if (timeoutRef.current) {
+                                clearTimeout(timeoutRef.current)
+                                timeoutRef.current = null
+                            }
+                        }}
                     >
-                        <span
-                            className={styles.contents}
-                            data-line-decoration-attachment-content={true}
-                            data-contents={attachment.contentText || ''}
-                        />
-                    </LinkOrSpan>
-                </Tooltip>
-            )
-        })}
-    </>
-)
+                        <Popover isOpen={isOpen} onOpenChange={() => (isOpen ? onClose() : onOpen())} key={key}>
+                            <PopoverTrigger
+                                as={LinkOrSpan}
+                                onFocus={() => {
+                                    // selectRow(event)
+                                    onOpen()
+                                }}
+                                onBlur={() => {
+                                    // deselectRow(event)
+                                    onClose()
+                                }}
+                                style={{ color: style.color }}
+                                to={attachment.linkURL}
+                                // Use target to open external URLs
+                                target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
+                                // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                                rel="noreferrer noopener"
+                                onMouseEnter={() => {
+                                    // selectRow(event)
+                                    onOpen()
+                                }}
+                            >
+                                <span
+                                    className={styles.contents}
+                                    data-line-decoration-attachment-content={true}
+                                    data-contents={attachment.contentText || ''}
+                                />
+                            </PopoverTrigger>
+
+                            <PopoverContent
+                                targetPadding={createRectangle(0, 0, 10, 10)}
+                                position={Position.top}
+                                focusLocked={false}
+                            >
+                                {attachment.hoverMessage}
+
+                                <Button variant="secondary">Action 1</Button>
+                                <Button variant="secondary">Action 2</Button>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                )
+            })}
+        </>
+    )
+}
 
 ColumnDecorator.displayName = 'ColumnDecorator'

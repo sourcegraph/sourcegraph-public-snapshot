@@ -28,6 +28,7 @@ import { LineDecoratorContents } from '../LineDecorator'
 
 import columnDecoratorStyles from '../ColumnDecorator.module.scss'
 import lineDecoratorStyles from '../LineDecorator.module.scss'
+import { Subject } from 'rxjs'
 
 export type TextDocumentDecorationSpec = [TextDocumentDecorationType, TextDocumentDecoration[]]
 type GroupedDecorations = ReturnType<typeof groupDecorations>
@@ -57,6 +58,7 @@ class TextDocumentDecorationManager implements PluginValue {
     public groupedDecorations: GroupedDecorations = { column: [], inline: new Map() }
     private gutters: Map<string, { gutter: Extension; items: DecorationMapByLine }> = new Map()
     private reset: number | null = null
+    private popoverOpenSubject: Subject<string> = new Subject()
 
     constructor(private readonly view: EditorView) {
         this.updateDecorations(
@@ -152,14 +154,22 @@ class TextDocumentDecorationManager implements PluginValue {
                             if (!lineItems || lineItems.length === 0) {
                                 return null
                             }
-                            return new ColumnDecoratorMarker(lineItems, !view.state.facet(EditorView.darkTheme))
+                            return new ColumnDecoratorMarker(
+                                lineItems,
+                                !view.state.facet(EditorView.darkTheme),
+                                this.popoverOpenSubject
+                            )
                         },
                         // Without a spacer the whole gutter flickers when the
                         // decorations for the visible lines are re-rendered
                         // TODO: update spacer when decorations change
                         initialSpacer: () => {
                             const decorations = longestColumnDecorations(this.gutters.get(extensionID)?.items)
-                            return new ColumnDecoratorMarker(decorations, /* value doesn't matter for spacer */ true)
+                            return new ColumnDecoratorMarker(
+                                decorations,
+                                /* value doesn't matter for spacer */ true,
+                                this.popoverOpenSubject
+                            )
                         },
                         // Markers need to be updated when theme changes
                         lineMarkerChange: update =>
@@ -215,7 +225,11 @@ class ColumnDecoratorMarker extends GutterMarker {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
 
-    constructor(public readonly items: TextDocumentDecoration[], public readonly isLightTheme: boolean) {
+    constructor(
+        public readonly items: TextDocumentDecoration[],
+        public readonly isLightTheme: boolean,
+        private readonly popoverOpenSubject: Subject<string>
+    ) {
         super()
     }
 
@@ -231,7 +245,11 @@ class ColumnDecoratorMarker extends GutterMarker {
             this.container = document.createElement('span')
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
-                <ColumnDecoratorContents lineDecorations={this.items} isLightTheme={this.isLightTheme} />
+                <ColumnDecoratorContents
+                    lineDecorations={this.items}
+                    isLightTheme={this.isLightTheme}
+                    popoverOpenSubject={this.popoverOpenSubject}
+                />
             )
         }
         return this.container
