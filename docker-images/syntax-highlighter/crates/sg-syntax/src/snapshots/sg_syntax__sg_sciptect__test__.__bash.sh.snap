@@ -4,6 +4,8 @@ expression: "dump_document(&document, &contents)"
 ---
   #!/bin/sh
 // ^^^^^^^^ Comment
+  set -eux
+//    ^^^^ Identifier
   
   OUT=$(test/backtrace-test-raise 2>&1)
 //^^^ Identifier
@@ -16,7 +18,7 @@ expression: "dump_document(&document, &contents)"
   REPO_LINT=$(
 //^^^^^^^^^ Identifier
 //         ^ IdentifierOperator
-//          ^^ StringLiteral 3:10..8:19
+//          ^^ StringLiteral 4:10..9:19
    git diff origin/main -- foobar.md |
 // ^^^ Identifier
 //                     ^^^ IdentifierOperator
@@ -36,18 +38,23 @@ expression: "dump_document(&document, &contents)"
   echo "$OUT"
 //     ^^^^^^ StringLiteral
 //       ^^^ Identifier
+  echo "$REPO_LINT"
+//     ^^^^^^^^^^^^ StringLiteral
+//       ^^^^^^^^^ Identifier
   echo "$OUT" | grep 'in main backtrace-test-raise.cc:4'
 //     ^^^^^^ StringLiteral
 //       ^^^ Identifier
 //            ^ IdentifierOperator
 //              ^^^^ Identifier
 //                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-  if [[ x != '0' ]]; then
+  if [ "$OUT" != '0' ]; then
 //^^ IdentifierKeyword
-//        ^^ IdentifierOperator
-//           ^^^ StringLiteral
-//                 ^ IdentifierOperator
-//                   ^^^^ IdentifierKeyword
+//     ^^^^^^ StringLiteral
+//       ^^^ Identifier
+//            ^^ IdentifierOperator
+//               ^^^ StringLiteral
+//                    ^ IdentifierOperator
+//                      ^^^^ IdentifierKeyword
   echo 'foo'
 //     ^^^^^ StringLiteral
   fi

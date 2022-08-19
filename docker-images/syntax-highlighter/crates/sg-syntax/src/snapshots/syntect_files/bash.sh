@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eux
 
 OUT=$(test/backtrace-test-raise 2>&1)
 REPO_LINT=$(
@@ -8,7 +9,8 @@ REPO_LINT=$(
 	# more sed
 	sed 's/#readme//')
 echo "$OUT"
+echo "$REPO_LINT"
 echo "$OUT" | grep 'in main backtrace-test-raise.cc:4'
-if [[ x != '0' ]]; then
+if [ "$OUT" != '0' ]; then
 echo 'foo'
 fi
