@@ -1,9 +1,10 @@
-import React, { useLayoutEffect, useState, useRef, useMemo, useEffect } from 'react'
+import React, { useLayoutEffect, useMemo, useCallback } from 'react'
 
 import isAbsoluteUrl from 'is-absolute-url'
 import iterate from 'iterare'
+import { uniqueId } from 'lodash'
 import ReactDOM from 'react-dom'
-import { ReplaySubject, Subject } from 'rxjs'
+import { BehaviorSubject, ReplaySubject, Subject } from 'rxjs'
 
 import { isDefined, property } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
@@ -13,10 +14,16 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Popover, PopoverContent, PopoverTrigger, Position, Button, createRectangle } from '@sourcegraph/wildcard'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+    createRectangle,
+    useObservable,
+} from '@sourcegraph/wildcard'
 
 import styles from './ColumnDecorator.module.scss'
-import { uniqueId } from 'lodash'
 
 export interface LineDecoratorProps extends ThemeProps {
     extensionID: string
@@ -150,33 +157,81 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
     }
 )
 
+const currentPopoverId = new BehaviorSubject<string>('')
+let timeoutId: NodeJS.Timeout | null = null
+
+interface PopoverEventHandlers {
+    popoverTrigger: {
+        onFocus: (event: React.FocusEvent) => void
+        onBlur: (event: React.FocusEvent) => void
+        onMouseEnter: (event: React.MouseEvent) => void
+        onMouseLeave: (event: React.MouseEvent) => void
+    }
+    popoverContent: {
+        onMouseEnter: (event: React.MouseEvent) => void
+        onMouseLeave: (event: React.MouseEvent) => void
+    }
+}
+
+const usePopover = (
+    id: string,
+    timeout: number = 1000
+): { popoverId?: string; eventHandlers: PopoverEventHandlers } => {
+    const popoverId = useObservable(currentPopoverId)
+
+    const open = useCallback(() => currentPopoverId.next(id), [id])
+
+    const close = useCallback(() => {
+        if (currentPopoverId.getValue() === id) {
+            currentPopoverId.next('')
+        }
+    }, [id])
+
+    const closeWithTimeout = useCallback(() => {
+        timeoutId = setTimeout(close, timeout)
+    }, [close, timeout])
+
+    const resetTimeout = useCallback(() => {
+        if (timeoutId) {
+            clearTimeout(timeoutId)
+            timeoutId = null
+        }
+    }, [])
+
+    const eventHandlers = useMemo(
+        () => ({
+            popoverTrigger: {
+                onFocus: open,
+                onBlur: close,
+                onMouseEnter: open,
+                onMouseLeave: closeWithTimeout,
+            },
+            popoverContent: {
+                onMouseEnter: resetTimeout,
+                onMouseLeave: close,
+            },
+        }),
+        [open, close, closeWithTimeout, resetTimeout]
+    )
+
+    return { popoverId, eventHandlers }
+}
+
+// TODO: select/deselct row on hover/focus
+
 export const ColumnDecoratorContents: React.FunctionComponent<{
     lineDecorations: TextDocumentDecoration[] | undefined
     isLightTheme: boolean
     portalRoot?: HTMLElement
     popoverOpenSubject: Subject<string>
-}> = ({ lineDecorations, isLightTheme, portalRoot, popoverOpenSubject }) => {
+}> = ({ lineDecorations, isLightTheme }) => {
     const key = useMemo(() => uniqueId(), [])
-    const [isOpen, setIsOpen] = useState(false)
-    const timeoutRef = useRef<Timeout | null>(null)
 
-    useEffect(() => {
-        const subscriber = popoverOpenSubject.subscribe((value: string) => {
-            console.log(value)
-            if (value !== key) {
-                setIsOpen(false)
-            }
-        })
-        return () => subscriber.unsubscribe()
-    }, [popoverOpenSubject, key])
+    const { popoverId, eventHandlers } = usePopover(key)
 
-    const onOpen = () => {
-        popoverOpenSubject.next(key)
-        setIsOpen(true)
-    }
-    const onClose = () => {
-        setIsOpen(false)
-    }
+    const isOpen = popoverId === key
+
+    const onPopoverOpenChange = useCallback(() => (isOpen ? close() : open()), [isOpen])
 
     return (
         <>
@@ -185,58 +240,33 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
                 const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
 
                 return (
-                    <div
-                        onMouseLeave={() => {
-                            timeoutRef.current = setTimeout(() => onClose(), 1000)
-                        }}
-                        onMouseEnter={() => {
-                            if (timeoutRef.current) {
-                                clearTimeout(timeoutRef.current)
-                                timeoutRef.current = null
-                            }
-                        }}
-                    >
-                        <Popover isOpen={isOpen} onOpenChange={() => (isOpen ? onClose() : onOpen())} key={key}>
-                            <PopoverTrigger
-                                as={LinkOrSpan}
-                                onFocus={() => {
-                                    // selectRow(event)
-                                    onOpen()
-                                }}
-                                onBlur={() => {
-                                    // deselectRow(event)
-                                    onClose()
-                                }}
-                                style={{ color: style.color }}
-                                to={attachment.linkURL}
-                                // Use target to open external URLs
-                                target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
-                                // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                                rel="noreferrer noopener"
-                                onMouseEnter={() => {
-                                    // selectRow(event)
-                                    onOpen()
-                                }}
-                            >
-                                <span
-                                    className={styles.contents}
-                                    data-line-decoration-attachment-content={true}
-                                    data-contents={attachment.contentText || ''}
-                                />
-                            </PopoverTrigger>
+                    <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={key}>
+                        <PopoverTrigger
+                            as={LinkOrSpan}
+                            style={{ color: style.color }}
+                            to={attachment.linkURL}
+                            // Use target to open external URLs
+                            target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
+                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                            rel="noreferrer noopener"
+                            {...eventHandlers.popoverTrigger}
+                        >
+                            <span
+                                className={styles.contents}
+                                data-line-decoration-attachment-content={true}
+                                data-contents={attachment.contentText || ''}
+                            />
+                        </PopoverTrigger>
 
-                            <PopoverContent
-                                targetPadding={createRectangle(0, 0, 10, 10)}
-                                position={Position.top}
-                                focusLocked={false}
-                            >
-                                {attachment.hoverMessage}
-
-                                <Button variant="secondary">Action 1</Button>
-                                <Button variant="secondary">Action 2</Button>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
+                        <PopoverContent
+                            targetPadding={createRectangle(0, 0, 10, 10)}
+                            position={Position.top}
+                            focusLocked={false}
+                            {...eventHandlers.popoverContent}
+                        >
+                            {attachment.hoverMessage}
+                        </PopoverContent>
+                    </Popover>
                 )
             })}
         </>
