@@ -12,7 +12,7 @@ import (
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -22,25 +22,26 @@ import (
 )
 
 func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, services *Services) error {
-	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
-
-	codenavCtx := &observation.Context{
-		Logger:     logger.Scoped("codenav.transport.graphql", "codeintel symbols graphql transport"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
+	oc := func(name string) *observation.Context {
+		return &observation.Context{
+			Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
 	}
-	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, codenavCtx)
+
+	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	executorResolver := executorgraphql.New(db)
+	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
 		services.lsifStore,
-		services.gitserverClient,
-		policyMatcher,
 		services.indexEnqueuer,
 		symbols.DefaultClient,
 		codenavResolver,
 		executorResolver,
+		policyResolver,
 	)
 
 	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}

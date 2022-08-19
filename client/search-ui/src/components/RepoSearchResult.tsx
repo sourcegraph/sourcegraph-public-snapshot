@@ -106,9 +106,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 {result.description && (
                     <>
                         <div className={styles.dividerVertical} />
-                        <div ref={containerElement}>
+                        <div>
                             <small>
-                                <em>
+                                <em ref={containerElement}>
                                     {result.description.length > REPO_DESCRIPTION_CHAR_LIMIT
                                         ? result.description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
                                         : result.description}
@@ -123,15 +123,12 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
 
     useEffect((): void => {
         if (containerElement.current && result.descriptionMatches) {
-            const visibleDescription = containerElement.current.querySelector('small em')
-            if (visibleDescription) {
-                for (const range of result.descriptionMatches) {
-                    highlightNode(
-                        visibleDescription as HTMLElement,
-                        range.start.column,
-                        range.end.column - range.start.column
-                    )
-                }
+            for (const range of result.descriptionMatches) {
+                highlightNode(
+                    containerElement.current as HTMLElement,
+                    range.start.column,
+                    range.end.column - range.start.column
+                )
             }
         }
     }, [result.description, result.descriptionMatches, containerElement])

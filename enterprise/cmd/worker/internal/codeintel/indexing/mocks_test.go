@@ -3270,6 +3270,158 @@ func (c RepoUpdaterClientRepoLookupFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// MockReposStore is a mock implementation of the ReposStore interface (from
+// the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// used for unit testing.
+type MockReposStore struct {
+	// ListMinimalReposFunc is an instance of a mock function object
+	// controlling the behavior of the method ListMinimalRepos.
+	ListMinimalReposFunc *ReposStoreListMinimalReposFunc
+}
+
+// NewMockReposStore creates a new mock of the ReposStore interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockReposStore() *MockReposStore {
+	return &MockReposStore{
+		ListMinimalReposFunc: &ReposStoreListMinimalReposFunc{
+			defaultHook: func(context.Context, database.ReposListOptions) (r0 []types.MinimalRepo, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockReposStore creates a new mock of the ReposStore interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockReposStore() *MockReposStore {
+	return &MockReposStore{
+		ListMinimalReposFunc: &ReposStoreListMinimalReposFunc{
+			defaultHook: func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+				panic("unexpected invocation of MockReposStore.ListMinimalRepos")
+			},
+		},
+	}
+}
+
+// NewMockReposStoreFrom creates a new mock of the MockReposStore interface.
+// All methods delegate to the given implementation, unless overwritten.
+func NewMockReposStoreFrom(i ReposStore) *MockReposStore {
+	return &MockReposStore{
+		ListMinimalReposFunc: &ReposStoreListMinimalReposFunc{
+			defaultHook: i.ListMinimalRepos,
+		},
+	}
+}
+
+// ReposStoreListMinimalReposFunc describes the behavior when the
+// ListMinimalRepos method of the parent MockReposStore instance is invoked.
+type ReposStoreListMinimalReposFunc struct {
+	defaultHook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+	hooks       []func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+	history     []ReposStoreListMinimalReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ListMinimalRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockReposStore) ListMinimalRepos(v0 context.Context, v1 database.ReposListOptions) ([]types.MinimalRepo, error) {
+	r0, r1 := m.ListMinimalReposFunc.nextHook()(v0, v1)
+	m.ListMinimalReposFunc.appendCall(ReposStoreListMinimalReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListMinimalRepos
+// method of the parent MockReposStore instance is invoked and the hook
+// queue is empty.
+func (f *ReposStoreListMinimalReposFunc) SetDefaultHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListMinimalRepos method of the parent MockReposStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ReposStoreListMinimalReposFunc) PushHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ReposStoreListMinimalReposFunc) SetDefaultReturn(r0 []types.MinimalRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ReposStoreListMinimalReposFunc) PushReturn(r0 []types.MinimalRepo, r1 error) {
+	f.PushHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ReposStoreListMinimalReposFunc) nextHook() func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ReposStoreListMinimalReposFunc) appendCall(r0 ReposStoreListMinimalReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ReposStoreListMinimalReposFuncCall objects
+// describing the invocations of this function.
+func (f *ReposStoreListMinimalReposFunc) History() []ReposStoreListMinimalReposFuncCall {
+	f.mutex.Lock()
+	history := make([]ReposStoreListMinimalReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ReposStoreListMinimalReposFuncCall is an object that describes an
+// invocation of method ListMinimalRepos on an instance of MockReposStore.
+type ReposStoreListMinimalReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ReposListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.MinimalRepo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ReposStoreListMinimalReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ReposStoreListMinimalReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockPackageReferenceScanner is a mock implementation of the
 // PackageReferenceScanner interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gobwas/glob"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -104,6 +105,28 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 	}
 
 	return context.commitMap, nil
+}
+
+func (m *Matcher) CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []shared.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
+	dbStorePolicies := make([]dbstore.ConfigurationPolicy, 0, len(policies))
+	for _, p := range policies {
+		dbStorePolicies = append(dbStorePolicies, dbstore.ConfigurationPolicy{
+			ID:                        p.ID,
+			RepositoryID:              p.RepositoryID,
+			RepositoryPatterns:        p.RepositoryPatterns,
+			Name:                      p.Name,
+			Type:                      dbstore.GitObjectType(p.Type),
+			Pattern:                   p.Pattern,
+			Protected:                 p.Protected,
+			RetentionEnabled:          p.RetentionEnabled,
+			RetentionDuration:         p.RetentionDuration,
+			RetainIntermediateCommits: p.RetainIntermediateCommits,
+			IndexingEnabled:           p.IndexingEnabled,
+			IndexCommitMaxAge:         p.IndexCommitMaxAge,
+			IndexIntermediateCommits:  p.IndexIntermediateCommits,
+		})
+	}
+	return m.CommitsDescribedByPolicy(ctx, repositoryID, dbStorePolicies, now, filterCommits...)
 }
 
 type matcherContext struct {

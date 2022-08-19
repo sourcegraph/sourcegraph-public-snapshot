@@ -200,8 +200,8 @@ function createEvent(event: string, eventProperties?: unknown, publicArgument?: 
         source: EventSource.WEB,
         argument: eventProperties ? JSON.stringify(eventProperties) : null,
         publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
-        deviceID: window.context.sourcegraphDotComMode ? eventLogger.getDeviceID() : null,
-        eventID: window.context.sourcegraphDotComMode ? eventLogger.getEventID() : null,
-        insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID() : null,
+        deviceID: eventLogger.getDeviceID(),
+        eventID: eventLogger.getEventID(),
+        insertID: eventLogger.getInsertID(),
     }
 }

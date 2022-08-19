@@ -34,11 +34,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.New(db, &observation.TestContext, nil)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	// Creating user with matching email to the changeset spec author.
-	user, err := database.UsersWith(logger, cstore).Create(ctx, database.NewUser{
+	user, err := database.UsersWith(logger, bstore).Create(ctx, database.NewUser{
 		Username:        "mary",
 		Email:           bt.ChangesetSpecAuthorEmail,
 		EmailIsVerified: true,
@@ -48,7 +48,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoStore := database.ReposWith(logger, cstore)
+	repoStore := database.ReposWith(logger, bstore)
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -63,11 +63,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 	batchSpec.NamespaceUserID = userID
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 			spec.RepoID = repo.ID
 			spec.BatchSpecID = batchSpec.ID
 
-			if err := cstore.CreateChangesetSpec(ctx, spec); err != nil {
+			if err := bstore.CreateChangesetSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 

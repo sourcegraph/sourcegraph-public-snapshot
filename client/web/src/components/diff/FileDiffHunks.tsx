@@ -264,30 +264,34 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
                     {/* Always render base status bar even though it isn't displayed in unified mode
                     in order to prevent overloading the extension host with messages (`api.getStatusBarItems`) on
                     mode switch, which noticeably decreases status bar performance. */}
-                    <StatusBar
-                        getStatusBarItems={getBaseStatusBarItems}
-                        className={classNames(
-                            isSplitMode && 'flex-1 w-50',
-                            'border-bottom border-top-0',
-                            styles.statusBar
-                        )}
-                        statusBarItemClassName="mx-0"
-                        extensionsController={extensionInfo.extensionsController}
-                        location={location}
-                        badgeText="BASE"
-                    />
-                    <StatusBar
-                        getStatusBarItems={getHeadStatusBarItems}
-                        className={classNames(
-                            isSplitMode && 'w-50',
-                            'flex-1 border-bottom border-top-0',
-                            styles.statusBar
-                        )}
-                        statusBarItemClassName="mx-0"
-                        extensionsController={extensionInfo.extensionsController}
-                        location={location}
-                        badgeText="HEAD"
-                    />
+                    {extensionInfo.extensionsController !== null ? (
+                        <>
+                            <StatusBar
+                                getStatusBarItems={getBaseStatusBarItems}
+                                className={classNames(
+                                    isSplitMode && 'flex-1 w-50',
+                                    'border-bottom border-top-0',
+                                    styles.statusBar
+                                )}
+                                statusBarItemClassName="mx-0"
+                                extensionsController={extensionInfo.extensionsController}
+                                location={location}
+                                badgeText="BASE"
+                            />
+                            <StatusBar
+                                getStatusBarItems={getHeadStatusBarItems}
+                                className={classNames(
+                                    isSplitMode && 'w-50',
+                                    'flex-1 border-bottom border-top-0',
+                                    styles.statusBar
+                                )}
+                                statusBarItemClassName="mx-0"
+                                extensionsController={extensionInfo.extensionsController}
+                                location={location}
+                                badgeText="HEAD"
+                            />
+                        </>
+                    ) : null}
                 </div>
             )}
             <div className={classNames(styles.fileDiffHunks, className)} ref={nextBlobElement}>

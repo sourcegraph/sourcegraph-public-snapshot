@@ -3,7 +3,6 @@ package perforce
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -134,7 +133,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 					AccountID:   email,
 				},
 				AccountData: extsvc.AccountData{
-					Data: (*json.RawMessage)(&accountData),
+					Data: extsvc.NewUnencryptedData(accountData),
 				},
 			}, nil
 		}
@@ -158,7 +157,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	user, err := perforce.GetExternalAccountData(&account.AccountData)
+	user, err := perforce.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting external account data")
 	} else if user == nil {

@@ -18,9 +18,10 @@ import {
     CommandListPopoverButtonProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import {
-    createController as createExtensionsController,
     ExtensionsControllerProps,
+    RequiredExtensionsControllerProps,
 } from '@sourcegraph/shared/src/extensions/controller'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -49,7 +50,7 @@ export function initializeExtensions(
 
 interface InjectProps
     extends PlatformContextProps<'settings' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
-        ExtensionsControllerProps {
+        RequiredExtensionsControllerProps {
     history: H.History
     render: Renderer
 }

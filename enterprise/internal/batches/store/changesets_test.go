@@ -1806,7 +1806,8 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	createChangesetSpec := func(title string) *btypes.ChangesetSpec {
 		spec := &btypes.ChangesetSpec{
 			Spec: &batcheslib.ChangesetSpec{
-				Title: title,
+				Title:      title,
+				ExternalID: "123",
 			},
 		}
 		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
@@ -2117,7 +2118,8 @@ func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, c
 		// First, we need to create a changeset spec.
 		spec := &btypes.ChangesetSpec{
 			Spec: &batcheslib.ChangesetSpec{
-				Title: "fake spec",
+				Title:      "fake spec",
+				ExternalID: "123",
 			},
 		}
 		if err := s.CreateChangesetSpec(ctx, spec); err != nil {

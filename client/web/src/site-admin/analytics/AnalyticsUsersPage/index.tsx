@@ -125,7 +125,7 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Users</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Users</AnalyticsPageTitle>
             <Card className="p-3">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
                     <HorizontalSelect<typeof dateRange.value> {...dateRange} />

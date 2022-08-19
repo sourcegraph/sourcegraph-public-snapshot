@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -72,7 +73,7 @@ func (c CodeHostConfigProcessor) Process(ctx context.Context, _ ConfigRequest, d
 
 	summaries := make([]*ExternalServiceSummary, len(externalServices))
 	for idx, extSvc := range externalServices {
-		summary, err := convertToSummary(extSvc)
+		summary, err := convertToSummary(ctx, extSvc)
 		if err != nil {
 			// basically this is the only error that can occur
 			c.logger.Error("error during redacting the code host config", log.Error(err))
@@ -99,8 +100,8 @@ type ExternalServiceSummary struct {
 	Config      json.RawMessage `json:"config"`
 }
 
-func convertToSummary(extSvc *types.ExternalService) (*ExternalServiceSummary, error) {
-	config, err := extSvc.RedactedConfig()
+func convertToSummary(ctx context.Context, extSvc *types.ExternalService) (*ExternalServiceSummary, error) {
+	config, err := extSvc.RedactedConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
