@@ -45,6 +45,7 @@ func main() {
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWith(log.SentrySink{
 		ClientOptions: sentry.ClientOptions{
+			Debug:      true,
 			Dsn:        os.Getenv("CI_SENTRY_DSN"),
 			SampleRate: 1, //send all
 		},
@@ -52,6 +53,7 @@ func main() {
 	defer liblog.Sync()
 
 	logger = log.Scoped("gen-pipeline", "generates the pipeline for ci")
+	logger.Info("👀", log.String(os.Getenv("CI_SENTRY_DSN")[:5]))
 
 	if docs {
 		renderPipelineDocs(os.Stdout)
