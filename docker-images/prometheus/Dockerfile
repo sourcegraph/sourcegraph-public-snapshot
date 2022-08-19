@@ -8,6 +8,7 @@ ARG BASE_IMAGE="prom/prometheus:v2.35.0@sha256:4b86ad59abc67fa19a6e1618e936f3fd0
 # https://github.com/hadolint/hadolint/issues/339
 # hadolint ignore=DL3006
 FROM ${BASE_IMAGE} AS prom_upstream
+FROM prom/alertmanager:v0.24.0@sha256:088464f949de8065b9da7dfce7302a633d700e9d598e2bebc03310712f083b31 AS am_upstream
 
 # Build monitoring definitions
 FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e AS monitoring_builder
@@ -16,7 +17,6 @@ COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/prometheus'
 
-FROM prom/alertmanager:v0.24.0@sha256:088464f949de8065b9da7dfce7302a633d700e9d598e2bebc03310712f083b31 AS am_upstream
 
 # Prepare final image
 # hadolint ignore=DL3007
