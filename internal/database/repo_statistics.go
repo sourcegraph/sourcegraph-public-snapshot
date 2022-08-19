@@ -85,72 +85,30 @@ FROM repo_statistics
 `
 
 func (s *repoStatisticsStore) CompactRepoStatistics(ctx context.Context) error {
-	// Start transaction
-	tx, err := s.Store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// Get current state and the first row we have in the database
-	var (
-		rowID int
-		rs    RepoStatistics
-	)
-	row := tx.QueryRow(ctx, sqlf.Sprintf(getRepoStatisticsForCompactionQueryFmtstr))
-	err = row.Scan(&rowID, &rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned, &rs.FailedFetch)
-	if err != nil {
-		return err
-	}
-
-	// Update the first row so its columns reflect the total state
-	updateQuery := sqlf.Sprintf(
-		updateRepoStatisticsForCompactionQueryFmtstr,
-		rs.Total,
-		rs.SoftDeleted,
-		rs.NotCloned,
-		rs.Cloning,
-		rs.Cloned,
-		rs.FailedFetch,
-		rowID,
-	)
-	if err := tx.Exec(ctx, updateQuery); err != nil {
-		return err
-	}
-
-	// Delete all the other rows
-	return tx.Exec(ctx, sqlf.Sprintf(deleteOtherRepoStatisticsForCompactionQueryFmtstr, rowID))
+	return s.Exec(ctx, sqlf.Sprintf(compactRepoStatisticsQueryFmtstr))
 }
 
-const getRepoStatisticsForCompactionQueryFmtstr = `
+const compactRepoStatisticsQueryFmtstr = `
 -- source: internal/database/repo_statistics.go:repoStatisticsStore.CompactRepoStatistics
+WITH deleted AS (
+	DELETE FROM repo_statistics
+	RETURNING
+		total,
+		soft_deleted,
+		not_cloned,
+		cloning,
+		cloned,
+		failed_fetch
+)
+INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
 SELECT
-	MIN(id), -- choose min id
 	SUM(total),
 	SUM(soft_deleted),
 	SUM(not_cloned),
 	SUM(cloning),
 	SUM(cloned),
 	SUM(failed_fetch)
-FROM repo_statistics
-`
-
-const updateRepoStatisticsForCompactionQueryFmtstr = `
--- source: internal/database/repo_statistics.go:repoStatisticsStore.CompactRepoStatistics
-UPDATE repo_statistics
-SET
-	total = %s,
-	soft_deleted = %s,
-	not_cloned = %s,
-	cloning = %s,
-	cloned = %s,
-	failed_fetch = %s
-WHERE id = %s;
-`
-
-const deleteOtherRepoStatisticsForCompactionQueryFmtstr = `
--- source: internal/database/repo_statistics.go:repoStatisticsStore.CompactRepoStatistics
-DELETE FROM repo_statistics WHERE id != %s;
+FROM deleted;
 `
 
 func (s *repoStatisticsStore) GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistics, error) {
