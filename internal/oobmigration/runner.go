@@ -301,24 +301,34 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 
 	// We're just starting up - refresh our progress before migrating
 	if err := updateProgress(ctx, store, &migration, migrator); err != nil {
-		log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+		if !errors.Is(err, ctx.Err()) {
+			log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+		}
 	}
 
 	for {
 		select {
-		case migration = <-migrations:
+		case migration, ok = <-migrations:
+			if !ok {
+				return
+			}
+
 			// We just got a new version of the migration from the database. We need to check
 			// the actual progress based on the migrator in case the progress as stored in the
 			// migrations table has been de-synchronized from the actual progress.
 			if err := updateProgress(ctx, store, &migration, migrator); err != nil {
-				log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+				if !errors.Is(err, ctx.Err()) {
+					log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+				}
 			}
 
 		case <-options.ticker.Chan():
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
 				if err := runMigrationFunction(ctx, store, &migration, migrator, operations); err != nil {
-					log15.Error("Failed migration action", "migrationID", migration.ID, "error", err)
+					if !errors.Is(err, ctx.Err()) {
+						log15.Error("Failed migration action", "migrationID", migration.ID, "error", err)
+					}
 				}
 			}
 
