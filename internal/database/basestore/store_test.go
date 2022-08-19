@@ -106,7 +106,10 @@ func TestConcurrentTransactions(t *testing.T) {
 		for i := 0; i < 2; i++ {
 			routine := i
 			g.Go(func() (err error) {
-				return tx.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, routine, routine))
+				if err := tx.Exec(ctx, sqlf.Sprintf(`SELECT pg_sleep(0.1);`)); err != nil {
+					return err
+				}
+				return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, routine, routine))
 			})
 		}
 		err = g.Wait()
