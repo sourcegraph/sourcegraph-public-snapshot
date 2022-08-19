@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiAlertCircle, mdiCheck, mdiClose } from '@mdi/js'
+import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
@@ -53,26 +53,24 @@ export const SaveToolbar: React.FunctionComponent<
                     {error.message}
                 </div>
             )}
-            <div className={styles.actions}>
+            <div className={classNames('mt-2', styles.actions)}>
                 <Button
                     disabled={disabled}
                     title={saveDiscardTitle || 'Save changes'}
-                    className={classNames('test-save-toolbar-save', styles.item, styles.btn, styles.btnFirst)}
+                    className={classNames('test-save-toolbar-save mr-2', styles.item)}
                     onClick={onSave}
-                    variant="success"
-                    size="sm"
+                    variant="primary"
                 >
-                    <Icon style={{ marginRight: '0.1em' }} aria-hidden={true} svgPath={mdiCheck} /> Save changes
+                    Save
                 </Button>
                 <Button
                     disabled={disabled}
                     title={saveDiscardTitle || 'Discard changes'}
-                    className={classNames('test-save-toolbar-discard', styles.item, styles.btn, styles.btnLast)}
+                    className={classNames('test-save-toolbar-discard', styles.item)}
                     onClick={onDiscard}
                     variant="secondary"
-                    size="sm"
                 >
-                    <Icon aria-hidden={true} svgPath={mdiClose} /> Discard
+                    Discard changes
                 </Button>
                 {children}
                 {saving && (

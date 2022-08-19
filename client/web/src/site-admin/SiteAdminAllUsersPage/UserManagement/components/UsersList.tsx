@@ -1,12 +1,20 @@
 import React, { useState, useCallback } from 'react'
 
-import { mdiLogoutVariant, mdiArchive, mdiDelete, mdiLockReset, mdiClipboardMinus, mdiClipboardPlus } from '@mdi/js'
+import {
+    mdiLogoutVariant,
+    mdiArchive,
+    mdiDelete,
+    mdiLockReset,
+    mdiClipboardMinus,
+    mdiClipboardPlus,
+    mdiClose,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce, Link, Tooltip } from '@sourcegraph/wildcard'
+import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce, Link, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import {
@@ -15,6 +23,7 @@ import {
     UsersManagementUsersListResult,
     UsersManagementUsersListVariables,
 } from '../../../../graphql-operations'
+import { useURLSyncedState } from '../../../../hooks'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { HorizontalSelect } from '../../../analytics/components/HorizontalSelect'
 import { randomizeUserPassword, setUserIsSiteAdmin } from '../../../backend'
@@ -27,32 +36,47 @@ import styles from '../index.module.scss'
 type SiteUser = UsersManagementUsersListResult['site']['users']['nodes'][0]
 
 const LIMIT = 25
-export const UsersList: React.FunctionComponent = () => {
-    const [searchText, setSearchText] = useState<string>('')
-    const debouncedSearchText = useDebounce(searchText, 300)
+interface UsersListProps {
+    onActionEnd?: () => void
+}
 
-    const [lastActivePeriod, setLastActivePeriod] = useState<SiteUsersLastActivePeriod>(SiteUsersLastActivePeriod.ALL)
-    const [limit, setLimit] = useState(LIMIT)
-    const [sortBy, setSortBy] = useState({ key: SiteUserOrderBy.EVENTS_COUNT, descending: false })
-
-    const showMore = useCallback(() => setLimit(limit => limit + LIMIT), [])
+export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd }) => {
+    const [filters, setFilters] = useURLSyncedState({
+        searchText: '',
+        limit: LIMIT.toString(),
+        lastActivePeriod: SiteUsersLastActivePeriod.ALL,
+        orderBy: SiteUserOrderBy.EVENTS_COUNT,
+        descending: 'false',
+    })
+    const debouncedSearchText = useDebounce(filters.searchText, 300)
+    const showMore = useCallback(() => setFilters({ limit: (Number(filters.limit) + LIMIT).toString() }), [
+        filters.limit,
+        setFilters,
+    ])
 
     const { data, previousData, refetch, variables, error, loading } = useQuery<
         UsersManagementUsersListResult,
         UsersManagementUsersListVariables
     >(USERS_MANAGEMENT_USERS_LIST, {
         variables: {
-            first: limit,
+            first: Number(filters.limit),
             query: debouncedSearchText || null,
-            lastActivePeriod,
-            orderBy: sortBy.key,
-            descending: sortBy.descending,
+            lastActivePeriod: filters.lastActivePeriod,
+            orderBy: filters.orderBy,
+            descending: JSON.parse(filters.descending),
         },
     })
 
-    const reload = useCallback(() => {
-        refetch(variables).catch(console.error)
-    }, [refetch, variables])
+    const handleActionEnd = useCallback(
+        (error?: any) => {
+            if (!error) {
+                // reload data
+                refetch(variables).catch(console.error)
+                onActionEnd?.()
+            }
+        },
+        [onActionEnd, refetch, variables]
+    )
 
     const {
         handleDeleteUsers,
@@ -62,7 +86,8 @@ export const UsersList: React.FunctionComponent = () => {
         handlePromoteToSiteAdmin,
         handleResetUserPassword,
         notification,
-    } = useUserListActions(reload)
+        handleDismissNotification,
+    } = useUserListActions(handleActionEnd)
 
     const users = (data || previousData)?.site.users
     return (
@@ -72,10 +97,10 @@ export const UsersList: React.FunctionComponent = () => {
                 <div className="d-flex w-75">
                     <HorizontalSelect<SiteUsersLastActivePeriod>
                         className="mr-4"
-                        value={lastActivePeriod}
+                        value={filters.lastActivePeriod}
                         label="Last active"
                         onChange={value => {
-                            setLastActivePeriod(value)
+                            setFilters({ lastActivePeriod: value })
                             eventLogger.log(`UserManagementLastActive${value}`)
                         }}
                         items={[
@@ -90,15 +115,21 @@ export const UsersList: React.FunctionComponent = () => {
                         <Input
                             className="flex-1 ml-2"
                             placeholder="Search username, display name, email"
-                            value={searchText}
-                            onChange={event => setSearchText(event.target.value)}
+                            value={filters.searchText}
+                            onChange={event => setFilters({ searchText: event.target.value })}
                         />
                     </div>
                 </div>
             </div>
             {notification && (
-                <Alert className="mt-2" variant={notification.isError ? 'danger' : 'success'}>
+                <Alert
+                    className="mt-2 d-flex justify-content-between align-items-center"
+                    variant={notification.isError ? 'danger' : 'success'}
+                >
                     {notification.text}
+                    <Button variant="secondary" outline={true} onClick={handleDismissNotification}>
+                        <Icon aria-label="Close notification" svgPath={mdiClose} />
+                    </Button>
                 </Alert>
             )}
             {loading && (
@@ -116,15 +147,14 @@ export const UsersList: React.FunctionComponent = () => {
                 <>
                     <Table
                         selectable={true}
-                        sortBy={sortBy}
+                        sortBy={{ key: filters.orderBy, descending: JSON.parse(filters.descending) as boolean }}
                         data={users.nodes}
-                        onSortByChange={value =>
-                            setSortBy(
-                                value
-                                    ? { key: (value.key as any) as SiteUserOrderBy, descending: value.descending }
-                                    : value
-                            )
-                        }
+                        onSortByChange={value => {
+                            setFilters({
+                                orderBy: value.key as SiteUserOrderBy,
+                                descending: value.descending.toString(),
+                            })
+                        }}
                         getRowId={({ id }) => id}
                         actions={[
                             {
@@ -287,41 +317,48 @@ interface UseUserListActionReturnType {
     handlePromoteToSiteAdmin: ActionHandler
     handleRevokeSiteAdmin: ActionHandler
     notification: { text: React.ReactNode; isError?: boolean } | undefined
+    handleDismissNotification: () => void
     handleResetUserPassword: ActionHandler
 }
 
 const getUsernames = (users: SiteUser[]): string => users.map(user => user.username).join(', ')
 
-function useUserListActions(reload: () => void): UseUserListActionReturnType {
+function useUserListActions(onEnd: (error?: any) => void): UseUserListActionReturnType {
     const [forceSignOutUsers] = useMutation(FORCE_SIGN_OUT_USERS)
     const [deleteUsers] = useMutation(DELETE_USERS)
     const [deleteUsersForever] = useMutation(DELETE_USERS_FOREVER)
 
     const [notification, setNotification] = useState<UseUserListActionReturnType['notification']>()
 
-    const onError = useCallback((error: any) => {
-        setNotification({
-            text: (
-                <Text as="span">
-                    Something went wrong :(!
-                    <Text as="pre" className="m-1" size="small">
-                        {error?.message}
+    const handleDismissNotification = useCallback(() => setNotification(undefined), [])
+
+    const onError = useCallback(
+        (error: any) => {
+            setNotification({
+                text: (
+                    <Text as="span">
+                        Something went wrong :(!
+                        <Text as="pre" className="m-1" size="small">
+                            {error?.message}
+                        </Text>
                     </Text>
-                </Text>
-            ),
-            isError: true,
-        })
-        console.error(error)
-    }, [])
+                ),
+                isError: true,
+            })
+            console.error(error)
+            onEnd(error)
+        },
+        [onEnd]
+    )
 
     const createOnSuccess = useCallback(
         (text: React.ReactNode, shouldReload = false) => () => {
             setNotification({ text })
             if (shouldReload) {
-                reload()
+                onEnd()
             }
         },
-        [reload]
+        [onEnd]
     )
 
     const handleForceSignOutUsers = useCallback(
@@ -456,5 +493,6 @@ function useUserListActions(reload: () => void): UseUserListActionReturnType {
         handlePromoteToSiteAdmin,
         handleRevokeSiteAdmin,
         handleResetUserPassword,
+        handleDismissNotification,
     }
 }

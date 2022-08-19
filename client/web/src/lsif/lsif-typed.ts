@@ -12,10 +12,27 @@ export interface JsonOccurrence {
 
 export class Position {
     constructor(public readonly line: number, public readonly character: number) {}
+
+    public compare(other: Position): number {
+        if (this.line !== other.line) {
+            return this.line - other.line
+        }
+        return this.character - other.character
+    }
 }
 
 export class Range {
     constructor(public readonly start: Position, public readonly end: Position) {}
+    public isSingleLine(): boolean {
+        return this.start.line === this.end.line
+    }
+    public compare(other: Range): number {
+        const byStart = this.start.compare(other.start)
+        if (byStart !== 0) {
+            return byStart
+        }
+        return this.end.compare(other.end)
+    }
 }
 
 export class Occurrence {
@@ -34,6 +51,11 @@ export class Occurrence {
         )
 
         this.kind = occ.syntaxKind
+    }
+    public static fromJson(json: string): Occurrence[] {
+        const jsonOccurrences = (JSON.parse(json) as JsonDocument).occurrences ?? []
+        const occurrences = jsonOccurrences.map(occ => new Occurrence(occ))
+        return occurrences.sort((a, b) => a.range.compare(b.range))
     }
 }
 

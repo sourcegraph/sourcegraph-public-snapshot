@@ -8,14 +8,14 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
 	driver := &testMigrationDriver{}
 	migrator := newMigrator(store, driver, migratorOptions{

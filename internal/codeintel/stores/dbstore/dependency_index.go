@@ -2,7 +2,6 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -67,12 +65,6 @@ var scanDependencySyncingJobs = basestore.NewSliceScanner(scanDependencySyncingJ
 // scanFirstDependencySyncingingJob scans a slice of dependency indexing jobs from the return
 // value of `*Store.query` and returns the first.
 var scanFirstDependencySyncingingJob = basestore.NewFirstScanner(scanDependencySyncingJob)
-
-// scanFirstDependencySyncingJobRecord scans a slice of dependency indexing jobs from the
-// return value of `*Store.query` and returns the first.
-func scanFirstDependencySyncingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstDependencySyncingingJob(rows, err)
-}
 
 // DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
@@ -131,12 +123,6 @@ var scanDependencyIndexingJobs = basestore.NewSliceScanner(scanDependencyIndexin
 // scanFirstDependencyIndexingJob scans a slice of dependency indexing jobs from the return
 // value of `*Store.query` and returns the first.
 var scanFirstDependencyIndexingJob = basestore.NewFirstScanner(scanDependencyIndexingJob)
-
-// scanFirstDependencyIndexingJobRecord scans a slice of dependency indexing jobs from the
-// return value of `*Store.query` and returns the first.
-func scanFirstDependencyIndexingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstDependencyIndexingJob(rows, err)
-}
 
 // InsertDependencySyncingJob inserts a new dependency syncing job and returns its identifier.
 func (s *Store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {

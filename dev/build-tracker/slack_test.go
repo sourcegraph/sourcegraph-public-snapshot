@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
 )
 
@@ -37,7 +38,7 @@ func TestSlack(t *testing.T) {
 	pipelineID := "sourcegraph"
 	exit := 999
 	msg := "this is a test"
-	err = client.send(
+	err = client.sendFailedBuild(
 		&Build{
 			Build: buildkite.Build{
 				Message: &msg,
@@ -71,5 +72,36 @@ func TestSlack(t *testing.T) {
 
 	if err != nil {
 		t.Fatalf("failed to send slack notification: %v", err)
+	}
+}
+
+func TestGenerateHeader(t *testing.T) {
+	for _, tc := range []struct {
+		build *Build
+		want  autogold.Value // use 'go test -update' to update
+	}{
+		{
+			build: &Build{
+				ConsecutiveFailure: 0,
+			},
+			want: autogold.Want("first failure", ":red_circle: Build 0 failed"),
+		},
+		{
+			build: &Build{
+				ConsecutiveFailure: 1,
+			},
+			want: autogold.Want("second failure", ":red_circle: Build 0 failed"),
+		},
+		{
+			build: &Build{
+				ConsecutiveFailure: 4,
+			},
+			want: autogold.Want("fifth failure", ":red_circle: Build 0 failed (:bangbang: 4th failure)"),
+		},
+	} {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := generateSlackHeader(tc.build)
+			tc.want.Equal(t, got)
+		})
 	}
 }
