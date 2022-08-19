@@ -38,5 +38,10 @@
     "path": "lib/group",
     "prefix": "ResultErrorGroup",
     "reason": "A flaky test that was made unflaky after the release cut"
+  },
+  {
+    "path": "internal/database/basestore",
+    "prefix": "TestConcurrentTransactions",
+    "reason": "Another related test was fixed in 3d51294 but the did not make it into 3.42.0. It causes the whole test suite to deadlock and that deadlocks shows up reliably in this test."
   }
 ]
