@@ -49,6 +49,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                     playsInline={true}
                     controls={false}
                 >
+                    {/* TODO: Accessibility improvement - Add caption for video */}
                     <source type="video/webm" src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.webm" />
                     <source type="video/mp4" src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.mp4" />
                 </video>
