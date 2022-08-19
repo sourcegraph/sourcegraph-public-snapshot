@@ -38,7 +38,7 @@ func (j *compactor) Routines(ctx context.Context, logger log.Logger) ([]goroutin
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
+		goroutine.NewPeriodicGoroutine(context.Background(), 30*time.Minute, &handler{
 			store:  database.NewDB(logger, db).RepoStatistics(),
 			logger: logger,
 		}),

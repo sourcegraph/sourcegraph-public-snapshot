@@ -744,15 +744,6 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "repo_statistics_id_seq",
-      "TypeName": "integer",
-      "StartValue": 1,
-      "MinimumValue": 1,
-      "MaximumValue": 2147483647,
-      "Increment": 1,
-      "CycleOption": "NO"
-    },
-    {
       "Name": "saved_searches_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -16147,7 +16138,7 @@
       "Columns": [
         {
           "Name": "cloned",
-          "Index": 6,
+          "Index": 5,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
@@ -16160,7 +16151,7 @@
         },
         {
           "Name": "cloning",
-          "Index": 5,
+          "Index": 4,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
@@ -16173,7 +16164,7 @@
         },
         {
           "Name": "failed_fetch",
-          "Index": 7,
+          "Index": 6,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
@@ -16185,21 +16176,8 @@
           "Comment": "Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table"
         },
         {
-          "Name": "id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "nextval('repo_statistics_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "not_cloned",
-          "Index": 4,
+          "Index": 3,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
@@ -16212,7 +16190,7 @@
         },
         {
           "Name": "soft_deleted",
-          "Index": 3,
+          "Index": 2,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
@@ -16225,7 +16203,7 @@
         },
         {
           "Name": "total",
-          "Index": 2,
+          "Index": 1,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
@@ -16237,18 +16215,7 @@
           "Comment": "Number of repositories that are not soft-deleted and not blocked"
         }
       ],
-      "Indexes": [
-        {
-          "Name": "repo_statistics_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX repo_statistics_pkey ON repo_statistics USING btree (id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (id)"
-        }
-      ],
+      "Indexes": [],
       "Constraints": null,
       "Triggers": []
     },

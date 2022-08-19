@@ -5,8 +5,6 @@
 -- repo_statistics holds statistics for the repo table (hence the singular
 -- "repo" in the name)
 CREATE TABLE IF NOT EXISTS repo_statistics (
-  id serial NOT NULL PRIMARY KEY,
-
   total         BIGINT NOT NULL DEFAULT 0,
   soft_deleted  BIGINT NOT NULL DEFAULT 0,
   not_cloned    BIGINT NOT NULL DEFAULT 0,
