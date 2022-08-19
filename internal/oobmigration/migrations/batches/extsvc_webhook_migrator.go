@@ -8,7 +8,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -25,10 +24,10 @@ type externalServiceWebhookMigrator struct {
 
 var _ oobmigration.Migrator = &externalServiceWebhookMigrator{}
 
-func NewExternalServiceWebhookMigratorWithDB(db database.DB, key encryption.Key, batchSize int) *externalServiceWebhookMigrator {
+func NewExternalServiceWebhookMigratorWithDB(store *basestore.Store, key encryption.Key, batchSize int) *externalServiceWebhookMigrator {
 	return &externalServiceWebhookMigrator{
 		logger:    log.Scoped("ExternalServiceWebhookMigrator", ""),
-		store:     basestore.NewWithHandle(db.Handle()),
+		store:     store,
 		batchSize: batchSize,
 		key:       key,
 	}

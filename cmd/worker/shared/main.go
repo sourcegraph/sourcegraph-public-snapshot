@@ -38,7 +38,11 @@ import (
 const addr = ":3189"
 
 // Start runs the worker.
-func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) error {
+func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
+	ctx context.Context,
+	db database.DB,
+	outOfBandMigrationRunner *oobmigration.Runner,
+) error) error {
 	registerMigrations := composeRegisterMigrations(migrations.RegisterOSSMigrations, registerEnterpriseMigrations)
 
 	builtins := map[string]job.Job{
@@ -273,13 +277,29 @@ func jobNames(jobs map[string]job.Job) []string {
 	return names
 }
 
-func composeRegisterMigrations(fns ...func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	return func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+func composeRegisterMigrations(
+	fns ...func(
+		ctx context.Context,
+		db database.DB,
+		outOfBandMigrationRunner *oobmigration.Runner,
+	) error,
+) func(
+	ctx context.Context,
+	db database.DB,
+	outOfBandMigrationRunner *oobmigration.Runner,
+) error {
+	return func(
+		ctx context.Context,
+		db database.DB,
+		outOfBandMigrationRunner *oobmigration.Runner,
+	) error {
 		for _, fn := range fns {
-			if fn != nil {
-				if err := fn(db, outOfBandMigrationRunner); err != nil {
-					return err
-				}
+			if fn == nil {
+				continue
+			}
+
+			if err := fn(ctx, db, outOfBandMigrationRunner); err != nil {
+				return err
 			}
 		}
 
