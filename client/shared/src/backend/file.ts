@@ -54,7 +54,7 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                           }
                       `
                     : gql`
-                          query HighlightedFile(
+                          query HighlightedFileVSCE(
                               $repoName: String!
                               $commitID: String!
                               $filePath: String!
