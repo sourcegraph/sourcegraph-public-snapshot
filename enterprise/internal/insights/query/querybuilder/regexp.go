@@ -113,6 +113,12 @@ func findGroups(pattern string) (groups []group) {
 			opens = append(opens, g)
 
 		} else if pattern[i] == ')' && !inCharClass {
+			if len(opens) == 0 {
+				// this shouldn't happen if we are parsing a well formed regexp since it
+				// effectively means we have encountered a closing parenthesis without a
+				// corresponding open, but for completeness here this will no-op
+				return nil
+			}
 			current := opens[len(opens)-1]
 			current.end = i
 			groups = append(groups, current)

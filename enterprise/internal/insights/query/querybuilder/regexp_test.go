@@ -144,6 +144,13 @@ func Test_replaceCaptureGroupsWithString(t *testing.T) {
 			expected: `(?:\\w)`,
 			maxGroup: -1,
 		},
+		{
+			name:     "fixed repeat pattern",
+			pattern:  `\w{3}(.{3})\w{3}`,
+			text:     `foobardog`,
+			expected: `\w{3}(?:bar)\w{3}`,
+			maxGroup: -1,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
