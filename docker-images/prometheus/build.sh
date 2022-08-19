@@ -48,21 +48,15 @@ if [[ "$CACHE" == "true" ]]; then
   BUILD_CACHE=""
 fi
 
+export APPLICATION=${APPLICATION:-prometheus}
+
 # shellcheck disable=SC2086
-docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
+docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/$APPLICATION}" . \
   --progress=plain \
+  --build-arg BASE_IMAGE \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION
-
-# shellcheck disable=SC2086
-docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/mi-prometheus}" . \
-  --progress=plain \
-  --build-arg BASE_IMAGE="gke.gcr.io/prometheus-engine/prometheus:v2.35.0-gmp.2-gke.0" \
-  --build-arg COMMIT_SHA \
-  --build-arg DATE \
-  --build-arg VERSION
-
 
 # cd out of $BUILDDIR for cleanup
 popd
