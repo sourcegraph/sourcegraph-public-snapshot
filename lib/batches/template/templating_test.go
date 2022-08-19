@@ -77,7 +77,8 @@ func TestValidateBatchSpecTemplate(t *testing.T) {
 				${{ join_if "---" "a" "b" "" "d" }}
 				${{ replace "a/b/c/d" "/" "-" }}
 				${{ split repository.name "/" }}
-				${{ matches repository.name "github.com/my-org/terra*" }}`,
+				${{ matches repository.name "github.com/my-org/terra*" }}
+				${{ index steps.modified_files 1 }}`,
 			wantValid: true,
 		},
 		{
@@ -110,15 +111,18 @@ func TestValidateBatchSpecTemplate(t *testing.T) {
 			wantValid: true,
 		},
 		{
-			name:      "output variables are ignored",
-			batchSpec: `${{ outputs.IDontExist }} ${{OUTPUTS.anotherOne}}`,
+			name: "output variables are ignored",
+			batchSpec: `${{ outputs.IDontExist }}
+						${{OUTPUTS.anotherOne}}
+						${{ join outputs.myArray "," }}
+						${{ index outputs.env.something 1 }}`,
 			wantValid: true,
 		},
 		{
 			name:      "output variables are ignored, but invalid step template variable still fails",
-			batchSpec: `${{ outputs.IDontExist }} ${{ repository.i_dont_exist_either }}`,
+			batchSpec: `${{ outputs.unknown }} ${{ outputz.unknown }}`,
 			wantValid: false,
-			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'repository.i_dont_exist_either'"),
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'outputz'"),
 		},
 	}
 
