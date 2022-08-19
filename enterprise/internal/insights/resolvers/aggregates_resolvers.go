@@ -53,46 +53,54 @@ func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 	if !ok {
 		return false, errors.Newf("mode %q not recognised", r.mode)
 	}
-	return canAggregateByFunc(r.searchQuery, r.patternType), nil
+	return canAggregateByFunc(r.searchQuery, r.patternType)
 }
 
-type canAggregateBy func(searchQuery, patternType string) bool
+type canAggregateBy func(searchQuery, patternType string) (bool, error)
 
-func canAggregateByRepo(searchQuery, patternType string) bool {
+func canAggregateByRepo(searchQuery, patternType string) (bool, error) {
+	_, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	if err != nil {
+		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+	}
 	// We can always aggregate by repo.
-	return true
+	return true, nil
 }
 
-func canAggregateByPath(searchQuery, patternType string) bool {
-	// We don't need to validate the searchQuery is valid as search have their own validation which would get triggered,
-	// we just want to grab the query plan parameters.
-	plan, _ := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+func canAggregateByPath(searchQuery, patternType string) (bool, error) {
+	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	if err != nil {
+		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// cannot aggregate over:
 	// - searches by commit or repo
 	for _, parameter := range parameters {
 		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
 			if parameter.Value == "commit" || parameter.Value == "repo" {
-				return false
+				return false, nil
 			}
 		}
 	}
-	return true
+	return true, nil
 }
 
-func canAggregateByAuthor(searchQuery, patternType string) bool {
-	plan, _ := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
+	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	if err != nil {
+		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// can only aggregate over type:diff and select/type:commit searches.
 	// users can make searches like `type:commit fix select:repo` but assume a faulty search like that is on them.
 	for _, parameter := range parameters {
 		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
 			if parameter.Value == "diff" || parameter.Value == "commit" {
-				return true
+				return true, nil
 			}
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {

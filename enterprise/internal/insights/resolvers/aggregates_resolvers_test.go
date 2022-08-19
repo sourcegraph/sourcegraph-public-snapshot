@@ -2,41 +2,35 @@ package resolvers
 
 import (
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Test_canAggregateByPath(t *testing.T) {
-	// pattern type does not matter for this aggregation mode.
-	patternType := "literal"
+type canAggregateTestCase struct {
+	name         string
+	query        string
+	patternType  string
+	canAggregate bool
+	err          error
+}
 
-	testCases := []struct {
-		name         string
-		query        string
-		canAggregate bool
-	}{
-		{
-			"can aggregate for query without parameters",
-			"func(t *testing.T)",
-			true,
-		},
-		{
-			"can aggregate for query with case parameter",
-			"func(t *testing.T) case:yes",
-			true,
-		},
-		{
-			"cannot aggregate for query with select:repo parameter",
-			"repo:contains.file(README) select:repo",
-			false,
-		},
-		{
-			"cannot aggregate for query with type:commit parameter",
-			"insights type:commit",
-			false,
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			canAggregate := canAggregateByPath(tc.query, patternType)
+type canAggregateBySuite struct {
+	t                  *testing.T
+	testCases          []canAggregateTestCase
+	canAggregateByFunc canAggregateBy
+}
+
+func (suite *canAggregateBySuite) Test_canAggregateBy() {
+	for _, tc := range suite.testCases {
+		suite.t.Run(tc.name, func(t *testing.T) {
+			if tc.patternType == "" {
+				tc.patternType = "literal"
+			}
+			canAggregate, err := suite.canAggregateByFunc(tc.query, tc.patternType)
+			errCheck := (err == nil && tc.err == nil) || (err != nil && tc.err != nil)
+			if !errCheck {
+				t.Errorf("expected error %v, got %v", tc.err, err)
+			}
 			if canAggregate != tc.canAggregate {
 				t.Errorf("expected canAggregate to be %v, got %v", tc.canAggregate, canAggregate)
 			}
@@ -44,57 +38,108 @@ func Test_canAggregateByPath(t *testing.T) {
 	}
 }
 
-func Test_canAggregateByAuthor(t *testing.T) {
-	// pattern type does not matter for this aggregation mode.
-	patternType := "literal"
+func Test_canAggregateByRepo(t *testing.T) {
+	testCases := []canAggregateTestCase{
+		{
+			name:         "cannot aggregate for invalid query",
+			query:        "fork:woo",
+			canAggregate: false,
+			err:          errors.Newf("ParseAndValidateQuery"),
+		},
+	}
+	suite := canAggregateBySuite{
+		canAggregateByFunc: canAggregateByRepo,
+		testCases:          testCases,
+		t:                  t,
+	}
+	suite.Test_canAggregateBy()
+}
 
-	testCases := []struct {
-		name         string
-		query        string
-		canAggregate bool
-	}{
+func Test_canAggregateByPath(t *testing.T) {
+	testCases := []canAggregateTestCase{
 		{
-			"cannot aggregate for query without parameters",
-			"func(t *testing.T)",
-			false,
+			name:         "can aggregate for query without parameters",
+			query:        "func(t *testing.T)",
+			canAggregate: true,
 		},
 		{
-			"cannot aggregate for query with case parameter",
-			"func(t *testing.T) case:yes",
-			false,
+			name:         "can aggregate for query with case parameter",
+			query:        "func(t *testing.T) case:yes",
+			canAggregate: true,
 		},
 		{
-			"cannot aggregate for query with select:repo parameter",
-			"repo:contains.file(README) select:repo",
-			false,
+			name:         "cannot aggregate for query with select:repo parameter",
+			query:        "repo:contains.file(README) select:repo",
+			canAggregate: false,
 		},
 		{
-			"can aggregate for query with type:commit parameter",
-			"repo:contains.file(README) select:repo type:commit fix",
-			true,
+			name:         "cannot aggregate for query with type:commit parameter",
+			query:        "insights type:commit",
+			canAggregate: false,
 		},
 		{
-			"can aggregate for query with select:commit parameter",
-			"repo:contains.file(README) select:commit fix",
-			true,
-		},
-		{
-			"can aggregate for query with type:diff parameter",
-			"repo:contains.file(README) type:diff fix",
-			true,
-		},
-		{
-			"can aggregate for weird query with type:diff select:commit",
-			"type:diff select:commit insights",
-			true,
+			name:         "cannot aggregate for invalid query",
+			query:        "insights type:commit fork:test",
+			canAggregate: false,
+			err:          errors.Newf("ParseAndValidateQuery"),
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			canAggregate := canAggregateByAuthor(tc.query, patternType)
-			if canAggregate != tc.canAggregate {
-				t.Errorf("expected canAggregate to be %v, got %v", tc.canAggregate, canAggregate)
-			}
-		})
+	suite := canAggregateBySuite{
+		canAggregateByFunc: canAggregateByPath,
+		testCases:          testCases,
+		t:                  t,
 	}
+	suite.Test_canAggregateBy()
+}
+
+func Test_canAggregateByAuthor(t *testing.T) {
+	testCases := []canAggregateTestCase{
+		{
+			name:         "cannot aggregate for query without parameters",
+			query:        "func(t *testing.T)",
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with case parameter",
+			query:        "func(t *testing.T) case:yes",
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with select:repo parameter",
+			query:        "repo:contains.file(README) select:repo",
+			canAggregate: false,
+		},
+		{
+			name:         "can aggregate for query with type:commit parameter",
+			query:        "repo:contains.file(README) select:repo type:commit fix",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for query with select:commit parameter",
+			query:        "repo:contains.file(README) select:commit fix",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for query with type:diff parameter",
+			query:        "repo:contains.file(README) type:diff fix",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for weird query with type:diff select:commit",
+			query:        "type:diff select:commit insights",
+			canAggregate: true,
+		},
+		{
+			name:         "cannot aggregate for invalid query",
+			query:        "type:diff fork:leo",
+			canAggregate: false,
+			err:          errors.Newf("ParseAndValidateQuery"),
+		},
+	}
+	suite := canAggregateBySuite{
+		canAggregateByFunc: canAggregateByAuthor,
+		testCases:          testCases,
+		t:                  t,
+	}
+	suite.Test_canAggregateBy()
 }
