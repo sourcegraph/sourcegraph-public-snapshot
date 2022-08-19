@@ -34,7 +34,8 @@ import (
 // laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
 func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
 	// We don't support OTEL_EXPORTER_OTLP_ENDPOINT yet, see newOTelCollectorExporter
-	// docstring.
+	// docstring. We need to get the endpoint explicitly because the Go library does not
+	// seem to infer the endpoint correctly - see newOTelCollectorExporter()
 	endpoint := otlpenv.GetEndpoint()
 	logger = logger.Scoped("otel", "OpenTelemetry tracer").With(log.String("endpoint", endpoint))
 

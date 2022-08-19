@@ -56,20 +56,19 @@ func ID(ctx context.Context) string {
 // Context retrieves the full trace context, if any, from context - this includes
 // both TraceID and SpanID.
 func Context(ctx context.Context) *log.TraceContext {
+	// try opentracing span
 	span := opentracing.SpanFromContext(ctx)
-	if span == nil {
-		return nil
-	}
-
-	// try Jaeger ("opentracing") span
-	if jaegerSpan, ok := span.Context().(jaeger.SpanContext); ok {
-		return &log.TraceContext{
-			TraceID: jaegerSpan.TraceID().String(),
-			SpanID:  jaegerSpan.SpanID().String(),
+	if span != nil {
+		// try Jaeger ("opentracing") span. This is set in Jaeger/opentracing mode.
+		if jaegerSpan, ok := span.Context().(jaeger.SpanContext); ok {
+			return &log.TraceContext{
+				TraceID: jaegerSpan.TraceID().String(),
+				SpanID:  jaegerSpan.SpanID().String(),
+			}
 		}
 	}
 
-	// try bridged OpenTelemetry span
+	// try OpenTelemetry span (set by the bridge tracer, or an OpenTelemetry library)
 	if otelSpan := oteltrace.SpanFromContext(ctx).SpanContext(); otelSpan.IsValid() {
 		return &log.TraceContext{
 			TraceID: otelSpan.TraceID().String(),
