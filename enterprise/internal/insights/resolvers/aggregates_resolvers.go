@@ -43,9 +43,14 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	aggregationMode := types.SearchAggregationMode(args.Mode)
 	aggregationModeAvailabilityResolver := newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, aggregationMode)
 	supported, err := aggregationModeAvailabilityResolver.Available()
-	if !supported || err != nil {
+	if err != nil {
+		return nil, err
+	}
+	if !supported {
 		unavailableReason := ""
-		reason := aggregationModeAvailabilityResolver.ReasonUnavailable()
+		// We don't need to assert on the error because this uses the same logic as `Available()` above so it would
+		// have errored already.
+		reason, _ := aggregationModeAvailabilityResolver.ReasonUnavailable()
 		if reason == nil {
 			unavailableReason = "could not fetch unavailability reason"
 		} else {
@@ -178,10 +183,9 @@ func newAggregationModeAvailabilityResolver(searchQuery string, patternType stri
 }
 
 type aggregationModeAvailabilityResolver struct {
-	searchQuery       string
-	patternType       string
-	mode              types.SearchAggregationMode
-	reasonUnavailable *string
+	searchQuery string
+	patternType string
+	mode        types.SearchAggregationMode
 }
 
 func (r *aggregationModeAvailabilityResolver) Mode() string {
@@ -189,6 +193,33 @@ func (r *aggregationModeAvailabilityResolver) Mode() string {
 }
 
 func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
+	canAggregateByFunc := getAggregateBy(r.mode)
+	if canAggregateByFunc == nil {
+		return false, nil
+	}
+	return canAggregateByFunc(r.searchQuery, r.patternType)
+}
+
+func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
+	// if it’s possible write a clear concise reason why that mode won’t work then put it in the reason.
+	// if not return an error
+	canAggregateByFunc := getAggregateBy(r.mode)
+	if canAggregateByFunc == nil {
+		reason := fmt.Sprintf("aggregation mode %v is not yet supported", r.mode)
+		return &reason, nil
+	}
+	canAggregate, err := canAggregateByFunc(r.searchQuery, r.patternType)
+	if err != nil {
+		return nil, err
+	}
+	if !canAggregate {
+		reason := fmt.Sprintf("this specific query does not support aggregation by %v", r.mode)
+		return &reason, nil
+	}
+	return nil, nil
+}
+
+func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
 		types.REPO_AGGREGATION_MODE: canAggregateByRepo,
 		// TODO(insights): these paths should be uncommented as they are implemented. Logic for allowing the aggregation should be double-checked.
@@ -196,29 +227,11 @@ func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 		// types.AUTHOR_AGGREGATION_MODE: canAggregateByAuthor,
 		// types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
 	}
-	canAggregateByFunc, ok := checkByMode[r.mode]
+	canAggregateByFunc, ok := checkByMode[mode]
 	if !ok {
-		reason := fmt.Sprintf("aggregation mode %v is not yet supported", r.mode)
-		r.reasonUnavailable = &reason
-		return false, nil
+		return nil
 	}
-	canAggregate, err := canAggregateByFunc(r.searchQuery, r.patternType)
-	if err != nil {
-		reason := fmt.Sprintf("cannot aggregate due to error: %v", err)
-		r.reasonUnavailable = &reason
-	}
-	if !canAggregate {
-		reason := fmt.Sprintf("this specific query does not support aggregation by %v", r.mode)
-		r.reasonUnavailable = &reason
-	}
-	return canAggregate, err
-}
-
-func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() *string {
-	if r.reasonUnavailable != nil {
-		return r.reasonUnavailable
-	}
-	return nil
+	return canAggregateByFunc
 }
 
 type canAggregateBy func(searchQuery, patternType string) (bool, error)
