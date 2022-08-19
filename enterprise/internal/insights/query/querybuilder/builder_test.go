@@ -3,8 +3,6 @@ package querybuilder
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
 
