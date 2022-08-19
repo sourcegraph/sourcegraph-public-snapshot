@@ -4,9 +4,15 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/migrator/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
+
+func init() {
+	oobmigration.ReturnEnterpriseMigrations = true
+}
 
 func main() {
 	liblog := log.Init(log.Resource{
@@ -17,7 +23,7 @@ func main() {
 
 	logger := log.Scoped("migrator", "migrator enterprise edition")
 
-	if err := shared.Start(logger); err != nil {
+	if err := shared.Start(logger, migrations.RegisterEnterpriseMigrationsFromConfig); err != nil {
 		logger.Fatal(err.Error())
 	}
 }

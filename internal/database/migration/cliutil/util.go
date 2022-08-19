@@ -139,3 +139,7 @@ var migratorObservationContext = &observation.TestContext
 func outOfBandMigrationRunner(db database.DB) *oobmigration.Runner {
 	return oobmigration.NewRunnerWithDB(db, time.Second, migratorObservationContext)
 }
+
+func outOfBandMigrationRunnerWithStore(store *oobmigration.Store) *oobmigration.Runner {
+	return oobmigration.NewRunner(store, time.Second, migratorObservationContext)
+}

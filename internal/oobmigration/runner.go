@@ -40,7 +40,11 @@ type migratorAndOption struct {
 var _ goroutine.BackgroundRoutine = &Runner{}
 
 func NewRunnerWithDB(db database.DB, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
-	return newRunner(NewStoreWithDB(db), glock.NewRealTicker(refreshInterval), observationContext)
+	return NewRunner(NewStoreWithDB(db), refreshInterval, observationContext)
+}
+
+func NewRunner(store *Store, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
+	return newRunner(store, glock.NewRealTicker(refreshInterval), observationContext)
 }
 
 func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext *observation.Context) *Runner {
