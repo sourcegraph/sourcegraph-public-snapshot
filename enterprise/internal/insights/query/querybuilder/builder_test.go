@@ -556,12 +556,12 @@ func Test_addFileFilter(t *testing.T) {
 }
 
 func TestSFDSDF(t *testing.T) {
-	builder, err := FromQuery("repo:myorg/myrepo findme", query.SearchTypeStandard)
+	builder, err := FromQuery("(repo:myorg/myrepo findme) or (asdf repo:your/org)", query.SearchTypeStandard)
 	if err != nil {
 		t.Fatal(err)
 	}
-	builder.WithRepo("github.com/sourcegraph/sourcegraph")
-	builder.WithAuthor("asbasdf")
+	builder.WithRepoRevision("github.com/sourcegraph/sourcegraph", "6c3fasdf")
+	builder.WithCountAll()
 	res, err := builder.Build()
 	if err != nil {
 		t.Fatal(err)

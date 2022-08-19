@@ -296,6 +296,14 @@ func (b *builder) WithRepoPattern(repoPattern string) *builder {
 	return b
 }
 
+func (b *builder) WithRepoRevision(repo, revision string) *builder {
+	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
+		return escapedField(plan, searchquery.FieldRepo, fmt.Sprintf("%s@%s", repo, revision))
+	}
+	b.modifications = append(b.modifications, mod)
+	return b
+}
+
 func (b *builder) WithFile(file string) *builder {
 	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
 		return escapedField(plan, searchquery.FieldFile, file)
@@ -314,13 +322,22 @@ func (b *builder) WithFilePattern(filePattern string) *builder {
 
 func (b *builder) WithCountAll() *builder {
 	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
-		searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
-			return searchquery.MapField(basic.ToParseTree(), searchquery.FieldCount, func(value string, negated bool, annotation searchquery.Annotation) searchquery.Node {
-
+		return searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+			params := make([]searchquery.Parameter, 0, len(basic.Parameters))
+			for _, parameter := range basic.Parameters {
+				if parameter.Field == searchquery.FieldCount {
+					continue
+				}
+				params = append(params, parameter)
+			}
+			params = append(params, searchquery.Parameter{
+				Field:      searchquery.FieldCount,
+				Value:      "all",
+				Negated:    false,
+				Annotation: searchquery.Annotation{},
 			})
-
-		})
-
+			return basic.MapParameters(params)
+		}), nil
 	}
 	b.modifications = append(b.modifications, mod)
 	return b
