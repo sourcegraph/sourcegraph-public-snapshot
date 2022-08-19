@@ -28,7 +28,6 @@ import { LineDecoratorContents } from '../LineDecorator'
 
 import columnDecoratorStyles from '../ColumnDecorator.module.scss'
 import lineDecoratorStyles from '../LineDecorator.module.scss'
-import { Subject } from 'rxjs'
 
 export type TextDocumentDecorationSpec = [TextDocumentDecorationType, TextDocumentDecoration[]]
 type GroupedDecorations = ReturnType<typeof groupDecorations>
@@ -58,7 +57,6 @@ class TextDocumentDecorationManager implements PluginValue {
     public groupedDecorations: GroupedDecorations = { column: [], inline: new Map() }
     private gutters: Map<string, { gutter: Extension; items: DecorationMapByLine }> = new Map()
     private reset: number | null = null
-    private popoverOpenSubject: Subject<string> = new Subject()
 
     constructor(private readonly view: EditorView) {
         this.updateDecorations(
@@ -150,14 +148,15 @@ class TextDocumentDecorationManager implements PluginValue {
                                 // This shouldn't be possible but just in case
                                 return null
                             }
-                            const lineItems = items.get(view.state.doc.lineAt(lineBlock.from).number)
+                            const lineNumber = view.state.doc.lineAt(lineBlock.from).number
+                            const lineItems = items.get(lineNumber)
                             if (!lineItems || lineItems.length === 0) {
                                 return null
                             }
                             return new ColumnDecoratorMarker(
                                 lineItems,
                                 !view.state.facet(EditorView.darkTheme),
-                                this.popoverOpenSubject
+                                lineNumber
                             )
                         },
                         // Without a spacer the whole gutter flickers when the
@@ -165,11 +164,7 @@ class TextDocumentDecorationManager implements PluginValue {
                         // TODO: update spacer when decorations change
                         initialSpacer: () => {
                             const decorations = longestColumnDecorations(this.gutters.get(extensionID)?.items)
-                            return new ColumnDecoratorMarker(
-                                decorations,
-                                /* value doesn't matter for spacer */ true,
-                                this.popoverOpenSubject
-                            )
+                            return new ColumnDecoratorMarker(decorations, /* value doesn't matter for spacer */ true)
                         },
                         // Markers need to be updated when theme changes
                         lineMarkerChange: update =>
@@ -217,6 +212,23 @@ function longestColumnDecorations(mappedDecorations: DecorationMapByLine | undef
     return result
 }
 
+const getCellsByLine = (line: number): HTMLElement[] =>
+    [
+        document.querySelector<HTMLElement>(`.cm-editor .cm-gutters .cm-gutterElement:nth-of-type(${line + 1})`),
+        document.querySelector<HTMLElement>(`.cm-editor .cm-content .cm-line:nth-of-type(${line})`),
+    ].filter(Boolean)
+
+// const selectRow = (line: number): void => {
+//     for (const cell of getCellsByLine(line)) {
+//         cell.classList.add('selected-line')
+//     }
+// }
+// const deselectRow = (line: number): void => {
+//     for (const cell of getCellsByLine(line)) {
+//         cell.classList.remove('selected-line')
+//     }
+// }
+
 /**
  * Widget class for rendering column Sourcegrpah text document decorations inside
  * CodeMirror.
@@ -228,7 +240,7 @@ class ColumnDecoratorMarker extends GutterMarker {
     constructor(
         public readonly items: TextDocumentDecoration[],
         public readonly isLightTheme: boolean,
-        private readonly popoverOpenSubject: Subject<string>
+        public readonly line?: number
     ) {
         super()
     }
@@ -246,13 +258,37 @@ class ColumnDecoratorMarker extends GutterMarker {
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
                 <ColumnDecoratorContents
+                    line={this.line}
                     lineDecorations={this.items}
                     isLightTheme={this.isLightTheme}
-                    popoverOpenSubject={this.popoverOpenSubject}
+                    onSelect={this.selectRow}
+                    onDeselect={this.deselectRow}
                 />
             )
         }
         return this.container
+    }
+
+    private selectRow = (line: number): void => {
+        const decorationCell = this.container?.closest('.cm-gutterElement')
+        if (!decorationCell) {
+            return
+        }
+
+        for (const cell of [...getCellsByLine(line), decorationCell]) {
+            cell.classList.add('highlighted-line')
+        }
+    }
+
+    private deselectRow = (line: number): void => {
+        const decorationCell = this.container?.closest('.cm-gutterElement')
+        if (!decorationCell) {
+            return
+        }
+
+        for (const cell of [...getCellsByLine(line), decorationCell]) {
+            cell.classList.remove('highlighted-line')
+        }
     }
 
     public destroy(): void {

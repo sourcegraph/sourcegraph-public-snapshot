@@ -46,6 +46,9 @@ const staticExtensions: Extension = [
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+        '.highlighted-line': {
+            backgroundColor: 'var(--code-selection-bg)',
+        },
         '.cm-gutters': {
             backgroundColor: 'var(--code-bg)',
             borderRight: 'initial',

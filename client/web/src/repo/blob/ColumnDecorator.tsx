@@ -1,8 +1,8 @@
-import React, { useLayoutEffect, useMemo, useCallback } from 'react'
+import React, { useLayoutEffect, useCallback, useEffect } from 'react'
 
 import isAbsoluteUrl from 'is-absolute-url'
 import iterate from 'iterare'
-import { uniqueId } from 'lodash'
+import { toNumber } from 'lodash'
 import ReactDOM from 'react-dom'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 
@@ -12,7 +12,6 @@ import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Popover,
@@ -21,6 +20,7 @@ import {
     Position,
     createRectangle,
     useObservable,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import styles from './ColumnDecorator.module.scss'
@@ -31,17 +31,13 @@ export interface LineDecoratorProps extends ThemeProps {
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
-const selectRow = (event: React.FocusEvent | React.MouseEvent): void => {
-    if (event.target instanceof HTMLElement) {
-        event.target.closest('tr')?.classList.add('highlighted')
-    }
-}
+const getRowByLine = (line: number): HTMLTableRowElement | null | undefined =>
+    [...document.querySelectorAll('table')]
+        .find(table => table.querySelector(`.${styles.decoration}`)) // TODO: use more stable way to the proper code view element
+        ?.querySelector(`tr:nth-of-type(${line})`)
 
-const deselectRow = (event: React.FocusEvent | React.MouseEvent): void => {
-    if (event.target instanceof HTMLElement) {
-        event.target.closest('tr')?.classList.remove('highlighted')
-    }
-}
+const selectRow = (line: number): void => getRowByLine(line)?.classList.add('highlighted')
+const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
 /**
  * Component that prepends lines of code with attachments set by extensions
@@ -56,7 +52,6 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
         // after mount/decoration updates, but before the browser has painted DOM updates.
         // This prevents users from seeing inconsistent states where changes handled by React have been
         // painted, but DOM manipulation handled by these effects are painted on the next tick.
-
         useLayoutEffect(() => {
             const addedCells = new Map<HTMLTableCellElement, TextDocumentDecoration[] | undefined>()
 
@@ -140,7 +135,13 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                 {iterate(portalNodes)
                     .map(([portalRoot, lineDecorations]) =>
                         ReactDOM.createPortal(
-                            <ColumnDecoratorContents lineDecorations={lineDecorations} isLightTheme={isLightTheme} />,
+                            <ColumnDecoratorContents
+                                line={toNumber(portalRoot.previousElementSibling?.dataset.line)} // TODO: use more stable way to get line number
+                                lineDecorations={lineDecorations}
+                                isLightTheme={isLightTheme}
+                                onSelect={selectRow}
+                                onDeselect={deselectRow}
+                            />,
                             portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
                         )
                     )
@@ -150,39 +151,52 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
     }
 )
 
-const currentPopoverId = new BehaviorSubject<string>('')
+const currentPopoverId = new BehaviorSubject<string | null>(null)
 let timeoutId: NodeJS.Timeout | null = null
-
-interface PopoverEventHandlers {
-    popoverTrigger: {
-        onFocus: (event: React.FocusEvent) => void
-        onBlur: (event: React.FocusEvent) => void
-        onMouseEnter: (event: React.MouseEvent) => void
-        onMouseLeave: (event: React.MouseEvent) => void
-    }
-    popoverContent: {
-        onMouseEnter: (event: React.MouseEvent) => void
-        onMouseLeave: (event: React.MouseEvent) => void
+const resetTimeout = (): void => {
+    if (timeoutId) {
+        clearTimeout(timeoutId)
+        timeoutId = null
     }
 }
 
-const usePopover = (
-    id: string,
-    timeout: number = 1000
-): {
-    popoverId?: string
+const usePopover = ({
+    id,
+    timeout,
+    onOpen,
+    onClose,
+}: {
+    id: string
+    timeout: number
+    onOpen?: () => void
+    onClose?: () => void
+}): {
+    isOpen: boolean
     open: () => void
     close: () => void
     closeWithTimeout: () => void
-    resetTimeout: () => void
+    resetCloseTimeout: () => void
 } => {
     const popoverId = useObservable(currentPopoverId)
+
+    const isOpen = popoverId === id
+    useEffect(() => {
+        if (isOpen) {
+            onOpen?.()
+        }
+
+        return () => {
+            if (isOpen) {
+                onClose?.()
+            }
+        }
+    }, [isOpen, onOpen, onClose])
 
     const open = useCallback(() => currentPopoverId.next(id), [id])
 
     const close = useCallback(() => {
         if (currentPopoverId.getValue() === id) {
-            currentPopoverId.next('')
+            currentPopoverId.next(null)
         }
     }, [id])
 
@@ -190,27 +204,33 @@ const usePopover = (
         timeoutId = setTimeout(close, timeout)
     }, [close, timeout])
 
-    const resetTimeout = useCallback(() => {
-        if (timeoutId) {
-            clearTimeout(timeoutId)
-            timeoutId = null
-        }
-    }, [])
-
-    return { popoverId, open, close, closeWithTimeout, resetTimeout }
+    return { isOpen, open, close, closeWithTimeout, resetCloseTimeout: resetTimeout }
 }
 
-// TODO: select/deselect row on hover/focus
-
 export const ColumnDecoratorContents: React.FunctionComponent<{
+    line?: number
     lineDecorations: TextDocumentDecoration[] | undefined
     isLightTheme: boolean
-}> = ({ lineDecorations, isLightTheme }) => {
-    const key = useMemo(() => uniqueId(), [])
-
-    const { popoverId, open, close, closeWithTimeout, resetTimeout } = usePopover(key)
-
-    const isOpen = popoverId === key
+    onSelect?: (line: number) => void
+    onDeselect?: (line: number) => void
+}> = ({ line, lineDecorations, isLightTheme, onSelect, onDeselect }) => {
+    const id = line?.toString() || ''
+    const onOpen = useCallback(() => {
+        if (typeof line === 'number' && onSelect) {
+            onSelect(line)
+        }
+    }, [line, onSelect])
+    const onClose = useCallback(() => {
+        if (typeof line === 'number' && onDeselect) {
+            onDeselect(line)
+        }
+    }, [line, onDeselect])
+    const { isOpen, open, close, closeWithTimeout, resetCloseTimeout } = usePopover({
+        id,
+        timeout: 1000,
+        onOpen,
+        onClose,
+    })
 
     const onPopoverOpenChange = useCallback(() => (isOpen ? close() : open()), [isOpen, close, open])
 
@@ -221,11 +241,11 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
                 const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
 
                 return (
-                    <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={key}>
+                    <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
                         <PopoverTrigger
-                            as={LinkOrSpan}
+                            as={Link}
                             style={{ color: style.color }}
-                            to={attachment.linkURL}
+                            to={attachment.linkURL!}
                             // Use target to open external URLs
                             target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
                             // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
@@ -246,7 +266,7 @@ export const ColumnDecoratorContents: React.FunctionComponent<{
                             targetPadding={createRectangle(0, 0, 10, 10)}
                             position={Position.top}
                             focusLocked={false}
-                            onMouseEnter={resetTimeout}
+                            onMouseEnter={resetCloseTimeout}
                             onMouseLeave={close}
                         >
                             {attachment.hoverMessage}
