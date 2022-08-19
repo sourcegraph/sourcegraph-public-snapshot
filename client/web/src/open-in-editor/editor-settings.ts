@@ -1,7 +1,6 @@
 import { EditorId } from './editors'
 
-const jetBrainsApis = ['protocolHandler', 'builtInServer']
-const vsCodeModes = ['standard', 'insiders', 'ssh']
+export const jetBrainsApis = ['protocolHandler', 'builtInServer']
 
 export type Replacements = Record<string, string>
 
@@ -19,7 +18,8 @@ export interface EditorSettings {
     }
     vscode?: {
         isBasePathUNCPath?: boolean
-        mode?: typeof vsCodeModes[number]
+        useInsiders?: boolean
+        useSSH?: boolean
         remoteHostForSSH?: string
     }
     custom?: {

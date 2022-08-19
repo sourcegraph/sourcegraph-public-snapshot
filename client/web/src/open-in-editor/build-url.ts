@@ -12,10 +12,16 @@ export function buildEditorUrl(
 ): URL {
     const basePath = getBasePathWithChecks(editorSettings, sourcegraphBaseUrl)
     const editor = getEditorWithChecks(editorSettings.editorId, editorSettings.custom?.urlPattern, sourcegraphBaseUrl)
-    const urlPattern = editor.id === 'custom' ? editorSettings.custom?.urlPattern || '' : editor.urlPattern
+    const urlPattern = getUrlPattern(editor, editorSettings)
+    // If VS Code && (Windows || UNC flag is on), add an extra slash in the beginning
+    const pathPrefix =
+        editor.id === 'vscode' && (/^[A-Za-z]:\\/.test(basePath) || editorSettings.vscode?.isBasePathUNCPath) ? '/' : ''
     const absolutePath = getActiveUrl(activeViewComponent, basePath)
     const { line, column } = getLineAndColumn(activeViewComponent)
-    const url = urlPattern.replace('%file', absolutePath).replace('%line', `${line}`).replace('%col', `${column}`)
+    const url = urlPattern
+        .replace('%file', pathPrefix + absolutePath)
+        .replace('%line', `${line}`)
+        .replace('%col', `${column}`)
     return new URL(doReplacements(url, editorSettings.replacements))
 }
 
@@ -87,6 +93,35 @@ function getEditorWithChecks(
 
 function getLearnMorePath(sourcegraphBaseUrl: string): string {
     return new URL('/extensions/sourcegraph/open-in-editor', sourcegraphBaseUrl).href
+}
+
+function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
+    if (editor.urlPattern) {
+        return editor.urlPattern
+    }
+    if (editor.id === 'vscode') {
+        if (editorSettings.vscode?.useSSH) {
+            if (!editorSettings.vscode.remoteHostForSSH) {
+                throw new TypeError(
+                    '`openineditor.vscode.mode` is set to "ssh" but `openineditor.vscode.remoteHostForSSH` is not set.'
+                )
+            }
+            return `vscode://vscode-remote/ssh-remote+${editorSettings.vscode.remoteHostForSSH}%file:%line:%col`
+        }
+        return `${editorSettings.vscode?.useInsiders ? 'vscode-insiders' : 'vscode'}://file%file:%line:%col`
+    }
+    if (editor.isJetBrainsProduct) {
+        if (editorSettings.jetbrains?.forceApi === 'builtInServer') {
+            // Open files with IntelliJ's built-in REST API (port 63342) if useBuiltin is enabled instead of the idea:// protocol handler
+            // ref: https://www.jetbrains.com/help/idea/php-built-in-web-server.html#configuring-built-in-web-server
+            return 'http://localhost:63342/api/file%file:%line:%col'
+        }
+        return `${editor.id}://open?file=%file&line=%line&column=%col`
+    }
+    if (editor.id === 'custom') {
+        return editorSettings.custom?.urlPattern ?? ''
+    }
+    throw new TypeError(`No url pattern found for editor ${editor.id}`)
 }
 
 function getActiveUrl(activeViewComponent: ViewComponent | undefined, basePath: string): string {
