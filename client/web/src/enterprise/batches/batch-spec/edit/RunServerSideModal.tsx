@@ -43,9 +43,9 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                     className="w-100 h-auto shadow percy-hide"
                     width={1280}
                     height={720}
-                    autoPlay={true}
-                    muted={true}
-                    loop={true}
+                    autoPlay={false}
+                    muted={false}
+                    loop={false}
                     playsInline={true}
                     controls={false}
                 >
