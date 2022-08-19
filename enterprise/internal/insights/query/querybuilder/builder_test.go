@@ -347,8 +347,8 @@ func TestIsSingleRepoQuery(t *testing.T) {
 			want:       false,
 		},
 		{
-			name:       "repo contains",
-			inputQuery: "repo:contains.file(CHANGELOG) TEST",
+			name:       "repo contains path",
+			inputQuery: "repo:contains.path(CHANGELOG) TEST",
 			mapType:    Lang,
 			want:       false,
 		},
