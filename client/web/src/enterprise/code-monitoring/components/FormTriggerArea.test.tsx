@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
@@ -163,7 +163,7 @@ describe('FormTriggerArea', () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
-                query=""
+                query="test type:diff repo:test"
                 triggerCompleted={false}
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
@@ -173,17 +173,6 @@ describe('FormTriggerArea', () => {
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
-
-        const triggerInput = screen.getByTestId('trigger-query-edit')
-        userEvent.click(triggerInput)
-
-        await waitFor(() => expect(triggerInput.querySelector('.test-trigger-input')).toBeInTheDocument())
-        ;(triggerInput.querySelector('.test-trigger-input') as HTMLElement).focus()
-        userEvent.keyboard('test type:diff repo:test')
-
-        act(() => {
-            clock.tick(600)
-        })
         userEvent.click(screen.getByTestId('submit-trigger'))
 
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test type:diff repo:test patternType:literal')
@@ -193,7 +182,7 @@ describe('FormTriggerArea', () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
-                query=""
+                query="test patternType:regexp type:diff repo:test"
                 triggerCompleted={false}
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
@@ -203,16 +192,6 @@ describe('FormTriggerArea', () => {
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
-
-        const triggerInput = screen.getByTestId('trigger-query-edit')
-        userEvent.click(triggerInput)
-
-        await waitFor(() => expect(triggerInput.querySelector('.test-trigger-input')).toBeInTheDocument())
-        ;(triggerInput.querySelector('.test-trigger-input') as HTMLElement).focus()
-        userEvent.keyboard('test patternType:regexp type:diff repo:test')
-        act(() => {
-            clock.tick(600)
-        })
         userEvent.click(screen.getByTestId('submit-trigger'))
 
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test patternType:regexp type:diff repo:test')
