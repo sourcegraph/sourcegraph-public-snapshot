@@ -354,6 +354,7 @@ ${{ steps.path }}
 
 `,
 		},
+		// TODO: Fix me!
 		{
 			name:    "typo 1 level deep in template variable",
 			stepCtx: &StepContext{},
