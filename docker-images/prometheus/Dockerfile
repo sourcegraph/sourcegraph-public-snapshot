@@ -5,6 +5,8 @@
 #	https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
 # To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
 ARG BASE_IMAGE="prom/prometheus:v2.35.0@sha256:4b86ad59abc67fa19a6e1618e936f3fd0f6ae13f49260da55a03eeca763a0fb5" 
+# https://github.com/hadolint/hadolint/issues/339
+# hadolint ignore=DL3006
 FROM ${BASE_IMAGE} AS prom_upstream
 
 # Build monitoring definitions
