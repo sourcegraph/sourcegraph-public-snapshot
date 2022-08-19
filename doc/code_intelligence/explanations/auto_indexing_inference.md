@@ -12,7 +12,7 @@ When a commit of a repository is selected as a candidate for [auto-indexing](./a
 
 This document describes the heuristics used to determine the set of index jobs to schedule. See [configuration reference](../references/auto_indexing_configuration.md) for additional documentation on how index jobs are configured.
 
-As a general rule of thumb, an LSIF indexer can be invoked successfully if the source code to index can be compiled successfully. The heuristics below attempt to cover the common cases of dependency resolution, but may not be sufficient if the target code requires additional steps such as code generation, header file linking, or installation of system dependencies to compile from a fresh clone of the repository. For such cases, we recommend using the inferred job as a starting point to [explicitly supply index job configuration](../how-to/configure_auto_indexing.md#explicit-index-job-configuration).
+As a general rule of thumb, an indexer can be invoked successfully if the source code to index can be compiled successfully. The heuristics below attempt to cover the common cases of dependency resolution, but may not be sufficient if the target code requires additional steps such as code generation, header file linking, or installation of system dependencies to compile from a fresh clone of the repository. For such cases, we recommend using the inferred job as a starting point to [explicitly supply index job configuration](../how-to/configure_auto_indexing.md#explicit-index-job-configuration).
 
 ## Go
 

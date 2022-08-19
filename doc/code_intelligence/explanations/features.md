@@ -18,7 +18,7 @@ When you click on the 'Go to definition' button in the popover or click on a sym
 
 ## Find references
 
-When you select 'Find references' from the popover, a panel will be shown at the bottom of the page that lists all of the references found for both precise (LSIF or language server) and search-based results (from search heuristics). This panel will separate references by repository, and you can optionally group them by file.
+When you select 'Find references' from the popover, a panel will be shown at the bottom of the page that lists all of the references found for both precise and search-based results (from search heuristics). This panel will separate references by repository, and you can optionally group them by file.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/find-refs.gif" width="450"/>
 
