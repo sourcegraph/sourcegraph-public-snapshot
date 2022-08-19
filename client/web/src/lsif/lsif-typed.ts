@@ -1,10 +1,13 @@
 // TODO: Eventually we'll import the actual lsif-typed protobuf file in this project,
 // but it doesn't make sense to do so right now.
 
-import { BlobInfo } from '../repo/blob/Blob'
-
 export interface JsonDocument {
     occurrences?: JsonOccurrence[]
+}
+
+export interface DocumentInfo {
+    content: string
+    lsif?: string
 }
 
 export interface JsonOccurrence {
@@ -78,7 +81,7 @@ export class Occurrence {
 
         return new Occurrence(range, occ.syntaxKind)
     }
-    public static fromInfo(info: BlobInfo): Occurrence[] {
+    public static fromInfo(info: DocumentInfo): Occurrence[] {
         const sortedSingleLineOccurrences = parseJsonOccurrencesIntoSingleLineOccurrences(info)
         return nonOverlappingOccurrences(sortedSingleLineOccurrences)
     }
@@ -117,7 +120,7 @@ function nonOverlappingOccurrences(occurrences: Occurrence[]): Occurrence[] {
 // Returns a list of occurrences that are guaranteed to only consiste of
 // single-line ranges.  A multiline occurrence gets split into multiple
 // occurrences where each range encloses a single line.
-function parseJsonOccurrencesIntoSingleLineOccurrences(info: BlobInfo): Occurrence[] {
+function parseJsonOccurrencesIntoSingleLineOccurrences(info: DocumentInfo): Occurrence[] {
     if (!info.lsif) {
         return []
     }
