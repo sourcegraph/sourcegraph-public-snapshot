@@ -469,6 +469,7 @@ export const hasPathLikeValue = (field: string): boolean => {
         case 'r':
         case 'file':
         case 'f':
+        case 'path':
         case 'repohasfile':
             return true
         default:
