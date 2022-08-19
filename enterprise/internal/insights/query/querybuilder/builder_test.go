@@ -343,7 +343,7 @@ func TestIsSingleRepoQuery(t *testing.T) {
 		want       bool
 	}{
 		{
-			name:       "repo as simple text string",
+			name:       "repo as quotedField text string",
 			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
 			mapType:    Lang,
 			want:       false,
@@ -553,4 +553,18 @@ func Test_addFileFilter(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSFDSDF(t *testing.T) {
+	builder, err := FromQuery("repo:myorg/myrepo findme", query.SearchTypeStandard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	builder.WithRepo("github.com/sourcegraph/sourcegraph")
+	builder.WithAuthor("asbasdf")
+	res, err := builder.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(res)
 }

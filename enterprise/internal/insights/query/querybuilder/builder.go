@@ -253,3 +253,136 @@ func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) 
 	})
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
+
+type modificationFunc func(plan searchquery.Plan) (searchquery.Plan, error)
+
+type builder struct {
+	originalPlan  searchquery.Plan
+	modifications []modificationFunc
+}
+
+var failedToParseQueryErr = errors.New("failed to parse search query")
+
+func FromQuery(query string, searchType searchquery.SearchType) (*builder, error) {
+	plan, err := searchquery.Pipeline(searchquery.Init(query, searchType))
+	if err != nil {
+		return nil, failedToParseQueryErr
+	}
+
+	return &builder{originalPlan: plan}, nil
+}
+
+func (b *builder) Build() (string, error) {
+	result, err := b.doModifications()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to apply search query modifications")
+	}
+	return searchquery.StringHuman(result.ToQ()), nil
+}
+
+func (b *builder) WithRepo(repo string) *builder {
+	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
+		return escapedField(plan, searchquery.FieldRepo, repo)
+	}
+	b.modifications = append(b.modifications, mod)
+	return b
+}
+
+func (b *builder) WithRepoPattern(repoPattern string) *builder {
+	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
+		return newField(plan, searchquery.FieldRepo, repoPattern)
+	}
+	b.modifications = append(b.modifications, mod)
+	return b
+}
+
+func (b *builder) WithFile(file string) *builder {
+	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
+		return escapedField(plan, searchquery.FieldFile, file)
+	}
+	b.modifications = append(b.modifications, mod)
+	return b
+}
+
+func (b *builder) WithFilePattern(filePattern string) *builder {
+	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
+		return newField(plan, searchquery.FieldFile, filePattern)
+	}
+	b.modifications = append(b.modifications, mod)
+	return b
+}
+
+func (b *builder) WithCountAll() *builder {
+	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
+		searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+			return searchquery.MapField(basic.ToParseTree(), searchquery.FieldCount, func(value string, negated bool, annotation searchquery.Annotation) searchquery.Node {
+
+			})
+
+		})
+
+	}
+	b.modifications = append(b.modifications, mod)
+	return b
+}
+
+func (b *builder) WithAuthor(author string) *builder {
+	mod := func(plan searchquery.Plan) (searchquery.Plan, error) {
+		mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+			modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
+			isCommitDiffType := false
+			for _, parameter := range basic.Parameters {
+				modified = append(modified, parameter)
+				if parameter.Field == searchquery.FieldType && (parameter.Value == "commit" || parameter.Value == "diff") {
+					isCommitDiffType = true
+				}
+			}
+			if !isCommitDiffType {
+				// we can't modify this query to accept an author so return the original input
+				return basic
+			}
+			modified = append(modified, searchquery.Parameter{
+				Field:      searchquery.FieldAuthor,
+				Value:      regexp.QuoteMeta(author),
+				Negated:    false,
+				Annotation: searchquery.Annotation{},
+			})
+			return basic.MapParameters(modified)
+		})
+		return mutatedQuery, nil
+	}
+	b.modifications = append(b.modifications, mod)
+	return b
+}
+
+func escapedField(plan searchquery.Plan, field, value string) (searchquery.Plan, error) {
+	return newField(plan, field, regexp.QuoteMeta(value))
+}
+
+func newField(plan searchquery.Plan, field, value string) (searchquery.Plan, error) {
+	mutated := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
+		modified = append(modified, basic.Parameters...)
+		modified = append(modified, searchquery.Parameter{
+			Field:      field,
+			Value:      value,
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		})
+		return basic.MapParameters(modified)
+	})
+
+	return mutated, nil
+}
+
+func (b *builder) doModifications() (searchquery.Plan, error) {
+	current := b.originalPlan
+	for _, modification := range b.modifications {
+		next, err := modification(current)
+		if err != nil {
+			return nil, err
+		}
+		current = next
+	}
+	return current, nil
+}
