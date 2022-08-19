@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -39,7 +38,7 @@ const addr = ":3189"
 
 // Start runs the worker.
 func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations oobmigration.RegisterMigratorsFunc) error {
-	registerMigrations := composeRegisterMigrations(migrations.RegisterOSSMigrations, registerEnterpriseMigrations)
+	registerMigrations := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrations, registerEnterpriseMigrations)
 
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
@@ -271,20 +270,4 @@ func jobNames(jobs map[string]job.Job) []string {
 	sort.Strings(names)
 
 	return names
-}
-
-func composeRegisterMigrations(fns ...oobmigration.RegisterMigratorsFunc) oobmigration.RegisterMigratorsFunc {
-	return func(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-		for _, fn := range fns {
-			if fn == nil {
-				continue
-			}
-
-			if err := fn(ctx, db, runner); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
 }
