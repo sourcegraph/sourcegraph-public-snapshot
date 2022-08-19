@@ -44,6 +44,13 @@ func ValidateBatchSpecTemplate(name, spec string) (bool, error) {
 	emptyStepCtx := &StepContext{}
 	emptyCSTmplCtx := &ChangesetTemplateContext{}
 
+	// Strip any `outputs` fields from the spec template. Without the previous step's
+	// context, they'll fail in `template.Execute` if they aren't present in the
+	// `FuncMap`s, and it's difficult to statically validate them without deeper
+	// inspection of the YAML, so our validation is best-effort without them.
+	outputRe := regexp.MustCompile(`(?i)\$\{\{\s*outputs\.[^}]*\}\}`)
+	spec = outputRe.ReplaceAllString(spec, "")
+
 	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(emptyStepCtx.ToFuncMap()).Funcs(emptyCSTmplCtx.ToFuncMap()).Parse(spec)
 
 	if err != nil {
