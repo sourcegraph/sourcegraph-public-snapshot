@@ -166,8 +166,6 @@ type SourceResult struct {
 	Repo *types.Repo
 	// Err is only set in case the Source ran into an error when listing repositories
 	Err error
-	// NonFatalError identifies that if the error is considered fatal (for example unauthorized) , it should not stop the sync
-	NonFatalError bool
 }
 
 type SourceError struct {

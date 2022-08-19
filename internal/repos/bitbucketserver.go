@@ -207,9 +207,8 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	}
 
 	type batch struct {
-		repos         []*bitbucketserver.Repo
-		err           error
-		nonFatalError bool
+		repos []*bitbucketserver.Repo
+		err   error
 	}
 
 	ch := make(chan batch)
@@ -280,7 +279,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			repos, err := s.client.ProjectRepos(ctx, q)
 			if err != nil {
 				// Getting a "fatal" error on one project key is not a reason to stop the sync, so set nonFatalError to true.
-				ch <- batch{nonFatalError: true, err: errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q)}
+				ch <- batch{err: errors.NewWarningError(errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q))}
 				return
 			}
 
@@ -296,7 +295,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	seen := make(map[int]bool)
 	for r := range ch {
 		if r.err != nil {
-			results <- SourceResult{Source: s, Err: r.err, NonFatalError: r.nonFatalError}
+			results <- SourceResult{Source: s, Err: r.err}
 			continue
 		}
 
