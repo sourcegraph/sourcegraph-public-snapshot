@@ -9,14 +9,10 @@ import { Tooltip } from '../../core'
 import { GroupedBars } from './components/GroupedBars'
 import { StackedBars } from './components/StackedBars'
 import { BarTooltipContent } from './components/TooltipContent'
+import { ActiveSegment } from './types'
 import { Category } from './utils/get-grouped-categories'
 
 import styles from './BarChartContent.module.scss'
-
-interface ActiveSegment<Datum> {
-    category: Category<Datum>
-    datum: Datum
-}
 
 interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
     stacked: boolean
@@ -81,6 +77,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                 />
             ) : (
                 <GroupedBars
+                    activeSegment={activeSegment}
                     categories={categories}
                     xScale={xScale}
                     yScale={yScale}

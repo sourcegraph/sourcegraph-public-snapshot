@@ -168,13 +168,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
-                <SaveToolbar
-                    dirty={dirty}
-                    error={this.props.commitError}
-                    saving={this.state.saving}
-                    onSave={this.save}
-                    onDiscard={this.discard}
-                />
                 <div className={adminConfigurationStyles.actionGroups}>
                     <div className={adminConfigurationStyles.actions}>
                         {settingsActions.map(({ id, label }) => (
@@ -201,6 +194,13 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         onDidSave={this.save}
                     />
                 </React.Suspense>
+                <SaveToolbar
+                    dirty={dirty}
+                    error={this.props.commitError}
+                    saving={this.state.saving}
+                    onSave={this.save}
+                    onDiscard={this.discard}
+                />
             </div>
         )
     }

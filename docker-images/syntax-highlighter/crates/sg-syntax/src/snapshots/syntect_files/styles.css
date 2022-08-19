@@ -1,0 +1,20 @@
+:root {
+    --modal-body-padding: 1.5rem;
+}
+
+[data-reach-dialog-overlay] {
+    background-color: var(--modal-bg);
+}
+
+
+/*
+ * Positions
+ */
+.center,
+.top-third {
+    transform: translate(-50%, -50%);
+    position: absolute;
+    top: 50%;
+    margin: 0;
+    left: 50%;
+}

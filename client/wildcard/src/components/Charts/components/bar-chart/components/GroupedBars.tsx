@@ -5,9 +5,11 @@ import { scaleBand } from '@visx/scale'
 import { ScaleBand, ScaleLinear } from 'd3-scale'
 
 import { MaybeLink } from '../../../core'
+import { ActiveSegment } from '../types'
 import { Category } from '../utils/get-grouped-categories'
 
 interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
+    activeSegment: ActiveSegment<Datum> | null
     categories: Category<Datum>[]
     height: number
     xScale: ScaleBand<string>
@@ -24,6 +26,7 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
 export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement {
     const {
         width,
+        activeSegment,
         categories,
         height,
         xScale,
@@ -89,6 +92,9 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                                     height={barHeight}
                                     fill={getDatumColor(datum)}
                                     rx={4}
+                                    // TODO: Move hardcoded to the public API and make it overridable
+                                    // see https://github.com/sourcegraph/sourcegraph/issues/40259
+                                    opacity={activeSegment ? (activeSegment.category.id === category.id ? 1 : 0.5) : 1}
                                 />
                             </MaybeLink>
                         )

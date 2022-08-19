@@ -145,6 +145,30 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.merge_audit_log_transitions(internal hstore, arrayhstore hstore[])\n RETURNS hstore\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\n    DECLARE\n        trans hstore;\n    BEGIN\n      FOREACH trans IN ARRAY arrayhstore\n      LOOP\n          internal := internal || hstore(trans-\u003e'column', trans-\u003e'new');\n      END LOOP;\n\n      RETURN internal;\n    END;\n$function$\n"
     },
     {
+      "Name": "recalc_gitserver_repos_statistics_on_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      UPDATE gitserver_repos_statistics grs\n      SET\n        total        = grs.total      - (SELECT COUNT(*)                                           FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        not_cloned   = grs.not_cloned - (SELECT COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        cloning      = grs.cloning    - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        cloned       = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        failed_fetch = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab WHERE oldtab.shard_id = grs.shard_id)\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
+    },
+    {
+      "Name": "recalc_gitserver_repos_statistics_on_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)\n      SELECT\n        shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch\n      FROM\n        newtab\n      GROUP BY shard_id\n      ON CONFLICT(shard_id)\n      DO UPDATE\n      SET\n        total        = grs.total        + excluded.total,\n        not_cloned   = grs.not_cloned   + excluded.not_cloned,\n        cloning      = grs.cloning      + excluded.cloning,\n        cloned       = grs.cloned       + excluded.cloned,\n        failed_fetch = grs.failed_fetch + excluded.failed_fetch\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
+    },
+    {
+      "Name": "recalc_gitserver_repos_statistics_on_update",
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)\n      SELECT\n        newtab.shard_id AS shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch\n      FROM\n        newtab\n      GROUP BY newtab.shard_id\n      ON CONFLICT(shard_id) DO\n      UPDATE\n      SET\n        total        = grs.total        + (excluded.total        - (SELECT COUNT(*)                                              FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        not_cloned   = grs.not_cloned   + (excluded.not_cloned   - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        cloning      = grs.cloning      + (excluded.cloning      - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        cloned       = grs.cloned       + (excluded.cloned       - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))\n      ;\n\n      WITH moved AS (\n        SELECT\n          oldtab.shard_id AS shard_id,\n          COUNT(*) AS total,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned,\n          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch\n        FROM\n          oldtab\n        JOIN newtab ON newtab.repo_id = oldtab.repo_id\n        WHERE\n          oldtab.shard_id != newtab.shard_id\n        GROUP BY oldtab.shard_id\n      )\n      UPDATE gitserver_repos_statistics grs\n      SET\n        total        = grs.total        - moved.total,\n        not_cloned   = grs.not_cloned   - moved.not_cloned,\n        cloning      = grs.cloning      - moved.cloning,\n        cloned       = grs.cloned       - moved.cloned,\n        failed_fetch = grs.failed_fetch - moved.failed_fetch\n      FROM moved\n      WHERE moved.shard_id = grs.shard_id;\n\n      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch)\n      VALUES (\n        (\n          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')\n          -\n          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')\n        ),\n        (\n          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')\n          -\n          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')\n        ),\n        (\n          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')\n          -\n          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')\n        ),\n        (\n          (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)\n          -\n          (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)\n        )\n      );\n\n      RETURN NULL;\n  END\n$function$\n"
+    },
+    {
+      "Name": "recalc_repo_statistics_on_repo_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_repo_statistics_on_repo_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO\n        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)\n      VALUES (\n        -- Insert negative counts\n        (SELECT -COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),\n        (SELECT -COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),\n        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'not_cloned'),\n        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloning'),\n        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloned'),\n        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)\n      );\n      RETURN NULL;\n  END\n$function$\n"
+    },
+    {
+      "Name": "recalc_repo_statistics_on_repo_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_repo_statistics_on_repo_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO\n        repo_statistics (total, soft_deleted, not_cloned)\n      VALUES (\n        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL),\n        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),\n        -- New repositories are always not_cloned by default, so we can count them as not cloned here\n        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL)\n        -- New repositories never have last_error set, so we can also ignore those here\n      );\n      RETURN NULL;\n  END\n$function$\n"
+    },
+    {
+      "Name": "recalc_repo_statistics_on_repo_update",
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_repo_statistics_on_repo_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      -- Insert diff of changes\n      INSERT INTO\n        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)\n      VALUES (\n        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),\n        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),\n        (\n          (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'not_cloned')\n          -\n          (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'not_cloned')\n        ),\n        (\n          (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'cloning')\n          -\n          (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloning')\n        ),\n        (\n          (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'cloned')\n          -\n          (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloned')\n        ),\n        (\n          (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.last_error IS NOT NULL)\n          -\n          (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)\n        )\n      )\n      ;\n      RETURN NULL;\n  END\n$function$\n"
+    },
+    {
       "Name": "repo_block",
       "Definition": "CREATE OR REPLACE FUNCTION public.repo_block(reason text, at timestamp with time zone)\n RETURNS jsonb\n LANGUAGE sql\n IMMUTABLE STRICT\nAS $function$\nSELECT jsonb_build_object(\n    'reason', reason,\n    'at', extract(epoch from timezone('utc', at))::bigint\n);\n$function$\n"
     },
@@ -9565,6 +9589,117 @@
           "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
         }
       ],
+      "Triggers": [
+        {
+          "Name": "trig_recalc_gitserver_repos_statistics_on_delete",
+          "Definition": "CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_delete AFTER DELETE ON gitserver_repos REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_delete()"
+        },
+        {
+          "Name": "trig_recalc_gitserver_repos_statistics_on_insert",
+          "Definition": "CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_insert AFTER INSERT ON gitserver_repos REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_insert()"
+        },
+        {
+          "Name": "trig_recalc_gitserver_repos_statistics_on_update",
+          "Definition": "CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update()"
+        }
+      ]
+    },
+    {
+      "Name": "gitserver_repos_statistics",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "cloned",
+          "Index": 5,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories in gitserver_repos table on this shard that are cloned"
+        },
+        {
+          "Name": "cloning",
+          "Index": 4,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories in gitserver_repos table on this shard that cloning"
+        },
+        {
+          "Name": "failed_fetch",
+          "Index": 6,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories in gitserver_repos table on this shard where last_error is set"
+        },
+        {
+          "Name": "not_cloned",
+          "Index": 3,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories in gitserver_repos table on this shard that are not cloned yet"
+        },
+        {
+          "Name": "shard_id",
+          "Index": 1,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard."
+        },
+        {
+          "Name": "total",
+          "Index": 2,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories in gitserver_repos table on this shard"
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "gitserver_repos_statistics_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX gitserver_repos_statistics_pkey ON gitserver_repos_statistics USING btree (shard_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (shard_id)"
+        }
+      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -15733,6 +15868,18 @@
           "Definition": "CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()"
         },
         {
+          "Name": "trig_recalc_repo_statistics_on_repo_delete",
+          "Definition": "CREATE TRIGGER trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete()"
+        },
+        {
+          "Name": "trig_recalc_repo_statistics_on_repo_insert",
+          "Definition": "CREATE TRIGGER trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()"
+        },
+        {
+          "Name": "trig_recalc_repo_statistics_on_repo_update",
+          "Definition": "CREATE TRIGGER trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()"
+        },
+        {
           "Name": "trigger_gitserver_repo_insert",
           "Definition": "CREATE TRIGGER trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()"
         }
@@ -15982,6 +16129,93 @@
           "ConstraintDefinition": ""
         }
       ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "repo_statistics",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "cloned",
+          "Index": 5,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver"
+        },
+        {
+          "Name": "cloning",
+          "Index": 4,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver"
+        },
+        {
+          "Name": "failed_fetch",
+          "Index": 6,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table"
+        },
+        {
+          "Name": "not_cloned",
+          "Index": 3,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories that are NOT soft-deleted and not blocked and not cloned by gitserver"
+        },
+        {
+          "Name": "soft_deleted",
+          "Index": 2,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories that are soft-deleted and not blocked"
+        },
+        {
+          "Name": "total",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Number of repositories that are not soft-deleted and not blocked"
+        }
+      ],
+      "Indexes": [],
       "Constraints": null,
       "Triggers": []
     },

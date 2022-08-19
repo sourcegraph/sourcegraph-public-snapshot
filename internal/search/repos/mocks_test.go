@@ -10,12 +10,12 @@ import (
 	"context"
 	"sync"
 
-	zoekt "github.com/google/zoekt"
-	query "github.com/google/zoekt/query"
+	zoekt "github.com/sourcegraph/zoekt"
+	query "github.com/sourcegraph/zoekt/query"
 )
 
 // MockStreamer is a mock implementation of the Streamer interface (from the
-// package github.com/google/zoekt) used for unit testing.
+// package github.com/sourcegraph/zoekt) used for unit testing.
 type MockStreamer struct {
 	// CloseFunc is an instance of a mock function object controlling the
 	// behavior of the method Close.
