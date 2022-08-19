@@ -41,27 +41,39 @@ var builtins = template.FuncMap{
 	},
 }
 
+// ValidateBatchSpecTemplate attempts to perform a dry run replacement of the whole batch
+// spec template for any templating variables which are not dependent on execution
+// context. It returns a tuple whose first element is whether or not the batch spec is
+// valid and whose second element is an error message if the spec is found to be invalid.
 func ValidateBatchSpecTemplate(name, spec string) (bool, error) {
-	// Create empty step conext and changeset template context to produce
-	// `template.FuncMap`s for; we don't need to render actual values for anything in the
-	// batch spec, just validate that we *could* render to it.
-	emptyStepCtx := &StepContext{}
-	emptyCSTmplCtx := &ChangesetTemplateContext{}
+	// We use empty contexts to create "dummy" `template.FuncMap`s -- function mappings
+	// with all the right keys, but no actual values. We'll use these `FuncMap`s to do a
+	// dry run on the batch spec to determine if it's valid or not, before we actually
+	// execute it.
+	sc := &StepContext{}
+	sfm := sc.ToFuncMap()
+	cstc := &ChangesetTemplateContext{}
+	cstfm := cstc.ToFuncMap()
 
-	// Strip any `outputs` fields from the spec template. Without the previous step's
-	// context, they'll fail in `template.Execute` if they aren't present in the
-	// `FuncMap`s, and it's difficult to statically validate them without deeper
-	// inspection of the YAML, so our validation is best-effort without them.
-	outputRe := regexp.MustCompile(`(?i)\$\{\{\s*outputs\.[^}]*\}\}`)
+	// Strip any use of `outputs` fields from the spec template. Without using real
+	// contexts for the `FuncMap`s, they'll fail to `template.Execute`, and it's difficult
+	// to statically validate them without deeper inspection of the YAML, so our
+	// validation is just a best-effort without them.
+	outputRe := regexp.MustCompile(`(?i)\$\{\{\s*[^}]*\s*outputs\.[^}]*\}\}`)
 	spec = outputRe.ReplaceAllString(spec, "")
 
-	// By default, text/template will continue even if it encounters a template variable
-	// key that is not indexed in any of the provided `FuncMap`s. A missing key is an
-	// indication of an unknown or mistyped template variable which would invalidate the
-	// batch spec, so we want to fail immediately if we encounter one. We accomplish this
-	// by setting the option "missingkey=error". See
-	// https://pkg.go.dev/text/template#Template.Option for more.
-	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(emptyStepCtx.ToFuncMap()).Funcs(emptyCSTmplCtx.ToFuncMap()).Parse(spec)
+	// Also strip index references. We also can't validate whether or not an index is in
+	// range without real context.
+	indexRe := regexp.MustCompile(`(?i)\$\{\{\s*index\s*[^}]*\}\}`)
+	spec = indexRe.ReplaceAllString(spec, "")
+
+	// By default, text/template will continue even if it encounters a key that is not
+	// indexed in any of the provided `FuncMap`s. A missing key is an indication of an
+	// unknown or mistyped template variable which would invalidate the batch spec, so we
+	// want to fail immediately if we encounter one. We accomplish this by setting the
+	// option "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for
+	// more.
+	t, err := template.New(name).Delims(startDelim, endDelim).Option("missingkey=error").Funcs(builtins).Funcs(sfm).Funcs(cstfm).Parse(spec)
 
 	if err != nil {
 		// Attempt to extract the specific template variable field that caused the error
@@ -107,9 +119,9 @@ func EvalStepCondition(condition string, stepCtx *StepContext) (bool, error) {
 }
 
 func RenderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
-	// By default, text/template will continue even if it encounters a template variable
-	// key that is not indexed in any of the provided `FuncMap`s, replacing the variable
-	// with "<no value>". This means that a mis-typed variable such as "${{
+	// By default, text/template will continue even if it encounters a key that is not
+	// indexed in any of the provided `FuncMap`s, replacing the variable with "<no
+	// value>". This means that a mis-typed variable such as "${{
 	// repository.search_resalt_paths }}" would just be evaluated as "<no value>", which
 	// is not a particularly useful substitution and will only indirectly manifest to the
 	// user as an error during execution. Instead, we prefer to fail immediately if we
@@ -301,9 +313,9 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 func RenderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateContext) (string, error) {
 	var out bytes.Buffer
 
-	// By default, text/template will continue even if it encounters a template variable
-	// key that is not indexed in any of the provided `FuncMap`s, replacing the variable
-	// with "<no value>". This means that a mis-typed variable such as "${{
+	// By default, text/template will continue even if it encounters a key that is not
+	// indexed in any of the provided `FuncMap`s, replacing the variable with "<no
+	// value>". This means that a mis-typed variable such as "${{
 	// repository.search_resalt_paths }}" would just be evaluated as "<no value>", which
 	// is not a particularly useful substitution and will only indirectly manifest to the
 	// user as an error during execution. Instead, we prefer to fail immediately if we
