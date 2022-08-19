@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -364,8 +365,26 @@ func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc
 	q := getBatchChangeQuery(&opts)
 
 	var c btypes.BatchChange
+	var userDeletedAt time.Time
+	var orgDeletedAt time.Time
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanBatchChange(&c, sc)
+		return sc.Scan(
+			&c.ID,
+			&c.Name,
+			&dbutil.NullString{S: &c.Description},
+			&dbutil.NullInt32{N: &c.CreatorID},
+			&dbutil.NullInt32{N: &c.LastApplierID},
+			&dbutil.NullTime{Time: &c.LastAppliedAt},
+			&dbutil.NullInt32{N: &c.NamespaceUserID},
+			&dbutil.NullInt32{N: &c.NamespaceOrgID},
+			&c.CreatedAt,
+			&c.UpdatedAt,
+			&dbutil.NullTime{Time: &c.ClosedAt},
+			&c.BatchSpecID,
+			// Namespace deleted values
+			&dbutil.NullTime{Time: &userDeletedAt},
+			&dbutil.NullTime{Time: &orgDeletedAt},
+		)
 	})
 	if err != nil {
 		return nil, err
@@ -373,6 +392,10 @@ func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc
 
 	if c.ID == 0 {
 		return nil, ErrNoResults
+	}
+
+	if !userDeletedAt.IsZero() || !orgDeletedAt.IsZero() {
+		return nil, ErrDeletedNamespace
 	}
 
 	return &c, nil
@@ -388,10 +411,7 @@ LIMIT 1
 `
 
 func getBatchChangeQuery(opts *GetBatchChangeOpts) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
-		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),
-	}
+	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.ID))
 	}
@@ -416,12 +436,18 @@ func getBatchChangeQuery(opts *GetBatchChangeOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
+	columns := append(batchChangeColumns, sqlf.Sprintf("namespace_user.deleted_at"), sqlf.Sprintf("namespace_org.deleted_at"))
+
 	return sqlf.Sprintf(
 		getBatchChangesQueryFmtstr,
-		sqlf.Join(batchChangeColumns, ", "),
+		sqlf.Join(columns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
+
+// ErrDeletedNamespace is the error when the namespace (either user or org) that is associated with the batch change
+// has been deleted.
+var ErrDeletedNamespace = errors.New("namespace has been deleted")
 
 type GetBatchChangeDiffStatOpts struct {
 	BatchChangeID int64

@@ -108,16 +108,16 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 
 	eConfig, err := e.Config.Decrypt(ctx)
 	if err != nil || eConfig == "" {
-		return nil
+		return err
 	}
 	oldConfig, err := old.Config.Decrypt(ctx)
 	if err != nil || oldConfig == "" {
-		return nil
+		return err
 	}
 
 	if old.Kind != e.Kind {
 		return errors.Errorf(
-			"UnRedactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
+			"UnredactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
 			old.Kind,
 			e.Kind,
 		)

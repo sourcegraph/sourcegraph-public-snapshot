@@ -24,7 +24,7 @@ import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { toURIWithPath, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
@@ -49,7 +49,7 @@ import blobStyles from '../Blob.module.scss'
  */
 interface Context {
     viewerId: ViewerId
-    extensionsController: ExtensionsControllerProps['extensionsController']
+    extensionsController: RequiredExtensionsControllerProps['extensionsController']
     extensionHostAPI: Remote<FlatExtensionHostAPI>
     blobInfo: BlobInfo
 }
@@ -72,7 +72,7 @@ export function sourcegraphExtensions({
 }: {
     blobInfo: BlobInfo
     initialSelection: LineOrPositionOrRange
-    extensionsController: ExtensionsControllerProps['extensionsController']
+    extensionsController: RequiredExtensionsControllerProps['extensionsController']
     disableStatusBar?: boolean
     disableDecorations?: boolean
 }): Extension {

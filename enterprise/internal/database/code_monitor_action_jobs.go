@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type ActionJob struct {
@@ -262,27 +261,13 @@ WHERE id = %s
 func (s *codeMonitorStore) GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error) {
 	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), jobID)
 	row := s.QueryRow(ctx, q)
-	return scanActionJob(row)
-}
-
-// ScanActionJobRecord implements the worker RecordScanFn
-func ScanActionJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	if err != nil {
-		return &TriggerJob{}, false, err
-	}
-	defer rows.Close()
-
-	records, err := scanActionJobs(rows)
-	if err != nil || len(records) == 0 {
-		return &TriggerJob{}, false, err
-	}
-	return records[0], true, nil
+	return ScanActionJob(row)
 }
 
 func scanActionJobs(rows *sql.Rows) ([]*ActionJob, error) {
 	var ajs []*ActionJob
 	for rows.Next() {
-		aj, err := scanActionJob(rows)
+		aj, err := ScanActionJob(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -291,7 +276,7 @@ func scanActionJobs(rows *sql.Rows) ([]*ActionJob, error) {
 	return ajs, rows.Err()
 }
 
-func scanActionJob(row dbutil.Scanner) (*ActionJob, error) {
+func ScanActionJob(row dbutil.Scanner) (*ActionJob, error) {
 	aj := &ActionJob{}
 	return aj, row.Scan(
 		&aj.ID,

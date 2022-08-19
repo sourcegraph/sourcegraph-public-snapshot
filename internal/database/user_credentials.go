@@ -161,7 +161,7 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		return nil, err
 	}
 
-	enc, id, err := EncryptAuthenticator(ctx, s.key, credential)
+	encryptedCredential, keyID, err := EncryptAuthenticator(ctx, s.key, credential)
 	if err != nil {
 		return nil, err
 	}
@@ -172,8 +172,8 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
-		enc,
-		id,
+		encryptedCredential, // N.B.: is already a []byte
+		keyID,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -206,7 +206,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.UserID,
 		credential.ExternalServiceType,
 		credential.ExternalServiceID,
-		encryptedCredential,
+		[]byte(encryptedCredential),
 		keyID,
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
@@ -485,7 +485,10 @@ RETURNING %s
 func scanUserCredential(cred *UserCredential, key encryption.Key, s interface {
 	Scan(...any) error
 }) error {
-	var credential, keyID string
+	var (
+		credential []byte
+		keyID      string
+	)
 
 	if err := s.Scan(
 		&cred.ID,
@@ -502,7 +505,7 @@ func scanUserCredential(cred *UserCredential, key encryption.Key, s interface {
 		return err
 	}
 
-	cred.Credential = NewEncryptedCredential(credential, keyID, key)
+	cred.Credential = NewEncryptedCredential(string(credential), keyID, key)
 	return nil
 }
 

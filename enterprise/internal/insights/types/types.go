@@ -198,3 +198,14 @@ type SeriesSortOptions struct {
 	Mode      SeriesSortMode
 	Direction SeriesSortDirection
 }
+
+type SearchAggregationMode string
+
+const (
+	REPO_AGGREGATION_MODE          SearchAggregationMode = "REPO"
+	PATH_AGGREGATION_MODE          SearchAggregationMode = "PATH"
+	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
+	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
+)
+
+var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE}

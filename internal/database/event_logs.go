@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -210,6 +212,14 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 		return json.RawMessage(`{}`)
 	}
 
+	ensureUuid := func(in *string) string {
+		if in == nil || len(*in) == 0 {
+			u, _ := uuid.NewV4()
+			return u.String()
+		}
+		return *in
+	}
+
 	rowValues := make(chan []any, len(events))
 	for _, event := range events {
 		featureFlags, err := json.Marshal(event.EvaluatedFlagSet)
@@ -235,8 +245,8 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.FirstSourceURL,
 			event.LastSourceURL,
 			event.Referrer,
-			event.DeviceID,
-			event.InsertID,
+			ensureUuid(event.DeviceID),
+			ensureUuid(event.InsertID),
 		}
 	}
 	close(rowValues)

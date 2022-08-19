@@ -43,33 +43,27 @@ func Init(
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	if !envvar.SourcegraphDotComMode() {
-		enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
+	var privateKey []byte
+	var err error
+	var appID string
+
+	gitHubAppConfig := conf.SiteConfig().GitHubApp
+	if !repos.IsGitHubAppEnabled(gitHubAppConfig) {
+		enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
-				_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is only available on sourcegraph.com"))
+				_, _ = w.Write([]byte("Sourcegraph GitHub App setup is not enabled"))
 			})
 		}
 		return nil
 	}
-
-	dotcomConfig := conf.SiteConfig().Dotcom
-	if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
-		enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusNotFound)
-				_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is not enabled"))
-			})
-		}
-		return nil
-	}
-
-	privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+	privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
 	if err != nil {
 		return errors.Wrap(err, "decode private key")
 	}
+	appID = gitHubAppConfig.AppID
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, privateKey)
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
 	if err != nil {
 		return errors.Wrap(err, "new authenticator with GitHub App")
 	}
@@ -78,10 +72,10 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubAppCloud, apiURL, auther, nil)
+	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, auther, nil)
 
-	enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
-		return newGitHubAppCloudSetupHandler(db, apiURL, client)
+	enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
+		return newGitHubAppSetupHandler(db, apiURL, client)
 	}
 	return nil
 }
@@ -147,14 +141,8 @@ func EncryptWithPrivateKey(msg string, privateKey []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githubClient) http.Handler {
+func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !envvar.SourcegraphDotComMode() {
-			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is only available on sourcegraph.com"))
-			return
-		}
-
 		setupAction := r.URL.Query().Get("setup_action")
 
 		if !isSetupActionValid(setupAction) {
@@ -163,12 +151,20 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		a := actor.FromContext(r.Context())
-		if !a.IsAuthenticated() {
-			if setupAction == "install" {
-				dotcomConfig := conf.SiteConfig().Dotcom
+		responseServerError := func(msg string, err error) {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(msg))
+			log15.Error(msg, "error", err)
+		}
 
-				privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+		a := actor.FromContext(r.Context())
+		if !a.IsAuthenticated() || !envvar.SourcegraphDotComMode() {
+			if setupAction == "install" {
+				var privateKey []byte
+				var err error
+
+				gitHubAppConfig := conf.SiteConfig().GitHubApp
+				privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
 				if err != nil {
 					log15.Error("Error while decoding privatekey.", "error", err)
 					w.WriteHeader(http.StatusBadRequest)
@@ -176,17 +172,86 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 					return
 				}
 
-				installationID := r.URL.Query().Get("installation_id")
-				encryptedInstallationID, err := EncryptWithPrivateKey(installationID, privateKey)
-				if err != nil {
-					log15.Error("Error while encrypting installation ID.", "error", err)
-					w.WriteHeader(http.StatusBadRequest)
-					_, _ = w.Write([]byte(`Error while encrypting installation ID`))
+				var svc *types.ExternalService
+				displayName := "GitHub App"
+				now := time.Now()
+
+				svc = &types.ExternalService{
+					Kind:        extsvc.KindGitHub,
+					DisplayName: displayName,
+					Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
+{
+  "url": "%s",
+  "repos": []
+}
+`, apiURL.String())),
+					CreatedAt: now,
+					UpdatedAt: now,
+				}
+
+				if setupAction == "request" {
+					currentConfig, err := svc.Config.Decrypt(context.Background())
+					if err != nil {
+						responseServerError("Failed to edit config", err)
+						return
+					}
+					newConfig, err := jsonc.Edit(currentConfig, true, "pending")
+					if err != nil {
+						responseServerError("Failed to edit config", err)
+						return
+					}
+					svc.Config = extsvc.NewUnencryptedConfig(newConfig)
+				} else if setupAction == "install" {
+					installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
+					if err != nil {
+						w.WriteHeader(http.StatusBadRequest)
+						_, _ = w.Write([]byte(`The "installation_id" is not a valid integer`))
+						return
+					}
+
+					ins, err := client.GetAppInstallation(r.Context(), installationID)
+					if err != nil {
+						responseServerError(`Failed to get the installation information using the "installation_id"`, err)
+						return
+					}
+
+					if ins.Account.Login != nil {
+						displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
+					}
+
+					svc.DisplayName = displayName
+					currentConfig, err := svc.Config.Decrypt(context.Background())
+					if err != nil {
+						responseServerError("Failed to edit config", err)
+						return
+					}
+					newConfig, err := jsonc.Edit(currentConfig, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
+					if err != nil {
+						responseServerError("Failed to edit config", err)
+						return
+					}
+					newConfig, err = jsonc.Edit(newConfig, false, "pending")
+					if err != nil {
+						responseServerError("Failed to edit config", err)
+					}
+					svc.Config = extsvc.NewUnencryptedConfig(newConfig)
+					svc.UpdatedAt = now
+					err = db.ExternalServices().Upsert(r.Context(), svc)
+					if err != nil {
+						responseServerError("Failed to upsert code host connection", err)
+						return
+					}
+					encryptedInstallationID, err := EncryptWithPrivateKey(r.URL.Query().Get("installation_id"), privateKey)
+					if err != nil {
+						log15.Error("Error while encrypting installation ID.", "error", err)
+						w.WriteHeader(http.StatusBadRequest)
+						_, _ = w.Write([]byte(`Error while encrypting installation ID`))
+						return
+					}
+					base64InstallationID := base64.StdEncoding.EncodeToString(encryptedInstallationID)
+					http.Redirect(w, r, "/install-github-app-success?installation_id="+url.QueryEscape(base64InstallationID), http.StatusFound)
 					return
 				}
-				base64InstallationID := base64.StdEncoding.EncodeToString(encryptedInstallationID)
-				http.Redirect(w, r, "/install-github-app-success?installation_id="+url.QueryEscape(base64InstallationID), http.StatusFound)
-				return
 			}
 
 			if setupAction == "request" {
@@ -206,12 +271,6 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`The "state" is not a valid graphql.ID of an organization`))
 			return
-		}
-
-		responseServerError := func(msg string, err error) {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(msg))
-			log15.Error(msg, "error", err)
 		}
 
 		org, err := db.Orgs().GetByID(r.Context(), orgID)
