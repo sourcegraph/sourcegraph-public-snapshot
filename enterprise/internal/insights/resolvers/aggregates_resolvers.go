@@ -51,7 +51,7 @@ func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 	}
 	canAggregateByFunc, ok := checkByMode[r.mode]
 	if !ok {
-		return false, errors.Newf("mode %q not recognised", r.mode)
+		return false, nil
 	}
 	return canAggregateByFunc(r.searchQuery, r.patternType)
 }
@@ -101,6 +101,33 @@ func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
+	if !(patternType == "regexp" || patternType == "regex" || patternType == "standard") {
+		return false, nil
+	}
+	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	if err != nil {
+		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+	}
+	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	selectParameter, typeParameter := false, false
+	for _, parameter := range parameters {
+		if parameter.Field == query.FieldSelect {
+			if parameter.Value == "repo" || parameter.Value == "file" {
+				selectParameter = true
+			}
+		} else if parameter.Field == query.FieldType {
+			if parameter.Value == "repo" || parameter.Value == "path" {
+				typeParameter = true
+			}
+		}
+	}
+	if selectParameter && !typeParameter {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {

@@ -143,3 +143,69 @@ func Test_canAggregateByAuthor(t *testing.T) {
 	}
 	suite.Test_canAggregateBy()
 }
+
+func Test_canAggregateByCaptureGroup(t *testing.T) {
+	testCases := []canAggregateTestCase{
+		{
+			name:         "cannot aggregate for query with wrong pattern type",
+			query:        "func(t *testing.T)",
+			patternType:  "literal",
+			canAggregate: false,
+		},
+		{
+			name:         "can aggregate for simple query with regex pattern type",
+			query:        "func(\\w+) case:yes",
+			patternType:  "regex",
+			canAggregate: true,
+		},
+		{
+			name:         "cannot aggregate for select:repo query",
+			query:        "repo:contains.file(README) select:repo",
+			patternType:  "regex",
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for select:file query",
+			query:        "repo:contains.file(README) insights select:file",
+			patternType:  "regex",
+			canAggregate: false,
+		},
+		{
+			name:         "can aggregate for query with both select:repo type:repo",
+			query:        "repo:contains.file(README) insights select:repo type:repo",
+			patternType:  "regex",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for query with both select:file type:path",
+			query:        "repo:contains.file(README) insights select:file type:path",
+			patternType:  "regex",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for query with both select:file type:repo",
+			query:        "repo:contains.file(README) insights select:file type:repo",
+			patternType:  "regex",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for query with both select:repo type:path",
+			query:        "repo:contains.file(README) insights select:repo type:path",
+			patternType:  "regex",
+			canAggregate: true,
+		},
+		{
+			name:         "cannot aggregate for invalid query",
+			query:        "type:diff fork:leo func(.*)",
+			patternType:  "regexp",
+			canAggregate: false,
+			err:          errors.Newf("ParseAndValidateQuery"),
+		},
+	}
+	suite := canAggregateBySuite{
+		canAggregateByFunc: canAggregateByCaptureGroup,
+		testCases:          testCases,
+		t:                  t,
+	}
+	suite.Test_canAggregateBy()
+}
