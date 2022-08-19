@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/aggregation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 const searchTimeLimitSeconds = 2
@@ -53,34 +54,30 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		}, nil
 	}
 
-	cappedAggregator := streaming.NewLimitedAggregator(aggregationBufferSize)
+	cappedAggregator := aggregation.NewLimitedAggregator(aggregationBufferSize)
 	tabulationErrors := []error{}
-	tabulationFunc := func(amr *streaming.AggregationMatchResult, err error) {
+	tabulationFunc := func(amr *aggregation.AggregationMatchResult, err error) {
 		if err != nil {
 			tabulationErrors = append(tabulationErrors, err)
 			return
 		}
 		cappedAggregator.Add(amr.Key.Group, int32(amr.Count))
 	}
-	onMatchFunc, err := streaming.TabulateAggregationMatches(tabulationFunc, aggregationMode)
+
+	countingFunc, err := aggregation.GetCountFuncForMode(r.searchQuery, r.patternType, aggregationMode)
 	if err != nil {
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(err.Error(), aggregationMode)}, nil
 	}
-	decoder, searchEvents := streaming.AggregationDecoder(onMatchFunc)
 
-	// This request context limits the total time search runs and returns in a manner that allows knowing if the search completed
 	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*searchTimeLimitSeconds)
 	defer cancelReqContext()
-	err = streaming.Search(requestContext, string(modifiedQuery), &r.patternType, decoder)
+	searchClient := streaming.NewInsightsSearchClient(r.baseInsightResolver.postgresDB)
+	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, aggregation.NewSearchResultsAggregator(tabulationFunc, countingFunc))
 	if err != nil {
-		reason := "unable to run search"
-		if errors.Is(err, context.DeadlineExceeded) {
-			reason = "search did not complete in time"
-		}
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggregationMode)}, nil
+		return nil, err
 	}
 
-	successful, failureReason := searchSuccessful(searchEvents, tabulationErrors)
+	successful, failureReason := searchSuccessful(alert, tabulationErrors)
 	if !successful {
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
 	}
@@ -106,16 +103,7 @@ func aggregationModeSupported(searchQuery, patternType string, mode types.Search
 	return false, "Only aggregation by repository is currently supported."
 }
 
-func searchSuccessful(events *streaming.AggregationDecoderEvents, tabulationErrors []error) (bool, string) {
-	for _, skipped := range events.Skipped {
-		if skipped.Reason == string(streaming.ShardTimeoutSkippedReason) {
-			return false, "query was unable to complete"
-		}
-	}
-
-	if len(events.Errors) > 0 {
-		return false, "query returned with errors"
-	}
+func searchSuccessful(alert *search.Alert, tabulationErrors []error) (bool, string) {
 
 	if len(tabulationErrors) > 0 {
 		return false, "query returned with errors"
@@ -146,7 +134,7 @@ func (r *AggregationGroup) Query() (*string, error) {
 	return r.query, nil
 }
 
-func buildResults(aggregator streaming.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string) aggregationResults {
+func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string) aggregationResults {
 	sorted := aggregator.SortAggregate()
 	groups := make([]graphqlbackend.AggregationGroup, 0, limit)
 	otherResults := aggregator.OtherCounts().ResultCount
