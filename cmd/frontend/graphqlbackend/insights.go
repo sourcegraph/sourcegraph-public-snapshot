@@ -465,7 +465,7 @@ type SearchQueryAggregateResolver interface {
 type AggregationModeAvailabilityResolver interface {
 	Mode() string //ENUM
 	Available() (bool, error)
-	ReasonUnavailable() (*string, error)
+	ReasonUnavailable() *string
 }
 
 type ExhaustiveSearchAggregationResultResolver interface {

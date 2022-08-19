@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
@@ -34,9 +35,10 @@ func newAggregationModeAvailabilityResolver(searchQuery string, patternType stri
 }
 
 type aggregationModeAvailabilityResolver struct {
-	searchQuery string
-	patternType string
-	mode        types.SearchAggregationMode
+	searchQuery       string
+	patternType       string
+	mode              types.SearchAggregationMode
+	reasonUnavailable *string
 }
 
 func (r *aggregationModeAvailabilityResolver) Mode() string {
@@ -48,12 +50,31 @@ func (r *aggregationModeAvailabilityResolver) Available() (bool, error) {
 		types.REPO_AGGREGATION_MODE: canAggregateByRepo,
 		// types.PATH_AGGREGATION_MODE: canAggregateByPath,
 		// types.AUTHOR_AGGREGATION_MODE: canAggregateByAuthor,
+		// types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
 	}
 	canAggregateByFunc, ok := checkByMode[r.mode]
 	if !ok {
+		reason := fmt.Sprintf("aggregation mode %v is not yet supported", r.mode)
+		r.reasonUnavailable = &reason
 		return false, nil
 	}
-	return canAggregateByFunc(r.searchQuery, r.patternType)
+	canAggregate, err := canAggregateByFunc(r.searchQuery, r.patternType)
+	if err != nil {
+		reason := fmt.Sprintf("cannot aggregate due to error: %v", err)
+		r.reasonUnavailable = &reason
+	}
+	if !canAggregate {
+		reason := fmt.Sprintf("this specific query does not support aggregation by %v", r.mode)
+		r.reasonUnavailable = &reason
+	}
+	return canAggregate, err
+}
+
+func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() *string {
+	if r.reasonUnavailable != nil {
+		return r.reasonUnavailable
+	}
+	return nil
 }
 
 type canAggregateBy func(searchQuery, patternType string) (bool, error)
@@ -128,11 +149,6 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
-}
-
-func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
-	reason := "not implemented"
-	return &reason, nil
 }
 
 // A  type to represent the GraphQL union SearchAggregationResult
