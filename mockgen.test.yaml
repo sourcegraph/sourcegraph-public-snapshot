@@ -1,3 +1,7 @@
+- filename: cmd/frontend/internal/httpapi/releasecache/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache
+  interfaces:
+    - ReleaseCache
 - filename: cmd/symbols/fetcher/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver
   interfaces:

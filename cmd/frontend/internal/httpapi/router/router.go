@@ -14,8 +14,9 @@ const (
 	SearchStream  = "search.stream"
 	ComputeStream = "compute.stream"
 
-	SrcCliVersion  = "src-cli.version"
-	SrcCliDownload = "src-cli.download"
+	SrcCliVersion      = "src-cli.version"
+	SrcCliDownload     = "src-cli.download"
+	SrcCliVersionCache = "src-cli.version-cache"
 
 	Registry = "registry"
 
@@ -58,6 +59,8 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
+
+	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
