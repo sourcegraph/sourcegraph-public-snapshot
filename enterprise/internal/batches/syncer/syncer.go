@@ -485,6 +485,10 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 
 	source, err := loadChangesetSource(ctx, s.httpFactory, s.syncStore, cs, repo)
 	if err != nil {
+		if errors.Is(err, store.ErrDeletedNamespace) {
+			syncLogger.Debug("SyncChangeset skipping changeset: namespace deleted")
+			return nil
+		}
 		return err
 	}
 

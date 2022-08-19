@@ -38,6 +38,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
+import { BlobProps } from './blob/Blob'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -61,6 +62,7 @@ export interface RepoRevisionContainerContext
         ActivationProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -95,6 +97,7 @@ interface RepoRevisionContainerProps
         ThemeProps,
         ActivationProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,

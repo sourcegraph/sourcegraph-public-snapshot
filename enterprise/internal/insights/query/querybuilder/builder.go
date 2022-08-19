@@ -39,6 +39,48 @@ func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (Basic
 	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
 }
 
+// AggregationQuery takes an existing query and adds a count:all and timeout:[timeoutSeconds]s
+// If a count or timeout parameter already exist in the query they will be updated.
+func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int) (BasicQuery, error) {
+
+	upsertParams := searchquery.Parameters{
+		{
+			Field:      searchquery.FieldCount,
+			Value:      "all",
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+		{
+			Field:      searchquery.FieldTimeout,
+			Value:      fmt.Sprintf("%ds", timeoutSeconds),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+	}
+
+	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", errors.Wrap(err, "Pipeline")
+	}
+	modified := make(searchquery.Plan, 0, len(plan))
+
+	for _, basic := range plan {
+		p := make(searchquery.Parameters, 0, len(basic.Parameters)+len(upsertParams))
+
+		for _, param := range basic.Parameters {
+			if upsertParams.Exists(param.Field) {
+				continue
+			}
+			p = append(p, param)
+		}
+
+		p = append(p, upsertParams...)
+		modified = append(modified, basic.MapParameters(p))
+	}
+
+	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}
+
 // CodeInsightsQueryDefaults returns the default query parameters for a Code Insights generated Sourcegraph query.
 func CodeInsightsQueryDefaults(allReposInsight bool) searchquery.Parameters {
 	forkArchiveValue := searchquery.No

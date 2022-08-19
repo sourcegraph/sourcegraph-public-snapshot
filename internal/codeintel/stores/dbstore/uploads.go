@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -43,6 +42,7 @@ type Upload struct {
 	NumParts          int
 	UploadedParts     []int
 	UploadSize        *int64
+	UncompressedSize  *int64
 	Rank              *int
 	AssociatedIndexID *int
 }
@@ -75,6 +75,7 @@ func scanUpload(s dbutil.Scanner) (upload Upload, _ error) {
 		&upload.UploadSize,
 		&upload.AssociatedIndexID,
 		&upload.Rank,
+		&upload.UncompressedSize,
 	); err != nil {
 		return upload, err
 	}
@@ -111,6 +112,7 @@ func scanUploadWithCount(s dbutil.Scanner) (upload Upload, count int, _ error) {
 		&upload.UploadSize,
 		&upload.AssociatedIndexID,
 		&upload.Rank,
+		&upload.UncompressedSize,
 		&count,
 	); err != nil {
 		return upload, 0, err
@@ -131,11 +133,6 @@ var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCoun
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
-
-// scanFirstUploadRecord scans a slice of uploads from the return value of `*Store.query` and returns the first.
-func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstUpload(rows, err)
-}
 
 // scanCounts scans pairs of id/counts from the return value of `*Store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
@@ -204,7 +201,8 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
-	s.rank
+	s.rank,
+	u.uncompressed_size
 FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
@@ -262,7 +260,8 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
-	s.rank
+	s.rank,
+	u.uncompressed_size
 FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
@@ -402,7 +401,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				uploaded_parts,
 				upload_size,
 				associated_index_id,
-				expired
+				expired,
+				uncompressed_size
 			FROM lsif_uploads
 			UNION ALL
 			SELECT *
@@ -505,6 +505,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	s.rank,
+	u.uncompressed_size,
 	COUNT(*) OVER() AS count
 FROM %s
 LEFT JOIN (` + uploadRankQueryFragment + `) s
@@ -528,7 +529,8 @@ SELECT
 	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
 	NULL::integer[] as uploaded_parts,
 	au.upload_size, au.associated_index_id,
-	COALESCE((snapshot->'expired')::boolean, false) AS expired
+	COALESCE((snapshot->'expired')::boolean, false) AS expired,
+	NULL::bigint AS uncompressed_size
 FROM (
 	SELECT upload_id, snapshot_transition_columns(transition_columns ORDER BY sequence ASC) AS snapshot
 	FROM lsif_uploads_audit_logs
@@ -643,6 +645,7 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (id int, err er
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
+			upload.UncompressedSize,
 		),
 	))
 
@@ -661,8 +664,9 @@ INSERT INTO lsif_uploads (
 	num_parts,
 	uploaded_parts,
 	upload_size,
-	associated_index_id
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	associated_index_id,
+	uncompressed_size
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -748,6 +752,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.upload_size"),
 	sqlf.Sprintf("u.associated_index_id"),
 	sqlf.Sprintf("NULL"),
+	sqlf.Sprintf("u.uncompressed_size"),
 }
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
@@ -1437,7 +1442,8 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
-	s.rank
+	s.rank,
+	u.uncompressed_size
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id

@@ -46,38 +46,38 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(logger.Scoped("GithubSource", ""), externalServicesStore, svc, cf)
+		return NewGithubSource(ctx, logger.Scoped("GithubSource", ""), externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", ""), db, svc, cf)
 	case extsvc.KindGerrit:
-		return NewGerritSource(svc, cf)
+		return NewGerritSource(ctx, svc, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(logger.Scoped("BitbucketServerSource", ""), svc, cf)
+		return NewBitbucketServerSource(ctx, logger.Scoped("BitbucketServerSource", ""), svc, cf)
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(logger.Scoped("BitbucketCloudSource", ""), svc, cf)
+		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource", ""), svc, cf)
 	case extsvc.KindGitolite:
-		return NewGitoliteSource(svc, cf)
+		return NewGitoliteSource(ctx, svc, cf)
 	case extsvc.KindPhabricator:
-		return NewPhabricatorSource(logger.Scoped("PhabricatorSource", ""), svc, cf)
+		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource", ""), svc, cf)
 	case extsvc.KindAWSCodeCommit:
-		return NewAWSCodeCommitSource(svc, cf)
+		return NewAWSCodeCommitSource(ctx, svc, cf)
 	case extsvc.KindPerforce:
-		return NewPerforceSource(svc)
+		return NewPerforceSource(ctx, svc)
 	case extsvc.KindGoPackages:
-		return NewGoPackagesSource(svc, cf)
+		return NewGoPackagesSource(ctx, svc, cf)
 	case extsvc.KindJVMPackages:
 		// JVM doesn't need a client factory because we use coursier.
-		return NewJVMPackagesSource(svc)
+		return NewJVMPackagesSource(ctx, svc)
 	case extsvc.KindPagure:
-		return NewPagureSource(svc, cf)
+		return NewPagureSource(ctx, svc, cf)
 	case extsvc.KindNpmPackages:
-		return NewNpmPackagesSource(svc, cf)
+		return NewNpmPackagesSource(ctx, svc, cf)
 	case extsvc.KindPythonPackages:
-		return NewPythonPackagesSource(svc, cf)
+		return NewPythonPackagesSource(ctx, svc, cf)
 	case extsvc.KindRustPackages:
-		return NewRustPackagesSource(svc, cf)
+		return NewRustPackagesSource(ctx, svc, cf)
 	case extsvc.KindOther:
-		return NewOtherSource(svc, cf)
+		return NewOtherSource(ctx, svc, cf)
 	default:
 		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}

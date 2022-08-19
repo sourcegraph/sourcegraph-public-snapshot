@@ -11,10 +11,12 @@ export type FeatureFlagName =
     | 'insight-polling-enabled'
     | 'ab-visitor-tour-with-notebooks'
     | 'ab-email-verification-alert'
-    | 'hide-run-batch-spec-for-mi'
     | 'contrast-compliant-syntax-highlighting'
     | 'admin-analytics-disabled'
     | 'admin-analytics-cache-disabled'
+    | 'search-aggregation-filters'
+    | 'ab-lucky-search' // To be removed at latest by 12/2022.
+    | 'user-management-disabled'
 
 interface OrgFlagOverride {
     orgID: string

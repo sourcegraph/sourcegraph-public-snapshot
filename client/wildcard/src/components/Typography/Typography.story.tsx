@@ -1,4 +1,3 @@
-import { select } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -36,7 +35,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => (
+export const Simple: Story = (args = {}) => (
     <>
         <H2>Headings</H2>
         <table className="table">
@@ -50,10 +49,7 @@ export const Simple: Story = () => (
                         </Code>
                     </td>
                     <td>
-                        <H1
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                        >
+                        <H1 mode={args.mode} alignment={args.alignment}>
                             This is H1
                         </H1>
                     </td>
@@ -67,10 +63,7 @@ export const Simple: Story = () => (
                         </Code>
                     </td>
                     <td>
-                        <H2
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                        >
+                        <H2 mode={args.mode} alignment={args.alignment}>
                             This is H2
                         </H2>
                     </td>
@@ -84,10 +77,7 @@ export const Simple: Story = () => (
                         </Code>
                     </td>
                     <td>
-                        <H3
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                        >
+                        <H3 mode={args.mode} alignment={args.alignment}>
                             This is H3
                         </H3>
                     </td>
@@ -101,10 +91,7 @@ export const Simple: Story = () => (
                         </Code>
                     </td>
                     <td>
-                        <H4
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                        >
+                        <H4 mode={args.mode} alignment={args.alignment}>
                             This is H4
                         </H4>
                     </td>
@@ -118,10 +105,7 @@ export const Simple: Story = () => (
                         </Code>
                     </td>
                     <td>
-                        <H5
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                        >
+                        <H5 mode={args.mode} alignment={args.alignment}>
                             This is H5
                         </H5>
                     </td>
@@ -135,10 +119,7 @@ export const Simple: Story = () => (
                         </Code>
                     </td>
                     <td>
-                        <H6
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                        >
+                        <H6 mode={args.mode} alignment={args.alignment}>
                             This is H6
                         </H6>
                     </td>
@@ -196,59 +177,32 @@ export const Simple: Story = () => (
                     </td>
                     <td>
                         <div>
-                            <Label
-                                mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                                alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                                size="base"
-                            >
+                            <Label mode={args.mode} alignment={args.alignment} size="base">
                                 This is Label / Base
                             </Label>
                         </div>
                         <div>
-                            <Label
-                                mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                                alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                                size="base"
-                                isUnderline={true}
-                            >
+                            <Label mode={args.mode} alignment={args.alignment} size="base" isUnderline={true}>
                                 This is Label / Base - underline
                             </Label>
                         </div>
                         <div>
-                            <Label
-                                mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                                alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                                size="small"
-                            >
+                            <Label mode={args.mode} alignment={args.alignment} size="small">
                                 This is Label / Small
                             </Label>
                         </div>
                         <div>
-                            <Label
-                                mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                                alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                                size="small"
-                                isUnderline={true}
-                            >
+                            <Label mode={args.mode} alignment={args.alignment} size="small" isUnderline={true}>
                                 This is Label / Small - underline
                             </Label>
                         </div>
                         <div>
-                            <Label
-                                mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                                alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                                isUppercase={true}
-                            >
+                            <Label mode={args.mode} alignment={args.alignment} isUppercase={true}>
                                 This is Label / Uppercase / Base
                             </Label>
                         </div>
                         <div>
-                            <Label
-                                mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                                alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                                size="small"
-                                isUppercase={true}
-                            >
+                            <Label mode={args.mode} alignment={args.alignment} size="small" isUppercase={true}>
                                 This is Label / Uppercase / Small
                             </Label>
                         </div>
@@ -269,52 +223,22 @@ export const Simple: Story = () => (
                         </Code>
                     </td>
                     <td>
-                        <Text
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                            size="base"
-                            weight="regular"
-                        >
+                        <Text mode={args.mode} alignment={args.alignment} size="base" weight="regular">
                             This is Body / Base / Regular
                         </Text>
-                        <Text
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                            size="base"
-                            weight="medium"
-                        >
+                        <Text mode={args.mode} alignment={args.alignment} size="base" weight="medium">
                             This is Body / Base / Medium
                         </Text>
-                        <Text
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                            size="base"
-                            weight="bold"
-                        >
+                        <Text mode={args.mode} alignment={args.alignment} size="base" weight="bold">
                             This is Body / Base / Bold
                         </Text>
-                        <Text
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                            size="small"
-                            weight="regular"
-                        >
+                        <Text mode={args.mode} alignment={args.alignment} size="small" weight="regular">
                             This is Body / Small / Regular
                         </Text>
-                        <Text
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                            size="small"
-                            weight="medium"
-                        >
+                        <Text mode={args.mode} alignment={args.alignment} size="small" weight="medium">
                             This is Body / Small / Medium
                         </Text>
-                        <Text
-                            mode={select('mode', TYPOGRAPHY_MODES, undefined)}
-                            alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
-                            size="small"
-                            weight="bold"
-                        >
+                        <Text mode={args.mode} alignment={args.alignment} size="small" weight="bold">
                             This is Body / Small / Bold
                         </Text>
                     </td>
@@ -323,6 +247,16 @@ export const Simple: Story = () => (
         </table>
     </>
 )
+Simple.argTypes = {
+    mode: {
+        control: { type: 'select', options: TYPOGRAPHY_MODES },
+        defaultValue: 'default',
+    },
+    alignment: {
+        control: { type: 'select', options: TYPOGRAPHY_ALIGNMENTS },
+        defaultValue: 'left',
+    },
+}
 
 export const CrossingStyles: Story = () => (
     <>

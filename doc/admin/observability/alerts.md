@@ -6025,3 +6025,51 @@ an underprovisioned main postgres instance.
 
 <br />
 
+## telemetry: telemetry_job_error_rate
+
+<p class="subtitle">usage data exporter operation error rate over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0%+ usage data exporter operation error rate over 5m for 30m0s
+
+**Next steps**
+
+- Involved cloud team to inspect logs of the managed instance to determine error sources.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetry-job-error-rate).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetry_job_error_rate"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<br />
+
+## telemetry: telemetry_job_utilized_throughput
+
+<p class="subtitle">utilized percentage of maximum throughput</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 90%+ utilized percentage of maximum throughput for 30m0s
+
+**Next steps**
+
+- Throughput utilization is high. This could be a signal that this instance is producing too many events for the export job to keep up. Configure more throughput using the maxBatchSize option.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetry-job-utilized-throughput).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetry_job_utilized_throughput"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<br />
+

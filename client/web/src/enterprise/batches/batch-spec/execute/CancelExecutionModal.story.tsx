@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
@@ -13,18 +12,26 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 const config: Meta = {
     title: 'web/batches/batch-spec/execute',
     decorators: [decorator],
+    argTypes: {
+        isLoading: {
+            control: {
+                type: 'boolean',
+            },
+            defaultValue: false,
+        },
+    },
 }
 
 export default config
 
-export const CancelExecutionModalStory: Story = () => (
+export const CancelExecutionModalStory: Story = args => (
     <WebStory>
         {props => (
             <CancelExecutionModal
                 {...props}
                 modalBody={<Text>Are you sure you want to cancel the current execution?</Text>}
                 isOpen={true}
-                isLoading={boolean('isLoading', false)}
+                isLoading={args.isLoading}
                 onCancel={noop}
                 onConfirm={noop}
             />

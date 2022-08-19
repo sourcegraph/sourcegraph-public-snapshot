@@ -70,25 +70,14 @@ func ResetClientMocks() {
 
 var _ Client = &clientImplementor{}
 
-// NewClient returns a new gitserver.Client instantiated with default arguments
-// and httpcli.Doer.
+// NewClient returns a new gitserver.Client.
 func NewClient(db database.DB) Client {
-	return newClientImplementor(db)
-}
-
-func newClientImplementor(db database.DB) *clientImplementor {
 	return &clientImplementor{
-		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client instantiated with default arguments and httpcli.Doer."),
+		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
-		pinned: func() map[string]string {
-			cfg := conf.Get()
-			if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
-				return cfg.ExperimentalFeatures.GitServerPinnedRepos
-			}
-			return map[string]string{}
-		},
+		pinned:      pinnedReposFromConfig,
 		db:          db,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
@@ -100,16 +89,15 @@ func newClientImplementor(db database.DB) *clientImplementor {
 	}
 }
 
+// NewTestClient returns a test client that will use the given hard coded list of
+// addresses instead of reading them from config.
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 	return &clientImplementor{
 		logger: sglog.Scoped("NewTestClient", "Test New client"),
 		addrs: func() []string {
 			return addrs
 		},
-		pinned: func() map[string]string {
-			// nothing needs to be pinned for the tests
-			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
-		},
+		pinned:      pinnedReposFromConfig,
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -368,9 +356,8 @@ type Client interface {
 	// revspecs).
 	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
 
-	// ShortLog
-	// TODO: Rename to something like PersonCount?
-	ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error)
+	// ContributorCount returns the number of commits grouped by contributor
+	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
 
 	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
 	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
@@ -1179,7 +1166,6 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
-
 	if err != nil {
 		return "", err
 	}
@@ -1334,4 +1320,12 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
+}
+
+func pinnedReposFromConfig() map[string]string {
+	cfg := conf.Get()
+	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
+		return cfg.ExperimentalFeatures.GitServerPinnedRepos
+	}
+	return map[string]string{}
 }

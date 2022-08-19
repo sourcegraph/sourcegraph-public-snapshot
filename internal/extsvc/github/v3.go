@@ -748,7 +748,7 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 // API docs: https://docs.github.com/en/rest/reference/apps#create-an-installation-access-token-for-an-app
 func (c *V3Client) CreateAppInstallationAccessToken(ctx context.Context, installationID int64) (*github.InstallationToken, error) {
 	var token github.InstallationToken
-	if _, err := c.post(ctx, fmt.Sprintf("/app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
+	if _, err := c.post(ctx, fmt.Sprintf("app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
 		return nil, err
 	}
 	return &token, nil
@@ -847,19 +847,19 @@ func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Web
 }
 
 // FindSyncWebhook looks for any webhook with the targetURL ending in /github-webhooks
-func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, error) {
+func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*WebhookPayload, error) {
 	payloads, err := c.ListSyncWebhooks(ctx, repoName)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	for _, payload := range payloads {
 		if strings.Contains(payload.Config.URL, "github-webhooks") {
-			return payload.ID, nil
+			return &payload, nil
 		}
 	}
 
-	return 0, errors.New("unable to find webhook")
+	return nil, errors.New("unable to find webhook")
 }
 
 // DeleteSyncWebhook returns a boolean answer as to whether the target repo was deleted or not

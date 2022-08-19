@@ -52,7 +52,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: get external service failed"))
 	}
 
-	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	parsed, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: ParseConfig failed"))
 	}
@@ -66,22 +66,21 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: parse baseURL failed"))
 	}
-
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer)
-	id, err := client.FindSyncWebhook(ctx, job.RepoName) // TODO: Don't make API calls every time
+
+	webhookPayload, err := client.FindSyncWebhook(ctx, job.RepoName) // TODO: Not make an API call upon every request
 	if err != nil && err.Error() != "unable to find webhook" {
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
 	}
 
 	// found webhook from GitHub API
 	// don't build a new one
-	if id != 0 {
-		logger.Info(fmt.Sprintf("Webhook exists with ID: %d", id))
-		return nil
-	}
+	if webhookPayload != nil {
+		if err := addWebhookToExtSvc(svc, conn, job.Org, webhookPayload.Config.Secret); err != nil {
+			return errors.Wrap(err, "handleKindGitHub: Webhook found but addWebhookToExtSvc failed")
+		}
 
-	if webhookExistsInConfig(conn.Webhooks, job.Org) {
-		logger.Info("Webhook found, no need to build new webhook")
+		logger.Info("webhook found", log.Int("ID", webhookPayload.ID))
 		return nil
 	}
 
@@ -90,16 +89,33 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: secret generation failed"))
 	}
 
-	if err := addSecretToExtSvc(svc, conn, job.Org, secret); err != nil {
-		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: Marshal failed"))
-	}
-
-	id, err = client.CreateSyncWebhook(ctx, job.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret) // TODO: Add to DB
+	id, err := client.CreateSyncWebhook(ctx, job.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret) // TODO: store the webhook
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: CreateSyncWebhook failed")
 	}
 
-	logger.Info(fmt.Sprintf("Created webhook with ID: %d", id))
+	if err := addWebhookToExtSvc(svc, conn, job.Org, secret); err != nil {
+		return errors.Wrap(err, "handleKindGitHub: Webhook created but addWebhookToExtSvc failed")
+	}
+
+	logger.Info("webhook created", log.Int("ID", id))
+	return nil
+}
+
+func addWebhookToExtSvc(svc *types.ExternalService, conn *schema.GitHubConnection, org, secret string) error {
+	if webhookExistsInConfig(conn.Webhooks, org) {
+		return nil
+	}
+
+	conn.Webhooks = append(conn.Webhooks, &schema.GitHubWebhook{
+		Org: org, Secret: secret,
+	})
+
+	serialized, err := json.Marshal(conn)
+	if err != nil {
+		return err
+	}
+	svc.Config.Set(string(serialized))
 	return nil
 }
 
@@ -110,20 +126,6 @@ func webhookExistsInConfig(webhooks []*schema.GitHubWebhook, org string) bool {
 		}
 	}
 	return false
-}
-
-func addSecretToExtSvc(svc *types.ExternalService, conn *schema.GitHubConnection, org, secret string) error {
-	conn.Webhooks = append(conn.Webhooks, &schema.GitHubWebhook{
-		Org: org, Secret: secret,
-	})
-
-	newConfig, err := json.Marshal(conn)
-	if err != nil {
-		return err
-	}
-
-	svc.Config = string(newConfig)
-	return nil
 }
 
 func randomHex(n int) (string, error) {

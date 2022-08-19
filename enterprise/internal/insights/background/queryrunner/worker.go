@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -42,7 +43,8 @@ import (
 func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
-		numHandlers = 1
+		// Default concurrency is set to 5.
+		numHandlers = 5
 	}
 
 	options := workerutil.WorkerOptions{
@@ -53,7 +55,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		Metrics:           metrics,
 	}
 
-	defaultRateLimit := rate.Limit(10.0)
+	defaultRateLimit := rate.Limit(20.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
 
 	limiter := ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit(), 1))
@@ -67,7 +69,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	sharedCache := make(map[string]*types.InsightSeries)
 
 	prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_insights_search_queue_total",
+		Name: "src_query_runner_worker_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
 		count, err := workerStore.QueuedCount(context.Background(), false)
@@ -87,7 +89,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		seriesCache:     sharedCache,
 		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
 			decoder, streamResults := streaming.TabulationDecoder()
-			err := streaming.Search(ctx, query, decoder)
+			err := streaming.Search(ctx, query, nil, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
 			}
@@ -146,7 +148,7 @@ func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Con
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,
-		Scan:              scanJobs,
+		Scan:              dbworkerstore.BuildWorkerScan(scanJob),
 
 		// If you change this, be sure to adjust the interval that work is enqueued in
 		// enterprise/internal/insights/background:newInsightEnqueuer.
@@ -281,7 +283,7 @@ func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID 
 	if err != nil {
 		return nil, err
 	}
-	jobs, err := doScanJobs(rows, nil)
+	jobs, err := scanJobs(rows, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -435,45 +437,18 @@ func (j *Job) RecordID() int {
 	return j.ID
 }
 
-func scanJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	records, err := doScanJobs(rows, err)
-	if err != nil || len(records) == 0 {
-		return &Job{}, false, err
-	}
-	return records[0], true, nil
-}
-
-func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
+func scanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 	var jobs []*Job
 	for rows.Next() {
-		j := &Job{}
-		if err := rows.Scan(
-			// Query runner fields.
-			&j.SeriesID,
-			&j.SearchQuery,
-			&j.RecordTime,
-			&j.Cost,
-			&j.Priority,
-			&j.PersistMode,
-
-			// Standard/required dbworker fields.
-			&j.ID,
-			&j.State,
-			&j.FailureMessage,
-			&j.StartedAt,
-			&j.FinishedAt,
-			&j.ProcessAfter,
-			&j.NumResets,
-			&j.NumFailures,
-			pq.Array(&j.ExecutionLogs),
-		); err != nil {
+		job, err := scanJob(rows)
+		if err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, j)
+		jobs = append(jobs, job)
 	}
 	if err != nil {
 		return nil, err
@@ -483,6 +458,34 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 		return nil, err
 	}
 	return jobs, nil
+}
+
+func scanJob(sc dbutil.Scanner) (*Job, error) {
+	j := &Job{}
+	if err := sc.Scan(
+		// Query runner fields.
+		&j.SeriesID,
+		&j.SearchQuery,
+		&j.RecordTime,
+		&j.Cost,
+		&j.Priority,
+		&j.PersistMode,
+
+		// Standard/required dbworker fields.
+		&j.ID,
+		&j.State,
+		&j.FailureMessage,
+		&j.StartedAt,
+		&j.FinishedAt,
+		&j.ProcessAfter,
+		&j.NumResets,
+		&j.NumFailures,
+		pq.Array(&j.ExecutionLogs),
+	); err != nil {
+		return nil, err
+	}
+
+	return j, nil
 }
 
 var jobsColumns = []*sqlf.Query{

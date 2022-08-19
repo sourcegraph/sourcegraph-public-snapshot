@@ -126,7 +126,10 @@ func (workerutilConstructor) NewGroup(containerName string, owner monitoring.Obs
 	if len(row) == 5 {
 		// If we have all 5 metrics, put handlers on a row by itself first,
 		// followed by the standard observation group panels.
-		rows = []monitoring.Row{row[:1], row[1:]}
+		firstRow := monitoring.Row{row[0]}
+		secondRow := make(monitoring.Row, len(row[1:]))
+		copy(secondRow, row[1:])
+		rows = []monitoring.Row{firstRow, secondRow}
 	}
 
 	return monitoring.Group{

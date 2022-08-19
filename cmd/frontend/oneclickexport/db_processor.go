@@ -4,39 +4,40 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"path"
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const DefaultLimit = 1000
 
-var _ Processor[Limit] = &ExtSvcDBQueryProcessor{}
+var _ Processor[Limit] = &ExtSvcQueryProcessor{}
 
-type ExtSvcDBQueryProcessor struct {
+type ExtSvcQueryProcessor struct {
 	db     database.DB
 	logger log.Logger
 	Type   string
 }
 
-func (d ExtSvcDBQueryProcessor) Process(ctx context.Context, payload Limit, dir string) {
+func (d ExtSvcQueryProcessor) Process(ctx context.Context, payload Limit, dir string) {
 	externalServices, err := d.db.ExternalServices().List(
 		ctx,
 		database.ExternalServicesListOptions{LimitOffset: &database.LimitOffset{Limit: payload.getOrDefault(DefaultLimit)}},
 	)
 	if err != nil {
-		d.logger.Error("Error during fetching external services from the DB", log.Error(err))
+		d.logger.Error("error during fetching external services from the DB", log.Error(err))
 		return
 	}
 
 	redactedExtSvc := make([]*RedactedExternalService, len(externalServices))
-
 	for idx, extSvc := range externalServices {
-		redacted, err := convertExtSvcToRedacted(extSvc)
+		redacted, err := convertExtSvcToRedacted(ctx, extSvc)
 		if err != nil {
-			d.logger.Error("Error during redacting external service code host config", log.Error(err))
+			d.logger.Error("error during redacting external service code host config", log.Error(err))
 			return
 		}
 		redactedExtSvc[idx] = redacted
@@ -44,18 +45,18 @@ func (d ExtSvcDBQueryProcessor) Process(ctx context.Context, payload Limit, dir 
 
 	bytes, err := json.MarshalIndent(redactedExtSvc, "", "  ")
 	if err != nil {
-		d.logger.Error("Error during marshalling the result", log.Error(err))
+		d.logger.Error("error during marshalling the result", log.Error(err))
 		return
 	}
 
-	err = ioutil.WriteFile(dir+"/db-external-services.txt", bytes, 0644)
-
+	outputFile := path.Join(dir, "db-external-services.txt")
+	err = ioutil.WriteFile(outputFile, bytes, 0644)
 	if err != nil {
-		d.logger.Error("Error during external_services export", log.Error(err))
+		d.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
 }
 
-func (d ExtSvcDBQueryProcessor) ProcessorType() string {
+func (d ExtSvcQueryProcessor) ProcessorType() string {
 	return d.Type
 }
 
@@ -79,8 +80,8 @@ type RedactedExternalService struct {
 	TokenExpiresAt  *time.Time
 }
 
-func convertExtSvcToRedacted(extSvc *types.ExternalService) (*RedactedExternalService, error) {
-	config, err := extSvc.RedactedConfig()
+func convertExtSvcToRedacted(ctx context.Context, extSvc *types.ExternalService) (*RedactedExternalService, error) {
+	config, err := extSvc.RedactedConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,16 +104,37 @@ func convertExtSvcToRedacted(extSvc *types.ExternalService) (*RedactedExternalSe
 	}, nil
 }
 
-type Limit int
-
-func (l Limit) getOrDefault(defaultValue int) int {
-	if l == 0 {
-		return defaultValue
-	}
-	return int(l)
+// ExtSvcReposQueryProcessor is the query processor for the
+// external_service_repos table.
+type ExtSvcReposQueryProcessor struct {
+	db     database.DB
+	logger log.Logger
+	Type   string
 }
 
-type DBQueryRequest struct {
-	TableName string `json:"tableName"`
-	Count     Limit  `json:"count"`
+func (e ExtSvcReposQueryProcessor) Process(ctx context.Context, payload Limit, dir string) {
+	externalServiceRepos, err := e.db.ExternalServices().ListRepos(
+		ctx,
+		database.ExternalServiceReposListOptions{LimitOffset: &database.LimitOffset{Limit: payload.getOrDefault(DefaultLimit)}},
+	)
+	if err != nil {
+		e.logger.Error("error during fetching external service repos from the DB", log.Error(err))
+		return
+	}
+
+	bytes, err := json.MarshalIndent(externalServiceRepos, "", "  ")
+	if err != nil {
+		e.logger.Error("error during marshalling the result", log.Error(err))
+		return
+	}
+
+	outputFile := path.Join(dir, "db-external-service-repos.txt")
+	err = ioutil.WriteFile(outputFile, bytes, 0644)
+	if err != nil {
+		e.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
+	}
+}
+
+func (e ExtSvcReposQueryProcessor) ProcessorType() string {
+	return e.Type
 }

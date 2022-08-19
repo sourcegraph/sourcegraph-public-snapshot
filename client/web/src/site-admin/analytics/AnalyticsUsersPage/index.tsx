@@ -1,14 +1,13 @@
 import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
+import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
-import { Card, LoadingSpinner, useMatchMedia, Text } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../../charts'
-import { BarChart } from '../../../charts/components/bar-chart/BarChart'
 import { GlobalAlert } from '../../../global/GlobalAlert'
 import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -122,9 +121,11 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
         return <LoadingSpinner />
     }
 
+    const groupingLabel = startCase(grouping.value.toLowerCase())
+
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Users</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Users</AnalyticsPageTitle>
             <Card className="p-3">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
                     <HorizontalSelect<typeof dateRange.value> {...dateRange} />
@@ -142,7 +143,11 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                 {activities && (
                     <div>
                         <ChartContainer
-                            title={aggregation.selected === 'count' ? 'Activity by day' : 'Unique users by day'}
+                            title={
+                                aggregation.selected === 'count'
+                                    ? `${groupingLabel} activity`
+                                    : `${groupingLabel} unique users`
+                            }
                             labelX="Time"
                             labelY={aggregation.selected === 'count' ? 'Activity' : 'Unique users'}
                         >

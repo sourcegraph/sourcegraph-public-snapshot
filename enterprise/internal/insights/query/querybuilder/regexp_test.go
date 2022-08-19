@@ -9,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/stretchr/testify/require"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/grafana/regexp"
 )
 
@@ -42,6 +40,11 @@ func Test_findGroups(t *testing.T) {
 		pattern  string
 		expected []group
 	}{
+		{
+			name:     "no groups in pattern",
+			pattern:  `\w*\s`,
+			expected: nil,
+		},
 		{
 			name:     "one group",
 			pattern:  "te(s)t",
@@ -86,82 +89,62 @@ func Test_findGroups(t *testing.T) {
 
 func Test_replaceCaptureGroupsWithString(t *testing.T) {
 	tests := []struct {
-		name     string
-		pattern  string
-		text     string
-		expected string
-		maxGroup int
+		pattern string
+		text    string
+		want    autogold.Value
 	}{
 		{
-			name:     "1",
-			pattern:  `(\w+)-(\w+)`,
-			text:     `cat-cow dog-bat`,
-			expected: `(?:cat|dog)-(?:cow|bat)`,
-			maxGroup: -1,
+			pattern: `(\w+)-(\w+)`,
+			text:    `cat-cow dog-bat`,
+			want:    autogold.Want("1", "(?:cat)-(\\w+)"),
 		},
 		{
-			name:     "2",
-			pattern:  `(\w+)-(\w+)`,
-			text:     `cat-cow dog-bat`,
-			expected: `(\w+)-(\w+)`,
-			maxGroup: 0,
+			pattern: `(\w+)-(?:\w+)-(\w+)`,
+			text:    `cat-cow-camel`,
+			want:    autogold.Want("middle non-capturing group", "(?:cat)-(?:\\w+)-(\\w+)"),
 		},
 		{
-			name:     "3",
-			pattern:  `(\w+)-(\w+)`,
-			text:     `cat-cow dog-bat`,
-			expected: `(?:cat|dog)-(\w+)`,
-			maxGroup: 1,
+			pattern: `(\w+)-(?:\w+)-(\w+)`,
+			text:    `cat-cow-camel`,
+			want:    autogold.Want("ensure non-capturing groups don't count towards group numbers", "(?:cat)-(?:\\w+)-(\\w+)"),
 		},
 		{
-			name:     "4",
-			pattern:  `(\w+)-(\w+)`,
-			text:     `cat-cow dog-bat`,
-			expected: `(?:cat|dog)-(?:cow|bat)`,
-			maxGroup: 2,
+			pattern: `(.*)`,
+			text:    `\w`,
+			want:    autogold.Want("ensure literal values are escaped in the new pattern", "(?:\\\\w)"),
 		},
 		{
-			name:     "5",
-			pattern:  `(\w+)-(?:\w+)-(\w+)`,
-			text:     `cat-cow-camel`,
-			expected: `(?:cat)-(?:\w+)-(?:camel)`,
-			maxGroup: -1,
-		},
-		{
-			name:     "6",
-			pattern:  `(\w+)-(?:\w+)-(\w+)`,
-			text:     `cat-cow-camel`,
-			expected: `(?:cat)-(?:\w+)-(\w+)`,
-			maxGroup: 1,
-		},
-		{
-			name:     "7 ensure non-capturing groups don't count towards group numbers",
-			pattern:  `(\w+)-(?:\w+)-(\w+)`,
-			text:     `cat-cow-camel`,
-			expected: `(?:cat)-(?:\w+)-(?:camel)`,
-			maxGroup: 2,
-		},
-		{
-			name:     "ensure literal values are escaped in the new pattern",
-			pattern:  `(.*)`,
-			text:     `\w`,
-			expected: `(?:\\w)`,
-			maxGroup: -1,
+			pattern: `\w{3}(.{3})\w{3}`,
+			text:    `foobardog`,
+			want:    autogold.Want("fixed repeat pattern", "\\w{3}(?:bar)\\w{3}"),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.want.Name(), func(t *testing.T) {
 			reg, err := regexp.Compile(test.pattern)
 			if err != nil {
 				return
 			}
-			matches := reg.FindAllStringSubmatch(test.text, -1)
+			matches := reg.FindStringSubmatch(test.text)
+			value := matches[1]
+
 			groups := findGroups(test.pattern)
-			if diff := cmp.Diff(test.expected, replaceCaptureGroupsWithString(test.pattern, groups, matches, test.maxGroup)); diff != "" {
-				t.Errorf("unexpected pattern (want/got): %s", diff)
-			}
+			got := replaceCaptureGroupsWithString(test.pattern, groups, value)
+			test.want.Equal(t, got)
 		})
 	}
+
+	t.Run("test explicitly a regexp with no groups", func(t *testing.T) {
+		pattern := `replaceme`
+		got := replaceCaptureGroupsWithString(pattern, nil, "no")
+		require.Equal(t, pattern, got)
+	})
+
+	t.Run("regexp with no capturing groups", func(t *testing.T) {
+		pattern := `(?:hello)(?:friend)`
+		got := replaceCaptureGroupsWithString(pattern, findGroups(pattern), "no")
+		require.Equal(t, pattern, got)
+	})
 }
 
 func TestReplace_Valid(t *testing.T) {

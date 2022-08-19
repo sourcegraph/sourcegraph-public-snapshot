@@ -22,6 +22,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.aggregated_user_statistics"
+```
+       Column        |           Type           | Collation | Nullable | Default 
+---------------------+--------------------------+-----------+----------+---------
+ user_id             | bigint                   |           | not null | 
+ created_at          | timestamp with time zone |           | not null | now()
+ updated_at          | timestamp with time zone |           | not null | now()
+ user_last_active_at | timestamp with time zone |           |          | 
+ user_events_count   | bigint                   |           |          | 
+Indexes:
+    "aggregated_user_statistics_pkey" PRIMARY KEY, btree (user_id)
+Foreign-key constraints:
+    "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
 # Table "public.batch_changes"
 ```
       Column       |           Type           | Collation | Nullable |                  Default                  
@@ -306,23 +322,32 @@ Foreign-key constraints:
 
 # Table "public.changeset_specs"
 ```
-      Column       |           Type           | Collation | Nullable |                   Default                   
--------------------+--------------------------+-----------+----------+---------------------------------------------
- id                | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
- rand_id           | text                     |           | not null | 
- spec              | jsonb                    |           | not null | '{}'::jsonb
- batch_spec_id     | bigint                   |           |          | 
- repo_id           | integer                  |           | not null | 
- user_id           | integer                  |           |          | 
- diff_stat_added   | integer                  |           |          | 
- diff_stat_changed | integer                  |           |          | 
- diff_stat_deleted | integer                  |           |          | 
- created_at        | timestamp with time zone |           | not null | now()
- updated_at        | timestamp with time zone |           | not null | now()
- head_ref          | text                     |           |          | 
- title             | text                     |           |          | 
- external_id       | text                     |           |          | 
- fork_namespace    | citext                   |           |          | 
+       Column        |           Type           | Collation | Nullable |                   Default                   
+---------------------+--------------------------+-----------+----------+---------------------------------------------
+ id                  | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
+ rand_id             | text                     |           | not null | 
+ spec                | jsonb                    |           | not null | '{}'::jsonb
+ batch_spec_id       | bigint                   |           |          | 
+ repo_id             | integer                  |           | not null | 
+ user_id             | integer                  |           |          | 
+ diff_stat_added     | integer                  |           |          | 
+ diff_stat_changed   | integer                  |           |          | 
+ diff_stat_deleted   | integer                  |           |          | 
+ created_at          | timestamp with time zone |           | not null | now()
+ updated_at          | timestamp with time zone |           | not null | now()
+ head_ref            | text                     |           |          | 
+ title               | text                     |           |          | 
+ external_id         | text                     |           |          | 
+ fork_namespace      | citext                   |           |          | 
+ diff                | bytea                    |           |          | 
+ base_rev            | text                     |           |          | 
+ base_ref            | text                     |           |          | 
+ body                | text                     |           |          | 
+ published           | text                     |           |          | 
+ commit_message      | text                     |           |          | 
+ commit_author_name  | text                     |           |          | 
+ commit_author_email | text                     |           |          | 
+ type                | text                     |           |          | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
@@ -931,6 +956,11 @@ Referenced by:
  feature_flags     | jsonb                    |           |          | 
  cohort_id         | date                     |           |          | 
  public_argument   | jsonb                    |           | not null | '{}'::jsonb
+ first_source_url  | text                     |           |          | 
+ last_source_url   | text                     |           |          | 
+ referrer          | text                     |           |          | 
+ device_id         | text                     |           |          | 
+ insert_id         | text                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -1254,8 +1284,39 @@ Indexes:
     "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+Triggers:
+    trig_recalc_gitserver_repos_statistics_on_delete AFTER DELETE ON gitserver_repos REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_delete()
+    trig_recalc_gitserver_repos_statistics_on_insert AFTER INSERT ON gitserver_repos REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_insert()
+    trig_recalc_gitserver_repos_statistics_on_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update()
 
 ```
+
+# Table "public.gitserver_repos_statistics"
+```
+    Column    |  Type  | Collation | Nullable | Default 
+--------------+--------+-----------+----------+---------
+ shard_id     | text   |           | not null | 
+ total        | bigint |           | not null | 0
+ not_cloned   | bigint |           | not null | 0
+ cloning      | bigint |           | not null | 0
+ cloned       | bigint |           | not null | 0
+ failed_fetch | bigint |           | not null | 0
+Indexes:
+    "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
+
+```
+
+**cloned**: Number of repositories in gitserver_repos table on this shard that are cloned
+
+**cloning**: Number of repositories in gitserver_repos table on this shard that cloning
+
+**failed_fetch**: Number of repositories in gitserver_repos table on this shard where last_error is set
+
+**not_cloned**: Number of repositories in gitserver_repos table on this shard that are not cloned yet
+
+**shard_id**: ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.
+
+**total**: Number of repositories in gitserver_repos table on this shard
 
 # Table "public.global_state"
 ```
@@ -1798,6 +1859,7 @@ Stores the retention policy of code intellience data for a repository.
  indexer_version        | text                     |           |          | 
  queued_at              | timestamp with time zone |           |          | 
  cancel                 | boolean                  |           | not null | false
+ uncompressed_size      | bigint                   |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2369,12 +2431,30 @@ Referenced by:
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
+    trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete()
+    trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
+    trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_kvps"
+```
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ repo_id | integer |           | not null | 
+ key     | text    |           | not null | 
+ value   | text    |           |          | 
+Indexes:
+    "repo_kvps_pkey" PRIMARY KEY, btree (repo_id, key) INCLUDE (value)
+Foreign-key constraints:
+    "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
@@ -2406,6 +2486,31 @@ Indexes:
     "repo_permissions_unrestricted_true_idx" btree (unrestricted) WHERE unrestricted
 
 ```
+
+# Table "public.repo_statistics"
+```
+    Column    |  Type  | Collation | Nullable | Default 
+--------------+--------+-----------+----------+---------
+ total        | bigint |           | not null | 0
+ soft_deleted | bigint |           | not null | 0
+ not_cloned   | bigint |           | not null | 0
+ cloning      | bigint |           | not null | 0
+ cloned       | bigint |           | not null | 0
+ failed_fetch | bigint |           | not null | 0
+
+```
+
+**cloned**: Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver
+
+**cloning**: Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver
+
+**failed_fetch**: Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table
+
+**not_cloned**: Number of repositories that are NOT soft-deleted and not blocked and not cloned by gitserver
+
+**soft_deleted**: Number of repositories that are soft-deleted and not blocked
+
+**total**: Number of repositories that are not soft-deleted and not blocked
 
 # Table "public.saved_searches"
 ```
@@ -2759,6 +2864,7 @@ Check constraints:
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
+    TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -3114,7 +3220,8 @@ Foreign-key constraints:
     u.associated_index_id,
     u.expired,
     u.last_retention_scan_at,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.uncompressed_size
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
