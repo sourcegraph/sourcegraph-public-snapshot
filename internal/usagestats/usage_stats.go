@@ -204,68 +204,37 @@ func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageS
 		}
 	}
 
-	daus, err := activeUsers(ctx, db, database.Daily, dayPeriods)
+	usage, err := activeUsers(ctx, db, dayPeriods, weekPeriods, monthPeriods)
+	// daus, err := activeUsers(ctx, db, database.Daily, dayPeriods)
 	if err != nil {
 		return nil, err
 	}
-	waus, err := activeUsers(ctx, db, database.Weekly, weekPeriods)
-	if err != nil {
-		return nil, err
-	}
-	maus, err := activeUsers(ctx, db, database.Monthly, monthPeriods)
-	if err != nil {
-		return nil, err
-	}
-	return &types.SiteUsageStatistics{
-		DAUs: daus,
-		WAUs: waus,
-		MAUs: maus,
-	}, nil
+	// waus, err := activeUsers(ctx, db, database.Weekly, weekPeriods)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// maus, err := activeUsers(ctx, db, database.Monthly, monthPeriods)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	return usage, nil
 }
 
 // activeUsers returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
-func activeUsers(ctx context.Context, db database.DB, periodType database.PeriodType, periods int) ([]*types.SiteActivityPeriod, error) {
-	if periods == 0 {
-		return []*types.SiteActivityPeriod{}, nil
+func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, monthPeriods int) (*types.SiteUsageStatistics, error) {
+	if dayPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 {
+		return &types.SiteUsageStatistics{
+			DAUs: []*types.SiteActivityPeriod{},
+			WAUs: []*types.SiteActivityPeriod{},
+			MAUs: []*types.SiteActivityPeriod{},
+		}, nil
 	}
 
-	uniqueUsers, err := db.EventLogs().CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &database.CountUniqueUsersOptions{
-		ExcludeSystemUsers: true,
+	return db.EventLogs().SiteUsageMultiplePeriods(ctx, timeNow().UTC(), dayPeriods, weekPeriods, monthPeriods, &database.CountUniqueUsersOptions{
+		ExcludeSystemUsers:    true,
+		ExcludeNonActiveUsers: true,
 	})
-	if err != nil {
-		return nil, err
-	}
-	registeredUniqueUsers, err := db.EventLogs().CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &database.CountUniqueUsersOptions{
-		RegisteredOnly:     true,
-		ExcludeSystemUsers: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-	integrationUniqueUsers, err := db.EventLogs().CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &database.CountUniqueUsersOptions{
-		IntegrationOnly:    true,
-		ExcludeSystemUsers: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var activeUsers []*types.SiteActivityPeriod
-	for i, u := range uniqueUsers {
-		// Pull out data from each period. Note that CountUniqueUsersPerPeriod will
-		// always return a slice of length `periods` due to the generate_series in
-		// the base query, so it is safe to read the following indices.
-		actPer := &types.SiteActivityPeriod{
-			StartTime:            u.Start,
-			UserCount:            int32(u.Count),
-			RegisteredUserCount:  int32(registeredUniqueUsers[i].Count),
-			AnonymousUserCount:   int32(u.Count - registeredUniqueUsers[i].Count),
-			IntegrationUserCount: int32(integrationUniqueUsers[i].Count),
-		}
-		activeUsers = append(activeUsers, actPer)
-	}
-
-	return activeUsers, nil
 }
 
 func minIntOrZero(a, b int) int {
