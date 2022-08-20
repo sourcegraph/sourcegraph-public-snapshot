@@ -59,7 +59,7 @@ func Upgrade(
 		if err != nil {
 			return err
 		}
-		if err := runUpgrade(ctx, runnerFactory, plan, skipVersionCheckFlag.Get(cmd)); err != nil {
+		if err := runUpgrade(ctx, runnerFactory, plan, skipVersionCheckFlag.Get(cmd), registerMigrators, out); err != nil {
 			return err
 		}
 
