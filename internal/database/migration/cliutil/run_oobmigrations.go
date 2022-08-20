@@ -30,6 +30,11 @@ func RunOutOfBandMigrations(
 		Required: false,
 	}
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		var ids []int
+		if id := idFlag.Get(cmd); id != 0 {
+			ids = append(ids, id)
+		}
+
 		r, err := runnerFactory(ctx, schemas.SchemaNames)
 		if err != nil {
 			return err
@@ -50,24 +55,24 @@ func RunOutOfBandMigrations(
 		}
 
 		getMigrations := func() ([]oobmigration.Migration, error) {
-			id := idFlag.Get(cmd)
-			if id == 0 {
-				migrations, err := store.List(ctx)
+			if len(ids) == 0 {
+				return store.List(ctx)
+			}
+
+			migrations := make([]oobmigration.Migration, 0, len(ids))
+			for _, id := range ids {
+				migration, ok, err := store.GetByID(ctx, id)
 				if err != nil {
 					return nil, err
 				}
+				if !ok {
+					return nil, errors.Newf("unknown migration id %d", id)
+				}
 
-				return migrations, nil
+				migrations = append(migrations, migration)
 			}
 
-			migration, ok, err := store.GetByID(ctx, id)
-			if err != nil {
-				return nil, err
-			}
-			if !ok {
-				return nil, errors.Newf("unknown migration id %d", id)
-			}
-			return []oobmigration.Migration{migration}, nil
+			return migrations, nil
 		}
 
 		go runner.Start()
