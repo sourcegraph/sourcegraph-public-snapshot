@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 )
 
-type registerMigratorsFromConfAndStoreFactoryFunc func(
+type registerMigratorsUsingConfAndStoreFactoryFunc func(
 	ctx context.Context,
 	db database.DB,
 	runner *oobmigration.Runner,
@@ -17,7 +17,7 @@ type registerMigratorsFromConfAndStoreFactoryFunc func(
 	storeFactory migrations.StoreFactory,
 ) error
 
-func composeRegisterMigratorsFuncs(fnsFromConfAndStoreFactory ...registerMigratorsFromConfAndStoreFactoryFunc) func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc {
+func composeRegisterMigratorsFuncs(fnsFromConfAndStoreFactory ...registerMigratorsUsingConfAndStoreFactoryFunc) func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc {
 	return func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc {
 		return func(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 			conf, err := newStaticConf(ctx, db)
