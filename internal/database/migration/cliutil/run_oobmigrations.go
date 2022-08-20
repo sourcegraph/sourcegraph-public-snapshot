@@ -141,16 +141,3 @@ func (r basestoreExtractor) Store(ctx context.Context, schemaName string) (*base
 
 	return basestore.NewWithHandle(basestore.NewHandleWithDB(shareableStore, sql.TxOptions{})), nil
 }
-
-type basestoreExtractor struct {
-	runner Runner
-}
-
-func (r basestoreExtractor) Store(ctx context.Context, schemaName string) (*basestore.Store, error) {
-	shareableStore, err := extractDB(ctx, r.runner, schemaName)
-	if err != nil {
-		return nil, err
-	}
-
-	return basestore.NewWithHandle(basestore.NewHandleWithDB(shareableStore, sql.TxOptions{})), nil
-}
