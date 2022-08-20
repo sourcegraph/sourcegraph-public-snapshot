@@ -39,6 +39,7 @@ func RunOutOfBandMigrations(
 		if err != nil {
 			return err
 		}
+		if err := func() error {
 		db, err := extractDatabase(ctx, r)
 		if err != nil {
 			return err
@@ -101,6 +102,11 @@ func RunOutOfBandMigrations(
 		}
 
 		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrations complete"))
+		return nil
+		}(); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
