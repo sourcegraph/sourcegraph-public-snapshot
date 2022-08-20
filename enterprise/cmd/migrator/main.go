@@ -23,7 +23,7 @@ func main() {
 
 	logger := log.Scoped("migrator", "migrator enterprise edition")
 
-	if err := shared.Start(logger, migrations.RegisterEnterpriseMigrationsFromConfig); err != nil {
+	if err := shared.Start(logger, migrations.RegisterEnterpriseMigratorsUsingConfAndStoreFactory); err != nil {
 		logger.Fatal(err.Error())
 	}
 }

@@ -30,7 +30,7 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceTTY:   true,
 })
 
-func Start(logger log.Logger, registerEnterpriseMigrations registerMigratorsFromConfFunc) error {
+func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationContext := &observation.Context{
 		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -73,8 +73,8 @@ func Start(logger log.Logger, registerEnterpriseMigrations registerMigratorsFrom
 			cliutil.AddLog(logger, appName, newRunner, outputFactory),
 			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory),
 			cliutil.RunOutOfBandMigrations(logger, appName, newRunner, outputFactory, composeRegisterMigratorsFuncs(
-				ossmigrations.RegisterOSSMigrationsFromConfig,
-				registerEnterpriseMigrations,
+				ossmigrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
+				registerEnterpriseMigrators,
 			)),
 		},
 	}
