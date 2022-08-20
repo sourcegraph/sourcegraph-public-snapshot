@@ -7,11 +7,18 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryWithSchemas, outFactory OutputFactory) *cli.Command {
+func Upgrade(
+	logger log.Logger,
+	commandName string,
+	runnerFactory RunnerFactoryWithSchemas,
+	outFactory OutputFactory,
+	registerMigrators func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
 		Usage:    "The source (current) instance version. Must be of the form `v{Major}.{Minor}`.",

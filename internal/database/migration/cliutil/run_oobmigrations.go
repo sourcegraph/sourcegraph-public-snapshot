@@ -23,7 +23,7 @@ func RunOutOfBandMigrations(
 	commandName string,
 	runnerFactory RunnerFactory,
 	outFactory OutputFactory,
-	registerMigrationsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 ) *cli.Command {
 	idFlag := &cli.IntFlag{
 		Name:     "id",
@@ -39,13 +39,13 @@ func RunOutOfBandMigrations(
 		if err != nil {
 			return err
 		}
-		registerMigrations := registerMigrationsWithStore(basestoreExtractor{r})
+		registerMigrators := registerMigratorsWithStore(basestoreExtractor{r})
 
 		var ids []int
 		if id := idFlag.Get(cmd); id != 0 {
 			ids = append(ids, id)
 		}
-		if err := runOutOfBandMigrations(ctx, db, registerMigrations, out, ids); err != nil {
+		if err := runOutOfBandMigrations(ctx, db, registerMigrators, out, ids); err != nil {
 			return err
 		}
 
