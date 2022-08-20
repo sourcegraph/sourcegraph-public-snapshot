@@ -40,7 +40,6 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 	keyring := keyring.Default()
 
 	return registerEnterpriseMigrators(runner, false, dependencies{
-	return registerEnterpriseMigrators(runner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
