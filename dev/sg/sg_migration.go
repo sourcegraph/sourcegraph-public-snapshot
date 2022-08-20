@@ -191,7 +191,6 @@ sg migration squash
 			describeCommand,
 			driftCommand,
 			addLogCommand,
-			upgradeCommand,
 			leavesCommand,
 			squashCommand,
 			squashAllCommand,
