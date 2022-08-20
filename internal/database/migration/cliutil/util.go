@@ -2,6 +2,7 @@ package cliutil
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"strconv"
 	"time"
@@ -117,7 +118,16 @@ func getPivilegedModeFromFlags(cmd *cli.Context, out *output.Output, unprivilege
 }
 
 func extractDatabase(ctx context.Context, r Runner) (database.DB, error) {
-	store, err := r.Store(ctx, "frontend")
+	db, err := extractDB(ctx, r, "frontend")
+	if err != nil {
+		return nil, err
+	}
+
+	return database.NewDB(log.Scoped("migrator", ""), db), nil
+}
+
+func extractDB(ctx context.Context, r Runner, schemaName string) (*sql.DB, error) {
+	store, err := r.Store(ctx, schemaName)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +141,7 @@ func extractDatabase(ctx context.Context, r Runner) (database.DB, error) {
 		return nil, errors.New("store does not support direct database handle access")
 	}
 
-	return database.NewDB(log.Scoped("migrator", ""), shareableStore), nil
+	return shareableStore, nil
 }
 
 var migratorObservationContext = &observation.TestContext
