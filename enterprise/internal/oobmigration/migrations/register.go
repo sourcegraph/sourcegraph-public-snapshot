@@ -36,7 +36,7 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 
 	keyring := keyring.Default()
 
-	return registerEnterpriseMigrators(runner, dependencies{
+	return registerEnterpriseMigrators(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
@@ -68,7 +68,7 @@ func RegisterEnterpriseMigratorsUsingConfAndStoreFactory(
 		keys = &keyring.Ring{}
 	}
 
-	return registerEnterpriseMigrators(runner, dependencies{
+	return registerEnterpriseMigrators(runner, true, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: codeIntelStore,
 		insightsStore:  insightsStore,
@@ -83,7 +83,7 @@ type dependencies struct {
 	keyring        *keyring.Ring
 }
 
-func registerEnterpriseMigrators(runner *oobmigration.Runner, deps dependencies) error {
+func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps dependencies) error {
 	var insightsMigrator migrations.TaggedMigrator
 	if internalInsights.IsEnabled() {
 		insightsMigrator = insights.NewMigrator(deps.store, deps.insightsStore)
@@ -91,7 +91,7 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, deps dependencies)
 		insightsMigrator = insights.NewMigratorNoOp()
 	}
 
-	return migrations.RegisterAll(runner, []migrations.TaggedMigrator{
+	return migrations.RegisterAll(runner, noDelay, []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
 		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
