@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -16,7 +17,7 @@ func Upgrade(
 	commandName string,
 	runnerFactory RunnerFactoryWithSchemas,
 	outFactory OutputFactory,
-	registerMigrators oobmigration.RegisterMigratorsFunc,
+	registerMigrators func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 ) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",

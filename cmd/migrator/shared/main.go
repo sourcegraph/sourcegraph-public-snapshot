@@ -61,7 +61,7 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 
 	registerMigrators := composeRegisterMigratorsFuncs(
 		ossmigrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
-		registerEnterpriseMigrations,
+		registerEnterpriseMigrators,
 	)
 
 	command := &cli.App{
