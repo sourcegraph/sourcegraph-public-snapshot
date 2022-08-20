@@ -15,7 +15,7 @@ import (
 func RegisterOSSMigrations(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 	keyring := keyring.Default()
 
-	return registerOSSMigrations(runner, migratorDependencies{
+	return registerOSSMigrations(runner, false, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
 		keyring: &keyring,
 	})
@@ -30,7 +30,7 @@ func RegisterOSSMigrationsFromConfig(ctx context.Context, db database.DB, runner
 		keys = &keyring.Ring{}
 	}
 
-	return registerOSSMigrations(runner, migratorDependencies{
+	return registerOSSMigrations(runner, true, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
 		keyring: keys,
 	})
@@ -41,8 +41,8 @@ type migratorDependencies struct {
 	keyring *keyring.Ring
 }
 
-func registerOSSMigrations(runner *oobmigration.Runner, deps migratorDependencies) error {
-	return RegisterAll(runner, []TaggedMigrator{
+func registerOSSMigrations(runner *oobmigration.Runner, noDelay bool, deps migratorDependencies) error {
+	return RegisterAll(runner, noDelay, []TaggedMigrator{
 		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
 	})
 }
@@ -53,13 +53,14 @@ type TaggedMigrator interface {
 	Interval() time.Duration
 }
 
-func RegisterAll(runner *oobmigration.Runner, migrators []TaggedMigrator) error {
+func RegisterAll(runner *oobmigration.Runner, noDelay bool, migrators []TaggedMigrator) error {
 	for _, migrator := range migrators {
-		if err := runner.Register(
-			migrator.ID(),
-			migrator,
-			oobmigration.MigratorOptions{Interval: migrator.Interval()},
-		); err != nil {
+		options := oobmigration.MigratorOptions{Interval: migrator.Interval()}
+		if noDelay {
+			options.Interval = time.Nanosecond
+		}
+
+		if err := runner.Register(migrator.ID(), migrator, options); err != nil {
 			return err
 		}
 	}

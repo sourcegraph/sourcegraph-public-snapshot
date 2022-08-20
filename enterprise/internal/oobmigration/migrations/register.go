@@ -39,7 +39,7 @@ func RegisterEnterpriseMigrations(ctx context.Context, db database.DB, runner *o
 
 	keyring := keyring.Default()
 
-	return registerEnterpriseMigrations(runner, dependencies{
+	return registerEnterpriseMigrations(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
@@ -79,7 +79,7 @@ func RegisterEnterpriseMigrationsFromConfig(ctx context.Context, db database.DB,
 		keys = &keyring.Ring{}
 	}
 
-	return registerEnterpriseMigrations(runner, dependencies{
+	return registerEnterpriseMigrations(runner, true, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
@@ -94,7 +94,7 @@ type dependencies struct {
 	keyring        *keyring.Ring
 }
 
-func registerEnterpriseMigrations(runner *oobmigration.Runner, deps dependencies) error {
+func registerEnterpriseMigrations(runner *oobmigration.Runner, noDelay bool, deps dependencies) error {
 	var insightsMigrator migrations.TaggedMigrator
 	if deps.insightsStore != nil {
 		insightsMigrator = insights.NewMigrator(deps.store, deps.insightsStore)
@@ -102,7 +102,7 @@ func registerEnterpriseMigrations(runner *oobmigration.Runner, deps dependencies
 		insightsMigrator = insights.NewMigratorNoOp()
 	}
 
-	return migrations.RegisterAll(runner, []migrations.TaggedMigrator{
+	return migrations.RegisterAll(runner, noDelay, []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
 		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
