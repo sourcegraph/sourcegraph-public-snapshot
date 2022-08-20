@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -40,62 +41,14 @@ func RunOutOfBandMigrations(
 		}
 		registerMigrations := registerMigrationsWithStore(basestoreExtractor{r})
 
-		store := oobmigration.NewStoreWithDB(db)
-		runner := outOfBandMigrationRunnerWithStore(store)
-		if err := runner.SynchronizeMetadata(ctx); err != nil {
+		var ids []int
+		if id := idFlag.Get(cmd); id != 0 {
+			ids = append(ids, id)
+		}
+		if err := runOutOfBandMigrations(ctx, db, registerMigrations, out, ids); err != nil {
 			return err
 		}
-		if err := registerMigrations(ctx, db, runner); err != nil {
-			return err
-		}
 
-		getMigrations := func() ([]oobmigration.Migration, error) {
-			id := idFlag.Get(cmd)
-			if id == 0 {
-				migrations, err := store.List(ctx)
-				if err != nil {
-					return nil, err
-				}
-
-				return migrations, nil
-			}
-
-			migration, ok, err := store.GetByID(ctx, id)
-			if err != nil {
-				return nil, err
-			}
-			if !ok {
-				return nil, errors.Newf("unknown migration id %d", id)
-			}
-			return []oobmigration.Migration{migration}, nil
-		}
-
-		go runner.Start()
-		defer runner.Stop()
-
-		for range time.NewTicker(time.Second).C {
-			migrations, err := getMigrations()
-			if err != nil {
-				return err
-			}
-
-			sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
-
-			incomplete := migrations[:0]
-			for _, m := range migrations {
-				if !m.Complete() {
-					incomplete = append(incomplete, m)
-				}
-			}
-			if len(incomplete) == 0 {
-				break
-			}
-			for _, m := range incomplete {
-				out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Migration #%d is at %.2f%%", m.ID, m.Progress*100))
-			}
-		}
-
-		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrations complete"))
 		return nil
 	})
 
@@ -108,6 +61,72 @@ func RunOutOfBandMigrations(
 			idFlag,
 		},
 	}
+}
+
+func runOutOfBandMigrations(
+	ctx context.Context,
+	db database.DB,
+	registerMigrations oobmigration.RegisterMigratorsFunc,
+	out *output.Output,
+	ids []int,
+) error {
+	store := oobmigration.NewStoreWithDB(db)
+	runner := outOfBandMigrationRunnerWithStore(store)
+	if err := runner.SynchronizeMetadata(ctx); err != nil {
+		return err
+	}
+	if err := registerMigrations(ctx, db, runner); err != nil {
+		return err
+	}
+
+	getMigrations := func() ([]oobmigration.Migration, error) {
+		if len(ids) == 0 {
+			return store.List(ctx)
+		}
+
+		migrations := make([]oobmigration.Migration, 0, len(ids))
+		for _, id := range ids {
+			migration, ok, err := store.GetByID(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, errors.Newf("unknown migration id %d", id)
+			}
+
+			migrations = append(migrations, migration)
+		}
+
+		return migrations, nil
+	}
+
+	go runner.Start()
+	defer runner.Stop()
+
+	for range time.NewTicker(time.Second).C {
+		migrations, err := getMigrations()
+		if err != nil {
+			return err
+		}
+
+		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
+
+		incomplete := migrations[:0]
+		for _, m := range migrations {
+			if !m.Complete() {
+				incomplete = append(incomplete, m)
+			}
+		}
+		if len(incomplete) == 0 {
+			break
+		}
+		for _, m := range incomplete {
+			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Migration #%d is at %.2f%%", m.ID, m.Progress*100))
+		}
+	}
+
+	out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrations complete"))
+	return nil
 }
 
 type basestoreExtractor struct {
