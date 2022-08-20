@@ -102,9 +102,9 @@ func runOutOfBandMigrations(
 
 	if len(ids) == 0 {
 		go runner.Start()
-  } else {
-  	go runner.StartPartial(ids)
-  }
+	} else {
+		go runner.StartPartial(ids)
+	}
 	defer runner.Stop()
 
 	for range time.NewTicker(time.Second).C {
