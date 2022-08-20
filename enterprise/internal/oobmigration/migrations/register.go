@@ -86,7 +86,6 @@ func RegisterEnterpriseMigratorsUsingConfAndStoreFactory(
 	}
 
 	return registerEnterpriseMigrators(runner, true, dependencies{
-	return registerEnterpriseMigrators(runner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
