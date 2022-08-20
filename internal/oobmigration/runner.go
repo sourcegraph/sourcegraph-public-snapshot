@@ -180,11 +180,24 @@ func wrapMigrationErrors(errs ...error) error {
 // Start runs registered migrators on a loop until they complete. This method will periodically
 // re-read from the database in order to refresh its current view of the migrations.
 func (r *Runner) Start() {
+	r.StartPartial(nil)
+}
+
+// StartPartial runs registered migrators matching one of the given identifiers on a loop until
+// they complete. This method will periodically re-read from the database in order to refresh its
+// current view of the migrations. When the given set of identifiers is empty, all migrations in
+// the database with a registered migrator will be considered active.
+func (r *Runner) StartPartial(ids []int) {
 	defer close(r.finished)
 
 	ctx := r.ctx
 	var wg sync.WaitGroup
 	migrationProcesses := map[int]chan Migration{}
+
+	idMap := make(map[int]struct{}, len(ids))
+	for _, id := range ids {
+		idMap[id] = struct{}{}
+	}
 
 	// Periodically read the complete set of out-of-band migrations from the database
 	for migrations := range r.listMigrations(ctx) {
@@ -192,6 +205,9 @@ func (r *Runner) Start() {
 			id := migrations[i].ID
 			migrator, ok := r.migrators[id]
 			if !ok {
+				continue
+			}
+			if _, ok := idMap[id]; !ok && len(ids) != 0 {
 				continue
 			}
 
