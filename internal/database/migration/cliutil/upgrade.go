@@ -11,7 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryWithSchemas, outFactory OutputFactory) *cli.Command {
+func Upgrade(
+	logger log.Logger,
+	commandName string,
+	runnerFactory RunnerFactoryWithSchemas,
+	outFactory OutputFactory,
+	registerMigrators oobmigration.RegisterMigratorsFunc,
+) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
 		Usage:    "The source (current) instance version. Must be of the form `v{Major}.{Minor}`.",

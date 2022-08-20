@@ -19,7 +19,7 @@ func RunOutOfBandMigrations(
 	commandName string,
 	runnerFactory RunnerFactory,
 	outFactory OutputFactory,
-	register oobmigration.RegisterMigratorsFunc,
+	registerMigrators oobmigration.RegisterMigratorsFunc,
 ) *cli.Command {
 	idFlag := &cli.IntFlag{
 		Name:     "id",
@@ -41,7 +41,7 @@ func RunOutOfBandMigrations(
 		if err := runner.SynchronizeMetadata(ctx); err != nil {
 			return err
 		}
-		if err := register(ctx, db, runner); err != nil {
+		if err := registerMigrators(ctx, db, runner); err != nil {
 			return err
 		}
 
