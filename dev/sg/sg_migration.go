@@ -118,7 +118,7 @@ var (
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
 	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, localGitExpectedSchemaFactory)
 	addLogCommand   = cliutil.AddLog(logger, "sg migration", makeRunner, outputFactory)
-	upgradeCommand  = cliutil.Upgrade(logger, "sg migration", makeRunnerWithSchemas, outputFactory)
+	upgradeCommand  = cliutil.Upgrade(logger, "sg migration", makeRunnerWithSchemas, outputFactory, nil)
 
 	leavesCommand = &cli.Command{
 		Name:        "leaves",
