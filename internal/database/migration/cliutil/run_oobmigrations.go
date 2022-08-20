@@ -2,12 +2,14 @@ package cliutil
 
 import (
 	"context"
+	"database/sql"
 	"sort"
 	"time"
 
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
@@ -20,7 +22,7 @@ func RunOutOfBandMigrations(
 	commandName string,
 	runnerFactory RunnerFactory,
 	outFactory OutputFactory,
-	register func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+	registerMigrationsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 ) *cli.Command {
 	idFlag := &cli.IntFlag{
 		Name:     "id",
@@ -36,13 +38,14 @@ func RunOutOfBandMigrations(
 		if err != nil {
 			return err
 		}
+		registerMigrations := registerMigrationsWithStore(basestoreExtractor{r})
 
 		store := oobmigration.NewStoreWithDB(db)
 		runner := outOfBandMigrationRunnerWithStore(store)
 		if err := runner.SynchronizeMetadata(ctx); err != nil {
 			return err
 		}
-		if err := register(nil)(ctx, db, runner); err != nil {
+		if err := registerMigrations(ctx, db, runner); err != nil {
 			return err
 		}
 
@@ -105,4 +108,17 @@ func RunOutOfBandMigrations(
 			idFlag,
 		},
 	}
+}
+
+type basestoreExtractor struct {
+	runner Runner
+}
+
+func (r basestoreExtractor) Store(ctx context.Context, schemaName string) (*basestore.Store, error) {
+	shareableStore, err := extractDB(ctx, r.runner, schemaName)
+	if err != nil {
+		return nil, err
+	}
+
+	return basestore.NewWithHandle(basestore.NewHandleWithDB(shareableStore, sql.TxOptions{})), nil
 }
