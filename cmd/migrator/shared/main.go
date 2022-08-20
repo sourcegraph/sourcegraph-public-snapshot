@@ -30,7 +30,7 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceTTY:   true,
 })
 
-func Start(logger log.Logger, registerEnterpriseMigrations registerMigratorsFromConfFunc) error {
+func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationContext := &observation.Context{
 		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -60,7 +60,7 @@ func Start(logger log.Logger, registerEnterpriseMigrations registerMigratorsFrom
 	}
 
 	registerMigrators := composeRegisterMigratorsFuncs(
-		ossmigrations.RegisterOSSMigrationsFromConfig,
+		ossmigrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
 		registerEnterpriseMigrations,
 	)
 
