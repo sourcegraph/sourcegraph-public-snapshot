@@ -12,16 +12,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/batches"
 )
 
-func RegisterOSSMigrations(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
+func RegisterOSSMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 	keyring := keyring.Default()
 
-	return registerOSSMigrations(runner, migratorDependencies{
+	return registerOSSMigrators(runner, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
 		keyring: &keyring,
 	})
 }
 
-func RegisterOSSMigrationsFromConfig(ctx context.Context, db database.DB, runner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
+type StoreFactory interface {
+	Store(ctx context.Context, schemaName string) (*basestore.Store, error)
+}
+
+func RegisterOSSMigratorsUsingConfAndStoreFactory(
+	ctx context.Context,
+	db database.DB,
+	runner *oobmigration.Runner,
+	conf conftypes.UnifiedQuerier,
+	storeFactory StoreFactory,
+) error {
 	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {
 		return err
@@ -30,7 +40,7 @@ func RegisterOSSMigrationsFromConfig(ctx context.Context, db database.DB, runner
 		keys = &keyring.Ring{}
 	}
 
-	return registerOSSMigrations(runner, migratorDependencies{
+	return registerOSSMigrators(runner, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
 		keyring: keys,
 	})
@@ -41,7 +51,7 @@ type migratorDependencies struct {
 	keyring *keyring.Ring
 }
 
-func registerOSSMigrations(runner *oobmigration.Runner, deps migratorDependencies) error {
+func registerOSSMigrators(runner *oobmigration.Runner, deps migratorDependencies) error {
 	return RegisterAll(runner, []TaggedMigrator{
 		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
 	})

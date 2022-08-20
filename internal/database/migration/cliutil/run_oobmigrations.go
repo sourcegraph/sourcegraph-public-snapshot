@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -19,7 +20,7 @@ func RunOutOfBandMigrations(
 	commandName string,
 	runnerFactory RunnerFactory,
 	outFactory OutputFactory,
-	register oobmigration.RegisterMigratorsFunc,
+	register func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 ) *cli.Command {
 	idFlag := &cli.IntFlag{
 		Name:     "id",
@@ -41,7 +42,7 @@ func RunOutOfBandMigrations(
 		if err := runner.SynchronizeMetadata(ctx); err != nil {
 			return err
 		}
-		if err := register(ctx, db, runner); err != nil {
+		if err := register(nil)(ctx, db, runner); err != nil {
 			return err
 		}
 
