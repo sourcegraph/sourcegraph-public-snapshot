@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func RegisterEnterpriseMigrations(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
+func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase()
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func RegisterEnterpriseMigrations(ctx context.Context, db database.DB, runner *o
 
 	keyring := keyring.Default()
 
-	return registerEnterpriseMigrations(runner, dependencies{
+	return registerEnterpriseMigrators(runner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
@@ -47,7 +47,13 @@ func RegisterEnterpriseMigrations(ctx context.Context, db database.DB, runner *o
 	})
 }
 
-func RegisterEnterpriseMigrationsFromConfig(ctx context.Context, db database.DB, runner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
+func RegisterEnterpriseMigratorsUsingConfAndStoreFactory(
+	ctx context.Context,
+	db database.DB,
+	runner *oobmigration.Runner,
+	conf conftypes.UnifiedQuerier,
+	storeFactory migrations.StoreFactory,
+) error {
 	codeIntelDB, err := connections.EnsureNewCodeIntelDB(
 		conf.ServiceConnections().CodeIntelPostgresDSN,
 		"migrator",
@@ -79,7 +85,7 @@ func RegisterEnterpriseMigrationsFromConfig(ctx context.Context, db database.DB,
 		keys = &keyring.Ring{}
 	}
 
-	return registerEnterpriseMigrations(runner, dependencies{
+	return registerEnterpriseMigrators(runner, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
@@ -94,7 +100,7 @@ type dependencies struct {
 	keyring        *keyring.Ring
 }
 
-func registerEnterpriseMigrations(runner *oobmigration.Runner, deps dependencies) error {
+func registerEnterpriseMigrators(runner *oobmigration.Runner, deps dependencies) error {
 	var insightsMigrator migrations.TaggedMigrator
 	if deps.insightsStore != nil {
 		insightsMigrator = insights.NewMigrator(deps.store, deps.insightsStore)
