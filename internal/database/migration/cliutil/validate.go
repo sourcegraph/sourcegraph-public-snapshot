@@ -41,7 +41,7 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		out.WriteLine(output.Emoji(output.EmojiSuccess, "schema okay!"))
 
 		if !skipOutOfBandMigrationsFlag.Get(cmd) {
-			db, err := extractDatabase(ctx, r, "frontend")
+			db, err := extractDatabase(ctx, r)
 			if err != nil {
 				return err
 			}
