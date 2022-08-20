@@ -93,7 +93,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			return err
 		}
 
-		db, err := extractFrontendDatabase(ctx, r)
+		db, err := extractDatabase(ctx, r)
 		if err != nil {
 			return err
 		}

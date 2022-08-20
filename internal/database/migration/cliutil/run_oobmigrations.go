@@ -34,7 +34,7 @@ func RunOutOfBandMigrations(
 		if err != nil {
 			return err
 		}
-		db, err := extractFrontendDatabase(ctx, r)
+		db, err := extractDatabase(ctx, r)
 		if err != nil {
 			return err
 		}

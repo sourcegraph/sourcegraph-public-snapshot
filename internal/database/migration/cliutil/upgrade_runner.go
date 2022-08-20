@@ -61,7 +61,7 @@ func runUpgrade(ctx context.Context, runnerFactory RunnerFactoryWithSchemas, pla
 }
 
 func checkUpgradeVersion(ctx context.Context, r Runner, plan upgradePlan) error {
-	db, err := extractFrontendDatabase(ctx, r)
+	db, err := extractDatabase(ctx, r)
 	if err != nil {
 		return err
 	}

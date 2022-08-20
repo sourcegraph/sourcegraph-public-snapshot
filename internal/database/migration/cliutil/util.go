@@ -117,12 +117,8 @@ func getPivilegedModeFromFlags(cmd *cli.Context, out *output.Output, unprivilege
 	return runner.ApplyPrivilegedMigrations, nil
 }
 
-func extractFrontendDatabase(ctx context.Context, r Runner) (database.DB, error) {
-	return extractDatabase(ctx, r, "frontend")
-}
-
-func extractDatabase(ctx context.Context, r Runner, schemaName string) (database.DB, error) {
-	db, err := extractDB(ctx, r, schemaName)
+func extractDatabase(ctx context.Context, r Runner) (database.DB, error) {
+	db, err := extractDB(ctx, r, "frontend")
 	if err != nil {
 		return nil, err
 	}
