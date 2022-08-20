@@ -125,12 +125,34 @@ func runOutOfBandMigrations(
 			break
 		}
 		for _, m := range incomplete {
-			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Migration #%d is at %.2f%%", m.ID, m.Progress*100))
+			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Out of band migration #%d is at %.2f%%", m.ID, m.Progress*100))
 		}
 	}
 
-	out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrations complete"))
+	out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
 	return nil
+}
+
+func getMigrations(ctx context.Context, store *oobmigration.Store, ids []int) ([]oobmigration.Migration, error) {
+	if len(ids) == 0 {
+		return store.List(ctx)
+	}
+
+	migrations := make([]oobmigration.Migration, 0, len(ids))
+	for _, id := range ids {
+		migration, ok, err := store.GetByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			return nil, errors.Newf("unknown migration id %d", id)
+		}
+
+		migrations = append(migrations, migration)
+	}
+	sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
+
+	return migrations, nil
 }
 
 type basestoreExtractor struct {
