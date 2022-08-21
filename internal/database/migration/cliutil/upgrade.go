@@ -34,6 +34,11 @@ func Upgrade(
 		Usage:    "Skip validation of the instance's current version.",
 		Required: false,
 	}
+	dryRunFlag := &cli.BoolFlag{
+		Name:     "dry-run",
+		Usage:    "Print the upgrade plan but do not execute it.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		from, ok := oobmigration.NewVersionFromString(fromFlag.Get(cmd))
@@ -59,7 +64,16 @@ func Upgrade(
 		if err != nil {
 			return err
 		}
-		if err := runUpgrade(ctx, runnerFactory, plan, skipVersionCheckFlag.Get(cmd), registerMigrators, out); err != nil {
+
+		if err := runUpgrade(
+			ctx,
+			runnerFactory,
+			plan,
+			skipVersionCheckFlag.Get(cmd),
+			dryRunFlag.Get(cmd),
+			registerMigrators,
+			out,
+		); err != nil {
 			return err
 		}
 
@@ -75,6 +89,7 @@ func Upgrade(
 			fromFlag,
 			toFlag,
 			skipVersionCheckFlag,
+			dryRunFlag,
 		},
 	}
 }

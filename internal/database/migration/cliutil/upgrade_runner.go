@@ -18,6 +18,7 @@ func runUpgrade(
 	runnerFactory RunnerFactoryWithSchemas,
 	plan upgradePlan,
 	skipVersionCheck bool,
+	dryRun bool,
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 ) error {
@@ -70,23 +71,32 @@ func runUpgrade(
 		}
 
 		if len(step.outOfBandMigrationIDs) > 0 {
-			if err := runOutOfBandMigrations(ctx, db, registerMigrators, out, step.outOfBandMigrationIDs); err != nil {
+			if err := runOutOfBandMigrations(
+				ctx,
+				db,
+				dryRun,
+				registerMigrators,
+				out,
+				step.outOfBandMigrationIDs,
+			); err != nil {
 				return err
 			}
 		}
 
 		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schema migrations"))
 
-		if err := r.Run(ctx, runner.Options{
-			Operations:           operations,
-			PrivilegedMode:       runner.ApplyPrivilegedMigrations,
-			PrivilegedHash:       "",
-			IgnoreSingleDirtyLog: false,
-		}); err != nil {
-			return err
-		}
+		if !dryRun {
+			if err := r.Run(ctx, runner.Options{
+				Operations:           operations,
+				PrivilegedMode:       runner.ApplyPrivilegedMigrations,
+				PrivilegedHash:       "",
+				IgnoreSingleDirtyLog: false,
+			}); err != nil {
+				return err
+			}
 
-		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Schema migrations complete"))
+			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Schema migrations complete"))
+		}
 	}
 
 	return nil
