@@ -6,6 +6,8 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 25
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
 - id: 2
   team: campaigns
   component: frontend-db.authenticators
@@ -22,6 +24,8 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 26
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
 - id: 5
   team: code-intelligence
   component: codeintel-db.lsif_data_references
@@ -30,6 +34,8 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 26
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
 - id: 7
   team: code-intelligence
   component: codeintel-db.lsif_data_documents
@@ -38,6 +44,8 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 27
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
 - id: 12
   team: apidocs
   component: codeintel-db.lsif_data_documentation_search
@@ -46,6 +54,8 @@
   is_enterprise: false
   introduced_version_major: 3
   introduced_version_minor: 32
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
 - id: 13
   team: batch-changes
   component: frontend-db.external_services
