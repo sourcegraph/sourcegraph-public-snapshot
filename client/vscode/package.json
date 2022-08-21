@@ -116,7 +116,7 @@
             "string"
           ],
           "default": "",
-          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
+          "description": "The access token to query the Sourcegraph API. Create a new access token at https://sourcegraph.com/users/<sourcegraph-username>/settings/tokens"
         },
         "sourcegraph.remoteUrlReplacements": {
           "type": [
