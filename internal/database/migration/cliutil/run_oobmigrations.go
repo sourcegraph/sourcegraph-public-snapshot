@@ -30,6 +30,7 @@ func RunOutOfBandMigrations(
 		Usage:    "The target migration to run. If not supplied, all migrations are run.",
 		Required: false,
 	}
+
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		r, err := runnerFactory(ctx, schemas.SchemaNames)
 		if err != nil {
@@ -45,7 +46,14 @@ func RunOutOfBandMigrations(
 		if id := idFlag.Get(cmd); id != 0 {
 			ids = append(ids, id)
 		}
-		if err := runOutOfBandMigrations(ctx, db, registerMigrators, out, ids); err != nil {
+		if err := runOutOfBandMigrations(
+			ctx,
+			db,
+			false,
+			registerMigrators,
+			out,
+			ids,
+		); err != nil {
 			return err
 		}
 
@@ -66,6 +74,7 @@ func RunOutOfBandMigrations(
 func runOutOfBandMigrations(
 	ctx context.Context,
 	db database.DB,
+	dryRun bool,
 	registerMigrations oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 	ids []int,
@@ -100,15 +109,19 @@ func runOutOfBandMigrations(
 		return migrations, nil
 	}
 
+	// TODO - need to query ids first
+	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
+
+	if dryRun {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		go runner.Start()
 	} else {
 		go runner.StartPartial(ids)
 	}
 	defer runner.Stop()
-
-	// TODO - need to query ids first
-	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
 
 	for range time.NewTicker(time.Second).C {
 		migrations, err := getMigrations()
