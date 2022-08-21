@@ -69,12 +69,6 @@ func runUpgrade(
 			})
 		}
 
-		if len(step.outOfBandMigrationIDs) > 0 {
-			if err := runOutOfBandMigrations(ctx, db, registerMigrators, out, step.outOfBandMigrationIDs); err != nil {
-				return err
-			}
-		}
-
 		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schema migrations"))
 
 		if err := r.Run(ctx, runner.Options{
@@ -87,6 +81,13 @@ func runUpgrade(
 		}
 
 		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Schema migrations complete"))
+
+		if len(step.outOfBandMigrationIDs) > 0 {
+			if err := runOutOfBandMigrations(ctx, db, registerMigrators, out, step.outOfBandMigrationIDs); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil
