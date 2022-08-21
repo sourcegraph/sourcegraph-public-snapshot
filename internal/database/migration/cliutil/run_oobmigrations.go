@@ -88,11 +88,18 @@ func runOutOfBandMigrations(
 		return err
 	}
 
-	getMigrations := func() ([]oobmigration.Migration, error) {
-		if len(ids) == 0 {
-			return store.List(ctx)
+	if len(ids) == 0 {
+		migrations, err := store.List(ctx)
+		if err != nil {
+			return err
 		}
 
+		for _, migration := range migrations {
+			ids = append(ids, migration.ID)
+		}
+	}
+
+	getMigrations := func() ([]oobmigration.Migration, error) {
 		migrations := make([]oobmigration.Migration, 0, len(ids))
 		for _, id := range ids {
 			migration, ok, err := store.GetByID(ctx, id)
@@ -109,18 +116,13 @@ func runOutOfBandMigrations(
 		return migrations, nil
 	}
 
-	// TODO - need to query ids first
 	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
 
 	if dryRun {
 		return nil
 	}
 
-	if len(ids) == 0 {
-		go runner.Start()
-	} else {
-		go runner.StartPartial(ids)
-	}
+	go runner.StartPartial(ids)
 	defer runner.Stop()
 
 	for range time.NewTicker(time.Second).C {
