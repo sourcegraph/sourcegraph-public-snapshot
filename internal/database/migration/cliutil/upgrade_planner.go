@@ -112,7 +112,13 @@ func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedM
 	for _, schemaName := range schemas.SchemaNames {
 		boundsByRev := make(map[string]shared.MigrationBounds, len(tags))
 		for _, tag := range tags {
-			boundsByRev[tag] = shared.StitchedMigationsBySchemaName[schemaName].BoundsByRev[tag]
+			bounds, ok := shared.StitchedMigationsBySchemaName[schemaName].BoundsByRev[tag]
+			if !ok {
+				// TODO
+				// return nil, errors.Newf("unknown tag %q", tag)
+			}
+
+			boundsByRev[tag] = bounds
 		}
 
 		filteredStitchedMigrationBySchemaName[schemaName] = shared.StitchedMigration{
