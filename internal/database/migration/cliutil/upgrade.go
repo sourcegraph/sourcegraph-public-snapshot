@@ -34,6 +34,11 @@ func Upgrade(
 		Usage:    "Skip validation of the instance's current version.",
 		Required: false,
 	}
+	dryRunFlag := &cli.BoolFlag{
+		Name:     "dry-run",
+		Usage:    "Print the upgrade plan but do not execute it.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		from, ok := oobmigration.NewVersionFromString(fromFlag.Get(cmd))
@@ -59,8 +64,36 @@ func Upgrade(
 		if err != nil {
 			return err
 		}
-		if err := runUpgrade(ctx, runnerFactory, plan, skipVersionCheckFlag.Get(cmd), registerMigrators, out); err != nil {
-			return err
+		if len(plan.steps) == 0 {
+			return errors.New("upgrade plan contains no steps")
+		}
+
+		if dryRunFlag.Get(cmd) {
+			for i, step := range plan.steps {
+				out.WriteLine(output.Linef(
+					output.EmojiFingerPointRight,
+					output.StyleReset,
+					"Migrating to v%s (step %d of %d)",
+					step.instanceVersion,
+					i+1,
+					len(plan.steps),
+				))
+
+				out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schema migrations"))
+
+				for schemaName, leafIDs := range step.schemaMigrationLeafIDsBySchemaName {
+					out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "%s -> %v", schemaName, leafIDs))
+				}
+
+				if len(step.outOfBandMigrationIDs) > 0 {
+					out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", step.outOfBandMigrationIDs))
+				}
+
+			}
+		} else {
+			if err := runUpgrade(ctx, runnerFactory, plan, skipVersionCheckFlag.Get(cmd), registerMigrators, out); err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -75,6 +108,7 @@ func Upgrade(
 			fromFlag,
 			toFlag,
 			skipVersionCheckFlag,
+			dryRunFlag,
 		},
 	}
 }

@@ -107,6 +107,9 @@ func runOutOfBandMigrations(
 	}
 	defer runner.Stop()
 
+	// TODO - need to query ids first
+	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
+
 	for range time.NewTicker(time.Second).C {
 		migrations, err := getMigrations()
 		if err != nil {

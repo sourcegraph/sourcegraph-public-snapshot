@@ -21,10 +21,6 @@ func runUpgrade(
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 ) error {
-	if len(plan.steps) == 0 {
-		return errors.New("upgrade plan contains no steps")
-	}
-
 	var runnerSchemas []*schemas.Schema
 	for _, schemaName := range schemas.SchemaNames {
 		runnerSchemas = append(runnerSchemas, &schemas.Schema{
