@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestParseAndValidateQuery(t *testing.T) {
+func TestParseQuery(t *testing.T) {
 	testCases := []struct {
 		name  string
 		query string
@@ -26,7 +26,7 @@ func TestParseAndValidateQuery(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			hasFailed := false
-			_, err := ParseAndValidateQuery(tc.query, "literal")
+			_, err := ParseQuery(tc.query, "literal")
 			if err != nil {
 				hasFailed = true
 			}
@@ -61,7 +61,7 @@ func TestParametersFromQueryPlan(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			plan, err := ParseAndValidateQuery(tc.query, "literal")
+			plan, err := ParseQuery(tc.query, "literal")
 			if err != nil {
 				t.Errorf("expected valid query, got error: %v", err)
 			}

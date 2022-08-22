@@ -1006,7 +1006,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			return nil, errors.Wrap(err, "query validation")
 		}
 	} else {
-		if _, err := querybuilder.ParseAndValidateQuery(series.Query, "literal"); err != nil {
+		if _, err := querybuilder.ParseQuery(series.Query, "literal"); err != nil {
 			return nil, errors.Wrap(err, "query validation")
 		}
 	}

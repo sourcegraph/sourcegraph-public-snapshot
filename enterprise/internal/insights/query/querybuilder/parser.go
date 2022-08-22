@@ -24,7 +24,7 @@ func searchTypeFromString(pt string) query.SearchType {
 	return searchType
 }
 
-func ParseAndValidateQuery(q string, patternType string) (query.Plan, error) {
+func ParseQuery(q string, patternType string) (query.Plan, error) {
 	plan, err := query.Pipeline(query.Init(q, searchTypeFromString(patternType)))
 	if err != nil {
 		return nil, errors.Wrapf(err, "Pipeline")
