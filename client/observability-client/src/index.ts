@@ -7,3 +7,5 @@ export * from './processors/clientAttributesSpanProcessor'
 
 export * from './instrumentations/window-load'
 export * from './instrumentations/history'
+
+export * from './react'

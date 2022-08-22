@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
@@ -167,7 +168,16 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     ].map(routePath => ({
         path: routePath,
         exact: routePath === '',
-        render: (props: RepositoryFileTreePageProps) => <RepositoryFileTreePage {...props} />,
+        render: (props: RepositoryFileTreePageProps) => (
+            <TraceSpanProvider
+                name="RepositoryFileTreePage"
+                attributes={{
+                    objectType: props.match.params.objectType,
+                }}
+            >
+                <RepositoryFileTreePage {...props} />,
+            </TraceSpanProvider>
+        ),
     })),
     {
         path: '/-/commits',
