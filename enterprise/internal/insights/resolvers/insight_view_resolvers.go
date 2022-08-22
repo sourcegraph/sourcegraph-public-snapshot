@@ -1002,7 +1002,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 	var dynamic bool
 	// Validate the query before creating anything; we don't want faulty insights running pointlessly.
 	if series.GroupBy != nil || series.GeneratedFromCaptureGroups != nil {
-		if _, err := querybuilder.ComputeInsightCommandQuery(querybuilder.BasicQuery(series.Query), querybuilder.MapType(*series.GroupBy)); err != nil {
+		if _, err := querybuilder.ParseComputeQuery(series.Query); err != nil {
 			return nil, errors.Wrap(err, "query validation")
 		}
 	} else {
