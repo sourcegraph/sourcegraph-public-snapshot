@@ -305,7 +305,6 @@ function Actions<T>({ children, actions, disabled, selection }: ActionsProps<T>)
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
         setIsOpen(event.isOpen)
-        console.log('REASON', event.reason)
     }, [])
 
     return (
