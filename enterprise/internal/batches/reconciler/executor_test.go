@@ -574,7 +574,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 					BatchSpec: batchSpec.ID,
 					Typ:       btypes.ChangesetSpecTypeBranch,
 				}
-				changesetSpec = bt.CreateChangesetSpec(t, ctx, cstore, specOpts)
+				changesetSpec = bt.CreateChangesetSpec(t, ctx, bstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
