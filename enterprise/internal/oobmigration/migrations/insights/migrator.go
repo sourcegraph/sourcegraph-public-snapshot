@@ -128,9 +128,6 @@ func (m *insightsMigrator) performMigrationJob(ctx context.Context, tx *basestor
 				err = errors.Append(err, errors.Wrap(execErr, "failed to mark job complete"))
 			}
 		}
-
-		// Always update run count (do not use tx)
-		_ = m.frontendStore.Exec(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationJobIncrementRunsQuery, makeJobCondition(job)))
 	}()
 
 	// Extract dashboards and insights from settings
@@ -175,11 +172,6 @@ func (m *insightsMigrator) performMigrationJob(ctx context.Context, tx *basestor
 const insightsMigratorPerformMigrationJobUpdateJobQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationJob
 UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
-`
-
-const insightsMigratorPerformMigrationJobIncrementRunsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationJob
-UPDATE insights_settings_migration_jobs SET runs = runs + 1 WHERE %s
 `
 
 func (m *insightsMigrator) migrateInsightsForJob(
