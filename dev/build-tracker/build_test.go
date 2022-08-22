@@ -93,11 +93,11 @@ func TestBuildStoreAdd(t *testing.T) {
 	failed := "failed"
 	pipeline := "bobheadxi"
 	eventFailed := func(n int) *Event {
-		return &Event{Name: "build.finished", Build: buildkite.Build{State: &failed, Number: &n, Pipeline: &buildkite.Pipeline{Name: &pipeline}}}
+		return &Event{Name: "build.finished", Build: buildkite.Build{State: &failed, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
 	}
 	eventSucceeded := func(n int) *Event {
 		// no state === not failed
-		return &Event{Name: "build.finished", Build: buildkite.Build{State: nil, Number: &n, Pipeline: &buildkite.Pipeline{Name: &pipeline}}}
+		return &Event{Name: "build.finished", Build: buildkite.Build{State: nil, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
 	}
 
 	store := NewBuildStore(logtest.Scoped(t))
