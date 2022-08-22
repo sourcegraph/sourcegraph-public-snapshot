@@ -99,23 +99,6 @@ func runOutOfBandMigrations(
 		}
 	}
 
-	getMigrations := func() ([]oobmigration.Migration, error) {
-		migrations := make([]oobmigration.Migration, 0, len(ids))
-		for _, id := range ids {
-			migration, ok, err := store.GetByID(ctx, id)
-			if err != nil {
-				return nil, err
-			}
-			if !ok {
-				return nil, errors.Newf("unknown migration id %d", id)
-			}
-
-			migrations = append(migrations, migration)
-		}
-
-		return migrations, nil
-	}
-
 	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
 
 	if dryRun {
@@ -126,7 +109,7 @@ func runOutOfBandMigrations(
 	defer runner.Stop()
 
 	for range time.NewTicker(time.Second).C {
-		migrations, err := getMigrations()
+		migrations, err := getMigrations(ctx, store, ids)
 		if err != nil {
 			return err
 		}
