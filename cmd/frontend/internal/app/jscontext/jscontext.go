@@ -241,6 +241,22 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 }
 
+// publicSiteConfiguration is the subset of the site.schema.json site
+// configuration that is necessary for the web app and is not sensitive/secret.
+func publicSiteConfiguration() schema.SiteConfiguration {
+	c := conf.Get()
+	updateChannel := c.UpdateChannel
+	if updateChannel == "" {
+		updateChannel = "release"
+	}
+	return schema.SiteConfiguration{
+		AuthPublic:                  c.AuthPublic,
+		UpdateChannel:               updateChannel,
+		AuthzEnforceForSiteAdmins:   c.AuthzEnforceForSiteAdmins,
+		DisableNonCriticalTelemetry: c.DisableNonCriticalTelemetry,
+	}
+}
+
 var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
 
 func isBot(userAgent string) bool {
@@ -256,20 +272,4 @@ func likelyDockerOnMac() bool {
 		return false //  Assume we're not docker for mac.
 	}
 	return true
-}
-
-// publicSiteConfiguration is the subset of the site.schema.json site
-// configuration that is necessary for the web app and is not sensitive/secret.
-func publicSiteConfiguration() schema.SiteConfiguration {
-	c := conf.Get()
-	updateChannel := c.UpdateChannel
-	if updateChannel == "" {
-		updateChannel = "release"
-	}
-	return schema.SiteConfiguration{
-		AuthPublic:                  c.AuthPublic,
-		UpdateChannel:               updateChannel,
-		AuthzEnforceForSiteAdmins:   c.AuthzEnforceForSiteAdmins,
-		DisableNonCriticalTelemetry: c.DisableNonCriticalTelemetry,
-	}
 }
