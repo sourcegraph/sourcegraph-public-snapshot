@@ -546,7 +546,7 @@ commands:
 
   grafana:
     cmd: |
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
         # to the prometheus backend.
         ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
@@ -596,7 +596,7 @@ commands:
 
   prometheus:
     cmd: |
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         DOCKER_USER="--user=$UID"
 
         # Frontend generally runs outside of Docker, so to access it we need to be
@@ -625,7 +625,7 @@ commands:
 
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
       fi
 
@@ -678,7 +678,7 @@ commands:
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         # Jaeger generally runs outside of Docker, so to access it we need to be
         # able to access ports on the host, because the Docker host only exists on
         # MacOS. --net=host is a very dirty way of enabling this.

@@ -116,12 +116,16 @@ func newEventMatch(event streamhttp.EventMatch) *eventMatch {
 	switch match := event.(type) {
 	case *streamhttp.EventContentMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)
+		resultCount := 0
+		for _, lineMatch := range match.LineMatches {
+			resultCount += len(lineMatch.OffsetAndLengths)
+		}
 		return &eventMatch{
 			Repo:        match.Repository,
 			RepoID:      match.RepositoryID,
 			Path:        match.Path,
 			Lang:        lang,
-			ResultCount: len(match.ChunkMatches),
+			ResultCount: resultCount,
 		}
 	case *streamhttp.EventPathMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)

@@ -1,13 +1,16 @@
-package migration
+package insights
 
 import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -15,9 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -29,7 +30,6 @@ const (
 )
 
 type migrator struct {
-	insightsDB dbutil.DB
 	postgresDB database.DB
 
 	settingsMigrationJobsStore *store.DBSettingsMigrationJobsStore
@@ -40,18 +40,23 @@ type migrator struct {
 	workerBaseStore            *basestore.Store
 }
 
-func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
+func NewMigrator(frontendStore, insightsStore *basestore.Store) *migrator {
+	logger := log.Scoped("insights-migration", "")
+	postgresDB := database.NewDBWith(logger, frontendStore)
+
 	return &migrator{
-		insightsDB:                 insightsDB,
 		postgresDB:                 postgresDB,
 		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(postgresDB),
 		settingsStore:              postgresDB.Settings(),
-		insightStore:               store.NewInsightStore(insightsDB),
-		dashboardStore:             store.NewDashboardStore(insightsDB),
+		insightStore:               &store.InsightStore{Store: insightsStore, Now: time.Now},
+		dashboardStore:             &store.DBDashboardStore{Store: insightsStore, Now: time.Now},
 		orgStore:                   postgresDB.Orgs(),
 		workerBaseStore:            basestore.NewWithHandle(postgresDB.Handle()),
 	}
 }
+
+func (m *migrator) ID() int                 { return 14 }
+func (m *migrator) Interval() time.Duration { return time.Second * 10 }
 
 func (m *migrator) Progress(ctx context.Context) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.settingsMigrationJobsStore.Query(ctx, sqlf.Sprintf(`

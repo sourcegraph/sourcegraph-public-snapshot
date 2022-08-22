@@ -61,7 +61,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
             },
             {
                 id: 'vscode',
-                name: aggregation.selected === 'count' ? 'VsCode IDE extension' : 'Users using VsCode IDE extension',
+                name: aggregation.selected === 'count' ? 'VSCode IDE extension' : 'Users using VSCode IDE extension',
                 color: 'var(--purple)',
                 data: vscode.nodes.map(
                     node => ({
@@ -102,11 +102,11 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
             {
                 value: vscode.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description:
-                    aggregation.selected === 'count' ? 'VsCode\nIDE extension' : 'Users using\nVsCode IDE extension',
+                    aggregation.selected === 'count' ? 'VSCode\nIDE extension' : 'Users using\nVSCode IDE extension',
                 color: 'var(--purple)',
                 tooltip:
                     aggregation.selected === 'count'
-                        ? 'The number searches in VsCode IDE extension.'
+                        ? 'The number searches in VSCode IDE extension.'
                         : 'The number of users searched in IDE extension.',
             },
             {
@@ -144,7 +144,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
                         "Searches from JetBrains across all of your company's code across code hosts, without locally cloning repositories or complex scripting.",
                 },
                 {
-                    label: 'VsCode IDE extension',
+                    label: 'VSCode IDE extension',
                     minPerItem: 3,
                     value: vscode.summary.totalCount,
                     description:
@@ -177,7 +177,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Extensions</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Extensions</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">

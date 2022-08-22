@@ -13,7 +13,7 @@ img.screenshot {
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
+<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers and might change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -72,7 +72,7 @@ In this example, we create an indexing policy that applies to all _versioned_ ta
 
 ## Explicit index job configuration
 
-Explicit index job configuration can be supplied to a repository in two ways (listed below in order of decreasing precedence). Both methods of configuration share a common expected schema. See the [reference documentation](../references/auto_indexing_configuration.md) for additional information on the shape and content of the configuration.
+For projects that have non-standard or complex dependency resolution or pre-compilation steps, inference heuristics might not be powerful enough to create an index job that produces the correct results. In these cases, explicit index job configuration can be supplied to a repository in two ways (listed below in order of decreasing precedence). Both methods of configuration share a common expected schema. See the [reference documentation](../references/auto_indexing_configuration.md) for additional information on the shape and content of the configuration.
 
 1. Configure index jobs by committing a `sourcegraph.yaml` file to the root of the target repository. If you're new to YAML and want a short introduction, see [Learn YAML in five minutes](https://learnxinyminutes.com/docs/yaml/). Note that YAML is a strict superset of JSON, therefore the file contents can also be encoded as valid JSON (despite the file extension).
 

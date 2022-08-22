@@ -42,23 +42,20 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('createCodeMonitor is called on submit', async () => {
+        const search = new URLSearchParams({
+            'trigger-query': 'test type:diff repo:test',
+        }).toString()
+
         renderWithBrandedContext(
             <MockedTestProvider>
-                <CreateCodeMonitorPage {...props} />
+                <CreateCodeMonitorPage {...props} location={{ ...history.location, search }} />
             </MockedTestProvider>
         )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
-        userEvent.click(screen.getByTestId('trigger-button'))
 
         const triggerInput = screen.getByTestId('trigger-query-edit')
         expect(triggerInput).toBeInTheDocument()
-
-        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
-
-        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
-        userEvent.type(textbox, 'test type:diff repo:test')
-
         await waitFor(() => expect(triggerInput).toHaveClass('test-is-valid'))
 
         userEvent.click(screen.getByTestId('submit-trigger'))
@@ -69,35 +66,21 @@ describe('CreateCodeMonitorPage', () => {
         sinon.assert.called(props.createCodeMonitor)
     })
 
-    test('createCodeMonitor is not called on submit when trigger or action is incomplete', async () => {
+    test('createCodeMonitor is not called on submit when action is incomplete', () => {
+        const search = new URLSearchParams({
+            'trigger-query': 'test type:diff repo:test',
+        }).toString()
+
         renderWithBrandedContext(
             <MockedTestProvider>
-                <CreateCodeMonitorPage {...props} />
+                <CreateCodeMonitorPage {...props} location={{ ...history.location, search }} />
             </MockedTestProvider>
         )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
         userEvent.click(screen.getByTestId('submit-monitor'))
 
-        // Pressing enter does not call createCodeMonitor because other fields not complete
-        sinon.assert.notCalled(props.createCodeMonitor)
-
-        userEvent.click(screen.getByTestId('trigger-button'))
-
-        const triggerInput = screen.getByTestId('trigger-query-edit')
-        expect(triggerInput).toBeInTheDocument()
-
-        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
-
-        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
-        userEvent.type(textbox, 'test type:diff repo:test')
-
-        await waitFor(() => expect(triggerInput).toHaveClass('test-is-valid'))
-
-        userEvent.click(screen.getByTestId('submit-trigger'))
-        userEvent.click(screen.getByTestId('submit-monitor'))
-
-        // Pressing enter still does not call createCodeMonitor
+        // Pressing enter does not call createCodeMonitor
         sinon.assert.notCalled(props.createCodeMonitor)
 
         userEvent.click(screen.getByTestId('form-action-toggle-email'))

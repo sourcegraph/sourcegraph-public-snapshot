@@ -6,12 +6,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // runUpgrade initializes a schema and out-of-band migration runner and performs the given upgrade plan.
-func runUpgrade(ctx context.Context, runnerFactory RunnerFactoryWithSchemas, plan upgradePlan, skipVersionCheck bool) error {
+func runUpgrade(
+	ctx context.Context,
+	runnerFactory RunnerFactoryWithSchemas,
+	plan upgradePlan,
+	skipVersionCheck bool,
+	dryRun bool,
+	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+	out *output.Output,
+) error {
+	if len(plan.steps) == 0 {
+		return errors.New("upgrade plan contains no steps")
+	}
+
 	var runnerSchemas []*schemas.Schema
 	for _, schemaName := range schemas.SchemaNames {
 		runnerSchemas = append(runnerSchemas, &schemas.Schema{
@@ -25,6 +39,11 @@ func runUpgrade(ctx context.Context, runnerFactory RunnerFactoryWithSchemas, pla
 	if err != nil {
 		return err
 	}
+	db, err := extractDatabase(ctx, r)
+	if err != nil {
+		return err
+	}
+	registerMigrators := registerMigratorsWithStore(basestoreExtractor{r})
 
 	if !skipVersionCheck {
 		if err := checkUpgradeVersion(ctx, r, plan); err != nil {
@@ -32,7 +51,16 @@ func runUpgrade(ctx context.Context, runnerFactory RunnerFactoryWithSchemas, pla
 		}
 	}
 
-	for _, step := range plan.steps {
+	for i, step := range plan.steps {
+		out.WriteLine(output.Linef(
+			output.EmojiFingerPointRight,
+			output.StyleReset,
+			"Migrating to v%s (step %d of %d)",
+			step.instanceVersion,
+			i+1,
+			len(plan.steps),
+		))
+
 		operations := make([]runner.MigrationOperation, 0, len(step.schemaMigrationLeafIDsBySchemaName))
 		for schemaName, leafMigrationIDs := range step.schemaMigrationLeafIDsBySchemaName {
 			operations = append(operations, runner.MigrationOperation{
@@ -43,17 +71,31 @@ func runUpgrade(ctx context.Context, runnerFactory RunnerFactoryWithSchemas, pla
 		}
 
 		if len(step.outOfBandMigrationIDs) > 0 {
-			// TODO - implement in https://github.com/sourcegraph/sourcegraph/issues/39578
-			return errors.Newf("unimplemented - out of band migrations %v were deprecated in this upload", step.outOfBandMigrationIDs)
+			if err := runOutOfBandMigrations(
+				ctx,
+				db,
+				dryRun,
+				registerMigrators,
+				out,
+				step.outOfBandMigrationIDs,
+			); err != nil {
+				return err
+			}
 		}
 
-		if err := r.Run(ctx, runner.Options{
-			Operations:           operations,
-			PrivilegedMode:       runner.ApplyPrivilegedMigrations,
-			PrivilegedHash:       "",
-			IgnoreSingleDirtyLog: false,
-		}); err != nil {
-			return err
+		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schema migrations"))
+
+		if !dryRun {
+			if err := r.Run(ctx, runner.Options{
+				Operations:           operations,
+				PrivilegedMode:       runner.ApplyPrivilegedMigrations,
+				PrivilegedHash:       "",
+				IgnoreSingleDirtyLog: false,
+			}); err != nil {
+				return err
+			}
+
+			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Schema migrations complete"))
 		}
 	}
 
