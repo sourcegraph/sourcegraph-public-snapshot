@@ -122,7 +122,7 @@ func (m *insightsMigrator) Down(ctx context.Context) (err error) {
 
 func (m *insightsMigrator) performMigrationJob(ctx context.Context, tx *basestore.Store, job insightsMigrationJob) (err error) {
 	defer func() {
-		if err != nil {
+		if err == nil {
 			// Mark job as successful on non-error exit
 			if execErr := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorPerformMigrationJobUpdateJobQuery, time.Now(), makeJobCondition(job))); err != nil {
 				err = errors.Append(err, errors.Wrap(execErr, "failed to mark job complete"))
