@@ -237,18 +237,18 @@ func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 type canAggregateBy func(searchQuery, patternType string) (bool, error)
 
 func canAggregateByRepo(searchQuery, patternType string) (bool, error) {
-	_, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	_, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
-		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+		return false, errors.Wrapf(err, "ParseQuery")
 	}
 	// We can always aggregate by repo.
 	return true, nil
 }
 
 func canAggregateByPath(searchQuery, patternType string) (bool, error) {
-	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
-		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+		return false, errors.Wrapf(err, "ParseQuery")
 	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// cannot aggregate over:
@@ -264,9 +264,9 @@ func canAggregateByPath(searchQuery, patternType string) (bool, error) {
 }
 
 func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
-	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
-		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+		return false, errors.Wrapf(err, "ParseQuery")
 	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// can only aggregate over type:diff and select/type:commit searches.
@@ -287,9 +287,9 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	//if !(patternType == "regexp" || patternType == "regex" || patternType == "standard" || patternType == "lucky") {
 	//	return false, nil
 	//}
-	//plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	//plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	//if err != nil {
-	//	return false, errors.Wrapf(err, "ParseAndValidateQuery")
+	//	return false, errors.Wrapf(err, "ParseQuery")
 	//}
 	//parameters := querybuilder.ParametersFromQueryPlan(plan)
 	//selectParameter, typeParameter := false, false

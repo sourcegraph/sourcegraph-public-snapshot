@@ -44,7 +44,7 @@ func Test_canAggregateByRepo(t *testing.T) {
 			name:         "cannot aggregate for invalid query",
 			query:        "fork:woo",
 			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			err:          errors.Newf("ParseQuery"),
 		},
 	}
 	suite := canAggregateBySuite{
@@ -81,7 +81,7 @@ func Test_canAggregateByPath(t *testing.T) {
 			name:         "cannot aggregate for invalid query",
 			query:        "insights type:commit fork:test",
 			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			err:          errors.Newf("ParseQuery"),
 		},
 	}
 	suite := canAggregateBySuite{
@@ -133,7 +133,7 @@ func Test_canAggregateByAuthor(t *testing.T) {
 			name:         "cannot aggregate for invalid query",
 			query:        "type:diff fork:leo",
 			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			err:          errors.Newf("ParseQuery"),
 		},
 	}
 	suite := canAggregateBySuite{
@@ -199,7 +199,7 @@ func Test_canAggregateByAuthor(t *testing.T) {
 //			query:        "type:diff fork:leo func(.*)",
 //			patternType:  "regexp",
 //			canAggregate: false,
-//			err:          errors.Newf("ParseAndValidateQuery"),
+//			err:          errors.Newf("ParseQuery"),
 //		},
 //	}
 //	suite := canAggregateBySuite{
