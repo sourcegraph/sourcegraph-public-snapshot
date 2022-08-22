@@ -144,7 +144,7 @@ func runOutOfBandMigrations(
 			}
 		}
 		if complete {
-			break
+			return nil
 		}
 
 		select {
