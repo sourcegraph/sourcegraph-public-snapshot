@@ -90,8 +90,12 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	searchClient := streaming.NewInsightsSearchClient(r.baseInsightResolver.postgresDB)
 	searchResultsAggregator := aggregation.NewSearchResultsAggregator(tabulationFunc, countingFunc)
 	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
-	if err != nil {
-		return nil, err
+	if err != nil || requestContext.Err() != nil {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(requestContext.Err(), context.DeadlineExceeded) {
+			return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver("query unable to complete in allocated time", aggregationMode)}, nil
+		} else {
+			return nil, err
+		}
 	}
 
 	successful, failureReason := searchSuccessful(alert, tabulationErrors, searchResultsAggregator.ShardTimeoutOccurred())
