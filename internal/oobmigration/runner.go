@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,6 +24,7 @@ import (
 // direction or 0% in the reverse direction.
 type Runner struct {
 	store         storeIface
+	logger        log.Logger
 	refreshTicker glock.Ticker
 	operations    *operations
 	migrators     map[int]migratorAndOption
@@ -55,6 +56,7 @@ func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext 
 
 	return &Runner{
 		store:         store,
+		logger:        log.Scoped("oobmigration", ""),
 		refreshTicker: refreshTicker,
 		operations:    newOperations(observationContext),
 		migrators:     map[int]migratorAndOption{},
@@ -213,7 +215,7 @@ func (r *Runner) StartPartial(ids []int) {
 
 			// Ensure we have a migration routine running for this migration
 			r.ensureProcessorIsRunning(&wg, migrationProcesses, id, func(ch <-chan Migration) {
-				runMigrator(ctx, r.store, migrator.Migrator, ch, migrator.migratorOptions, r.operations)
+				runMigrator(ctx, r.store, migrator.Migrator, ch, migrator.migratorOptions, r.logger, r.operations)
 			})
 
 			// Send the new migration to the processor routine. This loop guarantees
@@ -258,7 +260,7 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 		for {
 			migrations, err := r.store.List(ctx)
 			if err != nil {
-				log15.Error("Failed to list out-of-band migrations", "error", err)
+				r.logger.Error("Failed to list out-of-band migrations", log.Error(err))
 			}
 
 			select {
@@ -311,7 +313,7 @@ type migratorOptions struct {
 // runMigrator runs the given migrator function periodically (on each read from ticker)
 // while the migration is not complete. We will periodically (on each read from migrations)
 // update our current view of the migration progress and (more importantly) its direction.
-func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migrations <-chan Migration, options migratorOptions, operations *operations) {
+func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migrations <-chan Migration, options migratorOptions, logger log.Logger, operations *operations) {
 	// Get initial migration. This channel will close when the context
 	// is canceled, so we don't need to do any more complex select here.
 	migration, ok := <-migrations
@@ -322,7 +324,7 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 	// We're just starting up - refresh our progress before migrating
 	if err := updateProgress(ctx, store, &migration, migrator); err != nil {
 		if !errors.Is(err, ctx.Err()) {
-			log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+			logger.Error("Failed to determine migration progress", log.Error(err), log.Int("migrationID", migration.ID))
 		}
 	}
 
@@ -338,16 +340,16 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 			// migrations table has been de-synchronized from the actual progress.
 			if err := updateProgress(ctx, store, &migration, migrator); err != nil {
 				if !errors.Is(err, ctx.Err()) {
-					log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+					logger.Error("Failed to determine migration progress", log.Error(err), log.Int("migrationID", migration.ID))
 				}
 			}
 
 		case <-options.ticker.Chan():
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
-				if err := runMigrationFunction(ctx, store, &migration, migrator, operations); err != nil {
+				if err := runMigrationFunction(ctx, store, &migration, migrator, logger, operations); err != nil {
 					if !errors.Is(err, ctx.Err()) {
-						log15.Error("Failed migration action", "migrationID", migration.ID, "error", err)
+						logger.Error("Failed migration action", log.Error(err), log.Int("migrationID", migration.ID))
 					}
 				}
 			}
@@ -362,14 +364,14 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 // direction. If an error occurs, it will be associated in the database with the migration record.
 // Regardless of the success of the migration function, the progress function on the migrator will be
 // invoked and the progress written to the database.
-func runMigrationFunction(ctx context.Context, store storeIface, migration *Migration, migrator Migrator, operations *operations) error {
+func runMigrationFunction(ctx context.Context, store storeIface, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) error {
 	migrationFunc := runMigrationUp
 	if migration.ApplyReverse {
 		migrationFunc = runMigrationDown
 	}
 
-	if migrationErr := migrationFunc(ctx, migration, migrator, operations); migrationErr != nil {
-		log15.Error("Failed to perform migration", "migrationID", migration.ID, "error", migrationErr)
+	if migrationErr := migrationFunc(ctx, migration, migrator, logger, operations); migrationErr != nil {
+		logger.Error("Failed to perform migration", log.Error(migrationErr), log.Int("migrationID", migration.ID))
 
 		// Migration resulted in an error. All we'll do here is add this error to the migration's error
 		// message list. Unless _that_ write to the database fails, we'll continue along the happy path
@@ -399,22 +401,22 @@ func updateProgress(ctx context.Context, store storeIface, migration *Migration,
 	return nil
 }
 
-func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, operations *operations) (err error) {
-	ctx, _, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("migrationID", migration.ID),
+func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
+	ctx, _, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("migrationID", migration.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	log15.Debug("Running up migration", "migrationID", migration.ID)
+	logger.Debug("Running up migration", log.Int("migrationID", migration.ID))
 	return migrator.Up(ctx)
 }
 
-func runMigrationDown(ctx context.Context, migration *Migration, migrator Migrator, operations *operations) (err error) {
-	ctx, _, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("migrationID", migration.ID),
+func runMigrationDown(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
+	ctx, _, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("migrationID", migration.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	log15.Debug("Running down migration", "migrationID", migration.ID)
+	logger.Debug("Running down migration", log.Int("migrationID", migration.ID))
 	return migrator.Down(ctx)
 }
