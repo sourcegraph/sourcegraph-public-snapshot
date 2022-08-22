@@ -328,6 +328,8 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 					For(time.Minute*5),
 				`
 				- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+				- Make sure the executors appear under Site Admin > Executors.
+				- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
 			`),
 			Duration: NoAlertsOption("none"),
 			Errors:   NoAlertsOption("none"),
