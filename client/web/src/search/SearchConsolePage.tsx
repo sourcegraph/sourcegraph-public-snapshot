@@ -22,12 +22,12 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
 import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
 import styles from './SearchConsolePage.module.scss'
-import { useExperimentalFeatures } from '../stores'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
