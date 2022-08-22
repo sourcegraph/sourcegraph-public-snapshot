@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	nettrace "golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -18,20 +19,32 @@ type Tracer struct {
 
 // New returns a new Trace with the specified family and title.
 func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
-	span, ctx := ot.StartSpanFromContextWithTracer(
+	// Directly use the OpenTelemetry span created from the bridge API, discarding the
+	// OpenTracing span. We still create the span using the OpenTracing library for
+	// backwards compatibility.
+	_, ctx = ot.StartSpanFromContextWithTracer(
 		ctx,
 		t.Tracer,
 		family,
 		tagsOpt{title: title, tags: tags},
 	)
-	tr := nettrace.New(family, title)
-	trace := &Trace{span: span, trace: tr, family: family}
+	otelSpan := oteltrace.SpanFromContext(ctx)
+
+	// Create the nettrace trace to tee to.
+	ntTrace := nettrace.New(family, title)
+
+	// Set up the split trace.
+	trace := &Trace{
+		family:   family,
+		otelSpan: otelSpan,
+		ntTrace:  ntTrace,
+	}
 	if parent := TraceFromContext(ctx); parent != nil {
-		tr.LazyPrintf("parent: %s", parent.family)
+		ntTrace.LazyPrintf("parent: %s", parent.family)
 		trace.family = parent.family + " > " + family
 	}
 	for _, t := range tags {
-		tr.LazyPrintf("%s: %s", t.Key, t.Value)
+		ntTrace.LazyPrintf("%s: %s", t.Key, t.Value)
 	}
 	return trace, contextWithTrace(ctx, trace)
 }
