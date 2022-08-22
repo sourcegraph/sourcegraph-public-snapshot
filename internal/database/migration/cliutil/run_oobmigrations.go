@@ -122,6 +122,8 @@ func runOutOfBandMigrations(
 
 		if err == nil {
 			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
+		} else {
+			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Out of band migrations failed: %s", err))
 		}
 	}()
 
