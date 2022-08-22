@@ -76,9 +76,9 @@ func recordOperation(method string) func(*error) {
 	}
 }
 
-func getAndMarshalSiteActivityJSON(ctx context.Context, db database.DB, criticalOnly bool) (_ json.RawMessage, err error) {
+func getAndMarshalSiteActivityJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSiteActivityJSON")(&err)
-	siteActivity, err := usagestats.GetSiteUsageStats(ctx, db, criticalOnly)
+	siteActivity, err := usagestats.GetSiteUsageStats(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -456,7 +456,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, false)
+			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db)
 			if err != nil {
 				logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
 			}
@@ -485,11 +485,6 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
-		}
-
-		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, true)
-		if err != nil {
-			logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
 		}
 	}
 
