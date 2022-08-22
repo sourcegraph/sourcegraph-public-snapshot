@@ -99,7 +99,6 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000),
 		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000),
 		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100),
-		codeintel.NewAPIDocsSearchMigrator(),
 		insightsMigrator,
 	})
 }
