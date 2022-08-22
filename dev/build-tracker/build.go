@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -10,9 +11,34 @@ import (
 // Build keeps track of a buildkite.Build and it's associated jobs and pipeline.
 // See BuildStore for where jobs are added to the build.
 type Build struct {
-	buildkite.Build
-	Pipeline *Pipeline
-	Jobs     map[string]Job
+	// Build is the buildkite.Build currently being executed by buildkite on a particular Pipeline
+	buildkite.Build `json:"build"`
+
+	// Pipeline is a wrapped buildkite.Pipeline that is running this build.
+	Pipeline *Pipeline `json:"pipeline"`
+
+	// Jobs is a map that keeps track of all the buildkite.Jobs associated with this build.
+	// Each job is wrapped to allow for safer access to fields of the buildkite.Jobs. The name of the job is used as the key
+	Jobs map[string]Job `json:"jobs"`
+
+	// ConsecutiveFailure indicates whether this build is the nth consecutive failure.
+	ConsecutiveFailure int `json:"consecutiveFailures"`
+}
+
+// updateFromEvent updates the current build with the build and pipeline from the event. Care is taken
+// to ensure the author is retained as the build from the event might not have an author, whereas the original build
+// does!
+func (b *Build) updateFromEvent(e *Event) {
+	old := b.Build
+
+	b.Build = e.Build
+	// sometimes (typically when a build is retried) the "new" build won't have the author in it.
+	// so we make sure to retain the author, if the new build does not contain one!
+	// TODO(burmudar): maybe we should just always preserve the old author ?
+	if b.Build.Author == nil || b.Build.Author.Name == "" || b.Build.Author.Email == "" {
+		b.Build.Author = old.Author
+	}
+	b.Pipeline = e.pipeline()
 }
 
 func (b *Build) hasFailed() bool {
@@ -82,20 +108,27 @@ func (j *Job) failed() bool {
 
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
 type Pipeline struct {
-	buildkite.Pipeline
+	buildkite.Pipeline `json:"pipeline"`
 }
 
 func (p *Pipeline) name() string {
+	if p == nil {
+		return ""
+	}
 	return strp(p.Name)
 }
 
 // Event contains information about a buildkite event. Each event contains the build, pipeline, and job. Note that when the event
 // is `build.*` then Job will be empty.
 type Event struct {
-	Name     string             `json:"event"`
-	Build    buildkite.Build    `json:"build,omitempty"`
+	// Name is the name of the buildkite event that got triggered
+	Name string `json:"event"`
+	// Build is the buildkite.Build that triggered this event
+	Build buildkite.Build `json:"build,omitempty"`
+	// Pipeline is the buildkite.Pipeline that is running the build that triggered this event
 	Pipeline buildkite.Pipeline `json:"pipeline,omitempty"`
-	Job      buildkite.Job      `json:"job,omitempty"`
+	// Job is the current job being executed by the Build. When the event is not a job event variant, then this job will be empty
+	Job buildkite.Job `json:"job,omitempty"`
 }
 
 func (b *Event) build() *Build {
@@ -133,15 +166,24 @@ func (b *Event) buildNumber() int {
 // in a Build and added to the map. When the event contains a Job the corresponding job is retrieved from the map and added to the Job it is for.
 type BuildStore struct {
 	logger log.Logger
+
 	builds map[int]*Build
-	m      sync.RWMutex
+	// consecutiveFailures tracks how many consecutive build failed events has been
+	// received by pipeline and branch
+	consecutiveFailures map[string]int
+
+	// m locks all writes to BuildStore properties.
+	m sync.RWMutex
 }
 
 func NewBuildStore(logger log.Logger) *BuildStore {
 	return &BuildStore{
 		logger: logger.Scoped("store", "stores all the buildkite builds"),
-		builds: make(map[int]*Build),
-		m:      sync.RWMutex{},
+
+		builds:              make(map[int]*Build),
+		consecutiveFailures: make(map[string]int),
+
+		m: sync.RWMutex{},
 	}
 }
 
@@ -154,10 +196,23 @@ func (s *BuildStore) Add(event *Event) {
 		build = event.build()
 		s.builds[event.buildNumber()] = build
 	}
-	// if the build is finished replace the original build with the replaced one since it will be more up to date
-	build.Build = event.Build
-	build.Pipeline = event.pipeline()
 
+	// if the build is finished replace the original build with the replaced one since it
+	// will be more up to date, and tack on some finalized data
+	if event.isBuildFinished() {
+		build.updateFromEvent(event)
+
+		// Track consecutive failures by pipeline + branch
+		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.name(), build.branch())
+		if build.hasFailed() {
+			s.consecutiveFailures[failuresKey] += 1
+			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
+		} else {
+			s.consecutiveFailures[failuresKey] = 1
+		}
+	}
+
+	// Keep track of the job, if there is one
 	wrappedJob := event.job()
 	if wrappedJob.name() != "" {
 		build.Jobs[wrappedJob.name()] = *wrappedJob

@@ -58,8 +58,8 @@ func NewWarningError(err error) *warning {
 	}
 }
 
-func (ce *warning) Error() string {
-	return ce.error.Error()
+func (w *warning) Error() string {
+	return w.error.Error()
 }
 
 // IsWarning always returns true. It exists to differentiate regular errors with Warning
@@ -78,5 +78,14 @@ func (w *warning) As(target any) bool {
 		return true
 	}
 
+	return false
+}
+
+// IsWarning is a helper to check whether the specified err is a Warning
+func IsWarning(err error) bool {
+	var ref Warning
+	if As(err, &ref) {
+		return ref.IsWarning()
+	}
 	return false
 }

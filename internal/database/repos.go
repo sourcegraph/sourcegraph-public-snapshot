@@ -86,7 +86,6 @@ type RepoStore interface {
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
-	StatisticsCounts(context.Context) (StatisticsCounts, error)
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -339,54 +338,6 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 
 	return ct, err
 }
-
-type StatisticsCounts struct {
-	Total       int
-	NotCloned   int
-	Cloning     int
-	Cloned      int
-	FailedFetch int
-}
-
-func (s *repoStore) StatisticsCounts(ctx context.Context) (counts StatisticsCounts, err error) {
-	tr, ctx := trace.New(ctx, "repos.StatisticsCounts", "")
-	defer func() {
-		if err != nil {
-			tr.SetError(err)
-		}
-		tr.Finish()
-	}()
-
-	row := s.QueryRow(ctx, sqlf.Sprintf(statisticsCountsQueryFmtstr))
-
-	if err := row.Scan(
-		&counts.Total,
-		&counts.NotCloned,
-		&counts.Cloning,
-		&counts.Cloned,
-		&counts.FailedFetch,
-	); err != nil {
-		return counts, err
-	}
-
-	return counts, nil
-}
-
-const statisticsCountsQueryFmtstr = `
--- source: internal/database/repos.go:statisticsCounts
-SELECT
-	COUNT(*) AS total,
-	COUNT(*) FILTER(WHERE gr.clone_status = 'not_cloned') AS not_cloned,
-	COUNT(*) FILTER(WHERE gr.clone_status = 'cloning') AS cloning,
-	COUNT(*) FILTER(WHERE gr.clone_status = 'cloned') AS cloned,
-	COUNT(*) FILTER(WHERE gr.last_error IS NOT NULL) AS failed_fetch
-FROM repo r
-JOIN gitserver_repos gr ON gr.repo_id = r.id
-WHERE
-	r.deleted_at is NULL
-AND
-	r.blocked IS NULL
-`
 
 // Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
 // number of IDs given if a repo with the given ID does not exist.

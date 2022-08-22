@@ -1,0 +1,44 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+expression: "dump_document(&document, &contents)"
+---
+  :root {
+      --modal-body-padding: 1.5rem;
+//                          ^^^ NumericLiteral
+//                             ^^^ IdentifierKeyword
+//                                ^ PunctuationDelimiter
+  }
+  
+  [data-reach-dialog-overlay] {
+      background-color: var(--modal-bg);
+//                                     ^ PunctuationDelimiter
+  }
+  
+  
+  /*
+//^^ Comment 9:0..11:3
+   * Positions
+   */
+  .center,
+  .top-third {
+      transform: translate(-50%, -50%);
+//                         ^^^ NumericLiteral
+//                            ^ IdentifierKeyword
+//                               ^^^ NumericLiteral
+//                                  ^ IdentifierKeyword
+//                                    ^ PunctuationDelimiter
+      position: absolute;
+//                      ^ PunctuationDelimiter
+      top: 50%;
+//         ^^ NumericLiteral
+//           ^ IdentifierKeyword
+//            ^ PunctuationDelimiter
+      margin: 0;
+//            ^ NumericLiteral
+//             ^ PunctuationDelimiter
+      left: 50%;
+//          ^^ NumericLiteral
+//            ^ IdentifierKeyword
+//             ^ PunctuationDelimiter
+  }
+

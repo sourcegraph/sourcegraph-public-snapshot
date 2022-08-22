@@ -128,7 +128,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter = useExperimentalFeatures(
         features => features.applySearchQuerySuggestionOnEnter ?? false
     )
@@ -235,12 +235,12 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 className={classNames(
                                     'form-control',
                                     styles.queryInputField,
-                                    'test-trigger-input',
                                     `test-${derivedInputClassName}`
                                 )}
                                 data-testid="trigger-query-edit"
                             >
                                 <LazyMonacoQueryInput
+                                    className="test-trigger-input"
                                     editorComponent={editorComponent}
                                     isLightTheme={isLightTheme}
                                     patternType={SearchPatternType.standard}

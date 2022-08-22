@@ -204,7 +204,7 @@ export interface PlatformContext {
      * If this is a function that returns a Subscribable of executable extensions,
      * the extension host will not activate any other settings (e.g. extensions from user settings)
      */
-    getStaticExtensions?: () => undefined | Subscribable<ExecutableExtension[]>
+    getStaticExtensions?: () => Observable<ExecutableExtension[] | undefined>
 
     /**
      * Display a modal message from an extension to the user.

@@ -35,6 +35,20 @@ export function BarTooltipContent<Datum>(props: BarTooltipContentProps<Datum>): 
         )
     }
 
+    // Handle a special case when we don't have any multiple datum per group
+    if (category.data.length === 1) {
+        const datum = category.data[0]
+        const name = getDatumName(datum)
+        const value = getDatumValue(datum)
+
+        return (
+            <Text className={styles.oneLineTooltip}>
+                <span>{name}</span>
+                <span>{value}</span>
+            </Text>
+        )
+    }
+
     return (
         <>
             <H3>{category.id}</H3>

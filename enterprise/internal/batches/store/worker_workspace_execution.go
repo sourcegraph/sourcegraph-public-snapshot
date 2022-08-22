@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -40,9 +39,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
 	ColumnExpressions: batchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
-	Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-		return scanFirstBatchSpecWorkspaceExecutionJob(rows, err)
-	},
+	Scan:              dbworkerstore.BuildWorkerScan(buildRecordScanner(ScanBatchSpecWorkspaceExecutionJob)),
 	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.place_in_global_queue"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
