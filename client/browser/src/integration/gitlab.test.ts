@@ -87,12 +87,9 @@ describe('GitLab', () => {
                     hasCodeIntelligence: true,
                 },
             }),
-            PublicConfiguration: () => ({
+            EnableLegacyExtensions: () => ({
                 site: {
-                    publicConfiguration: {
-                        effectiveContents:
-                            '{"disableNonCriticalTelemetry":true,"experimentalFeatures":{"enableLegacyExtensions":true},"update.channel":"release"}',
-                    },
+                    enableLegacyExtensions: true,
                 },
             }),
         })

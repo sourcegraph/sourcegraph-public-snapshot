@@ -104,12 +104,9 @@ describe('GitHub', () => {
                     siteAdmin: false,
                 },
             }),
-            PublicConfiguration: () => ({
+            EnableLegacyExtensions: () => ({
                 site: {
-                    publicConfiguration: {
-                        effectiveContents:
-                            '{"disableNonCriticalTelemetry":true,"experimentalFeatures":{"enableLegacyExtensions":true},"update.channel":"release"}',
-                    },
+                    enableLegacyExtensions: true,
                 },
             }),
         })
