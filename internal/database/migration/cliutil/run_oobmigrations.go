@@ -102,7 +102,6 @@ func runOutOfBandMigrations(
 	sort.Ints(ids)
 
 	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
-
 	if dryRun {
 		return nil
 	}
@@ -126,7 +125,6 @@ func runOutOfBandMigrations(
 		if err != nil {
 			return err
 		}
-
 		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
 
 		for i, m := range migrations {
