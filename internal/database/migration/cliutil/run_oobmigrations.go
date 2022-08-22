@@ -113,7 +113,7 @@ func runOutOfBandMigrations(
 	bars := make([]output.ProgressBar, 0, len(ids))
 	for _, id := range ids {
 		bars = append(bars, output.ProgressBar{
-			Label: fmt.Sprintf("Migraton #%d", id),
+			Label: fmt.Sprintf("Migration #%d", id),
 			Max:   1.0,
 		})
 	}
