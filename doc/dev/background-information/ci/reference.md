@@ -73,8 +73,8 @@ The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Trigger 3.43 release branch healthcheck build
 - Trigger 3.42 release branch healthcheck build
-- Trigger 3.41 release branch healthcheck build
 - Upload build trace
 
 ### Browser extension nightly release build
