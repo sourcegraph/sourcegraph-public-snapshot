@@ -784,6 +784,7 @@ type ChangesetCountsResolver interface {
 }
 
 type BatchSpecWorkspaceResolutionResolver interface {
+	ID() graphql.ID
 	State() string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime

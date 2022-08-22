@@ -5,6 +5,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -18,6 +21,21 @@ type batchSpecWorkspaceResolutionResolver struct {
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceResolutionResolver = &batchSpecWorkspaceResolutionResolver{}
+
+const batchSpecWorkspaceResolutionIDKind = "BatchSpecWorkspaceResolution"
+
+func marshalBatchSpecWorkspaceResolutionID(id int64) graphql.ID {
+	return relay.MarshalID(batchSpecWorkspaceResolutionIDKind, id)
+}
+
+func unmarshalBatchSpecWorkspaceResolutionID(id graphql.ID) (cid int64, err error) {
+	err = relay.UnmarshalSpec(id, &cid)
+	return
+}
+
+func (r *batchSpecWorkspaceResolutionResolver) ID() graphql.ID {
+	return marshalBatchSpecWorkspaceResolutionID(r.resolution.ID)
+}
 
 func (r *batchSpecWorkspaceResolutionResolver) State() string {
 	return r.resolution.State.ToGraphQL()

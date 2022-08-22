@@ -1991,6 +1991,11 @@ A bag for all info around resolving workspaces.
 """
 type BatchSpecWorkspaceResolution {
     """
+    The unique ID for the resolution job.
+    """
+    id: ID!
+
+    """
     Error message, if the evaluation failed.
     """
     failureMessage: String
