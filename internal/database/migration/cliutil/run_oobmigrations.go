@@ -143,10 +143,6 @@ func runOutOfBandMigrations(
 }
 
 func getMigrations(ctx context.Context, store *oobmigration.Store, ids []int) ([]oobmigration.Migration, error) {
-	if len(ids) == 0 {
-		return store.List(ctx)
-	}
-
 	migrations := make([]oobmigration.Migration, 0, len(ids))
 	for _, id := range ids {
 		migration, ok, err := store.GetByID(ctx, id)
