@@ -80,30 +80,30 @@ func (m *insightsMigrator) Up(ctx context.Context) (err error) {
 const insightsMigratorUpQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/migration.go:Up
 WITH
-global AS (
+global_jobs AS (
 	SELECT id FROM insights_settings_migration_jobs
 	WHERE completed_at IS NULL AND global IS TRUE
 ),
-org AS (
+org_jobs AS (
 	SELECT id FROM insights_settings_migration_jobs
 	WHERE completed_at IS NULL AND org_id IS NOT NULL
 ),
-user AS (
+user_jobs AS (
 	SELECT id FROM insights_settings_migration_jobs
 	WHERE completed_at IS NULL AND user_id IS NOT NULL
 ),
 candidates AS (
 	-- Select global jobs first
-	SELECT id FROM global
+	SELECT id FROM global_jobs
 
 	-- Select org jobs only if global jobs are empty
-	UNION SELECT id FROM org WHERE
-		NOT EXISTS (SELECT 1 FROM global)
+	UNION SELECT id FROM org_jobs WHERE
+		NOT EXISTS (SELECT 1 FROM global_jobs)
 
 	-- Select user jobs only if global and org jobs are empty
-	UNION SELECT id FROM user WHERE
-		NOT EXISTS (SELECT 1 FROM global) AND
-		NOT EXISTS (SELECT 1 FROM org)
+	UNION SELECT id FROM user_jobs WHERE
+		NOT EXISTS (SELECT 1 FROM global_jobs) AND
+		NOT EXISTS (SELECT 1 FROM org_jobs)
 )
 SELECT
 	user_id,
