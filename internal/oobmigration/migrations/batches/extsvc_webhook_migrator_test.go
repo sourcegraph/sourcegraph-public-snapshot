@@ -139,7 +139,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		createExternalServices(t, ctx, store)
 
 		key := et.TestKey{}
-		m := NewExternalServiceWebhookMigratorWithDB(db, key, 50)
+		m := NewExternalServiceWebhookMigratorWithDB(store, key, 50)
 
 		// By default, all the external services should have non-NULL
 		// has_webhooks.
@@ -162,7 +162,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		numInitSvcs := len(testExtSvcs) + 1
 
 		key := et.TestKey{}
-		m := NewExternalServiceWebhookMigratorWithDB(db, key, 50)
+		m := NewExternalServiceWebhookMigratorWithDB(store, key, 50)
 		// Ensure that we have to run two Ups.
 		m.batchSize = numInitSvcs - 1
 
