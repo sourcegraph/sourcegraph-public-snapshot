@@ -117,6 +117,10 @@ func runOutOfBandMigrations(
 
 		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
 
+		for _, m := range migrations {
+			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Out of band migration #%d is at %.2f%%", m.ID, m.Progress*100))
+		}
+
 		complete := true
 		for _, m := range migrations {
 			if !m.Complete() {
@@ -125,9 +129,6 @@ func runOutOfBandMigrations(
 		}
 		if complete {
 			break
-		}
-		for _, m := range migrations {
-			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Out of band migration #%d is at %.2f%%", m.ID, m.Progress*100))
 		}
 
 		select {
