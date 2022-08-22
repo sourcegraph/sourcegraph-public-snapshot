@@ -1317,7 +1317,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetBaseRefOid := "f00b4r"
 		changesetHeadRefOid := "b4rf00"
 		mockRepoComparison(t, changesetBaseRefOid, changesetHeadRefOid, testDiff)
-		changesetDiffStat := apitest.DiffStat{Added: 0, Changed: 2, Deleted: 0}
+		changesetDiffStat := apitest.DiffStat{Added: 2, Deleted: 2}
 
 		changesets := make([]*btypes.Changeset, 0, len(repos))
 		for _, r := range repos {
@@ -1381,7 +1381,6 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			batchChangeDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
-				Changed: 2 * changesetDiffStat.Changed,
 				Deleted: 2 * changesetDiffStat.Deleted,
 			},
 		})
@@ -1407,7 +1406,6 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			batchChangeDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
-				Changed: 1 * changesetDiffStat.Changed,
 				Deleted: 1 * changesetDiffStat.Deleted,
 			},
 		}
@@ -1480,7 +1478,8 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesetPreviewTypes: map[string]int{"VisibleChangesetApplyPreview": 2},
 			changesetPreviewCount: 2,
 			batchSpecDiffStat: apitest.DiffStat{
-				Added: 8, Changed: 8, Deleted: 8,
+				Added:   16,
+				Deleted: 16,
 			},
 		})
 
@@ -1507,7 +1506,8 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesetPreviewTypes: map[string]int{"VisibleChangesetApplyPreview": 1, "HiddenChangesetApplyPreview": 1},
 			changesetPreviewCount: 2,
 			batchSpecDiffStat: apitest.DiffStat{
-				Added: 4, Changed: 4, Deleted: 4,
+				Added:   8,
+				Deleted: 8,
 			},
 		})
 
