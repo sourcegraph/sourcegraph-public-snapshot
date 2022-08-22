@@ -302,7 +302,8 @@ impl<'a> DocumentGenerator<'a> {
 
                             match match_scope_to_kind(&scope) {
                                 Some(kind) => {
-                                    println!("SCOPE {row:>3}:{character:<3} {} {kind:?}", format!("{}", scope));
+                                    // Uncomment to debug what scopes are picked up
+                                    // println!("SCOPE {row:>3}:{character:<3} {} {kind:?}", format!("{}", scope));
                                     let partial_hl = HighlightStart::some(row, character, kind);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
                                     {
