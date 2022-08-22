@@ -3,6 +3,7 @@ package cliutil
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
 	"time"
 
@@ -78,7 +79,7 @@ func runOutOfBandMigrations(
 	registerMigrations oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 	ids []int,
-) error {
+) (err error) {
 	store := oobmigration.NewStoreWithDB(db)
 	runner := outOfBandMigrationRunnerWithStore(store)
 	if err := runner.SynchronizeMetadata(ctx); err != nil {
@@ -98,6 +99,7 @@ func runOutOfBandMigrations(
 			ids = append(ids, migration.ID)
 		}
 	}
+	sort.Ints(ids)
 
 	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
 
@@ -108,6 +110,16 @@ func runOutOfBandMigrations(
 	go runner.StartPartial(ids)
 	defer runner.Stop()
 
+	bars := make([]output.ProgressBar, 0, len(ids))
+	for _, id := range ids {
+		bars = append(bars, output.ProgressBar{
+			Label: fmt.Sprintf("Migraton #%d", id),
+			Max:   1.0,
+		})
+	}
+	progress := out.Progress(bars, nil)
+	defer progress.Destroy()
+
 	ticker := time.NewTicker(time.Second).C
 	for {
 		migrations, err := getMigrations(ctx, store, ids)
@@ -117,8 +129,8 @@ func runOutOfBandMigrations(
 
 		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
 
-		for _, m := range migrations {
-			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Out of band migration #%d is at %.2f%%", m.ID, m.Progress*100))
+		for i, m := range migrations {
+			progress.SetValue(i, m.Progress)
 		}
 
 		complete := true
