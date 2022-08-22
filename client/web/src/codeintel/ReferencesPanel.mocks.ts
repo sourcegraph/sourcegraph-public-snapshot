@@ -1,13 +1,15 @@
 import { MockedResponse } from '@apollo/client/testing'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+
 import {
+    HighlightResponseFormat,
     LocationFields,
     ReferencesPanelHighlightedBlobVariables,
     ResolveRepoAndRevisionVariables,
     UsePreciseCodeIntelForPositionResult,
     UsePreciseCodeIntelForPositionVariables,
-} from 'src/graphql-operations'
-
-import { getDocumentNode } from '@sourcegraph/http-client'
+} from '../graphql-operations'
 
 import {
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
@@ -90,6 +92,8 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
         commit,
         path,
         repository: repoName,
+        format: HighlightResponseFormat.HTML_HIGHLIGHT,
+        html: true,
     }
 
     return {

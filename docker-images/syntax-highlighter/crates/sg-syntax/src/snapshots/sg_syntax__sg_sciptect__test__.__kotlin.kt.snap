@@ -1,0 +1,167 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+expression: "dump_document(&document, &contents)"
+---
+  package foobar
+//^^^^^^^ IdentifierKeyword
+  
+  import java.nio.channels.FileChannel
+//^^^^^^ IdentifierKeyword
+  
+  fun Mat.put(indices: IntArray, data: UShortArray)  = this.put(indices, data.asShortArray())
+//^^^ IdentifierKeyword
+//        ^^^ IdentifierFunction
+//            ^^^^^^^ Identifier
+//                   ^ IdentifierOperator
+//                     ^^^^^^^^ IdentifierType
+//                               ^^^^ IdentifierKeyword
+//                                   ^ IdentifierOperator
+//                                                   ^ IdentifierOperator
+//                                                     ^^^^ IdentifierBuiltin
+//                                                         ^ IdentifierOperator
+//                                                                       ^^^^ IdentifierKeyword
+//                                                                           ^ IdentifierOperator
+  
+  /***
+//^^^^ Comment 6:0..12:3
+   *  Example use:
+   *
+   *  val (b, g, r) = mat.at<UByte>(50, 50).v3c
+   *  mat.at<UByte>(50, 50).val = T3(245u, 113u, 34u)
+   *
+   */
+  @Suppress("UNCHECKED_CAST")
+//          ^^^^^^^^^^^^^^^^ StringLiteral
+  inline fun <reified T> Mat.at(row: Int, col: Int) : Atable<T> =
+//^^^^^^ IdentifierKeyword
+//       ^^^ IdentifierKeyword
+//            ^^^^^^^ IdentifierKeyword
+//                    ^ IdentifierType
+//                           ^^ IdentifierFunction
+//                              ^^^ Identifier
+//                                 ^ IdentifierOperator
+//                                   ^^^ IdentifierType
+//                                        ^^^ Identifier
+//                                           ^ IdentifierOperator
+//                                             ^^^ IdentifierType
+//                                                  ^ IdentifierOperator
+//                                                              ^ IdentifierOperator
+      when (T::class) {
+//    ^^^^ IdentifierKeyword
+//           ^^ IdentifierOperator
+          UShort::class -> AtableUShort(this, row, col) as Atable<T>
+//              ^^ IdentifierOperator
+//                      ^^ IdentifierOperator
+//                                      ^^^^ IdentifierBuiltin
+//                                                      ^^ IdentifierOperator
+          else -> throw RuntimeException("Unsupported class type")
+//        ^^^^ IdentifierKeyword
+//             ^^ IdentifierOperator
+//                ^^^^^ IdentifierKeyword
+//                                       ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      }
+  
+  
+  /**
+//^^^ Comment 21:0..24:3
+   * Implementation of [DataAccess] which handles access and interactions with file and data
+   * under scoped storage via the MediaStore API.
+   */
+  @RequiresApi(Build.VERSION_CODES.Q)
+//                  ^ IdentifierOperator
+//                                ^ IdentifierOperator
+  internal class MediaStoreData(context: Context, filePath: String, accessFlag: FileAccessFlags) :
+//^^^^^^^^ IdentifierKeyword
+//         ^^^^^ IdentifierKeyword
+//                              ^^^^^^^ Identifier
+//                                     ^ IdentifierOperator
+//                                                ^^^^^^^^ Identifier
+//                                                        ^ IdentifierOperator
+//                                                          ^^^^^^ IdentifierType
+//                                                                  ^^^^^^^^^^ Identifier
+//                                                                            ^ IdentifierOperator
+//                                                                                               ^ IdentifierOperator
+   DataAccess(filePath) {
+  
+   private data class DataItem(
+// ^^^^^^^ IdentifierKeyword
+//         ^^^^ IdentifierKeyword
+//              ^^^^^ IdentifierKeyword
+    val id: Long,
+//  ^^^ IdentifierKeyword
+//      ^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^^ IdentifierType
+    val mediaType: String
+//  ^^^ IdentifierKeyword
+//      ^^^^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^^^^^ IdentifierType
+   )
+  
+   companion object {
+// ^^^^^^^^^^ IdentifierKeyword
+//           ^^^^^^ IdentifierKeyword
+  
+    private val PROJECTION = arrayOf(
+//  ^^^^^^^ IdentifierKeyword
+//          ^^^ IdentifierKeyword
+//                         ^ IdentifierOperator
+     MediaStore.Files.FileColumns._ID
+//             ^ IdentifierOperator
+//                   ^ IdentifierOperator
+//                               ^ IdentifierOperator
+    )
+  
+    private const val SELECTION_BY_PATH = "${MediaStore.Files.FileColumns.DISPLAY_NAME} = ? " +
+//  ^^^^^^^ IdentifierKeyword
+//          ^^^^^ IdentifierKeyword
+//                ^^^ IdentifierKeyword
+//                                      ^ IdentifierOperator
+//                                        ^ StringLiteral
+//                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                                                                     ^^^^^^ StringLiteral
+//                                                                                            ^ IdentifierOperator
+     " AND ${MediaStore.Files.FileColumns.RELATIVE_PATH} = ?"
+//   ^^^^^^ StringLiteral
+//         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                                      ^^^^^ StringLiteral
+  
+    private fun getSelectionByPathArguments(path: String): Array<String> {
+//  ^^^^^^^ IdentifierKeyword
+//          ^^^ IdentifierKeyword
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                          ^^^^ Identifier
+//                                              ^ IdentifierOperator
+//                                                ^^^^^^ IdentifierType
+//                                                       ^ IdentifierOperator
+//                                                         ^^^^^ IdentifierType
+//                                                               ^^^^^^ IdentifierType
+     return arrayOf(getMediaStoreDisplayName(path), getMediaStoreRelativePath(path))
+//   ^^^^^^ IdentifierKeyword
+    }
+   }
+   override val fileChannel: FileChannel
+// ^^^^^^^^ IdentifierKeyword
+//          ^^^ IdentifierKeyword
+//                         ^ IdentifierOperator
+  
+   init {
+    val contentResolver = context.contentResolver
+//  ^^^ IdentifierKeyword
+//                      ^ IdentifierOperator
+//                               ^ IdentifierOperator
+    val dataItems = queryByPath(context, filePath)
+//  ^^^ IdentifierKeyword
+//                ^ IdentifierOperator
+  
+  
+    id = dataItem.id
+//     ^ IdentifierOperator
+//               ^ IdentifierOperator
+    uri = dataItem.uri
+//      ^ IdentifierOperator
+//                ^ IdentifierOperator
+   }
+  }
+

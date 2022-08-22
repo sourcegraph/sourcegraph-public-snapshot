@@ -271,6 +271,7 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 			Namespace:       "executor",
 			DescriptionRoot: "Executor jobs",
 
+			// if updating this, also update in NewExecutorProcessorGroup
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "executor",
 				MetricDescriptionRoot: "unprocessed executor job",
@@ -304,6 +305,12 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		Filters:               filters,
 	}
 
+	queueConstructorOptions := ObservableConstructorOptions{
+		MetricNameRoot:        "executor",
+		MetricDescriptionRoot: "unprocessed executor job",
+		By:                    []string{"queue"},
+	}
+
 	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
@@ -313,7 +320,17 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:    NoAlertsOption("none"),
+			Total: CriticalOption(
+				monitoring.Alert().
+					CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
+					LessOrEqual(0).
+					// ~5min for scale-from-zero
+					For(time.Minute*5),
+				`
+				- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+				- Make sure the executors appear under Site Admin > Executors.
+				- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
+			`),
 			Duration: NoAlertsOption("none"),
 			Errors:   NoAlertsOption("none"),
 			ErrorRate: CriticalOption(

@@ -604,7 +604,7 @@ type ExperimentalFeatures struct {
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
-	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
+	EnableLegacyExtensions *bool `json:"enableLegacyExtensions,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code

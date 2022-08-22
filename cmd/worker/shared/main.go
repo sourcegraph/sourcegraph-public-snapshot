@@ -16,10 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -37,16 +37,17 @@ import (
 const addr = ":3189"
 
 // Start runs the worker.
-func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) error {
-	registerMigrations := composeRegisterMigrations(migrations.RegisterOSSMigrations, registerEnterpriseMigrations)
+func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) error {
+	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
-		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrations),
+		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrators),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
+		"repo-statistics-compactor":             repostatistics.NewCompactor(),
 	}
 
 	jobs := map[string]job.Job{}
@@ -269,18 +270,4 @@ func jobNames(jobs map[string]job.Job) []string {
 	sort.Strings(names)
 
 	return names
-}
-
-func composeRegisterMigrations(fns ...func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	return func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-		for _, fn := range fns {
-			if fn != nil {
-				if err := fn(db, outOfBandMigrationRunner); err != nil {
-					return err
-				}
-			}
-		}
-
-		return nil
-	}
 }

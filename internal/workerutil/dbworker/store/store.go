@@ -233,8 +233,8 @@ type Options struct {
 	// is not necessary by the caller.
 	ViewName string
 
-	// Scan is the function used to convert a rows object into a record of the expected shape.
-	Scan RecordScanFn
+	// Scan is the function used to scan a resultset into a slice of the expected type.
+	Scan ResultsetScanFn
 
 	// OrderByExpression is the SQL expression used to order candidate records when selecting the next
 	// batch of work to perform. This expression may use the alias provided in `ViewName`, if one was
@@ -278,12 +278,13 @@ type Options struct {
 	clock glock.Clock
 }
 
-// RecordScanFn is a function that interprets row values as a particular record. This function should
-// return a false-valued flag if the given result set was empty. This function must close the rows
-// value if the given error value is nil.
+// ResultsetScanFn is a function that scans row values from a resultset into
+// records. This function must close the rows value if the given error value is
+// nil.
 //
-// See the `CloseRows` function in the store/base package for suggested implementation details.
-type RecordScanFn func(rows *sql.Rows, err error) (workerutil.Record, bool, error)
+// See the `CloseRows` function in the store/base package for suggested
+// implementation details.
+type ResultsetScanFn func(rows *sql.Rows, err error) ([]workerutil.Record, error)
 
 // New creates a new store with the given database handle and options.
 func New(handle basestore.TransactableHandle, options Options) Store {
@@ -531,7 +532,7 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		s.columnReplacer.Replace("{worker_hostname}"):   workerHostnameExpr,
 	}
 
-	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
+	records, err := s.options.Scan(s.Query(ctx, s.formatQuery(
 		dequeueQuery,
 		s.options.OrderByExpression,
 		quote(s.options.ViewName),
@@ -551,12 +552,15 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	if err != nil {
 		return nil, false, err
 	}
-	if !exists {
+	if len(records) > 1 {
+		return nil, false, errors.Newf("more than one record dequeued: %d", len(records))
+	}
+	if len(records) == 0 {
 		return nil, false, nil
 	}
-	trace.Log(log.Int("recordID", record.RecordID()))
+	trace.Log(log.Int("recordID", records[0].RecordID()))
 
-	return record, true, nil
+	return records[0], true, nil
 }
 
 const dequeueQuery = `

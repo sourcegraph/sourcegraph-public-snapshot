@@ -25,7 +25,7 @@ type Opts struct {
 
 // Search calls the streaming search endpoint and uses decoder to decode the
 // response body.
-func Search(ctx context.Context, query string, decoder streamhttp.FrontendStreamDecoder) (err error) {
+func Search(ctx context.Context, query string, patternType *string, decoder streamhttp.FrontendStreamDecoder) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "InsightsStreamSearch")
 	defer func() {
 		span.LogFields(
@@ -37,6 +37,10 @@ func Search(ctx context.Context, query string, decoder streamhttp.FrontendStream
 	if err != nil {
 		return err
 	}
+	if patternType != nil {
+		req.URL.Query().Add("t", *patternType)
+	}
+
 	req = req.WithContext(ctx)
 	req.Header.Set("User-Agent", "code-insights-backend")
 

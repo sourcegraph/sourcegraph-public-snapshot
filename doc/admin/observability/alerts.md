@@ -5920,6 +5920,43 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## executor: executor_processor_total
+
+<p class="subtitle">handler operations every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> executor: less than 0 handler operations every 5m for 5m0s
+
+<details>
+<summary>Technical details</summary>
+
+Custom alert query: `
+		(sum(src_executor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}) OR vector(0)) == 0
+			AND
+		(sum by (queue)(src_executor_total{job=~"^sourcegraph-executors.*"})) > 0
+	`
+
+</details>
+
+**Next steps**
+
+- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+- Make sure the executors appear under Site Admin > Executors.
+- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-executor-processor-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_executor_executor_processor_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<br />
+
 ## executor: executor_processor_error_rate
 
 <p class="subtitle">handler operation error rate over 5m</p>
