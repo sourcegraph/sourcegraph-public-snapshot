@@ -208,7 +208,8 @@ func (s *BuildStore) Add(event *Event) {
 			s.consecutiveFailures[failuresKey] += 1
 			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
 		} else {
-			s.consecutiveFailures[failuresKey] = 1
+			// We got a pass, reset the count
+			s.consecutiveFailures[failuresKey] = 0
 		}
 	}
 
