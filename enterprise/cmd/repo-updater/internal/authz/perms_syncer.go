@@ -260,6 +260,11 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 
 	_, tok, err := github.GetExternalAccountData(ctx, &acct.AccountData)
 
+	// Not a GitHub App access token
+	if tok.AccessToken[0:3] != "ghu" {
+		return nil, nil
+	}
+
 	if err != nil {
 		return nil, err
 	}
