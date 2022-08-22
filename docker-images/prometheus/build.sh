@@ -48,10 +48,8 @@ if [[ "$CACHE" == "true" ]]; then
   BUILD_CACHE=""
 fi
 
-export APPLICATION=${APPLICATION:-prometheus}
-
 # shellcheck disable=SC2086
-docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/$APPLICATION}" . \
+docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
   --progress=plain \
   --build-arg BASE_IMAGE \
   --build-arg COMMIT_SHA \

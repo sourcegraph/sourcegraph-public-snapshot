@@ -1,5 +1,7 @@
-# `prometheus-cloud`
+# `prometheus-gcp`
 This is a patched version of Sourcegraoh's Prometheus image using an alternative base image provided by GCP to allow automatically shipping metrics to the Google Cloud Managed Prometheus Service.
+
+Please note: using this image will automatically begin shipping Prometheus metrics to the Google Cloud Managed Prometheus Service and may incur additional cloud hosting costs.
 
 This image is built by calling the `build.sh` function in [`prometheus`](../prometheus/README.md).
 
