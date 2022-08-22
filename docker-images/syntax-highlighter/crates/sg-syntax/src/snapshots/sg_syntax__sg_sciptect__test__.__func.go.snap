@@ -96,21 +96,24 @@ expression: "dump_document(&document, &contents)"
 //        ^ IdentifierOperator
 //         ^^^ Identifier
 //             ^ PunctuationBracket
-    x: 42
+    x: 42,
 //  ^ Identifier
 //   ^ PunctuationBracket
 //     ^^ NumericLiteral
+//       ^ PunctuationBracket
     Bar: Bar {
 //  ^^^ Identifier
 //     ^ PunctuationBracket
 //       ^^^ Identifier
 //           ^ PunctuationBracket
-     z: 43
+     z: 43,
 //   ^ Identifier
 //    ^ PunctuationBracket
 //      ^^ NumericLiteral
-    }
+//        ^ PunctuationBracket
+    },
 //  ^ PunctuationBracket
+//   ^ PunctuationBracket
    }
 // ^ PunctuationBracket
   
