@@ -1,6 +1,6 @@
 import { useMemo, useContext } from 'react'
 
-import { trace, Span, ROOT_CONTEXT, Context } from '@opentelemetry/api'
+import { trace, Span, ROOT_CONTEXT, Context, Attributes } from '@opentelemetry/api'
 
 import { sharedSpanStore } from '../../sdk'
 import { TraceContext, reactManualTracer } from '../constants'
@@ -41,11 +41,15 @@ export function useNewTraceContextProviderValue(
     const { context: providedParentContext } = useContext(TraceContext)
 
     return useMemo(() => {
-        const { name, options: spanOptions, context: customContext } = options
+        const { name, attributes, options: spanOptions, context: customContext } = options
         const parentContext = getRelevantContext(providedParentContext, customContext)
 
         const newSpan = reactManualTracer.startSpan(name, spanOptions, parentContext)
         const newContext = trace.setSpan(parentContext, newSpan)
+
+        if (attributes) {
+            setRenderAttributes(newSpan, attributes)
+        }
 
         return {
             newSpan,
@@ -55,4 +59,20 @@ export function useNewTraceContextProviderValue(
         // We want to create a new span only on the first component render call.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+}
+
+/**
+ * A wrapper around `span.setAttributes()` that prefixes attribute names with `render.` string.
+ * This namespacing is valuable for data exploration with tools like Honeycomb.
+ */
+const setRenderAttributes = (span: Span | undefined, attributes: Attributes): void => {
+    if (!span) {
+        return
+    }
+
+    const prefixedAttributes = Object.fromEntries(
+        Object.entries(attributes).map(([key, value]) => [`render.${key}`, value])
+    )
+
+    span.setAttributes(prefixedAttributes)
 }

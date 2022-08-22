@@ -3,7 +3,7 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
-import { TraceSpanProvider, useCurrentSpan } from '@sourcegraph/observability-client'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
@@ -36,7 +36,6 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 export const RepositoryFileTreePage: React.FunctionComponent<
     React.PropsWithChildren<RepositoryFileTreePageProps>
 > = props => {
-    const { setSpanRenderAttributes } = useCurrentSpan()
     const {
         repo,
         resolvedRev: { commitID, defaultBranch },
@@ -56,11 +55,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
 
     const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
     const mode = getModeFromPath(filePath)
-
-    setSpanRenderAttributes({
-        mode,
-        objectType,
-    })
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
     const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)

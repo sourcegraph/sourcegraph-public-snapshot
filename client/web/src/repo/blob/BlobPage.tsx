@@ -92,7 +92,7 @@ interface BlobPageInfo extends BlobInfo {
 }
 
 export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const { span, setSpanRenderAttributes } = useCurrentSpan()
+    const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
@@ -283,11 +283,12 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
     const blameDecorations = useBlameDecorations({ repoName, commitID, filePath })
 
-    const isSearchNotebook =
+    const isSearchNotebook = Boolean(
         blobInfoOrError &&
-        !isErrorLike(blobInfoOrError) &&
-        blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
-        showSearchNotebook
+            !isErrorLike(blobInfoOrError) &&
+            blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
+            showSearchNotebook
+    )
 
     const onCopyNotebook = useCallback(
         (props: Omit<CopyNotebookProps, 'title'>) => {
@@ -307,13 +308,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 ? 'rendered'
                 : 'code'
     }
-
-    setSpanRenderAttributes({
-        isSearchNotebook: Boolean(isSearchNotebook),
-        renderMode,
-        enableCodeMirror,
-        enableLazyBlobSyntaxHighlighting,
-    })
 
     // Always render these to avoid UI jitter during loading when switching to a new file.
     const alwaysRender = (
@@ -464,7 +458,15 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
-                <TraceSpanProvider name={enableCodeMirror ? 'CodeMirrorBlob' : 'Blob'}>
+                <TraceSpanProvider
+                    name={enableCodeMirror ? 'CodeMirrorBlob' : 'Blob'}
+                    attributes={{
+                        isSearchNotebook,
+                        renderMode,
+                        enableCodeMirror,
+                        enableLazyBlobSyntaxHighlighting,
+                    }}
+                >
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}

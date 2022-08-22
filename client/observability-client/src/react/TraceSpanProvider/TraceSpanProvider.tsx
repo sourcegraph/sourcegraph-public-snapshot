@@ -10,8 +10,10 @@ import { useNewTraceContextProviderValue } from './useNewTraceContextProviderVal
 export type TraceSpanProviderProps = PropsWithChildren<{
     /** OpenTelemetry span name */
     name: string
-    /** OpenTelemetry span options */
-    options?: SpanOptions
+    /** OpenTelemetry span options without `attributes` */
+    options?: Omit<SpanOptions, 'attributes'>
+    /** OpenTelemetry span attributes. Attribute names will be automatically prefixed with 'render.' */
+    attributes?: SpanOptions['attributes']
     /** OpenTelemetry context */
     context?: Context
 }>

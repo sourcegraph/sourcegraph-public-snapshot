@@ -169,7 +169,12 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         path: routePath,
         exact: routePath === '',
         render: (props: RepositoryFileTreePageProps) => (
-            <TraceSpanProvider name="RepositoryFileTreePage">
+            <TraceSpanProvider
+                name="RepositoryFileTreePage"
+                attributes={{
+                    objectType: props.match.params.objectType,
+                }}
+            >
                 <RepositoryFileTreePage {...props} />,
             </TraceSpanProvider>
         ),
