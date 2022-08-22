@@ -429,20 +429,18 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             query Repositories(
                 $first: Int
                 $query: String
-                $cloned: Boolean
-                $notCloned: Boolean
                 $indexed: Boolean
                 $notIndexed: Boolean
                 $failedFetch: Boolean
+                $cloneStatus: CloneStatus
             ) {
                 repositories(
                     first: $first
                     query: $query
-                    cloned: $cloned
-                    notCloned: $notCloned
                     indexed: $indexed
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
+                    cloneStatus: $cloneStatus
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
@@ -457,13 +455,12 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             ${siteAdminRepositoryFieldsFragment}
         `,
         {
-            cloned: args.cloned ?? true,
-            notCloned: args.notCloned ?? true,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             failedFetch: args.failedFetch ?? false,
             first: args.first ?? null,
             query: args.query ?? null,
+            cloneStatus: args.cloneStatus ?? null,
         }
     ).pipe(
         map(dataOrThrowErrors),

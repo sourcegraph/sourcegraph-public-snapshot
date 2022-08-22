@@ -271,6 +271,7 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 			Namespace:       "executor",
 			DescriptionRoot: "Executor jobs",
 
+			// if updating this, also update in NewExecutorProcessorGroup
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "executor",
 				MetricDescriptionRoot: "unprocessed executor job",
@@ -304,6 +305,12 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		Filters:               filters,
 	}
 
+	queueConstructorOptions := ObservableConstructorOptions{
+		MetricNameRoot:        "executor",
+		MetricDescriptionRoot: "unprocessed executor job",
+		By:                    []string{"queue"},
+	}
+
 	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
@@ -313,7 +320,17 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:    NoAlertsOption("none"),
+			Total: CriticalOption(
+				monitoring.Alert().
+					CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
+					LessOrEqual(0).
+					// ~5min for scale-from-zero
+					For(time.Minute*5),
+				`
+				- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+				- Make sure the executors appear under Site Admin > Executors.
+				- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
+			`),
 			Duration: NoAlertsOption("none"),
 			Errors:   NoAlertsOption("none"),
 			ErrorRate: CriticalOption(
@@ -330,36 +347,6 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		},
 		Handlers: NoAlertsOption("none"),
 	})
-}
-
-// src_executor_run_lock_wait_total
-// src_executor_run_lock_held_total
-func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName string) monitoring.Group {
-	constructor := func(metricNameRoot, legend string) Observable {
-		filters := makeFilters("sg_job", containerName)
-		return Observable{
-			Name:        metricNameRoot + "_total",
-			Description: fmt.Sprintf("milliseconds %s every 5m", legend),
-			Owner:       monitoring.ObservableOwnerCodeIntel,
-			Query:       fmt.Sprintf(`sum(increase(src_%s_total{%s}[5m]))`, metricNameRoot, filters),
-			Panel:       monitoring.Panel().LegendFormat(legend).Unit(monitoring.Milliseconds),
-		}
-	}
-
-	return monitoring.Group{
-		Title:  "Run lock contention",
-		Hidden: true,
-		Rows: []monitoring.Row{
-			{
-				constructor("executor_run_lock_wait", "wait").WithNoAlerts(`
-					Number of milliseconds spent waiting for the run lock every 5m
-				`).Observable(),
-				constructor("executor_run_lock_held", "held").WithNoAlerts(`
-					Number of milliseconds spent holding for the run lock every 5m
-				`).Observable(),
-			},
-		},
-	}
 }
 
 // src_apiworker_command_total

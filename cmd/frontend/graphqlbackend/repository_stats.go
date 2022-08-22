@@ -15,9 +15,9 @@ type repositoryStatsResolver struct {
 	gitDirBytes       uint64
 	indexedLinesCount uint64
 
-	statisticsCountsOnce sync.Once
-	statisticsCounts     database.StatisticsCounts
-	statisticsCountsErr  error
+	repoStatisticsOnce sync.Once
+	repoStatistics     database.RepoStatistics
+	repoStatisticsErr  error
 }
 
 func (r *repositoryStatsResolver) GitDirBytes() BigInt {
@@ -29,7 +29,7 @@ func (r *repositoryStatsResolver) IndexedLinesCount() BigInt {
 }
 
 func (r *repositoryStatsResolver) Total(ctx context.Context) (int32, error) {
-	counts, err := r.computeStatisticsCounts(ctx)
+	counts, err := r.computeRepoStatistics(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -37,7 +37,7 @@ func (r *repositoryStatsResolver) Total(ctx context.Context) (int32, error) {
 }
 
 func (r *repositoryStatsResolver) Cloned(ctx context.Context) (int32, error) {
-	counts, err := r.computeStatisticsCounts(ctx)
+	counts, err := r.computeRepoStatistics(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -45,7 +45,7 @@ func (r *repositoryStatsResolver) Cloned(ctx context.Context) (int32, error) {
 }
 
 func (r *repositoryStatsResolver) Cloning(ctx context.Context) (int32, error) {
-	counts, err := r.computeStatisticsCounts(ctx)
+	counts, err := r.computeRepoStatistics(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -53,7 +53,7 @@ func (r *repositoryStatsResolver) Cloning(ctx context.Context) (int32, error) {
 }
 
 func (r *repositoryStatsResolver) NotCloned(ctx context.Context) (int32, error) {
-	counts, err := r.computeStatisticsCounts(ctx)
+	counts, err := r.computeRepoStatistics(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -61,18 +61,18 @@ func (r *repositoryStatsResolver) NotCloned(ctx context.Context) (int32, error) 
 }
 
 func (r *repositoryStatsResolver) FailedFetch(ctx context.Context) (int32, error) {
-	counts, err := r.computeStatisticsCounts(ctx)
+	counts, err := r.computeRepoStatistics(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return int32(counts.FailedFetch), nil
 }
 
-func (r *repositoryStatsResolver) computeStatisticsCounts(ctx context.Context) (database.StatisticsCounts, error) {
-	r.statisticsCountsOnce.Do(func() {
-		r.statisticsCounts, r.statisticsCountsErr = r.db.Repos().StatisticsCounts(ctx)
+func (r *repositoryStatsResolver) computeRepoStatistics(ctx context.Context) (database.RepoStatistics, error) {
+	r.repoStatisticsOnce.Do(func() {
+		r.repoStatistics, r.repoStatisticsErr = r.db.RepoStatistics().GetRepoStatistics(ctx)
 	})
-	return r.statisticsCounts, r.statisticsCountsErr
+	return r.repoStatistics, r.repoStatisticsErr
 }
 
 func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {

@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 538
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -277,6 +276,7 @@ expression: "dump_document(&document, &contents)"
               Assert.Contains(@"
 //            ^^^^^^ Identifier
 //                   ^^^^^^^^ Identifier
+//                            ^^ StringLiteral 53:28..55:1
   Lorem Ipsum
   ", component.Markup);
 //   ^^^^^^^^^ Identifier

@@ -1,0 +1,26 @@
+# A baseline configuration that sends logs of telemetry data to stdout.
+
+receivers:
+  otlp:
+    protocols:
+      grpc: # port 4317
+      http: # port 4318
+
+exporters:
+  logging:
+    loglevel: info
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+extensions:
+  health_check:
+    port: 13133
+  zpages:
+   endpoint: "localhost:55679"
+
+service:
+  extensions: [health_check,zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [logging]

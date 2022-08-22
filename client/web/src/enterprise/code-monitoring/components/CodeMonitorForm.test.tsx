@@ -20,6 +20,16 @@ const PROPS: CodeMonitorFormProps = {
 }
 
 describe('CodeMonitorForm', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     test('Uses trigger query when present', () => {
         renderWithBrandedContext(
             <MockedTestProvider>

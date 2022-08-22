@@ -168,13 +168,20 @@ export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
 
 export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
-        highlight(disableTimeout: false) {
+        highlight(disableTimeout: false, format: $format) {
             aborted
-            html
+            html @include(if: $html)
+            lsif
         }
     }
 
-    query ReferencesPanelHighlightedBlob($repository: String!, $commit: String!, $path: String!) {
+    query ReferencesPanelHighlightedBlob(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $format: HighlightResponseFormat!
+        $html: Boolean!
+    ) {
         repository(name: $repository) {
             id
             commit(rev: $commit) {

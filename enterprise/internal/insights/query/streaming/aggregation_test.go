@@ -9,32 +9,32 @@ import (
 func TestAddAggregate(t *testing.T) {
 	testCases := []struct {
 		name  string
-		have  aggregated
+		have  limitedAggregator
 		value string
 		count int32
-		want  aggregated
+		want  limitedAggregator
 	}{
 		{
 			name: "invalid buffer size does nothing",
-			have: aggregated{
+			have: limitedAggregator{
 				resultBufferSize: -1,
 			},
 			value: "B",
 			count: 9,
-			want: aggregated{
+			want: limitedAggregator{
 				resultBufferSize: -1,
 			},
 		},
 		{
 			name: "adds up other count",
-			have: aggregated{
+			have: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"A": 12},
 				smallestResult:   &Aggregate{"A", 12},
 			},
 			value: "B",
 			count: 9,
-			want: aggregated{
+			want: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"A": 12},
 				smallestResult:   &Aggregate{"A", 12},
@@ -43,14 +43,14 @@ func TestAddAggregate(t *testing.T) {
 		},
 		{
 			name: "adds new result",
-			have: aggregated{
+			have: limitedAggregator{
 				resultBufferSize: 2,
 				Results:          map[string]int32{"A": 24},
 				smallestResult:   &Aggregate{"A", 24},
 			},
 			value: "B",
 			count: 32,
-			want: aggregated{
+			want: limitedAggregator{
 				resultBufferSize: 2,
 				Results:          map[string]int32{"A": 24, "B": 32},
 				smallestResult:   &Aggregate{"A", 24},
@@ -58,14 +58,14 @@ func TestAddAggregate(t *testing.T) {
 		},
 		{
 			name: "updates existing results",
-			have: aggregated{
+			have: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"C": 5},
 				smallestResult:   &Aggregate{"C", 5},
 			},
 			value: "C",
 			count: 11,
-			want: aggregated{
+			want: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"C": 16},
 				smallestResult:   &Aggregate{"C", 16},
@@ -73,14 +73,14 @@ func TestAddAggregate(t *testing.T) {
 		},
 		{
 			name: "ejects smallest result",
-			have: aggregated{
+			have: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"C": 5},
 				smallestResult:   &Aggregate{"C", 5},
 			},
 			value: "A",
 			count: 15,
-			want: aggregated{
+			want: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"A": 15},
 				smallestResult:   &Aggregate{"A", 15},
@@ -89,7 +89,7 @@ func TestAddAggregate(t *testing.T) {
 		},
 		{
 			name: "adds up other group count",
-			have: aggregated{
+			have: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"A": 12},
 				smallestResult:   &Aggregate{"A", 12},
@@ -97,7 +97,7 @@ func TestAddAggregate(t *testing.T) {
 			},
 			value: "B",
 			count: 9,
-			want: aggregated{
+			want: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"A": 12},
 				smallestResult:   &Aggregate{"A", 12},
@@ -106,13 +106,13 @@ func TestAddAggregate(t *testing.T) {
 		},
 		{
 			name: "first result becomes smallest result",
-			have: aggregated{
+			have: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{},
 			},
 			value: "new",
 			count: 1,
-			want: aggregated{
+			want: limitedAggregator{
 				resultBufferSize: 1,
 				Results:          map[string]int32{"new": 1},
 				smallestResult:   &Aggregate{"new", 1},
@@ -130,7 +130,7 @@ func TestAddAggregate(t *testing.T) {
 func TestFindSmallestAggregate(t *testing.T) {
 	testCases := []struct {
 		name string
-		have aggregated
+		have limitedAggregator
 		want *Aggregate
 	}{
 		{
@@ -139,21 +139,21 @@ func TestFindSmallestAggregate(t *testing.T) {
 		},
 		{
 			name: "one result is smallest",
-			have: aggregated{
+			have: limitedAggregator{
 				Results: map[string]int32{"myresult": 20},
 			},
 			want: &Aggregate{"myresult", 20},
 		},
 		{
 			name: "finds smallest result by count",
-			have: aggregated{
+			have: limitedAggregator{
 				Results: map[string]int32{"high": 20, "low": 5, "mid": 10},
 			},
 			want: &Aggregate{"low", 5},
 		},
 		{
 			name: "finds smallest result by label",
-			have: aggregated{
+			have: limitedAggregator{
 				Results: map[string]int32{"outsider": 5, "abc/1": 5, "abcd": 5, "abc/2": 5},
 			},
 			want: &Aggregate{"abc/1", 5},
@@ -168,7 +168,7 @@ func TestFindSmallestAggregate(t *testing.T) {
 }
 
 func TestSortAggregate(t *testing.T) {
-	a := aggregated{
+	a := limitedAggregator{
 		Results:          make(map[string]int32),
 		resultBufferSize: 5,
 	}
