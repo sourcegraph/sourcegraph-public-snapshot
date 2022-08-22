@@ -45,7 +45,7 @@ interface SearchConsolePageProps
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
     const extensionHostAPI = extensionsController !== null ? extensionsController.extHostAPI : null
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
+    const enableGoImportsSearchExpansion = useExperimentalFeatures(features => features.enableGoImportsSearchExpansion)
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -67,9 +67,9 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         return transformSearchQuery({
             query,
             extensionHostAPIPromise: extensionHostAPI,
-            extensionsAsCoreFeatures,
+            enableGoImportsSearchExpansion,
         })
-    }, [props.location.search, extensionHostAPI, extensionsAsCoreFeatures])
+    }, [props.location.search, extensionHostAPI, enableGoImportsSearchExpansion])
 
     const autocompletion = useMemo(
         () =>

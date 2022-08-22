@@ -1789,6 +1789,8 @@ type SettingsExperimentalFeatures struct {
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
 	ExtensionsAsCoreFeatures *bool `json:"extensionsAsCoreFeatures,omitempty"`
+	// EnableGoImportsSearchExpansion description: Enables `go.imports:` search expansion (formally known as go imports search extension)
+	EnableGoImportsSearchExpansion *bool `json:"enableGoImportsSearchExpansion,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding

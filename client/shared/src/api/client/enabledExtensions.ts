@@ -69,11 +69,7 @@ export const getConfiguredSideloadedExtension = (
  * List of extensions migrated to the core workflow. These extensions should not be activated if
  * `extensionsAsCoreFeatures` experimental feature is enabled.
  */
-export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set([
-    'sourcegraph/git-extras',
-    'sourcegraph/search-export',
-    'sourcegraph/go-imports-search',
-])
+export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras', 'sourcegraph/search-export'])
 
 /**
  * Returns an Observable of extensions enabled for the user.
@@ -102,13 +98,20 @@ export const getEnabledExtensions = once(
             map(([configuredExtensions, sideloadedExtension, settings]) => {
                 const extensionsAsCoreFeatures =
                     isSettingsValid(settings) && settings.final.experimentalFeatures?.extensionsAsCoreFeatures
+                const enableGoImportsSearchExpansion =
+                    isSettingsValid(settings) && settings.final.experimentalFeatures?.enableGoImportsSearchExpansion
 
                 let enabled = configuredExtensions.filter(extension => {
+                    const extensionsAsCoreFeatureMigratedExtension =
+                        extensionsAsCoreFeatures && MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
+                    const enableGoImportsSearchExpansionMigratedExtension =
+                        (enableGoImportsSearchExpansion === undefined || enableGoImportsSearchExpansion) &&
+                        extension.id === 'sourcegraph/go-imports-search-expansion'
+
                     // Ignore extensions migrated to the core workflow if the experimental feature is enabled
                     if (
                         context.clientApplication === 'sourcegraph' &&
-                        extensionsAsCoreFeatures &&
-                        MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
+                        (extensionsAsCoreFeatureMigratedExtension || enableGoImportsSearchExpansionMigratedExtension)
                     ) {
                         return false
                     }

@@ -42,13 +42,14 @@ export function useCachedSearchResults(
     telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
     const [cachedResults, setCachedResults] = useContext(SearchResultsCacheContext)
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
+    const enableGoImportsSearchExpansion = useExperimentalFeatures(features => features.enableGoImportsSearchExpansion)
 
     const history = useHistory()
 
     const transformedQuery = useMemo(
-        () => transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI, extensionsAsCoreFeatures }),
-        [query, extensionHostAPI, extensionsAsCoreFeatures]
+        () =>
+            transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI, enableGoImportsSearchExpansion }),
+        [query, extensionHostAPI, enableGoImportsSearchExpansion]
     )
 
     const results = useObservable(

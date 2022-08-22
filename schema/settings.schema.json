@@ -333,6 +333,14 @@
             "pointer": true
           }
         },
+        "enableGoImportsSearchExpansion": {
+          "description": "Enables `go.imports:` search expansion (formally known as go imports search extension).",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsCompute": {
           "description": "Enables Compute powered Code Insights",
           "type": "boolean",

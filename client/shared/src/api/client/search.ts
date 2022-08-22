@@ -16,15 +16,15 @@ const TRANSFORM_QUERY_TIMEOUT = 3000
 export function transformSearchQuery({
     query,
     extensionHostAPIPromise,
-    extensionsAsCoreFeatures,
+    enableGoImportsSearchExpansion,
 }: {
     query: string
     extensionHostAPIPromise: null | Promise<Remote<FlatExtensionHostAPI>>
-    extensionsAsCoreFeatures: undefined | boolean
+    enableGoImportsSearchExpansion: undefined | boolean
 }): Observable<string> {
     // We apply any non-extension transform before we send the query to the
     // extensions since we want these to take presedence over the extensions.
-    if (extensionsAsCoreFeatures) {
+    if (enableGoImportsSearchExpansion === undefined || enableGoImportsSearchExpansion) {
         query = goImportsTransformer(query)
     }
 
@@ -62,18 +62,18 @@ export function transformSearchQuery({
 }
 
 function goImportsTransformer(query: string): string {
-    const goImportsRegex = /\bgo.imports:([^\s]*)/
+    const goImportsRegex = /\bgo.imports:(\S*)/
     if (query.match(goImportsRegex)) {
         // Get package name
-        const pkgFilter = query.match(goImportsRegex)
-        const pkg = pkgFilter && pkgFilter.length >= 1 ? pkgFilter[1] : ''
+        const packageFilter = query.match(goImportsRegex)
+        const package_ = packageFilter && packageFilter.length >= 1 ? packageFilter[1] : ''
 
         // Package imported in grouped import statements
-        const matchPackage = '^\\t"[^\\s]*' + pkg + '[^\\s]*"$'
+        const matchPackage = '^\\t"[^\\s]*' + package_ + '[^\\s]*"$'
         // Match packages with aliases
-        const matchAlias = '\\t[\\w/]*\\s"[^\\s]*' + pkg + '[^\\s]*"$'
+        const matchAlias = '\\t[\\w/]*\\s"[^\\s]*' + package_ + '[^\\s]*"$'
         // Match packages in single import statement
-        const matchSingle = 'import\\s"[^\\s]*' + pkg + '[^\\s]*"$'
+        const matchSingle = 'import\\s"[^\\s]*' + package_ + '[^\\s]*"$'
         const finalRegex = `(${matchPackage}|${matchAlias}|${matchSingle}) lang:go `
 
         return query.replace(goImportsRegex, finalRegex)
