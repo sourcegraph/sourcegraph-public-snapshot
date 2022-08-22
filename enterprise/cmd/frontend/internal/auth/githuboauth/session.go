@@ -122,6 +122,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
+			// Check if GitHub App access token
 			if token.AccessToken[0:3] == "ghu" {
 				installations, err := ghClient.GetUserInstallations(ctx)
 				if err != nil {
