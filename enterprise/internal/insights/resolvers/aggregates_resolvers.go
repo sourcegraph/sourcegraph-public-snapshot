@@ -282,33 +282,34 @@ func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
 }
 
 func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
-	// TODO(leonore): Finish up logic for ability to aggregate by capture group.
-	// A query should contain a capture group to allow this kind of aggregation.
-	//if !(patternType == "regexp" || patternType == "regex" || patternType == "standard" || patternType == "lucky") {
-	//	return false, nil
-	//}
-	//plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
-	//if err != nil {
-	//	return false, errors.Wrapf(err, "ParseAndValidateQuery")
-	//}
-	//parameters := querybuilder.ParametersFromQueryPlan(plan)
-	//selectParameter, typeParameter := false, false
-	//for _, parameter := range parameters {
-	//	if parameter.Field == query.FieldSelect {
-	//		if parameter.Value == "repo" || parameter.Value == "file" {
-	//			selectParameter = true
-	//		}
-	//	} else if parameter.Field == query.FieldType {
-	//		if parameter.Value == "repo" || parameter.Value == "path" {
-	//			typeParameter = true
-	//		}
-	//	}
-	//}
-	//if selectParameter && !typeParameter {
-	//	return false, nil
-	//}
-	//return true, nil
-	return false, nil
+	if !(patternType == "regexp" || patternType == "regex" || patternType == "standard" || patternType == "lucky") {
+		return false, nil
+	}
+	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	if err != nil {
+		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+	}
+	// A query should contain a capture group to allow capture group aggregation.
+	if !querybuilder.QueryContainsCaptureGroups(searchQuery) {
+		return false, nil
+	}
+	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	selectParameter, typeParameter := false, false
+	for _, parameter := range parameters {
+		if parameter.Field == query.FieldSelect {
+			if parameter.Value == "repo" || parameter.Value == "file" {
+				selectParameter = true
+			}
+		} else if parameter.Field == query.FieldType {
+			if parameter.Value == "repo" || parameter.Value == "path" {
+				typeParameter = true
+			}
+		}
+	}
+	if selectParameter && !typeParameter {
+		return false, nil
+	}
+	return true, nil
 }
 
 // A  type to represent the GraphQL union SearchAggregationResult

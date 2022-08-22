@@ -40,3 +40,7 @@ func ParametersFromQueryPlan(plan query.Plan) []query.Parameter {
 	}
 	return parameters
 }
+
+func QueryContainsCaptureGroups(q string) bool {
+	return len(findGroups(q)) > 0
+}
