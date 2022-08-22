@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -269,7 +270,7 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 	}
 
 	// Not a GitHub App access token
-	if len(tok.AccessToken) > 3 && tok.AccessToken[0:3] != "ghu" {
+	if !strings.HasPrefix(tok.AccessToken, "ghu") {
 		return nil, nil
 	}
 
