@@ -72,12 +72,13 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*searchTimeLimitSeconds)
 	defer cancelReqContext()
 	searchClient := streaming.NewInsightsSearchClient(r.baseInsightResolver.postgresDB)
-	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, aggregation.NewSearchResultsAggregator(tabulationFunc, countingFunc))
+	searchResultsAggregator := aggregation.NewSearchResultsAggregator(tabulationFunc, countingFunc)
+	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
 	if err != nil {
 		return nil, err
 	}
 
-	successful, failureReason := searchSuccessful(alert, tabulationErrors)
+	successful, failureReason := searchSuccessful(alert, tabulationErrors, searchResultsAggregator.ShardTimeoutOccured())
 	if !successful {
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
 	}
@@ -103,10 +104,14 @@ func aggregationModeSupported(searchQuery, patternType string, mode types.Search
 	return false, "Only aggregation by repository is currently supported."
 }
 
-func searchSuccessful(alert *search.Alert, tabulationErrors []error) (bool, string) {
+func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeoutOccured bool) (bool, string) {
 
 	if len(tabulationErrors) > 0 {
 		return false, "query returned with errors"
+	}
+
+	if shardTimeoutOccured {
+		return false, "query unable to complete in allocated time"
 	}
 
 	return true, ""

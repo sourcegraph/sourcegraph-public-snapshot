@@ -8,12 +8,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type AggregationMatchResult struct {
 	Key   MatchKey
 	Count int
+}
+
+type SearchResultsAggregator interface {
+	streaming.Sender
+	ShardTimeoutOccured() bool
 }
 
 type AggregationTabulator func(*AggregationMatchResult, error)
@@ -140,7 +147,7 @@ func GetCountFuncForMode(query, patternType string, mode types.SearchAggregation
 	return modeCountFunc, nil
 }
 
-func NewSearchResultsAggregator(tabulator AggregationTabulator, countFunc AggregationCountFunc) streaming.Sender {
+func NewSearchResultsAggregator(tabulator AggregationTabulator, countFunc AggregationCountFunc) SearchResultsAggregator {
 	return &searchAggregationResults{
 		tabulator: tabulator,
 		countFunc: countFunc,
@@ -150,9 +157,21 @@ func NewSearchResultsAggregator(tabulator AggregationTabulator, countFunc Aggreg
 type searchAggregationResults struct {
 	tabulator AggregationTabulator
 	countFunc AggregationCountFunc
+	progress  client.ProgressAggregator
+}
+
+func (r *searchAggregationResults) ShardTimeoutOccured() bool {
+	for _, skip := range r.progress.Current().Skipped {
+		if skip.Reason == api.ShardTimeout {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
+	r.progress.Update(event)
 	combined := map[MatchKey]int{}
 	for _, match := range event.Results {
 		key, count, err := r.countFunc(match)
