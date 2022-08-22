@@ -459,7 +459,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
                 <TraceSpanProvider
-                    name={enableCodeMirror ? 'CodeMirrorBlob' : 'Blob'}
+                    name="Blob"
                     attributes={{
                         isSearchNotebook,
                         renderMode,
