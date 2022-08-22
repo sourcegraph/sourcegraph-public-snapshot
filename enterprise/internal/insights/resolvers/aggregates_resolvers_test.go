@@ -201,6 +201,18 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 			canAggregate: false,
 			err:          errors.Newf("ParseAndValidateQuery"),
 		},
+		{
+			name:         "can aggregate for standard query in backslash pattern",
+			query:        "/func(\\\\w+)/ case:yes",
+			patternType:  "standard",
+			canAggregate: true,
+		},
+		{
+			name:         "cannot aggregate for query with non-captured regexp pattern",
+			query:        "\\w+",
+			patternType:  "regex",
+			canAggregate: false,
+		},
 	}
 	suite := canAggregateBySuite{
 		canAggregateByFunc: canAggregateByCaptureGroup,
