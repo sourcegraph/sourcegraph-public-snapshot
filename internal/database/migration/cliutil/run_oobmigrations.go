@@ -117,13 +117,13 @@ func runOutOfBandMigrations(
 
 		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
 
-		incomplete := migrations[:0]
+		complete := true
 		for _, m := range migrations {
 			if !m.Complete() {
-				incomplete = append(incomplete, m)
+				complete = false
 			}
 		}
-		if len(incomplete) == 0 {
+		if complete {
 			break
 		}
 		for _, m := range migrations {
