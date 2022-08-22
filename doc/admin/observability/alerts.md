@@ -5926,7 +5926,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> executor: less than 0 handler operations every 5m for 15m0s
+- <span class="badge badge-critical">critical</span> executor: less than 0 handler operations every 5m for 5m0s
 
 <details>
 <summary>Technical details</summary>
@@ -5942,8 +5942,6 @@ Custom alert query: `
 **Next steps**
 
 - Check to see the state of any compute VMs, they may be taking longer than expected to boot.
-- If the VMs are booted, are they processing anything? We don`t track number of in-progress active jobs today,
-so the alert would only subside once a completed (successful or failed) job is reported.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-executor-processor-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
