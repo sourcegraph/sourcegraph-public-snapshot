@@ -268,6 +268,11 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 		return nil, nil
 	}
 
+	// Not a GitHub App access token
+	if !github.IsGitHubAppAccessToken(tok.AccessToken) {
+		return nil, nil
+	}
+
 	apiURL, err := url.Parse(acct.ServiceID)
 	if err != nil {
 		return nil, err
