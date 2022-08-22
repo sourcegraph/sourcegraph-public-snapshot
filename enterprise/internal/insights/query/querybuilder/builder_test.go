@@ -459,3 +459,130 @@ func TestAggregationQuery(t *testing.T) {
 		})
 	}
 }
+
+func Test_addAuthorFilter(t *testing.T) {
+	tests := []struct {
+		input  string
+		author string
+		want   autogold.Value
+	}{
+		{
+			input:  "myquery repo:myrepo type:commit",
+			author: "santa",
+			want:   autogold.Want("no initial author field in commit search", BasicQuery("repo:myrepo type:commit author:santa myquery")),
+		},
+		{
+			input:  "myquery repo:myrepo type:commit",
+			author: "xtreme[username]",
+			want:   autogold.Want("ensure author is escaped", BasicQuery("repo:myrepo type:commit author:xtreme\\[username\\] myquery")),
+		},
+		{
+			input:  "myquery repo:myrepo type:commit author:claus",
+			author: "santa",
+			want:   autogold.Want("one initial author field in commit search", BasicQuery("repo:myrepo type:commit author:claus author:santa myquery")),
+		},
+		{
+			input:  "myquery repo:myrepo type:diff",
+			author: "santa",
+			want:   autogold.Want("no initial author field in diff search", BasicQuery("repo:myrepo type:diff author:santa myquery")),
+		},
+		{
+			input:  "myquery repo:myrepo type:diff author:claus",
+			author: "santa",
+			want:   autogold.Want("one initial author field in diff search", BasicQuery("repo:myrepo type:diff author:claus author:santa myquery")),
+		},
+		{
+			input:  "myquery repo:myrepo type:file author:claus",
+			author: "santa",
+			want:   autogold.Want("invalid adding to file search - should error", "your query contains the field 'author', which requires type:commit or type:diff in the query"),
+		},
+		{
+			input:  "myquery repo:myrepo type:repo",
+			author: "santa",
+			want:   autogold.Want("invalid adding to repo search - should return input", BasicQuery("repo:myrepo type:repo myquery")),
+		},
+		{
+			input:  "(myquery repo:myrepo type:repo) or (type:diff repo:asdf findme)",
+			author: "santa",
+			want:   autogold.Want("compound query where one side is author and one side is repo", BasicQuery("(repo:myrepo type:repo myquery OR type:diff repo:asdf author:santa findme)")),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			got, err := addAuthorFilter(BasicQuery(test.input), test.author)
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}
+
+func Test_addRepoFilter(t *testing.T) {
+	tests := []struct {
+		input string
+		repo  string
+		want  autogold.Value
+	}{
+		{
+			input: "myquery",
+			repo:  "github.com/sourcegraph/sourcegraph",
+			want:  autogold.Want("no initial repo filter", BasicQuery("repo:github\\.com/sourcegraph/sourcegraph myquery")),
+		},
+		{
+			input: "myquery repo:supergreat",
+			repo:  "github.com/sourcegraph/sourcegraph",
+			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat repo:github\\.com/sourcegraph/sourcegraph myquery")),
+		},
+		{
+			input: "(myquery repo:supergreat) or (big repo:asdf)",
+			repo:  "github.com/sourcegraph/sourcegraph",
+			want:  autogold.Want("compound query adding repo", BasicQuery("(repo:supergreat repo:github\\.com/sourcegraph/sourcegraph myquery OR repo:asdf repo:github\\.com/sourcegraph/sourcegraph big)")),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			got, err := addRepoFilter(BasicQuery(test.input), test.repo)
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}
+
+func Test_addFileFilter(t *testing.T) {
+	tests := []struct {
+		input string
+		file  string
+		want  autogold.Value
+	}{
+		{
+			input: "myquery",
+			file:  "some/directory/file.md",
+			want:  autogold.Want("no initial repo filter", BasicQuery("file:some/directory/file\\.md myquery")),
+		},
+		{
+			input: "myquery repo:supergreat",
+			file:  "some/directory/file.md",
+			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat file:some/directory/file\\.md myquery")),
+		},
+		{
+			input: "(myquery repo:supergreat file:abcdef) or (big repo:asdf)",
+			file:  "some/directory/file.md",
+			want:  autogold.Want("compound query adding file", BasicQuery("(repo:supergreat file:abcdef file:some/directory/file\\.md myquery OR repo:asdf file:some/directory/file\\.md big)")),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			got, err := addFileFilter(BasicQuery(test.input), test.file)
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}

@@ -237,18 +237,18 @@ func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 type canAggregateBy func(searchQuery, patternType string) (bool, error)
 
 func canAggregateByRepo(searchQuery, patternType string) (bool, error) {
-	_, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	_, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
-		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+		return false, errors.Wrapf(err, "ParseQuery")
 	}
 	// We can always aggregate by repo.
 	return true, nil
 }
 
 func canAggregateByPath(searchQuery, patternType string) (bool, error) {
-	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
-		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+		return false, errors.Wrapf(err, "ParseQuery")
 	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// cannot aggregate over:
@@ -264,9 +264,9 @@ func canAggregateByPath(searchQuery, patternType string) (bool, error) {
 }
 
 func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
-	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
-		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+		return false, errors.Wrapf(err, "ParseQuery")
 	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// can only aggregate over type:diff and select/type:commit searches.
@@ -282,16 +282,13 @@ func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
 }
 
 func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
-	if !(patternType == "regexp" || patternType == "regex" || patternType == "standard" || patternType == "lucky") {
+	searchType := querybuilder.SearchTypeFromString(patternType)
+	if !(searchType == query.SearchTypeRegex || searchType == query.SearchTypeStandard || searchType == query.SearchTypeLucky) {
 		return false, nil
 	}
-	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
-		return false, errors.Wrapf(err, "ParseAndValidateQuery")
-	}
-	// A query should contain a capture group to allow capture group aggregation.
-	if !querybuilder.QueryContainsCaptureGroups(searchQuery) {
-		return false, nil
+		return false, errors.Wrapf(err, "ParseQuery")
 	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	selectParameter, typeParameter := false, false
@@ -308,6 +305,10 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	}
 	if selectParameter && !typeParameter {
 		return false, nil
+	}
+	// A query should contain a single capture group to allow capture group aggregation.
+	if _, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType); err != nil {
+		return false, errors.Wrap(err, "pattern parsing: ")
 	}
 	return true, nil
 }
