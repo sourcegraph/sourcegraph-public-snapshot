@@ -117,7 +117,13 @@ func runOutOfBandMigrations(
 		})
 	}
 	progress := out.Progress(bars, nil)
-	defer progress.Destroy()
+	defer func() {
+		progress.Destroy()
+
+		if err == nil {
+			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
+		}
+	}()
 
 	ticker := time.NewTicker(time.Second).C
 	for {
@@ -147,9 +153,6 @@ func runOutOfBandMigrations(
 		case <-ticker:
 		}
 	}
-
-	out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
-	return nil
 }
 
 func getMigrations(ctx context.Context, store *oobmigration.Store, ids []int) ([]oobmigration.Migration, error) {
