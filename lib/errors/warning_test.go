@@ -28,4 +28,8 @@ func TestWarningError(t *testing.T) {
 	if !w.IsWarning() {
 		t.Error("Expecting warning.IsWarning to return true but got false")
 	}
+
+	if !IsWarning(w) {
+		t.Error("Expecting IsWarning to return true but got false")
+	}
 }
