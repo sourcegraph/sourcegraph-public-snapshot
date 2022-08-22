@@ -21,6 +21,22 @@ func TestCheckFeature(t *testing.T) {
 		return "plan:" + string(p)
 	}
 
+	t.Run(string(FeatureSSO), func(t *testing.T) {
+		check(t, FeatureSSO, nil, false)
+
+		check(t, FeatureSSO, license("starter"), false)
+		check(t, FeatureSSO, license("starter", string(FeatureSSO)), true)
+		check(t, FeatureSSO, license(plan(oldEnterpriseStarter)), false)
+		check(t, FeatureSSO, license(plan(oldEnterprise)), true)
+		check(t, FeatureSSO, license(), true)
+
+		check(t, FeatureSSO, license(plan(team)), true)
+		check(t, FeatureSSO, license(plan(enterprise0)), true)
+
+		check(t, FeatureSSO, license(plan(business0)), true)
+		check(t, FeatureSSO, license(plan(enterprise1)), true)
+	})
+
 	t.Run(string(FeatureACLs), func(t *testing.T) {
 		check(t, FeatureACLs, nil, false)
 

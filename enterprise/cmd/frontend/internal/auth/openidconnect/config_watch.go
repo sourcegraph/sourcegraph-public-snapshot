@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -28,7 +30,15 @@ func getProviders() []providers.Provider {
 
 func init() {
 	go func() {
+		const pkgName = "openidconnect"
+		logger := log.Scoped(pkgName, "OpenID Connect config watch")
 		conf.Watch(func() {
+			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+				logger.Warn("Check license for SSO (OpenID Connect)", log.Error(err))
+				providers.Update(pkgName, nil)
+				return
+			}
+
 			ps := getProviders()
 			for _, p := range ps {
 				go func(p providers.Provider) {
@@ -37,7 +47,7 @@ func init() {
 					}
 				}(p)
 			}
-			providers.Update("openidconnect", ps)
+			providers.Update(pkgName, ps)
 		})
 	}()
 }

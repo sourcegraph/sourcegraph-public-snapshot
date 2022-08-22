@@ -31,6 +31,10 @@ var allPlans = []Plan{
 // The list of features. For each feature, add a new const here and the checking logic in
 // isFeatureEnabled.
 const (
+	// FeatureSSO is whether non-builtin authentication may be used, such as GitHub
+	// OAuth, GitLab OAuth, SAML, and OpenID.
+	FeatureSSO Feature = "sso"
+
 	// FeatureACLs is whether ACLs may be used, such as GitHub, GitLab or Bitbucket Server repository
 	// permissions and integration with GitHub, GitLab or Bitbucket Server for user authentication.
 	FeatureACLs Feature = "acls"
@@ -71,6 +75,7 @@ const (
 var planFeatures = map[Plan][]Feature{
 	oldEnterpriseStarter: {},
 	oldEnterprise: {
+		FeatureSSO,
 		FeatureACLs,
 		FeatureExtensionRegistry,
 		FeatureRemoteExtensionsAllowDisallow,
@@ -81,11 +86,19 @@ var planFeatures = map[Plan][]Feature{
 		FeatureBackupAndRestore,
 		FeatureCodeInsights,
 	},
-	team:        {},
-	enterprise0: {},
+	team: {
+		FeatureSSO,
+	},
+	enterprise0: {
+		FeatureSSO,
+	},
 
-	business0:   {},
-	enterprise1: {},
+	business0: {
+		FeatureSSO,
+	},
+	enterprise1: {
+		FeatureSSO,
+	},
 }
 
 // NoLicenseMaximumExternalServiceCount is the maximum number of external services that the

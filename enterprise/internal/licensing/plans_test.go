@@ -40,6 +40,8 @@ func TestInfo_Plan(t *testing.T) {
 		{tags: []string{"plan:old-enterprise-0"}, want: oldEnterprise},
 		{tags: []string{"plan:team-0"}, want: team},
 		{tags: []string{"plan:enterprise-0"}, want: enterprise0},
+		{tags: []string{"plan:enterprise-1"}, want: enterprise1},
+		{tags: []string{"plan:business-0"}, want: business0},
 		{tags: []string{"starter"}, want: oldEnterpriseStarter},
 		{tags: []string{"foo"}, want: oldEnterprise},
 		{tags: []string{""}, want: oldEnterprise},
