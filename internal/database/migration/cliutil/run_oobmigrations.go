@@ -108,7 +108,8 @@ func runOutOfBandMigrations(
 	go runner.StartPartial(ids)
 	defer runner.Stop()
 
-	for range time.NewTicker(time.Second).C {
+	ticker := time.NewTicker(time.Second).C
+	for {
 		migrations, err := getMigrations(ctx, store, ids)
 		if err != nil {
 			return err
@@ -127,6 +128,12 @@ func runOutOfBandMigrations(
 		}
 		for _, m := range incomplete {
 			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Out of band migration #%d is at %.2f%%", m.ID, m.Progress*100))
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker:
 		}
 	}
 
