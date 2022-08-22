@@ -75,10 +75,6 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
-	// context: https://sourcegraph.slack.com/archives/C07KZF47K/p1658178309055259
-	// But it seems that there is still an issue with P4 and they're currently timing out.
-	// cc @mollylogue
-	t.Skip("Currently broken")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	createPerforceExternalService(t)
@@ -199,17 +195,29 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		})
 	}
 
+	t.Run("commit search admin", func(t *testing.T) {
+		results, err := client.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Admin should have access to ALL commits: there are 6 total
+		commitsNumber := len(results.Results)
+		expectedCommitsNumber := 6
+		if commitsNumber != expectedCommitsNumber {
+			t.Fatalf("Should have access to %d commits but got %d", expectedCommitsNumber, commitsNumber)
+		}
+	})
+
 	t.Run("commit search", func(t *testing.T) {
 		results, err := userClient.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// Alice should have access to only 1 commit at the moment (other 2 commits modify hack.sh which is
-		// inaccessible for Alice)
-		// TODO: Alice now has access to 2 commits with recent code changes to update the filtering of commits when sub-repo perms are enabled
+		// Alice should have access to only 3 commits at the moment
 		commitsNumber := len(results.Results)
-		if commitsNumber != 2 {
-			t.Fatalf("Should have access to 2 commits but got %d", commitsNumber)
+		expectedCommitsNumber := 3
+		if commitsNumber != expectedCommitsNumber {
+			t.Fatalf("Should have access to %d commits but got %d", expectedCommitsNumber, commitsNumber)
 		}
 	})
 
@@ -219,7 +227,6 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		hasAccess bool
 	}{
 		{
-			// I'm not seeing this commit at all in the commit history. Is it just a commit that doesn't exist at all?
 			name:     "direct access to inaccessible commit",
 			revision: "87440329a7bae580b90280aaaafdc14ee7c1f8ef",
 		},
@@ -228,13 +235,6 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			revision:  "36d7eda16b9a881ef153126a4036efc4f6afb0c1",
 			hasAccess: true,
 		},
-		// TODO: this commit now can be accessed since we've updated our handling of commit filtering to show commits that modify _any_ file the user has access to
-		// we just filter out the files the user doesn't have access to when showing the diff. The todo is to add a new commit that modifies _only_ a file that the user
-		// doesn't have access to, and add that here instead.
-		//{
-		//	name:     "direct access to inaccessible commit-2",
-		//	revision: "d9d835aa4b08e1dcb06a21a6dffe6e44f0a141d1",
-		//},
 	}
 
 	for _, test := range commitAccessTests {
