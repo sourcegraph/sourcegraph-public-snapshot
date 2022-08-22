@@ -21,8 +21,14 @@ export class Position {
     public isSmaller(other: Position): boolean {
         return this.compare(other) < 0
     }
+    public isSmallerOrEqual(other: Position): boolean {
+        return this.compare(other) <= 0
+    }
     public isGreater(other: Position): boolean {
         return this.compare(other) > 0
+    }
+    public isGreaterOrEqual(other: Position): boolean {
+        return this.compare(other) >= 0
     }
     public compare(other: Position): number {
         if (this.line !== other.line) {
@@ -40,8 +46,11 @@ export class Range {
     public withEnd(newEnd: Position): Range {
         return new Range(this.start, newEnd)
     }
+    public isZeroWidth(): boolean {
+        return this.start.compare(this.end) === 0
+    }
     public isOverlapping(other: Range): boolean {
-        return this.start.isSmaller(other.start) && this.end.isGreater(other.start)
+        return this.start.isSmallerOrEqual(other.start) && this.end.isGreater(other.start)
     }
     public isSingleLine(): boolean {
         return this.start.line === this.end.line
@@ -100,6 +109,11 @@ function nonOverlappingOccurrences(occurrences: Occurrence[]): Occurrence[] {
     // or after splitting multiline occurrences into single-line occurrences.
     const stack: Occurrence[] = occurrences.sort((a, b) => a.range.compare(b.range)).reverse()
     const result: Occurrence[] = []
+    const pushResult = (occ: Occurrence): void => {
+        if (!occ.range.isZeroWidth()) {
+            result.push(occ)
+        }
+    }
     while (true) {
         const current = stack.pop()
         if (!current) {
@@ -108,14 +122,14 @@ function nonOverlappingOccurrences(occurrences: Occurrence[]): Occurrence[] {
         const next = stack.pop()
         if (next) {
             if (current.range.isOverlapping(next.range)) {
-                result.push(current.withEndPosition(next.range.start))
+                pushResult(current.withEndPosition(next.range.start))
                 stack.push(current.withStartPosition(next.range.end))
             } else {
-                result.push(current)
+                pushResult(current)
             }
             stack.push(next)
         } else {
-            result.push(current)
+            pushResult(current)
         }
     }
     return result.sort((a, b) => a.range.compare(b.range))
