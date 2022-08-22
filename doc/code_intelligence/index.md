@@ -61,7 +61,7 @@ Code navigation is made up of multiple features that build on top of each other:
 - [Search-based code navigation](explanations/search_based_code_intelligence.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
 - [Precise code navigation](explanations/precise_code_intelligence.md) uses code graph data to provide correct code navigation features and accurate cross-repository navigation.
 - [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code navigation.
-- [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code navigation and auto-indexing.
+- <span class="badge badge-beta">Beta</span> [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code navigation and auto-indexing.
 
 ## Code navigation for your code
 

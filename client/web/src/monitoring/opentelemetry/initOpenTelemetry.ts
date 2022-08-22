@@ -23,6 +23,15 @@ import {
 export function initOpenTelemetry(): void {
     const { openTelemetry, externalURL } = window.context
 
+    /**
+     * OpenTelemetry is enabled only if
+     * 1. The backend passthrough endpoint is configured in the site configuration.
+     * 2. The application is running in the `production` environment or `ENABLE_OPEN_TELEMETRY` is true.
+     *
+     * The `ENABLE_OPEN_TELEMETRY` env variable is primarily used for local development
+     * because client-side OpenTelemetry is not enabled by default yet.
+     *
+     */
     if (openTelemetry?.endpoint && (process.env.NODE_ENV === 'production' || process.env.ENABLE_OPEN_TELEMETRY)) {
         const provider = new WebTracerProvider({
             resource: new Resource({
