@@ -205,18 +205,9 @@ func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageS
 	}
 
 	usage, err := activeUsers(ctx, db, dayPeriods, weekPeriods, monthPeriods)
-	// daus, err := activeUsers(ctx, db, database.Daily, dayPeriods)
 	if err != nil {
 		return nil, err
 	}
-	// waus, err := activeUsers(ctx, db, database.Weekly, weekPeriods)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// maus, err := activeUsers(ctx, db, database.Monthly, monthPeriods)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	return usage, nil
 }
