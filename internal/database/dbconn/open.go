@@ -100,6 +100,25 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Ensure we're not casting things blindly.
+	if _, ok := c.(any).(driver.ExecerContext); !ok {
+		return nil, errors.New("sql conn doen't implement driver.ExecerContext")
+	}
+	if _, ok := c.(any).(driver.QueryerContext); !ok {
+		return nil, errors.New("sql conn doen't implement driver.QueryerContext")
+	}
+	if _, ok := c.(any).(driver.Conn); !ok {
+		return nil, errors.New("sql conn doen't implement driver.Conn")
+	}
+	if _, ok := c.(any).(driver.ConnPrepareContext); !ok {
+		return nil, errors.New("sql conn doen't implement driver.ConnPrepareContext")
+	}
+	if _, ok := c.(any).(driver.ConnBeginTx); !ok {
+		return nil, errors.New("sql conn doen't implement driver.ConnBeginTx")
+	}
+
+	// Build the extended connection.
 	return &extendedConn{
 		ExecerContext:      c.(any).(driver.ExecerContext),
 		QueryerContext:     c.(any).(driver.QueryerContext),
@@ -109,6 +128,8 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	}, nil
 }
 
+// Access the underlying connection, so we can forward the methods that
+// sqlhooks does not implement on its own.
 func (n *extendedConn) rawConn() driver.Conn {
 	c := n.Conn.(*sqlhooks.ExecerQueryerContextWithSessionResetter)
 	return c.Conn.Conn
