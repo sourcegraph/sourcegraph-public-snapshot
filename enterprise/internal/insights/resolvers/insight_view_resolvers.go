@@ -3,19 +3,12 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Masterminds/semver"
-
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -24,10 +17,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
