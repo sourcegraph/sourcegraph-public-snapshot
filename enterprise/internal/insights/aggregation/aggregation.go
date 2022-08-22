@@ -20,7 +20,7 @@ type AggregationMatchResult struct {
 
 type SearchResultsAggregator interface {
 	streaming.Sender
-	ShardTimeoutOccured() bool
+	ShardTimeoutOccurred() bool
 }
 
 type AggregationTabulator func(*AggregationMatchResult, error)
@@ -160,7 +160,7 @@ type searchAggregationResults struct {
 	progress  client.ProgressAggregator
 }
 
-func (r *searchAggregationResults) ShardTimeoutOccured() bool {
+func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
 	for _, skip := range r.progress.Current().Skipped {
 		if skip.Reason == api.ShardTimeout {
 			return true

@@ -78,7 +78,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		return nil, err
 	}
 
-	successful, failureReason := searchSuccessful(alert, tabulationErrors, searchResultsAggregator.ShardTimeoutOccured())
+	successful, failureReason := searchSuccessful(alert, tabulationErrors, searchResultsAggregator.ShardTimeoutOccurred())
 	if !successful {
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
 	}
@@ -104,13 +104,13 @@ func aggregationModeSupported(searchQuery, patternType string, mode types.Search
 	return false, "Only aggregation by repository is currently supported."
 }
 
-func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeoutOccured bool) (bool, string) {
+func searchSuccessful(alert *search.Alert, tabulationErrors []error, ShardTimeoutOccurred bool) (bool, string) {
 
 	if len(tabulationErrors) > 0 {
 		return false, "query returned with errors"
 	}
 
-	if shardTimeoutOccured {
+	if ShardTimeoutOccurred {
 		return false, "query unable to complete in allocated time"
 	}
 
