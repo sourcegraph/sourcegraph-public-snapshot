@@ -17662,7 +17662,7 @@ Query: `sum(src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^so
 
 <p class="subtitle">Handler operations every 5m</p>
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#executor-executor-processor-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100110` on your Sourcegraph instance.
 
