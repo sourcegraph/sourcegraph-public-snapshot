@@ -34,10 +34,6 @@ This job periodically indexes file contents at a syntactic level to build an ind
 
 This job will eventually replace `codeintel-auto-indexing`.
 
-#### `codeintel-dependencies`
-
-This job periodically indexes and resolves the lockfiles found in repositories to build an index of dependencies and dependents.
-
 #### `codeintel-policies-repository-matcher`
 
 This job periodically updates an index of policy repository patterns to matching repository names.
@@ -110,6 +106,10 @@ This job runs the workspace resolutions for batch specs. Used for batch changes 
 #### `gitserver-metrics`
 
 This job runs queries against the database pertaining to generate `gitserver` metrics. These queries are generally expensive to run and do not need to be run per-instance of `gitserver` so the worker allows them to only be run once per scrape.
+
+#### `repo-statistics-compactor`
+
+This job periodically cleans up the `repo_statistics` table by rolling up all rows into a single row.
 
 #### `record-encrypter`
 

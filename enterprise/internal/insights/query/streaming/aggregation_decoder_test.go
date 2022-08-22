@@ -24,6 +24,7 @@ func (r *testAggregator) AddResult(result *AggregationMatchResult, err error) {
 
 func contentMatch(repo, path string, repoID int32, chunks ...string) *streamhttp.EventContentMatch {
 	matches := make([]streamhttp.ChunkMatch, 0, len(chunks))
+	lineMatches := make([]streamhttp.EventLineMatch, 0, len(chunks))
 	for _, content := range chunks {
 		matches = append(matches, streamhttp.ChunkMatch{
 			Content:      content,
@@ -33,6 +34,9 @@ func contentMatch(repo, path string, repoID int32, chunks ...string) *streamhttp
 				End:   streamhttp.Location{Offset: len(content), Line: 1, Column: len(content)},
 			}},
 		})
+		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
+			OffsetAndLengths: [][2]int32{{1, int32(len(content))}},
+		})
 	}
 
 	return &streamhttp.EventContentMatch{
@@ -41,6 +45,7 @@ func contentMatch(repo, path string, repoID int32, chunks ...string) *streamhttp
 		RepositoryID: repoID,
 		Repository:   repo,
 		ChunkMatches: matches,
+		LineMatches:  lineMatches,
 	}
 }
 

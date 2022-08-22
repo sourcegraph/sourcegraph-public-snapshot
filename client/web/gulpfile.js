@@ -88,6 +88,8 @@ async function watchWebpack() {
 }
 
 async function webpackDevelopmentServer() {
+  const start = performance.now()
+
   /** @type {import('webpack-dev-server').ProxyConfigMap } */
   const proxyConfig = {
     '/': {
@@ -153,6 +155,7 @@ async function webpackDevelopmentServer() {
     }
     compilationDoneOnce = true
 
+    signale.info(`Webpack server is ready after ${Math.round(performance.now() - start)}ms`)
     printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}`])
   })
 
