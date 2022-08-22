@@ -1001,17 +1001,13 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 	var err error
 	var dynamic bool
 	// Validate the query before creating anything; we don't want faulty insights running pointlessly.
-	if series.GroupBy != nil {
+	if series.GroupBy != nil || series.GeneratedFromCaptureGroups != nil {
 		if _, err := querybuilder.ComputeInsightCommandQuery(querybuilder.BasicQuery(series.Query), querybuilder.MapType(*series.GroupBy)); err != nil {
-			return nil, errors.Wrap(err, "query validation: ComputeInsightCommandQuery")
+			return nil, errors.Wrap(err, "query validation")
 		}
 	} else {
-		pt := "literal"
-		if series.GeneratedFromCaptureGroups != nil {
-			pt = "regexp"
-		}
-		if _, err := querybuilder.ParseAndValidateQuery(series.Query, pt); err != nil {
-			return nil, errors.Wrap(err, "query validation: ParseAndValidateQuery")
+		if _, err := querybuilder.ParseAndValidateQuery(series.Query, "literal"); err != nil {
+			return nil, errors.Wrap(err, "query validation")
 		}
 	}
 
