@@ -33,6 +33,18 @@ kbd {
     box-shadow: inset 0 -2px 0 var(--color-bg-3);
 }
 
+pre {
+    // Remove browser default top margin
+    margin-top: 0;
+    // Reset browser default of `1em` to use `rem`s
+    margin-bottom: 1rem;
+    // Don't allow content to break outside
+    overflow: auto;
+    // Disable auto-hiding scrollbar in IE & legacy Edge to avoid overlap,
+    // making it impossible to interact with the content
+    -ms-overflow-style: scrollbar;
+}
+
 // Search examples that link to the results page should use this class.
 .search-query-link {
     color: var(--body-color);

@@ -9,29 +9,29 @@
 
 // Document
 //
-// 1. Change the default font family in all browsers.
-// 2. Correct the line height in all browsers.
-// 3. Prevent adjustments of font size after orientation changes in IE on Windows Phone and in iOS.
-// 4. Change the default tap highlight to be completely transparent in iOS.
+// 1. Change from `box-sizing: content-box` so that `width` is not affected by `padding` or `border`.
+// 2. Change the default font family in all browsers.
+// 3. Correct the line height in all browsers.
+// 4. Prevent adjustments of font size after orientation changes in IE on Windows Phone and in iOS.
+// 5. Change the default tap highlight to be completely transparent in iOS.
 
+*,
+*::before,
+*::after {
+    box-sizing: border-box; // 1
+}
 :root {
     --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
         sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-weight-base: 400;
     --dt-font-weight: 700;
-    --link-decoration: none;
-    --link-hover-decoration: underline;
 }
 
 html {
-    font-family: sans-serif; // 2
     line-height: 1.15; // 3
     -webkit-text-size-adjust: 100%; // 4
     -webkit-tap-highlight-color: rgba(var(--black), 0); // 5
 }
 
-// Shim for "new" HTML5 structural elements to display correctly (IE10, older browsers)
-// TODO: remove in v5
 // stylelint-disable-next-line selector-list-comma-newline-after
 article,
 aside,
@@ -80,62 +80,10 @@ ul ol {
 dt {
     font-weight: var(--dt-font-weight);
 }
+
 dd {
     margin-bottom: 0.5rem;
     margin-left: 0; // Undo browser default
-}
-
-//
-// Links
-//
-
-a {
-    color: var(--link-color);
-    text-decoration: var(--link-decoration);
-    background-color: transparent; // Remove the gray background on active links in IE 10.
-
-    &:hover {
-        color: var(--link-hover-color);
-        text-decoration: var(--link-hover-decoration);
-    }
-}
-
-// And undo these styles for placeholder links/named anchors (without href).
-// It would be more straightforward to just use a[href] in previous block, but that
-// causes specificity issues in many other styles that are too complex to fix.
-// See https://github.com/twbs/bootstrap/issues/19402
-
-a:not([href]):not([class]) {
-    color: inherit;
-    text-decoration: none;
-
-    &:hover {
-        color: inherit;
-        text-decoration: none;
-    }
-}
-
-//
-// Code
-//
-
-pre,
-code,
-kbd {
-    font-family: var(--monospace-font-family);
-    font-size: 1em; // Correct the odd `em` font sizing in all browsers.
-}
-
-pre {
-    // Remove browser default top margin
-    margin-top: 0;
-    // Reset browser default of `1em` to use `rem`s
-    margin-bottom: 1rem;
-    // Don't allow content to break outside
-    overflow: auto;
-    // Disable auto-hiding scrollbar in IE & legacy Edge to avoid overlap,
-    // making it impossible to interact with the content
-    -ms-overflow-style: scrollbar;
 }
 
 //

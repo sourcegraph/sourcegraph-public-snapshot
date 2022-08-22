@@ -93,10 +93,6 @@ $enable-transitions: false;
 @import './collapse';
 @import './grid';
 
-* {
-    box-sizing: border-box;
-}
-
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at
 // https://github.com/WICG/focus-visible because few browsers support :focus-visible.
 :focus:not(:focus-visible) {
