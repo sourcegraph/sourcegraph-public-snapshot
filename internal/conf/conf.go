@@ -270,22 +270,3 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 		}
 	}()
 }
-
-// The subset of not sensitive/secret site.schema.json site configuration
-// that is necessary for the web app and the browser extension.
-func PublicSiteConfiguration() schema.SiteConfiguration {
-	c := Get()
-	updateChannel := c.UpdateChannel
-	if updateChannel == "" {
-		updateChannel = "release"
-	}
-	return schema.SiteConfiguration{
-		AuthPublic:                  c.AuthPublic,
-		UpdateChannel:               updateChannel,
-		AuthzEnforceForSiteAdmins:   c.AuthzEnforceForSiteAdmins,
-		DisableNonCriticalTelemetry: c.DisableNonCriticalTelemetry,
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			EnableLegacyExtensions: c.ExperimentalFeatures.EnableLegacyExtensions,
-		},
-	}
-}

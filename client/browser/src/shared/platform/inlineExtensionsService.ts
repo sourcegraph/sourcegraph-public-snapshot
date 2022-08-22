@@ -20,11 +20,9 @@ const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false afte
 export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<boolean> =>
     requestGraphQL<GQL.IQuery>({
         request: gql`
-            query PublicConfiguration {
+            query EnableLegacyExtensions {
                 site {
-                    publicConfiguration {
-                        effectiveContents
-                    }
+                    enableLegacyExtensions
                 }
             }
         `,
@@ -39,8 +37,7 @@ export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['reque
             }
 
             try {
-                const parsedConfig = JSON.parse(result.data.site.publicConfiguration.effectiveContents)
-                return Boolean(parsedConfig?.experimentalFeatures?.enableLegacyExtensions)
+                return result.data.site.enableLegacyExtensions
             } catch {
                 return DEFAULT_ENABLE_LEGACY_EXTENSIONS
             }

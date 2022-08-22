@@ -5620,10 +5620,6 @@ type Site implements SettingsSubject {
     """
     configuration: SiteConfiguration!
     """
-    The subset of the site's configuration which is not sensitive/secret.
-    """
-    publicConfiguration: SiteConfiguration!
-    """
     The site's latest site-wide settings (which are the second-lowest-precedence
     in the configuration cascade for a user).
     """
@@ -5807,6 +5803,11 @@ type Site implements SettingsSubject {
     the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
     """
     allowSiteSettingsEdits: Boolean!
+    """
+    Whether to enable the extension registry and the use of extensions.
+    Reflects the site configuration `enableLegacyExtensions` experimental feature value.
+    """
+    enableLegacyExtensions: Boolean!
 }
 
 """
