@@ -191,7 +191,7 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	}
 }
 
-func TestEventLogs_SiteUsageMultiplePeriodst *testing.T) {
+func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
