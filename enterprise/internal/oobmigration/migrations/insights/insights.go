@@ -163,7 +163,7 @@ INSERT INTO insight_view (
 	unique_id,
 	default_filter_include_repo_regex,
 	default_filter_exclude_repo_regex,
-	presentation_type,
+	presentation_type
 )
 VALUES (%s, %s, %s, %s, %s, 'LINE')
 RETURNING id
