@@ -126,7 +126,7 @@ func runOutOfBandMigrations(
 		if len(incomplete) == 0 {
 			break
 		}
-		for _, m := range incomplete {
+		for _, m := range migrations {
 			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Out of band migration #%d is at %.2f%%", m.ID, m.Progress*100))
 		}
 
