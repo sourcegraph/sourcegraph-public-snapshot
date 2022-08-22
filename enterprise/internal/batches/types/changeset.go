@@ -363,10 +363,10 @@ func (c *Changeset) SetDiffStat(stat *diff.Stat) {
 		c.DiffStatAdded = nil
 		c.DiffStatDeleted = nil
 	} else {
-		added := stat.Added
+		added := stat.Added + stat.Changed
 		c.DiffStatAdded = &added
 
-		deleted := stat.Deleted
+		deleted := stat.Deleted + stat.Changed
 		c.DiffStatDeleted = &deleted
 	}
 }
