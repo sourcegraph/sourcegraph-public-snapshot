@@ -31,7 +31,7 @@ export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['reque
     }).pipe(
         map(result => {
             if (isErrorGraphQLResult(result)) {
-                // PublicConfiguration query resolver may not be implemented on older versions.
+                // EnableLegacyExtensions query resolver may not be implemented on older versions.
                 // Return `true` by default.
                 return true
             }
