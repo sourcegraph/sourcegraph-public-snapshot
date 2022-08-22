@@ -672,7 +672,7 @@ func (s *Syncer) SyncExternalService(
 
 	// If all of our errors are warnings and either Forbidden or Unauthorized,
 	// we want to proceed with the deletion. This is to be able to properly sync
-	// repos (by removing ones if code-host permissions have changed.
+	// repos (by removing ones if code-host permissions have changed).
 	abortDeletion := false
 	if errs != nil {
 		var ref errors.MultiError
@@ -690,8 +690,9 @@ func (s *Syncer) SyncExternalService(
 		//
 		// We don't want to delete all repos that weren't seen if we had a lot of
 		// spurious errors since that could cause lots of repos to be deleted, only to be
-		// added the next sync. We delete only if we had no errors or we had one of the
-		// fatal errors.
+		// added the next sync. We delete only if we had no errors,
+		// or all of our errors are warnings and either Forbidden or Unauthorized,
+		// or we had one of the fatal errors and the service is not site owned.
 		var deletedErr error
 		deleted, deletedErr = s.delete(ctx, svc, seen)
 		if deletedErr != nil {
