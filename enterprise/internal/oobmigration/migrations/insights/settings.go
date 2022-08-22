@@ -26,7 +26,7 @@ func (m *insightsMigrator) getSettingsForJob(ctx context.Context, tx *basestore.
 
 func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore.Store, userID int32) (string, []settings, error) {
 	// Retrieve settings attached to user
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userID)))
+	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userID, userID)))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to retrieve user settings")
 	}
