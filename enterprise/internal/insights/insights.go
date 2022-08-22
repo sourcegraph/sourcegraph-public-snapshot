@@ -54,6 +54,7 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 		return err
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(db, postgres)
+	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver()
 
 	return nil
 }

@@ -16,25 +16,26 @@ import (
 // Services is a bag of HTTP handlers and factory functions that are registered by the
 // enterprise frontend setup hook.
 type Services struct {
-	GitHubWebhook             webhooks.Registerer
-	GitLabWebhook             http.Handler
-	BitbucketServerWebhook    http.Handler
-	BitbucketCloudWebhook     http.Handler
-	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
-	NewExecutorProxyHandler   NewExecutorProxyHandler
-	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
-	NewComputeStreamHandler   NewComputeStreamHandler
-	AuthzResolver             graphqlbackend.AuthzResolver
-	BatchChangesResolver      graphqlbackend.BatchChangesResolver
-	CodeIntelResolver         graphqlbackend.CodeIntelResolver
-	InsightsResolver          graphqlbackend.InsightsResolver
-	CodeMonitorsResolver      graphqlbackend.CodeMonitorsResolver
-	LicenseResolver           graphqlbackend.LicenseResolver
-	DotcomResolver            graphqlbackend.DotcomRootResolver
-	SearchContextsResolver    graphqlbackend.SearchContextsResolver
-	OrgRepositoryResolver     graphqlbackend.OrgRepositoryResolver
-	NotebooksResolver         graphqlbackend.NotebooksResolver
-	ComputeResolver           graphqlbackend.ComputeResolver
+	GitHubWebhook               webhooks.Registerer
+	GitLabWebhook               http.Handler
+	BitbucketServerWebhook      http.Handler
+	BitbucketCloudWebhook       http.Handler
+	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
+	NewExecutorProxyHandler     NewExecutorProxyHandler
+	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler
+	NewComputeStreamHandler     NewComputeStreamHandler
+	AuthzResolver               graphqlbackend.AuthzResolver
+	BatchChangesResolver        graphqlbackend.BatchChangesResolver
+	CodeIntelResolver           graphqlbackend.CodeIntelResolver
+	InsightsResolver            graphqlbackend.InsightsResolver
+	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
+	CodeMonitorsResolver        graphqlbackend.CodeMonitorsResolver
+	LicenseResolver             graphqlbackend.LicenseResolver
+	DotcomResolver              graphqlbackend.DotcomRootResolver
+	SearchContextsResolver      graphqlbackend.SearchContextsResolver
+	OrgRepositoryResolver       graphqlbackend.OrgRepositoryResolver
+	NotebooksResolver           graphqlbackend.NotebooksResolver
+	ComputeResolver             graphqlbackend.ComputeResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The

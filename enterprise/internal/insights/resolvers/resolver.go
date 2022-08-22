@@ -107,14 +107,6 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 	}, nil
 }
 
-func (r *Resolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
-	return &searchAggregateResolver{
-		baseInsightResolver: r.baseInsightResolver,
-		searchQuery:         args.Query,
-		patternType:         args.PatternType,
-	}, nil
-}
-
 // 🚨 SECURITY
 // only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
 // dashboards with a global grant.
@@ -133,4 +125,22 @@ func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userId
 		}
 	}
 	return
+}
+
+// AggregationResolver is the GraphQL resolver for insights aggregations.
+type AggregationResolver struct {
+	logger log.Logger
+}
+
+func NewAggregationResolver() graphqlbackend.InsightsAggregationResolver {
+	return &AggregationResolver{
+		logger: log.Scoped("AggregationResolver", ""),
+	}
+}
+
+func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
+	return &searchAggregateResolver{
+		searchQuery: args.Query,
+		patternType: args.PatternType,
+	}, nil
 }

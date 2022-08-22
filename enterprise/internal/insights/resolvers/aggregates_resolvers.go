@@ -19,7 +19,6 @@ const searchTimeLimitSeconds = 2
 const aggregationBufferSize = 500
 
 type searchAggregateResolver struct {
-	baseInsightResolver
 	searchQuery string
 	patternType string
 }
@@ -103,12 +102,11 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	results := buildResults(cappedAggregator, int(args.Limit), aggregationMode, r.searchQuery)
 
 	return &searchAggregationResultResolver{resolver: &searchAggregationModeResultResolver{
-		baseInsightResolver: r.baseInsightResolver,
-		searchQuery:         r.searchQuery,
-		patternType:         r.patternType,
-		mode:                aggregationMode,
-		results:             results,
-		isExhaustive:        cappedAggregator.OtherCounts().GroupCount == 0,
+		searchQuery:  r.searchQuery,
+		patternType:  r.patternType,
+		mode:         aggregationMode,
+		results:      results,
+		isExhaustive: cappedAggregator.OtherCounts().GroupCount == 0,
 	}}, nil
 }
 
@@ -361,7 +359,6 @@ func (r *searchAggregationNotAvailableResolver) Mode() string {
 
 // Resolver to calculate aggregations for a combination of search query, pattern type, aggregation mode
 type searchAggregationModeResultResolver struct {
-	baseInsightResolver
 	searchQuery  string
 	patternType  string
 	mode         types.SearchAggregationMode

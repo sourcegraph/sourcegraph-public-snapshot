@@ -22,8 +22,6 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	SearchQueryAggregate(ctx context.Context, args SearchQueryArgs) (SearchQueryAggregateResolver, error)
-
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -41,6 +39,10 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+}
+
+type InsightsAggregationResolver interface {
+	SearchQueryAggregate(ctx context.Context, args SearchQueryArgs) (SearchQueryAggregateResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
