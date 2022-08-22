@@ -68,7 +68,7 @@ export class Occurrence {
         return new Occurrence(newRange, this.kind)
     }
 
-    public static fromJson(occ: JsonOccurrence) {
+    public static fromJson(occ: JsonOccurrence): Occurrence {
         const range = new Range(
             new Position(occ.range[0], occ.range[1]),
             // Handle 3 vs 4 length meaning different things
