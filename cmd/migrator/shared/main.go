@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	ossmigrations "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -29,7 +30,7 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceTTY:   true,
 })
 
-func Start(logger log.Logger) error {
+func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationContext := &observation.Context{
 		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -58,6 +59,11 @@ func Start(logger log.Logger) error {
 		return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
 	}
 
+	registerMigrators := composeRegisterMigratorsFuncs(
+		ossmigrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
+		registerEnterpriseMigrators,
+	)
+
 	command := &cli.App{
 		Name:   appName,
 		Usage:  "Validates and runs schema migrations",
@@ -70,7 +76,8 @@ func Start(logger log.Logger) error {
 			cliutil.Describe(appName, newRunner, outputFactory),
 			cliutil.Drift(appName, newRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, cliutil.GitHubExpectedSchemaFactory),
 			cliutil.AddLog(logger, appName, newRunner, outputFactory),
-			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory),
+			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory, registerMigrators),
+			cliutil.RunOutOfBandMigrations(logger, appName, newRunner, outputFactory, registerMigrators),
 		},
 	}
 

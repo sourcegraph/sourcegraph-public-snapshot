@@ -1,12 +1,16 @@
 package migrations
 
 import (
+	"context"
+	"database/sql"
+
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -14,66 +18,88 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 )
 
-func RegisterEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	frontendStore, err := frontendStore(db)
+func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
+	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase()
 	if err != nil {
 		return err
 	}
 
-	codeIntelStore, err := codeIntelStore()
+	var insightsStore *basestore.Store
+	if internalInsights.IsEnabled() {
+		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
+		if err != nil {
+			return err
+		}
+
+		insightsStore = basestore.NewWithHandle(codeInsightsDB.Handle())
+	}
+
+	keyring := keyring.Default()
+
+	return registerEnterpriseMigrators(runner, false, dependencies{
+		store:          basestore.NewWithHandle(db.Handle()),
+		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
+		insightsStore:  insightsStore,
+		keyring:        &keyring,
+	})
+}
+
+func RegisterEnterpriseMigratorsUsingConfAndStoreFactory(
+	ctx context.Context,
+	db database.DB,
+	runner *oobmigration.Runner,
+	conf conftypes.UnifiedQuerier,
+	storeFactory migrations.StoreFactory,
+) error {
+	codeIntelStore, err := storeFactory.Store(ctx, "codeintel")
+	if err != nil {
+		return err
+	}
+	insightsStore, err := storeFactory.Store(ctx, "codeinsights")
 	if err != nil {
 		return err
 	}
 
-	insightsStore, err := insightsStore()
+	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {
 		return err
 	}
+	if keys == nil {
+		keys = &keyring.Ring{}
+	}
 
-	batchesCredentialKey := keyring.Default().BatchChangesCredentialKey
+	return registerEnterpriseMigrators(runner, true, dependencies{
+		store:          basestore.NewWithHandle(db.Handle()),
+		codeIntelStore: codeIntelStore,
+		insightsStore:  insightsStore,
+		keyring:        keys,
+	})
+}
 
+type dependencies struct {
+	store          *basestore.Store
+	codeIntelStore *basestore.Store
+	insightsStore  *basestore.Store
+	keyring        *keyring.Ring
+}
+
+func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps dependencies) error {
 	var insightsMigrator migrations.TaggedMigrator
 	if internalInsights.IsEnabled() {
-		insightsMigrator = insights.NewMigrator(frontendStore, insightsStore)
+		insightsMigrator = insights.NewMigrator(deps.store, deps.insightsStore)
 	} else {
 		insightsMigrator = insights.NewMigratorNoOp()
 	}
 
-	return migrations.RegisterAll(outOfBandMigrationRunner, []migrations.TaggedMigrator{
-		iam.NewSubscriptionAccountNumberMigrator(frontendStore, 500),
-		iam.NewLicenseKeyFieldsMigrator(frontendStore, 500),
-		batches.NewSSHMigratorWithDB(frontendStore, batchesCredentialKey, 5),
-		codeintel.NewDiagnosticsCountMigrator(codeIntelStore, 1000),
-		codeintel.NewDefinitionLocationsCountMigrator(codeIntelStore, 1000),
-		codeintel.NewReferencesLocationsCountMigrator(codeIntelStore, 1000),
-		codeintel.NewDocumentColumnSplitMigrator(codeIntelStore, 100),
+	return migrations.RegisterAll(runner, noDelay, []migrations.TaggedMigrator{
+		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
+		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
+		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
+		codeintel.NewDiagnosticsCountMigrator(deps.codeIntelStore, 1000),
+		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000),
+		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000),
+		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100),
 		codeintel.NewAPIDocsSearchMigrator(),
 		insightsMigrator,
 	})
-}
-
-func frontendStore(db database.DB) (*basestore.Store, error) {
-	return basestore.NewWithHandle(db.Handle()), nil
-}
-
-func codeIntelStore() (*basestore.Store, error) {
-	lsifStore, err := workerCodeIntel.InitLSIFStore()
-	if err != nil {
-		return nil, err
-	}
-
-	return lsifStore.Store, err
-}
-
-func insightsStore() (*basestore.Store, error) {
-	if !internalInsights.IsEnabled() {
-		return nil, nil
-	}
-
-	db, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
-	if err != nil {
-		return nil, err
-	}
-
-	return basestore.NewWithHandle(db.Handle()), nil
 }

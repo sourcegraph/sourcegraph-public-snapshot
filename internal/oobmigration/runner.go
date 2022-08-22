@@ -40,7 +40,11 @@ type migratorAndOption struct {
 var _ goroutine.BackgroundRoutine = &Runner{}
 
 func NewRunnerWithDB(db database.DB, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
-	return newRunner(NewStoreWithDB(db), glock.NewRealTicker(refreshInterval), observationContext)
+	return NewRunner(NewStoreWithDB(db), refreshInterval, observationContext)
+}
+
+func NewRunner(store *Store, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
+	return newRunner(store, glock.NewRealTicker(refreshInterval), observationContext)
 }
 
 func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext *observation.Context) *Runner {
@@ -176,11 +180,24 @@ func wrapMigrationErrors(errs ...error) error {
 // Start runs registered migrators on a loop until they complete. This method will periodically
 // re-read from the database in order to refresh its current view of the migrations.
 func (r *Runner) Start() {
+	r.StartPartial(nil)
+}
+
+// StartPartial runs registered migrators matching one of the given identifiers on a loop until
+// they complete. This method will periodically re-read from the database in order to refresh its
+// current view of the migrations. When the given set of identifiers is empty, all migrations in
+// the database with a registered migrator will be considered active.
+func (r *Runner) StartPartial(ids []int) {
 	defer close(r.finished)
 
 	ctx := r.ctx
 	var wg sync.WaitGroup
 	migrationProcesses := map[int]chan Migration{}
+
+	idMap := make(map[int]struct{}, len(ids))
+	for _, id := range ids {
+		idMap[id] = struct{}{}
+	}
 
 	// Periodically read the complete set of out-of-band migrations from the database
 	for migrations := range r.listMigrations(ctx) {
@@ -188,6 +205,9 @@ func (r *Runner) Start() {
 			id := migrations[i].ID
 			migrator, ok := r.migrators[id]
 			if !ok {
+				continue
+			}
+			if _, ok := idMap[id]; !ok && len(ids) != 0 {
 				continue
 			}
 
@@ -301,24 +321,34 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 
 	// We're just starting up - refresh our progress before migrating
 	if err := updateProgress(ctx, store, &migration, migrator); err != nil {
-		log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+		if !errors.Is(err, ctx.Err()) {
+			log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+		}
 	}
 
 	for {
 		select {
-		case migration = <-migrations:
+		case migration, ok = <-migrations:
+			if !ok {
+				return
+			}
+
 			// We just got a new version of the migration from the database. We need to check
 			// the actual progress based on the migrator in case the progress as stored in the
 			// migrations table has been de-synchronized from the actual progress.
 			if err := updateProgress(ctx, store, &migration, migrator); err != nil {
-				log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+				if !errors.Is(err, ctx.Err()) {
+					log15.Error("Failed to determine migration progress", "migrationID", migration.ID, "error", err)
+				}
 			}
 
 		case <-options.ticker.Chan():
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
 				if err := runMigrationFunction(ctx, store, &migration, migrator, operations); err != nil {
-					log15.Error("Failed migration action", "migrationID", migration.ID, "error", err)
+					if !errors.Is(err, ctx.Err()) {
+						log15.Error("Failed migration action", "migrationID", migration.ID, "error", err)
+					}
 				}
 			}
 
