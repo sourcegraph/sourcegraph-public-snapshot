@@ -56,6 +56,8 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("entity.name.type"), IdentifierType),
 
             // TODO: optimization opportunity, skip testing language-specific scopes.
+            (scope("keyword.operator.expression.keyof.ts"), IdentifierKeyword),
+            (scope("keyword.operator.expression.typeof.ts"), IdentifierKeyword),
             (scope("storage.type.namespace.ts"), IdentifierKeyword),
             (scope("storage.type.module.ts"), IdentifierKeyword),
             (scope("storage.type.interface.ts"), IdentifierKeyword),

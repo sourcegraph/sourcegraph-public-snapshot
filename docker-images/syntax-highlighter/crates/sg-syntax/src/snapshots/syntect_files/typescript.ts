@@ -8,6 +8,7 @@ import fs = require("fs");
 declare module MyModule {
   export interface MyInterface extends Other {
     myProperty: any;
+    myKeyoff: keyof MyClass;
   }
 }
 declare magicNumber number;
@@ -36,3 +37,5 @@ const scanToken = <T extends Term = Literal>(
         regexp = new RegExp(`^${regexp.source}`, regexp.flags)
     }
 }
+
+export const URI: typeof URL

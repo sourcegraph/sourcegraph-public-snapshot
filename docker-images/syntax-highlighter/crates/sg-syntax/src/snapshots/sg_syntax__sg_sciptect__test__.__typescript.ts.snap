@@ -58,6 +58,12 @@ expression: "dump_document(&document, &contents)"
 //              ^ IdentifierOperator
 //                ^^^ IdentifierType
 //                   ^ PunctuationDelimiter
+      myKeyoff: keyof MyClass;
+//    ^^^^^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^^ IdentifierKeyword
+//                    ^^^^^^^ IdentifierType
+//                           ^ PunctuationDelimiter
     }
 //  ^ PunctuationBracket
   }
@@ -286,4 +292,12 @@ expression: "dump_document(&document, &contents)"
 //    ^ PunctuationBracket
   }
 //^ PunctuationBracket
+  
+  export const URI: typeof URL
+//^^^^^^ IdentifierKeyword
+//       ^^^^^ IdentifierKeyword
+//             ^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^^^ IdentifierKeyword
+//                         ^^^ IdentifierType
 
