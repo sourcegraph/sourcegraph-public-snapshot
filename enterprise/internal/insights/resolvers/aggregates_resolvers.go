@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/aggregation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
@@ -17,7 +19,7 @@ import (
 
 const searchTimeLimitSeconds = 2
 
-//TODO: move to a setting
+// TODO: move to a setting
 const aggregationBufferSize = 500
 
 type searchAggregateResolver struct {
@@ -103,7 +105,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
 	}
 
-	results := buildResults(cappedAggregator, int(args.Limit), aggregationMode, r.searchQuery)
+	results := buildResults(cappedAggregator, int(args.Limit), aggregationMode, r.searchQuery, r.patternType)
 
 	return &searchAggregationResultResolver{resolver: &searchAggregationModeResultResolver{
 		baseInsightResolver: r.baseInsightResolver,
@@ -150,7 +152,7 @@ func (r *AggregationGroup) Query() (*string, error) {
 	return r.query, nil
 }
 
-func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string) aggregationResults {
+func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string, patternType string) aggregationResults {
 	sorted := aggregator.SortAggregate()
 	groups := make([]graphqlbackend.AggregationGroup, 0, limit)
 	otherResults := aggregator.OtherCounts().ResultCount
@@ -158,10 +160,16 @@ func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode type
 
 	for i := 0; i < len(sorted); i++ {
 		if i < limit {
+			label := sorted[i].Label
+			drilldownQuery, err := buildDrilldownQuery(mode, originalQuery, label, patternType)
+			if err != nil {
+				// for some reason we couldn't generate a new query, so fallback to the original
+				drilldownQuery = originalQuery
+			}
 			groups = append(groups, &AggregationGroup{
-				label: sorted[i].Label,
+				label: label,
 				count: int(sorted[i].Count),
-				query: nil,
+				query: &drilldownQuery,
 			})
 		} else {
 			otherGroups++
@@ -282,16 +290,16 @@ func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
 func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	// TODO(leonore): Finish up logic for ability to aggregate by capture group.
 	// A query should contain a capture group to allow this kind of aggregation.
-	//if !(patternType == "regexp" || patternType == "regex" || patternType == "standard" || patternType == "lucky") {
+	// if !(patternType == "regexp" || patternType == "regex" || patternType == "standard" || patternType == "lucky") {
 	//	return false, nil
-	//}
-	//plan, err := querybuilder.ParseQuery(searchQuery, patternType)
-	//if err != nil {
-	//	return false, errors.Wrapf(err, "ParseQuery")
-	//}
-	//parameters := querybuilder.ParametersFromQueryPlan(plan)
-	//selectParameter, typeParameter := false, false
-	//for _, parameter := range parameters {
+	// }
+	// plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	// if err != nil {
+	//	return false, errors.Wrapf(err, "ParseAndValidateQuery")
+	// }
+	// parameters := querybuilder.ParametersFromQueryPlan(plan)
+	// selectParameter, typeParameter := false, false
+	// for _, parameter := range parameters {
 	//	if parameter.Field == query.FieldSelect {
 	//		if parameter.Value == "repo" || parameter.Value == "file" {
 	//			selectParameter = true
@@ -301,11 +309,11 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	//			typeParameter = true
 	//		}
 	//	}
-	//}
-	//if selectParameter && !typeParameter {
+	// }
+	// if selectParameter && !typeParameter {
 	//	return false, nil
-	//}
-	//return true, nil
+	// }
+	// return true, nil
 	return false, nil
 }
 
@@ -395,4 +403,33 @@ func (r *searchAggregationModeResultResolver) SupportsPersistence() (*bool, erro
 
 func (r *searchAggregationModeResultResolver) Mode() (string, error) {
 	return string(r.mode), nil
+}
+
+func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string, drilldown string, patternType string) (string, error) {
+	var modifierFunc func(querybuilder.BasicQuery, string) (querybuilder.BasicQuery, error)
+	switch mode {
+	case types.REPO_AGGREGATION_MODE:
+		modifierFunc = querybuilder.AddRepoFilter
+	case types.PATH_AGGREGATION_MODE:
+		modifierFunc = querybuilder.AddFileFilter
+	case types.AUTHOR_AGGREGATION_MODE:
+		modifierFunc = querybuilder.AddAuthorFilter
+	case types.CAPTURE_GROUP_AGGREGATION_MODE:
+		searchType, err := client.SearchTypeFromString(patternType)
+		if err != nil {
+			return "", err
+		}
+		replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(originalQuery), searchType)
+		if err != nil {
+			return "", err
+		}
+		modifierFunc = func(basicQuery querybuilder.BasicQuery, s string) (querybuilder.BasicQuery, error) {
+			return replacer.Replace(s)
+		}
+	default:
+		return "", errors.New("unsupported aggregation mode")
+	}
+
+	newQuery, err := modifierFunc(querybuilder.BasicQuery(originalQuery), drilldown)
+	return string(newQuery), err
 }
