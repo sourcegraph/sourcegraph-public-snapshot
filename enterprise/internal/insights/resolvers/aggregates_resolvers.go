@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
@@ -415,7 +417,17 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 	case types.AUTHOR_AGGREGATION_MODE:
 		modifierFunc = querybuilder.AddAuthorFilter
 	case types.CAPTURE_GROUP_AGGREGATION_MODE:
-		querybuilder.NewPatternReplacer(querybuilder.BasicQuery(originalQuery), patternType)
+		searchType, err := client.SearchTypeFromString(patternType)
+		if err != nil {
+			return "", err
+		}
+		replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(originalQuery), searchType)
+		if err != nil {
+			return "", err
+		}
+		modifierFunc = func(basicQuery querybuilder.BasicQuery, s string) (querybuilder.BasicQuery, error) {
+			return replacer.Replace(s)
+		}
 	default:
 		return "", errors.New("unsupported aggregation mode")
 	}
