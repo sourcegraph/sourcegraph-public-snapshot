@@ -81,9 +81,9 @@ func runUpgrade(
 			}); err != nil {
 				return err
 			}
-		}
 
-		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Schema migrations complete"))
+			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Schema migrations complete"))
+		}
 
 		if len(step.outOfBandMigrationIDs) > 0 {
 			if err := runOutOfBandMigrations(
