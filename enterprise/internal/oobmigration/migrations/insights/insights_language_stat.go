@@ -147,6 +147,6 @@ VALUES (%s, %s, '', '')
 
 const insightsMigratorMigrateLanguageStatsInsightInsertViewGrantQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/insights_language_stat.go:migrateLanguageStatsInsight
-INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global)
+INSERT INTO insight_view_grants (insight_view_id, user_id, org_id, global)
 VALUES (%s, %s, %s, %s)
 `
