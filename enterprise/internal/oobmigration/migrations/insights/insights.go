@@ -177,7 +177,7 @@ VALUES (%s, %s, %s, %s)
 
 const insightsMigratorMigrateInsightInsertViewGrantQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
-INSERT INTO insight_view_grants (dashboard_id, user_id, org_id, global)
+INSERT INTO insight_view_grants (insight_view_id, user_id, org_id, global)
 VALUES (%s, %s, %s, %s)
 `
 
