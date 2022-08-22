@@ -8,10 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
+const pkgName = "httpheader"
+
 // Watch for configuration changes related to the http-header auth provider.
 func init() {
 	go func() {
-		const pkgName = "httpheader"
 		logger := log.Scoped(pkgName, "HTTP header authentication config watch")
 		conf.Watch(func() {
 			if err := licensing.Check(licensing.FeatureSSO); err != nil {

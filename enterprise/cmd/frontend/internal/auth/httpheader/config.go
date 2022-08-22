@@ -33,7 +33,7 @@ func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		}
 	}
 	if httpHeaderAuthProviders >= 2 {
-		problems = append(problems, conf.NewSiteProblem(`at most 1 http-header auth provider may be used`))
+		problems = append(problems, conf.NewSiteProblem(`at most 1 HTTP header auth provider may be set in site config`))
 	}
 	return problems
 }
