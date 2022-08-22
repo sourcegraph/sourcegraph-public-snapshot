@@ -128,7 +128,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
      <tr>
         <td>Ruby</td>
-        <td><a href="https://github.com/sourcegraph/scip-python">scip-python</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-ruby">scip-ruby</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟠</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
