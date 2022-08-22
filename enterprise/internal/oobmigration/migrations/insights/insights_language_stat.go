@@ -114,7 +114,6 @@ RETURNING id
 `
 
 // Note: these columns were never set
-//  - query
 //  - last_recorded_at
 //  - last_snapshot_at
 //  - sample_interval_value
@@ -125,6 +124,7 @@ const insightsMigratorMigrateLanguageStatsInsightInsertSeriesQuery = `
 -- source: enterprise/internal/oobmigration/migrations/insights/insights_language_stat.go:migrateLanguageStatsInsight
 INSERT INTO insight_series (
 	series_id,
+	query,
 	created_at,
 	oldest_historical_at,
 	next_recording_after,
@@ -133,9 +133,9 @@ INSERT INTO insight_series (
 	sample_interval_unit,
 	just_in_time,
 	generation_method,
-	needs_migration,
+	needs_migration
 )
-VALUES (%s, %s, %s, %s, %s, %s, 'MONTH', true, 'language-stats', false)
+VALUES (%s, '', %s, %s, %s, %s, %s, 'MONTH', true, 'language-stats', false)
 RETURNING id
 `
 
