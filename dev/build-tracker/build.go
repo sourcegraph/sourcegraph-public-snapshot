@@ -211,7 +211,7 @@ func (s *BuildStore) Add(event *Event) {
 			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
 		} else {
 			// We got a pass, reset the global count
-			s.consecutiveFailures[failuresKey] = 1
+			s.consecutiveFailures[failuresKey] = 0
 		}
 	}
 
