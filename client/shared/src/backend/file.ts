@@ -9,6 +9,12 @@ import { HighlightedFileResult, HighlightedFileVariables, HighlightResponseForma
 import { PlatformContext } from '../platform/context'
 import { makeRepoURI } from '../util/url'
 
+declare global {
+    interface Window {
+        acquireVsCodeApi?: () => unknown
+    }
+}
+
 /*
     Highlighted file result query doesn't support `format` on Sourcegraph versions older than 3.43.
     As we don't have feature detection implemented for the VSCode extensions yet,
@@ -16,7 +22,6 @@ import { makeRepoURI } from '../util/url'
 */
 type RequestVariables = Omit<HighlightedFileVariables, 'format'> & { format?: HighlightedFileVariables['format'] }
 
-// @ts-ignore
 const IS_VSCE = typeof window.acquireVsCodeApi === 'function'
 
 const HIGHLIGHTED_FILE_QUERY = gql`
