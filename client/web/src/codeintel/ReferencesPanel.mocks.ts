@@ -1,4 +1,7 @@
 import { MockedResponse } from '@apollo/client/testing'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+
 import {
     HighlightResponseFormat,
     LocationFields,
@@ -7,8 +10,6 @@ import {
     UsePreciseCodeIntelForPositionResult,
     UsePreciseCodeIntelForPositionVariables,
 } from '../graphql-operations'
-
-import { getDocumentNode } from '@sourcegraph/http-client'
 
 import {
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
