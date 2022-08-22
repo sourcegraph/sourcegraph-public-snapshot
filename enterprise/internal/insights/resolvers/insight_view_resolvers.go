@@ -9,12 +9,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -23,10 +17,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -999,6 +997,17 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 	var foundSeries bool
 	var err error
 	var dynamic bool
+	// Validate the query before creating anything; we don't want faulty insights running pointlessly.
+	if series.GroupBy != nil || series.GeneratedFromCaptureGroups != nil {
+		if _, err := querybuilder.ParseComputeQuery(series.Query); err != nil {
+			return nil, errors.Wrap(err, "query validation")
+		}
+	} else {
+		if _, err := querybuilder.ParseQuery(series.Query, "literal"); err != nil {
+			return nil, errors.Wrap(err, "query validation")
+		}
+	}
+
 	if series.GeneratedFromCaptureGroups != nil {
 		dynamic = *series.GeneratedFromCaptureGroups
 	}

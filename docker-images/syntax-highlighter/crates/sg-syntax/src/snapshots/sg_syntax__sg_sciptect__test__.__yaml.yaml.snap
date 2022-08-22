@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 539
 expression: "dump_document(&document, &contents)"
 ---
   ---
@@ -41,12 +40,14 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^^^^ StringLiteral
 //           ^ IdentifierKeyword
     Blank lines denote
+//^^^^^^^^^^^^^^^^^^^^ StringLiteral 16:0..18:0
     paragraph breaks
   content: |-
 //^^^^^^^ StringLiteral
 //         ^ IdentifierKeyword
 //          ^ IdentifierKeyword
     Or we
+//^^^^^^^ StringLiteral 19:0..23:0
     can auto
     convert line breaks
     to save space
