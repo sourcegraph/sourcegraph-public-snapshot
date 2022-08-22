@@ -9,8 +9,6 @@ import { convertMarkdownToBlocks } from '../../notebooks/serialize/convertMarkdo
 
 import styles from './RenderedNotebookMarkdown.module.scss'
 
-export const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
-
 interface RenderedNotebookMarkdownProps extends Omit<NotebookComponentProps, 'onSerializeBlocks' | 'blocks'> {
     markdown: string
     className?: string
