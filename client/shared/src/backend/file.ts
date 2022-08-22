@@ -78,6 +78,7 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
     }: FetchFileParameters & {
         platformContext: Pick<PlatformContext, 'requestGraphQL'>
     }): Observable<string[][]> => {
+        let request = HIGHLIGHTED_FILE_QUERY
         const variables: RequestVariables = {
             ...context,
             format,
@@ -90,12 +91,13 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                 As we don't have feature detection implemented for the VSCode extensions yet,
                 we omit `format` variable for this query if it comes from the VSCode extension.
             */
+            request = VSCE_HIGHLIGHTED_FILE_QUERY
             delete variables.format
         }
 
         return platformContext
             .requestGraphQL<HighlightedFileResult, RequestVariables>({
-                request: IS_VSCE ? VSCE_HIGHLIGHTED_FILE_QUERY : HIGHLIGHTED_FILE_QUERY,
+                request,
                 variables,
                 mightContainPrivateInfo: true,
             })
