@@ -84,7 +84,7 @@ func (m *insightsMigrator) migrateLanguageStatsInsight(ctx context.Context, insi
 	}
 
 	// Create insight view grant records
-	grantArgs := append([]any{viewID}, grantTiple(insight.UserID, insight.OrgID))
+	grantArgs := append([]any{viewID}, grantTiple(insight.UserID, insight.OrgID)...)
 	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateLanguageStatsInsightInsertViewGrantQuery, grantArgs...)); err != nil {
 		return errors.Wrap(err, "failed to insert view grant")
 	}
