@@ -46,16 +46,6 @@
   introduced_version_minor: 27
   deprecated_version_major: 4
   deprecated_version_minor: 0
-- id: 12
-  team: apidocs
-  component: codeintel-db.lsif_data_documentation_search
-  description: Index API docs for search
-  non_destructive: true
-  is_enterprise: false
-  introduced_version_major: 3
-  introduced_version_minor: 32
-  deprecated_version_major: 4
-  deprecated_version_minor: 0
 - id: 13
   team: batch-changes
   component: frontend-db.external_services
