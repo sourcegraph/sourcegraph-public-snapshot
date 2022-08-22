@@ -147,12 +147,6 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
     }
 }
 
-/** Start line to use when fetching an entire file. */
-const ENTIRE_FILE_START_LINE = 0
-/** End line to use when fetching an entire file.
- * For reference, this is a Mersenne prime number: https://en.wikipedia.org/wiki/2,147,483,647 */
-const ENTIRE_FILE_END_LINE = 2147483647
-
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
