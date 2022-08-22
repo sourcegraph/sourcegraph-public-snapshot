@@ -35,7 +35,7 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'settings'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
@@ -264,6 +264,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         props.onShowFiltersChanged?.(newShowFilters)
     }
 
+    const { extensionsController } = props
+
     return (
         <aside
             role="region"
@@ -291,30 +293,34 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
-                    <ActionsContainer
-                        {...props}
-                        extraContext={extraContext}
-                        menu={ContributableMenu.SearchResultsToolbar}
-                    >
-                        {actionItems => (
-                            <>
-                                {actionItems.map(actionItem => (
-                                    <ActionItem
-                                        {...props}
-                                        {...actionItem}
-                                        key={actionItem.action.id}
-                                        showLoadingSpinnerDuringExecution={false}
-                                        className="mr-2 text-decoration-none"
-                                        actionItemStyleProps={{
-                                            actionItemVariant: 'secondary',
-                                            actionItemSize: 'sm',
-                                            actionItemOutline: true,
-                                        }}
-                                    />
-                                ))}
-                            </>
-                        )}
-                    </ActionsContainer>
+                    {extensionsController !== null ? (
+                        <ActionsContainer
+                            {...props}
+                            extensionsController={extensionsController}
+                            extraContext={extraContext}
+                            menu={ContributableMenu.SearchResultsToolbar}
+                        >
+                            {actionItems => (
+                                <>
+                                    {actionItems.map(actionItem => (
+                                        <ActionItem
+                                            {...props}
+                                            {...actionItem}
+                                            extensionsController={extensionsController}
+                                            key={actionItem.action.id}
+                                            showLoadingSpinnerDuringExecution={false}
+                                            className="mr-2 text-decoration-none"
+                                            actionItemStyleProps={{
+                                                actionItemVariant: 'secondary',
+                                                actionItemSize: 'sm',
+                                                actionItemOutline: true,
+                                            }}
+                                        />
+                                    ))}
+                                </>
+                            )}
+                        </ActionsContainer>
+                    ) : null}
 
                     {(createActions.length > 0 ||
                         createCodeMonitorButton ||
@@ -323,6 +329,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                     {coreWorkflowImprovementsEnabled ? (
                         <SearchActionsMenu
+                            query={props.query}
+                            patternType={props.patternType}
+                            sourcegraphURL={props.platformContext.sourcegraphURL}
                             authenticatedUser={props.authenticatedUser}
                             createActions={createActions}
                             createCodeMonitorAction={createCodeMonitorAction}

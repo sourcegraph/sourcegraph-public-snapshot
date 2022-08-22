@@ -4,6 +4,8 @@ ignoreDisconnectedPageCheck: true
 
 # Publishing a local copy of an extension
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
+
 <!-- TODO(sqs): WIP -->
 
 If your Sourcegraph instance is unable to connect to Sourcegraph.com (due to a firewall), or if you want to customize an extension, you need to publish a local copy to your Sourcegraph instance. To do so, follow these steps:

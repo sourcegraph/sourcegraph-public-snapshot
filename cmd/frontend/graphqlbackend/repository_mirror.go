@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -33,18 +32,17 @@ type repositoryMirrorInfoResolver struct {
 	repoUpdateSchedulerInfoResult *repoupdaterprotocol.RepoUpdateSchedulerInfoResult
 	repoUpdateSchedulerInfoErr    error
 
-	// memoize the gitserver RepoInfo call
-	repoInfoOnce     sync.Once
-	repoInfoResponse *protocol.RepoInfo
-	repoInfoErr      error
+	// memoize the gitserverRepo
+	gsRepoOnce sync.Once
+	gsRepo     *types.GitserverRepo
+	gsRepoErr  error
 }
 
-func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
-	r.repoInfoOnce.Do(func() {
-		resp, err := gitserver.NewClient(r.db).RepoInfo(ctx, r.repository.RepoName())
-		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.RepoName()], err
+func (r *repositoryMirrorInfoResolver) computeGitserverRepo(ctx context.Context) (*types.GitserverRepo, error) {
+	r.gsRepoOnce.Do(func() {
+		r.gsRepo, r.gsRepoErr = r.db.GitserverRepos().GetByID(ctx, r.repository.IDInt32())
 	})
-	return r.repoInfoResponse, r.repoInfoErr
+	return r.gsRepo, r.gsRepoErr
 }
 
 func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
@@ -90,63 +88,74 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		return strings.Replace(strings.Replace(u.String(), "fake://", "", 1), "/", ":", 1)
 	}
 
-	{
-		repo, err := r.repository.repo(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		if cloneURLs := repo.CloneURLs(); len(cloneURLs) > 0 {
-			return removeUserinfo(cloneURLs[0]), nil
-		}
-	}
-
-	// Fall back to the gitserver repo info for repos on hosts that are not yet fully supported by repo-updater.
-	info, err := r.gitserverRepoInfo(ctx)
+	repo, err := r.repository.repo(ctx)
 	if err != nil {
 		return "", err
 	}
-	return removeUserinfo(info.URL), nil
+
+	cloneURLs := repo.CloneURLs()
+	if len(cloneURLs) == 0 {
+		// This should never happen: clone URL is enforced to be a non-empty string
+		// in our store, and we delete repos once they have no external service connection
+		// anymore.
+		return "", errors.Errorf("no sources for %q", repo)
+	}
+
+	return removeUserinfo(cloneURLs[0]), nil
 }
 
 func (r *repositoryMirrorInfoResolver) Cloned(ctx context.Context) (bool, error) {
-	info, err := r.gitserverRepoInfo(ctx)
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return false, err
 	}
-	return info.Cloned, nil
+
+	return info.CloneStatus == types.CloneStatusCloned, nil
 }
 
 func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (bool, error) {
-	info, err := r.gitserverRepoInfo(ctx)
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return false, err
 	}
-	return info.CloneInProgress, nil
+
+	return info.CloneStatus == types.CloneStatusCloning, nil
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	info, err := r.gitserverRepoInfo(ctx)
+	progress, err := gitserver.NewClient(r.db).RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
-	return strptr(info.CloneProgress), nil
+
+	result, ok := progress.Results[r.repository.RepoName()]
+	if !ok {
+		return nil, errors.New("got empty result for repo from RepoCloneProgress")
+	}
+
+	return strptr(result.CloneProgress), nil
 }
 
 func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {
-	info, err := r.gitserverRepoInfo(ctx)
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return strptr(info.LastError), nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime, error) {
-	info, err := r.gitserverRepoInfo(ctx)
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return DateTimeOrNil(info.LastFetched), nil
+
+	if info.LastFetched.IsZero() {
+		return nil, nil
+	}
+
+	return &DateTime{Time: info.LastFetched}, nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {

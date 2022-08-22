@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
 // eslint-disable-next-line no-restricted-imports
-import { Card, Icon } from '@sourcegraph/wildcard'
+import { Card, Icon, Button } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
@@ -163,8 +163,8 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                 )}
             >
                 {pinOptions?.showCloseButton && (
-                    <button
-                        type="button"
+                    <Button
+                        variant="icon"
                         onClick={
                             pinOptions.onCloseButtonClick
                                 ? transformMouseEvent(pinOptions.onCloseButtonClick)
@@ -177,7 +177,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                         )}
                     >
                         <Icon className={iconClassName} svgPath={mdiClose} inline={false} aria-label="Close" />
-                    </button>
+                    </Button>
                 )}
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}

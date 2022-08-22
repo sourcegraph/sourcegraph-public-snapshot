@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
@@ -24,10 +23,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const numRoutines = 5
-const numRepositories = 10
-const numCommits = 10 // per repo
-const numPaths = 10   // per commit
+const (
+	numRoutines     = 5
+	numRepositories = 10
+	numCommits      = 10 // per repo
+	numPaths        = 10 // per commit
+)
 
 func TestCachedLocationResolver(t *testing.T) {
 	repos := database.NewStrictMockRepoStore()
@@ -256,7 +257,7 @@ func TestResolveLocations(t *testing.T) {
 	r3 := lsifstore.Range{Start: lsifstore.Position{Line: 31, Character: 32}, End: lsifstore.Position{Line: 33, Character: 34}}
 	r4 := lsifstore.Range{Start: lsifstore.Position{Line: 41, Character: 42}, End: lsifstore.Position{Line: 43, Character: 44}}
 
-	locations, err := resolveLocations(context.Background(), NewCachedLocationResolver(db), []resolvers.AdjustedLocation{
+	locations, err := resolveLocations(context.Background(), NewCachedLocationResolver(db), []AdjustedLocation{
 		{Dump: store.Dump{RepositoryID: 50}, AdjustedCommit: "deadbeef1", AdjustedRange: r1, Path: "p1"},
 		{Dump: store.Dump{RepositoryID: 51}, AdjustedCommit: "deadbeef2", AdjustedRange: r2, Path: "p2"},
 		{Dump: store.Dump{RepositoryID: 52}, AdjustedCommit: "deadbeef3", AdjustedRange: r3, Path: "p3"},

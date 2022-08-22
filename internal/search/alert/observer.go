@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/zoekt"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -233,7 +233,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	{
-		var e gitdomain.BadCommitError
+		var e *gitdomain.BadCommitError
 		if errors.As(err, &e) {
 			return search.AlertForInvalidRevision(e.Spec), nil
 		}

@@ -1,11 +1,12 @@
 package search
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
-	zoektquery "github.com/google/zoekt/query"
 	otlog "github.com/opentracing/opentracing-go/log"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -26,7 +27,7 @@ type Inputs struct {
 	PatternType         query.SearchType
 	UserSettings        *schema.Settings
 	OnSourcegraphDotCom bool
-	Features            *featureflag.FlagSet
+	Features            *Features
 	Protocol            Protocol
 }
 
@@ -315,19 +316,38 @@ type Features struct {
 	// ContentBasedLangFilters when true will use the language detected from
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
-	ContentBasedLangFilters bool
+	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
 
 	// HybridSearch when true will consult the Zoekt index when running
 	// unindexed searches. Searcher (unindexed search) will the only search
 	// what has changed since the indexed commit.
-	HybridSearch bool
+	HybridSearch bool `json:"search-hybrid"`
 
 	// CodeOwnershipFilters when true will add the code ownership post-search
 	// filter and allow users to search by code owners using the has.owner
 	// predicate.
-	CodeOwnershipFilters bool
+	CodeOwnershipFilters bool `json:"code-ownership"`
+
+	// When true lucky search runs by default. Adding for A/B testing in
+	// 08/2022. To be removed at latest by 12/2022.
+	AbLuckySearch bool `json:"ab-lucky-search"`
 }
 
+func (f *Features) String() string {
+	jsonObject, err := json.Marshal(f)
+	if err != nil {
+		return "error encoding features as string"
+	}
+	flagMap := featureflag.EvaluatedFlagSet{}
+	if err := json.Unmarshal(jsonObject, &flagMap); err != nil {
+		return "error decoding features"
+	}
+	return flagMap.String()
+}
+
+// RepoOptions is the source of truth for the options a user specified
+// in their search query that affect which repos should be searched.
+// When adding fields to this struct, be sure to update IsGlobal().
 type RepoOptions struct {
 	RepoFilters         []string
 	MinusRepoFilters    []string
@@ -344,6 +364,7 @@ type RepoOptions struct {
 	// Whether we should depend on Zoekt for resolving repositories
 	UseIndex       query.YesNoOnly
 	HasFileContent []query.RepoHasFileContentArgs
+	HasKVPs        []query.RepoKVPFilter
 
 	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
@@ -411,6 +432,21 @@ func (op *RepoOptions) Tags() []otlog.Field {
 			add(trace.Scoped(fmt.Sprintf("hasFileContent[%d]", i), nondefault...))
 		}
 	}
+	if len(op.HasKVPs) > 0 {
+		for i, arg := range op.HasKVPs {
+			nondefault := []otlog.Field{}
+			if arg.Key != "" {
+				nondefault = append(nondefault, otlog.String("key", arg.Key))
+			}
+			if arg.Value != nil {
+				nondefault = append(nondefault, otlog.String("value", *arg.Value))
+			}
+			if arg.Negated {
+				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+			}
+			add(trace.Scoped(fmt.Sprintf("hasKVPs[%d]", i), nondefault...))
+		}
+	}
 	if op.ForkSet {
 		add(otlog.Bool("forkSet", op.ForkSet))
 	}
@@ -468,7 +504,20 @@ func (op *RepoOptions) String() string {
 				fmt.Fprintf(&b, "HasFileContent[%d].content: %s\n", i, arg.Content)
 			}
 			if arg.Negated {
-				fmt.Fprintf(&b, "HasFileContent[%d].negate: %s\n", i, arg.Path)
+				fmt.Fprintf(&b, "HasFileContent[%d].negated: %t\n", i, arg.Negated)
+			}
+		}
+	}
+	if len(op.HasKVPs) > 0 {
+		for i, arg := range op.HasKVPs {
+			if arg.Key != "" {
+				fmt.Fprintf(&b, "HasKVPs[%d].key: %s\n", i, arg.Key)
+			}
+			if arg.Value != nil {
+				fmt.Fprintf(&b, "HasKVPs[%d].value: %s\n", i, *arg.Value)
+			}
+			if arg.Negated {
+				fmt.Fprintf(&b, "HasKVPs[%d].negated: %t\n", i, arg.Negated)
 			}
 		}
 	}

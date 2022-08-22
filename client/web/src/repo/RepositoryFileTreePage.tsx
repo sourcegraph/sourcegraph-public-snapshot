@@ -3,6 +3,7 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
@@ -11,6 +12,7 @@ import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
+import { BlobProps } from './blob/Blob'
 import { BlobPage } from './blob/BlobPage'
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -23,7 +25,8 @@ export interface RepositoryFileTreePageProps
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
             spec: string
-        }> {}
+        }>,
+        Pick<BlobProps, 'onHandleFuzzyFinder'> {}
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
@@ -51,7 +54,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
     }
 
     const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
-
     const mode = getModeFromPath(filePath)
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
@@ -106,7 +108,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                     <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
                     <ErrorBoundary location={context.location}>
                         {objectType === 'blob' ? (
-                            <>
+                            <TraceSpanProvider name="BlobPage">
                                 <BlobPage
                                     {...context}
                                     {...repoRevisionProps}
@@ -117,8 +119,9 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
+                                    onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                 />
-                            </>
+                            </TraceSpanProvider>
                         ) : (
                             <TreePage
                                 {...props}

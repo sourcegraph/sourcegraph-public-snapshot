@@ -172,6 +172,8 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         </div>
     )
 
+    const { extensionsController } = props
+
     return (
         <>
             <section className={classNames('test-tree-entries mb-3', styles.section)}>
@@ -183,23 +185,31 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     isLightTheme={props.isLightTheme}
                 />
             </section>
-            <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
-                {items => (
-                    <section className={styles.section}>
-                        <H2>Actions</H2>
-                        {items.map(item => (
-                            <Button
-                                {...props}
-                                key={item.action.id}
-                                {...item}
-                                className="mr-1 mb-1"
-                                variant="secondary"
-                                as={ActionItem}
-                            />
-                        ))}
-                    </section>
-                )}
-            </ActionsContainer>
+            {extensionsController !== null ? (
+                <ActionsContainer
+                    {...props}
+                    extensionsController={extensionsController}
+                    menu={ContributableMenu.DirectoryPage}
+                    empty={null}
+                >
+                    {items => (
+                        <section className={styles.section}>
+                            <H2>Actions</H2>
+                            {items.map(item => (
+                                <Button
+                                    {...props}
+                                    extensionsController={extensionsController}
+                                    key={item.action.id}
+                                    {...item}
+                                    className="mr-1 mb-1"
+                                    variant="secondary"
+                                    as={ActionItem}
+                                />
+                            ))}
+                        </section>
+                    )}
+                </ActionsContainer>
+            ) : null}
 
             <div className={styles.section}>
                 <H2>Changes</H2>

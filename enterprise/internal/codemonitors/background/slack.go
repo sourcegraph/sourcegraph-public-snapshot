@@ -55,7 +55,7 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 			} else {
 				contentRaw = truncateString(result.MessagePreview.Content, 10)
 			}
-			blocks = append(blocks, newMarkdownSection(fmt.Sprintf("```%s```", contentRaw)))
+			blocks = append(blocks, newMarkdownSection(formatCodeBlock(contentRaw)))
 		}
 		if truncatedCount > 0 {
 			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
@@ -79,6 +79,10 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 		)),
 	)
 	return &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: blocks}}
+}
+
+func formatCodeBlock(s string) string {
+	return fmt.Sprintf("```%s```", strings.ReplaceAll(s, "```", "\\`\\`\\`"))
 }
 
 func truncateString(input string, lines int) string {

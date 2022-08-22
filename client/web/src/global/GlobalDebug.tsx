@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Link } from '@sourcegraph/wildcard'
@@ -12,7 +12,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 
 import styles from './GlobalDebug.module.scss'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
+interface Props extends RequiredExtensionsControllerProps, PlatformContextProps {
     location: H.Location
 }
 

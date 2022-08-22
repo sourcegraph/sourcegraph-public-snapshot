@@ -188,7 +188,7 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                         value={description}
                         onChange={createInputChangeHandler('description')}
                         label="Description"
-                        className={classNames('mb-0 form-group', styles.label)}
+                        className={styles.label}
                     />
                     <Input
                         id="saved-search-form-input-query"
@@ -198,11 +198,11 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                         value={query}
                         onChange={createInputChangeHandler('query')}
                         label="Query"
-                        className={classNames('mb-0 form-group', styles.label)}
+                        className={styles.label}
                     />
 
                     {props.defaultValues?.notify && (
-                        <div className="form-group mb-0">
+                        <div>
                             {/* Label is for visual benefit, input has more specific label attached */}
                             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                             <Label className={styles.label} id="saved-search-form-email-notifications">
@@ -231,7 +231,7 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                             onChange={createInputChangeHandler('slackWebhookURL')}
                             label="Slack notifications"
                             message="Slack webhooks are deprecated and will be removed in a future Sourcegraph version."
-                            className={classNames('mb-0 form-group mt-3', styles.label)}
+                            className={classNames('mt-3', styles.label)}
                         />
                     )}
                     {isUnsupportedNotifyQuery && (
@@ -247,7 +247,7 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                         </div>
                     )}
                     {props.error && !props.loading && <ErrorAlert className="my-3" error={props.error} />}
-                    <div className="form-group text-right mb-0">
+                    <div className="text-right">
                         <VSCodeButton type="submit" disabled={props.loading}>
                             {props.submitLabel}
                         </VSCodeButton>

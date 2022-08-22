@@ -3,20 +3,18 @@ package repos
 import (
 	"context"
 	"fmt"
-	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
-	"github.com/google/zoekt/stream"
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -133,11 +131,21 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		return Resolved{}, errs
 	}
 
+	kvpFilters := make([]database.RepoKVPFilter, 0, len(op.HasKVPs))
+	for _, filter := range op.HasKVPs {
+		kvpFilters = append(kvpFilters, database.RepoKVPFilter{
+			Key:     filter.Key,
+			Value:   filter.Value,
+			Negated: filter.Negated,
+		})
+	}
+
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
 		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		DescriptionPatterns:   op.DescriptionPatterns,
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
+		KVPFilters:            kvpFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:  &database.LimitOffset{Limit: limit + 1},
@@ -397,7 +405,7 @@ func (r *Resolver) normalizeRepoRefs(
 			trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
 			_, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 					return nil, err
 				}
 				reportMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{rev}})
@@ -461,8 +469,11 @@ func (r *Resolver) filterHasCommitAfter(
 			rev := rev
 			g.Go(func(ctx context.Context) error {
 				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, rev, authz.DefaultSubRepoPermsChecker); err != nil {
-					if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
-						return err
+					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
+						// If the revision does not exist or the repo does not exist,
+						// it certainly does not have any commits after some time.
+						// Ignore the error, but filter this repo out.
+						return nil
 					}
 					return err
 				} else if !hasCommitAfter {
@@ -581,28 +592,26 @@ func (r *Resolver) filterRepoHasFileContent(
 			}
 			var revsMatchingAllPredicates Set[repoAndRev]
 			for i, opt := range op.HasFileContent {
-				q := zoektQueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
+				q := searchzoekt.QueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
 				q = zoektquery.NewAnd(&zoektquery.BranchesRepos{List: indexed.BranchRepos()}, q)
 
+				repos, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Minimal: true})
+				if err != nil {
+					return err
+				}
+
 				foundRevs := Set[repoAndRev]{}
-				onMatch := func(res *zoekt.SearchResult) {
-					for _, file := range res.Files {
-						// Reverse lookup the inputRev from the returned branches
-						inputRevs := indexed.RepoRevs[api.RepoID(int32(file.RepositoryID))].Revs
-						for _, branch := range file.Branches {
-							for _, inputRev := range inputRevs {
-								if branch == inputRev || (branch == "HEAD" && inputRev == "") {
-									foundRevs.Add(repoAndRev{id: api.RepoID(file.RepositoryID), rev: inputRev})
-								}
+				for repoID, repo := range repos.Minimal {
+					inputRevs := indexed.RepoRevs[api.RepoID(repoID)].Revs
+					for _, branch := range repo.Branches {
+						for _, inputRev := range inputRevs {
+							if branch.Name == inputRev || (branch.Name == "HEAD" && inputRev == "") {
+								foundRevs.Add(repoAndRev{id: api.RepoID(repoID), rev: inputRev})
 							}
 						}
 					}
 				}
 
-				err := r.zoekt.StreamSearch(ctx, q, &zoekt.SearchOptions{ShardMaxMatchCount: 1}, stream.SenderFunc(onMatch))
-				if err != nil {
-					return err
-				}
 				if i == 0 {
 					revsMatchingAllPredicates = foundRevs
 				} else {
@@ -626,7 +635,7 @@ func (r *Resolver) filterRepoHasFileContent(
 					for _, arg := range op.HasFileContent {
 						commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 						if err != nil {
-							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
+							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 								return err
 							}
 							addMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}})
@@ -664,24 +673,6 @@ func (r *Resolver) filterRepoHasFileContent(
 
 	tr.LogFields(otlog.Int("filteredRevCount", len(matchedRepoRevs)))
 	return matchedRepoRevs, missing, nil
-}
-
-func zoektQueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoektquery.Q {
-	var children []zoektquery.Q
-	if opt.Path != "" {
-		re, _ := syntax.Parse(opt.Path, 0)
-		children = append(children, &zoektquery.Regexp{Regexp: re, FileName: true, CaseSensitive: caseSensitive})
-	}
-	if opt.Content != "" {
-		re, _ := syntax.Parse(opt.Content, 0)
-		children = append(children, &zoektquery.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
-	}
-	q := zoektquery.NewAnd(children...)
-	if opt.Negated {
-		q = &zoektquery.Not{Child: q}
-	}
-	q = zoektquery.Simplify(q)
-	return q
 }
 
 func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {

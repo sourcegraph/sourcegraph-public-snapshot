@@ -1,5 +1,4 @@
-import { boolean } from '@storybook/addon-knobs'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
@@ -16,11 +15,17 @@ const config: Meta = {
             viewports: [320, 576, 978, 1440],
         },
     },
+    argTypes: {
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 
 export default config
 
-export const Create: Story = () => (
+export const Create: Story = args => (
     <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
@@ -28,13 +33,13 @@ export const Create: Story = () => (
                 specID="123"
                 toBeArchived={18}
                 batchChange={null}
-                viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                viewerCanAdminister={args.viewerCanAdminister}
             />
         )}
     </WebStory>
 )
 
-export const Update: Story = () => (
+export const Update: Story = args => (
     <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
@@ -42,13 +47,13 @@ export const Update: Story = () => (
                 specID="123"
                 toBeArchived={199}
                 batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
-                viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                viewerCanAdminister={args.viewerCanAdminister}
             />
         )}
     </WebStory>
 )
 
-export const Disabled: Story = () => (
+export const Disabled: Story = args => (
     <WebStory>
         {props => (
             <MultiSelectContextProvider initialSelected={['id1', 'id2']}>
@@ -57,7 +62,7 @@ export const Disabled: Story = () => (
                     specID="123"
                     toBeArchived={199}
                     batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                 />
             </MultiSelectContextProvider>
         )}

@@ -6,12 +6,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
-func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	issueComment := &github.IssueComment{
 		DatabaseID: 443827703,
 		Author: github.Actor{

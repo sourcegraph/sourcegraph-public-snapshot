@@ -468,8 +468,6 @@ type DebugLog struct {
 
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
-	// GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
-	GithubAppCloud *GithubAppCloud `json:"githubApp.cloud,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 }
@@ -606,11 +604,13 @@ type ExperimentalFeatures struct {
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
-	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
+	EnableLegacyExtensions *bool `json:"enableLegacyExtensions,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
+	// EnableWebhookRepoSync description: Enable webhooks for repo syncing
+	EnableWebhookRepoSync bool `json:"enableWebhookRepoSync,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// Gerrit description: Allow adding Gerrit code host connections
@@ -661,9 +661,9 @@ type ExportUsageTelemetry struct {
 	// Enabled description: Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.
 	Enabled bool `json:"enabled,omitempty"`
 	// TopicName description: Destination pubsub topic name to export usage data
-	TopicName string `json:"topicName"`
+	TopicName string `json:"topicName,omitempty"`
 	// TopicProjectName description: GCP project name containing the usage data pubsub topic
-	TopicProjectName string `json:"topicProjectName"`
+	TopicProjectName string `json:"topicProjectName,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -741,6 +741,20 @@ type GitCommitDescription struct {
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
+}
+
+// GitHubApp description: The config options for Sourcegraph GitHub App.
+type GitHubApp struct {
+	// AppID description: The app ID of the GitHub App for Sourcegraph.
+	AppID string `json:"appID,omitempty"`
+	// ClientID description: The Client ID of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps .
+	ClientID string `json:"clientID,omitempty"`
+	// ClientSecret description: The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps .
+	ClientSecret string `json:"clientSecret,omitempty"`
+	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph.
+	PrivateKey string `json:"privateKey,omitempty"`
+	// Slug description: The slug of the GitHub App for Sourcegraph.
+	Slug string `json:"slug,omitempty"`
 }
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
@@ -948,20 +962,6 @@ type GitLabRateLimit struct {
 type GitLabWebhook struct {
 	// Secret description: The secret used to authenticate incoming webhook requests
 	Secret string `json:"secret"`
-}
-
-// GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
-type GithubAppCloud struct {
-	// AppID description: The app ID of the GitHub App for Sourcegraph Cloud.
-	AppID string `json:"appID,omitempty"`
-	// ClientID description: The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps .
-	ClientID string `json:"clientID,omitempty"`
-	// ClientSecret description: The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps .
-	ClientSecret string `json:"clientSecret,omitempty"`
-	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph Cloud.
-	PrivateKey string `json:"privateKey,omitempty"`
-	// Slug description: The slug of the GitHub App for Sourcegraph Cloud.
-	Slug string `json:"slug,omitempty"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -1294,8 +1294,10 @@ type ObservabilityTracing struct {
 	Debug bool `json:"debug,omitempty"`
 	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. An appropriate tracing backend must be running for traces to be collected (for "opentracing", a Jaeger instance must be running as described in the Sourcegraph installation instructions). Additional downsampling can be configured in tracing backend (for Jaeger, see https://www.jaegertracing.io/docs/1.17/sampling).
 	Sampling string `json:"sampling,omitempty"`
-	// Type description: Determines what tracing provider to enable. For "opentracing", the required backend is a Jaeger instance. For "opentelemetry" (EXPERIMENTAL), the required backend is a OpenTelemetry collector instance. "datadog" support has been removed, and the configuration option will be removed in a future release.
+	// Type description: Determines what tracing provider to enable. For "jaeger", a Jaeger instance is required. For "opentelemetry" (EXPERIMENTAL), the required backend is a OpenTelemetry collector instance. "datadog" and "opentracing" options are deprecated, and the configuration option will be removed in a future release.
 	Type string `json:"type,omitempty"`
+	// UrlTemplate description: Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'.
+	UrlTemplate string `json:"urlTemplate,omitempty"`
 }
 
 // OnQuery description: A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.
@@ -1744,6 +1746,8 @@ type Settings struct {
 type SettingsExperimentalFeatures struct {
 	// ApiDocs description: Deprecated.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
+	// ApplySearchQuerySuggestionOnEnter description: This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)
+	ApplySearchQuerySuggestionOnEnter *bool `json:"applySearchQuerySuggestionOnEnter,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// ClientSearchResultRanking description: How to rank search results in the client
@@ -1775,6 +1779,10 @@ type SettingsExperimentalFeatures struct {
 	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
+	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
+	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
+	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
+	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
@@ -1944,6 +1952,8 @@ type SiteConfiguration struct {
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
+	// GitHubApp description: The config options for Sourcegraph GitHub App.
+	GitHubApp *GitHubApp `json:"gitHubApp,omitempty"`
 	// GitLongCommandTimeout description: Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.
 	GitLongCommandTimeout int `json:"gitLongCommandTimeout,omitempty"`
 	// GitMaxCodehostRequestsPerSecond description: Maximum number of remote code host git operations (e.g. clone or ls-remote) to be run per second per gitserver. Default is -1, which is unlimited.

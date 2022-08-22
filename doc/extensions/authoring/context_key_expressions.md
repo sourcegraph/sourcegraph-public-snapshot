@@ -1,5 +1,7 @@
 # Context key expressions
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../deprecation.md).
+
 **Context key expressions** are a way to express values dynamically in the
 fields of a Sourcegraph extension's manifest.
 

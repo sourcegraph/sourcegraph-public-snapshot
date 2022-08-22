@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -51,14 +52,17 @@ func main() {
 		"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
 		"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
 		"executors-janitor":             executors.NewJanitorJob(),
+		"executors-metricsserver":       executors.NewMetricsServerJob(),
 		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
+		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
 		// fresh
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
 		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-upload-backfiller":      freshcodeintel.NewUploadBackfillerJob(),
 		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
 
 		// temporary
@@ -66,7 +70,7 @@ func main() {
 		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
 	}
 
-	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrations); err != nil {
+	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {
 		logger.Fatal(err.Error())
 	}
 }

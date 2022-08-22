@@ -71,7 +71,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// Try every verified email in succession until the first that succeeds
 	var data extsvc.AccountData
-	githubsvc.SetExternalAccountData(&data, ghUser, token)
+	if err := githubsvc.SetExternalAccountData(&data, ghUser, token); err != nil {
+		return nil, "", err
+	}
 	var (
 		firstSafeErrMsg string
 		firstErr        error
@@ -101,6 +103,13 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		})
 	}
 
+	installations, err := ghClient.GetUserInstallations(ctx)
+	if err != nil {
+		// Only log a warning, since we still want to create the user account
+		// even if we fail to get installations.
+		log15.Warn("Could not get GitHub App installations", "error", err)
+	}
+
 	for i, attempt := range attempts {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
@@ -120,6 +129,30 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
+			for _, installation := range installations {
+				accountID := strconv.FormatInt(*installation.ID, 10) + "/" + strconv.FormatInt(derefInt64(ghUser.ID), 10)
+				_, _, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+					UserProps: database.NewUser{
+						Username:        login,
+						Email:           attempt.email,
+						EmailIsVerified: true,
+						DisplayName:     deref(ghUser.Name),
+						AvatarURL:       deref(ghUser.AvatarURL),
+					},
+					ExternalAccount: extsvc.AccountSpec{
+						ServiceType: extsvc.TypeGitHubApp,
+						ServiceID:   s.ServiceID,
+						ClientID:    s.clientID,
+						AccountID:   accountID,
+					},
+					CreateIfNotExist: attempt.createIfNotExist,
+				})
+
+				if err != nil {
+					log15.Warn("Error while saving associated user installation", "error", err)
+				}
+			}
+
 			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 				AnonymousUserID: anonymousUserID,
 				FirstSourceURL:  firstSourceURL,
@@ -185,13 +218,13 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		svc = &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-			Config: fmt.Sprintf(`
+			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
   "orgs": []
 }
-`, p.ServiceID, token.AccessToken),
+`, p.ServiceID, token.AccessToken)),
 			NamespaceUserID: actor.UID,
 			CreatedAt:       now,
 			UpdatedAt:       now,
@@ -201,11 +234,17 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 	} else {
 		// We have an existing service, update it
 		svc = services[0]
-		newConfig, err := jsonc.Edit(svc.Config, token.AccessToken, "token")
+
+		rawConfig, err := svc.Config.Decrypt(ctx)
+		if err != nil {
+			return nil, "", err
+		}
+
+		rawConfig, err = jsonc.Edit(rawConfig, token.AccessToken, "token")
 		if err != nil {
 			return nil, "Error updating OAuth token", err
 		}
-		svc.Config = newConfig
+		svc.Config.Set(rawConfig)
 		svc.UpdatedAt = now
 	}
 

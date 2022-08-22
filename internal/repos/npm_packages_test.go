@@ -150,16 +150,16 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindNpmPackages,
-		Config: marshalJSON(t, &schema.NpmPackagesConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.NpmPackagesConnection{
 			Registry:     "https://registry.npmjs.org",
 			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
-		}),
+		})),
 	}
 
 	cf, save := newClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewNpmPackagesSource(&svc, cf)
+	src, err := NewNpmPackagesSource(ctx, &svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

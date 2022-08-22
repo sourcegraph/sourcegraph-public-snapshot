@@ -4,7 +4,7 @@ import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { range } from 'lodash'
 import VisibilitySensor from 'react-visibility-sensor'
-import { of, Observable, Subscription, BehaviorSubject } from 'rxjs'
+import { Observable, Subscription, BehaviorSubject, of } from 'rxjs'
 import { catchError, filter } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -12,6 +12,7 @@ import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Repo } from '@sourcegraph/shared/src/util/url'
@@ -25,6 +26,7 @@ export interface FetchFileParameters {
     filePath: string
     disableTimeout?: boolean
     ranges: GQL.IHighlightLineRange[]
+    format?: HighlightResponseFormat
 }
 
 interface Props extends Repo {
@@ -39,6 +41,9 @@ interface Props extends Repo {
     /** A function to fetch the range of lines this code excerpt will display. It will be provided
      * the same start and end lines properties that were provided as component props */
     fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
+    /** A function to fetch the range of lines this code excerpt will display. It will be provided
+     * the same start and end lines properties that were provided as component props */
+    fetchPlainTextFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 
     viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
@@ -102,6 +107,7 @@ const visibilitySensorOffset = { bottom: -500 }
 export const CodeExcerpt: React.FunctionComponent<Props> = ({
     blobLines,
     fetchHighlightedFileRangeLines,
+    fetchPlainTextFileRangeLines,
     startLine,
     endLine,
     highlightRanges,
@@ -110,8 +116,13 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     className,
     onCopy,
 }) => {
-    const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [plainTextBlobLinesOrError, setPlainTextBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [highlightedBlobLinesOrError, setHighlightedBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
     const [isVisible, setIsVisible] = useState(false)
+
+    const blobLinesOrError = fetchPlainTextFileRangeLines
+        ? highlightedBlobLinesOrError || plainTextBlobLinesOrError
+        : highlightedBlobLinesOrError
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
     // used for hoverified events while the React state is used for match highlighting.
@@ -126,13 +137,24 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         [tableContainerElements]
     )
 
+    // Get the plain text (unhighlighted) blob lines
+    useEffect(() => {
+        let subscription: Subscription | undefined
+        if (isVisible && fetchPlainTextFileRangeLines) {
+            subscription = fetchPlainTextFileRangeLines(startLine, endLine).subscribe(blobLinesOrError => {
+                setPlainTextBlobLinesOrError(blobLinesOrError)
+            })
+        }
+        return () => subscription?.unsubscribe()
+    }, [blobLines, endLine, fetchPlainTextFileRangeLines, isVisible, startLine])
+
     // Get the syntax highlighted blob lines
     useEffect(() => {
         let subscription: Subscription | undefined
         if (isVisible) {
             const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
             subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
-                setBlobLinesOrError(blobLinesOrError)
+                setHighlightedBlobLinesOrError(blobLinesOrError)
             })
         }
         return () => subscription?.unsubscribe()
@@ -155,7 +177,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 }
             }
         }
-    }, [highlightRanges, startLine, tableContainerElement])
+    }, [highlightRanges, startLine, tableContainerElement, blobLinesOrError])
 
     // Hook up the hover tooltips
     useEffect(() => {

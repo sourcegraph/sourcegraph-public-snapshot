@@ -4911,6 +4911,27 @@ Query: `sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))`
 
 <br />
 
+#### gitserver: non_existent_repos_removed
+
+<p class="subtitle">Repositories removed because they are not defined in the DB</p>
+
+Repositoriess removed because they are not defined in the DB
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100440` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance) (increase(src_gitserver_non_existing_repos_removed[5m]))`
+
+</details>
+
+<br />
+
 #### gitserver: sg_maintenance_reason
 
 <p class="subtitle">Successful sg maintenance jobs over 1h (by reason)</p>
@@ -4919,7 +4940,7 @@ the rate of successful sg maintenance jobs and the reason why they were triggere
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100440` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100450` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -4940,7 +4961,7 @@ the rate of successful git prune jobs over 1h and whether they were skipped
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100450` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100460` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6595,6 +6616,25 @@ Query: `sum(src_codeintel_upload_processor_handlers{job=~"^precise-code-intel-wo
 
 <br />
 
+#### precise-code-intel-worker: codeintel_upload_processor_upload_size
+
+<p class="subtitle">Sum of upload sizes in bytes being processed by each precise code-intel worker instance</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(instance) (src_codeintel_upload_processor_upload_size)`
+
+</details>
+
+<br />
+
 #### precise-code-intel-worker: codeintel_upload_processor_total
 
 <p class="subtitle">Handler operations every 5m</p>
@@ -8174,6 +8214,92 @@ Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-autoindexing-sche
 
 <br />
 
+### Worker: Database record encrypter
+
+#### worker: records_encrypted_at_rest_percentage
+
+<p class="subtitle">Percentage of database records encrypted at rest</p>
+
+Percentage of encrypted database records
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName))) * 100`
+
+</details>
+
+<br />
+
+#### worker: records_encrypted_total
+
+<p class="subtitle">Database records encrypted every 5m</p>
+
+Number of encrypted database records every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (tableName)(increase(src_records_encrypted_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: records_decrypted_total
+
+<p class="subtitle">Database records decrypted every 5m</p>
+
+Number of encrypted database records every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100102` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (tableName)(increase(src_records_decrypted_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: record_encryption_errors_total
+
+<p class="subtitle">Encryption operation errors every 5m</p>
+
+Number of database record encryption/decryption errors every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100103` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_record_encryption_errors_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
 ### Worker: Codeintel: Repository with stale commit graph
 
 #### worker: codeintel_commit_graph_queue_size
@@ -8182,7 +8308,7 @@ Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-autoindexing-sche
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8207,7 +8333,7 @@ This value compares the rate of enqueues against the rate of finished jobs.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8226,7 +8352,7 @@ Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^worker.*"}[30m])) /
 
 Refer to the [alerts reference](./alerts.md#worker-codeintel-commit-graph-queued-max-age) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100102` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100202` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8247,7 +8373,7 @@ Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^work
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8266,7 +8392,7 @@ Query: `sum(increase(src_codeintel_commit_graph_processor_total{job=~"^worker.*"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8285,7 +8411,7 @@ Query: `sum  by (le)(rate(src_codeintel_commit_graph_processor_duration_seconds_
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100202` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100302` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8304,7 +8430,7 @@ Query: `sum(increase(src_codeintel_commit_graph_processor_errors_total{job=~"^wo
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100203` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100303` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8325,7 +8451,7 @@ Query: `sum(increase(src_codeintel_commit_graph_processor_errors_total{job=~"^wo
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8350,7 +8476,7 @@ This value compares the rate of enqueues against the rate of finished jobs.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8369,7 +8495,7 @@ Query: `sum(increase(src_codeintel_dependency_index_total{job=~"^worker.*"}[30m]
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8390,7 +8516,7 @@ Query: `max(src_codeintel_dependency_index_queued_duration_seconds_total{job=~"^
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8409,7 +8535,7 @@ Query: `sum(src_codeintel_dependency_index_processor_handlers{job=~"^worker.*"})
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8428,7 +8554,7 @@ Query: `sum(increase(src_codeintel_dependency_index_processor_total{job=~"^worke
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8447,7 +8573,7 @@ Query: `sum  by (le)(rate(src_codeintel_dependency_index_processor_duration_seco
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100412` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100512` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8466,7 +8592,7 @@ Query: `sum(increase(src_codeintel_dependency_index_processor_errors_total{job=~
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100413` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100513` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8489,7 +8615,7 @@ Number of repositories considered for data retention scanning every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8510,7 +8636,7 @@ Number of upload records considered for data retention scanning every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100601` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8531,7 +8657,7 @@ Number of commits considered for data retention scanning every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100502` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100602` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8552,7 +8678,7 @@ Number of upload records found to be expired every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100503` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100603` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8573,7 +8699,7 @@ Number of LSIF upload records deleted due to expiration or unreachability every 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100510` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100610` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8594,7 +8720,7 @@ Number of LSIF index records deleted due to expiration or unreachability every 5
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100511` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100611` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8615,7 +8741,7 @@ Number of LSIF upload data bundles purged from the codeintel-db database every 5
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100512` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100612` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8636,7 +8762,7 @@ Number of documentation search records removed from the codeintel-db database ev
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100513` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100613` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8657,7 +8783,7 @@ Number of LSIF upload audit log records deleted due to expiration every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100520` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100620` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8678,7 +8804,7 @@ Number of code intelligence janitor errors every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100521` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100621` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8699,7 +8825,7 @@ Query: `sum(increase(src_codeintel_background_errors_total{job=~"^worker.*"}[5m]
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8718,7 +8844,7 @@ Query: `sum(increase(src_codeintel_index_scheduler_total{job=~"^worker.*"}[5m]))
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100601` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100701` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8737,7 +8863,7 @@ Query: `sum  by (le)(rate(src_codeintel_index_scheduler_duration_seconds_bucket{
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100602` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100702` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8756,7 +8882,7 @@ Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100603` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100703` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8775,7 +8901,7 @@ Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100610` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100710` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8794,7 +8920,7 @@ Query: `sum by (op)(increase(src_codeintel_index_scheduler_total{job=~"^worker.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100611` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100711` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8813,7 +8939,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_index_schedu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100612` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100712` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8832,7 +8958,7 @@ Query: `sum by (op)(increase(src_codeintel_index_scheduler_errors_total{job=~"^w
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100613` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100713` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8853,7 +8979,7 @@ Query: `sum by (op)(increase(src_codeintel_index_scheduler_errors_total{job=~"^w
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100700` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8872,7 +8998,7 @@ Query: `sum(increase(src_codeintel_autoindex_enqueuer_total{job=~"^worker.*"}[5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100701` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100801` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8891,7 +9017,7 @@ Query: `sum  by (le)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_buck
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100702` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100802` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8910,7 +9036,7 @@ Query: `sum(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"^worker
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100703` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100803` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8929,7 +9055,7 @@ Query: `sum(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"^worker
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100710` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100810` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8948,7 +9074,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindex_enqueuer_total{job=~"^worke
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100711` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100811` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8967,7 +9093,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindex_en
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100712` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100812` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -8986,7 +9112,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100713` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100813` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9007,7 +9133,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100800` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100900` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9026,7 +9152,7 @@ Query: `sum(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100801` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100901` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9045,7 +9171,7 @@ Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^w
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100802` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100902` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9064,7 +9190,7 @@ Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100803` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100903` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9083,7 +9209,7 @@ Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m])) 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100810` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100910` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9102,7 +9228,7 @@ Query: `sum by (op)(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m]))
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100811` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100911` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9121,7 +9247,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_dbstore_dura
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100812` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100912` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9140,7 +9266,7 @@ Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100813` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100913` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9161,7 +9287,7 @@ Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9180,7 +9306,7 @@ Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9199,7 +9325,7 @@ Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100902` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101002` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9218,7 +9344,7 @@ Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m])
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100903` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101003` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9237,7 +9363,7 @@ Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m])
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100910` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9256,7 +9382,7 @@ Query: `sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m]
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100911` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9275,7 +9401,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_lsifstore_du
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100912` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101012` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9294,7 +9420,7 @@ Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100913` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101013` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9315,7 +9441,7 @@ Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9334,7 +9460,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_to
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9353,7 +9479,7 @@ Query: `sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_dependency_ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101002` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101102` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9372,7 +9498,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_er
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101003` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101103` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9393,7 +9519,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_er
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9412,7 +9538,7 @@ Query: `sum(increase(src_codeintel_gitserver_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9431,7 +9557,7 @@ Query: `sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101102` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101202` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9450,7 +9576,7 @@ Query: `sum(increase(src_codeintel_gitserver_errors_total{job=~"^worker.*"}[5m])
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101103` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101203` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9469,7 +9595,7 @@ Query: `sum(increase(src_codeintel_gitserver_errors_total{job=~"^worker.*"}[5m])
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9488,7 +9614,7 @@ Query: `sum by (op)(increase(src_codeintel_gitserver_total{job=~"^worker.*"}[5m]
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101211` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9507,7 +9633,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_gitserver_du
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101112` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101212` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9526,7 +9652,7 @@ Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^worker.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101113` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101213` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9547,7 +9673,7 @@ Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^worker.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9566,7 +9692,7 @@ Query: `sum(increase(src_codeintel_repoupdater_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9585,7 +9711,7 @@ Query: `sum  by (le)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101202` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101302` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9604,7 +9730,7 @@ Query: `sum(increase(src_codeintel_repoupdater_errors_total{job=~"^worker.*"}[5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101203` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101303` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9623,7 +9749,7 @@ Query: `sum(increase(src_codeintel_repoupdater_errors_total{job=~"^worker.*"}[5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101210` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101310` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9642,7 +9768,7 @@ Query: `sum by (op)(increase(src_codeintel_repoupdater_total{job=~"^worker.*"}[5
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101211` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101311` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9661,7 +9787,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_repoupdater_
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101212` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101312` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9680,7 +9806,7 @@ Query: `sum by (op)(increase(src_codeintel_repoupdater_errors_total{job=~"^worke
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101213` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101313` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9701,7 +9827,7 @@ Query: `sum by (op)(increase(src_codeintel_repoupdater_errors_total{job=~"^worke
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9720,7 +9846,7 @@ Query: `sum(increase(src_codeintel_dependency_repos_total{job=~"^worker.*"}[5m])
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9739,7 +9865,7 @@ Query: `sum  by (le)(rate(src_codeintel_dependency_repos_duration_seconds_bucket
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9758,7 +9884,7 @@ Query: `sum(increase(src_codeintel_dependency_repos_errors_total{job=~"^worker.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101403` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9777,7 +9903,7 @@ Query: `sum(increase(src_codeintel_dependency_repos_errors_total{job=~"^worker.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101410` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9796,7 +9922,7 @@ Query: `sum by (scheme,new)(increase(src_codeintel_dependency_repos_total{job=~"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101411` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9815,7 +9941,7 @@ Query: `histogram_quantile(0.99, sum  by (le,scheme,new)(rate(src_codeintel_depe
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101312` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101412` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9834,7 +9960,7 @@ Query: `sum by (scheme,new)(increase(src_codeintel_dependency_repos_errors_total
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101313` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101413` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -9855,7 +9981,7 @@ Query: `sum by (scheme,new)(increase(src_codeintel_dependency_repos_errors_total
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -9874,7 +10000,7 @@ Query: `sum(increase(src_batches_dbstore_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -9893,7 +10019,7 @@ Query: `sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^wor
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101402` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101502` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -9912,7 +10038,7 @@ Query: `sum(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101403` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101503` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -9931,7 +10057,7 @@ Query: `sum(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[5m])) / 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -9950,7 +10076,7 @@ Query: `sum by (op)(increase(src_batches_dbstore_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -9969,7 +10095,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_batches_dbstore_durati
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101412` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101512` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -9988,7 +10114,7 @@ Query: `sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101413` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101513` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10009,7 +10135,7 @@ Query: `sum by (op)(increase(src_batches_dbstore_errors_total{job=~"^worker.*"}[
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10028,7 +10154,7 @@ Query: `sum(increase(src_batches_service_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101601` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10047,7 +10173,7 @@ Query: `sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^wor
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101502` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101602` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10066,7 +10192,7 @@ Query: `sum(increase(src_batches_service_errors_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101503` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101603` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10085,7 +10211,7 @@ Query: `sum(increase(src_batches_service_errors_total{job=~"^worker.*"}[5m])) / 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101510` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101610` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10104,7 +10230,7 @@ Query: `sum by (op)(increase(src_batches_service_total{job=~"^worker.*"}[5m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101511` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101611` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10123,7 +10249,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_batches_service_durati
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101512` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101612` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10142,7 +10268,7 @@ Query: `sum by (op)(increase(src_batches_service_errors_total{job=~"^worker.*"}[
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101513` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101613` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10163,7 +10289,7 @@ Query: `sum by (op)(increase(src_batches_service_errors_total{job=~"^worker.*"}[
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10182,7 +10308,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_changes_batch_s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101601` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101701` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10201,7 +10327,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_st
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101602` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101702` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10220,7 +10346,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_changes_batch_s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101603` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101703` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10241,7 +10367,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_changes_batch_s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101700` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10260,7 +10386,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_bulk_worker_s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101701` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101801` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10279,7 +10405,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_st
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101702` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101802` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10298,7 +10424,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_bulk_worker_s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101703` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101803` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10319,7 +10445,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_bulk_worker_s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101800` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101900` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10338,7 +10464,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_reconciler_wo
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101801` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101901` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10357,7 +10483,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_st
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101802` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101902` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10376,7 +10502,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_reconciler_wo
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101803` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101903` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10397,7 +10523,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batches_reconciler_wo
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10416,7 +10542,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10435,7 +10561,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_st
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101902` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102002` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10454,7 +10580,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101903` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102003` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Batch Changes team](https://handbook.sourcegraph.com/departments/engineering/teams/batch-changes).*</sub>
 
@@ -10475,7 +10601,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_batch_spec_workspace_
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10494,7 +10620,7 @@ Query: `sum(increase(src_codeintel_background_upload_record_resets_total{job=~"^
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10513,7 +10639,7 @@ Query: `sum(increase(src_codeintel_background_upload_record_reset_failures_total
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102002` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102102` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10534,7 +10660,7 @@ Query: `sum(increase(src_codeintel_background_upload_record_reset_errors_total{j
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10553,7 +10679,7 @@ Query: `sum(increase(src_codeintel_background_index_record_resets_total{job=~"^w
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10572,7 +10698,7 @@ Query: `sum(increase(src_codeintel_background_index_record_reset_failures_total{
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102102` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102202` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10593,7 +10719,7 @@ Query: `sum(increase(src_codeintel_background_index_record_reset_errors_total{jo
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10612,7 +10738,7 @@ Query: `sum(increase(src_codeintel_background_dependency_index_record_resets_tot
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10631,7 +10757,7 @@ Query: `sum(increase(src_codeintel_background_dependency_index_record_reset_fail
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102202` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102302` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -10646,55 +10772,9 @@ Query: `sum(increase(src_codeintel_background_dependency_index_record_reset_erro
 
 ### Worker: Codeinsights: Query Runner Queue
 
-#### worker: insights_search_queue_queue_size
+#### worker: query_runner_worker_queue_size
 
-<p class="subtitle">Code insights search queue queue size</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102300` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max(src_insights_search_queue_total{job=~"^worker.*"})`
-
-</details>
-
-<br />
-
-#### worker: insights_search_queue_queue_growth_rate
-
-<p class="subtitle">Code insights search queue queue growth rate over 30m</p>
-
-This value compares the rate of enqueues against the rate of finished jobs.
-
-	- A value < than 1 indicates that process rate > enqueue rate
-	- A value = than 1 indicates that process rate = enqueue rate
-	- A value > than 1 indicates that process rate < enqueue rate
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102301` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_insights_search_queue_total{job=~"^worker.*"}[30m])) / sum(increase(src_insights_search_queue_processor_total{job=~"^worker.*"}[30m]))`
-
-</details>
-
-<br />
-
-### Worker: Codeinsights: insights queue processor
-
-#### worker: insights_search_queue_handlers
-
-<p class="subtitle">Handler active handlers</p>
+<p class="subtitle">Code insights query runner queue queue size</p>
 
 This panel has no related alerts.
 
@@ -10705,93 +10785,42 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102400` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_insights_search_queue_processor_handlers{job=~"^worker.*"})`
+Query: `max(src_query_runner_worker_total{job=~"^worker.*"})`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_processor_total
+#### worker: query_runner_worker_queue_growth_rate
 
-<p class="subtitle">Handler operations every 5m</p>
+<p class="subtitle">Code insights query runner queue queue growth rate over 30m</p>
+
+This value compares the rate of enqueues against the rate of finished jobs.
+
+	- A value < than 1 indicates that process rate > enqueue rate
+	- A value = than 1 indicates that process rate = enqueue rate
+	- A value > than 1 indicates that process rate < enqueue rate
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_processor_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_total{job=~"^worker.*"}[30m])) / sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[30m]))`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_processor_99th_percentile_duration
+### Worker: Codeinsights: insights queue processor
 
-<p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
+#### worker: query_runner_worker_handlers
 
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102411` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum  by (le)(rate(src_insights_search_queue_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### worker: insights_search_queue_processor_errors_total
-
-<p class="subtitle">Handler operation errors every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102412` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_insights_search_queue_processor_errors_total{job=~"^worker.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### worker: insights_search_queue_processor_error_rate
-
-<p class="subtitle">Handler operation error rate over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102413` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_insights_search_queue_processor_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_insights_search_queue_processor_total{job=~"^worker.*"}[5m])) + sum(increase(src_insights_search_queue_processor_errors_total{job=~"^worker.*"}[5m]))) * 100`
-
-</details>
-
-<br />
-
-### Worker: Codeinsights: code insights search queue record resetter
-
-#### worker: insights_search_queue_record_resets_total
-
-<p class="subtitle">Insights search queue records reset to queued state every 5m</p>
+<p class="subtitle">Handler active handlers</p>
 
 This panel has no related alerts.
 
@@ -10802,45 +10831,142 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102500` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_record_resets_total{job=~"^worker.*"}[5m]))`
+Query: `sum(src_query_runner_worker_processor_handlers{job=~"^worker.*"})`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_record_reset_failures_total
+#### worker: query_runner_worker_processor_total
 
-<p class="subtitle">Insights search queue records reset to errored state every 5m</p>
+<p class="subtitle">Handler operations every 5m</p>
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_record_reset_failures_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: insights_search_queue_record_reset_errors_total
+#### worker: query_runner_worker_processor_99th_percentile_duration
 
-<p class="subtitle">Insights search queue operation errors every 5m</p>
+<p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102502` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_insights_search_queue_record_reset_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_query_runner_worker_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: query_runner_worker_processor_errors_total
+
+<p class="subtitle">Handler operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102512` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: query_runner_worker_processor_error_rate
+
+<p class="subtitle">Handler operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102513` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_query_runner_worker_processor_total{job=~"^worker.*"}[5m])) + sum(increase(src_query_runner_worker_processor_errors_total{job=~"^worker.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Worker: Codeinsights: code insights query runner queue record resetter
+
+#### worker: query_runner_worker_record_resets_total
+
+<p class="subtitle">Insights query runner queue records reset to queued state every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102600` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_query_runner_worker_record_resets_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: query_runner_worker_record_reset_failures_total
+
+<p class="subtitle">Insights query runner queue records reset to errored state every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102601` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_query_runner_worker_record_reset_failures_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: query_runner_worker_record_reset_errors_total
+
+<p class="subtitle">Insights query runner queue operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102602` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_query_runner_worker_record_reset_errors_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -10854,7 +10980,7 @@ Query: `sum(increase(src_insights_search_queue_record_reset_errors_total{job=~"^
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -10873,7 +10999,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_st
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102601` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102701` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -10892,7 +11018,7 @@ Query: `sum  by (le)(rate(src_workerutil_dbworker_store_insights_query_runner_jo
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102602` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102702` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -10911,7 +11037,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_st
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102603` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102703` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -10930,7 +11056,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_st
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102610` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102710` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -10949,7 +11075,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102611` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102711` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -10968,7 +11094,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_st
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102612` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102712` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -10987,7 +11113,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102613` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102713` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -11010,14 +11136,14 @@ Any value on this panel indicates code insights is not processing queries from i
 
 Refer to the [alerts reference](./alerts.md#worker-insights-queue-unutilized-size) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102700` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_insights_search_queue_total{job=~"^worker.*"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*",op="Dequeue"}[5m])) < 1`
+Query: `max(src_query_runner_worker_total{job=~"^worker.*"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*",op="Dequeue"}[5m])) < 1`
 
 </details>
 
@@ -11031,7 +11157,7 @@ Query: `max(src_insights_search_queue_total{job=~"^worker.*"}) > 0 and on(job) s
 
 Refer to the [alerts reference](./alerts.md#worker-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102800` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102900` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11052,7 +11178,7 @@ Query: `sum by (category)(increase(src_frontend_internal_request_duration_second
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -11071,7 +11197,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="worker"})
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -11090,7 +11216,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="worker"})`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102910` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -11109,7 +11235,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="worker"})`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102911` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -11128,7 +11254,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="worker"})`
 
 Refer to the [alerts reference](./alerts.md#worker-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102920` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103020` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -11147,7 +11273,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102930` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103030` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -11166,7 +11292,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102931` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103031` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -11185,7 +11311,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102932` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103032` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -11216,7 +11342,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11235,7 +11361,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^worker.*"}) > 60)`
 
 Refer to the [alerts reference](./alerts.md#worker-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11254,7 +11380,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^worker.*"}`
 
 Refer to the [alerts reference](./alerts.md#worker-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103002` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103102` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11276,7 +11402,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103003` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103103` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11297,7 +11423,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^worker.*"}[1h]) + ra
 
 Refer to the [alerts reference](./alerts.md#worker-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11316,7 +11442,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#worker-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11335,7 +11461,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^w
 
 Refer to the [alerts reference](./alerts.md#worker-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11354,7 +11480,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^work
 
 Refer to the [alerts reference](./alerts.md#worker-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103211` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11376,7 +11502,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#worker-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103112` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103212` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11399,7 +11525,7 @@ A high value here indicates a possible goroutine leak.
 
 Refer to the [alerts reference](./alerts.md#worker-go-goroutines) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11418,7 +11544,7 @@ Query: `max by(instance) (go_goroutines{job=~".*worker"})`
 
 Refer to the [alerts reference](./alerts.md#worker-go-gc-duration-seconds) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -11439,7 +11565,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*worker"})`
 
 Refer to the [alerts reference](./alerts.md#worker-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -15565,6 +15691,62 @@ Query: `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2
 
 <br />
 
+#### zoekt: zoekt_shards_sched
+
+<p class="subtitle">Current number of zoekt scheduler processes in a state</p>
+
+Each ongoing search request starts its life as an interactive query. If it
+takes too long it becomes a batch query. Between state transitions it can be queued.
+
+If you have a high number of batch queries it is a sign there is a large load
+of slow queries. Alternatively your systems are underprovisioned and normal
+search queries are taking too long.
+
+For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type, state) (zoekt_shards_sched)`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_shards_sched_total
+
+<p class="subtitle">Rate of zoekt scheduler process state transitions in the last 5m</p>
+
+Each ongoing search request starts its life as an interactive query. If it
+takes too long it becomes a batch query. Between state transitions it can be queued.
+
+If you have a high number of batch queries it is a sign there is a large load
+of slow queries. Alternatively your systems are underprovisioned and normal
+search queries are taking too long.
+
+For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type, state) (rate(zoekt_shards_sched[5m]))`
+
+</details>
+
+<br />
+
 ### Zoekt: Git fetch durations
 
 #### zoekt: 90th_percentile_successful_git_fetch_durations_5m
@@ -17470,7 +17652,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_executor_processor_handlers{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"})`
+Query: `sum(src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"})`
 
 </details>
 
@@ -17480,7 +17662,7 @@ Query: `sum(src_executor_processor_handlers{queue=~"${queue:regex}",job=~"^(exec
 
 <p class="subtitle">Handler operations every 5m</p>
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#executor-executor-processor-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100110` on your Sourcegraph instance.
 
@@ -17489,7 +17671,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100110`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17508,7 +17690,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100111`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_executor_processor_duration_seconds_bucket{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum  by (le)(rate(src_executor_processor_duration_seconds_bucket{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17527,7 +17709,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100112`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17546,51 +17728,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100113`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
-
-</details>
-
-<br />
-
-### Executor: Run lock contention
-
-#### executor: executor_run_lock_wait_total
-
-<p class="subtitle">Milliseconds wait every 5m</p>
-
-Number of milliseconds spent waiting for the run lock every 5m
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100200` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_executor_run_lock_wait_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
-
-</details>
-
-<br />
-
-#### executor: executor_run_lock_held_total
-
-<p class="subtitle">Milliseconds held every 5m</p>
-
-Number of milliseconds spent holding for the run lock every 5m
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100201` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_executor_run_lock_held_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17604,14 +17742,14 @@ Query: `sum(increase(src_executor_run_lock_held_total{job=~"^(executor|sourcegra
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17623,14 +17761,14 @@ Query: `sum(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17642,14 +17780,14 @@ Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{job=~"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100202` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17661,14 +17799,14 @@ Query: `sum(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourc
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100203` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17680,14 +17818,14 @@ Query: `sum(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourc
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17699,14 +17837,14 @@ Query: `sum by (op)(increase(src_apiworker_apiclient_total{job=~"^(executor|sour
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100211` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_duration_seconds_bucket{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^sourcegraph-executors.*"}[5m])))`
 
 </details>
 
@@ -17718,14 +17856,14 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_du
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100312` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100212` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17737,6 +17875,160 @@ Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{job=~"^(execut
 
 This panel has no related alerts.
 
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100213` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Executor: Executor: Job setup
+
+#### executor: apiworker_command_total
+
+<p class="subtitle">Aggregate command operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### executor: apiworker_command_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful command operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### executor: apiworker_command_errors_total
+
+<p class="subtitle">Aggregate command operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100302` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### executor: apiworker_command_error_rate
+
+<p class="subtitle">Aggregate command operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100303` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### executor: apiworker_command_total
+
+<p class="subtitle">Command operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### executor: apiworker_command_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful command operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### executor: apiworker_command_errors_total
+
+<p class="subtitle">Command operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100312` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### executor: apiworker_command_error_rate
+
+<p class="subtitle">Command operation error rate over 5m</p>
+
+This panel has no related alerts.
+
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100313` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
@@ -17744,13 +18036,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100313`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_errors_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Executor: Executor: Job setup
+### Executor: Executor: Job execution
 
 #### executor: apiworker_command_total
 
@@ -17765,7 +18057,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17784,7 +18076,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17803,7 +18095,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100402`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17822,7 +18114,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100403`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17841,7 +18133,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17860,7 +18152,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
 
 </details>
 
@@ -17879,7 +18171,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100412`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17898,13 +18190,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100413`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Executor: Executor: Job execution
+### Executor: Executor: Job teardown
 
 #### executor: apiworker_command_total
 
@@ -17919,7 +18211,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100500`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17938,7 +18230,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17957,7 +18249,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -17976,7 +18268,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100503`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -17995,7 +18287,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100510`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18014,7 +18306,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100511`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])))`
 
 </details>
 
@@ -18033,7 +18325,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
@@ -18052,161 +18344,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100513`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
-
-</details>
-
-<br />
-
-### Executor: Executor: Job teardown
-
-#### executor: apiworker_command_total
-
-<p class="subtitle">Aggregate command operations every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100600` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
-
-</details>
-
-<br />
-
-#### executor: apiworker_command_99th_percentile_duration
-
-<p class="subtitle">Aggregate successful command operation duration distribution over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100601` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
-
-</details>
-
-<br />
-
-#### executor: apiworker_command_errors_total
-
-<p class="subtitle">Aggregate command operation errors every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100602` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
-
-</details>
-
-<br />
-
-#### executor: apiworker_command_error_rate
-
-<p class="subtitle">Aggregate command operation error rate over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100603` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
-
-</details>
-
-<br />
-
-#### executor: apiworker_command_total
-
-<p class="subtitle">Command operations every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100610` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
-
-</details>
-
-<br />
-
-#### executor: apiworker_command_99th_percentile_duration
-
-<p class="subtitle">99th percentile successful command operation duration over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100611` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])))`
-
-</details>
-
-<br />
-
-#### executor: apiworker_command_errors_total
-
-<p class="subtitle">Command operation errors every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100612` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))`
-
-</details>
-
-<br />
-
-#### executor: apiworker_command_error_rate
-
-<p class="subtitle">Command operation error rate over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100613` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_command_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*",sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
@@ -18222,13 +18360,295 @@ Indicates the amount of CPU time excluding idle and iowait time, divided by the 
 
 This panel has no related alerts.
 
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100600` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_cpu_seconds_total{sg_job=~"sourcegraph-executors",mode!~"(idle|iowait)",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) / count(node_cpu_seconds_total{sg_job=~"sourcegraph-executors",mode="system",sg_instance=~"$instance"}) by (sg_instance) * 100`
+
+</details>
+
+<br />
+
+#### executor: node_cpu_saturation_cpu_wait
+
+<p class="subtitle">CPU saturation (time waiting)</p>
+
+Indicates the average summed time a number of (but strictly not all) non-idle processes spent waiting for CPU time. If this is higher than normal, then the CPU is underpowered for the workload and more powerful machines should be provisioned. This only represents a "less-than-all processes" time, because for processes to be waiting for CPU time there must be other process(es) consuming CPU time.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100601` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])`
+
+</details>
+
+<br />
+
+#### executor: node_memory_utilization
+
+<p class="subtitle">Memory utilization</p>
+
+Indicates the amount of available memory (including cache and buffers) as a percentage. Consistently high numbers are generally fine so long memory saturation figures are within acceptable ranges, these figures may be more useful for informing executor provisioning decisions, such as increasing worker parallelism, down-sizing machines etc.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100610` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}) by (sg_instance) / sum(node_memory_MemTotal_bytes{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}) by (sg_instance)) * 100`
+
+</details>
+
+<br />
+
+#### executor: node_memory_saturation_vmeff
+
+<p class="subtitle">Memory saturation (vmem efficiency)</p>
+
+Indicates the efficiency of page reclaim, calculated as pgsteal/pgscan. Optimal figures are short spikes of near 100% and above, indicating that a high ratio of scanned pages are actually being freed, or exactly 0%, indicating that pages arent being scanned as there is no memory pressure. Sustained numbers >~100% may be sign of imminent memory exhaustion, while sustained 0% < x < ~100% figures are very serious.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100611` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) * 100`
+
+</details>
+
+<br />
+
+#### executor: node_memory_saturation_pressure_stalled
+
+<p class="subtitle">Memory saturation (fully stalled)</p>
+
+Indicates the amount of time all non-idle processes were stalled waiting on memory operations to complete. This is often correlated with vmem efficiency ratio when pressure on available memory is high. If they`re not correlated, this could indicate issues with the machine hardware and/or configuration.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100612` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_utilization
+
+<p class="subtitle">Disk IO utilization (percentage time spent in IO)</p>
+
+Indicates the percentage of time a disk was busy. If this is less than 100%, then the disk has spare utilization capacity. However, a value of 100% does not necesarily indicate the disk is at max capacity. For single, serial request-serving devices, 100% may indicate maximum saturation, but for SSDs and RAID arrays this is less likely to be the case, as they are capable of serving multiple requests in parallel, other metrics such as throughput and request queue size should be factored in.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100620` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk) * 100`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_saturation
+
+<p class="subtitle">Disk IO saturation (avg IO queue size)</p>
+
+Indicates the number of outstanding/queued IO requests. High but short-lived queue sizes may not present an issue, but if theyre consistently/often high and/or monotonically increasing, the disk may be failing or simply too slow for the amount of activity required. Consider replacing the drive(s) with SSDs if they are not already and/or replacing the faulty drive(s), if any.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100621` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk)`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_saturation_pressure_full
+
+<p class="subtitle">Disk IO saturation (avg time of all processes stalled)</p>
+
+Indicates the averaged amount of time for which all non-idle processes were stalled waiting for IO to complete simultaneously aka where no processes could make progress.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100622` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_utilization
+
+<p class="subtitle">Network IO utilization (Rx)</p>
+
+Indicates the average summed receiving throughput of all network interfaces. This is often predominantly composed of the WAN/internet-connected interface, and knowing normal/good figures depends on knowing the bandwidth of the underlying hardware and the workloads.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100630` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) * 8`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO saturation (Rx packets dropped)</p>
+
+Number of dropped received packets. This can happen if the receive queues/buffers become full due to slow packet processing throughput. The queues/buffers could be configured to be larger as a stop-gap but the processing application should be investigated as soon as possible. https://www.kernel.org/doc/html/latest/networking/statistics.html#:~:text=not%20otherwise%20counted.-,rx_dropped,-Number%20of%20packets
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100631` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_drop_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO errors (Rx)</p>
+
+Number of bad/malformed packets received. https://www.kernel.org/doc/html/latest/networking/statistics.html#:~:text=excluding%20the%20FCS.-,rx_errors,-Total%20number%20of
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100632` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_errs_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_utilization
+
+<p class="subtitle">Network IO utilization (Tx)</p>
+
+Indicates the average summed transmitted throughput of all network interfaces. This is often predominantly composed of the WAN/internet-connected interface, and knowing normal/good figures depends on knowing the bandwidth of the underlying hardware and the workloads.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100640` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance) * 8`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO saturation (Tx packets dropped)</p>
+
+Number of dropped transmitted packets. This can happen if the receiving side`s receive queues/buffers become full due to slow packet processing throughput, the network link is congested etc.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100641` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO errors (Tx)</p>
+
+Number of packet transmission errors. This is distinct from tx packet dropping, and can indicate a failing NIC, improperly configured network options anywhere along the line, signal noise etc.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100642` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"sourcegraph-executors",sg_instance=~"$instance"}[$__rate_interval])) by(sg_instance)`
+
+</details>
+
+<br />
+
+### Executor: Executor: Docker Registry Mirror instance metrics
+
+#### executor: node_cpu_utilization
+
+<p class="subtitle">CPU utilization (minus idle/iowait)</p>
+
+Indicates the amount of CPU time excluding idle and iowait time, divided by the number of cores, as a percentage.
+
+This panel has no related alerts.
+
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100700` on your Sourcegraph instance.
 
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_cpu_seconds_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",mode!~"(idle|iowait)",instance=~"$instance"}[$__rate_interval])) by(instance) / count(node_cpu_seconds_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",mode="system",instance=~"$instance"}) by (instance) * 100`
+Query: `sum(rate(node_cpu_seconds_total{sg_job=~"sourcegraph-executors-registry",mode!~"(idle|iowait)",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) / count(node_cpu_seconds_total{sg_job=~"sourcegraph-executors-registry",mode="system",sg_instance=~"docker-registry"}) by (sg_instance) * 100`
 
 </details>
 
@@ -18248,7 +18668,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100701`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_cpu_waiting_seconds_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_cpu_waiting_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
 
 </details>
 
@@ -18268,7 +18688,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100710`
 <details>
 <summary>Technical details</summary>
 
-Query: `(1 - sum(node_memory_MemAvailable_bytes{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}) by (instance) / sum(node_memory_MemTotal_bytes{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}) by (instance)) * 100`
+Query: `(1 - sum(node_memory_MemAvailable_bytes{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}) by (sg_instance) / sum(node_memory_MemTotal_bytes{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}) by (sg_instance)) * 100`
 
 </details>
 
@@ -18288,7 +18708,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100711`
 <details>
 <summary>Technical details</summary>
 
-Query: `(rate(node_vmstat_pgsteal_anon{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) * 100`
+Query: `(rate(node_vmstat_pgsteal_anon{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) * 100`
 
 </details>
 
@@ -18308,7 +18728,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100712`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_memory_stalled_seconds_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_memory_stalled_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
 
 </details>
 
@@ -18328,7 +18748,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100720`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk) * 100`
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk) * 100`
 
 </details>
 
@@ -18348,7 +18768,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100721`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk)`
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(sg_instance,disk)`
 
 </details>
 
@@ -18368,7 +18788,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100722`
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(node_pressure_io_stalled_seconds_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])`
+Query: `rate(node_pressure_io_stalled_seconds_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])`
 
 </details>
 
@@ -18388,7 +18808,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100730`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_bytes_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance) * 8`
+Query: `sum(rate(node_network_receive_bytes_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) * 8`
 
 </details>
 
@@ -18408,7 +18828,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100731`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_drop_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_receive_drop_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18428,7 +18848,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100732`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_receive_errs_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_receive_errs_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18448,7 +18868,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100740`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_bytes_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance) * 8`
+Query: `sum(rate(node_network_transmit_bytes_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance) * 8`
 
 </details>
 
@@ -18468,7 +18888,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100741`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_drop_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_transmit_drop_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18488,289 +18908,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100742`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(node_network_transmit_errs_total{job=~"(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)",instance=~"$instance"}[$__rate_interval])) by(instance)`
-
-</details>
-
-<br />
-
-### Executor: Executor: Docker Registry Mirror instance metrics
-
-#### executor: node_cpu_utilization
-
-<p class="subtitle">CPU utilization (minus idle/iowait)</p>
-
-Indicates the amount of CPU time excluding idle and iowait time, divided by the number of cores, as a percentage.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100800` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(node_cpu_seconds_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",mode!~"(idle|iowait)",instance=~".*"}[$__rate_interval])) by(instance) / count(node_cpu_seconds_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",mode="system",instance=~".*"}) by (instance) * 100`
-
-</details>
-
-<br />
-
-#### executor: node_cpu_saturation_cpu_wait
-
-<p class="subtitle">CPU saturation (time waiting)</p>
-
-Indicates the average summed time a number of (but strictly not all) non-idle processes spent waiting for CPU time. If this is higher than normal, then the CPU is underpowered for the workload and more powerful machines should be provisioned. This only represents a "less-than-all processes" time, because for processes to be waiting for CPU time there must be other process(es) consuming CPU time.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100801` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `rate(node_pressure_cpu_waiting_seconds_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])`
-
-</details>
-
-<br />
-
-#### executor: node_memory_utilization
-
-<p class="subtitle">Memory utilization</p>
-
-Indicates the amount of available memory (including cache and buffers) as a percentage. Consistently high numbers are generally fine so long memory saturation figures are within acceptable ranges, these figures may be more useful for informing executor provisioning decisions, such as increasing worker parallelism, down-sizing machines etc.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100810` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `(1 - sum(node_memory_MemAvailable_bytes{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}) by (instance) / sum(node_memory_MemTotal_bytes{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}) by (instance)) * 100`
-
-</details>
-
-<br />
-
-#### executor: node_memory_saturation_vmeff
-
-<p class="subtitle">Memory saturation (vmem efficiency)</p>
-
-Indicates the efficiency of page reclaim, calculated as pgsteal/pgscan. Optimal figures are short spikes of near 100% and above, indicating that a high ratio of scanned pages are actually being freed, or exactly 0%, indicating that pages arent being scanned as there is no memory pressure. Sustained numbers >~100% may be sign of imminent memory exhaustion, while sustained 0% < x < ~100% figures are very serious.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100811` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `(rate(node_vmstat_pgsteal_anon{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) * 100`
-
-</details>
-
-<br />
-
-#### executor: node_memory_saturation_pressure_stalled
-
-<p class="subtitle">Memory saturation (fully stalled)</p>
-
-Indicates the amount of time all non-idle processes were stalled waiting on memory operations to complete. This is often correlated with vmem efficiency ratio when pressure on available memory is high. If they`re not correlated, this could indicate issues with the machine hardware and/or configuration.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100812` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `rate(node_pressure_memory_stalled_seconds_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])`
-
-</details>
-
-<br />
-
-#### executor: node_io_disk_utilization
-
-<p class="subtitle">Disk IO utilization (percentage time spent in IO)</p>
-
-Indicates the percentage of time a disk was busy. If this is less than 100%, then the disk has spare utilization capacity. However, a value of 100% does not necesarily indicate the disk is at max capacity. For single, serial request-serving devices, 100% may indicate maximum saturation, but for SSDs and RAID arrays this is less likely to be the case, as they are capable of serving multiple requests in parallel, other metrics such as throughput and request queue size should be factored in.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100820` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk) * 100`
-
-</details>
-
-<br />
-
-#### executor: node_io_disk_saturation
-
-<p class="subtitle">Disk IO saturation (avg IO queue size)</p>
-
-Indicates the number of outstanding/queued IO requests. High but short-lived queue sizes may not present an issue, but if theyre consistently/often high and/or monotonically increasing, the disk may be failing or simply too slow for the amount of activity required. Consider replacing the drive(s) with SSDs if they are not already and/or replacing the faulty drive(s), if any.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100821` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk)`
-
-</details>
-
-<br />
-
-#### executor: node_io_disk_saturation_pressure_full
-
-<p class="subtitle">Disk IO saturation (avg time of all processes stalled)</p>
-
-Indicates the averaged amount of time for which all non-idle processes were stalled waiting for IO to complete simultaneously aka where no processes could make progress.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100822` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `rate(node_pressure_io_stalled_seconds_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])`
-
-</details>
-
-<br />
-
-#### executor: node_io_network_utilization
-
-<p class="subtitle">Network IO utilization (Rx)</p>
-
-Indicates the average summed receiving throughput of all network interfaces. This is often predominantly composed of the WAN/internet-connected interface, and knowing normal/good figures depends on knowing the bandwidth of the underlying hardware and the workloads.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100830` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(node_network_receive_bytes_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance) * 8`
-
-</details>
-
-<br />
-
-#### executor: node_io_network_saturation
-
-<p class="subtitle">Network IO saturation (Rx packets dropped)</p>
-
-Number of dropped received packets. This can happen if the receive queues/buffers become full due to slow packet processing throughput. The queues/buffers could be configured to be larger as a stop-gap but the processing application should be investigated as soon as possible. https://www.kernel.org/doc/html/latest/networking/statistics.html#:~:text=not%20otherwise%20counted.-,rx_dropped,-Number%20of%20packets
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100831` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(node_network_receive_drop_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance)`
-
-</details>
-
-<br />
-
-#### executor: node_io_network_saturation
-
-<p class="subtitle">Network IO errors (Rx)</p>
-
-Number of bad/malformed packets received. https://www.kernel.org/doc/html/latest/networking/statistics.html#:~:text=excluding%20the%20FCS.-,rx_errors,-Total%20number%20of
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100832` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(node_network_receive_errs_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance)`
-
-</details>
-
-<br />
-
-#### executor: node_io_network_utilization
-
-<p class="subtitle">Network IO utilization (Tx)</p>
-
-Indicates the average summed transmitted throughput of all network interfaces. This is often predominantly composed of the WAN/internet-connected interface, and knowing normal/good figures depends on knowing the bandwidth of the underlying hardware and the workloads.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100840` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(node_network_transmit_bytes_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance) * 8`
-
-</details>
-
-<br />
-
-#### executor: node_io_network_saturation
-
-<p class="subtitle">Network IO saturation (Tx packets dropped)</p>
-
-Number of dropped transmitted packets. This can happen if the receiving side`s receive queues/buffers become full due to slow packet processing throughput, the network link is congested etc.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100841` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(node_network_transmit_drop_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance)`
-
-</details>
-
-<br />
-
-#### executor: node_io_network_saturation
-
-<p class="subtitle">Network IO errors (Tx)</p>
-
-Number of packet transmission errors. This is distinct from tx packet dropping, and can indicate a failing NIC, improperly configured network options anywhere along the line, signal noise etc.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100842` on your Sourcegraph instance.
-
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(node_network_transmit_errs_total{job=~"(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)",instance=~".*"}[$__rate_interval])) by(instance)`
+Query: `sum(rate(node_network_transmit_errs_total{sg_job=~"sourcegraph-executors-registry",sg_instance=~"docker-registry"}[$__rate_interval])) by(sg_instance)`
 
 </details>
 
@@ -18786,14 +18924,14 @@ A high value here indicates a possible goroutine leak.
 
 Refer to the [alerts reference](./alerts.md#executor-go-goroutines) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_goroutines{job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors)"})`
+Query: `max by(sg_instance) (go_goroutines{sg_job=~".*sourcegraph-executors"})`
 
 </details>
 
@@ -18805,14 +18943,14 @@ Query: `max by(instance) (go_goroutines{job=~".*(executor|sourcegraph-code-intel
 
 Refer to the [alerts reference](./alerts.md#executor-go-gc-duration-seconds) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100801` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors)"})`
+Query: `max by(sg_instance) (go_gc_duration_seconds{sg_job=~".*sourcegraph-executors"})`
 
 </details>
 
@@ -20636,6 +20774,233 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+## Telemetry
+
+<p class="subtitle">Monitoring telemetry services in Sourcegraph.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/telemetry/telemetry` on your Sourcegraph instance.
+
+### Telemetry: Usage data exporter: Job operations
+
+#### telemetry: telemetry_job_total
+
+<p class="subtitle">Aggregate usage data exporter operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetry_job_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_job_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful usage data exporter operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_telemetry_job_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_job_errors_total
+
+<p class="subtitle">Aggregate usage data exporter operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_job_error_rate
+
+<p class="subtitle">Aggregate usage data exporter operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100003` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_telemetry_job_total{job=~"^worker.*"}[5m])) + sum(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_job_total
+
+<p class="subtitle">Usage data exporter operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100010` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_telemetry_job_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_job_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful usage data exporter operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100011` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_telemetry_job_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_job_errors_total
+
+<p class="subtitle">Usage data exporter operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100012` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_job_error_rate
+
+<p class="subtitle">Usage data exporter operation error rate over 5m</p>
+
+Refer to the [alerts reference](./alerts.md#telemetry-telemetry-job-error-rate) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100013` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_telemetry_job_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Telemetry: Usage data exporter: Queue size
+
+#### telemetry: telemetry_job_queue_size_queue_size
+
+<p class="subtitle">Event level usage data queue size</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(src_telemetry_job_queue_size_total{job=~"^worker.*"})`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_job_queue_size_queue_growth_rate
+
+<p class="subtitle">Event level usage data queue growth rate over 30m</p>
+
+This value compares the rate of enqueues against the rate of finished jobs.
+
+	- A value < than 1 indicates that process rate > enqueue rate
+	- A value = than 1 indicates that process rate = enqueue rate
+	- A value > than 1 indicates that process rate < enqueue rate
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetry_job_queue_size_total{job=~"^worker.*"}[30m])) / sum(increase(src_telemetry_job_queue_size_processor_total{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+### Telemetry: Usage data exporter: Utilization
+
+#### telemetry: telemetry_job_utilized_throughput
+
+<p class="subtitle">Utilized percentage of maximum throughput</p>
+
+Refer to the [alerts reference](./alerts.md#telemetry-telemetry-job-utilized-throughput) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on() group_right() src_telemetry_job_max_throughput * 100`
 
 </details>
 

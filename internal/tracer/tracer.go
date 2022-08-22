@@ -1,7 +1,9 @@
 package tracer
 
 import (
+	"fmt"
 	"io"
+	"text/template"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log"
@@ -9,6 +11,7 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -28,8 +31,16 @@ type options struct {
 type TracerType string
 
 const (
-	None          TracerType = "none"
-	OpenTracing   TracerType = "opentracing"
+	None TracerType = "none"
+
+	// Jaeger and openTracing should be treated as analagous - the 'opentracing' moniker
+	// is for backwards compatibility only, 'jaeger' is more correct because we export
+	// Jaeger traces in 'opentracing' mode because 'opentracing' itself is an implementation
+	// detail, it does not have a wire protocol.
+	Jaeger      TracerType = "jaeger"
+	openTracing TracerType = "opentracing"
+
+	// OpenTelemetry exports traces over OTLP.
 	OpenTelemetry TracerType = "opentelemetry"
 )
 
@@ -37,7 +48,7 @@ const (
 // should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
 func (t TracerType) isSetByUser() bool {
 	switch t {
-	case OpenTracing, OpenTelemetry:
+	case openTracing, Jaeger, OpenTelemetry:
 		return true
 	}
 	return false
@@ -101,12 +112,13 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 			debug = tracingConfig.Debug
 
 			// If sampling policy is set, update the strategy and set our tracer to be
-			// OpenTracing by default.
+			// Jaeger by default.
 			previousPolicy := policy.GetTracePolicy()
 			switch p := policy.TracePolicy(tracingConfig.Sampling); p {
 			case policy.TraceAll, policy.TraceSelective:
 				policy.SetTracePolicy(p)
-				setTracer = OpenTracing // enable the defualt tracer type
+				// enable the defualt tracer type. TODO in 4.0, this should be OpenTelemetry
+				setTracer = Jaeger
 			default:
 				policy.SetTracePolicy(policy.TraceNone)
 			}
@@ -149,6 +161,18 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 		globalOTTracer.set(tracerLogger, otImpl, closer, opts.debug)
 		globalOTelTracerProvider.set(otelImpl, opts.debug)
 	})
+
+	// Contribute validation for tracing package
+	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) conf.Problems {
+		tracing := c.SiteConfig().ObservabilityTracing
+		if tracing == nil || tracing.UrlTemplate == "" {
+			return nil
+		}
+		if _, err := template.New("").Parse(tracing.UrlTemplate); err != nil {
+			return conf.NewSiteProblems(fmt.Sprintf("observability.tracing.traceURL is not a valid template: %s", err.Error()))
+		}
+		return nil
+	})
 }
 
 // newTracer creates a tracer based on options
@@ -156,7 +180,7 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.
 	logger.Debug("configuring tracer")
 
 	switch opts.TracerType {
-	case OpenTracing:
+	case Jaeger, openTracing:
 		ot, closer, err := newJaegerTracer(logger, opts)
 		return ot, nil, closer, err
 

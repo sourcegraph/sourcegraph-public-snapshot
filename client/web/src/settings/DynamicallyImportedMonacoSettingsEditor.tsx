@@ -53,6 +53,8 @@ interface Props<T extends object>
         saveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveToolbarProps & T>>
     }
 
+    explanation?: JSX.Element
+
     history: H.History
 }
 
@@ -131,7 +133,6 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
         return (
             <div className={this.props.className || ''}>
-                {this.props.canEdit && saveToolbar}
                 {this.props.actions && (
                     <div className={adminConfigurationStyles.actionGroups}>
                         <div className={adminConfigurationStyles.actions}>
@@ -158,6 +159,8 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                         monacoRef={this.monacoRef}
                     />
                 </React.Suspense>
+                {this.props.explanation && this.props.explanation}
+                {this.props.canEdit && saveToolbar}
             </div>
         )
     }

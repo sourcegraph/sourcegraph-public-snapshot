@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -11,12 +11,14 @@ import {
     SearchPatternTypeProps,
     SubmitSearchParameters,
     canSubmitSearch,
+    QueryState,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -30,6 +32,7 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
+import { searchQueryHistorySource } from '../input/completion'
 import { QuickLinks } from '../QuickLinks'
 
 import styles from './SearchPageInput.module.scss'
@@ -49,11 +52,9 @@ interface Props
     isSourcegraphDotCom: boolean
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-    /** A query fragment to appear at the beginning of the input. */
-    queryPrefix?: string
-    /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
-    hiddenQueryPrefix?: string
     autoFocus?: boolean
+    queryState: QueryState
+    setQueryState: (newState: QueryState) => void
 }
 
 const queryStateSelector = (
@@ -64,29 +65,47 @@ const queryStateSelector = (
 })
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    /** The value entered by the user in the query input */
-    const [userQueryState, setUserQueryState] = useState({
-        query: props.queryPrefix ? props.queryPrefix : '',
-    })
     const { caseSensitive, patternType } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const applySuggestionsOnEnter = useExperimentalFeatures(
+        features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
-    useEffect(() => {
-        setUserQueryState({ query: props.queryPrefix || '' })
-    }, [props.queryPrefix])
+    const suggestionSources = useMemo(
+        () =>
+            coreWorkflowImprovementsEnabled && props.authenticatedUser
+                ? [
+                      searchQueryHistorySource({
+                          userId: props.authenticatedUser.id,
+                          selectedSearchContext: props.selectedSearchContextSpec,
+                          onSelection: index => {
+                              props.telemetryService.log('SearchSuggestionItemClicked', {
+                                  type: 'SearchHistory',
+                                  index,
+                              })
+                          },
+                      }),
+                  ]
+                : [],
+        [
+            props.authenticatedUser,
+            props.selectedSearchContextSpec,
+            coreWorkflowImprovementsEnabled,
+            props.telemetryService,
+        ]
+    )
 
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = props.hiddenQueryPrefix
-                ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
-                : userQueryState.query
+            const query = props.queryState.query
 
             if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
                 submitSearch({
@@ -102,13 +121,12 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             }
         },
         [
+            props.queryState.query,
+            props.selectedSearchContextSpec,
             props.history,
+            props.activation,
             patternType,
             caseSensitive,
-            props.activation,
-            props.selectedSearchContextSpec,
-            props.hiddenQueryPrefix,
-            userQueryState.query,
         ]
     )
 
@@ -141,12 +159,16 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         setPatternType={setSearchPatternType}
                         setCaseSensitivity={setSearchCaseSensitivity}
                         submitSearchOnToggle={submitSearchOnChange}
-                        queryState={userQueryState}
-                        onChange={setUserQueryState}
+                        queryState={props.queryState}
+                        onChange={props.setQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
+                        autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                        applySuggestionsOnEnter={coreWorkflowImprovementsEnabled || applySuggestionsOnEnter}
+                        suggestionSources={suggestionSources}
+                        defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
+                        showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />

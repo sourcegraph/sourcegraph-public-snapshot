@@ -29,6 +29,8 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
+		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
+		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -230,6 +232,39 @@ func (f *RepoHasDescriptionPredicate) ParseParams(params string) (err error) {
 
 func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
 func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
+
+type RepoHasTagPredicate struct {
+	Key string
+}
+
+func (f *RepoHasTagPredicate) ParseParams(params string) (err error) {
+	if len(params) == 0 {
+		return errors.New("tag must be non-empty")
+	}
+	f.Key = params
+	return nil
+}
+
+func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
+func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
+
+type RepoHasKVPPredicate struct {
+	Key   string
+	Value string
+}
+
+func (p *RepoHasKVPPredicate) ParseParams(params string) (err error) {
+	split := strings.Split(params, ":")
+	if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
+		return errors.New("expected params in the form of key:value")
+	}
+	p.Key = split[0]
+	p.Value = split[1]
+	return nil
+}
+
+func (p *RepoHasKVPPredicate) Field() string { return FieldRepo }
+func (p *RepoHasKVPPredicate) Name() string  { return "has" }
 
 /* file:contains.content(pattern) */
 

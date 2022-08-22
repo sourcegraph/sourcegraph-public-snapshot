@@ -12,10 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,7 +27,7 @@ import (
 )
 
 func init() {
-	database.Init()
+	symbolsdatabase.Init()
 }
 
 func TestHandler(t *testing.T) {
@@ -65,7 +66,7 @@ func TestHandler(t *testing.T) {
 	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 1000, 1_000_000, &observation.TestContext), 0, 10, &observation.TestContext)
 	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(sharedobservability.NewOperations(&observation.TestContext), cachedDatabaseWriter, gitserverClient), gitserverClient.ReadFile, nil, "")
+	handler := NewHandler(MakeSqliteSearchFunc(sharedobservability.NewOperations(&observation.TestContext), cachedDatabaseWriter, database.NewMockDB()), gitserverClient.ReadFile, nil, "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()

@@ -73,14 +73,6 @@ func NewSiteProblem(msg string) *Problem {
 	}
 }
 
-// NewExternalServiceProblem creates a new external service config problem with given message.
-func NewExternalServiceProblem(msg string) *Problem {
-	return &Problem{
-		kind:        problemExternalService,
-		description: msg,
-	}
-}
-
 // IsSite returns true if the problem is about site config.
 func (p Problem) IsSite() bool {
 	return p.kind == problemSite
@@ -217,6 +209,8 @@ var siteConfigSecrets = []struct {
 	{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
+	{readPath: `gitHubApp.privateKey`, editPaths: []string{"gitHubApp", "privateKey"}},
+	{readPath: `gitHubApp.clientSecret`, editPaths: []string{"gitHubApp", "clientSecret"}},
 	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
 }
 
@@ -276,7 +270,13 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 			return input, errors.Wrapf(err, `unredact %q`, strings.Join(secret.editPaths, " > "))
 		}
 	}
-	return unredactedSite, err
+
+	formattedSite, err := jsonc.Format(unredactedSite, &jsonc.DefaultFormatOptions)
+	if err != nil {
+		return input, errors.Wrapf(err, "JSON formatting")
+	}
+
+	return formattedSite, err
 }
 
 // RedactSecrets redacts defined list of secrets from the given configuration. It
@@ -301,9 +301,12 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 			ap.Gitlab.ClientSecret = redactedSecret
 		}
 	}
-	redactedSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
-	if err != nil {
-		return empty, errors.Wrap(err, `redact "auth.providers"`)
+	redactedSite := raw.Site
+	if len(cfg.AuthProviders) > 0 {
+		redactedSite, err = jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
+		if err != nil {
+			return empty, errors.Wrap(err, `redact "auth.providers"`)
+		}
 	}
 
 	for _, secret := range siteConfigSecrets {
@@ -318,8 +321,13 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 		}
 	}
 
+	formattedSite, err := jsonc.Format(redactedSite, &jsonc.DefaultFormatOptions)
+	if err != nil {
+		return empty, errors.Wrapf(err, "JSON formatting")
+	}
+
 	return conftypes.RawUnified{
-		Site: redactedSite,
+		Site: formattedSite,
 	}, err
 }
 

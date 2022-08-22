@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { json } from '@codemirror/lang-json'
 import { foldGutter } from '@codemirror/language'
-import { EditorView } from '@codemirror/view'
+import { search, searchKeymap } from '@codemirror/search'
+import { EditorState } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
 import { isEmpty } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
@@ -46,7 +48,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         useMemo(
             () => [
                 EditorView.darkTheme.of(isLightTheme === false),
-                EditorView.editable.of(false),
+                EditorState.readOnly.of(true),
                 json(),
                 foldGutter(),
                 editorHeight({ height: '300px' }),
@@ -60,6 +62,8 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 }),
                 defaultEditorTheme,
                 jsonHighlighting,
+                search({ top: true }),
+                keymap.of(searchKeymap),
             ],
             [isLightTheme]
         )

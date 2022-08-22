@@ -56,6 +56,7 @@ env:
       { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
+      { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
       { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
       { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
@@ -390,9 +391,9 @@ commands:
     install: |
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
-      go install github.com/google/zoekt/cmd/zoekt-archive-index
-      go install github.com/google/zoekt/cmd/zoekt-git-index
-      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+      go install github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
+      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+      go install github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -416,7 +417,7 @@ commands:
   zoekt-web-template: &zoekt_webserver_template
     install: |
       mkdir -p .bin
-      env GOBIN="${PWD}/.bin" go install github.com/google/zoekt/cmd/zoekt-webserver
+      env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
       JAEGER_DISABLED: false
@@ -431,13 +432,13 @@ commands:
     cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
 
   codeintel-worker:
-    cmd: .bin/precise-code-intel-worker
+    cmd: .bin/codeintel-worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
-    checkBinary: .bin/precise-code-intel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+    checkBinary: .bin/codeintel-worker
     watch:
       - lib
       - internal
@@ -545,7 +546,7 @@ commands:
 
   grafana:
     cmd: |
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
         # to the prometheus backend.
         ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
@@ -572,7 +573,7 @@ commands:
     install: |
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-
+      export CACHE=true
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       ./docker-images/grafana/build.sh
     env:
@@ -595,7 +596,7 @@ commands:
 
   prometheus:
     cmd: |
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         DOCKER_USER="--user=$UID"
 
         # Frontend generally runs outside of Docker, so to access it we need to be
@@ -624,7 +625,7 @@ commands:
 
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
       fi
 
@@ -677,7 +678,7 @@ commands:
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         # Jaeger generally runs outside of Docker, so to access it we need to be
         # able to access ports on the host, because the Docker host only exists on
         # MacOS. --net=host is a very dirty way of enabling this.

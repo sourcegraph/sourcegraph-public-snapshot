@@ -68,9 +68,39 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 				"-v", "/work:/data",
 				"-w", "/data/subdir",
 				"-e", "TEST=true",
-				"-e", `CONTAINS_WHITESPACE="yes it does"`,
+				"-e", `'CONTAINS_WHITESPACE="yes it does"'`,
 				"--entrypoint /bin/sh",
 				"alpine:latest",
+				"/data/.sourcegraph-executor/myscript.sh",
+			}, " "),
+		},
+	}
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+}
+
+func TestFormatFirecrackerCommandDockerScript_NoInjection(t *testing.T) {
+	actual := formatFirecrackerCommand(
+		CommandSpec{
+			Image:      "--privileged alpine:latest",
+			ScriptPath: "myscript.sh",
+			Operation:  makeTestOperation(),
+		},
+		"deadbeef",
+		Options{},
+	)
+
+	expected := command{
+		Command: []string{
+			"ignite", "exec", "deadbeef", "--",
+			strings.Join([]string{
+				"docker", "run", "--rm",
+				"-v", "/work:/data",
+				"-w", "/data",
+				"--entrypoint /bin/sh",
+				// This has to be quoted, otherwise it allows to pass arbitrary params.
+				"'--privileged alpine:latest'",
 				"/data/.sourcegraph-executor/myscript.sh",
 			}, " "),
 		},
@@ -85,6 +115,7 @@ func TestSetupFirecracker(t *testing.T) {
 	options := Options{
 		FirecrackerOptions: FirecrackerOptions{
 			Image:               "ignite-ubuntu",
+			KernelImage:         "ignite-kernel:5.10.135",
 			VMStartupScriptPath: "/vm-startup.sh",
 		},
 		ResourceOptions: ResourceOptions{
@@ -96,18 +127,8 @@ func TestSetupFirecracker(t *testing.T) {
 	operations := NewOperations(&observation.TestContext)
 
 	logger := NewMockLogger()
-	logEntry := NewMockLogEntry()
-	logger.LogFunc.SetDefaultHook(func(_ string, _ []string) LogEntry { return logEntry })
 	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/proj", options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
-	}
-
-	if len(logger.LogFunc.History()) != 1 {
-		t.Error("logger not called")
-	}
-
-	if len(logEntry.CloseFunc.History()) != 1 {
-		t.Error("log handle not closed")
 	}
 
 	var actual []string
@@ -123,6 +144,7 @@ func TestSetupFirecracker(t *testing.T) {
 			"--copy-files /proj:/work",
 			"--copy-files /vm-startup.sh:/vm-startup.sh",
 			"--ssh --name deadbeef",
+			"--kernel-image", "ignite-kernel:5.10.135",
 			"ignite-ubuntu",
 		}, " "),
 		"ignite exec deadbeef -- /vm-startup.sh",

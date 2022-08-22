@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	gprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -51,9 +50,17 @@ type RepoUpdaterClient interface {
 	RepoLookup(ctx context.Context, name api.RepoName) (info *protocol.RepoInfo, err error)
 }
 
+type ReposStore interface {
+	ListMinimalRepos(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+}
+
 type ExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
+}
+
+type GitserverRepoStore interface {
+	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
 }
 
 type GitserverClient interface {
@@ -62,7 +69,6 @@ type GitserverClient interface {
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
-	RepoInfo(ctx context.Context, repos ...api.RepoName) (map[api.RepoName]*gprotocol.RepoInfo, error)
 }
 
 type IndexEnqueuer interface {

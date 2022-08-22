@@ -103,7 +103,6 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 <span>
                     <RepoHeaderActionButtonLink
                         aria-label={visible ? 'Hide' : 'Show'}
-                        className="btn-icon"
                         file={false}
                         onSelect={this.onClick}
                     >

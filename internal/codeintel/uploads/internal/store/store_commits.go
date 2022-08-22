@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -268,4 +269,31 @@ func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 const getOldestCommitDateQuery = `
 -- source: internal/codeintel/uploads/internal/store/store_commits.go:GetOldestCommitDate
 SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL AND committed_at != '-infinity' ORDER BY committed_at LIMIT 1
+`
+
+// HasCommit determines if the given commit is known for the given repository.
+func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.hasCommit.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(
+		ctx,
+		sqlf.Sprintf(
+			hasCommitQuery,
+			repositoryID, dbutil.CommitBytea(commit),
+			repositoryID, dbutil.CommitBytea(commit),
+		),
+	))
+
+	return count > 0, err
+}
+
+const hasCommitQuery = `
+-- source: internal/codeintel/stores/dbstore/commits.go:HasCommit
+SELECT
+	(SELECT COUNT(*) FROM lsif_nearest_uploads WHERE repository_id = %s AND commit_bytea = %s) +
+	(SELECT COUNT(*) FROM lsif_nearest_uploads_links WHERE repository_id = %s AND commit_bytea = %s)
 `

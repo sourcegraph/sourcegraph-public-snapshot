@@ -6,6 +6,7 @@
     display: grid;
     gap: 1rem;
     grid-template-columns: 1fr 1fr 1fr 1fr 4fr;
+    padding-left: 2rem;
 }
 
 .calculator-input {
@@ -42,4 +43,8 @@
 
 .link-color {
     color: var(--link-color);
+}
+
+.purple-color {
+    color: var(--purple);
 }
