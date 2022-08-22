@@ -123,7 +123,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		})
 		if err == nil {
 			// Check if GitHub App access token
-			if token.AccessToken[0:3] == "ghu" {
+			if len(token.AccessToken) > 3 && token.AccessToken[0:3] == "ghu" {
 				installations, err := ghClient.GetUserInstallations(ctx)
 				if err != nil {
 					// Only log a warning, since we still want to create the user account
