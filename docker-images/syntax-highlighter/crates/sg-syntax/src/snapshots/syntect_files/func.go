@@ -28,12 +28,12 @@ this is my poem` + aString
 	var null_was_a_mistake *int
 	null_was_a_mistake = nil
 
-	foo := &Foo {
-		x: 42,
-		Bar: Bar {
+	foo := &Foo{
+		x: &x,
+		Bar: Bar{
 			z: 43,
 		},
 	}
 
-	fmt.Println(x, char, string, bool, null_was_a_mistake)
+	fmt.Println(x, char, aString, bool, null_was_a_mistake, foo, multilineString)
 }

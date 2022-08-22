@@ -90,22 +90,23 @@ expression: "dump_document(&document, &contents)"
 //                    ^ IdentifierOperator
 //                      ^^^ IdentifierBuiltin
   
-   foo := &Foo {
+   foo := &Foo{
 // ^^^ Identifier
 //     ^^ IdentifierOperator
 //        ^ IdentifierOperator
 //         ^^^ Identifier
-//             ^ PunctuationBracket
-    x: 42,
+//            ^ PunctuationBracket
+    x: &x,
 //  ^ Identifier
 //   ^ PunctuationBracket
-//     ^^ NumericLiteral
+//     ^ IdentifierOperator
+//      ^ Identifier
 //       ^ PunctuationBracket
-    Bar: Bar {
+    Bar: Bar{
 //  ^^^ Identifier
 //     ^ PunctuationBracket
 //       ^^^ Identifier
-//           ^ PunctuationBracket
+//          ^ PunctuationBracket
      z: 43,
 //   ^ Identifier
 //    ^ PunctuationBracket
@@ -117,7 +118,7 @@ expression: "dump_document(&document, &contents)"
    }
 // ^ PunctuationBracket
   
-   fmt.Println(x, char, string, bool, null_was_a_mistake)
+   fmt.Println(x, char, aString, bool, null_was_a_mistake, foo, multilineString)
 // ^^^ Identifier
 //    ^ PunctuationBracket
 //     ^^^^^^^ IdentifierFunction
@@ -126,12 +127,16 @@ expression: "dump_document(&document, &contents)"
 //              ^ PunctuationBracket
 //                ^^^^ Identifier
 //                    ^ PunctuationBracket
-//                      ^^^^^^ Identifier
-//                            ^ PunctuationBracket
-//                              ^^^^ Identifier
-//                                  ^ PunctuationBracket
-//                                    ^^^^^^^^^^^^^^^^^^ Identifier
-//                                                      ^ PunctuationBracket
+//                      ^^^^^^^ Identifier
+//                             ^ PunctuationBracket
+//                               ^^^^ Identifier
+//                                   ^ PunctuationBracket
+//                                     ^^^^^^^^^^^^^^^^^^ Identifier
+//                                                       ^ PunctuationBracket
+//                                                         ^^^ Identifier
+//                                                            ^ PunctuationBracket
+//                                                              ^^^^^^^^^^^^^^^ Identifier
+//                                                                             ^ PunctuationBracket
   }
 //^ PunctuationBracket
 
