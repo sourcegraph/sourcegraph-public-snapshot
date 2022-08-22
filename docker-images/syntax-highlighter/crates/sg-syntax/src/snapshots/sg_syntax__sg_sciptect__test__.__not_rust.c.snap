@@ -8,12 +8,15 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^ StringLiteral
   
   int main() {
-//^^^ IdentifierKeyword
+//^^^ IdentifierType
 //    ^^^^ IdentifierFunction
+//        ^ PunctuationBracket
+//         ^ PunctuationBracket
+//           ^ PunctuationBracket
     // Single line comment
 //  ^^^^^^^^^^^^^^^^^^^^^^ Comment
     int x = 1;
-//  ^^^ IdentifierKeyword
+//  ^^^ IdentifierType
 //        ^ IdentifierOperator
 //          ^ NumericLiteral
 //           ^ PunctuationDelimiter
@@ -27,4 +30,5 @@ expression: "dump_document(&document, &contents)"
 //  ^^^^^^ IdentifierKeyword
 //          ^ PunctuationDelimiter
   }
+//^ PunctuationBracket
 

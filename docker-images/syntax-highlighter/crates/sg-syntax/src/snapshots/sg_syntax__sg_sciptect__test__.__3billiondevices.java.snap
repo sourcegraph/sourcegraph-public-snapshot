@@ -3,72 +3,120 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   interface MyInterface
-//^^^^^^^^^ IdentifierKeyword
+//^^^^^^^^^ IdentifierType
   {
+//^ PunctuationBracket
        void abstract_func(int x,int y);
-//     ^^^^ IdentifierKeyword
+//     ^^^^ IdentifierType
 //          ^^^^^^^^^^^^^ IdentifierFunction
-//                        ^^^ IdentifierKeyword
+//                       ^ PunctuationBracket
+//                        ^^^ IdentifierType
 //                            ^ Identifier
-//                              ^^^ IdentifierKeyword
+//                             ^ PunctuationBracket
+//                              ^^^ IdentifierType
 //                                  ^ Identifier
+//                                   ^ PunctuationBracket
 //                                    ^ PunctuationDelimiter
   
        default void default_Fun()
 //     ^^^^^^^ IdentifierKeyword
-//             ^^^^ IdentifierKeyword
+//             ^^^^ IdentifierType
 //                  ^^^^^^^^^^^ IdentifierFunction
+//                             ^ PunctuationBracket
+//                              ^ PunctuationBracket
       {
+//    ^ PunctuationBracket
            System.out.println("This is default method");
+//         ^^^^^^ IdentifierType
+//               ^ PunctuationBracket
+//                   ^ PunctuationBracket
 //                    ^^^^^^^ IdentifierFunction
+//                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                    ^ PunctuationBracket
 //                                                     ^ PunctuationDelimiter
       }
+//    ^ PunctuationBracket
   }
+//^ PunctuationBracket
   
   class Main
-//^^^^^ IdentifierKeyword
+//^^^^^ IdentifierType
   {
+//^ PunctuationBracket
        public static void main(String args[])
 //     ^^^^^^ IdentifierKeyword
 //            ^^^^^^ IdentifierKeyword
-//                   ^^^^ IdentifierKeyword
+//                   ^^^^ IdentifierType
 //                        ^^^^ IdentifierFunction
+//                            ^ PunctuationBracket
+//                             ^^^^^^ IdentifierType
 //                                    ^^^^ Identifier
 //                                        ^^ PunctuationBracket
+//                                          ^ PunctuationBracket
       {
+//    ^ PunctuationBracket
           //lambda expression
 //        ^^^^^^^^^^^^^^^^^^^ Comment
           MyInterface fobj = (int x, int y)->System.out.println(x+y);
+//        ^^^^^^^^^^^ IdentifierType
 //                         ^ IdentifierOperator
-//                            ^^^ IdentifierKeyword
+//                           ^ PunctuationBracket
+//                            ^^^ IdentifierType
 //                                ^ Identifier
-//                                   ^^^ IdentifierKeyword
+//                                 ^ PunctuationBracket
+//                                   ^^^ IdentifierType
 //                                       ^ Identifier
-//                                         ^^ IdentifierKeyword
+//                                        ^ PunctuationBracket
+//                                         ^^ IdentifierType
+//                                           ^^^^^^ IdentifierType
+//                                                 ^ PunctuationBracket
+//                                                     ^ PunctuationBracket
 //                                                      ^^^^^^^ IdentifierFunction
+//                                                             ^ PunctuationBracket
 //                                                               ^ IdentifierOperator
+//                                                                 ^ PunctuationBracket
 //                                                                  ^ PunctuationDelimiter
   
           System.out.print("The result = ");
+//        ^^^^^^ IdentifierType
+//              ^ PunctuationBracket
+//                  ^ PunctuationBracket
 //                   ^^^^^ IdentifierFunction
+//                        ^ PunctuationBracket
 //                         ^^^^^^^^^^^^^^^ StringLiteral
+//                                        ^ PunctuationBracket
 //                                         ^ PunctuationDelimiter
           fobj.abstract_func(5,5);
+//            ^ PunctuationBracket
 //             ^^^^^^^^^^^^^ IdentifierFunction
+//                          ^ PunctuationBracket
 //                           ^ NumericLiteral
+//                            ^ PunctuationBracket
 //                             ^ NumericLiteral
+//                              ^ PunctuationBracket
 //                               ^ PunctuationDelimiter
           fobj.default_Fun();
+//            ^ PunctuationBracket
 //             ^^^^^^^^^^^ IdentifierFunction
+//                        ^ PunctuationBracket
+//                         ^ PunctuationBracket
 //                          ^ PunctuationDelimiter
       }
+//    ^ PunctuationBracket
       String format(String x) {
+//    ^^^^^^ IdentifierType
 //           ^^^^^^ IdentifierFunction
+//                 ^ PunctuationBracket
+//                  ^^^^^^ IdentifierType
 //                         ^ Identifier
+//                          ^ PunctuationBracket
+//                            ^ PunctuationBracket
           return x;
 //        ^^^^^^ IdentifierKeyword
 //                ^ PunctuationDelimiter
       }
+//    ^ PunctuationBracket
   }
+//^ PunctuationBracket
 

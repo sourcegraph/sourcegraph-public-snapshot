@@ -13,7 +13,7 @@ expression: "dump_document(&document, &contents)"
 //        ^^^ IdentifierFunction
 //            ^^^^^^^ Identifier
 //                   ^ IdentifierOperator
-//                     ^^^^^^^^ IdentifierKeyword
+//                     ^^^^^^^^ IdentifierType
 //                               ^^^^ IdentifierKeyword
 //                                   ^ IdentifierOperator
 //                                                   ^ IdentifierOperator
@@ -36,14 +36,14 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^ IdentifierKeyword
 //       ^^^ IdentifierKeyword
 //            ^^^^^^^ IdentifierKeyword
-//                    ^ IdentifierKeyword
+//                    ^ IdentifierType
 //                           ^^ IdentifierFunction
 //                              ^^^ Identifier
 //                                 ^ IdentifierOperator
-//                                   ^^^ IdentifierKeyword
+//                                   ^^^ IdentifierType
 //                                        ^^^ Identifier
 //                                           ^ IdentifierOperator
-//                                             ^^^ IdentifierKeyword
+//                                             ^^^ IdentifierType
 //                                                  ^ IdentifierOperator
 //                                                              ^ IdentifierOperator
       when (T::class) {
@@ -73,11 +73,12 @@ expression: "dump_document(&document, &contents)"
   internal class MediaStoreData(context: Context, filePath: String, accessFlag: FileAccessFlags) :
 //^^^^^^^^ IdentifierKeyword
 //         ^^^^^ IdentifierKeyword
+//               ^^^^^^^^^^^^^^ IdentifierType
 //                              ^^^^^^^ Identifier
 //                                     ^ IdentifierOperator
 //                                                ^^^^^^^^ Identifier
 //                                                        ^ IdentifierOperator
-//                                                          ^^^^^^ IdentifierKeyword
+//                                                          ^^^^^^ IdentifierType
 //                                                                  ^^^^^^^^^^ Identifier
 //                                                                            ^ IdentifierOperator
 //                                                                                               ^ IdentifierOperator
@@ -87,16 +88,17 @@ expression: "dump_document(&document, &contents)"
 // ^^^^^^^ IdentifierKeyword
 //         ^^^^ IdentifierKeyword
 //              ^^^^^ IdentifierKeyword
+//                    ^^^^^^^^ IdentifierType
     val id: Long,
 //  ^^^ IdentifierKeyword
 //      ^^ Identifier
 //        ^ IdentifierOperator
-//          ^^^^ IdentifierKeyword
+//          ^^^^ IdentifierType
     val mediaType: String
 //  ^^^ IdentifierKeyword
 //      ^^^^^^^^^ Identifier
 //               ^ IdentifierOperator
-//                 ^^^^^^ IdentifierKeyword
+//                 ^^^^^^ IdentifierType
    )
   
    companion object {
@@ -133,10 +135,10 @@ expression: "dump_document(&document, &contents)"
 //              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
 //                                          ^^^^ Identifier
 //                                              ^ IdentifierOperator
-//                                                ^^^^^^ IdentifierKeyword
+//                                                ^^^^^^ IdentifierType
 //                                                       ^ IdentifierOperator
-//                                                         ^^^^^ IdentifierKeyword
-//                                                               ^^^^^^ IdentifierKeyword
+//                                                         ^^^^^ IdentifierType
+//                                                               ^^^^^^ IdentifierType
      return arrayOf(getMediaStoreDisplayName(path), getMediaStoreRelativePath(path))
 //   ^^^^^^ IdentifierKeyword
     }

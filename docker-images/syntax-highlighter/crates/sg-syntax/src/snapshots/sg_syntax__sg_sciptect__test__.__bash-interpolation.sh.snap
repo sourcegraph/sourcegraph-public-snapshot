@@ -10,5 +10,8 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^^^^^^^^^^ Identifier
 //                    ^ IdentifierOperator
 //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                         ^ PunctuationBracket
+//                                          ^ PunctuationBracket
 //                                           ^^^^^^^^^^^^^^ Identifier
+//                                                         ^ PunctuationBracket
 

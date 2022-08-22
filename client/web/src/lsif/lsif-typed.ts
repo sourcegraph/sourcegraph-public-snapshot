@@ -51,7 +51,11 @@ export class Range {
         if (byStart !== 0) {
             return byStart
         }
-        return this.end.compare(other.end)
+        // Both ranges have the same start position, sort by inverse end
+        // position so that the longer range appears first. The motivation for
+        // using inverse order is so that we handle the larger range first when
+        // dealing with overlapping ranges.
+        return -this.end.compare(other.end)
     }
 }
 
@@ -114,7 +118,7 @@ function nonOverlappingOccurrences(occurrences: Occurrence[]): Occurrence[] {
             result.push(current)
         }
     }
-    return result
+    return result.sort((a, b) => a.range.compare(b.range))
 }
 
 // Returns a list of occurrences that are guaranteed to only consiste of

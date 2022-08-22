@@ -8,12 +8,15 @@ expression: "dump_document(&document, &contents)"
   
   :root {
       --modal-body-padding: 1.5rem;
+//    ^^^^^^^^^^^^^^^^^^^^ IdentifierType
 //                         ^^^^ NumericLiteral
 //                             ^^^ IdentifierKeyword
   }
   
   [data-reach-dialog-overlay] {
+//^ PunctuationBracket
       background-color: var(--modal-bg);
+//    ^^^^^^^^^^^^^^^^ IdentifierType
 //                      ^^^ IdentifierKeyword
   }
   
@@ -25,13 +28,21 @@ expression: "dump_document(&document, &contents)"
   .center,
   .top-third {
       transform: translate(-50%, -50%);
+//    ^^^^^^^^^ IdentifierType
+//                       ^ IdentifierFunction
+//                        ^ PunctuationBracket
+//                                   ^ PunctuationBracket
       position: absolute;
+//    ^^^^^^^^ IdentifierType
       top: 50%;
+//    ^^^ IdentifierType
 //        ^^^ NumericLiteral
 //           ^ IdentifierKeyword
       margin: 0;
+//    ^^^^^^ IdentifierType
 //           ^^ NumericLiteral
       left: 50%;
+//    ^^^^ IdentifierType
 //         ^^^ NumericLiteral
 //            ^ IdentifierKeyword
   }

@@ -10,30 +10,36 @@ expression: "dump_document(&document, &contents)"
   namespace Example
 //^^^^^^^^^ IdentifierNamespace
   {
+//^ PunctuationBracket
       public void Something()
 //    ^^^^^^ IdentifierKeyword
-//           ^^^^ IdentifierKeyword
+//           ^^^^ IdentifierType
 //                ^^^^^^^^^ IdentifierFunction
+//                         ^ PunctuationBracket
+//                          ^ PunctuationBracket
       {
+//    ^ PunctuationBracket
           var x = "世界";
-//        ^^^ IdentifierKeyword
+//        ^^^ IdentifierType
 //            ^ Identifier
 //              ^ IdentifierOperator
 //                ^^^^ StringLiteral
 //                    ^ PunctuationDelimiter
           var y = "世界 Hello, 世界";
-//        ^^^ IdentifierKeyword
+//        ^^^ IdentifierType
 //            ^ Identifier
 //              ^ IdentifierOperator
 //                ^^^^^^^^^^^^^^ StringLiteral
 //                              ^ PunctuationDelimiter
   
           var emoji = "🥳";
-//        ^^^ IdentifierKeyword
+//        ^^^ IdentifierType
 //            ^^^^^ Identifier
 //                  ^ IdentifierOperator
 //                    ^^^ StringLiteral
 //                       ^ PunctuationDelimiter
       }
+//    ^ PunctuationBracket
   }
+//^ PunctuationBracket
 

@@ -12,10 +12,19 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^ StringLiteral
   
   int main() {
-//^^^ IdentifierKeyword
+//^^^ IdentifierType
 //    ^^^^ IdentifierFunction
+//        ^ PunctuationBracket
+//         ^ PunctuationBracket
+//           ^ PunctuationBracket
       syntect::Exception::raise("oops");
+//           ^^ PunctuationBracket
+//                      ^^ PunctuationBracket
+//                        ^^^^^ IdentifierFunction
+//                             ^ PunctuationBracket
 //                              ^^^^^^ StringLiteral
+//                                    ^ PunctuationBracket
 //                                     ^ PunctuationDelimiter
   }
+//^ PunctuationBracket
 
