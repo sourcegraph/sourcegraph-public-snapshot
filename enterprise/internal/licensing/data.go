@@ -9,15 +9,23 @@ const (
 
 	// team is the "Team" plan.
 	team Plan = "team-0"
-	// enterprise is the "Enterprise" plan.
-	enterprise Plan = "enterprise-0"
+	// enterprise0 is the "Enterprise" plan pre-4.0.
+	enterprise0 Plan = "enterprise-0"
+
+	// business0 is the "Business" plan for 4.0.
+	business0 Plan = "business-0"
+	// enterprise1 is the "Enterprise" plan for 4.0.
+	enterprise1 Plan = "enterprise-1"
 )
 
 var allPlans = []Plan{
 	oldEnterpriseStarter,
 	oldEnterprise,
 	team,
-	enterprise,
+	enterprise0,
+
+	business0,
+	enterprise1,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -73,8 +81,11 @@ var planFeatures = map[Plan][]Feature{
 		FeatureBackupAndRestore,
 		FeatureCodeInsights,
 	},
-	team:       {},
-	enterprise: {},
+	team:        {},
+	enterprise0: {},
+
+	business0:   {},
+	enterprise1: {},
 }
 
 // NoLicenseMaximumExternalServiceCount is the maximum number of external services that the
