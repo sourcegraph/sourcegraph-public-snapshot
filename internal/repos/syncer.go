@@ -590,10 +590,10 @@ func (s *Syncer) SyncExternalService(
 	var errs error
 	fatal := func(err error) bool {
 		// If the error is just a warning, then it is not fatal.
-		var ref errors.Warning
-		if err != nil && errors.As(err, &ref) {
+		if errors.IsWarning(err) && !errcode.IsAccountSuspended(err) {
 			return false
 		}
+
 		return errcode.IsUnauthorized(err) ||
 			errcode.IsForbidden(err) ||
 			errcode.IsAccountSuspended(err)
@@ -609,6 +609,7 @@ func (s *Syncer) SyncExternalService(
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
 			if fatal(err) {
 				// Delete all external service repos of this external service
+				logger.Error("stopping external service sync due to fatal error from codehost", log.Error(err))
 				seen = map[api.RepoID]struct{}{}
 				break
 			}
