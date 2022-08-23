@@ -109,6 +109,8 @@ export const WORKSPACE_RESOLUTION_STATUS = gql`
             __typename
             ... on BatchSpec {
                 workspaceResolution {
+                    __typename
+                    id
                     state
                     failureMessage
                 }
@@ -124,6 +126,7 @@ export const WORKSPACES = gql`
             ... on BatchSpec {
                 workspaceResolution {
                     __typename
+                    id
                     workspaces(first: $first, after: $after, search: $search) {
                         __typename
                         totalCount

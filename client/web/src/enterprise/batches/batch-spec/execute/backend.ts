@@ -204,6 +204,8 @@ export const batchSpecExecutionFieldsFragment = gql`
         }
         viewerCanRetry
         workspaceResolution {
+            __typename
+            id
             workspaces {
                 stats {
                     ...BatchSpecWorkspaceStats
@@ -377,16 +379,20 @@ export const BATCH_SPEC_WORKSPACES = gql`
             ... on BatchSpec {
                 id
                 workspaceResolution {
-                    workspaces(first: $first, after: $after, search: $search, state: $state) {
-                        ...BatchSpecWorkspacesConnectionFields
+                    __typename
+                    id
+                    workspaces(first: 10000, after: $after) {
+                        ... on BatchSpecWorkspaceConnection {
+                            ...BatchSpecWorkspaceConnectionFields
+                        }
                     }
                 }
             }
         }
     }
 
-    fragment BatchSpecWorkspacesConnectionFields on BatchSpecWorkspaceConnection {
-        totalCount
+    fragment BatchSpecWorkspaceConnectionFields on BatchSpecWorkspaceConnection {
+        __typename
         pageInfo {
             endCursor
             hasNextPage
