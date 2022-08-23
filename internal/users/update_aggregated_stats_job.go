@@ -23,7 +23,8 @@ var (
 			SELECT
 				user_id,
 				MAX(timestamp) AS last_active_at,
-				COUNT(*) AS events_count
+				-- count billable only events for each user
+				COUNT(*) FILTER (WHERE name NOT IN ('ViewSignIn', 'ViewResetPassword')) AS events_count
 			FROM
 				event_logs
 			GROUP BY

@@ -509,7 +509,7 @@ func Test_addAuthorFilter(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, err := addAuthorFilter(BasicQuery(test.input), test.author)
+			got, err := AddAuthorFilter(BasicQuery(test.input), test.author)
 			if err != nil {
 				test.want.Equal(t, err.Error())
 			} else {
@@ -543,7 +543,7 @@ func Test_addRepoFilter(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, err := addRepoFilter(BasicQuery(test.input), test.repo)
+			got, err := AddRepoFilter(BasicQuery(test.input), test.repo)
 			if err != nil {
 				test.want.Equal(t, err.Error())
 			} else {
@@ -577,7 +577,7 @@ func Test_addFileFilter(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, err := addFileFilter(BasicQuery(test.input), test.file)
+			got, err := AddFileFilter(BasicQuery(test.input), test.file)
 			if err != nil {
 				test.want.Equal(t, err.Error())
 			} else {
