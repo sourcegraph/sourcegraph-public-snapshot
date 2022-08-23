@@ -314,8 +314,6 @@ ${{ previous_step.deleted_files }}
 ${{ previous_step.renamed_files }}
 ${{ previous_step.stdout }}
 ${{ previous_step.stderr}}
-${{ outputs.lastLine }}
-${{ outputs.project }}
 ${{ step.modified_files }}
 ${{ step.added_files }}
 ${{ step.deleted_files }}
@@ -336,8 +334,6 @@ ${{ steps.path }}
 []
 
 
-<no value>
-<no value>
 []
 []
 []
@@ -350,13 +346,6 @@ ${{ steps.path }}
 []
 
 `,
-		},
-		// TODO: Fix me!
-		{
-			name:    "typo 1 level deep in template variable",
-			stepCtx: &StepContext{},
-			run:     `${{ repository.search_resalt_paths }}`,
-			want:    "fake",
 		},
 	}
 
