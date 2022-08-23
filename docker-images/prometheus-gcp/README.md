@@ -3,6 +3,6 @@ This is a patched version of Sourcegraoh's Prometheus image using an alternative
 
 Please note: using this image will automatically begin shipping Prometheus metrics to the Google Cloud Managed Prometheus Service and may incur additional cloud hosting costs.
 
-This image is built by calling the `build.sh` function in [`prometheus`](../prometheus/README.md).
+This image is built by calling the [`build.sh` script in `prometheus`](../prometheus/build.sh) with some additional parameters.
 
 https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
