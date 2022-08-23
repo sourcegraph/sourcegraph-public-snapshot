@@ -298,9 +298,10 @@ Available testsuites in `sg.config.yaml`:
 * bext-build
 * bext-e2e
 * bext-integration
-* docsite
-* frontend
+* client
 * client-e2e
+* client-regression
+* docsite
 * web-integration
 
 ```sh
