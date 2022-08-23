@@ -10,7 +10,7 @@ export const EmptyUploads: React.FunctionComponent<React.PropsWithChildren<unkno
         <br />
         No uploads yet. Enable precise code navigation by{' '}
         <Link
-            to="/help/code_intelligence/explanations/precise_code_intelligence"
+            to="/help/code_navigation/explanations/precise_code_intelligence"
             target="_blank"
             rel="noreferrer noopener"
         >

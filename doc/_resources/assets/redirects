@@ -285,7 +285,6 @@
 /code_intelligence/explanations /code_navigation/explanations 308
 
 /code_intelligence/explanations/diagrams /code_navigation/explanations/diagrams 308
-/code_intelligence/explanations/diagrams/generate.sh /code_navigation/explanations/diagrams/generate.sh 308
 /code_intelligence/explanations/diagrams/index-states.mermaid /code_navigation/explanations/diagrams/index-states.mermaid 308
 /code_intelligence/explanations/diagrams/index-states.svg /code_navigation/explanations/diagrams/index-states.svg 308
 /code_intelligence/explanations/diagrams/upload-states.mermaid /code_navigation/explanations/diagrams/upload-states.mermaid 308
@@ -316,7 +315,6 @@
 /code_intelligence/how-to/img/workflow.png /code_navigation/how-to/img/workflow.png 308
 /code_intelligence/how-to/img /code_navigation/how-to/img 308
 
-/code_intelligence/references/.gitattributes /code_navigation/references/.gitattributes 308
 /code_intelligence/references/auto_indexing_configuration /code_navigation/references/auto_indexing_configuration 308
 /code_intelligence/references/envvars /code_navigation/references/envvars 308
 /code_intelligence/references/faq /code_navigation/references/faq 308
@@ -325,7 +323,5 @@
 /code_intelligence/references/requirements /code_navigation/references/requirements 308
 /code_intelligence/references/troubleshooting /code_navigation/references/troubleshooting 308
 /code_intelligence/references /code_navigation/references 308
-
-/code_intelligence/CODENOTIFY /code_navigation/CODENOTIFY 308
 
 /code_intelligence /code_navigation 308
