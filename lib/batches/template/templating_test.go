@@ -468,17 +468,13 @@ ${{ batch_change_link }}`,
 			tmplCtx: &ChangesetTemplateContext{},
 			tmpl: `${{ repository.search_result_paths }}
 ${{ repository.name }}
-${{ outputs.lastLine }}
-${{ outputs.project }}
 ${{ steps.modified_files }}
 ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
 ${{ batch_change_link }}
 `,
-			want: `<no value>
-<no value>
-[]
+			want: `[]
 []
 []
 []
