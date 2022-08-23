@@ -16,6 +16,8 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 26
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
 - id: 4
   team: code-intelligence
   component: codeintel-db.lsif_data_definitions
@@ -54,6 +56,8 @@
   is_enterprise: false
   introduced_version_major: 3
   introduced_version_minor: 34
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
 - id: 14
   team: code-insights
   component: db.insights_settings_migration_jobs
