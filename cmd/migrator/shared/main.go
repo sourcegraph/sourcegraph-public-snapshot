@@ -30,7 +30,7 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceTTY:   true,
 })
 
-func Start(logger log.Logger, registerEnterpriseMigrations registerMigratorsFromConfFunc) error {
+func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationContext := &observation.Context{
 		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -59,6 +59,11 @@ func Start(logger log.Logger, registerEnterpriseMigrations registerMigratorsFrom
 		return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
 	}
 
+	registerMigrators := composeRegisterMigratorsFuncs(
+		ossmigrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
+		registerEnterpriseMigrators,
+	)
+
 	command := &cli.App{
 		Name:   appName,
 		Usage:  "Validates and runs schema migrations",
@@ -71,11 +76,8 @@ func Start(logger log.Logger, registerEnterpriseMigrations registerMigratorsFrom
 			cliutil.Describe(appName, newRunner, outputFactory),
 			cliutil.Drift(appName, newRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, cliutil.GitHubExpectedSchemaFactory),
 			cliutil.AddLog(logger, appName, newRunner, outputFactory),
-			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory),
-			cliutil.RunOutOfBandMigrations(logger, appName, newRunner, outputFactory, composeRegisterMigratorsFuncs(
-				ossmigrations.RegisterOSSMigrationsFromConfig,
-				registerEnterpriseMigrations,
-			)),
+			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory, registerMigrators),
+			cliutil.RunOutOfBandMigrations(logger, appName, newRunner, outputFactory, registerMigrators),
 		},
 	}
 

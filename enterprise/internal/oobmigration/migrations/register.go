@@ -13,15 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func RegisterEnterpriseMigrations(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
+func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase()
 	if err != nil {
 		return err
@@ -39,7 +36,7 @@ func RegisterEnterpriseMigrations(ctx context.Context, db database.DB, runner *o
 
 	keyring := keyring.Default()
 
-	return registerEnterpriseMigrations(runner, dependencies{
+	return registerEnterpriseMigrators(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
@@ -47,28 +44,20 @@ func RegisterEnterpriseMigrations(ctx context.Context, db database.DB, runner *o
 	})
 }
 
-func RegisterEnterpriseMigrationsFromConfig(ctx context.Context, db database.DB, runner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
-	codeIntelDB, err := connections.EnsureNewCodeIntelDB(
-		conf.ServiceConnections().CodeIntelPostgresDSN,
-		"migrator",
-		&observation.TestContext,
-	)
+func RegisterEnterpriseMigratorsUsingConfAndStoreFactory(
+	ctx context.Context,
+	db database.DB,
+	runner *oobmigration.Runner,
+	conf conftypes.UnifiedQuerier,
+	storeFactory migrations.StoreFactory,
+) error {
+	codeIntelStore, err := storeFactory.Store(ctx, "codeintel")
 	if err != nil {
-		return errors.Errorf("failed to connect to codeintel database: %s", err)
+		return err
 	}
-
-	var insightsStore *basestore.Store
-	if internalInsights.IsEnabled() {
-		codeInsightsDB, err := connections.EnsureNewCodeInsightsDB(
-			conf.ServiceConnections().CodeInsightsDSN,
-			"migrator",
-			&observation.TestContext,
-		)
-		if err != nil {
-			return errors.Errorf("failed to connect to codeintel database: %s", err)
-		}
-
-		insightsStore = basestore.NewWithHandle(basestore.NewHandleWithDB(codeInsightsDB, sql.TxOptions{}))
+	insightsStore, err := storeFactory.Store(ctx, "codeinsights")
+	if err != nil {
+		return err
 	}
 
 	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
@@ -79,9 +68,9 @@ func RegisterEnterpriseMigrationsFromConfig(ctx context.Context, db database.DB,
 		keys = &keyring.Ring{}
 	}
 
-	return registerEnterpriseMigrations(runner, dependencies{
+	return registerEnterpriseMigrators(runner, true, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
-		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
+		codeIntelStore: codeIntelStore,
 		insightsStore:  insightsStore,
 		keyring:        keys,
 	})
@@ -94,15 +83,15 @@ type dependencies struct {
 	keyring        *keyring.Ring
 }
 
-func registerEnterpriseMigrations(runner *oobmigration.Runner, deps dependencies) error {
+func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps dependencies) error {
 	var insightsMigrator migrations.TaggedMigrator
-	if deps.insightsStore != nil {
+	if internalInsights.IsEnabled() {
 		insightsMigrator = insights.NewMigrator(deps.store, deps.insightsStore)
 	} else {
 		insightsMigrator = insights.NewMigratorNoOp()
 	}
 
-	return migrations.RegisterAll(runner, []migrations.TaggedMigrator{
+	return migrations.RegisterAll(runner, noDelay, []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
 		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
@@ -110,7 +99,6 @@ func registerEnterpriseMigrations(runner *oobmigration.Runner, deps dependencies
 		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000),
 		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000),
 		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100),
-		codeintel.NewAPIDocsSearchMigrator(),
 		insightsMigrator,
 	})
 }

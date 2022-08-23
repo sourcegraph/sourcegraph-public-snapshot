@@ -37,7 +37,14 @@ describe('CreateCodeMonitorPage', () => {
         isSourcegraphDotCom: false,
     }
 
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
     afterEach(() => {
+        window.context = origContext
         props.createCodeMonitor.resetHistory()
     })
 

@@ -8,9 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
-
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"

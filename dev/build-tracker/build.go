@@ -203,12 +203,15 @@ func (s *BuildStore) Add(event *Event) {
 		build.updateFromEvent(event)
 
 		// Track consecutive failures by pipeline + branch
+		// We update the global count of consecutiveFailures then we set the count on the individual build
+		// if we get a pass, we reset the global count of consecutiveFailures
 		failuresKey := fmt.Sprintf("%s/%s", build.Pipeline.name(), build.branch())
 		if build.hasFailed() {
 			s.consecutiveFailures[failuresKey] += 1
 			build.ConsecutiveFailure = s.consecutiveFailures[failuresKey]
 		} else {
-			s.consecutiveFailures[failuresKey] = 1
+			// We got a pass, reset the global count
+			s.consecutiveFailures[failuresKey] = 0
 		}
 	}
 
