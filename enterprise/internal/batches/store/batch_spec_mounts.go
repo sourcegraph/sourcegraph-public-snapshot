@@ -19,7 +19,8 @@ var batchSpecMountColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_spec_mounts.filename"),
 	sqlf.Sprintf("batch_spec_mounts.path"),
 	sqlf.Sprintf("batch_spec_mounts.size"),
-	sqlf.Sprintf("batch_spec_mounts.modified"),
+	sqlf.Sprintf("batch_spec_mounts.content"),
+	sqlf.Sprintf("batch_spec_mounts.modified_at"),
 	sqlf.Sprintf("batch_spec_mounts.created_at"),
 	sqlf.Sprintf("batch_spec_mounts.updated_at"),
 }
@@ -30,7 +31,8 @@ var batchSpecMountInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("filename"),
 	sqlf.Sprintf("path"),
 	sqlf.Sprintf("size"),
-	sqlf.Sprintf("modified"),
+	sqlf.Sprintf("content"),
+	sqlf.Sprintf("modified_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
@@ -74,7 +76,8 @@ func (s *Store) upsertBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query
 		m.FileName,
 		m.Path,
 		m.Size,
-		m.Modified,
+		m.Content,
+		m.ModifiedAt,
 		m.UpdatedAt,
 		sqlf.Join(batchSpecMountConflictTarget, ", "),
 		sqlf.Join(batchSpecMountInsertColumns, ", "),
@@ -83,7 +86,8 @@ func (s *Store) upsertBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query
 		m.FileName,
 		m.Path,
 		m.Size,
-		m.Modified,
+		m.Content,
+		m.ModifiedAt,
 		m.UpdatedAt,
 		sqlf.Join(batchSpecMountColumns, ", "),
 	), nil
@@ -92,10 +96,10 @@ func (s *Store) upsertBatchSpecMountQuery(m *btypes.BatchSpecMount) (*sqlf.Query
 var upsertBatchSpecMountQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_mounts.go:UpsertBatchSpecMount
 INSERT INTO batch_spec_mounts (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (%s) WHERE TRUE
 DO UPDATE SET
-(%s) = (%s, %s, %s, %s, %s, %s, %s)
+(%s) = (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 // DeleteBatchSpecMountOpts are the options to determine which BatchSpecMounts to delete.
@@ -319,7 +323,7 @@ func scanBatchSpecMount(m *btypes.BatchSpecMount, s dbutil.Scanner) error {
 		&m.FileName,
 		&m.Path,
 		&m.Size,
-		&m.Modified,
+		&m.ModifiedAt,
 		&m.CreatedAt,
 		&m.UpdatedAt,
 	)

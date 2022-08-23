@@ -132,7 +132,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 					Once()
 				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Modified: modifiedTime}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, ModifiedAt: modifiedTime}).
 					Return(nil).
 					Once()
 			},
@@ -155,11 +155,11 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 					Once()
 				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 6, Modified: modifiedTime}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 6, ModifiedAt: modifiedTime}).
 					Return(nil).
 					Once()
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "world.txt", Path: "faz/baz", Size: 6, Modified: modifiedTime}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "world.txt", Path: "faz/baz", Size: 6, ModifiedAt: modifiedTime}).
 					Return(nil).
 					Once()
 			},
@@ -303,7 +303,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 					Once()
 				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Modified: modifiedTime}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, ModifiedAt: modifiedTime}).
 					Return(errors.New("failed to insert batch spec mount")).
 					Once()
 			},

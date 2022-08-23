@@ -175,7 +175,7 @@ func (h *MountHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec, index
 		FileName:    headers.Filename,
 		Path:        filePath,
 		Size:        headers.Size,
-		Modified:    modified,
+		ModifiedAt:  modified,
 	}); err != nil {
 		return err
 	}

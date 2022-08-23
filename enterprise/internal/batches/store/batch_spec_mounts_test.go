@@ -31,7 +31,7 @@ func testStoreBatchSpecMounts(t *testing.T, ctx context.Context, s *Store, clock
 				FileName:    fmt.Sprintf("hello-%d.txt", i),
 				Path:        "foo/bar",
 				Size:        12,
-				Modified:    clock.Now(),
+				ModifiedAt:  clock.Now(),
 			}
 			expected := mount.Clone()
 
@@ -216,7 +216,7 @@ func testStoreBatchSpecMounts(t *testing.T, ctx context.Context, s *Store, clock
 				FileName:    "by-spec-id.txt",
 				Path:        "foo/bar",
 				Size:        12,
-				Modified:    clock.Now(),
+				ModifiedAt:  clock.Now(),
 			}
 			err := s.UpsertBatchSpecMount(ctx, newMount)
 			require.NoError(t, err)

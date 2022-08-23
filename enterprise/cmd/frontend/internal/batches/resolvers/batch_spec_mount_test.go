@@ -17,13 +17,13 @@ func TestBatchSpecMountResolver(t *testing.T) {
 	resolver := batchSpecMountResolver{
 		batchSpecRandID: "123abc",
 		mount: &btypes.BatchSpecMount{
-			RandID:    "987xyz",
-			FileName:  "hello.txt",
-			Path:      "foo/bar",
-			Size:      12,
-			Modified:  date,
-			CreatedAt: date,
-			UpdatedAt: date,
+			RandID:     "987xyz",
+			FileName:   "hello.txt",
+			Path:       "foo/bar",
+			Size:       12,
+			ModifiedAt: date,
+			CreatedAt:  date,
+			UpdatedAt:  date,
 		},
 	}
 
@@ -61,7 +61,7 @@ func TestBatchSpecMountResolver(t *testing.T) {
 			expected: int32(12),
 		},
 		{
-			name: "Modified",
+			name: "ModifiedAt",
 			getActual: func() interface{} {
 				return resolver.Modified()
 			},

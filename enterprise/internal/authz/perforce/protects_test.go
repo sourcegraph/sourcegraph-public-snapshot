@@ -366,7 +366,7 @@ func TestFullScanMatchRules(t *testing.T) {
 		// Confirm the rules as defined in
 		// https://www.perforce.com/manuals/p4sag/Content/P4SAG/protections-implementation.html
 		//
-		// Modified slightly by removing the //depot prefix and only including rules
+		// ModifiedAt slightly by removing the //depot prefix and only including rules
 		// applicable to the actual user since that's what we'll get back from protect -u
 		{
 			name:  "Without an exclusionary mapping, the most permissive line rules",

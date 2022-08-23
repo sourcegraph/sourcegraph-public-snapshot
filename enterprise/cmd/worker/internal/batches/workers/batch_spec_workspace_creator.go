@@ -342,7 +342,7 @@ func getMountMetadata(mounts []*btypes.BatchSpecMount, path string) (metadata ca
 			return cache.MountMetadata{
 				Path:     mountPath,
 				Size:     mount.Size,
-				Modified: mount.Modified,
+				Modified: mount.ModifiedAt,
 			}, nil
 		}
 	}
