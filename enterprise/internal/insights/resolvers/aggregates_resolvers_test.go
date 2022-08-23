@@ -178,8 +178,20 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 		},
 		{
 			name:         "can aggregate for standard query in backslash pattern",
-			query:        "/func(\\\\w+)/ case:yes",
+			query:        "/func(\\w+)/ case:yes",
 			patternType:  "standard",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for multi-pattern query",
+			query:        "func(\\w+[0-9]) return(\\w+[0-9]) ",
+			patternType:  "regexp",
+			canAggregate: true,
+		},
+		{
+			name:         "can aggregate for query with both captured and non-captured regexp pattern",
+			query:        "func(\\w+) \\w+",
+			patternType:  "regexp",
 			canAggregate: true,
 		},
 		{

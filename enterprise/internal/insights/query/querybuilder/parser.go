@@ -35,7 +35,3 @@ func ParametersFromQueryPlan(plan query.Plan) []query.Parameter {
 	}
 	return parameters
 }
-
-func QueryContainsSingleCaptureGroup(q string) bool {
-	return len(findGroups(q)) == 1
-}

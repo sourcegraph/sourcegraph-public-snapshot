@@ -296,18 +296,17 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	}
 
 	// A query should contain a single capture group to allow capture group aggregation.
-	if _, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType); err != nil {
+	replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType)
+	if err != nil {
 		return false, errors.Wrap(err, "pattern parsing")
 	}
-	if !querybuilder.QueryContainsSingleCaptureGroup(searchQuery) {
-		return false, errors.New("query should contain single capture group for aggregation")
+	// If there is no value to capture we can't run this aggregation.
+	if !replacer.HasCaptureGroups() {
+		return false, nil
 	}
 
-	// We use ParseQuery to obtain the query parameters.
-	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
-	if err != nil {
-		return false, errors.Wrapf(err, "ParseQuery")
-	}
+	// We use ParseQuery to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
+	plan, _ := querybuilder.ParseQuery(searchQuery, patternType)
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
 	// We allow capture group aggregation for select:path and select:file searches
 	// if they are accompanied by the correct `type` (query syntax edge cases)
