@@ -349,6 +349,22 @@ func TestCaptureGroupAggregation(t *testing.T) {
 			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9])`,
 			autogold.Want("count 2 from 1 chunk", map[string]int{"2.7": 2}),
 		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			},
+			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:no`,
+			autogold.Want("capture match respects case:no", map[string]int{"2.7": 2}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			},
+			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:yes`,
+			autogold.Want("capture match respects case:yes", map[string]int{}),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {

@@ -167,6 +167,10 @@ func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
 }
 
 func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
+
+	//TODO: this is the entire query, capture group piece needs just the query pattern
+	// parse and extract only whats needed.
+	// pattern may need to be modified based on case yes/no
 	captureGroupsCount, err := countCaptureGroupsFunc(query)
 	if err != nil {
 		return nil, err
