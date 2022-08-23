@@ -82,12 +82,12 @@ describe('renderMarkdown', () => {
     it('sanitizes event handlers', () => {
         expect(renderMarkdown('<svg><rect onclick="evil()"></rect></svg>')).toBe('<p><svg><rect></rect></svg></p>\n')
     })
-    it('sanitizes non-SVG <object> tags', () => {
+    it('does not allow arbitrary <object> tags', () => {
         expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>\n')
     })
-    it('allows SVG <object> tags', () => {
+    it('does not allow SVG <object> tags', () => {
         expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe(
-            '<p><object data="something" type="image/svg+xml"></object></p>\n'
+            '<p><object></object></p>\n'
         )
     })
     it('allows <svg> tags', () => {
