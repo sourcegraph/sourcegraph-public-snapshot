@@ -130,9 +130,6 @@ func TestValidateBatchSpecTemplate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			gotValid, gotErr := ValidateBatchSpecTemplate("testing", tc.batchSpec)
 
-			// TODO: Testing
-			// t.Fatal("test")
-
 			if tc.wantValid != gotValid {
 				t.Fatalf("unexpected valid status. want valid=%t, got valid=%t\nerror message: %s", tc.wantValid, gotValid, gotErr)
 			}

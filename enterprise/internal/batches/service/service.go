@@ -639,10 +639,11 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	if err != nil {
 		return nil, err
 	}
-	
-	// placing validation
-	//if we got back an error that mean its invalid so return that
-	_, err = template.ValidateBatchSpecTemplate("adeola", opts.RawSpec)
+
+	// Also validate that the batch spec only uses known templating variables and
+	// functions. If we get an error here that it's invalid, we also want to surface that
+	// error to the UI.
+	_, err = template.ValidateBatchSpecTemplate("spec"+opts.BatchSpecRandID, opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
