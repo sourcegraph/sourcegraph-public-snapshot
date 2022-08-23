@@ -4,6 +4,7 @@ export class MyClass {
     this.myValue = init;
   }
 }
+export abstract class MyAbstractClass {}
 import fs = require("fs");
 declare module MyModule {
   export interface MyInterface extends Other {
@@ -14,7 +15,13 @@ declare module MyModule {
 declare magicNumber number;
 myArray.forEach(() => { }); // fat arrow syntax
 const oneOf = (a:number): number => a + 1
+export enum Day {
+    Weekday = 1,
+    Weekend = 2
+}
+export type MyNumber = number
 export const a = 42
+const aa = 42
 export let b = 42
 export var c = 42
 export var d1 = {e2:41}
@@ -39,3 +46,14 @@ const scanToken = <T extends Term = Literal>(
 }
 
 export const URI: typeof URL
+
+export class SiteAdminUsageStatisticsPage extends React.Component<
+    SiteAdminUsageStatisticsPageProps,
+    SiteAdminUsageStatisticsPageState
+> {
+    private loadLatestChartFromStorage(): keyof ChartOptions {
+        const latest = localStorage.getItem(CHART_ID_KEY)
+        return latest && latest in chartGeneratorOptions ? (latest as keyof ChartOptions) : 'daus'
+    }
+
+}

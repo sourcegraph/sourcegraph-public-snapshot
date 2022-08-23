@@ -1,7 +1,7 @@
 use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
-use std::fmt::Write as _; // import without risk of name clashing
+use std::fmt::{Write as _}; // import without risk of name clashing
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -416,12 +416,18 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
                             range.start_line, range.start_col, range.end_line, range.end_col
                         )
                     };
+                    let symbol_suffix = if occ.symbol.is_empty() {
+                        "".to_owned()
+                    } else {
+                        format!(" {}", occ.symbol)
+                    };
                     let _ = writeln!(
                         result,
-                        "//{}{} {:?}{multiline_suffix}",
+                        "//{}{} {:?}{multiline_suffix} {}",
                         " ".repeat(range.start_col as usize),
                         "^".repeat(length),
-                        occ.syntax_kind
+                        occ.syntax_kind,
+                        symbol_suffix,
                     );
                 }
             }
