@@ -13,12 +13,12 @@ type CalendarProps = {
 } & (
     | {
           isRange: true
-          value: [Date | null, Date | null]
+          value?: [Date | null, Date | null] | null
           onChange: (value: [Date, Date]) => void
       }
     | {
           isRange?: false
-          value: Date | null | undefined
+          value?: Date | null
           onChange: (value: Date) => void
       }
 )
@@ -33,7 +33,7 @@ export function Calendar({
     highlightToday,
 }: CalendarProps): JSX.Element {
     return (
-        <Container className={classNames(styles.container, styles.highlightToday, className)}>
+        <Container className={classNames(styles.container, highlightToday && styles.highlightToday, className)}>
             <ReactCalendar
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
