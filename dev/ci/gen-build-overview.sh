@@ -2,29 +2,28 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 #set -euo pipefail
-
-echo "CWD: $(pwd)"
+set -x
 
 echo "--- Generating build overview annotation"
 mkdir -p annotations
 
+PR() {
+    if [[ ${BUILDKITE_PULL_REQUEST} -ne "false" ]]; then
+        echo "Pull request [🔗]: \`${BUILDKITE_PULL_REQUEST}\`"\n
+    fi
+}
+
+PR_LINK=$(PR)
+
 cat <<-EOF> ./annotations/Build\ overview.md
-### Overview
-
-[Build Number](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`
-
-Retry count: \`${BUILDKITE_RETRY_COUNT}\`
-
-Pipeline: ${BUILDKITE_PIPELINE_SLUG}
-
-Author: \`${BUILDKITE_BUILD_AUTHOR}\`
-
-Branch: \`${BUILDKITE_BRANCH}\`
-
-Commit: \`${BUILDKITE_COMMIT}\`
-
-\`\`\`${BUILDKITE_MESSAGE}\`\`\`
-
-Agent: \`${BUILDKITE_AGENT_NAME}
+Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`\n
+Retry count: \`${BUILDKITE_RETRY_COUNT}\`\n
+Pipeline: ${BUILDKITE_PIPELINE_SLUG}\n
+Author: \`${BUILDKITE_BUILD_AUTHOR}\`\n
+Branch: \`${BUILDKITE_BRANCH}\`\n
+Commit: \`${BUILDKITE_COMMIT}\`\n
+\`\`\`${BUILDKITE_MESSAGE}\`\`\`\n
+${PR_LINK}
+Agent: \`${BUILDKITE_AGENT_NAME}\`\n
 EOF
 
