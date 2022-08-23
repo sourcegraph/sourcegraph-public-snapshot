@@ -7,8 +7,8 @@ expect.addSnapshotSerializer({
 
 describe('scanPredicate', () => {
     test('scan recognized and valid syntax', () => {
-        expect(scanPredicate('repo', 'contains(stuff)')).toMatchInlineSnapshot(
-            '{"path":["contains"],"parameters":"(stuff)"}'
+        expect(scanPredicate('repo', 'contains.file(content:stuff)')).toMatchInlineSnapshot(
+            '{"path":["contains","file"],"parameters":"(content:stuff)"}'
         )
     })
 
@@ -19,17 +19,17 @@ describe('scanPredicate', () => {
     })
 
     test('scan recognized and valid syntax with escapes', () => {
-        expect(scanPredicate('repo', 'contains(\\((stuff))')).toMatchInlineSnapshot(
-            '{"path":["contains"],"parameters":"(\\\\((stuff))"}'
+        expect(scanPredicate('repo', 'contains.file(content:\\((stuff))')).toMatchInlineSnapshot(
+            '{"path":["contains","file"],"parameters":"(content:\\\\((stuff))"}'
         )
     })
 
     test('scan valid syntax but not recognized', () => {
-        expect(scanPredicate('foo', 'contains(stuff)')).toMatchInlineSnapshot('invalid')
+        expect(scanPredicate('foo', 'contains.path(stuff)')).toMatchInlineSnapshot('invalid')
     })
 
     test('scan unbalanced syntax', () => {
-        expect(scanPredicate('repo', 'contains(')).toMatchInlineSnapshot('invalid')
+        expect(scanPredicate('repo', 'contains.file(content:')).toMatchInlineSnapshot('invalid')
     })
 
     test('scan invalid nonalphanumeric name', () => {
@@ -37,8 +37,8 @@ describe('scanPredicate', () => {
     })
 
     test('resolve field aliases for predicates', () => {
-        expect(scanPredicate('r', 'contains.file(stuff)')).toMatchInlineSnapshot(
-            '{"path":["contains","file"],"parameters":"(stuff)"}'
+        expect(scanPredicate('r', 'contains.file(content:stuff)')).toMatchInlineSnapshot(
+            '{"path":["contains","file"],"parameters":"(content:stuff)"}'
         )
     })
 
@@ -52,7 +52,7 @@ describe('scanPredicate', () => {
 describe('resolveAccess', () => {
     test('resolves partial access tree', () => {
         expect(resolveAccess(['repo', 'contains'], PREDICATES)).toMatchInlineSnapshot(
-            '[{"name":"file"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]'
+            '[{"name":"file"},{"name":"path"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]'
         )
     })
 
