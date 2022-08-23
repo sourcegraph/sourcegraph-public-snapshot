@@ -144,29 +144,21 @@ func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
 	return func(r result.Match) (MatchKey, int, error) {
 		match := newEventMatch(r)
 		if len(match.ChunkMatches) != 0 {
-			groups := make([]Match, 0, len(match.ChunkMatches))
+			var textResult string
 			for _, cm := range match.ChunkMatches {
 				for _, range_ := range cm.Ranges {
 					content := chunkContent(cm, range_)
-					for _, submatches := range regexp.FindAllStringSubmatchIndex(content, -1) {
-						value := fromRegexpMatches(submatches, regexp.SubexpNames(), content, range_)
-						textResult, err := toTextResult(content, &Regexp{Value: regexp}, "$1", "\n", "")
-						if err != nil {
-							return MatchKey{}, 0, errors.Wrap(err, "toTextResult")
-						}
-						value.Value = textResult
-						groups = append(groups, value)
+					textResult, err = toTextResult(content, &Regexp{Value: regexp}, "$1", "\n", "")
+					if err != nil {
+						return MatchKey{}, 0, errors.Wrap(err, "toTextResult")
 					}
 				}
 			}
-
-			// TODO: What if there's more than one capture group per match? This whole thing might need to return an array
-			// of these..
-			if len(groups) > 0 {
+			if textResult != "" {
 				return MatchKey{
 					RepoID: match.RepoID,
 					Repo:   match.Repo,
-					Group:  groups[0].Value,
+					Group:  textResult,
 				}, match.ResultCount, nil
 			}
 		}
