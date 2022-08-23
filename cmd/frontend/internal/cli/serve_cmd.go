@@ -22,8 +22,6 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
-	sentrylib "github.com/getsentry/sentry-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -136,11 +134,11 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, sglog.NewSentrySinkWith(sglog.SentrySink{
-        ClientOptions: sentrylib.ClientOptions{
-            SampleRate: 0.2,
-        },
-    }) // Experimental: DevX is observing how sampling affects the errors signal
+	}, sglog.NewSentrySinkWith(
+		sglog.SentryClientOptions{
+			SampleRate: 0.2,
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	hc := &check.HealthChecker{Checks: []check.Check{

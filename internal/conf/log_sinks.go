@@ -1,20 +1,24 @@
 package conf
 
-import "github.com/sourcegraph/log"
+import (
+	"github.com/sourcegraph/log"
+)
 
 func GetLogSinks() log.SinksConfig {
 	cfg := Get()
 
-	var sentry *log.SentrySink
+	var sentrySink *log.SentrySink
 	if cfg.Log != nil {
 		if sk := cfg.Log.Sentry; sk != nil {
-			sentry = &log.SentrySink{
-				DSN: sk.BackendDSN,
+			sentrySink = &log.SentrySink{
+				SentryClientOptions: log.SentryClientOptions{
+					Dsn: sk.BackendDSN,
+				},
 			}
 		}
 	}
 
 	return log.SinksConfig{
-		Sentry: sentry,
+		Sentry: sentrySink,
 	}
 }

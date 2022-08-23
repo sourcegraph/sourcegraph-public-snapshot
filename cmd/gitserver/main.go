@@ -90,9 +90,11 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(log.SentrySink{
-		ClientOptions: sentrylib.ClientOptions{SampleRate: 0.2},
-	})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, log.NewSentrySinkWith(
+		log.SentryClientOptions{
+			SampleRate: 0.2,
+		},
+	))
 	defer liblog.Sync()
 
 	conf.Init()

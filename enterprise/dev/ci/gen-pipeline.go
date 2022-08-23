@@ -48,13 +48,14 @@ func main() {
 		Name:       "buildkite-ci",
 		Version:    "-",
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(log.SentrySink{
-		ClientOptions: sentry.ClientOptions{
+	}, log.NewSentrySinkWith(
+		log.SentryClientOptions{
 			Debug:      true,
 			Dsn:        dsn,
 			SampleRate: 1, //send all
 		},
-	}))
+	))
+
 	defer liblog.Sync()
 
 	logger = log.Scoped("gen-pipeline", "generates the pipeline for ci")
