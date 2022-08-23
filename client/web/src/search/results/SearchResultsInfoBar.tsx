@@ -53,6 +53,7 @@ export interface SearchResultsInfoBarProps
     query?: string
     resultsFound: boolean
 
+    batchChangesEnabled?: boolean
     /** Whether running batch changes server-side is enabled */
     batchChangesExecutionEnabled?: boolean
 
@@ -135,7 +136,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     props.query,
                     props.patternType,
                     props.authenticatedUser,
-                    props.batchChangesExecutionEnabled
+                    props.batchChangesEnabled && props.batchChangesExecutionEnabled
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
@@ -150,6 +151,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             props.enableCodeInsights,
             props.patternType,
             props.query,
+            props.batchChangesEnabled,
             props.batchChangesExecutionEnabled,
         ]
     )
