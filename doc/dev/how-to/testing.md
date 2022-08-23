@@ -295,7 +295,7 @@ This will open Chromium, add a code host, clone repositories, and execute the e2
 
 ##### Starting regression tests
 
-1. Log in as a `test` user. See more info below on creating this user on your instance if it doesn't exist.
+1. Log in as a `test` user. If the user does not exist then see below for more information on how to create a user.
 2. Create a site-admin access token with the `site-admin:sudo` scope. The access tokens page can be found under user settings.
 3. Create your personal `GITHUB_TOKEN`. It should have access to all the repos in the Sourcegraph GitHub required to run these tests without scopes.
 4. Run in the repository root:
