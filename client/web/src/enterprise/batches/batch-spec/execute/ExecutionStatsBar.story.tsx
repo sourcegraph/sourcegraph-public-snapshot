@@ -4,6 +4,8 @@ import { WebStory } from '../../../../components/WebStory'
 
 import { ExecutionStatsBar } from './ExecutionStatsBar'
 
+import styles from './ExecuteBatchSpecPage.module.scss'
+
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
@@ -39,14 +41,16 @@ export default config
 export const ExecutionStatsBarStory: Story = args => (
     <WebStory>
         {props => (
-            <ExecutionStatsBar
-                {...props}
-                errored={args.errored}
-                completed={args.completed}
-                processing={args.processing}
-                queued={args.queued}
-                ignored={args.ignored}
-            />
+            <div className={styles.statsBar}>
+                <ExecutionStatsBar
+                    {...props}
+                    errored={args.errored}
+                    completed={args.completed}
+                    processing={args.processing}
+                    queued={args.queued}
+                    ignored={args.ignored}
+                />
+            </div>
         )}
     </WebStory>
 )

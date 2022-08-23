@@ -6,7 +6,7 @@ import { WebStory } from '../../../../../components/WebStory'
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 import { mockWorkspace } from '../../batch-spec.mock'
 
-import { WorkspacesListItem } from './WorkspacesListItem'
+import { MemoizedWorkspacesListItem } from './WorkspacesListItem'
 
 const decorator: DecoratorFn = story => <div className="list-group d-flex flex-column w-100">{story()}</div>
 
@@ -37,7 +37,7 @@ export const WorkspacesListItemStory: Story = () => {
             {props => (
                 <>
                     {WORKSPACE_STATES.map(([key, state, isCached], index) => (
-                        <WorkspacesListItem
+                        <MemoizedWorkspacesListItem
                             {...props}
                             key={key}
                             isSelected={selectedIndex === index}

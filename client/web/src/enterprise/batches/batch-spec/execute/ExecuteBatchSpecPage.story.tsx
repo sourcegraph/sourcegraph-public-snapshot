@@ -20,19 +20,32 @@ import {
     VisibleBatchSpecWorkspaceFields,
 } from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../../code-monitoring/testing/util'
-import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../create/backend'
+import {
+    GET_BATCH_CHANGE_TO_EDIT,
+    IMPORTING_CHANGESETS,
+    WORKSPACES,
+    WORKSPACE_RESOLUTION_STATUS,
+} from '../../create/backend'
 import {
     COMPLETED_BATCH_SPEC,
     COMPLETED_WITH_ERRORS_BATCH_SPEC,
     EXECUTING_BATCH_SPEC,
     mockBatchChange,
+    mockBatchSpecWorkspaces,
+    mockBatchSpecWorkspaceStatuses,
     mockFullBatchSpec,
     mockWorkspaceResolutionStatus,
     mockWorkspaces,
+    NO_IMPORTING_CHANGESETS_RESPONSE,
     PROCESSING_WORKSPACE,
 } from '../batch-spec.mock'
 
-import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXECUTION } from './backend'
+import {
+    BATCH_SPEC_WORKSPACES,
+    BATCH_SPEC_WORKSPACE_BY_ID,
+    BATCH_SPEC_WORKSPACE_STATUSES,
+    FETCH_BATCH_SPEC_EXECUTION,
+} from './backend'
 import { ExecuteBatchSpecPage } from './ExecuteBatchSpecPage'
 
 const decorator: DecoratorFn = story => (
@@ -94,6 +107,30 @@ const COMMON_MOCKS: MockedResponses = [
             variables: MATCH_ANY_PARAMETERS,
         },
         result: { data: mockWorkspaceResolutionStatus(BatchSpecWorkspaceResolutionState.COMPLETED) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(WORKSPACES),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockBatchSpecWorkspaces(50) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(BATCH_SPEC_WORKSPACE_STATUSES),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockBatchSpecWorkspaceStatuses(50) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(IMPORTING_CHANGESETS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: NO_IMPORTING_CHANGESETS_RESPONSE },
         nMatches: Number.POSITIVE_INFINITY,
     },
 ]

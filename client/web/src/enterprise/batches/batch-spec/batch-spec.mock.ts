@@ -21,6 +21,8 @@ import {
     BatchSpecWorkspaceStepFields,
     BatchSpecExecutionFields,
     BatchSpecWorkspacesResult,
+    BatchSpecWorkspaceStatusesResult,
+    BatchSpecWorkspaceStatusFields,
 } from '../../../graphql-operations'
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
@@ -95,6 +97,7 @@ export const EXECUTING_BATCH_SPEC = mockFullBatchSpec({
     startedAt: subHours(now, 1).toISOString(),
     workspaceResolution: {
         __typename: 'BatchSpecWorkspaceResolution',
+        id: 'resolution1234',
         workspaces: {
             __typename: 'BatchSpecWorkspaceConnection',
             stats: {
@@ -116,6 +119,7 @@ export const COMPLETED_BATCH_SPEC = mockFullBatchSpec({
     applyURL: '/some/preview/url',
     workspaceResolution: {
         __typename: 'BatchSpecWorkspaceResolution',
+        id: 'resolution1234',
         workspaces: {
             __typename: 'BatchSpecWorkspaceConnection',
             stats: {
@@ -139,6 +143,7 @@ export const COMPLETED_WITH_ERRORS_BATCH_SPEC = mockFullBatchSpec({
         "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that.",
     workspaceResolution: {
         __typename: 'BatchSpecWorkspaceResolution',
+        id: 'resolution1234',
         workspaces: {
             __typename: 'BatchSpecWorkspaceConnection',
             stats: {
@@ -161,6 +166,7 @@ export const mockWorkspaceResolutionStatus = (
         __typename: 'BatchSpec',
         workspaceResolution: {
             __typename: 'BatchSpecWorkspaceResolution',
+            id: 'resolution1234',
             state: status,
             failureMessage: error || null,
         },
@@ -425,6 +431,7 @@ export const mockWorkspaces = (
         id: 'spec1234',
         workspaceResolution: {
             __typename: 'BatchSpecWorkspaceResolution',
+            id: 'resolution1234',
             workspaces: {
                 __typename: 'BatchSpecWorkspaceConnection',
                 totalCount: count,
@@ -439,6 +446,21 @@ export const mockWorkspaces = (
         },
     },
 })
+
+export const mockWorkspaceStatus = (
+    id: number,
+    workspace?: Partial<BatchSpecWorkspaceStatusFields>
+): BatchSpecWorkspaceStatusFields => ({
+    __typename: 'VisibleBatchSpecWorkspace',
+    id: `id-${id}`,
+    state: BatchSpecWorkspaceState.COMPLETED,
+    placeInQueue: null,
+    diffStat: { __typename: 'DiffStat', added: 100, changed: 50, deleted: 90 },
+    ...workspace,
+})
+
+export const mockWorkspaceStatuses = (count: number): BatchSpecWorkspaceStatusFields[] =>
+    [...new Array(count).keys()].map(id => mockWorkspaceStatus(id))
 
 const mockImportingChangeset = (
     id: number
@@ -461,11 +483,27 @@ export const mockImportingChangesets = (
     __typename: 'VisibleChangesetSpec'
 })[] => [...new Array(count).keys()].map(id => mockImportingChangeset(id))
 
+export const NO_IMPORTING_CHANGESETS_RESPONSE: BatchSpecImportingChangesetsResult = {
+    node: {
+        __typename: 'BatchSpec',
+        importingChangesets: {
+            __typename: 'ChangesetSpecConnection',
+            totalCount: 0,
+            pageInfo: {
+                hasNextPage: false,
+                endCursor: null,
+            },
+            nodes: [],
+        },
+    },
+}
+
 export const mockBatchSpecWorkspaces = (workspacesCount: number): BatchSpecWorkspacesPreviewResult => ({
     node: {
         __typename: 'BatchSpec',
         workspaceResolution: {
             __typename: 'BatchSpecWorkspaceResolution',
+            id: 'resolution1234',
             workspaces: {
                 __typename: 'BatchSpecWorkspaceConnection',
                 totalCount: workspacesCount,
@@ -474,6 +512,25 @@ export const mockBatchSpecWorkspaces = (workspacesCount: number): BatchSpecWorks
                     endCursor: 'end-cursor',
                 },
                 nodes: mockPreviewWorkspaces(workspacesCount),
+            },
+        },
+    },
+})
+
+export const mockBatchSpecWorkspaceStatuses = (workspacesCount: number): BatchSpecWorkspaceStatusesResult => ({
+    node: {
+        __typename: 'BatchSpec',
+        id: 'spec1234',
+        workspaceResolution: {
+            __typename: 'BatchSpecWorkspaceResolution',
+            id: 'resolution1234',
+            workspaces: {
+                __typename: 'BatchSpecWorkspaceConnection',
+                pageInfo: {
+                    hasNextPage: workspacesCount > 0,
+                    endCursor: 'end-cursor',
+                },
+                nodes: mockWorkspaceStatuses(workspacesCount),
             },
         },
     },
