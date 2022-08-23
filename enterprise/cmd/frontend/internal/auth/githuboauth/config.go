@@ -18,9 +18,9 @@ func Init(db database.DB) {
 		return problems
 	})
 
+	const pkgName = "githuboauth"
+	logger := log.Scoped(pkgName, "GitHub OAuth config watch")
 	go func() {
-		const pkgName = "githuboauth"
-		logger := log.Scoped(pkgName, "GitHub OAuth config watch")
 		conf.Watch(func() {
 			if err := licensing.Check(licensing.FeatureSSO); err != nil {
 				logger.Warn("Check license for SSO (GitHub OAuth)", log.Error(err))
