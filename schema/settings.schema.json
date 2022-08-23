@@ -197,6 +197,14 @@
             "pointer": true
           }
         },
+        "enableMergedFileSymbolSidebar": {
+          "description": "Enables the new file sidebar experience with merged file and symbol entries.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",

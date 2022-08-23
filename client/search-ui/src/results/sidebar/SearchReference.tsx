@@ -179,10 +179,10 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ],
     },
     {
-        ...createQueryExampleFromString('contains.file({path})'),
+        ...createQueryExampleFromString('contains.path({path})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain a file path matching the regular expression.',
-        examples: ['repo:contains.file(README)'],
+        examples: ['repo:contains.path(README)', 'repo:contains.path(src/main/)'],
         showSuggestions: false,
     },
     {
@@ -193,11 +193,11 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains({file:path content:content})'),
+        ...createQueryExampleFromString('contains.file({path:path content:content})'),
         field: FilterType.repo,
         description:
-            'Search only inside repositories that contain a file matching the `file:` with `content:` filters.',
-        examples: ['repo:contains(file:CHANGELOG content:fix)'],
+            'Search only inside repositories that contain a file path matching the `path:` and/or `content:` filters.',
+        examples: ['repo:contains.file(path:README content:fix)'],
         showSuggestions: false,
     },
     {

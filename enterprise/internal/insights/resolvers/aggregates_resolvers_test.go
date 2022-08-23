@@ -44,7 +44,7 @@ func Test_canAggregateByRepo(t *testing.T) {
 			name:         "cannot aggregate for invalid query",
 			query:        "fork:woo",
 			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			err:          errors.Newf("ParseQuery"),
 		},
 	}
 	suite := canAggregateBySuite{
@@ -69,7 +69,7 @@ func Test_canAggregateByPath(t *testing.T) {
 		},
 		{
 			name:         "cannot aggregate for query with select:repo parameter",
-			query:        "repo:contains.file(README) select:repo",
+			query:        "repo:contains.path(README) select:repo",
 			canAggregate: false,
 		},
 		{
@@ -81,7 +81,7 @@ func Test_canAggregateByPath(t *testing.T) {
 			name:         "cannot aggregate for invalid query",
 			query:        "insights type:commit fork:test",
 			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			err:          errors.Newf("ParseQuery"),
 		},
 	}
 	suite := canAggregateBySuite{
@@ -106,22 +106,22 @@ func Test_canAggregateByAuthor(t *testing.T) {
 		},
 		{
 			name:         "cannot aggregate for query with select:repo parameter",
-			query:        "repo:contains.file(README) select:repo",
+			query:        "repo:contains.path(README) select:repo",
 			canAggregate: false,
 		},
 		{
 			name:         "can aggregate for query with type:commit parameter",
-			query:        "repo:contains.file(README) select:repo type:commit fix",
+			query:        "repo:contains.path(README) select:repo type:commit fix",
 			canAggregate: true,
 		},
 		{
 			name:         "can aggregate for query with select:commit parameter",
-			query:        "repo:contains.file(README) select:commit fix",
+			query:        "repo:contains.path(README) select:commit fix",
 			canAggregate: true,
 		},
 		{
 			name:         "can aggregate for query with type:diff parameter",
-			query:        "repo:contains.file(README) type:diff fix",
+			query:        "repo:contains.path(README) type:diff fix",
 			canAggregate: true,
 		},
 		{
@@ -133,7 +133,7 @@ func Test_canAggregateByAuthor(t *testing.T) {
 			name:         "cannot aggregate for invalid query",
 			query:        "type:diff fork:leo",
 			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			err:          errors.Newf("ParseQuery"),
 		},
 	}
 	suite := canAggregateBySuite{
@@ -199,7 +199,7 @@ func Test_canAggregateByAuthor(t *testing.T) {
 //			query:        "type:diff fork:leo func(.*)",
 //			patternType:  "regexp",
 //			canAggregate: false,
-//			err:          errors.Newf("ParseAndValidateQuery"),
+//			err:          errors.Newf("ParseQuery"),
 //		},
 //	}
 //	suite := canAggregateBySuite{

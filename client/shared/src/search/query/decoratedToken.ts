@@ -469,6 +469,7 @@ export const hasPathLikeValue = (field: string): boolean => {
         case 'r':
         case 'file':
         case 'f':
+        case 'path':
         case 'repohasfile':
             return true
         default:
@@ -799,6 +800,7 @@ export const hasRegexpValue = (field: string): boolean => {
         case 'r':
         case 'file':
         case 'f':
+        case 'path':
         case 'repohasfile':
         case 'message':
         case 'msg':
@@ -881,12 +883,12 @@ const mapOffset = (token: Token, offset: number): Token => {
 }
 
 /**
- * Returns true if a `contains(...)` predicate is valid. This predicate is currently valid when one of
- * `file:` or `content:` is specified, or both. Any additional filters or tokens besides whitespace
+ * Returns true if a `contains.file(...)` predicate is valid. This predicate is currently valid when one of
+ * `path:` or `content:` is specified, or both. Any additional filters or tokens besides whitespace
  * makes this body invalid.
  */
-const validContainsBody = (tokens: Token[]): boolean => {
-    const fileIndex = tokens.findIndex(token => token.type === 'filter' && token.field.value === 'file')
+const validContainsFileBody = (tokens: Token[]): boolean => {
+    const fileIndex = tokens.findIndex(token => token.type === 'filter' && token.field.value === 'path')
     if (fileIndex !== -1) {
         tokens.splice(fileIndex, 1)
     }
@@ -901,21 +903,21 @@ const validContainsBody = (tokens: Token[]): boolean => {
 }
 
 /**
- * Attempts to decorate `contains(file:foo content:bar)` syntax. Fails if
+ * Attempts to decorate `contains.file(path:foo content:bar)` syntax. Fails if
  * the body contains unsupported syntax. This function takes care to
- * decorate `content:` values as regular expression syntax.
+ * decorate `path:` and `content:` values as regular expression syntax.
  */
-const decorateContainsBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+const decorateContainsFileBody = (body: string, offset: number): DecoratedToken[] | undefined => {
     const result = scanSearchQuery(body, false, SearchPatternType.regexp)
     if (result.type === 'error') {
         return undefined
     }
-    if (!validContainsBody([...result.term])) {
+    if (!validContainsFileBody([...result.term])) {
         // There are more things in this query than we support.
         return undefined
     }
     const decorated: DecoratedToken[] = result.term.flatMap(token => {
-        if (token.type === 'filter' && token.field.value === 'file') {
+        if (token.type === 'filter' && token.field.value === 'path') {
             return decorate(mapOffset(token, offset))
         }
         if (token.type === 'filter' && token.field.value === 'content') {
@@ -978,14 +980,14 @@ const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | u
 const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (path.join('.')) {
-        case 'contains': {
-            const result = decorateContainsBody(body, offset)
+        case 'contains.file': {
+            const result = decorateContainsFileBody(body, offset)
             if (result !== undefined) {
                 return result
             }
             break
         }
-        case 'contains.file':
+        case 'contains.path':
         case 'contains.content':
         case 'has.description':
             return mapRegexpMetaSucceed({

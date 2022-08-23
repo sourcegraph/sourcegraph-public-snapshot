@@ -7,7 +7,7 @@ import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     extensionsController,
-    HIGHLIGHTED_FILE_LINES_LONG,
+    HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULTS_WITH_METADATA,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
@@ -54,7 +54,7 @@ const defaultProps: StreamingSearchResultsProps = {
 
     streamSearch: () => of(streamingSearchResult),
 
-    fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
+    fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
 }

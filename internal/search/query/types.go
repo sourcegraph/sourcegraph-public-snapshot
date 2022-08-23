@@ -360,7 +360,7 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 		})
 	})
 
-	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPathPredicate, negated bool) {
 		res = append(res, RepoHasFileContentArgs{
 			Path:    pred.Pattern,
 			Negated: negated,
@@ -374,9 +374,9 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 		})
 	})
 
-	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate, negated bool) {
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
 		res = append(res, RepoHasFileContentArgs{
-			Path:    pred.File,
+			Path:    pred.Path,
 			Content: pred.Content,
 			Negated: negated,
 		})
