@@ -292,7 +292,7 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	if !(patternType == "regexp" || patternType == "regex" || patternType == "standard" || patternType == "lucky") {
 		return false, nil
 	}
-	plan, err := querybuilder.ParseAndValidateQuery(searchQuery, patternType)
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
 		return false, errors.Wrapf(err, "ParseAndValidateQuery")
 	}
