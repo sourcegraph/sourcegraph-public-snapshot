@@ -873,7 +873,7 @@ SELECT
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND source = 'CODEHOSTINTEGRATION')
   	AS integration_uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND source = 'CODEHOSTINTEGRATION')
-  	AS integration_uniques_day,
+  	AS integration_uniques_day
 FROM (
   -- This sub-query is here to avoid re-doing this work above on each aggregation.
   SELECT
