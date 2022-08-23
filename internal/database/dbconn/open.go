@@ -174,6 +174,7 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
 			OmitConnResetSession: true,
 		}),
+		otelsql.WithArgumentsAttributes(otelsql.ArgumentsOptions{EnableAttributes: true}),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "postgresql open")
