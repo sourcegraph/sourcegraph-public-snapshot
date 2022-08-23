@@ -928,15 +928,16 @@ func uploadBuildeventTrace() operations.Operation {
 }
 
 func buildOverviewAnnotation() operations.Operation {
-    return func(p *bk.Pipeline) {
-        p.AddStep("Build overview annotation",
-        bk.AnnotatedCmd("dev/ci/gen-build-overview.sh", bk.AnnotatedCmdOpts{
-            Annotations: &bk.AnnotationOpts{
-                Type: bk.AnnotationTypeInfo,
-                IncludeNames: true,
-            },
-        }
-    }
+	return func(p *bk.Pipeline) {
+		p.AddStep("Build overview",
+			bk.AnnotatedCmd("dev/ci/gen-build-overview.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{
+					Type:         bk.AnnotationTypeInfo,
+					IncludeNames: true,
+				},
+			}),
+		)
+	}
 }
 
 // Request render.com to create client preview app for current PR

@@ -80,6 +80,31 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
+	ops.Append(
+		wait, // wait for all steps to pass
+		//uploadBuildeventTrace(), // upload the final buildevent trace if the build succeeded.
+		buildOverviewAnnotation(),
+	)
+
+	// Construct pipeline
+	pipeline := &bk.Pipeline{
+		Env:   env,
+		Steps: []any{},
+		AfterEveryStepOpts: []bk.StepOpt{
+			withDefaultTimeout,
+			withAgentQueueDefaults,
+			withAgentLostRetries,
+		},
+	}
+	// Toggle profiling of each step
+	if c.MessageFlags.ProfilingEnabled {
+		pipeline.AfterEveryStepOpts = append(pipeline.AfterEveryStepOpts, withProfiling)
+	}
+
+	// Apply operations on pipeline
+	ops.Apply(pipeline)
+
+	return pipeline, nil
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
@@ -299,7 +324,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	)
 
 	// Construct pipeline
-	pipeline := &bk.Pipeline{
+	pipeline = &bk.Pipeline{
 		Env:   env,
 		Steps: []any{},
 		AfterEveryStepOpts: []bk.StepOpt{
