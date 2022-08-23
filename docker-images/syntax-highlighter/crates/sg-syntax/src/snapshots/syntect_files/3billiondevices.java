@@ -10,6 +10,8 @@ interface MyInterface
 
 class Main
 {
+    public static final String staticField = "42";
+    public final int field = 42;
      public static void main(String args[])
     {
         //lambda expression
@@ -20,6 +22,6 @@ class Main
         fobj.default_Fun();
     }
     String format(String x) {
-        return x;
+        return x + this.field;
     }
 }

@@ -7,6 +7,10 @@ use syntect::{
     util::LinesWithEndings,
 };
 
+static EMPTY_SCOPE: OnceCell<Scope> = OnceCell::new();
+fn empty_scope() -> Scope {
+ *EMPTY_SCOPE.get_or_init(|| Scope::new("").unwrap())
+}
 // Whenever a scope matches any of the scopes in IGNORED_SCOPES,
 // it will not emit an occurrence for that range. The most specific
 // scope that overlaps this region will instead emit an occurrence for
@@ -19,6 +23,25 @@ fn should_skip_scope(scope: &Scope) -> bool {
             let scope = |s| Scope::new(s).unwrap();
             vec![
                 scope("source"),
+                scope("meta.tag.tsx"),
+                scope("meta.tag.without-attributes.tsx"),
+                scope("punctuation.definition.tag.begin.tsx"),
+                scope("punctuation.definition.tag.end.tsx"),
+                scope("entity.other.document.begin.yaml"),
+                scope("punctuation.definition.heading.begin"),
+                scope("punctuation.definition.heading.end"),
+                scope("punctuation.definition.bold.begin"),
+                scope("punctuation.definition.bold.end"),
+                scope("punctuation.definition.italic.begin"),
+                scope("punctuation.definition.italic.end"),
+                scope("punctuation.definition.strikethrough.begin"),
+                scope("punctuation.definition.strikethrough.end"),
+                scope("punctuation.definition.raw.begin"),
+                scope("punctuation.definition.raw.end"),
+                scope("punctuation.definition.link.begin"),
+                scope("punctuation.definition.link.end"),
+                scope("punctuation.definition.metadata.begin"),
+                scope("punctuation.definition.metadata.end"),
                 scope("punctuation.definition.string.begin"),
                 scope("punctuation.definition.string.end"),
                 scope("punctuation.definition.comment"),
@@ -57,19 +80,48 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
 
             // TODO: optimization opportunity, skip testing language-specific scopes.
             (scope("keyword.operator.expression.keyof.ts"), IdentifierKeyword),
+            (scope("keyword.operator.expression.keyof.tsx"), IdentifierKeyword),
             (scope("keyword.operator.expression.typeof.ts"), IdentifierKeyword),
+            (scope("keyword.operator.expression.typeof.tsx"), IdentifierKeyword),
             (scope("storage.type.namespace.ts"), IdentifierKeyword),
+            (scope("storage.type.namespace.tsx"), IdentifierKeyword),
+            (scope("storage.type.module.js"), IdentifierKeyword),
+            (scope("storage.type.module.jsx"), IdentifierKeyword),
             (scope("storage.type.module.ts"), IdentifierKeyword),
+            (scope("storage.type.module.tsx"), IdentifierKeyword),
             (scope("storage.type.interface.ts"), IdentifierKeyword),
+            (scope("storage.type.interface.tsx"), IdentifierKeyword),
             (scope("storage.type.class.ts"), IdentifierKeyword),
+            (scope("storage.type.class.tsx"), IdentifierKeyword),
+            (scope("storage.type.class.js"), IdentifierKeyword),
+            (scope("storage.type.class.jsx"), IdentifierKeyword),
+            (scope("storage.type.type.tsx"), IdentifierKeyword),
+            (scope("storage.type.type.ts"), IdentifierKeyword),
+            (scope("storage.type.enum.tsx"), IdentifierKeyword),
+            (scope("storage.type.enum.ts"), IdentifierKeyword),
+            (scope("storage.type.function.tsx"), IdentifierKeyword),
             (scope("storage.type.function.ts"), IdentifierKeyword),
+            (scope("storage.type.function.js"), IdentifierKeyword),
+            (scope("storage.type.function.jsx"), IdentifierKeyword),
+            (scope("storage.type.ts"), IdentifierKeyword),
+            (scope("storage.type.tsx"), IdentifierKeyword),
             (scope("keyword.operator.logical.sql"), IdentifierKeyword),
             (scope("keyword.operator.assignment.alias.sql"), IdentifierKeyword),
             (scope("meta.mapping.key.json"), StringLiteralKey),
             (scope("entity.name.tag.yaml"), StringLiteralKey),
+            (scope("entity.other.attribute-name.class.css"), Identifier),
+            (scope("meta.link.inline.markdown"), StringLiteral),
+            // (scope("entity.name.section.markdown"), IdentifierType),
 
+            (scope("meta.tag"), Identifier),
+            (scope("markup.bold"), Identifier),
+            (scope("markup.underline"), Identifier),
+            (scope("markup.italic"), Identifier),
+            (scope("markup.raw"), StringLiteral),
+            (scope("markup.heading"), Identifier),
             (scope("keyword.operator"), IdentifierOperator),
             (scope("keyword"), IdentifierKeyword),
+            (scope("variable.language.this"), IdentifierBuiltin),
             (scope("variable.function"), IdentifierFunction),
             (scope("meta.definition.property"), IdentifierAttribute),
             (scope("variable"), Identifier),
@@ -92,6 +144,10 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("support.class"), IdentifierType),
             (scope("support.function"), IdentifierFunction),
             (scope("support.variable"), Identifier),
+
+            (scope("entity.other.attribute-name"), TagAttribute),
+            (scope("entity.name"), Identifier),
+            (scope("entity.other"), Identifier),
             //
             // Punctuation Types: while these may appear noisy, they're
             // intentionally included so that punctutation characters get
@@ -127,14 +183,16 @@ struct HighlightStart {
     row: i32,
     col: i32,
     kind: Option<SyntaxKind>,
+    scope: Scope,
 }
 
 impl HighlightStart {
-    fn some(row: usize, col: usize, kind: SyntaxKind) -> Self {
+    fn some(row: usize, col: usize, kind: SyntaxKind, scope: Scope) -> Self {
         Self {
             row: row as i32,
             col: col as i32,
             kind: Some(kind),
+            scope: scope,
         }
     }
 
@@ -143,6 +201,7 @@ impl HighlightStart {
             row: 0,
             col: 0,
             kind: None,
+            scope: empty_scope(),
         }
     }
 }
@@ -305,12 +364,13 @@ impl<'a> DocumentGenerator<'a> {
                             match match_scope_to_kind(&scope) {
                                 Some(kind) => {
                                     // Uncomment to debug what scopes are picked up
-                                    // println!("SCOPE {row:>3}:{character:<3} {} {kind:?}", format!("{}", scope));
-                                    let partial_hl = HighlightStart::some(row, character, kind);
+                                    // println!("SCOPE {row:>3}:{character:<3} {:50} {kind:?}", format!("{}", scope));
+                                    let partial_hl = HighlightStart::some(row, character, kind, scope);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
                                     {
                                         push_document_occurence(
                                             &mut document,
+                                            scope,
                                             &partial_hl,
                                             row,
                                             character,
@@ -318,6 +378,7 @@ impl<'a> DocumentGenerator<'a> {
                                     };
                                 }
                                 None => {
+                                    // println!("SCOPE {row:>3}:{character:<3} {:50}", format!("{}", scope));
                                     unhandled_scopes.insert(scope);
                                     highlight_manager.push_empty();
                                 }
@@ -329,7 +390,7 @@ impl<'a> DocumentGenerator<'a> {
                             //  (never pop past what we've pushed) and still easily skip the
                             //  highlights that are useless.
                             if let Some(partial_hl) = highlight_manager.pop_hl(row, character) {
-                                push_document_occurence(&mut document, &partial_hl, row, character);
+                                push_document_occurence(&mut document, partial_hl.scope, &partial_hl, row, character);
                             }
                         }
                     }
@@ -366,7 +427,7 @@ impl<'a> DocumentGenerator<'a> {
             .map(|(row, line)| (row, line.chars().count()))
         {
             while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
-                push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
+                push_document_occurence(&mut document, partial_hl.scope, &partial_hl, end_of_line.0, end_of_line.1);
             }
         }
 
@@ -376,6 +437,7 @@ impl<'a> DocumentGenerator<'a> {
 
 fn push_document_occurence(
     document: &mut Document,
+    scope: Scope,
     partial_hl: &HighlightStart,
     row: usize,
     col: usize,
@@ -392,13 +454,14 @@ fn push_document_occurence(
         Some(kind) => document.occurrences.push(new_occurence(
             vec![partial_hl.row, partial_hl.col, row, col],
             kind,
+            scope
         )),
         None => (),
     }
 }
 
 
-fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind) -> Occurrence {
+fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind, scope: Scope) -> Occurrence {
     let syntax_kind = EnumOrUnknown::new(syntax_kind);
     let range = match range.len() {
         4 => {
@@ -411,11 +474,12 @@ fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind) -> Occurrence {
         _ => range,
     };
 
+        let symbol = if cfg!(test) { scope.to_string() } else  {String::default() };
     Occurrence {
         range,
         syntax_kind,
         symbol_roles: 0,
-        symbol: String::default(),
+        symbol:  symbol,
         override_documentation: vec![],
         diagnostics: vec![],
         special_fields: SpecialFields::default(),
@@ -449,78 +513,7 @@ mod test {
         assert_eq!(Document::default(), output);
     }
 
-    #[test]
-    fn test_generates_go_package() {
-        let syntax_set = SyntaxSet::load_defaults_newlines();
-        let mut q = crate::SourcegraphQuery::default();
-        q.filetype = Some("go".to_string());
-        q.code = "package main".to_string();
 
-        let syntax_def = determine_language(&q, &syntax_set).unwrap();
-        let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
-            .generate();
-
-        assert_eq!(
-            vec![
-                new_occurence(vec![0, 0, 0, 7], SyntaxKind::IdentifierKeyword),
-                new_occurence(vec![0, 8, 0, 11], SyntaxKind::Identifier),
-            ],
-            output.occurrences
-        );
-    }
-
-    #[test]
-    fn test_generates_c_multi_comment() {
-        let syntax_set = SyntaxSet::load_defaults_newlines();
-        let mut q = crate::SourcegraphQuery::default();
-        q.filetype = Some("c".to_string());
-        q.code = r#"
-/* Multi
- * Line
- */
-int x = 1;
-"#
-        .to_string();
-
-        let syntax_def = determine_language(&q, &syntax_set).unwrap();
-        let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
-            .generate();
-
-        assert_eq!(
-            vec![
-                new_occurence(vec![1, 0, 3, 3], SyntaxKind::Comment),
-                new_occurence(vec![4, 0, 3], SyntaxKind::IdentifierType),
-                new_occurence(vec![4, 6, 7], SyntaxKind::IdentifierOperator),
-                new_occurence(vec![4, 8, 9], SyntaxKind::NumericLiteral),
-                new_occurence(vec![4, 9, 10], SyntaxKind::PunctuationDelimiter),
-            ],
-            output.occurrences
-        );
-    }
-
-    #[test]
-    fn test_generates_cs_singlebyte() {
-        let syntax_set = SyntaxSet::load_defaults_newlines();
-        let mut q = crate::SourcegraphQuery::default();
-        // q.filetype = Some("csharp".to_string());
-        q.filepath = "multibyte.cs".to_string();
-        q.code = r#"
-"inner string";
-"#
-        .to_string();
-
-        let syntax_def = determine_language(&q, &syntax_set).unwrap();
-        let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
-            .generate();
-
-        assert_eq!(
-            vec![
-                new_occurence(vec![1, 0, 14], SyntaxKind::StringLiteral),
-                new_occurence(vec![1, 14, 15], SyntaxKind::PunctuationDelimiter),
-            ],
-            output.occurrences
-        );
-    }
 
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {

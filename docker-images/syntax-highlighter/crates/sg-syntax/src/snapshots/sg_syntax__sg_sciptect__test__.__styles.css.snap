@@ -3,80 +3,84 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   :root {
-//^ PunctuationBracket
-//      ^ PunctuationBracket
+//^ PunctuationBracket  punctuation.definition.entity.css
+// ^^^^ Identifier  entity.other.pseudo-class.css
+//      ^ PunctuationBracket  punctuation.section.property-list.css
       --modal-body-padding: 1.5rem;
-//    ^^ PunctuationBracket
-//      ^^^^^^^^^^^^^^^^^^ IdentifierType
-//                        ^ PunctuationBracket
-//                          ^ NumericLiteral
-//                           ^ PunctuationBracket
-//                            ^ NumericLiteral
-//                             ^^^ IdentifierKeyword
-//                                ^ PunctuationDelimiter
+//    ^^ PunctuationBracket  punctuation.definition.custom-property.css
+//      ^^^^^^^^^^^^^^^^^^ IdentifierType  support.type.custom-property.name.css
+//                        ^ PunctuationBracket  punctuation.separator.key-value.css
+//                          ^ NumericLiteral  punctuation.separator.decimal.css
+//                           ^ PunctuationBracket  punctuation.separator.decimal.css
+//                            ^ NumericLiteral  keyword.other.unit.css
+//                             ^^^ IdentifierKeyword  keyword.other.unit.css
+//                                ^ PunctuationDelimiter  punctuation.terminator.rule.css
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.property-list.css
   
   [data-reach-dialog-overlay] {
-//^ PunctuationBracket
-//                          ^ PunctuationBracket
-//                            ^ PunctuationBracket
+//^ PunctuationBracket  punctuation.definition.entity.css
+// ^^^^^^^^^^^^^^^^^^^^^^^^^ TagAttribute  entity.other.attribute-name.css
+//                          ^ PunctuationBracket  punctuation.definition.entity.css
+//                            ^ PunctuationBracket  punctuation.section.property-list.css
       background-color: var(--modal-bg);
-//    ^^^^^^^^^^^^^^^^ IdentifierType
-//                    ^ PunctuationBracket
-//                      ^^^ IdentifierFunction
-//                         ^ PunctuationBracket
-//                          ^^ PunctuationBracket
-//                            ^^^^^^^^ IdentifierType
-//                                    ^ PunctuationBracket
-//                                     ^ PunctuationDelimiter
+//    ^^^^^^^^^^^^^^^^ IdentifierType  support.type.property-name.css
+//                    ^ PunctuationBracket  punctuation.separator.key-value.css
+//                      ^^^ IdentifierFunction  support.function.var.css
+//                         ^ PunctuationBracket  punctuation.definition.group.begin.css
+//                          ^^ PunctuationBracket  punctuation.definition.custom-property.css
+//                            ^^^^^^^^ IdentifierType  support.type.custom-property.name.css
+//                                    ^ PunctuationBracket  punctuation.definition.group.end.css
+//                                     ^ PunctuationDelimiter  punctuation.terminator.rule.css
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.property-list.css
   
   
   /*
-//^^ Comment 9:0..11:3
+//^^ Comment 9:0..11:3  comment.block.css
    * Positions
    */
   .center,
-//^ PunctuationBracket
-//       ^ PunctuationBracket
+//^ PunctuationBracket  punctuation.definition.entity.css
+// ^^^^^^ Identifier  entity.other.attribute-name.class.css
+//       ^ PunctuationBracket  punctuation.separator.sequence.css
   .top-third {
-//^ PunctuationBracket
-//           ^ PunctuationBracket
+//^ PunctuationBracket  punctuation.definition.entity.css
+// ^^^^^^^^^ Identifier  entity.other.attribute-name.class.css
+//           ^ PunctuationBracket  punctuation.section.property-list.css
       transform: translate(-50%, -50%);
-//    ^^^^^^^^^ IdentifierType
-//             ^ PunctuationBracket
-//               ^^^^^^^^^ IdentifierFunction
-//                        ^ PunctuationBracket
-//                         ^^^ NumericLiteral
-//                            ^ IdentifierKeyword
-//                             ^ PunctuationBracket
-//                               ^^^ NumericLiteral
-//                                  ^ IdentifierKeyword
-//                                   ^ PunctuationBracket
-//                                    ^ PunctuationDelimiter
+//    ^^^^^^^^^ IdentifierType  support.type.property-name.css
+//             ^ PunctuationBracket  punctuation.separator.key-value.css
+//               ^^^^^^^^^ IdentifierFunction  support.function.transform.css
+//                        ^ PunctuationBracket  punctuation.definition.group.begin.css
+//                         ^^^ NumericLiteral  keyword.other.unit.css
+//                            ^ IdentifierKeyword  keyword.other.unit.css
+//                             ^ PunctuationBracket  punctuation.separator.sequence.css
+//                               ^^^ NumericLiteral  keyword.other.unit.css
+//                                  ^ IdentifierKeyword  keyword.other.unit.css
+//                                   ^ PunctuationBracket  punctuation.definition.group.end.css
+//                                    ^ PunctuationDelimiter  punctuation.terminator.rule.css
       position: absolute;
-//    ^^^^^^^^ IdentifierType
-//            ^ PunctuationBracket
-//                      ^ PunctuationDelimiter
+//    ^^^^^^^^ IdentifierType  support.type.property-name.css
+//            ^ PunctuationBracket  punctuation.separator.key-value.css
+//                      ^ PunctuationDelimiter  punctuation.terminator.rule.css
       top: 50%;
-//    ^^^ IdentifierType
-//       ^ PunctuationBracket
-//         ^^ NumericLiteral
-//           ^ IdentifierKeyword
-//            ^ PunctuationDelimiter
+//    ^^^ IdentifierType  support.type.property-name.css
+//       ^ PunctuationBracket  punctuation.separator.key-value.css
+//         ^^ NumericLiteral  keyword.other.unit.css
+//           ^ IdentifierKeyword  keyword.other.unit.css
+//            ^ PunctuationDelimiter  punctuation.terminator.rule.css
       margin: 0;
-//    ^^^^^^ IdentifierType
-//          ^ PunctuationBracket
-//            ^ NumericLiteral
-//             ^ PunctuationDelimiter
+//    ^^^^^^ IdentifierType  support.type.property-name.css
+//          ^ PunctuationBracket  punctuation.separator.key-value.css
+//            ^ NumericLiteral  constant.numeric.integer.decimal.css
+//             ^ PunctuationDelimiter  punctuation.terminator.rule.css
       left: 50%;
-//    ^^^^ IdentifierType
-//        ^ PunctuationBracket
-//          ^^ NumericLiteral
-//            ^ IdentifierKeyword
-//             ^ PunctuationDelimiter
+//    ^^^^ IdentifierType  support.type.property-name.css
+//        ^ PunctuationBracket  punctuation.separator.key-value.css
+//          ^^ NumericLiteral  keyword.other.unit.css
+//            ^ IdentifierKeyword  keyword.other.unit.css
+//             ^ PunctuationDelimiter  punctuation.terminator.rule.css
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.property-list.css
 

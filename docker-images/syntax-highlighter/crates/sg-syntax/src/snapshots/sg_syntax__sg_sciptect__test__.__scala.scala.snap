@@ -3,63 +3,67 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   package foobar
-//^^^^^^^ IdentifierKeyword
+//^^^^^^^ IdentifierKeyword  keyword.control.scala
+//        ^^^^^^ Identifier  entity.name.namespace.header.scala
   
   case class Foo(x: Int) extends AnyVal
-//^^^^^ IdentifierType
-//     ^^^^^ IdentifierType
-//              ^ PunctuationBracket
-//               ^ Identifier
-//                ^ PunctuationBracket
-//                  ^^^ IdentifierType
-//                     ^ PunctuationBracket
-//                       ^^^^^^^ IdentifierKeyword
+//^^^^^ IdentifierType  storage.type.class.scala
+//     ^^^^^ IdentifierType  storage.type.class.scala
+//          ^^^^ Identifier  entity.name.class.scala
+//              ^ PunctuationBracket  punctuation.section.group.begin.scala
+//               ^ Identifier  variable.parameter.scala
+//                ^ PunctuationBracket  punctuation.ascription.scala
+//                  ^^^ IdentifierType  storage.type.primitive.scala
+//                     ^ PunctuationBracket  punctuation.section.group.end.scala
+//                       ^^^^^^^ IdentifierKeyword  keyword.declaration.scala
+//                               ^^^^^^ Identifier  entity.other.inherited-class.scala
   object Foo {
-//^^^^^^ IdentifierType
-//           ^ PunctuationBracket
+//^^^^^^ IdentifierType  storage.type.class.scala
+//      ^^^^ Identifier  entity.name.class.scala
+//           ^ PunctuationBracket  punctuation.section.braces.begin.scala
     val x = 42
-//  ^^^ IdentifierType
-//      ^ Identifier
-//        ^ IdentifierOperator
-//          ^^ NumericLiteral
+//  ^^^ IdentifierType  storage.type.stable.scala
+//      ^ Identifier  variable.other.constant.scala
+//        ^ IdentifierOperator  keyword.operator.assignment.scala
+//          ^^ NumericLiteral  constant.numeric.integer.decimal.scala
     val y = 42.0
-//  ^^^ IdentifierType
-//      ^ Identifier
-//        ^ IdentifierOperator
-//          ^^ NumericLiteral
-//            ^ PunctuationBracket
-//             ^ NumericLiteral
+//  ^^^ IdentifierType  storage.type.stable.scala
+//      ^ Identifier  variable.other.constant.scala
+//        ^ IdentifierOperator  keyword.operator.assignment.scala
+//          ^^ NumericLiteral  punctuation.separator.decimal.scala
+//            ^ PunctuationBracket  punctuation.separator.decimal.scala
+//             ^ NumericLiteral  constant.numeric.float.decimal.scala
     val z = s"hello $x" + "hello world"
-//  ^^^ IdentifierType
-//      ^ Identifier
-//        ^ IdentifierOperator
-//          ^ IdentifierFunction
-//           ^^^^^^^ StringLiteral
-//                  ^ Identifier
-//                   ^ Identifier
-//                    ^ StringLiteral
-//                        ^^^^^^^^^^^^^ StringLiteral
+//  ^^^ IdentifierType  storage.type.stable.scala
+//      ^ Identifier  variable.other.constant.scala
+//        ^ IdentifierOperator  keyword.operator.assignment.scala
+//          ^ IdentifierFunction  support.function.scala
+//           ^^^^^^^ StringLiteral  string.quoted.interpolated.scala
+//                  ^ Identifier  variable.other.scala
+//                   ^ Identifier  variable.other.scala
+//                    ^ StringLiteral  string.quoted.interpolated.scala
+//                        ^^^^^^^^^^^^^ StringLiteral  string.quoted.double.scala
     def main(args: Array[String]): Unit = {
-//  ^^^ IdentifierType
-//      ^^^^ IdentifierFunction
-//          ^ PunctuationBracket
-//           ^^^^ Identifier
-//               ^ PunctuationBracket
-//                 ^^^^^ IdentifierType
-//                      ^ PunctuationBracket
-//                       ^^^^^^ IdentifierType
-//                             ^ PunctuationBracket
-//                              ^ PunctuationBracket
-//                               ^ PunctuationBracket
-//                                 ^^^^ IdentifierType
-//                                      ^ IdentifierOperator
-//                                        ^ PunctuationBracket
+//  ^^^ IdentifierType  storage.type.function.scala
+//      ^^^^ IdentifierFunction  entity.name.function.scala
+//          ^ PunctuationBracket  punctuation.section.group.begin.scala
+//           ^^^^ Identifier  variable.parameter.scala
+//               ^ PunctuationBracket  punctuation.ascription.scala
+//                 ^^^^^ IdentifierType  support.class.scala
+//                      ^ PunctuationBracket  punctuation.definition.generic.begin.scala
+//                       ^^^^^^ IdentifierType  support.class.scala
+//                             ^ PunctuationBracket  punctuation.definition.generic.end.scala
+//                              ^ PunctuationBracket  punctuation.section.group.end.scala
+//                               ^ PunctuationBracket  punctuation.ascription.scala
+//                                 ^^^^ IdentifierType  storage.type.primitive.scala
+//                                      ^ IdentifierOperator  keyword.operator.assignment.scala
+//                                        ^ PunctuationBracket  punctuation.section.block.begin.scala
       println(args.toList)
-//           ^ PunctuationBracket
-//                ^ PunctuationBracket
-//                       ^ PunctuationBracket
+//           ^ PunctuationBracket  punctuation.section.group.begin.scala
+//                ^ PunctuationBracket  punctuation.accessor.scala
+//                       ^ PunctuationBracket  punctuation.section.group.end.scala
     }
-//  ^ PunctuationBracket
+//  ^ PunctuationBracket  punctuation.section.block.end.scala
   }
-//^ PunctuationBracket
+//^ PunctuationBracket  punctuation.section.braces.end.scala
 
