@@ -273,24 +273,6 @@
 
 /admin/deploy/managed /cloud 308
 
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-/code_intelligence /code_navigation 308
-
 /code_intelligence/explanations/writing_an_indexer /code_navigation/explanations/writing_an_indexer 308
 /code_intelligence/explanations/auto_indexing_inference /code_navigation/explanations/auto_indexing_inference 308
 /code_intelligence/explanations/auto_indexing /code_navigation/explanations/auto_indexing 308
