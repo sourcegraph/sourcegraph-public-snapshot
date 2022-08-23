@@ -19,6 +19,7 @@ import (
 )
 
 var _ graphqlbackend.InsightsResolver = &Resolver{}
+var _ graphqlbackend.InsightsAggregationResolver = &AggregationResolver{}
 
 // baseInsightResolver is a "super" resolver for all other insights resolvers. Since insights interacts with multiple
 // database and multiple Stores, this is a convenient way to propagate those stores without having to drill individual
