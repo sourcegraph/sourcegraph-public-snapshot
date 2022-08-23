@@ -1,6 +1,7 @@
 package querybuilder
 
 import (
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,12 +25,20 @@ func searchTypeFromString(pt string) query.SearchType {
 	return searchType
 }
 
-func ParseAndValidateQuery(q string, patternType string) (query.Plan, error) {
+func ParseQuery(q string, patternType string) (query.Plan, error) {
 	plan, err := query.Pipeline(query.Init(q, searchTypeFromString(patternType)))
 	if err != nil {
-		return nil, errors.Wrapf(err, "Pipeline")
+		return nil, errors.Wrap(err, "query.Pipeline")
 	}
 	return plan, nil
+}
+
+func ParseComputeQuery(q string) (*compute.Query, error) {
+	computeQuery, err := compute.Parse(q)
+	if err != nil {
+		return nil, errors.Wrap(err, "compute.Parse")
+	}
+	return computeQuery, nil
 }
 
 // ParametersFromQueryPlan expects a valid query plan and returns all parameters from it, e.g. context:global.

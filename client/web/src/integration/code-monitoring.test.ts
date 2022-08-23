@@ -100,6 +100,7 @@ describe('Code monitoring', () => {
             }),
         })
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
+        testContext.overrideJsContext({ emailEnabled: true })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
