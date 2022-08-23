@@ -25,7 +25,7 @@ export function transformSearchQuery({
     // We apply any non-extension transform before we send the query to the
     // extensions since we want these to take presedence over the extensions.
     if (enableGoImportsSearchQueryTransform === undefined || enableGoImportsSearchQueryTransform) {
-        query = goImportsTransformer(query)
+        query = goImportsTransform(query)
     }
 
     if (extensionHostAPIPromise === null) {
@@ -61,7 +61,7 @@ export function transformSearchQuery({
     )
 }
 
-function goImportsTransformer(query: string): string {
+function goImportsTransform(query: string): string {
     const goImportsRegex = /\bgo.imports:(\S*)/
     if (query.match(goImportsRegex)) {
         // Get package name
