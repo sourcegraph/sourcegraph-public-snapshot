@@ -5,25 +5,25 @@ import (
 	"testing"
 )
 
-func TestRepoContainsPredicate(t *testing.T) {
+func TestRepoContainsFilePredicate(t *testing.T) {
 	t.Run("ParseParams", func(t *testing.T) {
 		type test struct {
 			name     string
 			params   string
-			expected *RepoContainsPredicate
+			expected *RepoContainsFilePredicate
 		}
 
 		valid := []test{
-			{`file`, `file:test`, &RepoContainsPredicate{File: "test"}},
-			{`file regex`, `file:test(a|b)*.go`, &RepoContainsPredicate{File: "test(a|b)*.go"}},
-			{`content`, `content:test`, &RepoContainsPredicate{Content: "test"}},
-			{`file and content`, `file:test.go content:abc`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
-			{`content and file`, `content:abc file:test.go`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
+			{`path`, `path:test`, &RepoContainsFilePredicate{Path: "test"}},
+			{`path regex`, `path:test(a|b)*.go`, &RepoContainsFilePredicate{Path: "test(a|b)*.go"}},
+			{`content`, `content:test`, &RepoContainsFilePredicate{Content: "test"}},
+			{`path and content`, `path:test.go content:abc`, &RepoContainsFilePredicate{Path: "test.go", Content: "abc"}},
+			{`content and path`, `content:abc path:test.go`, &RepoContainsFilePredicate{Path: "test.go", Content: "abc"}},
 		}
 
 		for _, tc := range valid {
 			t.Run(tc.name, func(t *testing.T) {
-				p := &RepoContainsPredicate{}
+				p := &RepoContainsFilePredicate{}
 				err := p.ParseParams(tc.params)
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
@@ -37,16 +37,16 @@ func TestRepoContainsPredicate(t *testing.T) {
 
 		invalid := []test{
 			{`empty`, ``, nil},
-			{`negated file`, `-file:test`, nil},
+			{`negated path`, `-path:test`, nil},
 			{`negated content`, `-content:test`, nil},
 			{`unsupported syntax`, `abc:test`, nil},
 			{`unnamed content`, `test`, nil},
-			{`catch invalid content regexp`, `file:foo content:([)`, nil},
+			{`catch invalid content regexp`, `path:foo content:([)`, nil},
 		}
 
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
-				p := &RepoContainsPredicate{}
+				p := &RepoContainsFilePredicate{}
 				err := p.ParseParams(tc.params)
 				if err == nil {
 					t.Fatal("expected error but got none")

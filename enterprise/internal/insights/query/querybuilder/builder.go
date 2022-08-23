@@ -235,7 +235,7 @@ func IsSingleRepoQuery(query BasicQuery) (bool, error) {
 	return true, nil
 }
 
-func addAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
+func AddAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", err
@@ -266,11 +266,11 @@ func addAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
 
-func addRepoFilter(query BasicQuery, repo string) (BasicQuery, error) {
+func AddRepoFilter(query BasicQuery, repo string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldRepo, repo)
 }
 
-func addFileFilter(query BasicQuery, file string) (BasicQuery, error) {
+func AddFileFilter(query BasicQuery, file string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldFile, file)
 }
 

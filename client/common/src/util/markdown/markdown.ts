@@ -124,8 +124,6 @@ export const renderMarkdown = (
                 img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height', 'align', 'style'],
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
                 source: ['srcset', 'media'],
-                // Support SVGs for code insights.
-                object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
                 svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
                 rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
                 path: ['d', ...svgPresentationAttributes],
