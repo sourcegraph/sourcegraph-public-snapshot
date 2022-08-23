@@ -1011,7 +1011,7 @@ tests:
 
   client-regression:
     preamble: |
-      A Sourcegraph isntance must be already running for these tests to work, most
+      A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-regression-tests
