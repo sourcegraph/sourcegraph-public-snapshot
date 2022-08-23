@@ -2,8 +2,6 @@ package aggregation
 
 import (
 	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
@@ -151,7 +149,13 @@ func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
 				for _, range_ := range cm.Ranges {
 					content := chunkContent(cm, range_)
 					for _, submatches := range regexp.FindAllStringSubmatchIndex(content, -1) {
-						groups = append(groups, fromRegexpMatches(submatches, regexp.SubexpNames(), content, range_))
+						value := fromRegexpMatches(submatches, regexp.SubexpNames(), content, range_)
+						textResult, err := toTextResult(content, &Regexp{Value: regexp}, "$1", "\n", "")
+						if err != nil {
+							return MatchKey{}, 0, errors.Wrap(err, "toTextResult")
+						}
+						value.Value = textResult
+						groups = append(groups, value)
 					}
 				}
 			}
@@ -231,99 +235,5 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	}
 	for key, count := range combined {
 		r.tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)
-	}
-}
-
-func substituteRegexp(content string, match *regexp.Regexp, replacePattern, separator string) string {
-	var b strings.Builder
-	for _, submatches := range match.FindAllStringSubmatchIndex(content, -1) {
-		b.Write(match.ExpandString([]byte{}, replacePattern, content, submatches))
-		b.WriteString(separator)
-	}
-	return b.String()
-}
-
-type Match struct {
-	Value       string      `json:"value"`
-	Range       Range       `json:"range"`
-	Environment Environment `json:"environment"`
-}
-
-type Range struct {
-	Start Location `json:"start"`
-	End   Location `json:"end"`
-}
-
-type Environment map[string]Data
-
-type Location struct {
-	Offset int `json:"offset"`
-	Line   int `json:"line"`
-	Column int `json:"column"`
-}
-
-type Data struct {
-	Value string `json:"value"`
-	Range Range  `json:"range"`
-}
-
-func chunkContent(c result.ChunkMatch, r result.Range) string {
-	// Set range relative to the start of the content.
-	rr := r.Sub(c.ContentStart)
-	return c.Content[rr.Start.Offset:rr.End.Offset]
-}
-
-func fromRegexpMatches(submatches []int, namedGroups []string, content string, range_ result.Range) Match {
-	env := make(Environment)
-	var firstValue string
-	var firstRange Range
-	// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
-	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
-	for j := 0; j < len(submatches); j += 2 {
-		start := submatches[j]
-		end := submatches[j+1]
-		if start == -1 || end == -1 {
-			// The entire regexp matched, but a capture
-			// group inside it did not. Ignore this entry.
-			continue
-		}
-		value := content[start:end]
-		captureRange := newRange(range_.Start.Offset+start, range_.Start.Offset+end)
-
-		if j == 0 {
-			// The first submatch is the overall match
-			// value. Don’t add this to the Environment
-			firstValue = value
-			firstRange = captureRange
-			continue
-		}
-
-		var v string
-		if namedGroups[j/2] == "" {
-			v = strconv.Itoa(j / 2)
-		} else {
-			v = namedGroups[j/2]
-		}
-		env[v] = Data{Value: value, Range: captureRange}
-	}
-	return Match{Value: firstValue, Range: firstRange, Environment: env}
-}
-
-type Regexp struct {
-	Value *regexp.Regexp
-}
-
-func newRange(startOffset, endOffset int) Range {
-	return Range{
-		Start: newLocation(-1, -1, startOffset),
-		End:   newLocation(-1, -1, endOffset),
-	}
-}
-
-func newLocation(line, column, offset int) Location {
-	return Location{
-		Offset: offset,
-		Line:   line,
-		Column: column,
 	}
 }
