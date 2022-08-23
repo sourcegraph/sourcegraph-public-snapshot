@@ -6368,6 +6368,20 @@ type AnalyticsCodeIntelByLanguageResult {
 }
 
 """
+CodeIntelTopRepositories analytics.
+"""
+type AnalyticsCodeIntelRepositoryResult {
+    """
+    Repository name
+    """
+    name: String!
+    """
+    Event count
+    """
+    events: Float!
+}
+
+"""
 Repositories summary.
 """
 type AnalyticsReposSummartResult {
@@ -6438,6 +6452,10 @@ type Analytics {
     Code-intelligence statistics grouped by language and precision.
     """
     codeIntelByLanguage(dateRange: AnalyticsDateRange): [AnalyticsCodeIntelByLanguageResult!]!
+    """
+    Top repositories by code-intelligence events.
+    """
+    codeIntelTopRepositories(dateRange: AnalyticsDateRange): [AnalyticsCodeIntelRepositoryResult!]!
     """
     Repositories summary statistics.
     """

@@ -303,22 +303,24 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         </div>
                     )}
                     <H4 className="my-3">Top repositories</H4>
-                    <div className={styles.repos}>
-                        <div className="text-muted text-nowrap">{/* Repository */}</div>
-                        <div className="text-center text-muted text-nowrap">Events</div>
-                        <div className="text-center text-muted text-nowrap">Hours saved</div>
-                        <div className="text-center text-muted text-nowrap">Precise enabled</div>
-                        <div className="text-muted text-nowrap">Precise navigation</div>
-                        {topRepos.map((repo, index) => (
-                            <React.Fragment key={index}>
-                                <td className="text-muted">{repo.name}</td>
-                                <td className="text-center font-weight-bold">{formatNumber(repo.events)}</td>
-                                <td className="text-center font-weight-bold">{repo.hoursSaved}</td>
-                                <td className="text-center font-weight-bold">{repo.preciseEnabled ? 'Yes' : 'No'}</td>
-                                <td>{repo.preciseNavigation}</td>
-                            </React.Fragment>
-                        ))}
-                    </div>
+                    {data && (
+                        <div className={styles.repos}>
+                            <div className="text-muted text-nowrap">{/* Repository */}</div>
+                            <div className="text-center text-muted text-nowrap">Events</div>
+                            <div className="text-center text-muted text-nowrap">Hours saved</div>
+                            <div className="text-center text-muted text-nowrap">Precise enabled</div>
+                            <div className="text-muted text-nowrap">Precise navigation</div>
+                            {data.site.analytics.codeIntelTopRepositories.map((repo, index) => (
+                                <React.Fragment key={index}>
+                                    <td className="text-muted">{repo.name}</td>
+                                    <td className="text-center font-weight-bold">{formatNumber(repo.events)}</td>
+                                    <td className="text-center font-weight-bold">TODO</td>
+                                    <td className="text-center font-weight-bold">TODO</td>
+                                    <td>TODO</td>
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </Card>
             <Text className="font-italic text-center mt-2">

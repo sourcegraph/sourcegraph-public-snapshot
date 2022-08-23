@@ -60,6 +60,10 @@ export const CODEINTEL_STATISTICS = gql`
                     precision
                     count
                 }
+                codeIntelTopRepositories(dateRange: $dateRange) {
+                    name
+                    events
+                }
             }
         }
     }
