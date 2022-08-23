@@ -8,6 +8,14 @@ $input-font-size-sm: (11/14) + em;
 
 // Spacer
 $spacer: 1rem;
+$spacers: (
+    0: 0,
+    1: $spacer * 0.25,
+    2: $spacer * 0.5,
+    3: $spacer,
+    4: $spacer * 1.5,
+    5: $spacer * 3,
+);
 
 :root {
     --spacer: #{$spacer};
