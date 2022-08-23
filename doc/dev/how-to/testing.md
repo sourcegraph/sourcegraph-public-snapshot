@@ -314,7 +314,7 @@ Also, you can also run tests selectively with a command like `yarn run test:regr
 
 ##### Fixing authentication issues
 
-If you run into authentication issues, **create a user and promote it site admin**:
+If you run into authentication issues, **create a user and promote it to site admin**:
 
 ```
 sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
