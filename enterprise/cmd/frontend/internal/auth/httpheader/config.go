@@ -49,9 +49,6 @@ func Init() {
 	}()
 }
 
-func init() {
-}
-
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 	var httpHeaderAuthProviders int
 	for _, p := range c.SiteConfig().AuthProviders {
