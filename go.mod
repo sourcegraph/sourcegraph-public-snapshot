@@ -466,7 +466,7 @@ replace (
 // These entries indicate replace directives that are defined for unknown reasons.
 replace (
 	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220823152446-2c07cbc4e718
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220823183744-af1710b9120e
 	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
 	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d

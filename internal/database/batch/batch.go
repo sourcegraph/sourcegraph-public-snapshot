@@ -7,9 +7,7 @@ import (
 	"sync"
 
 	"github.com/opentracing/opentracing-go/log"
-	// There is an initialization issue happening here, without this, time will be the local TZ
-	// not UTC. This is rather concerning.
-	_ "github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -221,7 +219,7 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 	// Create a query with enough placeholders to match the current batch size. This should
 	// generally be the full querySuffix string, except for the last call to Flush which
 	// may be a partial batch.
-	rows, err := i.db.QueryContext(ctx, i.makeQuery(len(batch)), batch...)
+	rows, err := i.db.QueryContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...)
 	if err != nil {
 		return err
 	}

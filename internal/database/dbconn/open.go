@@ -174,7 +174,14 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
 			OmitConnResetSession: true,
 		}),
-		otelsql.WithArgumentsAttributes(otelsql.ArgumentsOptions{EnableAttributes: true}),
+		otelsql.WithArgumentsAttributes(
+			otelsql.ArgumentOptions{
+				EnableAttributes: true,
+				Skip: func(ctx context.Context, query string, args []any) bool {
+					// Do not decorate span with args as attributes if that's a bulk insertion
+					// or if we have too many args (it's unreadable anyway).
+					return bulkInsertion(ctx) || len(args) > 24
+				}}),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "postgresql open")
