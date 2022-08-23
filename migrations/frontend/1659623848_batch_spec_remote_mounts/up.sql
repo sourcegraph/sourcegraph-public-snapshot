@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS batch_spec_mounts
     filename      text                                   NOT NULL,
     path          text                                   NOT NULL,
     size          bigint                                 NOT NULL,
-    modified      timestamp with time zone               NOT NULL,
+    content       bytea                                  NOT NULL,
+    modified_at   timestamp with time zone               NOT NULL,
     created_at    timestamp with time zone DEFAULT now() NOT NULL,
     updated_at    timestamp with time zone DEFAULT now() NOT NULL
 );
