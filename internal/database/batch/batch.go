@@ -7,6 +7,9 @@ import (
 	"sync"
 
 	"github.com/opentracing/opentracing-go/log"
+	// There is an initialization issue happening here, without this, time will be the local TZ
+	// not UTC. This is rather concerning.
+	_ "github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
