@@ -589,8 +589,15 @@ func (s *Syncer) SyncExternalService(
 	seen := make(map[api.RepoID]struct{})
 	var errs error
 	fatal := func(err error) bool {
+
 		// If the error is just a warning, then it is not fatal.
-		if errors.IsWarning(err) && !errcode.IsAccountSuspended(err) {
+		if errors.IsWarning(err) {
+			baseError := errors.Unwrap(err)
+			// Account suspended is the only base error in a warning
+			// that is considered fatal.
+			if errcode.IsAccountSuspended(baseError) {
+				return true
+			}
 			return false
 		}
 
@@ -608,8 +615,8 @@ func (s *Syncer) SyncExternalService(
 
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
 			if fatal(err) {
-				// Delete all external service repos of this external service
-				logger.Error("stopping external service sync due to fatal error from codehost", log.Error(err))
+				// Clear all seen repos of this external service and stop the sync.
+				logger.Error(fmt.Sprintf("stopping external service sync for: %s due to fatal error from codehost", svc.DisplayName), log.Error(err))
 				seen = map[api.RepoID]struct{}{}
 				break
 			}
@@ -636,7 +643,6 @@ func (s *Syncer) SyncExternalService(
 
 			continue
 		}
-
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}
 		}
@@ -676,10 +682,19 @@ func (s *Syncer) SyncExternalService(
 	abortDeletion := false
 	if errs != nil {
 		var ref errors.MultiError
-		errors.As(errs, &ref)
-		for _, e := range ref.Errors() {
-			if !errors.IsWarning(e) && !(errcode.IsForbidden(e) || errcode.IsUnauthorized(e)) {
+		if errors.As(errs, &ref) {
+			for _, e := range ref.Errors() {
+				if errors.IsWarning(e) {
+					baseError := errors.Unwrap(e)
+					logger.Info(fmt.Sprintf("iswarning unauthed: %+v, error: %+v", errcode.IsUnauthorized(baseError), baseError))
+					if !errcode.IsForbidden(baseError) && !errcode.IsUnauthorized(baseError) {
+						abortDeletion = true
+						break
+					}
+					continue
+				}
 				abortDeletion = true
+				break
 			}
 		}
 	}
