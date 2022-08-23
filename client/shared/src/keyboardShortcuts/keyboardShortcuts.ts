@@ -9,6 +9,7 @@ type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'focusSearch'
     | 'fuzzyFinder'
     | 'copyFullQuery'
+    | 'searchCodeMirrorBlob'
 
 export type KEYBOARD_SHORTCUT_MAPPING = Record<KEYBOARD_SHORTCUT_IDENTIFIERS, KeyboardShortcut>
 
@@ -38,5 +39,9 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
     copyFullQuery: {
         title: 'Copy full query',
         keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control', 'Shift'], ordered: ['c'] }],
+    },
+    searchCodeMirrorBlob: {
+        title: 'Search in the current file',
+        keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control'], ordered: ['f'] }],
     },
 }

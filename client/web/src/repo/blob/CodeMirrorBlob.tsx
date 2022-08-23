@@ -4,13 +4,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { search, searchKeymap } from '@codemirror/search'
+import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
+import { Shortcut } from '@slimsag/react-shortcuts'
 import { isEqual } from 'lodash'
 
 import { addLineRangeQueryParameter, LineOrPositionOrRange, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
@@ -202,12 +204,21 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         updateValueOnChange: false,
         updateOnExtensionChange: false,
     })
+    const editorRef = useRef(editor)
+    editorRef.current = editor
 
     useEffect(() => {
         if (editor) {
             setCallbacks(editor, { onHandleFuzzyFinder })
         }
     }, [editor, onHandleFuzzyFinder])
+
+    const searchInFileShortcut = useKeyboardShortcut('searchCodeMirrorBlob')
+    const searchInFileCallback = useCallback(() => {
+        if (editorRef.current) {
+            openSearchPanel(editorRef.current)
+        }
+    }, [])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -278,7 +289,14 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position, hasPin])
 
-    return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
+    return (
+        <>
+            <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
+            {searchInFileShortcut?.keybindings.map(keybinding => (
+                <Shortcut key="shortcut-searchCodeMirrorBlob" {...keybinding} onMatch={searchInFileCallback} />
+            ))}
+        </>
+    )
 }
 
 /**
