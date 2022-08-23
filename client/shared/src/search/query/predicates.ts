@@ -38,7 +38,8 @@ export const PREDICATES: Access[] = [
                         fields: [{ name: 'after' }],
                     },
                     { name: 'description' },
-                    { name: 'tag' }],
+                    { name: 'tag' },
+                ],
             },
         ],
     },
@@ -173,7 +174,7 @@ export const predicateCompletion = (field: string): Completion[] => {
                 asSnippet: true,
             },
             {
-                label:'has.file(...)',
+                label: 'has.file(...)',
                 insertText: 'has.file(path:${1:CHANGELOG} content:${2:fix})',
                 asSnippet: true,
             },
