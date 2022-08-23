@@ -81,59 +81,59 @@ func newEventMatch(event result.Match) *eventMatch {
 	}
 }
 
-type AggregationCountFunc func(result.Match) (MatchKey, int, error)
+type AggregationCountFunc func(result.Match) (map[MatchKey]int, error)
 type MatchKey struct {
 	Repo   string
 	RepoID int32
 	Group  string
 }
 
-func countRepo(r result.Match) (MatchKey, int, error) {
+func countRepo(r result.Match) (map[MatchKey]int, error) {
 	match := newEventMatch(r)
 	if match.Repo != "" {
-		return MatchKey{
+		return map[MatchKey]int{{
 			RepoID: match.RepoID,
 			Repo:   match.Repo,
 			Group:  match.Repo,
-		}, match.ResultCount, nil
+		}: match.ResultCount}, nil
 	}
-	return MatchKey{}, 0, nil
+	return nil, nil
 }
 
-func countLang(r result.Match) (MatchKey, int, error) {
+func countLang(r result.Match) (map[MatchKey]int, error) {
 	match := newEventMatch(r)
 	if match.Lang != "" {
-		return MatchKey{
+		return map[MatchKey]int{{
 			RepoID: match.RepoID,
 			Repo:   match.Repo,
 			Group:  match.Lang,
-		}, match.ResultCount, nil
+		}: match.ResultCount}, nil
 	}
-	return MatchKey{}, 0, nil
+	return nil, nil
 }
 
-func countPath(r result.Match) (MatchKey, int, error) {
+func countPath(r result.Match) (map[MatchKey]int, error) {
 	match := newEventMatch(r)
 	if match.Path != "" {
-		return MatchKey{
+		return map[MatchKey]int{{
 			RepoID: match.RepoID,
 			Repo:   match.Repo,
 			Group:  match.Path,
-		}, match.ResultCount, nil
+		}: match.ResultCount}, nil
 	}
-	return MatchKey{}, 0, nil
+	return nil, nil
 }
 
-func countAuthor(r result.Match) (MatchKey, int, error) {
+func countAuthor(r result.Match) (map[MatchKey]int, error) {
 	match := newEventMatch(r)
 	if match.Author != "" {
-		return MatchKey{
+		return map[MatchKey]int{{
 			RepoID: match.RepoID,
 			Repo:   match.Repo,
 			Group:  match.Author,
-		}, match.ResultCount, nil
+		}: match.ResultCount}, nil
 	}
-	return MatchKey{}, 0, nil
+	return nil, nil
 }
 
 func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
@@ -141,7 +141,7 @@ func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
 	if err != nil {
 		return nil, errors.New("Could not compile regexp")
 	}
-	return func(r result.Match) (MatchKey, int, error) {
+	return func(r result.Match) (map[MatchKey]int, error) {
 		match := newEventMatch(r)
 		if len(match.ChunkMatches) != 0 {
 			var textResult string
@@ -150,23 +150,27 @@ func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
 					content := chunkContent(cm, range_)
 					textResult, err = toTextResult(content, &Regexp{Value: regexp}, "$1", "\n", "")
 					if err != nil {
-						return MatchKey{}, 0, errors.Wrap(err, "toTextResult")
+						return nil, errors.Wrap(err, "toTextResult")
 					}
 				}
 			}
 			if textResult != "" {
-				return MatchKey{
+				return map[MatchKey]int{{
 					RepoID: match.RepoID,
 					Repo:   match.Repo,
-					Group:  textResult,
-				}, match.ResultCount, nil
+					Group:  match.Repo,
+				}: match.ResultCount}, nil
 			}
 		}
-		return MatchKey{}, 0, nil
+		return nil, nil
 	}, nil
 }
 
 func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
+
+	//TODO: this is the entire query, capture group piece needs just the query pattern
+	// parse and extract only whats needed.
+	// pattern may need to be modified based on case yes/no
 	captureGroupsCount, err := countCaptureGroupsFunc(query)
 	if err != nil {
 		return nil, err
@@ -213,17 +217,19 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	r.progress.Update(event)
 	combined := map[MatchKey]int{}
 	for _, match := range event.Results {
-		key, count, err := r.countFunc(match)
-		// delegate error handling to the passed in tabulator
-		if err != nil {
-			r.tabulator(nil, err)
-			continue
+		groups, err := r.countFunc(match)
+		for groupKey, count := range groups {
+			// delegate error handling to the passed in tabulator
+			if err != nil {
+				r.tabulator(nil, err)
+				continue
+			}
+			if groups == nil {
+				continue
+			}
+			current, _ := combined[groupKey]
+			combined[groupKey] = current + count
 		}
-		if count == 0 {
-			continue
-		}
-		current, _ := combined[key]
-		combined[key] = current + count
 	}
 	for key, count := range combined {
 		r.tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)
