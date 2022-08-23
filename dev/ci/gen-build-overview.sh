@@ -16,14 +16,22 @@ PR() {
 PR_LINK=$(PR)
 
 cat <<-EOF> ./annotations/Build\ overview.md
-Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`\n
-Retry count: \`${BUILDKITE_RETRY_COUNT}\`\n
-Pipeline: ${BUILDKITE_PIPELINE_SLUG}\n
-Author: \`${BUILDKITE_BUILD_AUTHOR}\`\n
-Branch: \`${BUILDKITE_BRANCH}\`\n
-Commit: \`${BUILDKITE_COMMIT}\`\n
-\`\`\`${BUILDKITE_MESSAGE}\`\`\`\n
 ${PR_LINK}
+
+Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`\n
+
+Retry count: \`${BUILDKITE_RETRY_COUNT}\`\n
+
+Pipeline: ${BUILDKITE_PIPELINE_SLUG}\n
+
+Author: \`${BUILDKITE_BUILD_AUTHOR}\`\n
+
+Branch: \`${BUILDKITE_BRANCH}\`\n
+
+Commit: \`${BUILDKITE_COMMIT}\`\n
+
+\`\`\`${BUILDKITE_MESSAGE}\`\`\`\n
+
 Agent: \`${BUILDKITE_AGENT_NAME}\`\n
 EOF
 
