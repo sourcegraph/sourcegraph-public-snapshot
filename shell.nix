@@ -96,4 +96,6 @@ pkgs.mkShell {
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+
+  DEV_WEB_BUILDER = "esbuild";
 }
