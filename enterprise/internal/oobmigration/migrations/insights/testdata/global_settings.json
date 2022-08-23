@@ -1,0 +1,727 @@
+{
+  // Experimental features
+  "experimentalFeatures": {
+    "codeInsightsAllRepos": true,
+    "codeInsights": true
+  },
+  "searchInsights.insight.globalFunc": {
+    "title": "GLOBAL func",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "global Insights",
+        "stroke": "var(--oc-grape-7)",
+        "query": "func"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "insights.dashboards": {
+    "customGlobalDashboard": {
+      "id": "f19552ff-46ea-4e8e-afcb-3bfa4b36e6f3",
+      "title": "Custom global dashboard",
+      "insightIds": [
+        "searchInsights.insight.globalFunc",
+        "searchInsights.insight.terraformFunkySymbolsTest",
+        "searchInsights.insight.checkupTodoAndTodTestingTitleChanged",
+        "searchInsights.insight.copyOfTerraformFunkySymbolsNewView",
+        "searchInsights.insight.test234Changed"
+      ]
+    },
+    "jdbGlobalRegressionTesting": {
+      "id": "d6b5695d-2d51-46ee-b1c3-bf865b26ac65",
+      "title": "JDB Global Regression Testing",
+      "insightIds": [
+        "searchInsights.insight.joelkwOffsetTest"
+      ]
+    },
+    "rfc487HexagonalGitserver": {
+      "id": "8c36c15e-d9ff-422a-a8ab-89a0818b0d54",
+      "title": "RFC 487: Hexagonal Gitserver",
+      "insightIds": [
+        "searchInsights.insight.removingRawCommands"
+      ]
+    },
+    "readmeExample": {
+      "id": "efacc342-c41b-489a-9406-240098ea5551",
+      "title": "Readme example",
+      "insightIds": [
+        "searchInsights.insight.readmesAndReadmesThatAreComplete"
+      ]
+    }
+  },
+  "insights.allrepos": {
+    "searchInsights.insight.testingJoelkwWithACountAllToMakeSureItWorks": {
+      "title": "Testing joelkw with a count:all to make sure it works ",
+      "series": [
+        {
+          "name": "joelkw but count:all",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "joelkw count:all"
+        }
+      ]
+    },
+    "searchInsights.insight.test12QueryJesteCountAllExpectedPresentDay119KResuls": {
+      "title": "[Test 1.2] query: \"jeste count:all\" expected present day 11.9k resuls",
+      "series": [
+        {
+          "name": "jeste count:all",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "jeste count:all"
+        }
+      ]
+    },
+    "searchInsights.insight.test13QueryJesteRepoExpectedPresentDay119KResuls": {
+      "title": "[Test 1.3] query: \"jeste repo:.\" expected present day 11.9k resuls",
+      "series": [
+        {
+          "name": "jeste repo:.",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "jeste repo:."
+        }
+      ]
+    },
+    "searchInsights.insight.test14QueryJesteCountAllRepoExpected119KResults": {
+      "title": "[Test 1.4] query:\"jeste count:all repo:.\" expected 11.9k results",
+      "series": [
+        {
+          "name": "jeste count:all repo:.",
+          "stroke": "var(--oc-orange-7)",
+          "query": "jeste count:all repo:."
+        }
+      ]
+    },
+    "searchInsights.insight.joelkwResultsButFilteredJustToSourcegraphSourcegraph": {
+      "title": "joelkw results but filtered just to sourcegraph/sourcegraph$",
+      "series": [
+        {
+          "name": "joelkw results",
+          "stroke": "var(--oc-grape-7)",
+          "query": "joelkw repo:sourcegraph/sourcegraph$"
+        }
+      ]
+    },
+    "searchInsights.insight.test15QueryJestFileExpectedResultsNear273KOrSo": {
+      "title": "[Test 1.5] query:\"jest file:.\" expected results near 273k or so",
+      "series": [
+        {
+          "name": "jest file:.",
+          "stroke": "var(--oc-violet-7)",
+          "query": "jest file:."
+        }
+      ]
+    },
+    "searchInsights.insight.insightsOverallAndInSrcSrc": {
+      "title": "Insights overall and in src/src",
+      "series": [
+        {
+          "name": "insights",
+          "stroke": "var(--oc-pink-7)",
+          "query": "insights"
+        },
+        {
+          "name": "insights filtered to src/src",
+          "stroke": "var(--oc-blue-7)",
+          "query": "insights repo:sourcegraph/sourcegraph$"
+        }
+      ]
+    },
+    "searchInsights.insight.test23QueryAardvarkLangGoTsJsMdExpectedResultsAll500": {
+      "title": "[Test 2.3] query:\"aardvark lang:[go|ts|js|md]\" expected results all <500",
+      "series": [
+        {
+          "name": "aardvark TS 32",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "aardvark lang:TypeScript "
+        },
+        {
+          "name": "aardvark GO 52",
+          "stroke": "var(--oc-blue-7)",
+          "query": "aardvark lang:go "
+        },
+        {
+          "name": "aardvark MD 178",
+          "stroke": "var(--oc-cyan-7)",
+          "query": "aardvark lang:Markdown "
+        },
+        {
+          "name": "aardvark JS 354",
+          "stroke": "var(--oc-teal-7)",
+          "query": "aardvark lang:JavaScript "
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.test41QueryJoelExpected325K": {
+      "title": "[Test 4.1] query:\"joel\" expected 32.5k",
+      "series": [
+        {
+          "name": "joel 32.5k",
+          "stroke": "var(--oc-cyan-7)",
+          "query": "joel"
+        },
+        {
+          "name": "joel file:. 32.5k",
+          "stroke": "var(--oc-grape-7)",
+          "query": "joel file:. "
+        },
+        {
+          "name": "joel visibility:any 32.5k",
+          "stroke": "var(--oc-yellow-7)",
+          "query": "joel visibility:any"
+        }
+      ]
+    },
+    "searchInsights.insight.test31QueryCouryExpected206": {
+      "title": "[Test 3.1] query:\"coury\" expected 206",
+      "series": [
+        {
+          "name": "coury 206",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "coury"
+        },
+        {
+          "name": "coury file:. 206",
+          "stroke": "var(--oc-teal-7)",
+          "query": "coury file:."
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "sourcegraph2",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.test22QueryAardvarkAllRepos": {
+      "title": "[Test 2.2] query:\"aardvark\" all repos",
+      "series": [
+        {
+          "name": "aardvark 3.1k",
+          "stroke": "var(--oc-pink-7)",
+          "query": "aardvark"
+        }
+      ]
+    },
+    "searchInsights.insight.test21QueryCountAllAardvarkAllRepos": {
+      "title": "[Test 2.1] query:\"count:all aardvark\" all repos",
+      "series": [
+        {
+          "name": "count:all aardvark 3.1k",
+          "stroke": "var(--oc-red-7)",
+          "query": "count:all aardvark"
+        }
+      ]
+    },
+    "searchInsights.insight.test51QuerySelectRepoFinalExpected262K": {
+      "title": "[Test 5.1] query:\"select:repo\" final expected 26.2k",
+      "series": [
+        {
+          "name": "select:repo 26.2k",
+          "stroke": "var(--oc-cyan-7)",
+          "query": "select:repo"
+        }
+      ]
+    },
+    "searchInsights.insight.test61QueryFelixFelixfForMoreWrongDataConfirmation": {
+      "title": "[Test 6.1] query:\"felix\" / \"felixf\" for more wrong data confirmation",
+      "series": [
+        {
+          "name": "felix 32.3k",
+          "stroke": "var(--oc-blue-7)",
+          "query": "felix"
+        },
+        {
+          "name": "felixf 783",
+          "stroke": "var(--oc-lime-7)",
+          "query": "felixf"
+        }
+      ]
+    },
+    "searchInsights.insight.test32VariousSubCouryQueryTests": {
+      "title": "[Test 3.2] various sub \"coury\" query tests",
+      "series": [
+        {
+          "name": "coury. 17",
+          "stroke": "var(--oc-blue-7)",
+          "query": "coury."
+        },
+        {
+          "name": "coury, 28",
+          "stroke": "var(--oc-grape-7)",
+          "query": "coury,"
+        },
+        {
+          "name": "coury@ 12",
+          "stroke": "var(--oc-green-7)",
+          "query": "coury@"
+        },
+        {
+          "name": "coury select:repo 44",
+          "stroke": "var(--oc-orange-7)",
+          "query": "coury select:repo"
+        }
+      ]
+    },
+    "searchInsights.insight.test24QueryAardvarkLanguageTypeScriptForkNoArchivedNoExpected32": {
+      "title": "[Test 2.4] query:\"Aardvark language:TypeScript fork:no archived:no\" expected 32",
+      "series": [
+        {
+          "name": "Aardvark TS fork:no archived:no expected 32",
+          "stroke": "var(--oc-grape-7)",
+          "query": "Aardvark language:TypeScript fork:no archived:no"
+        }
+      ]
+    },
+    "searchInsights.insight.test71JoeljSeeIfBitingLargeFilesExpected31": {
+      "title": "[Test 7.1] \"Joelj\" see if biting large files expected 31",
+      "series": [
+        {
+          "name": "joelj 31",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "joelj"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.test81TestSearchContextsExpected311WithoutContext": {
+      "title": "[Test 8.1] Test search contexts expected 3 (11 without context)",
+      "series": [
+        {
+          "name": "joelkw in search context src/src, expected 3",
+          "stroke": "var(--oc-green-7)",
+          "query": "joelkw context:@joel/src/src"
+        }
+      ]
+    },
+    "searchInsights.insight.testCampaignsInContextJoelSrcSrc": {
+      "title": "Test \"campaigns\" in context:@joel/src/src",
+      "series": [
+        {
+          "name": "test for deleted \"campaigns\"",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "campaigns context:@joel/src/src"
+        }
+      ]
+    },
+    "searchInsights.insight.felixTestNewView": {
+      "title": "Felix test new view",
+      "series": [
+        {
+          "name": "jest file:.",
+          "stroke": "var(--oc-violet-7)",
+          "query": "jest file:."
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.test93CampaignsInSrcSrcToMatchFrontendFixedAddedContext": {
+      "title": "[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)",
+      "series": [
+        {
+          "name": "campaigns file:. context:@joel/src/src",
+          "stroke": "var(--oc-green-7)",
+          "query": "campaigns file:. context:@joel/src/src"
+        }
+      ]
+    },
+    "searchInsights.insight.test71SecondFilters": {
+      "title": "[test 7.1 second filters]",
+      "series": [
+        {
+          "name": "joelj 31",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "joelj"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "bobber",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.testV221QueryCountAllAardvark": {
+      "title": "[Test-v2 2.1] query: \"count:all aardvark     \" ",
+      "series": [
+        {
+          "name": "count:all aardvark 3.1k 5s",
+          "stroke": "var(--oc-grape-7)",
+          "query": "count:all aardvark     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV223QueryAardvarkLangGoTsJsMdEVs500": {
+      "title": "[Test-v2 2.3] query:\"aardvark lang:[go|ts|js|md]     \" EVs <500 ",
+      "series": [
+        {
+          "name": "aardvark TS 32 5s",
+          "stroke": "var(--oc-pink-7)",
+          "query": "aardvark lang:TypeScript     "
+        },
+        {
+          "name": "aardvark GO 52 5s",
+          "stroke": "var(--oc-grape-7)",
+          "query": "aardvark lang:go     "
+        },
+        {
+          "name": "aardvark MD 178 5s",
+          "stroke": "var(--oc-violet-7)",
+          "query": "aardvark lang:Markdown     "
+        },
+        {
+          "name": "aardvark JS 354 5s",
+          "stroke": "var(--oc-red-7)",
+          "query": "aardvark lang:JavaScript     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV231QueryCouryEv206": {
+      "title": "[Test-v2 3.1] query:\"coury     \" ev 206",
+      "series": [
+        {
+          "name": "coury 5s",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "coury     "
+        },
+        {
+          "name": "coury file:. 5s",
+          "stroke": "var(--oc-yellow-7)",
+          "query": "coury file:.     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV241QueryJoelEv325K": {
+      "title": "[Test-v2 4.1] query:\"joel     \" ev 32.5k ",
+      "series": [
+        {
+          "name": "joel 32.5k 5s",
+          "stroke": "var(--oc-green-7)",
+          "query": "joel     "
+        },
+        {
+          "name": "joel file:. 32.5k 5s",
+          "stroke": "var(--oc-orange-7)",
+          "query": "joel file:.     "
+        },
+        {
+          "name": "joel visibility:any 32.5k 5s",
+          "stroke": "var(--oc-pink-7)",
+          "query": "joel visibility:any     "
+        },
+        {
+          "name": "joel fork:no archived:no 32.5k 5s",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "joel fork:no archived:no     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV251QuerySelectRepoEv262K": {
+      "title": "[Test-v2 5.1] query:\"select:repo     \" ev 26.2k",
+      "series": [
+        {
+          "name": "select:repo 26.4k 5s",
+          "stroke": "var(--oc-grape-7)",
+          "query": "select:repo     "
+        },
+        {
+          "name": "select:repo archived:no fork:no 5s 26.2",
+          "stroke": "var(--oc-pink-7)",
+          "query": "select:repo archived:no fork:no     "
+        },
+        {
+          "name": "select:repo archived:only fork:only 15 5s",
+          "stroke": "var(--oc-indigo-7)",
+          "query": "select:repo archived:only fork:only.    "
+        }
+      ]
+    },
+    "searchInsights.insight.testV261QueryFelixFelixf": {
+      "title": "[Test-v2 6.1] query:\"felix     \" / \"felixf     \"",
+      "series": [
+        {
+          "name": "felix 32.3k 5s",
+          "stroke": "var(--oc-teal-7)",
+          "query": "felix     "
+        },
+        {
+          "name": "felixf 783 5s",
+          "stroke": "var(--oc-grape-7)",
+          "query": "felixf     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV232VariousSubCouryQueryTests": {
+      "title": "[Test-v2 3.2] various sub \"coury\" query tests",
+      "series": [
+        {
+          "name": "coury. 17 5s",
+          "stroke": "var(--oc-cyan-7)",
+          "query": "coury.     "
+        },
+        {
+          "name": "coury, 28 5s",
+          "stroke": "var(--oc-pink-7)",
+          "query": "coury,     "
+        },
+        {
+          "name": "coury@ 12 5s",
+          "stroke": "var(--oc-yellow-7)",
+          "query": "coury@     "
+        },
+        {
+          "name": "coury select:repo 44",
+          "stroke": "var(--oc-orange-7)",
+          "query": "coury select:repo     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV271JoeljSeeIfBitingLargeFilesExpected31": {
+      "title": "[Test-v2 7.1] \"Joelj\" see if biting large files expected 31",
+      "series": [
+        {
+          "name": "joelj 31 5s",
+          "stroke": "var(--oc-lime-7)",
+          "query": "joelj     "
+        }
+      ]
+    },
+    "searchInsights.insight.testV201InsightsOverAll": {
+      "title": "[test-v2 0.1] insights over all ",
+      "series": [
+        {
+          "name": "insights 5s",
+          "stroke": "var(--oc-teal-7)",
+          "query": "insights     "
+        },
+        {
+          "name": "insights fork/arch no 5s",
+          "stroke": "var(--oc-grape-7)",
+          "query": "insights fork:no archived:no     "
+        }
+      ]
+    },
+    "searchInsights.insight.useOfUnstableEventApiCalls": {
+      "title": "Use of unstable event.API calls",
+      "series": [
+        {
+          "name": "unstable event.API call pattern",
+          "stroke": "var(--oc-yellow-7)",
+          "query": "campaigns        "
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "",
+        "excludeRepoRegexp": ".*3rdparty.*"
+      }
+    },
+    "searchInsights.insight.copyOfTerraformFunkySymbolsNewView": {
+      "title": "Copy of terraform funky symbols, new view",
+      "series": [
+        {
+          "name": "Terraform example 2 teest",
+          "stroke": "var(--oc-grape-7)",
+          "query": "context:global \"app.terraform.io/.*\\n version\\s=\\s\"[0-9] patterntype:regexp"
+        },
+        {
+          "name": "no results but make sure it transfers",
+          "stroke": "var(--oc-violet-7)",
+          "query": "\"app.terraform.io/.*\\n[^#] version\\s=\\s\"~>\\s2"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "sourcegraph/sourcegraph",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.terraformFunkySymbolsTest": {
+      "title": "Terraform funky symbols test ",
+      "series": [
+        {
+          "name": "Terraform example 2 teest",
+          "stroke": "var(--oc-grape-7)",
+          "query": "context:global \"app.terraform.io/.*\\n version\\s=\\s\"[0-9] patterntype:regexp"
+        },
+        {
+          "name": "no results but make sure it transfers",
+          "stroke": "var(--oc-violet-7)",
+          "query": "\"app.terraform.io/.*\\n[^#] version\\s=\\s\"~>\\s2"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "sourcegraph/about",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.jdbRegressionTest6": {
+      "title": "JDB Regression Test 6",
+      "series": [
+        {
+          "name": "joelkw but count:all",
+          "query": "joelkw count:all",
+          "stroke": "var(--oc-indigo-7)"
+        }
+      ],
+      "filters": {
+        "includeRepoRegexp": "github.com/sourcegraph/sourcegraph",
+        "excludeRepoRegexp": ""
+      }
+    },
+    "searchInsights.insight.test11QueryJesteExpectedPresentDay119KResuls": {
+      "title": "[Test 1.1] query: \"jeste\" expected present day 11.9k resuls",
+      "series": [
+        {
+          "name": "jeste edited",
+          "query": "jeste",
+          "stroke": "var(--oc-lime-7)"
+        }
+      ]
+    },
+    "searchInsights.insight.joelkwOffsetTest": {
+      "title": "joelkw offset test",
+      "series": [
+        {
+          "name": "joelkw",
+          "query": "joelkw                              ",
+          "stroke": "var(--oc-grape-7)"
+        },
+        {
+          "name": "joelkw even more spaces",
+          "query": "joelkw                                                ",
+          "stroke": "var(--oc-blue-7)"
+        }
+      ]
+    }
+  },
+  "searchInsights.insight.test92CampaignsFrontendInsight": {
+    "title": "[Test 9.2] Campaigns frontend insight ",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "campaigns",
+        "stroke": "var(--oc-indigo-7)",
+        "query": "campaigns"
+      }
+    ],
+    "step": {
+      "days": 25
+    }
+  },
+  "searchInsights.insight.testGlobalPingsInsight": {
+    "title": "Test global pings insight",
+    "repositories": [
+      "github.com/sourcegraph/about"
+    ],
+    "series": [
+      {
+        "name": "testing",
+        "stroke": "var(--oc-grape-7)",
+        "query": "test "
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "searchInsights.insight.globalTest": {
+    "title": "global test",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "global test",
+        "stroke": "var(--oc-grape-7)",
+        "query": "global test"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "searchInsights.insight.checkupTodoAndTodTestingTitleChanged": {
+    "title": "checkup todo and tod testing title changed",
+    "repositories": [
+      "ghe.sgdev.org/sourcegraph/sourcegraph-checkup"
+    ],
+    "series": [
+      {
+        "name": "\"todo\" basic test in src-checkup",
+        "stroke": "var(--oc-grape-7)",
+        "query": "todo"
+      },
+      {
+        "name": "\"tod\" same repo",
+        "stroke": "var(--oc-teal-7)",
+        "query": "tod"
+      }
+    ],
+    "step": {
+      "years": 1
+    }
+  },
+  "searchInsights.insight.test234Changed": {
+    "title": "test234 changed",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "test234 changed",
+        "query": "test234 changed",
+        "stroke": "var(--oc-grape-7)"
+      }
+    ],
+    "step": {
+      "months": 2
+    }
+  },
+  "searchInsights.insight.removingRawCommands": {
+    "title": "Removing raw commands",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Remove raw commands from vcs/git",
+        "query": "gitserver.DefaultClient.Command file:vcs/git",
+        "stroke": "var(--oc-grape-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "searchInsights.insight.readmesAndReadmesThatAreComplete": {
+    "title": "Readmes and readmes that are \"complete\"",
+    "repositories": [
+      "github.com/sourcegraph/sourcegraph"
+    ],
+    "series": [
+      {
+        "name": "Readmes of 50+ lines",
+        "query": "context:global file:readme.md \\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n*\\n.*\\n.* select:file patterntype:regexp",
+        "stroke": "var(--oc-lime-7)"
+      },
+      {
+        "name": "Total readmes",
+        "query": "context:global file:readme.md select:file patterntype:regexp",
+        "stroke": "var(--oc-grape-7)"
+      }
+    ],
+    "step": {
+      "months": 2,
+    }
+  },
+}
