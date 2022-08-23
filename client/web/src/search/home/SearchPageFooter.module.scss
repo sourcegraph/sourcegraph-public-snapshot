@@ -56,7 +56,7 @@
     }
 }
 
-.dev-tool-time-wrapper {
+.discord-wrapper {
     display: flex;
     margin-top: 0.5rem;
     color: var(--body-color);
@@ -66,14 +66,14 @@
     }
 }
 
-.dev-tool-time-image {
+.discord-image {
     margin-right: 0.625rem;
     // Note: This is to reduce cumulative layout shift
     // It should be as close as possible to the source image width
     min-width: 4.75rem;
 }
 
-.dev-tool-time-text {
+.discord-text {
     width: 11.5rem;
     font-size: 0.75rem;
 }

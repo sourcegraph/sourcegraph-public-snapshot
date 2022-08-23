@@ -155,6 +155,10 @@ export interface EditorAPI {
      */
     replace: (input: string, method?: 'type' | 'paste') => Promise<void>
     /**
+     * Append the provided input to the editor's content
+     */
+    append: (input: string, method?: 'type' | 'paste') => Promise<void>
+    /**
      * Triggers application of the specified suggestion.
      */
     selectSuggestion: (label: string) => Promise<void>
@@ -190,6 +194,10 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     enterTextMethod: method,
                     selectMethod: 'keyboard',
                 })
+            },
+            async append(newText: string, method = 'type') {
+                await api.focus()
+                return driver.enterText(method, newText)
             },
             async waitForSuggestion(suggestion?: string) {
                 await driver.page.waitForSelector(completionSelector)
@@ -257,6 +265,10 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     selectMethod: 'selectall',
                 })
             },
+            async append(newText: string, method = 'type') {
+                await api.focus()
+                return driver.enterText(method, newText)
+            },
             async waitForSuggestion(suggestion?: string) {
                 await driver.page.waitForSelector(completionSelector)
                 if (suggestion !== undefined) {
@@ -300,7 +312,10 @@ export function enableEditor(editor: Editor): Partial<Settings> {
  * It also waits for the editor to be ready
  */
 export const createEditorAPI = async (driver: Driver, rootSelector: string): Promise<EditorAPI> => {
-    await driver.page.waitForSelector(rootSelector)
+    // We append `.test-editor` to make sure to wait for the actual editor
+    // component to load and not e.g. target the placeholder input used by
+    // LazyMonacoSearchQueryInput
+    await driver.page.waitForSelector(`${rootSelector}.test-editor`)
     const editor = await driver.page.evaluate<(selector: string) => string | undefined>(
         selector => (document.querySelector(selector) as HTMLElement).dataset.editor,
         rootSelector

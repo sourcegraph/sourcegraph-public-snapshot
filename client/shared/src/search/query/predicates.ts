@@ -19,6 +19,7 @@ export const PREDICATES: Access[] = [
                 name: 'contains',
                 fields: [
                     { name: 'file' },
+                    { name: 'path' },
                     { name: 'content' },
                     {
                         name: 'commit',
@@ -149,8 +150,8 @@ export const predicateCompletion = (field: string): Completion[] => {
     if (field === 'repo') {
         return [
             {
-                label: 'contains.file(...)',
-                insertText: 'contains.file(${1:CHANGELOG})',
+                label: 'contains.path(...)',
+                insertText: 'contains.path(${1:CHANGELOG})',
                 asSnippet: true,
             },
             {
@@ -159,8 +160,8 @@ export const predicateCompletion = (field: string): Completion[] => {
                 asSnippet: true,
             },
             {
-                label: 'contains(...)',
-                insertText: 'contains(file:${1:CHANGELOG} content:${2:fix})',
+                label: 'contains.file(...)',
+                insertText: 'contains.file(path:${1:CHANGELOG} content:${2:fix})',
                 asSnippet: true,
             },
             {

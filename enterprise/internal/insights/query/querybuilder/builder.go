@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
-
 	"github.com/grafana/regexp"
 
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -33,6 +31,48 @@ func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (Basic
 			}
 		}
 		p = append(p, basic.Parameters...)
+		modified = append(modified, basic.MapParameters(p))
+	}
+
+	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}
+
+// AggregationQuery takes an existing query and adds a count:all and timeout:[timeoutSeconds]s
+// If a count or timeout parameter already exist in the query they will be updated.
+func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int) (BasicQuery, error) {
+
+	upsertParams := searchquery.Parameters{
+		{
+			Field:      searchquery.FieldCount,
+			Value:      "all",
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+		{
+			Field:      searchquery.FieldTimeout,
+			Value:      fmt.Sprintf("%ds", timeoutSeconds),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+	}
+
+	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", errors.Wrap(err, "Pipeline")
+	}
+	modified := make(searchquery.Plan, 0, len(plan))
+
+	for _, basic := range plan {
+		p := make(searchquery.Parameters, 0, len(basic.Parameters)+len(upsertParams))
+
+		for _, param := range basic.Parameters {
+			if upsertParams.Exists(param.Field) {
+				continue
+			}
+			p = append(p, param)
+		}
+
+		p = append(p, upsertParams...)
 		modified = append(modified, basic.MapParameters(p))
 	}
 
@@ -148,7 +188,7 @@ const insightsComputeCommand = "output.extra"
 // ComputeInsightCommandQuery will convert a standard Sourcegraph search query into a compute "map type" insight query. This command type will group by
 // certain fields. The original search query semantic should be preserved, although any new limitations or restrictions in Compute will apply.
 func ComputeInsightCommandQuery(query BasicQuery, mapType MapType) (ComputeInsightQuery, error) {
-	q, err := compute.Parse(string(query))
+	q, err := ParseComputeQuery(string(query))
 	if err != nil {
 		return "", err
 	}
@@ -193,4 +233,63 @@ func IsSingleRepoQuery(query BasicQuery) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func AddAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
+	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", err
+	}
+
+	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
+		isCommitDiffType := false
+		for _, parameter := range basic.Parameters {
+			modified = append(modified, parameter)
+			if parameter.Field == searchquery.FieldType && (parameter.Value == "commit" || parameter.Value == "diff") {
+				isCommitDiffType = true
+			}
+		}
+		if !isCommitDiffType {
+			// we can't modify this plan to accept an author so return the original input
+			return basic
+		}
+		modified = append(modified, searchquery.Parameter{
+			Field:      searchquery.FieldAuthor,
+			Value:      regexp.QuoteMeta(author),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		})
+		return basic.MapParameters(modified)
+	})
+
+	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
+}
+
+func AddRepoFilter(query BasicQuery, repo string) (BasicQuery, error) {
+	return addFilterSimple(query, searchquery.FieldRepo, repo)
+}
+
+func AddFileFilter(query BasicQuery, file string) (BasicQuery, error) {
+	return addFilterSimple(query, searchquery.FieldFile, file)
+}
+
+func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) {
+	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", err
+	}
+
+	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
+		modified = append(modified, basic.Parameters...)
+		modified = append(modified, searchquery.Parameter{
+			Field:      field,
+			Value:      regexp.QuoteMeta(value),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		})
+		return basic.MapParameters(modified)
+	})
+	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }

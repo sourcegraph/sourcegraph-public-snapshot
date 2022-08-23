@@ -82,3 +82,12 @@ func (r *siteAnalyticsResolver) BatchChanges(ctx context.Context, args *struct {
 }) *adminanalytics.BatchChanges {
 	return &adminanalytics.BatchChanges{DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
+
+/* Extensions */
+
+func (r *siteAnalyticsResolver) Extensions(ctx context.Context, args *struct {
+	DateRange *string
+	Grouping  *string
+}) *adminanalytics.Extensions {
+	return &adminanalytics.Extensions{DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}

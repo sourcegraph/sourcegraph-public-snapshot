@@ -10,7 +10,6 @@ import { NavLink } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -49,14 +48,13 @@ interface FileProps extends ThemeProps {
     isActive: boolean
     isSelected: boolean
     customIconPath?: string
+    enableMergedFileSymbolSidebar: boolean
 
     // For core workflow inline symbols redesign
     location: H.Location
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
     const renderedFileDecorations = (
         <FileDecorator
             // If component is not specified, or it is 'sidebar', render it.
@@ -144,7 +142,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     )}
                 </TreeLayerCell>
             </TreeRow>
-            {coreWorkflowImprovementsEnabled && props.isActive && (
+            {props.enableMergedFileSymbolSidebar && props.isActive && (
                 <Symbols activePath={props.entryInfo.path} location={props.location} style={offsetStyle} />
             )}
         </>

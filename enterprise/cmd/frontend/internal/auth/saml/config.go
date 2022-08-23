@@ -6,15 +6,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
+	stdlog "log"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -64,8 +66,47 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) 
 	return p, false
 }
 
-func init() {
+func Init() {
 	conf.ContributeValidator(validateConfig)
+
+	const pkgName = "saml"
+	logger := log.Scoped(pkgName, "SAML config watch")
+	go func() {
+		conf.Watch(func() {
+			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+				logger.Warn("Check license for SSO (SAML)", log.Error(err))
+				providers.Update(pkgName, nil)
+				return
+			}
+
+			ps := getProviders()
+			for _, p := range ps {
+				go func(p providers.Provider) {
+					if err := p.Refresh(context.Background()); err != nil {
+						log15.Error("Error prefetching SAML service provider metadata.", "error", err)
+					}
+				}(p)
+			}
+			providers.Update(pkgName, ps)
+		})
+	}()
+}
+
+func getProviders() []providers.Provider {
+	var cfgs []*schema.SAMLAuthProvider
+	for _, p := range conf.Get().AuthProviders {
+		if p.Saml == nil {
+			continue
+		}
+		cfgs = append(cfgs, withConfigDefaults(p.Saml))
+	}
+	multiple := len(cfgs) >= 2
+	ps := make([]providers.Provider, 0, len(cfgs))
+	for _, cfg := range cfgs {
+		p := &provider{config: *cfg, multiple: multiple}
+		ps = append(ps, p)
+	}
+	return ps
 }
 
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
@@ -146,6 +187,6 @@ var traceLogEnabled, _ = strconv.ParseBool(env.Get("INSECURE_SAML_LOG_TRACES", "
 func traceLog(description, body string) {
 	if traceLogEnabled {
 		const n = 40
-		log.Printf("%s SAML trace: %s\n%s\n%s", strings.Repeat("=", n), description, body, strings.Repeat("=", n+len(description)+1))
+		stdlog.Printf("%s SAML trace: %s\n%s\n%s", strings.Repeat("=", n), description, body, strings.Repeat("=", n+len(description)+1))
 	}
 }

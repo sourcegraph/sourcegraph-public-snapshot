@@ -1,4 +1,5 @@
 export enum SectionID {
+    GROUPED_BY = 'grouped-by',
     SEARCH_REFERENCE = 'reference',
     SEARCH_TYPES = 'types',
     DYNAMIC_FILTERS = 'filters', // Deprecated

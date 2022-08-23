@@ -38,3 +38,4 @@ client/jetbrains/build
 client/jetbrains/.idea
 client/jetbrains/.gradle
 .browserslistrc
+code-intel-extensions.json
