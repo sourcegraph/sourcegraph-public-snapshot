@@ -1,7 +1,7 @@
-import React from 'react'
+import { useState } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { startOfYesterday } from 'date-fns'
+import { addDays, startOfDay, subDays } from 'date-fns'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -20,36 +20,61 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => {
-    const [value, onChange] = React.useState(new Date())
+// NOTE: hardcoded in order to screenshot test the calendar
+const today = startOfDay(new Date('2022-08-22'))
+
+export const Single: Story = () => {
+    const [value, onChange] = useState(today)
     return <Calendar value={value} onChange={onChange} />
 }
 
-Default.parameters = {
+Single.parameters = {
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: false,
     },
-    design: {
-        type: 'figma',
-        name: 'Figma',
-        url: '#',
-    },
 }
 
-export const ModeRange: Story = () => {
-    const [value, onChange] = React.useState([startOfYesterday(), new Date()])
-    return <Calendar mode="range" value={value as [Date, Date]} onChange={onChange} />
+export const Range: Story = () => {
+    const [value, onChange] = useState<[Date, Date]>([subDays(today, 7), today])
+    return <Calendar isRange={true} value={value} onChange={onChange} />
 }
 
-ModeRange.parameters = {
+Range.parameters = {
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: false,
     },
-    design: {
-        type: 'figma',
-        name: 'Figma',
-        url: '#',
+}
+
+export const MinMaxDates: Story = () => {
+    const [value, onChange] = useState<[Date, Date]>([subDays(today, 7), today])
+    return (
+        <Calendar
+            isRange={true}
+            value={value}
+            onChange={onChange}
+            minDate={subDays(today, 10)}
+            maxDate={addDays(today, 10)}
+        />
+    )
+}
+
+MinMaxDates.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
+
+export const HighlightToday: Story = () => {
+    const [value, onChange] = useState(new Date())
+    return <Calendar value={value} onChange={onChange} highlightToday={true} />
+}
+
+HighlightToday.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: true,
     },
 }

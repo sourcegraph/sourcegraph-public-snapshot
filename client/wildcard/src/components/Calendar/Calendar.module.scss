@@ -1,10 +1,14 @@
+// stylelint-disable selector-class-pattern
+
 .container {
     width: 21rem;
     display: inline-block;
 
     :global {
         .react-calendar {
-            &__navigation__arrow, &__navigation__label, &__tile {
+            &__navigation__arrow,
+            &__navigation__label,
+            &__tile {
                 background-color: inherit;
                 border: none;
                 padding: 0.25rem;
@@ -48,7 +52,19 @@
                 &--active {
                     background-color: var(--primary-2);
                 }
+                &:disabled {
+                    color: var(--secondary);
+                }
+            }
+
+            &__month-view__days__day--neighboringMonth {
+                color: var(--text-muted);
             }
         }
     }
+}
+
+.highlight-today :global(.react-calendar__tile--now) {
+    color: var(--primary);
+    text-decoration: underline;
 }

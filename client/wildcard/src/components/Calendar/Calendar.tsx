@@ -5,17 +5,46 @@ import { Container } from '@sourcegraph/wildcard'
 
 import styles from './Calendar.module.scss'
 
-interface CalendarProps {
-    mode?: 'range' | 'single'
+type CalendarProps = {
     className?: string
-    value: Date | null | undefined | [Date | null, Date | null]
-    onChange: (value: Date | ([Date] | [Date, Date])) => void
-}
+    maxDate?: Date
+    minDate?: Date
+    highlightToday?: boolean
+} & (
+    | {
+          isRange: true
+          value: [Date | null, Date | null]
+          onChange: (value: [Date, Date]) => void
+      }
+    | {
+          isRange?: false
+          value: Date | null | undefined
+          onChange: (value: Date) => void
+      }
+)
 
-export function Calendar({ className, value, onChange, mode }: CalendarProps): JSX.Element {
+export function Calendar({
+    className,
+    value,
+    onChange,
+    isRange,
+    minDate,
+    maxDate,
+    highlightToday,
+}: CalendarProps): JSX.Element {
     return (
-        <Container className={classNames(styles.container, className)}>
-            <ReactCalendar onChange={onChange} value={value} selectRange={mode === 'range'} view="month" />
+        <Container className={classNames(styles.container, styles.highlightToday, className)}>
+            <ReactCalendar
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                onChange={onChange}
+                value={value}
+                selectRange={isRange}
+                view="month"
+                maxDate={maxDate}
+                minDate={minDate}
+                showFixedNumberOfWeeks={true}
+            />
         </Container>
     )
 }
