@@ -602,7 +602,7 @@ export const useWorkspacesListConnection = (
         variables: {
             node: batchSpecID,
             after: null,
-            first: 5,
+            first: 50,
             search,
             state,
         },
