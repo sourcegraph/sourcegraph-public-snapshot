@@ -386,12 +386,8 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 }
 
 func (p Parameters) FileContainsContent() (include []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldFile && (name == "contains" || name == "contains.content") {
-			var pred FileContainsContentPredicate
-			pred.ParseParams(value)
-			include = append(include, pred.Pattern)
-		}
+	VisitTypedPredicate(toNodes(p), func(pred *FileContainsContentPredicate, negated bool) {
+		include = append(include, pred.Pattern)
 	})
 	return include
 }
