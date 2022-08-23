@@ -1,47 +1,73 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 538
 expression: "dump_document(&document, &contents)"
 ---
-  class MyClass {
-//^^^^^ IdentifierType
+  export class MyClass {
+//^^^^^^ IdentifierKeyword
+//       ^^^^^ IdentifierKeyword
+//             ^^^^^^^ IdentifierType
+//                     ^ PunctuationBracket
     public static myValue: string;
 //  ^^^^^^ IdentifierKeyword
 //         ^^^^^^ IdentifierKeyword
 //                ^^^^^^^ Identifier
 //                       ^ IdentifierOperator
+//                         ^^^^^^ IdentifierType
 //                               ^ PunctuationDelimiter
     constructor(init: string) {
-//  ^^^^^^^^^^^ IdentifierType
+//  ^^^^^^^^^^^ IdentifierKeyword
+//             ^ PunctuationBracket
 //              ^^^^ Identifier
 //                  ^ IdentifierOperator
+//                    ^^^^^^ IdentifierType
+//                          ^ PunctuationBracket
+//                            ^ PunctuationBracket
       this.myValue = init;
 //    ^^^^ Identifier
+//        ^ PunctuationBracket
 //         ^^^^^^^ Identifier
 //                 ^ IdentifierOperator
 //                   ^^^^ Identifier
 //                       ^ PunctuationDelimiter
     }
+//  ^ PunctuationBracket
   }
+//^ PunctuationBracket
   import fs = require("fs");
 //^^^^^^ IdentifierKeyword
 //       ^^ Identifier
 //          ^ IdentifierOperator
 //            ^^^^^^^ IdentifierKeyword
+//                   ^ PunctuationBracket
 //                    ^^^^ StringLiteral
+//                        ^ PunctuationBracket
 //                         ^ PunctuationDelimiter
-  module MyModule {
-//^^^^^^ IdentifierNamespace
+  declare module MyModule {
+//^^^^^^^ IdentifierKeyword
+//        ^^^^^^ IdentifierKeyword
+//               ^^^^^^^^ IdentifierType
+//                        ^ PunctuationBracket
     export interface MyInterface extends Other {
 //  ^^^^^^ IdentifierKeyword
-//         ^^^^^^^^^ IdentifierType
+//         ^^^^^^^^^ IdentifierKeyword
+//                   ^^^^^^^^^^^ IdentifierType
 //                               ^^^^^^^ IdentifierKeyword
+//                                             ^ PunctuationBracket
       myProperty: any;
 //    ^^^^^^^^^^ Identifier
 //              ^ IdentifierOperator
+//                ^^^ IdentifierType
 //                   ^ PunctuationDelimiter
+      myKeyoff: keyof MyClass;
+//    ^^^^^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^^ IdentifierKeyword
+//                    ^^^^^^^ IdentifierType
+//                           ^ PunctuationDelimiter
     }
+//  ^ PunctuationBracket
   }
+//^ PunctuationBracket
   declare magicNumber number;
 //^^^^^^^ IdentifierKeyword
 //        ^^^^^^^^^^^ Identifier
@@ -49,8 +75,229 @@ expression: "dump_document(&document, &contents)"
 //                          ^ PunctuationDelimiter
   myArray.forEach(() => { }); // fat arrow syntax
 //^^^^^^^ Identifier
+//       ^ PunctuationBracket
+//        ^^^^^^^ IdentifierFunction
+//               ^ PunctuationBracket
+//                ^ PunctuationBracket
+//                 ^ PunctuationBracket
 //                   ^^ IdentifierType
+//                      ^ PunctuationBracket
+//                        ^ PunctuationBracket
+//                         ^ PunctuationBracket
 //                          ^ PunctuationDelimiter
 //                            ^^ Comment
 //                              ^^^^^^^^^^^^^^^^^ Comment
+  const oneOf = (a:number): number => a + 1
+//^^^^^ IdentifierKeyword
+//      ^^^^^ IdentifierFunction
+//            ^ IdentifierOperator
+//              ^ PunctuationBracket
+//               ^ Identifier
+//                ^ IdentifierOperator
+//                 ^^^^^^ IdentifierType
+//                       ^ PunctuationBracket
+//                        ^ IdentifierOperator
+//                         ^ IdentifierType
+//                          ^^^^^^ IdentifierType
+//                                ^ IdentifierType
+//                                 ^^ IdentifierType
+//                                    ^ Identifier
+//                                      ^ IdentifierOperator
+//                                        ^ NumericLiteral
+  export const a = 42
+//^^^^^^ IdentifierKeyword
+//       ^^^^^ IdentifierKeyword
+//             ^ Identifier
+//               ^ IdentifierOperator
+//                 ^^ NumericLiteral
+  export let b = 42
+//^^^^^^ IdentifierKeyword
+//       ^^^ IdentifierKeyword
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^^ NumericLiteral
+  export var c = 42
+//^^^^^^ IdentifierKeyword
+//       ^^^ IdentifierKeyword
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^^ NumericLiteral
+  export var d1 = {e2:41}
+//^^^^^^ IdentifierKeyword
+//       ^^^ IdentifierKeyword
+//           ^^ Identifier
+//              ^ IdentifierOperator
+//                ^ PunctuationBracket
+//                 ^^ IdentifierAttribute
+//                   ^ PunctuationBracket
+//                    ^^ NumericLiteral
+//                      ^ PunctuationBracket
+  export var d = {
+//^^^^^^ IdentifierKeyword
+//       ^^^ IdentifierKeyword
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^ PunctuationBracket
+      key1: 1,
+//    ^^^^ IdentifierAttribute
+//        ^ PunctuationBracket
+//          ^ NumericLiteral
+//           ^ PunctuationBracket
+      key2: null,
+//    ^^^^ IdentifierAttribute
+//        ^ PunctuationBracket
+//          ^^^^ IdentifierBuiltin
+//              ^ PunctuationBracket
+      key3: `abc${d1.e2}`,
+//    ^^^^ IdentifierAttribute
+//        ^ PunctuationBracket
+//          ^ PunctuationBracket
+//           ^^^^^^^^^^^ StringLiteral
+//              ^^ PunctuationBracket
+//                ^^ Identifier
+//                  ^ PunctuationBracket
+//                   ^^ Identifier
+//                     ^ PunctuationBracket
+//                      ^ PunctuationBracket
+//                       ^ PunctuationBracket
+  }
+//^ PunctuationBracket
+  export var e = Object.keys(d) as MyClass
+//^^^^^^ IdentifierKeyword
+//       ^^^ IdentifierKeyword
+//           ^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^^ IdentifierType
+//                     ^ PunctuationBracket
+//                      ^^^^ IdentifierFunction
+//                          ^ PunctuationBracket
+//                           ^ Identifier
+//                            ^ PunctuationBracket
+//                              ^^ IdentifierKeyword
+//                                 ^^^^^^^ IdentifierType
+  export function f() {}
+//^^^^^^ IdentifierKeyword
+//       ^^^^^^^^ IdentifierKeyword
+//                ^ IdentifierFunction
+//                 ^ PunctuationBracket
+//                  ^ PunctuationBracket
+//                    ^ PunctuationBracket
+//                     ^ PunctuationBracket
+  
+  const negatedFilterToNegatableFilter: { [key: string]: MyClass } = null as any
+//^^^^^ IdentifierKeyword
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                    ^ IdentifierOperator
+//                                      ^ PunctuationBracket
+//                                        ^ PunctuationBracket
+//                                         ^^^ Identifier
+//                                            ^ IdentifierOperator
+//                                              ^^^^^^ IdentifierType
+//                                                    ^ PunctuationBracket
+//                                                     ^ IdentifierOperator
+//                                                       ^^^^^^^ IdentifierType
+//                                                               ^ PunctuationBracket
+//                                                                 ^ IdentifierOperator
+//                                                                   ^^^^ IdentifierBuiltin
+//                                                                        ^^ IdentifierKeyword
+//                                                                           ^^^ IdentifierType
+  
+  const scanToken = <T extends Term = Literal>(
+//^^^^^ IdentifierKeyword
+//      ^^^^^^^^^ IdentifierFunction
+//                ^ IdentifierOperator
+//                  ^ PunctuationBracket
+//                   ^ IdentifierType
+//                     ^^^^^^^ IdentifierKeyword
+//                             ^^^^ IdentifierType
+//                                  ^ IdentifierOperator
+//                                    ^^^^^^^ IdentifierType
+//                                           ^ PunctuationBracket
+//                                            ^ PunctuationBracket
+      regexp: RegExp,
+//    ^^^^^^ Identifier
+//          ^ IdentifierOperator
+//            ^^^^^^ IdentifierType
+//                  ^ PunctuationBracket
+      output?: T | ((input: string, range: CharacterRange) => T),
+//    ^^^^^^ Identifier
+//          ^ IdentifierOperator
+//           ^ IdentifierOperator
+//             ^ IdentifierType
+//               ^ IdentifierOperator
+//                 ^ PunctuationBracket
+//                  ^ PunctuationBracket
+//                   ^^^^^ Identifier
+//                        ^ IdentifierOperator
+//                          ^^^^^^ IdentifierType
+//                                ^ PunctuationBracket
+//                                  ^^^^^ Identifier
+//                                       ^ IdentifierOperator
+//                                         ^^^^^^^^^^^^^^ IdentifierType
+//                                                       ^ PunctuationBracket
+//                                                         ^^ IdentifierType
+//                                                            ^ IdentifierType
+//                                                             ^ PunctuationBracket
+//                                                              ^ PunctuationBracket
+      expected?: string
+//    ^^^^^^^^ Identifier
+//            ^ IdentifierOperator
+//             ^ IdentifierOperator
+//               ^^^^^^ IdentifierType
+  ): Parser<T> => {
+//^ PunctuationBracket
+// ^ IdentifierOperator
+//  ^ IdentifierType
+//   ^^^^^^ IdentifierType
+//         ^ PunctuationBracket
+//         ^^^^ IdentifierType
+//          ^ IdentifierType
+//           ^ PunctuationBracket
+//             ^^ IdentifierType
+//                ^ PunctuationBracket
+      if (!regexp.source.startsWith('^')) {
+//    ^^ IdentifierKeyword
+//       ^ PunctuationBracket
+//        ^ IdentifierOperator
+//         ^^^^^^ Identifier
+//               ^ PunctuationBracket
+//                ^^^^^^ Identifier
+//                      ^ PunctuationBracket
+//                       ^^^^^^^^^^ IdentifierFunction
+//                                 ^ PunctuationBracket
+//                                  ^^^ StringLiteral
+//                                     ^ PunctuationBracket
+//                                      ^ PunctuationBracket
+//                                        ^ PunctuationBracket
+          regexp = new RegExp(`^${regexp.source}`, regexp.flags)
+//        ^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^^ IdentifierOperator
+//                     ^^^^^^ IdentifierType
+//                           ^ PunctuationBracket
+//                            ^ PunctuationBracket
+//                             ^^^^^^^^^^^^^^^^^ StringLiteral
+//                              ^^ PunctuationBracket
+//                                ^^^^^^ Identifier
+//                                      ^ PunctuationBracket
+//                                       ^^^^^^ Identifier
+//                                             ^ PunctuationBracket
+//                                              ^ PunctuationBracket
+//                                               ^ PunctuationBracket
+//                                                 ^^^^^^ Identifier
+//                                                       ^ PunctuationBracket
+//                                                        ^^^^^ Identifier
+//                                                             ^ PunctuationBracket
+      }
+//    ^ PunctuationBracket
+  }
+//^ PunctuationBracket
+  
+  export const URI: typeof URL
+//^^^^^^ IdentifierKeyword
+//       ^^^^^ IdentifierKeyword
+//             ^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^^^ IdentifierKeyword
+//                         ^^^ IdentifierType
 

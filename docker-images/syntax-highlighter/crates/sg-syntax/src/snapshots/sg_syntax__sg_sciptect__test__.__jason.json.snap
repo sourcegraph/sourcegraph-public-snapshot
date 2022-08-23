@@ -1,20 +1,28 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 540
 expression: "dump_document(&document, &contents)"
 ---
   {
 //^ PunctuationBracket
       "hello": "world",
-//    ^^^^^^^ StringLiteral
+//    ^^^^^^^ StringLiteralKey
+//           ^ PunctuationBracket
 //             ^^^^^^^ StringLiteral
+//                    ^ PunctuationBracket
       "list": [null, 1, 2.0, true, false]
-//    ^^^^^^ StringLiteral
+//    ^^^^^^ StringLiteralKey
+//          ^ PunctuationBracket
 //            ^ PunctuationBracket
 //             ^^^^ IdentifierBuiltin
+//                 ^ PunctuationBracket
 //                   ^ NumericLiteral
-//                      ^^^ NumericLiteral
+//                    ^ PunctuationBracket
+//                      ^ NumericLiteral
+//                       ^ PunctuationBracket
+//                        ^ NumericLiteral
+//                         ^ PunctuationBracket
 //                           ^^^^ IdentifierBuiltin
+//                               ^ PunctuationBracket
 //                                 ^^^^^ IdentifierBuiltin
 //                                      ^ PunctuationBracket
   }

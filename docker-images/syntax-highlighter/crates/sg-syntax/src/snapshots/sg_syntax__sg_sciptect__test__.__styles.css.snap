@@ -3,16 +3,35 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   :root {
+//^ PunctuationBracket
+//      ^ PunctuationBracket
       --modal-body-padding: 1.5rem;
-//                          ^^^ NumericLiteral
+//    ^^ PunctuationBracket
+//      ^^^^^^^^^^^^^^^^^^ IdentifierType
+//                        ^ PunctuationBracket
+//                          ^ NumericLiteral
+//                           ^ PunctuationBracket
+//                            ^ NumericLiteral
 //                             ^^^ IdentifierKeyword
 //                                ^ PunctuationDelimiter
   }
+//^ PunctuationBracket
   
   [data-reach-dialog-overlay] {
+//^ PunctuationBracket
+//                          ^ PunctuationBracket
+//                            ^ PunctuationBracket
       background-color: var(--modal-bg);
+//    ^^^^^^^^^^^^^^^^ IdentifierType
+//                    ^ PunctuationBracket
+//                      ^^^ IdentifierFunction
+//                         ^ PunctuationBracket
+//                          ^^ PunctuationBracket
+//                            ^^^^^^^^ IdentifierType
+//                                    ^ PunctuationBracket
 //                                     ^ PunctuationDelimiter
   }
+//^ PunctuationBracket
   
   
   /*
@@ -20,25 +39,44 @@ expression: "dump_document(&document, &contents)"
    * Positions
    */
   .center,
+//^ PunctuationBracket
+//       ^ PunctuationBracket
   .top-third {
+//^ PunctuationBracket
+//           ^ PunctuationBracket
       transform: translate(-50%, -50%);
+//    ^^^^^^^^^ IdentifierType
+//             ^ PunctuationBracket
+//               ^^^^^^^^^ IdentifierFunction
+//                        ^ PunctuationBracket
 //                         ^^^ NumericLiteral
 //                            ^ IdentifierKeyword
+//                             ^ PunctuationBracket
 //                               ^^^ NumericLiteral
 //                                  ^ IdentifierKeyword
+//                                   ^ PunctuationBracket
 //                                    ^ PunctuationDelimiter
       position: absolute;
+//    ^^^^^^^^ IdentifierType
+//            ^ PunctuationBracket
 //                      ^ PunctuationDelimiter
       top: 50%;
+//    ^^^ IdentifierType
+//       ^ PunctuationBracket
 //         ^^ NumericLiteral
 //           ^ IdentifierKeyword
 //            ^ PunctuationDelimiter
       margin: 0;
+//    ^^^^^^ IdentifierType
+//          ^ PunctuationBracket
 //            ^ NumericLiteral
 //             ^ PunctuationDelimiter
       left: 50%;
+//    ^^^^ IdentifierType
+//        ^ PunctuationBracket
 //          ^^ NumericLiteral
 //            ^ IdentifierKeyword
 //             ^ PunctuationDelimiter
   }
+//^ PunctuationBracket
 

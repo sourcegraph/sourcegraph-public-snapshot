@@ -53,8 +53,25 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("meta.preprocessor.include"), IdentifierNamespace),
             (scope("storage.type.keyword"), IdentifierKeyword),
             (scope("entity.name.function"), IdentifierFunction),
+            (scope("entity.name.type"), IdentifierType),
+
+            // TODO: optimization opportunity, skip testing language-specific scopes.
+            (scope("keyword.operator.expression.keyof.ts"), IdentifierKeyword),
+            (scope("keyword.operator.expression.typeof.ts"), IdentifierKeyword),
+            (scope("storage.type.namespace.ts"), IdentifierKeyword),
+            (scope("storage.type.module.ts"), IdentifierKeyword),
+            (scope("storage.type.interface.ts"), IdentifierKeyword),
+            (scope("storage.type.class.ts"), IdentifierKeyword),
+            (scope("storage.type.function.ts"), IdentifierKeyword),
+            (scope("keyword.operator.logical.sql"), IdentifierKeyword),
+            (scope("keyword.operator.assignment.alias.sql"), IdentifierKeyword),
+            (scope("meta.mapping.key.json"), StringLiteralKey),
+            (scope("entity.name.tag.yaml"), StringLiteralKey),
+
             (scope("keyword.operator"), IdentifierOperator),
             (scope("keyword"), IdentifierKeyword),
+            (scope("variable.function"), IdentifierFunction),
+            (scope("meta.definition.property"), IdentifierAttribute),
             (scope("variable"), Identifier),
             (scope("constant.character.escape"), StringLiteralEscape),
             (scope("string"), StringLiteral),
@@ -64,16 +81,27 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.modifier.array"), PunctuationBracket),
             (scope("storage.modifier"), IdentifierKeyword),
             (scope("storage.type.namespace"), IdentifierNamespace),
+            (scope("storage.type.ts"), IdentifierKeyword),
             (scope("storage.type"), IdentifierType),
             (scope("support.type.builtin"), IdentifierBuiltinType),
+            (scope("meta.object-literal.key"), IdentifierAttribute),
             (scope("meta.path"), IdentifierNamespace),
+            // (scope("meta.type"), IdentifierType), Intentionally disabled in favor of more precise classes
+            (scope("meta.return.type"), IdentifierType),
+            (scope("support.type"), IdentifierType),
+            (scope("support.class"), IdentifierType),
+            (scope("support.function"), IdentifierFunction),
+            (scope("support.variable"), Identifier),
             //
-            // Punctuation Types
+            // Punctuation Types: while these may appear noisy, they're
+            // intentionally included so that punctutation characters get
+            // correctly highlighted when nested inside other occurrences like
+            // interpolated string literals. Example: the braces in `a${b}`.
             (scope("punctuation.section.mapping"), PunctuationBracket),
             (scope("punctuation.section.sequence"), PunctuationBracket),
             (scope("punctuation.terminator"), PunctuationDelimiter),
-            // TODO: Consider what to do w/ this
-            // (scope("punctuation"), PunctuationBracket),
+            (scope("meta.brace"), PunctuationBracket),
+            (scope("punctuation"), PunctuationBracket),
         ]
     });
 
@@ -162,6 +190,10 @@ impl HighlightManager {
         //
         // (see the documentation above for HighlightManager)
         if let Some(last_hl) = self.highlights.last_mut() {
+            // TODO: Avoid this hack to get string literal keys to take priority over strings for JSON.
+            if last_hl.kind == Some(SyntaxKind::StringLiteralKey) && hl.kind == Some(SyntaxKind::StringLiteral) {
+                return Some(last_hl.clone());
+            }
             if let Some(_kind) = last_hl.kind {
                 existing_hl = Some(last_hl.clone());
                 last_hl.row = hl.row;
@@ -272,6 +304,8 @@ impl<'a> DocumentGenerator<'a> {
 
                             match match_scope_to_kind(&scope) {
                                 Some(kind) => {
+                                    // Uncomment to debug what scopes are picked up
+                                    // println!("SCOPE {row:>3}:{character:<3} {} {kind:?}", format!("{}", scope));
                                     let partial_hl = HighlightStart::some(row, character, kind);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
                                     {
@@ -363,6 +397,7 @@ fn push_document_occurence(
     }
 }
 
+
 fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind) -> Occurrence {
     let syntax_kind = EnumOrUnknown::new(syntax_kind);
     let range = match range.len() {
@@ -390,6 +425,7 @@ fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind) -> Occurrence {
 #[cfg(test)]
 mod test {
     use std::{
+        env,
         fs::{read_dir, File},
         io::Read,
     };
@@ -487,49 +523,23 @@ int x = 1;
     }
 
     #[test]
-    fn test_generates_c_with_comment() {
-        let syntax_set = SyntaxSet::load_defaults_newlines();
-        let mut q = crate::SourcegraphQuery::default();
-        // q.filetype = Some("csharp".to_string());
-        q.filepath = "c_with_comment.c".to_string();
-        q.code = r#"
-int main() {
-  // Single line comment
-  return x;
-}
-"#
-        .to_string();
-
-        let syntax_def = determine_language(&q, &syntax_set).unwrap();
-        let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
-            .generate();
-
-        let dumped = dump_document(&output, &q.code);
-        assert_eq!(
-            dumped.trim(),
-            r#"
-  int main() {
-//^^^ IdentifierType
-//    ^^^^ IdentifierFunction
-    // Single line comment
-//  ^^^^^^^^^^^^^^^^^^^^^^ Comment
-    return x;
-//  ^^^^^^ IdentifierKeyword
-//          ^ PunctuationDelimiter
-  }
-"#
-            .trim()
-        );
-    }
-
-    #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
         let ss = SyntaxSet::load_defaults_newlines();
         let mut failed = vec![];
 
         let dir = read_dir("./src/snapshots/syntect_files/")?;
+
+        let filter = env::args()
+            .last()
+            .and_then(|x| x.strip_prefix("only=").map(|x| x.to_owned()))
+            .unwrap_or("".to_owned()); // run everything
+
         for entry in dir {
             let entry = entry?;
+
+            if !entry.file_name().to_str().unwrap().contains(&filter) {
+                continue;
+            }
             let filepath = entry.path();
             let mut file = File::open(&filepath)?;
             let mut contents = String::new();

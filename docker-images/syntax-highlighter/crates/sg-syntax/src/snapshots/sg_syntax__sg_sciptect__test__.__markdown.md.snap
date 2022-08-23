@@ -3,12 +3,27 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   # Media
+//^ PunctuationBracket
   
   ## Logo
+//^^ PunctuationBracket
   
   - Primary color: `#fc60a8`
+//^ PunctuationBracket
+//                 ^ PunctuationBracket
+//                         ^ PunctuationBracket
   - Secondary color: `#494368`
+//^ PunctuationBracket
+//                   ^ PunctuationBracket
+//                           ^ PunctuationBracket
   - Font: [`Orbitron`](https://fonts.google.com/specimen/Orbitron)
+//^ PunctuationBracket
+//        ^ PunctuationBracket
+//         ^ PunctuationBracket
+//                  ^ PunctuationBracket
+//                   ^ PunctuationBracket
+//                    ^ PunctuationBracket
+//                                                               ^ PunctuationBracket
   
   You are free to use and modify the logo for your Awesome list or other usage.
 
