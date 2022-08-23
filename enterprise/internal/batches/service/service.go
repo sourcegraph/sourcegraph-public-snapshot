@@ -638,6 +638,9 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	if err != nil {
 		return nil, err
 	}
+	
+	// placing validation
+	newSpec, err = 
 
 	// Make sure the user has access.
 	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
