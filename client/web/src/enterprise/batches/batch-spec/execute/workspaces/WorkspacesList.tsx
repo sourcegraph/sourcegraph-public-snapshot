@@ -39,16 +39,17 @@ export const WorkspacesList: React.FunctionComponent<React.PropsWithChildren<Wor
         <ConnectionContainer>
             {error && <ConnectionError errors={[error.message]} />}
             <ConnectionList as="ul" className="mb-0">
-                {connection?.nodes?.map(node => (
+                {connection?.nodes?.map(({ id, __typename: type }) => (
                     <WorkspacesListItem
-                        key={node.id}
-                        workspace={node}
-                        isSelected={node.id === selectedNode}
-                        onSelect={() => history.push(`${executionURL}/execution/workspaces/${node.id}`)}
+                        key={id}
+                        id={id}
+                        type={type}
+                        isSelected={id === selectedNode}
+                        onSelect={() => history.push(`${executionURL}/execution/workspaces/${id}`)}
                     />
                 ))}
             </ConnectionList>
-            {/* We don't want to flash a loader on reloads: */}
+            {/* We don't want to flash a loader on reloads. */}
             {loading && !connection && <ConnectionLoading />}
             {connection && (
                 <SummaryContainer centered={true}>

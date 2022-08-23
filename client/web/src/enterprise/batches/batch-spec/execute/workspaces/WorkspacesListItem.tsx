@@ -1,18 +1,17 @@
 import React from 'react'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
-import {
-    HiddenBatchSpecWorkspaceListFields,
-    VisibleBatchSpecWorkspaceListFields,
-} from '../../../../../graphql-operations'
+import { BatchSpecWorkspaceAndStatusFields, Scalars } from '../../../../../graphql-operations'
 import { Descriptor, ListItem } from '../../../workspaces-list'
+import { useWorkspaceFromCache } from '../backend'
 
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspacesListItem.module.scss'
 
 interface WorkspacesListItemProps {
-    workspace: VisibleBatchSpecWorkspaceListFields | HiddenBatchSpecWorkspaceListFields
+    id: Scalars['ID']
+    type: 'VisibleBatchSpecWorkspace' | 'HiddenBatchSpecWorkspace'
     /** Whether or not this item is selected to view the details of. */
     isSelected: boolean
     /** Handler when this item is selected. */
@@ -20,10 +19,26 @@ interface WorkspacesListItemProps {
 }
 
 export const WorkspacesListItem: React.FunctionComponent<React.PropsWithChildren<WorkspacesListItemProps>> = ({
-    workspace,
+    id,
+    type,
     isSelected,
     onSelect,
 }) => {
+    const workspace = useWorkspaceFromCache(id, type)
+    if (!workspace) {
+        return null
+    }
+
+    return <MemoizedWorkspacesListItem workspace={workspace} isSelected={isSelected} onSelect={onSelect} />
+}
+
+type MemoizedWorkspacesListItemProps = Pick<WorkspacesListItemProps, 'isSelected' | 'onSelect'> & {
+    workspace: BatchSpecWorkspaceAndStatusFields
+}
+
+export const MemoizedWorkspacesListItem: React.FunctionComponent<
+    React.PropsWithChildren<MemoizedWorkspacesListItemProps>
+> = React.memo(function MemoizedWorkspacesListItem({ isSelected, onSelect, workspace }) {
     const statusIndicator = (
         <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />
     )
@@ -41,4 +56,4 @@ export const WorkspacesListItem: React.FunctionComponent<React.PropsWithChildren
             {diffStat}
         </ListItem>
     )
-}
+})

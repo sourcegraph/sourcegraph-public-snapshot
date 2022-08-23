@@ -1,32 +1,39 @@
-import { MutationTuple } from '@apollo/client'
+import { MutationTuple, useApolloClient, gql as apolloGQL } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
+import { useStopwatch } from '@sourcegraph/wildcard'
 
 import { fileDiffFields } from '../../../../backend/diff'
 import { requestGraphQL } from '../../../../backend/graphql'
 import { useConnection, UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
+    BatchSpecWorkspaceAndStatusFields,
     BatchSpecWorkspaceByIDResult,
     BatchSpecWorkspaceByIDVariables,
+    BatchSpecWorkspaceStatusesConnectionFields,
     BatchSpecWorkspacesResult,
+    BatchSpecWorkspaceState,
+    BatchSpecWorkspaceStatusesResult,
+    BatchSpecWorkspaceStatusesVariables,
     BatchSpecWorkspaceStepFileDiffsResult,
     BatchSpecWorkspaceStepFileDiffsVariables,
     BatchSpecWorkspacesVariables,
     CancelBatchSpecExecutionResult,
     CancelBatchSpecExecutionVariables,
-    Scalars,
-    WorkspaceStepFileDiffConnectionFields,
-    BatchSpecWorkspaceState,
-    VisibleBatchSpecWorkspaceFields,
     HiddenBatchSpecWorkspaceFields,
-    VisibleBatchSpecWorkspaceListFields,
     HiddenBatchSpecWorkspaceListFields,
     RetryWorkspaceExecutionResult,
     RetryWorkspaceExecutionVariables,
+    Scalars,
+    VisibleBatchSpecWorkspaceFields,
+    VisibleBatchSpecWorkspaceListFields,
+    WorkspaceStepFileDiffConnectionFields,
 } from '../../../../graphql-operations'
+
+const WORKSPACE_POLLING_INTERVAL = 2500
 
 const batchSpecWorkspaceFieldsFragment = gql`
     fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
@@ -260,7 +267,7 @@ export const useBatchSpecWorkspace = (id: Scalars['ID']): BatchSpecWorkspaceHook
             // use of network bandwidth since many of these fields aren't changing and most of
             // the time there will be no changes at all, but it's also the easiest way to
             // keep this in sync for now at the cost of a bit of excess network resources.
-            pollInterval: 2500,
+            pollInterval: WORKSPACE_POLLING_INTERVAL,
         }
     )
 
@@ -366,14 +373,17 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
         })
     )
 
-export const BATCH_SPEC_WORKSPACES = gql`
-    query BatchSpecWorkspaces(
-        $node: ID!
-        $first: Int
-        $after: String
-        $search: String
-        $state: BatchSpecWorkspaceState
-    ) {
+/**
+ * BATCH_SPEC_WORKSPACE_STATUSES is the GraphQL document to query a batch spec's
+ * workspaces connection for dynamic fields that indicate the workspace's execution
+ * status, namely: `placeInQueue`, `state`, and `diffStat`. These fields are available on
+ * both visible and hidden workspaces.
+ *
+ * Due to the `defaultMaxFirstParam` enforced by the backend server, we can only request
+ * up to 10000 workspaces at a time.
+ */
+export const BATCH_SPEC_WORKSPACE_STATUSES = gql`
+    query BatchSpecWorkspaceStatuses($node: ID!, $after: String) {
         node(id: $node) {
             __typename
             ... on BatchSpec {
@@ -383,7 +393,7 @@ export const BATCH_SPEC_WORKSPACES = gql`
                     id
                     workspaces(first: 10000, after: $after) {
                         ... on BatchSpecWorkspaceConnection {
-                            ...BatchSpecWorkspaceConnectionFields
+                            ...BatchSpecWorkspaceStatusesConnectionFields
                         }
                     }
                 }
@@ -391,24 +401,21 @@ export const BATCH_SPEC_WORKSPACES = gql`
         }
     }
 
-    fragment BatchSpecWorkspaceConnectionFields on BatchSpecWorkspaceConnection {
+    fragment BatchSpecWorkspaceStatusesConnectionFields on BatchSpecWorkspaceConnection {
         __typename
         pageInfo {
-            endCursor
             hasNextPage
+            endCursor
         }
         nodes {
             __typename
-            ... on HiddenBatchSpecWorkspace {
-                ...HiddenBatchSpecWorkspaceListFields
-            }
-            ... on VisibleBatchSpecWorkspace {
-                ...VisibleBatchSpecWorkspaceListFields
+            ... on BatchSpecWorkspace {
+                ...BatchSpecWorkspaceStatusFields
             }
         }
     }
 
-    fragment BatchSpecWorkspaceListFields on BatchSpecWorkspace {
+    fragment BatchSpecWorkspaceStatusFields on BatchSpecWorkspace {
         __typename
         id
         state
@@ -418,6 +425,86 @@ export const BATCH_SPEC_WORKSPACES = gql`
             deleted
         }
         placeInQueue
+    }
+`
+
+/**
+ * workspacesOrError is a helper function that extracts the `BatchSpecWorkspaceConnection`
+ * from the full query response data, or throws an error if it's not accessible in the
+ * response.
+ */
+const workspacesOrError = (
+    batchSpecID: Scalars['ID'],
+    data: BatchSpecWorkspaceStatusesResult
+): BatchSpecWorkspaceStatusesConnectionFields | null => {
+    if (!data.node) {
+        throw new Error(`Batch spec with ID ${batchSpecID} does not exist`)
+    }
+    if (data.node.__typename !== 'BatchSpec') {
+        throw new Error(`The given ID is a ${data.node.__typename as string}, not a BatchSpec`)
+    }
+    return data.node.workspaceResolution?.workspaces || null
+}
+
+/**
+ * usePollWorkspaceStatuses is a hook that will poll batched requests for a batch spec's
+ * workspaces connection for dynamic fields that indicate every workspace's execution
+ * status.
+ *
+ * It is meant to be used in conjunction with `useWorkspacesListConnection` to populate
+ * all of the workspace information surfaced in the UI for the execution workspaces list,
+ * but it is separate in order to prevent write conflicts between `fetchMore` requests
+ * (the "show more" button) and polling requests. The data from both queries is merged and
+ * eventually read from the cache.
+ */
+export const usePollWorkspaceStatuses = (batchSpecID: Scalars['ID']): void => {
+    const { start: resetStopwatch, time } = useStopwatch()
+    // We manually poll with `refetch` in case there are more workspaces than fit on the
+    // first page.
+    const { refetch } = useQuery<BatchSpecWorkspaceStatusesResult, BatchSpecWorkspaceStatusesVariables>(
+        BATCH_SPEC_WORKSPACE_STATUSES,
+        {
+            variables: { node: batchSpecID, after: null },
+            fetchPolicy: 'cache-and-network',
+            /* eslint-disable @typescript-eslint/no-floating-promises */
+            onCompleted: data => {
+                const workspaces = workspacesOrError(batchSpecID, data)
+                if (!workspaces) {
+                    return
+                }
+                // If there are more workspaces to fetch, do that immediately.
+                if (workspaces.pageInfo.hasNextPage) {
+                    refetch({ node: batchSpecID, after: workspaces.pageInfo.endCursor })
+                    return
+                }
+                // Once we've finished fetching all of the workspace statuses, we'll wait
+                // the extent of the polling interval and then start back at the beginning
+                // again. Ideally, we would stop polling once all workspaces were in a
+                // final state. However, we don't have an easy way to restart polling if
+                // the user then retried any workspace, so for this reason we won't stop.
+                if (time.milliseconds > WORKSPACE_POLLING_INTERVAL) {
+                    // If it took longer than the polling interval to fetch all of the
+                    // pages of workspaces, we can restart immediately.
+                    resetStopwatch()
+                    refetch({ node: batchSpecID, after: null })
+                } else {
+                    // Otherwise, we'll wait for the remaining part of the interval to
+                    // elapse first.
+                    setTimeout(() => {
+                        resetStopwatch()
+                        refetch({ node: batchSpecID, after: null })
+                    }, WORKSPACE_POLLING_INTERVAL - time.milliseconds)
+                }
+            },
+            /* eslint-enable @typescript-eslint/no-floating-promises */
+        }
+    )
+}
+
+const commonBatchSpecWorkspaceFields = gql`
+    fragment BatchSpecWorkspaceListFields on BatchSpecWorkspace {
+        __typename
+        id
         ignored
         unsupported
         cachedResultFound
@@ -442,6 +529,65 @@ export const BATCH_SPEC_WORKSPACES = gql`
     }
 `
 
+/**
+ * BATCH_SPEC_WORKSPACES is the GraphQL document to query a batch spec's workspaces
+ * connection for fields of the workspaces that are not expected to change, such as the
+ * path/branch and repository it is part of or whether or not it's
+ * unsupported/ignored/cached.
+ */
+export const BATCH_SPEC_WORKSPACES = gql`
+    query BatchSpecWorkspaces(
+        $node: ID!
+        $first: Int
+        $after: String
+        $search: String
+        $state: BatchSpecWorkspaceState
+    ) {
+        node(id: $node) {
+            __typename
+            ... on BatchSpec {
+                id
+                workspaceResolution {
+                    __typename
+                    id
+                    workspaces(first: $first, after: $after, search: $search, state: $state) {
+                        ...BatchSpecWorkspaceConnectionFields
+                    }
+                }
+            }
+        }
+    }
+
+    fragment BatchSpecWorkspaceConnectionFields on BatchSpecWorkspaceConnection {
+        __typename
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            __typename
+            ... on HiddenBatchSpecWorkspace {
+                ...HiddenBatchSpecWorkspaceListFields
+            }
+            ... on VisibleBatchSpecWorkspace {
+                ...VisibleBatchSpecWorkspaceListFields
+            }
+        }
+    }
+
+    ${commonBatchSpecWorkspaceFields}
+`
+
+/**
+ * usePollWorkspaceStatuses is a connection query hook for a batch spec's workspaces
+ * connection, specifically for fields of the workspaces that are not expected to change.
+ * It can optionally filter the nodes in the connection by search string or execution
+ * state.
+ *
+ * It is meant to be used in conjunction with `usePollWorkspaceStatuses` to populate all
+ * of the workspace information surfaced in the UI for the execution workspaces list.
+ */
 export const useWorkspacesListConnection = (
     batchSpecID: Scalars['ID'],
     search: string | null,
@@ -456,14 +602,13 @@ export const useWorkspacesListConnection = (
         variables: {
             node: batchSpecID,
             after: null,
-            first: 20,
+            first: 5,
             search,
             state,
         },
         options: {
             useURL: true,
             fetchPolicy: 'cache-and-network',
-            pollInterval: 2500,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
@@ -480,6 +625,46 @@ export const useWorkspacesListConnection = (
             return data.node.workspaceResolution.workspaces
         },
     })
+
+/**
+ * useWorkspaceFromCache is a hook that fetches a given batch spec workspace from the
+ * Apollo Client cache, if it is there. It will *not* use the network at all and relies on
+ * data having already been fetched and written from `useWorkspacesListConnection` and
+ * `usePollWorkspaceStatuses`. It is intended to be used to fetch the merged results from
+ * both of said queries.
+ */
+export const useWorkspaceFromCache = (
+    workspaceID: Scalars['ID'],
+    type: 'VisibleBatchSpecWorkspace' | 'HiddenBatchSpecWorkspace'
+): BatchSpecWorkspaceAndStatusFields | null | undefined => {
+    const apolloClient = useApolloClient()
+    return apolloClient.readFragment<BatchSpecWorkspaceAndStatusFields | null | undefined>({
+        id: `${type}:${workspaceID}`,
+        fragmentName: 'BatchSpecWorkspaceAndStatusFields',
+        fragment: apolloGQL`
+            fragment BatchSpecWorkspaceAndStatusFields on BatchSpecWorkspace {
+                __typename
+                id
+                state
+                diffStat {
+                    added
+                    changed
+                    deleted
+                }
+                placeInQueue
+                __typename
+                ... on HiddenBatchSpecWorkspace {
+                    ...HiddenBatchSpecWorkspaceListFields
+                }
+                ... on VisibleBatchSpecWorkspace {
+                    ...VisibleBatchSpecWorkspaceListFields
+                }
+            }
+
+            ${commonBatchSpecWorkspaceFields}
+        `,
+    })
+}
 
 const RETRY_WORKSPACE_EXECUTION = gql`
     mutation RetryWorkspaceExecution($id: ID!) {

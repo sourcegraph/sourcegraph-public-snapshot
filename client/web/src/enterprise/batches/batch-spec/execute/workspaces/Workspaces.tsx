@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 
 import { Scalars } from '../../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
-import { useWorkspacesListConnection } from '../backend'
+import { useWorkspacesListConnection, usePollWorkspaceStatuses } from '../backend'
 
 import { WorkspaceFilterRow, WorkspaceFilters } from './WorkspacesFilterRow'
 import { WorkspacesList } from './WorkspacesList'
@@ -28,6 +28,12 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
         filters?.search ?? null,
         filters?.state ?? null
     )
+
+    // We poll for statuses separately from the paginated connection query to prevent
+    // conflicts between poll responses and "Show More" request responses when writing to
+    // the cache. The data from both queries is merged and eventually read from the cache
+    // for the `WorkspaceListItem`.
+    usePollWorkspaceStatuses(batchSpecID)
 
     return (
         <div className="d-flex flex-column w-100 h-100 pr-3">
