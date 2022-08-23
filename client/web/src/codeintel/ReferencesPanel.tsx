@@ -51,7 +51,7 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
-import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'

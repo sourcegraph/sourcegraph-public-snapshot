@@ -77,6 +77,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     isSourcegraphDotCom,
     globbing,
     onHandleFuzzyFinder,
+    onTriggerSearch,
     onEditorCreated,
     interpretComments,
     isLightTheme,
@@ -213,9 +214,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 onBlur,
                 onCompletionItemSelected,
                 onHandleFuzzyFinder,
+                onTriggerSearch,
             })
         }
-    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected, onHandleFuzzyFinder])
+    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected, onHandleFuzzyFinder, onTriggerSearch])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
     useEffect(() => {
@@ -383,6 +385,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
         )
     }
 )
+CodeMirrorQueryInput.displayName = 'CodeMirrorQueryInput'
 
 // The remainder of the file defines all the extensions that provide the query
 // editor behavior. Here is also a brief overview over CodeMirror's architecture
@@ -437,7 +440,13 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
 const [callbacksField, setCallbacks] = createUpdateableField<
     Pick<
         MonacoQueryInputProps,
-        'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected' | 'onHandleFuzzyFinder'
+        | 'onChange'
+        | 'onSubmit'
+        | 'onFocus'
+        | 'onBlur'
+        | 'onCompletionItemSelected'
+        | 'onHandleFuzzyFinder'
+        | 'onTriggerSearch'
     >
 >({ onChange: () => {} }, callbacks => [
     Prec.high(
@@ -464,6 +473,17 @@ const [callbacksField, setCallbacks] = createUpdateableField<
                 const { onHandleFuzzyFinder } = view.state.field(callbacks)
                 if (onHandleFuzzyFinder) {
                     onHandleFuzzyFinder(true)
+                    return true
+                }
+                return false
+            },
+        },
+        {
+            key: 'Mod-f',
+            run: view => {
+                const { onTriggerSearch } = view.state.field(callbacks)
+                if (onTriggerSearch) {
+                    onTriggerSearch()
                     return true
                 }
                 return false

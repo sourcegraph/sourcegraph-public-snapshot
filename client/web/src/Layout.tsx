@@ -45,6 +45,8 @@ import { GlobalNavbar } from './nav/GlobalNavbar'
 import type { BlockInput } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
+import { CodeMirrorContext } from './repo/blob/CodeMirrorContext'
+import { useCodeMirrorBlobSearch } from './repo/blob/useCodeMirrorBlobSearch'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
@@ -209,6 +211,12 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     //     setTosAccepted(true)
     // }, [])
 
+    const {
+        searchShortcut: codeMirrorSearchShortcut,
+        setCodeMirrorBlobEditor,
+        triggerSearchIfAvailable,
+    } = useCodeMirrorBlobSearch()
+
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
@@ -238,121 +246,124 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 coreWorkflowImprovementsEnabled && 'core-workflow-improvements-enabled'
             )}
         >
-            {showHelpShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
-            ))}
-            <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
-            <GlobalAlerts
-                authenticatedUser={props.authenticatedUser}
-                settingsCascade={props.settingsCascade}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
-            {!isSiteInit && !isSignInOrUp && (
-                <GlobalNavbar
-                    {...props}
-                    {...themeProps}
-                    authRequired={!!authRequired}
-                    showSearchBox={
-                        isSearchRelatedPage &&
-                        !isSearchHomepage &&
-                        !isCommunitySearchContextPage &&
-                        !isSearchConsolePage &&
-                        !isSearchNotebooksPage
-                    }
-                    variant={
-                        isSearchHomepage
-                            ? 'low-profile'
-                            : isCommunitySearchContextPage
-                            ? 'low-profile-with-logo'
-                            : 'default'
-                    }
-                    minimalNavLinks={minimalNavLinks}
-                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                    showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
-                    onHandleFuzzyFinder={setIsFuzzyFinderVisible}
+            <CodeMirrorContext.Provider value={{ setCodeMirrorBlobEditor, triggerSearchIfAvailable }}>
+                {showHelpShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
+                ))}
+                <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
+                <GlobalAlerts
+                    authenticatedUser={props.authenticatedUser}
+                    settingsCascade={props.settingsCascade}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
-            )}
-            {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
-            <ErrorBoundary location={props.location}>
-                <Suspense
-                    fallback={
-                        <div className="flex flex-1">
-                            <LoadingSpinner className="m-2" />
-                        </div>
-                    }
-                >
-                    <Switch>
-                        {props.routes.map(
-                            ({ render, condition = () => true, ...route }) =>
-                                condition(context) && (
-                                    <Route
-                                        {...route}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        component={undefined}
-                                        render={routeComponentProps => (
-                                            <AppRouterContainer>
-                                                {render({ ...context, ...routeComponentProps })}
-                                            </AppRouterContainer>
-                                        )}
-                                    />
-                                )
-                        )}
-                    </Switch>
-                </Suspense>
-            </ErrorBoundary>
-            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
-                props.location.pathname !== PageRoutes.SignIn && (
-                    <Panel
-                        className={styles.panel}
-                        position="bottom"
-                        defaultSize={350}
-                        storageKey="panel-size"
-                        ariaLabel="References panel"
-                    >
-                        <TabbedPanelContent
-                            {...props}
-                            {...themeProps}
-                            repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-                        />
-                    </Panel>
+                {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+                {!isSiteInit && !isSignInOrUp && (
+                    <GlobalNavbar
+                        {...props}
+                        {...themeProps}
+                        authRequired={!!authRequired}
+                        showSearchBox={
+                            isSearchRelatedPage &&
+                            !isSearchHomepage &&
+                            !isCommunitySearchContextPage &&
+                            !isSearchConsolePage &&
+                            !isSearchNotebooksPage
+                        }
+                        variant={
+                            isSearchHomepage
+                                ? 'low-profile'
+                                : isCommunitySearchContextPage
+                                ? 'low-profile-with-logo'
+                                : 'default'
+                        }
+                        minimalNavLinks={minimalNavLinks}
+                        isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
+                        isRepositoryRelatedPage={isRepositoryRelatedPage}
+                        showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                        onHandleFuzzyFinder={setIsFuzzyFinderVisible}
+                    />
                 )}
-            <GlobalContributions
-                key={3}
-                extensionsController={props.extensionsController}
-                platformContext={props.platformContext}
-                history={props.history}
-            />
-            {props.extensionsController !== null ? (
-                <GlobalDebug {...props} extensionsController={props.extensionsController} />
-            ) : null}
-            {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
-            )}
-            {fuzzyFinderShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut
-                    key={index}
-                    {...keybinding}
-                    onMatch={() => {
-                        setIsFuzzyFinderVisible(true)
-                        setRetainFuzzyFinderCache(true)
-                        const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
-                        input?.focus()
-                        input?.select()
-                    }}
+                {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
+                <ErrorBoundary location={props.location}>
+                    <Suspense
+                        fallback={
+                            <div className="flex flex-1">
+                                <LoadingSpinner className="m-2" />
+                            </div>
+                        }
+                    >
+                        <Switch>
+                            {props.routes.map(
+                                ({ render, condition = () => true, ...route }) =>
+                                    condition(context) && (
+                                        <Route
+                                            {...route}
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            component={undefined}
+                                            render={routeComponentProps => (
+                                                <AppRouterContainer>
+                                                    {render({ ...context, ...routeComponentProps })}
+                                                </AppRouterContainer>
+                                            )}
+                                        />
+                                    )
+                            )}
+                        </Switch>
+                    </Suspense>
+                </ErrorBoundary>
+                {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
+                    props.location.pathname !== PageRoutes.SignIn && (
+                        <Panel
+                            className={styles.panel}
+                            position="bottom"
+                            defaultSize={350}
+                            storageKey="panel-size"
+                            ariaLabel="References panel"
+                        >
+                            <TabbedPanelContent
+                                {...props}
+                                {...themeProps}
+                                repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                                fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                            />
+                        </Panel>
+                    )}
+                <GlobalContributions
+                    key={3}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    history={props.history}
                 />
-            ))}
-            {isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
-                <FuzzyFinder
-                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
-                    isVisible={isFuzzyFinderVisible}
-                    telemetryService={props.telemetryService}
-                    location={props.location}
-                    setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
-                />
-            )}
+                {props.extensionsController !== null ? (
+                    <GlobalDebug {...props} extensionsController={props.extensionsController} />
+                ) : null}
+                {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
+                    <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
+                )}
+                {fuzzyFinderShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut
+                        key={index}
+                        {...keybinding}
+                        onMatch={() => {
+                            setIsFuzzyFinderVisible(true)
+                            setRetainFuzzyFinderCache(true)
+                            const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
+                            input?.focus()
+                            input?.select()
+                        }}
+                    />
+                ))}
+                {isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
+                    <FuzzyFinder
+                        setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                        isVisible={isFuzzyFinderVisible}
+                        telemetryService={props.telemetryService}
+                        location={props.location}
+                        setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
+                    />
+                )}
+                {codeMirrorSearchShortcut}
+            </CodeMirrorContext.Provider>
         </div>
     )
 }

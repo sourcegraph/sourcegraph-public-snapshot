@@ -26,6 +26,7 @@ import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
+import { useCodeMirrorContext } from './CodeMirrorContext'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -89,7 +90,7 @@ const [callbacksField, setCallbacks] = createUpdateableField<Pick<BlobProps, 'on
     ]
 )
 
-export const Blob: React.FunctionComponent<BlobProps> = props => {
+export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
         wrapCode,
@@ -208,6 +209,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             setCallbacks(editor, { onHandleFuzzyFinder })
         }
     }, [editor, onHandleFuzzyFinder])
+
+    const { setCodeMirrorBlobEditor } = useCodeMirrorContext()
+
+    useEffect(() => {
+        if (editor) {
+            setCodeMirrorBlobEditor(editor)
+        }
+        return () => {
+            setCodeMirrorBlobEditor(undefined)
+        }
+    }, [setCodeMirrorBlobEditor, editor])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
