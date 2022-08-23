@@ -34,7 +34,7 @@ export interface Settings {
         }
         enableExtensionsDecorationsColumnView?: boolean
         extensionsAsCoreFeatures?: boolean
-        enableGoImportsSearchExpansion?: boolean
+        enableGoImportsSearchQueryTransform?: boolean
         enableLegacyExtensions?: boolean
         enableLazyFileResultSyntaxHighlighting?: boolean
     }

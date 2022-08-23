@@ -151,7 +151,7 @@ export class Notebook {
                 })
                 break
             case 'query': {
-                const { extensionHostAPI, enableGoImportsSearchExpansion } = this.dependencies
+                const { extensionHostAPI, enableGoImportsSearchQueryTransform } = this.dependencies
                 // Removes comments
                 const query = block.input.query.replace(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
@@ -160,7 +160,7 @@ export class Notebook {
                         transformSearchQuery({
                             query,
                             extensionHostAPIPromise: extensionHostAPI,
-                            enableGoImportsSearchExpansion,
+                            enableGoImportsSearchQueryTransform,
                         }),
                         {
                             version: LATEST_VERSION,

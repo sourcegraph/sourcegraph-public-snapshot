@@ -16,15 +16,15 @@ const TRANSFORM_QUERY_TIMEOUT = 3000
 export function transformSearchQuery({
     query,
     extensionHostAPIPromise,
-    enableGoImportsSearchExpansion,
+    enableGoImportsSearchQueryTransform,
 }: {
     query: string
     extensionHostAPIPromise: null | Promise<Remote<FlatExtensionHostAPI>>
-    enableGoImportsSearchExpansion: undefined | boolean
+    enableGoImportsSearchQueryTransform: undefined | boolean
 }): Observable<string> {
     // We apply any non-extension transform before we send the query to the
     // extensions since we want these to take presedence over the extensions.
-    if (enableGoImportsSearchExpansion === undefined || enableGoImportsSearchExpansion) {
+    if (enableGoImportsSearchQueryTransform === undefined || enableGoImportsSearchQueryTransform) {
         query = goImportsTransformer(query)
     }
 

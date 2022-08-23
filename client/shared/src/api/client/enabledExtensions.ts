@@ -98,20 +98,22 @@ export const getEnabledExtensions = once(
             map(([configuredExtensions, sideloadedExtension, settings]) => {
                 const extensionsAsCoreFeatures =
                     isSettingsValid(settings) && settings.final.experimentalFeatures?.extensionsAsCoreFeatures
-                const enableGoImportsSearchExpansion =
-                    isSettingsValid(settings) && settings.final.experimentalFeatures?.enableGoImportsSearchExpansion
+                const enableGoImportsSearchQueryTransform =
+                    isSettingsValid(settings) &&
+                    settings.final.experimentalFeatures?.enableGoImportsSearchQueryTransform
 
                 let enabled = configuredExtensions.filter(extension => {
                     const extensionsAsCoreFeatureMigratedExtension =
                         extensionsAsCoreFeatures && MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
-                    const enableGoImportsSearchExpansionMigratedExtension =
-                        (enableGoImportsSearchExpansion === undefined || enableGoImportsSearchExpansion) &&
+                    const enableGoImportsSearchQueryTransformMigratedExtension =
+                        (enableGoImportsSearchQueryTransform === undefined || enableGoImportsSearchQueryTransform) &&
                         extension.id === 'sourcegraph/go-imports-search-expansion'
 
                     // Ignore extensions migrated to the core workflow if the experimental feature is enabled
                     if (
                         context.clientApplication === 'sourcegraph' &&
-                        (extensionsAsCoreFeatureMigratedExtension || enableGoImportsSearchExpansionMigratedExtension)
+                        (extensionsAsCoreFeatureMigratedExtension ||
+                            enableGoImportsSearchQueryTransformMigratedExtension)
                     ) {
                         return false
                     }

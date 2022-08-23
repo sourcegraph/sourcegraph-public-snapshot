@@ -111,17 +111,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         settingsCascade,
         outlineContainerElement,
     }) => {
-        const enableGoImportsSearchExpansion = useExperimentalFeatures(
-            features => features.enableGoImportsSearchExpansion
+        const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+            features => features.enableGoImportsSearchQueryTransform
         )
         const notebook = useMemo(
             () =>
                 new Notebook(initialBlocks, {
                     extensionHostAPI: extensionsController !== null ? extensionsController.extHostAPI : null,
                     fetchHighlightedFileLineRanges,
-                    enableGoImportsSearchExpansion,
+                    enableGoImportsSearchQueryTransform,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController, enableGoImportsSearchExpansion]
+            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController, enableGoImportsSearchQueryTransform]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)

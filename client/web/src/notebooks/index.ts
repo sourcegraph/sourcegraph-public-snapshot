@@ -116,6 +116,6 @@ export interface BlockProps<T extends Block = Block> {
 
 export interface BlockDependencies {
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null
-    enableGoImportsSearchExpansion: undefined | boolean
+    enableGoImportsSearchQueryTransform: undefined | boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }

@@ -333,7 +333,7 @@
             "pointer": true
           }
         },
-        "enableGoImportsSearchExpansion": {
+        "enableGoImportsSearchQueryTransform": {
           "description": "Enables `go.imports:` search expansion (formally known as go imports search extension).",
           "type": "boolean",
           "default": false,

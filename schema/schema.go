@@ -1779,8 +1779,8 @@ type SettingsExperimentalFeatures struct {
 	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
-	// EnableGoImportsSearchExpansion description: Enables `go.imports:` search expansion (formally known as go imports search extension).
-	EnableGoImportsSearchExpansion *bool `json:"enableGoImportsSearchExpansion,omitempty"`
+	// EnableGoImportsSearchQueryTransform description: Enables `go.imports:` search expansion (formally known as go imports search extension).
+	EnableGoImportsSearchQueryTransform *bool `json:"enableGoImportsSearchQueryTransform,omitempty"`
 	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
