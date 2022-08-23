@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/aggregation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -288,7 +287,10 @@ func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
 }
 
 func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
-	searchType := querybuilder.SearchTypeFromString(patternType)
+	searchType, err := client.SearchTypeFromString(patternType)
+	if err != nil {
+		return false, err
+	}
 	if !(searchType == query.SearchTypeRegex || searchType == query.SearchTypeStandard || searchType == query.SearchTypeLucky) {
 		return false, nil
 	}

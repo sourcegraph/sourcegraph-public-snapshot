@@ -2,31 +2,17 @@ package querybuilder
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func SearchTypeFromString(pt string) query.SearchType {
-	var searchType query.SearchType
-	switch pt {
-	case "literal":
-		searchType = query.SearchTypeLiteral
-	case "structural":
-		searchType = query.SearchTypeStructural
-	case "regexp", "regex":
-		searchType = query.SearchTypeRegex
-	case "standard":
-		searchType = query.SearchTypeStandard
-	case "lucky":
-		searchType = query.SearchTypeLucky
-	default:
-		searchType = query.SearchTypeLiteral
-	}
-	return searchType
-}
-
 func ParseQuery(q string, patternType string) (query.Plan, error) {
-	plan, err := query.Pipeline(query.Init(q, SearchTypeFromString(patternType)))
+	searchType, err := client.SearchTypeFromString(patternType)
+	if err != nil {
+		return nil, errors.Wrap(err, "SearchTypeFromString")
+	}
+	plan, err := query.Pipeline(query.Init(q, searchType))
 	if err != nil {
 		return nil, errors.Wrap(err, "query.Pipeline")
 	}
