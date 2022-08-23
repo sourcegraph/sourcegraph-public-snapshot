@@ -25,7 +25,7 @@ import (
 type handler struct {
 	nameSet       *janitor.NameSet
 	store         workerutil.Store
-	uploadStore   UploadStore
+	uploadStore   FileStore
 	options       Options
 	operations    *command.Operations
 	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
@@ -179,7 +179,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 
 	// Write mount files
 	for _, mount := range job.Mounts {
-		content, err := h.uploadStore.GetMount(ctx, mount.URL)
+		content, err := h.uploadStore.Get(ctx, mount.URL)
 		if err != nil {
 			return err
 		}

@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"path/filepath"
 
 	"github.com/inconshreveable/log15"
 	"golang.org/x/net/context/ctxhttp"
@@ -15,6 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// schemeExecutorToken is the special type of token to communicate with the executor endpoints.
+const schemeExecutorToken = "token-executor"
+
 // BaseClient is an abstract HTTP API-backed data access layer. Instances of this
 // struct should not be used directly, but should be used compositionally by other
 // stores that implement logic specific to a domain.
@@ -22,24 +27,24 @@ import (
 // The following is a minimal example of decorating the base client, making the
 // actual logic of the decorated client extremely lean:
 //
-//     type SprocketClient struct {
-//         *httpcli.BaseClient
+//	type SprocketClient struct {
+//	    *httpcli.BaseClient
 //
-//         baseURL *url.URL
-//     }
+//	    baseURL *url.URL
+//	}
 //
-//     func (c *SprocketClient) Fabricate(ctx context.Context(), spec SprocketSpec) (Sprocket, error) {
-//         url := c.baseURL.ResolveReference(&url.URL{Path: "/new"})
+//	func (c *SprocketClient) Fabricate(ctx context.Context(), spec SprocketSpec) (Sprocket, error) {
+//	    url := c.baseURL.ResolveReference(&url.URL{Path: "/new"})
 //
-//         req, err := httpcli.MakeJSONRequest("POST", url.String(), spec)
-//         if err != nil {
-//             return Sprocket{}, err
-//         }
+//	    req, err := httpcli.NewJSONRequest("POST", url.String(), spec)
+//	    if err != nil {
+//	        return Sprocket{}, err
+//	    }
 //
-//         var s Sprocket
-//         err := c.client.DoAndDecode(ctx, req, &s)
-//         return s, err
-//     }
+//	    var s Sprocket
+//	    err := c.client.DoAndDecode(ctx, req, &s)
+//	    return s, err
+//	}
 type BaseClient struct {
 	httpClient *http.Client
 	options    BaseClientOptions
@@ -48,6 +53,18 @@ type BaseClient struct {
 type BaseClientOptions struct {
 	// UserAgent specifies the user agent string to supply on requests.
 	UserAgent string
+
+	EndpointOptions EndpointOptions
+}
+
+type EndpointOptions struct {
+	// URL is the target request URL.
+	URL string
+
+	PathPrefix string
+
+	// Token is the authorization token to include with all requests (via Authorization header).
+	Token string
 }
 
 // NewBaseClient creates a new BaseClient with the given transport.
@@ -112,9 +129,58 @@ func (c *BaseClient) DoAndDrop(ctx context.Context, req *http.Request) error {
 	return err
 }
 
-// MakeJSONRequest creates an HTTP request with the given payload serialized as JSON. This
+func (c *BaseClient) NewRequest(method, path string, payload io.Reader) (*http.Request, error) {
+	u, err := newRelativeURL(
+		c.options.EndpointOptions.URL,
+		c.options.EndpointOptions.PathPrefix,
+		path,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := http.NewRequest(method, u.String(), payload)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	return r, nil
+}
+
+func (c *BaseClient) NewJSONRequest(method, path string, payload any) (*http.Request, error) {
+	u, err := newRelativeURL(
+		c.options.EndpointOptions.URL,
+		c.options.EndpointOptions.PathPrefix,
+		path,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := newJSONRequest(method, u, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	return r, nil
+}
+
+// newRelativeURL builds the relative URL on the provided base URL and adds any additional paths.
+// If the base URL is not a valid URL, an error is returned.
+func newRelativeURL(base string, path ...string) (*url.URL, error) {
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		return nil, err
+	}
+
+	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+}
+
+// newJSONRequest creates an HTTP request with the given payload serialized as JSON. This
 // will also ensure that the proper content type header (which is necessary, not pedantic).
-func MakeJSONRequest(method string, url *url.URL, payload any) (*http.Request, error) {
+func newJSONRequest(method string, url *url.URL, payload any) (*http.Request, error) {
 	contents, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

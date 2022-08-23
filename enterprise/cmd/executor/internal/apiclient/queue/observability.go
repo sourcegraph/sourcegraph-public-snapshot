@@ -1,4 +1,4 @@
-package apiclient
+package queue
 
 import (
 	"fmt"
@@ -18,18 +18,18 @@ type operations struct {
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"apiworker_apiclient",
+		"apiworker_apiclient_queue",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("apiworker.apiclient.%s", name),
+			Name:              fmt.Sprintf("apiworker.apiclient.queue.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 

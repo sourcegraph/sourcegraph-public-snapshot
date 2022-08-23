@@ -69,6 +69,6 @@ func (s *storeShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, er
 	return s.queueStore.CanceledJobs(ctx, s.queueName, knownIDs)
 }
 
-type UploadStore interface {
-	GetMount(ctx context.Context, path string) (io.ReadCloser, error)
+type FileStore interface {
+	Get(ctx context.Context, path string) (io.ReadCloser, error)
 }

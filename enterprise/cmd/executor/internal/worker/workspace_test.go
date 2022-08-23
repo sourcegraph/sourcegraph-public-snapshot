@@ -9,16 +9,19 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestPrepareWorkspace_Clone(t *testing.T) {
 	options := Options{
-		ClientOptions: apiclient.Options{
-			EndpointOptions: apiclient.EndpointOptions{
-				URL:   "https://test.io",
-				Token: "hunter2",
+		QueueOptions: queue.Options{
+			BaseClientOptions: apiclient.BaseClientOptions{
+				EndpointOptions: apiclient.EndpointOptions{
+					URL:   "https://test.io",
+					Token: "hunter2",
+				},
 			},
 		},
 		GitServicePath: "/internal/git",
@@ -59,10 +62,12 @@ func TestPrepareWorkspace_Clone(t *testing.T) {
 
 func TestPrepareWorkspace_Clone_Subdirectory(t *testing.T) {
 	options := Options{
-		ClientOptions: apiclient.Options{
-			EndpointOptions: apiclient.EndpointOptions{
-				URL:   "https://test.io",
-				Token: "hunter2",
+		QueueOptions: queue.Options{
+			BaseClientOptions: apiclient.BaseClientOptions{
+				EndpointOptions: apiclient.EndpointOptions{
+					URL:   "https://test.io",
+					Token: "hunter2",
+				},
 			},
 		},
 		GitServicePath: "/internal/git",
@@ -105,10 +110,12 @@ func TestPrepareWorkspace_Clone_Subdirectory(t *testing.T) {
 
 func TestPrepareWorkspace_ShallowClone(t *testing.T) {
 	options := Options{
-		ClientOptions: apiclient.Options{
-			EndpointOptions: apiclient.EndpointOptions{
-				URL:   "https://test.io",
-				Token: "hunter2",
+		QueueOptions: queue.Options{
+			BaseClientOptions: apiclient.BaseClientOptions{
+				EndpointOptions: apiclient.EndpointOptions{
+					URL:   "https://test.io",
+					Token: "hunter2",
+				},
 			},
 		},
 		GitServicePath: "/internal/git",
@@ -149,10 +156,12 @@ func TestPrepareWorkspace_ShallowClone(t *testing.T) {
 
 func TestPrepareWorkspace_SparseCheckout(t *testing.T) {
 	options := Options{
-		ClientOptions: apiclient.Options{
-			EndpointOptions: apiclient.EndpointOptions{
-				URL:   "https://test.io",
-				Token: "hunter2",
+		QueueOptions: queue.Options{
+			BaseClientOptions: apiclient.BaseClientOptions{
+				EndpointOptions: apiclient.EndpointOptions{
+					URL:   "https://test.io",
+					Token: "hunter2",
+				},
 			},
 		},
 		GitServicePath: "/internal/git",

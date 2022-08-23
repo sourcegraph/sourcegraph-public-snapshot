@@ -47,7 +47,7 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 		}
 
 		cloneURL, err := makeRelativeURL(
-			h.options.ClientOptions.EndpointOptions.URL,
+			h.options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
 			h.options.GitServicePath,
 			repositoryName,
 		)
@@ -58,7 +58,7 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 		authorizationOption := fmt.Sprintf(
 			"http.extraHeader=Authorization: %s %s",
 			SchemeExecutorToken,
-			h.options.ClientOptions.EndpointOptions.Token,
+			h.options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
 		)
 
 		fetchCommand := []string{
