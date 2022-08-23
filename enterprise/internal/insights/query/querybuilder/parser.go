@@ -17,7 +17,7 @@ func DetectSearchType(rawQuery string, patternType string) (query.SearchType, er
 		return -1, errors.Wrap(err, "query.Parse")
 	}
 	q = query.LowercaseFieldNames(q)
-	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
+	query.VisitField(q, searchquery.FieldPatternType, func(value string, _ bool, _ query.Annotation) {
 		if value != "" {
 			searchType, err = client.SearchTypeFromString(value)
 		}
