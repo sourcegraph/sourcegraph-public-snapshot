@@ -309,6 +309,9 @@ export const HIGHLIGHTED_FILE_LINES_REQUEST = sinon.fake((parameters: FetchFileP
 export const HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
     of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_SIMPLE[0].slice(range.startLine, range.endLine)))
 )
+export const HIGHLIGHTED_FILE_LINES_LONG_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_LONG[0].slice(range.startLine, range.endLine)))
+)
 
 export const NOOP_SETTINGS_CASCADE = {
     subjects: null,
