@@ -107,7 +107,7 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasSuffix(p, ".yaml") || strings.HasSuffix(p, ".yml") {
 			diff |= Docs
 		}
-		if strings.HasSuffix(p, ".json") || strings.HasSuffix(p, ".jsonc") {
+		if strings.HasSuffix(p, ".json") || strings.HasSuffix(p, ".jsonc") || strings.HasSuffix(p, ".json5") {
 			diff |= Docs
 		}
 
