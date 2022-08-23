@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -233,8 +234,8 @@ func main() {
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWith(
-		log.SentryClientOptions{
-			SampleRate: 0.2,
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
 		},
 	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()

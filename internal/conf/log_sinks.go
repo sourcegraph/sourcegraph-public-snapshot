@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 )
 
@@ -11,7 +12,7 @@ func GetLogSinks() log.SinksConfig {
 	if cfg.Log != nil {
 		if sk := cfg.Log.Sentry; sk != nil {
 			sentrySink = &log.SentrySink{
-				SentryClientOptions: log.SentryClientOptions{
+				ClientOptions: sentry.ClientOptions{
 					Dsn: sk.BackendDSN,
 				},
 			}

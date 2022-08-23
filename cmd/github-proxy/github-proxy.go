@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gorilla/handlers"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -64,8 +65,8 @@ func main() {
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWith(
-		log.SentryClientOptions{
-			SampleRate: 0.2,
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
 		},
 	)) // Experimental: DevX is observing how sampling affects the errors signal
 

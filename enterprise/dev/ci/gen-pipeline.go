@@ -38,21 +38,17 @@ func init() {
 //go:generate sh -c "cd ../../../ && go run ./enterprise/dev/ci/gen-pipeline.go -docs >> doc/dev/background-information/ci/reference.md"
 func main() {
 	flag.Parse()
-	dsn, exists := os.LookupEnv("CI_SENTRY_DSN")
-	if !exists {
-		panic("CI_SENTRY_DSN not found in env")
-	}
-	fmt.Printf("🍀 %d 🍀\n", len(dsn))
 
 	liblog := log.Init(log.Resource{
 		Name:       "buildkite-ci",
 		Version:    "-",
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWith(
-		log.SentryClientOptions{
-			Debug:      true,
-			Dsn:        dsn,
-			SampleRate: 1, //send all
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{
+				Dsn:        os.Getenv("CI_SENTRY_DSN"),
+				SampleRate: 1, //send all
+			},
 		},
 	))
 

@@ -22,8 +22,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
-	sentrylib "github.com/getsentry/sentry-go"
-
+	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -91,8 +90,8 @@ func main() {
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWith(
-		log.SentryClientOptions{
-			SampleRate: 0.2,
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
 		},
 	))
 	defer liblog.Sync()

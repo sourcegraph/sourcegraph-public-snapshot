@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
@@ -135,8 +136,8 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	}, sglog.NewSentrySinkWith(
-		sglog.SentryClientOptions{
-			SampleRate: 0.2,
+		sglog.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
 		},
 	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
