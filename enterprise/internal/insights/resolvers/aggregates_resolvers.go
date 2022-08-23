@@ -294,30 +294,35 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	if !(searchType == query.SearchTypeRegex || searchType == query.SearchTypeStandard || searchType == query.SearchTypeLucky) {
 		return false, nil
 	}
+
+	// A query should contain a single capture group to allow capture group aggregation.
+	if _, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType); err != nil {
+		return false, errors.Wrap(err, "pattern parsing")
+	}
+	if !querybuilder.QueryContainsSingleCaptureGroup(searchQuery) {
+		return false, errors.New("query should contain single capture group for aggregation")
+	}
+
+	// We use ParseQuery to obtain the query parameters.
 	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
 		return false, errors.Wrapf(err, "ParseQuery")
 	}
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	// We allow capture group aggregation for select:path and select:file searches
+	// if they are accompanied by the correct `type` (query syntax edge cases)
 	selectParameter, typeParameter := false, false
 	for _, parameter := range parameters {
-		if parameter.Field == query.FieldSelect {
-			if parameter.Value == "repo" || parameter.Value == "file" {
-				selectParameter = true
-			}
-		} else if parameter.Field == query.FieldType {
-			if parameter.Value == "repo" || parameter.Value == "path" {
-				typeParameter = true
-			}
+		if parameter.Field == query.FieldSelect && (parameter.Value == "repo" || parameter.Value == "file") {
+			selectParameter = true
+		} else if parameter.Field == query.FieldType && (parameter.Value == "repo" || parameter.Value == "path") {
+			typeParameter = true
 		}
 	}
 	if selectParameter && !typeParameter {
 		return false, nil
 	}
-	// A query should contain a single capture group to allow capture group aggregation.
-	if _, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType); err != nil {
-		return false, errors.Wrap(err, "pattern parsing: ")
-	}
+
 	return true, nil
 }
 

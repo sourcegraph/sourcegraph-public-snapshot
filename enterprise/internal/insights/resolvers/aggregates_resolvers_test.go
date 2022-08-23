@@ -147,59 +147,34 @@ func Test_canAggregateByAuthor(t *testing.T) {
 func Test_canAggregateByCaptureGroup(t *testing.T) {
 	testCases := []canAggregateTestCase{
 		{
-			name:         "cannot aggregate for query with wrong pattern type",
-			query:        "func(t *testing.T)",
-			patternType:  "literal",
-			canAggregate: false,
-		},
-		{
 			name:         "can aggregate for simple query with regex pattern type",
 			query:        "func(\\w+) case:yes",
-			patternType:  "regex",
+			patternType:  "regexp",
 			canAggregate: true,
-		},
-		{
-			name:         "cannot aggregate for select:repo query",
-			query:        "repo:contains.file(README) func(\\w+) select:repo",
-			patternType:  "regex",
-			canAggregate: false,
-		},
-		{
-			name:         "cannot aggregate for select:file query",
-			query:        "repo:contains.file(README) func(\\w+) select:file",
-			patternType:  "regex",
-			canAggregate: false,
 		},
 		{
 			name:         "can aggregate for query with both select:repo type:repo",
 			query:        "repo:contains.file(README) func(\\w+) select:repo type:repo",
-			patternType:  "regex",
+			patternType:  "regexp",
 			canAggregate: true,
 		},
 		{
 			name:         "can aggregate for query with both select:file type:path",
 			query:        "repo:contains.file(README) func(\\w+) select:file type:path",
-			patternType:  "regex",
+			patternType:  "regexp",
 			canAggregate: true,
 		},
 		{
 			name:         "can aggregate for query with both select:file type:repo",
 			query:        "repo:contains.file(README) func(\\w+) select:file type:repo",
-			patternType:  "regex",
+			patternType:  "regexp",
 			canAggregate: true,
 		},
 		{
 			name:         "can aggregate for query with both select:repo type:path",
 			query:        "repo:contains.file(README) func(\\w+) select:repo type:path",
-			patternType:  "regex",
-			canAggregate: true,
-		},
-		{
-			name:         "cannot aggregate for invalid query",
-			query:        "type:diff fork:leo func(.*)",
 			patternType:  "regexp",
-			canAggregate: false,
-			err:          errors.Newf("ParseAndValidateQuery"),
+			canAggregate: true,
 		},
 		{
 			name:         "can aggregate for standard query in backslash pattern",
@@ -210,7 +185,32 @@ func Test_canAggregateByCaptureGroup(t *testing.T) {
 		{
 			name:         "cannot aggregate for query with non-captured regexp pattern",
 			query:        "\\w+",
-			patternType:  "regex",
+			patternType:  "regexp",
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for invalid query",
+			query:        "type:diff fork:leo func(.*)",
+			patternType:  "regexp",
+			canAggregate: false,
+			err:          errors.Newf("ParseAndValidateQuery"),
+		},
+		{
+			name:         "cannot aggregate for select:repo query",
+			query:        "repo:contains.file(README) func(\\w+) select:repo",
+			patternType:  "regexp",
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for select:file query",
+			query:        "repo:contains.file(README) func(\\w+) select:file",
+			patternType:  "regexp",
+			canAggregate: false,
+		},
+		{
+			name:         "cannot aggregate for query with wrong pattern type",
+			query:        "func(t *testing.T)",
+			patternType:  "literal",
 			canAggregate: false,
 		},
 	}
