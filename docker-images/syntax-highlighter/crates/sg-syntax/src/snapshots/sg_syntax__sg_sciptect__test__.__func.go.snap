@@ -10,9 +10,46 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^ IdentifierKeyword
 //       ^^^^^ StringLiteral
   
+  type Bar struct {
+//^^^^ IdentifierKeyword
+//     ^^^ IdentifierType
+//         ^^^^^^ IdentifierKeyword
+//                ^ PunctuationBracket
+   z int
+// ^ Identifier
+//   ^^^ IdentifierBuiltinType
+  }
+//^ PunctuationBracket
+  
+  type Foo struct {
+//^^^^ IdentifierKeyword
+//     ^^^ IdentifierType
+//         ^^^^^^ IdentifierKeyword
+//                ^ PunctuationBracket
+   x *int
+// ^ Identifier
+//   ^ IdentifierOperator
+//    ^^^ IdentifierBuiltinType
+   Y string
+// ^ Identifier
+//   ^^^^^^ IdentifierBuiltinType
+   Bar
+   Bar2 Bar
+// ^^^^ Identifier
+//      ^^^ IdentifierType
+   Bar3 *Bar
+// ^^^^ Identifier
+//      ^ IdentifierOperator
+//       ^^^ IdentifierType
+  }
+//^ PunctuationBracket
+  
   func main() {
 //^^^^ IdentifierKeyword
 //     ^^^^ IdentifierFunction
+//         ^ PunctuationBracket
+//          ^ PunctuationBracket
+//            ^ PunctuationBracket
    // this is comment
 // ^^^^^^^^^^^^^^^^^^ Comment
   
@@ -37,7 +74,7 @@ expression: "dump_document(&document, &contents)"
    multilineString := `hello
 // ^^^^^^^^^^^^^^^ Identifier
 //                 ^^ IdentifierOperator
-//                    ^^^^^^ StringLiteral 11:20..13:16
+//                    ^^^^^^ StringLiteral 23:20..25:16
    world
   this is my poem` + aString
 //                 ^ IdentifierOperator
@@ -53,13 +90,53 @@ expression: "dump_document(&document, &contents)"
 //                    ^ IdentifierOperator
 //                      ^^^ IdentifierBuiltin
   
-   fmt.Println(x, char, string, bool, null_was_a_mistake)
+   foo := &Foo{
 // ^^^ Identifier
-//     ^^^^^^^ Identifier
+//     ^^ IdentifierOperator
+//        ^ IdentifierOperator
+//         ^^^ Identifier
+//            ^ PunctuationBracket
+    x: &x,
+//  ^ Identifier
+//   ^ PunctuationBracket
+//     ^ IdentifierOperator
+//      ^ Identifier
+//       ^ PunctuationBracket
+    Bar: Bar{
+//  ^^^ Identifier
+//     ^ PunctuationBracket
+//       ^^^ Identifier
+//          ^ PunctuationBracket
+     z: 43,
+//   ^ Identifier
+//    ^ PunctuationBracket
+//      ^^ NumericLiteral
+//        ^ PunctuationBracket
+    },
+//  ^ PunctuationBracket
+//   ^ PunctuationBracket
+   }
+// ^ PunctuationBracket
+  
+   fmt.Println(x, char, aString, bool, null_was_a_mistake, foo, multilineString)
+// ^^^ Identifier
+//    ^ PunctuationBracket
+//     ^^^^^^^ IdentifierFunction
+//            ^ PunctuationBracket
 //             ^ Identifier
+//              ^ PunctuationBracket
 //                ^^^^ Identifier
-//                      ^^^^^^ Identifier
-//                              ^^^^ Identifier
-//                                    ^^^^^^^^^^^^^^^^^^ Identifier
+//                    ^ PunctuationBracket
+//                      ^^^^^^^ Identifier
+//                             ^ PunctuationBracket
+//                               ^^^^ Identifier
+//                                   ^ PunctuationBracket
+//                                     ^^^^^^^^^^^^^^^^^^ Identifier
+//                                                       ^ PunctuationBracket
+//                                                         ^^^ Identifier
+//                                                            ^ PunctuationBracket
+//                                                              ^^^^^^^^^^^^^^^ Identifier
+//                                                                             ^ PunctuationBracket
   }
+//^ PunctuationBracket
 

@@ -1,68 +1,122 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 539
 expression: "dump_document(&document, &contents)"
 ---
-  interface MyInterface 
+  interface MyInterface
 //^^^^^^^^^ IdentifierType
-  { 
-       void abstract_func(int x,int y); 
+  {
+//^ PunctuationBracket
+       void abstract_func(int x,int y);
 //     ^^^^ IdentifierType
 //          ^^^^^^^^^^^^^ IdentifierFunction
+//                       ^ PunctuationBracket
 //                        ^^^ IdentifierType
 //                            ^ Identifier
+//                             ^ PunctuationBracket
 //                              ^^^ IdentifierType
 //                                  ^ Identifier
+//                                   ^ PunctuationBracket
 //                                    ^ PunctuationDelimiter
-   
-       default void default_Fun() 
+  
+       default void default_Fun()
 //     ^^^^^^^ IdentifierKeyword
 //             ^^^^ IdentifierType
 //                  ^^^^^^^^^^^ IdentifierFunction
-      { 
-           System.out.println("This is default method"); 
-//                    ^^^^^^^ Identifier
+//                             ^ PunctuationBracket
+//                              ^ PunctuationBracket
+      {
+//    ^ PunctuationBracket
+           System.out.println("This is default method");
+//         ^^^^^^ IdentifierType
+//               ^ PunctuationBracket
+//                   ^ PunctuationBracket
+//                    ^^^^^^^ IdentifierFunction
+//                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                    ^ PunctuationBracket
 //                                                     ^ PunctuationDelimiter
-      } 
-  } 
-   
-  class Main 
+      }
+//    ^ PunctuationBracket
+  }
+//^ PunctuationBracket
+  
+  class Main
 //^^^^^ IdentifierType
-  { 
-       public static void main(String args[]) 
+  {
+//^ PunctuationBracket
+       public static void main(String args[])
 //     ^^^^^^ IdentifierKeyword
 //            ^^^^^^ IdentifierKeyword
 //                   ^^^^ IdentifierType
 //                        ^^^^ IdentifierFunction
+//                            ^ PunctuationBracket
+//                             ^^^^^^ IdentifierType
 //                                    ^^^^ Identifier
 //                                        ^^ PunctuationBracket
-      { 
+//                                          ^ PunctuationBracket
+      {
+//    ^ PunctuationBracket
           //lambda expression
 //        ^^^^^^^^^^^^^^^^^^^ Comment
-          MyInterface fobj = (int x, int y)->System.out.println(x+y); 
+          MyInterface fobj = (int x, int y)->System.out.println(x+y);
+//        ^^^^^^^^^^^ IdentifierType
 //                         ^ IdentifierOperator
+//                           ^ PunctuationBracket
 //                            ^^^ IdentifierType
 //                                ^ Identifier
+//                                 ^ PunctuationBracket
 //                                   ^^^ IdentifierType
 //                                       ^ Identifier
+//                                        ^ PunctuationBracket
 //                                         ^^ IdentifierType
-//                                                      ^^^^^^^ Identifier
+//                                           ^^^^^^ IdentifierType
+//                                                 ^ PunctuationBracket
+//                                                     ^ PunctuationBracket
+//                                                      ^^^^^^^ IdentifierFunction
+//                                                             ^ PunctuationBracket
 //                                                               ^ IdentifierOperator
+//                                                                 ^ PunctuationBracket
 //                                                                  ^ PunctuationDelimiter
-   
+  
           System.out.print("The result = ");
-//                   ^^^^^ Identifier
+//        ^^^^^^ IdentifierType
+//              ^ PunctuationBracket
+//                  ^ PunctuationBracket
+//                   ^^^^^ IdentifierFunction
+//                        ^ PunctuationBracket
 //                         ^^^^^^^^^^^^^^^ StringLiteral
+//                                        ^ PunctuationBracket
 //                                         ^ PunctuationDelimiter
-          fobj.abstract_func(5,5); 
-//             ^^^^^^^^^^^^^ Identifier
+          fobj.abstract_func(5,5);
+//            ^ PunctuationBracket
+//             ^^^^^^^^^^^^^ IdentifierFunction
+//                          ^ PunctuationBracket
 //                           ^ NumericLiteral
+//                            ^ PunctuationBracket
 //                             ^ NumericLiteral
+//                              ^ PunctuationBracket
 //                               ^ PunctuationDelimiter
           fobj.default_Fun();
-//             ^^^^^^^^^^^ Identifier
+//            ^ PunctuationBracket
+//             ^^^^^^^^^^^ IdentifierFunction
+//                        ^ PunctuationBracket
+//                         ^ PunctuationBracket
 //                          ^ PunctuationDelimiter
-      } 
+      }
+//    ^ PunctuationBracket
+      String format(String x) {
+//    ^^^^^^ IdentifierType
+//           ^^^^^^ IdentifierFunction
+//                 ^ PunctuationBracket
+//                  ^^^^^^ IdentifierType
+//                         ^ Identifier
+//                          ^ PunctuationBracket
+//                            ^ PunctuationBracket
+          return x;
+//        ^^^^^^ IdentifierKeyword
+//                ^ PunctuationDelimiter
+      }
+//    ^ PunctuationBracket
   }
+//^ PunctuationBracket
 

@@ -260,7 +260,9 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 		for {
 			migrations, err := r.store.List(ctx)
 			if err != nil {
-				r.logger.Error("Failed to list out-of-band migrations", log.Error(err))
+				if !errors.Is(err, ctx.Err()) {
+					r.logger.Error("Failed to list out-of-band migrations", log.Error(err))
+				}
 			}
 
 			select {
@@ -371,7 +373,9 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 	}
 
 	if migrationErr := migrationFunc(ctx, migration, migrator, logger, operations); migrationErr != nil {
-		logger.Error("Failed to perform migration", log.Error(migrationErr), log.Int("migrationID", migration.ID))
+		if !errors.Is(migrationErr, ctx.Err()) {
+			logger.Error("Failed to perform migration", log.Error(migrationErr), log.Int("migrationID", migration.ID))
+		}
 
 		// Migration resulted in an error. All we'll do here is add this error to the migration's error
 		// message list. Unless _that_ write to the database fails, we'll continue along the happy path

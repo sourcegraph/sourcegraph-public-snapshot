@@ -73,6 +73,7 @@ expression: "dump_document(&document, &contents)"
   internal class MediaStoreData(context: Context, filePath: String, accessFlag: FileAccessFlags) :
 //^^^^^^^^ IdentifierKeyword
 //         ^^^^^ IdentifierKeyword
+//               ^^^^^^^^^^^^^^ IdentifierType
 //                              ^^^^^^^ Identifier
 //                                     ^ IdentifierOperator
 //                                                ^^^^^^^^ Identifier
@@ -87,6 +88,7 @@ expression: "dump_document(&document, &contents)"
 // ^^^^^^^ IdentifierKeyword
 //         ^^^^ IdentifierKeyword
 //              ^^^^^ IdentifierKeyword
+//                    ^^^^^^^^ IdentifierType
     val id: Long,
 //  ^^^ IdentifierKeyword
 //      ^^ Identifier

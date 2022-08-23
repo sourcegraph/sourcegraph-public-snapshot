@@ -1,19 +1,26 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 541
 expression: "dump_document(&document, &contents)"
 ---
   function $initHighlight(block, cls) {
 //^^^^^^^^ IdentifierType
 //         ^^^^^^^^^^^^^^ IdentifierFunction
+//                       ^ PunctuationBracket
 //                        ^^^^^ Identifier
+//                             ^ PunctuationBracket
 //                               ^^^ Identifier
+//                                  ^ PunctuationBracket
+//                                    ^ PunctuationBracket
     try {
 //  ^^^ IdentifierKeyword
+//      ^ PunctuationBracket
       if (cls.search(/\bno\-highlight\b/) != -1)
 //    ^^ IdentifierKeyword
+//       ^ PunctuationBracket
 //        ^^^ Identifier
-//            ^^^^^^ Identifier
+//           ^ PunctuationBracket
+//            ^^^^^^ IdentifierFunction
+//                  ^ PunctuationBracket
 //                   ^ StringLiteral
 //                    ^^ IdentifierKeyword
 //                      ^^ StringLiteral
@@ -21,59 +28,106 @@ expression: "dump_document(&document, &contents)"
 //                          ^^^^^^^^^ StringLiteral
 //                                   ^^ IdentifierKeyword
 //                                     ^ StringLiteral
+//                                      ^ PunctuationBracket
 //                                        ^^ IdentifierOperator
 //                                           ^ IdentifierOperator
 //                                            ^ NumericLiteral
+//                                             ^ PunctuationBracket
         return process(block, true, 0x0F) +
 //      ^^^^^^ IdentifierKeyword
+//                    ^ PunctuationBracket
 //                     ^^^^^ Identifier
+//                          ^ PunctuationBracket
 //                            ^^^^ IdentifierBuiltin
-//                                  ^^^^ NumericLiteral
+//                                ^ PunctuationBracket
+//                                  ^^ PunctuationBracket
+//                                    ^^ NumericLiteral
+//                                      ^ PunctuationBracket
 //                                        ^ IdentifierOperator
                ` class="${cls}"`;
 //             ^^^^^^^^^ StringLiteral
+//                      ^^ PunctuationBracket
 //                        ^^^ Identifier
+//                           ^ PunctuationBracket
 //                            ^^ StringLiteral
 //                              ^ PunctuationDelimiter
     } catch (e) {
+//  ^ PunctuationBracket
 //    ^^^^^ IdentifierKeyword
+//          ^ PunctuationBracket
 //           ^ Identifier
+//            ^ PunctuationBracket
+//              ^ PunctuationBracket
       /* handle exception */
 //    ^^^^^^^^^^^^^^^^^^^^^^ Comment
     }
+//  ^ PunctuationBracket
     for (var i = 0 / 2; i < classes.length; i++) {
 //  ^^^ IdentifierKeyword
+//      ^ PunctuationBracket
 //       ^^^ IdentifierType
 //           ^ Identifier
 //             ^ IdentifierOperator
 //               ^ NumericLiteral
 //                 ^ IdentifierOperator
 //                   ^ NumericLiteral
+//                    ^ PunctuationBracket
 //                      ^ Identifier
 //                        ^ IdentifierOperator
 //                          ^^^^^^^ Identifier
+//                                 ^ PunctuationBracket
+//                                        ^ PunctuationBracket
 //                                          ^ Identifier
 //                                           ^^ IdentifierOperator
+//                                             ^ PunctuationBracket
+//                                               ^ PunctuationBracket
       if (checkCondition(classes[i]) === undefined)
 //    ^^ IdentifierKeyword
-//        ^^^^^^^^^^^^^^ Identifier
+//       ^ PunctuationBracket
+//        ^^^^^^^^^^^^^^ IdentifierFunction
+//                      ^ PunctuationBracket
 //                       ^^^^^^^ Identifier
+//                              ^ PunctuationBracket
 //                               ^ Identifier
+//                                ^ PunctuationBracket
+//                                 ^ PunctuationBracket
 //                                   ^^^ IdentifierOperator
 //                                       ^^^^^^^^^ IdentifierBuiltin
+//                                                ^ PunctuationBracket
         console.log('undefined');
+//      ^^^^^^^ IdentifierType
+//             ^ PunctuationBracket
+//              ^^^ IdentifierFunction
+//                 ^ PunctuationBracket
 //                  ^^^^^^^^^^^ StringLiteral
+//                             ^ PunctuationBracket
 //                              ^ PunctuationDelimiter
     }
+//  ^ PunctuationBracket
   
     return (
 //  ^^^^^^ IdentifierKeyword
+//         ^ PunctuationBracket
       <div>
+//    ^ PunctuationBracket
+//        ^ PunctuationBracket
         <web-component>{block}</web-component>
+//      ^ PunctuationBracket
+//                    ^ PunctuationBracket
+//                     ^ PunctuationBracket
 //                      ^^^^^ Identifier
+//                           ^ PunctuationBracket
+//                            ^ PunctuationBracket
+//                             ^ PunctuationBracket
+//                                           ^ PunctuationBracket
       </div>
+//    ^ PunctuationBracket
+//     ^ PunctuationBracket
+//         ^ PunctuationBracket
     )
+//  ^ PunctuationBracket
   }
+//^ PunctuationBracket
   
   export  $initHighlight;
 //^^^^^^ IdentifierKeyword

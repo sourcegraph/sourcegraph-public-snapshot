@@ -10,6 +10,9 @@ expression: "dump_document(&document, &contents)"
   int main() {
 //^^^ IdentifierType
 //    ^^^^ IdentifierFunction
+//        ^ PunctuationBracket
+//         ^ PunctuationBracket
+//           ^ PunctuationBracket
     // Single line comment
 //  ^^^^^^^^^^^^^^^^^^^^^^ Comment
     int x = 1;
@@ -27,4 +30,5 @@ expression: "dump_document(&document, &contents)"
 //  ^^^^^^ IdentifierKeyword
 //          ^ PunctuationDelimiter
   }
+//^ PunctuationBracket
 
