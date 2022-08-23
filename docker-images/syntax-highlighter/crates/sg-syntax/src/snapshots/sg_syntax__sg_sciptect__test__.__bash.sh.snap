@@ -5,57 +5,75 @@ expression: "dump_document(&document, &contents)"
   #!/bin/sh
 // ^^^^^^^^ Comment
   set -eux
-//    ^^^^ Identifier
+//^^^ IdentifierFunction
+//    ^ PunctuationBracket
+//     ^^^ Identifier
   
   OUT=$(test/backtrace-test-raise 2>&1)
 //^^^ Identifier
 //   ^ IdentifierOperator
+//    ^ PunctuationBracket
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//      ^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//     ^ PunctuationBracket
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
 //                                ^ NumericLiteral
 //                                 ^^ IdentifierOperator
 //                                   ^ NumericLiteral
+//                                    ^ PunctuationBracket
   REPO_LINT=$(
 //^^^^^^^^^ Identifier
 //         ^ IdentifierOperator
+//          ^ PunctuationBracket
+//           ^ PunctuationBracket
 //          ^^ StringLiteral 4:10..9:19
    git diff origin/main -- foobar.md |
-// ^^^ Identifier
+// ^^^ IdentifierFunction
 //                     ^^^ IdentifierOperator
 //                                   ^ IdentifierOperator
    # some comment
 // ^ Comment
 //  ^^^^^^^^^^^^^ Comment
    grep ^+ |
-// ^^^^ Identifier
+// ^^^^ IdentifierFunction
 //         ^ IdentifierOperator
    # more sed
 // ^ Comment
 //  ^^^^^^^^^ Comment
    sed 's/#readme//')
-// ^^^ Identifier
+// ^^^ IdentifierFunction
 //     ^^^^^^^^^^^^^ StringLiteral
+//                  ^ PunctuationBracket
   echo "$OUT"
+//^^^^ IdentifierFunction
 //     ^^^^^^ StringLiteral
+//      ^ PunctuationBracket
 //       ^^^ Identifier
   echo "$REPO_LINT"
+//^^^^ IdentifierFunction
 //     ^^^^^^^^^^^^ StringLiteral
+//      ^ PunctuationBracket
 //       ^^^^^^^^^ Identifier
   echo "$OUT" | grep 'in main backtrace-test-raise.cc:4'
+//^^^^ IdentifierFunction
 //     ^^^^^^ StringLiteral
+//      ^ PunctuationBracket
 //       ^^^ Identifier
 //            ^ IdentifierOperator
-//              ^^^^ Identifier
+//              ^^^^ IdentifierFunction
 //                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   if [ "$OUT" != '0' ]; then
 //^^ IdentifierKeyword
+//   ^ IdentifierFunction
 //     ^^^^^^ StringLiteral
+//      ^ PunctuationBracket
 //       ^^^ Identifier
 //            ^^ IdentifierOperator
 //               ^^^ StringLiteral
+//                   ^ IdentifierFunction
 //                    ^ IdentifierOperator
 //                      ^^^^ IdentifierKeyword
   echo 'foo'
+//^^^^ IdentifierFunction
 //     ^^^^^ StringLiteral
   fi
 //^^ IdentifierKeyword

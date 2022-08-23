@@ -2009,3 +2009,9 @@ func handlePullRequestError(err error) error {
 	}
 	return err
 }
+
+// IsGitHubAppAccessToken checks whether the access token starts with "ghu",
+// which is used for GitHub App access tokens.
+func IsGitHubAppAccessToken(token string) bool {
+	return strings.HasPrefix(token, "ghu")
+}

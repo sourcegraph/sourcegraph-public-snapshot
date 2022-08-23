@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 538
 expression: "dump_document(&document, &contents)"
 ---
   using System;
@@ -11,11 +10,15 @@ expression: "dump_document(&document, &contents)"
   namespace Example
 //^^^^^^^^^ IdentifierNamespace
   {
+//^ PunctuationBracket
       public void Something()
 //    ^^^^^^ IdentifierKeyword
 //           ^^^^ IdentifierType
 //                ^^^^^^^^^ IdentifierFunction
+//                         ^ PunctuationBracket
+//                          ^ PunctuationBracket
       {
+//    ^ PunctuationBracket
           var x = "世界";
 //        ^^^ IdentifierType
 //            ^ Identifier
@@ -36,5 +39,7 @@ expression: "dump_document(&document, &contents)"
 //                    ^^^ StringLiteral
 //                       ^ PunctuationDelimiter
       }
+//    ^ PunctuationBracket
   }
+//^ PunctuationBracket
 

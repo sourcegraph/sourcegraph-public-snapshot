@@ -3,22 +3,63 @@ source: crates/sg-syntax/src/sg_sciptect.rs
 expression: "dump_document(&document, &contents)"
 ---
   <?xml version="1.0" encoding="UTF-8"?>
+//^^ PunctuationBracket
+//             ^ PunctuationBracket
 //              ^^^^^ StringLiteral
+//                            ^ PunctuationBracket
 //                             ^^^^^^^ StringLiteral
+//                                    ^^ PunctuationBracket
   <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+//^ PunctuationBracket
+//              ^ PunctuationBracket
 //               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                        ^ PunctuationBracket
+//                                                            ^ PunctuationBracket
 //                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
            xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+//            ^ PunctuationBracket
+//                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                                                                           ^ PunctuationBracket
       <modelVersion>4.0.0</modelVersion>
+//    ^ PunctuationBracket
+//                 ^ PunctuationBracket
+//                       ^^ PunctuationBracket
+//                                     ^ PunctuationBracket
       <groupId>com.macro.mall</groupId>
+//    ^ PunctuationBracket
+//            ^ PunctuationBracket
+//                           ^^ PunctuationBracket
+//                                    ^ PunctuationBracket
       <build>
+//    ^ PunctuationBracket
+//          ^ PunctuationBracket
           <plugins>
+//        ^ PunctuationBracket
+//                ^ PunctuationBracket
               <plugin>
+//            ^ PunctuationBracket
+//                   ^ PunctuationBracket
                   <groupId>org.springframework.boot</groupId>
+//                ^ PunctuationBracket
+//                        ^ PunctuationBracket
+//                                                 ^^ PunctuationBracket
+//                                                          ^ PunctuationBracket
                   <artifactId>spring-boot-maven-plugin</artifactId>
+//                ^ PunctuationBracket
+//                           ^ PunctuationBracket
+//                                                    ^^ PunctuationBracket
+//                                                                ^ PunctuationBracket
               </plugin>
+//            ^^ PunctuationBracket
+//                    ^ PunctuationBracket
           </plugins>
+//        ^^ PunctuationBracket
+//                 ^ PunctuationBracket
       </build>
+//    ^^ PunctuationBracket
+//           ^ PunctuationBracket
   </project>
+//^^ PunctuationBracket
+//         ^ PunctuationBracket
 

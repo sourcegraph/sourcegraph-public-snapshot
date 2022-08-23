@@ -10,6 +10,7 @@ expression: "dump_document(&document, &contents)"
   using AngleSharp.Dom;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^^^^^ IdentifierNamespace
+//                ^ PunctuationBracket
 //                 ^^^ IdentifierNamespace
 //                    ^ PunctuationDelimiter
   using Bunit;
@@ -19,14 +20,19 @@ expression: "dump_document(&document, &contents)"
   using Microsoft.AspNetCore.Components;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^^^^ IdentifierNamespace
+//               ^ PunctuationBracket
 //                ^^^^^^^^^^ IdentifierNamespace
+//                          ^ PunctuationBracket
 //                           ^^^^^^^^^^ IdentifierNamespace
 //                                     ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components.Rendering;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^^^^ IdentifierNamespace
+//               ^ PunctuationBracket
 //                ^^^^^^^^^^ IdentifierNamespace
+//                          ^ PunctuationBracket
 //                           ^^^^^^^^^^ IdentifierNamespace
+//                                     ^ PunctuationBracket
 //                                      ^^^^^^^^^ IdentifierNamespace
 //                                               ^ PunctuationDelimiter
   using System;
@@ -36,18 +42,23 @@ expression: "dump_document(&document, &contents)"
   using System.Collections.Generic;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^ IdentifierNamespace
+//            ^ PunctuationBracket
 //             ^^^^^^^^^^^ IdentifierNamespace
+//                        ^ PunctuationBracket
 //                         ^^^^^^^ IdentifierNamespace
 //                                ^ PunctuationDelimiter
   using System.Linq;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^ IdentifierNamespace
+//            ^ PunctuationBracket
 //             ^^^^ IdentifierNamespace
 //                 ^ PunctuationDelimiter
   using System.Text.RegularExpressions;
 //^^^^^ IdentifierKeyword
 //      ^^^^^^ IdentifierNamespace
+//            ^ PunctuationBracket
 //             ^^^^ IdentifierNamespace
+//                 ^ PunctuationBracket
 //                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace
 //                                    ^ PunctuationDelimiter
   using Xunit;
@@ -56,117 +67,209 @@ expression: "dump_document(&document, &contents)"
 //           ^ PunctuationDelimiter
   namespace Radzen.Blazor.
 //^^^^^^^^^ IdentifierNamespace
+//                ^ PunctuationBracket
+//                       ^ PunctuationBracket
   {
+//^ PunctuationBracket
       public class DataGridTests
 //    ^^^^^^ IdentifierKeyword
 //           ^^^^^ IdentifierType
       {
+//    ^ PunctuationBracket
           // Css classes tests
 //        ^^^^^^^^^^^^^^^^^^^^ Comment
           [Fact]
+//        ^ PunctuationBracket
 //         ^^^^ Identifier
+//             ^ PunctuationBracket
           public void DataGrid_Renders_CssClass()
 //        ^^^^^^ IdentifierKeyword
 //               ^^^^ IdentifierType
 //                    ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                             ^ PunctuationBracket
+//                                              ^ PunctuationBracket
           {
+//        ^ PunctuationBracket
               using var ctx = new TestContext();
+//            ^^^^^ IdentifierType
 //                  ^^^ Identifier
 //                      ^^^ Identifier
 //                          ^ IdentifierOperator
 //                            ^^^ IdentifierOperator
+//                                ^^^^^^^^^^^ IdentifierType
+//                                           ^ PunctuationBracket
+//                                            ^ PunctuationBracket
 //                                             ^ PunctuationDelimiter
               ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 //            ^^^ Identifier
+//               ^ PunctuationBracket
 //                ^^^^^^^^^ Identifier
+//                         ^ PunctuationBracket
 //                          ^^^^ Identifier
 //                               ^ IdentifierOperator
 //                                 ^^^^^^^^^^^^^ Identifier
+//                                              ^ PunctuationBracket
 //                                               ^^^^^ Identifier
 //                                                    ^ PunctuationDelimiter
               ctx.JSInterop.SetupModule("_content/Radzen.Blazor/Radzen.Blazor.js");
 //            ^^^ Identifier
+//               ^ PunctuationBracket
 //                ^^^^^^^^^ Identifier
-//                          ^^^^^^^^^^^ Identifier
+//                         ^ PunctuationBracket
+//                          ^^^^^^^^^^^ IdentifierFunction
+//                                     ^ PunctuationBracket
 //                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                                               ^ PunctuationBracket
 //                                                                                ^ PunctuationDelimiter
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
 //            ^^^ IdentifierType
 //                ^^^^^^^^^ Identifier
 //                          ^ IdentifierOperator
 //                            ^^^ Identifier
-//                                ^^^^^^^^^^^^^^^ Identifier
+//                               ^ PunctuationBracket
+//                                ^^^^^^^^^^^^^^^ IdentifierFunction
+//                                               ^ PunctuationBracket
+//                                                ^^^^^^^^^^ IdentifierType
+//                                                          ^ PunctuationBracket
+//                                                           ^^^^^^^ IdentifierType
+//                                                                  ^ PunctuationBracket
+//                                                                   ^ PunctuationBracket
+//                                                                    ^ PunctuationBracket
 //                                                                     ^^^^^^^^^^^^^^^^ Identifier
 //                                                                                      ^^ IdentifierType
               {
+//            ^ PunctuationBracket
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
 //                ^^^^^^^^^^^^^^^^ Identifier
-//                                 ^^^ Identifier
+//                                ^ PunctuationBracket
+//                                 ^^^ IdentifierFunction
+//                                    ^ PunctuationBracket
+//                                     ^^^^^^^^^^^ IdentifierType
+//                                                ^ PunctuationBracket
+//                                                 ^^^^^^^ IdentifierType
+//                                                        ^ PunctuationBracket
+//                                                         ^ PunctuationBracket
+//                                                          ^ PunctuationBracket
 //                                                           ^ Identifier
 //                                                             ^^ IdentifierType
 //                                                                ^ Identifier
+//                                                                 ^ PunctuationBracket
 //                                                                  ^^^^ Identifier
+//                                                                      ^ PunctuationBracket
 //                                                                        ^^^ IdentifierOperator
+//                                                                           ^ PunctuationBracket
+//                                                                            ^ PunctuationBracket
+//                                                                              ^ PunctuationBracket
 //                                                                                ^^^ IdentifierOperator
+//                                                                                    ^ PunctuationBracket
 //                                                                                      ^^ Identifier
 //                                                                                         ^ IdentifierOperator
 //                                                                                           ^ NumericLiteral
+//                                                                                             ^ PunctuationBracket
+//                                                                                              ^ PunctuationBracket
 //                                                                                                ^^^ IdentifierOperator
+//                                                                                                    ^ PunctuationBracket
 //                                                                                                      ^^ Identifier
 //                                                                                                         ^ IdentifierOperator
 //                                                                                                           ^ NumericLiteral
+//                                                                                                             ^ PunctuationBracket
+//                                                                                                              ^ PunctuationBracket
 //                                                                                                                ^^^ IdentifierOperator
+//                                                                                                                    ^ PunctuationBracket
 //                                                                                                                      ^^ Identifier
 //                                                                                                                         ^ IdentifierOperator
 //                                                                                                                           ^ NumericLiteral
+//                                                                                                                             ^ PunctuationBracket
+//                                                                                                                               ^ PunctuationBracket
+//                                                                                                                                ^ PunctuationBracket
 //                                                                                                                                 ^ PunctuationDelimiter
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
 //                ^^^^^^^^^^^^^^^^ Identifier
-//                                 ^^^ Identifier
+//                                ^ PunctuationBracket
+//                                 ^^^ IdentifierFunction
+//                                    ^ PunctuationBracket
+//                                     ^^^^^^^^^^^^^^ IdentifierType
+//                                                   ^ PunctuationBracket
+//                                                    ^ PunctuationBracket
 //                                                     ^ Identifier
 //                                                       ^^ IdentifierType
 //                                                          ^ Identifier
+//                                                           ^ PunctuationBracket
 //                                                            ^^^^^^^ Identifier
+//                                                                   ^ PunctuationBracket
 //                                                                     ^^^^^^^ Identifier
 //                                                                             ^^ IdentifierType
                   {
+//                ^ PunctuationBracket
                       builder.OpenComponent(0, typeof(RadzenGridColumn<dynamic>));
 //                    ^^^^^^^ Identifier
-//                            ^^^^^^^^^^^^^ Identifier
+//                           ^ PunctuationBracket
+//                            ^^^^^^^^^^^^^ IdentifierFunction
+//                                         ^ PunctuationBracket
 //                                          ^ NumericLiteral
+//                                           ^ PunctuationBracket
 //                                             ^^^^^^ IdentifierOperator
+//                                                   ^ PunctuationBracket
+//                                                    ^^^^^^^^^^^^^^^^ IdentifierType
+//                                                                    ^ PunctuationBracket
+//                                                                     ^^^^^^^ IdentifierType
+//                                                                            ^ PunctuationBracket
+//                                                                             ^ PunctuationBracket
+//                                                                              ^ PunctuationBracket
 //                                                                               ^ PunctuationDelimiter
                       builder.AddAttribute(1, "Property", "Id");
 //                    ^^^^^^^ Identifier
-//                            ^^^^^^^^^^^^ Identifier
+//                           ^ PunctuationBracket
+//                            ^^^^^^^^^^^^ IdentifierFunction
+//                                        ^ PunctuationBracket
 //                                         ^ NumericLiteral
+//                                          ^ PunctuationBracket
 //                                            ^^^^^^^^^^ StringLiteral
+//                                                      ^ PunctuationBracket
 //                                                        ^^^^ StringLiteral
+//                                                            ^ PunctuationBracket
 //                                                             ^ PunctuationDelimiter
                       builder.CloseComponent();
 //                    ^^^^^^^ Identifier
-//                            ^^^^^^^^^^^^^^ Identifier
+//                           ^ PunctuationBracket
+//                            ^^^^^^^^^^^^^^ IdentifierFunction
+//                                          ^ PunctuationBracket
+//                                           ^ PunctuationBracket
 //                                            ^ PunctuationDelimiter
                   });
+//                ^ PunctuationBracket
+//                 ^ PunctuationBracket
 //                  ^ PunctuationDelimiter
               });
+//            ^ PunctuationBracket
+//             ^ PunctuationBracket
 //              ^ PunctuationDelimiter
   
               // Main
 //            ^^^^^^^ Comment
               Assert.Contains(@$"rz-datatable-scrollable-wrapper", component.Markup);
 //            ^^^^^^ Identifier
-//                   ^^^^^^^^ Identifier
+//                  ^ PunctuationBracket
+//                   ^^^^^^^^ IdentifierFunction
+//                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                               ^ PunctuationBracket
 //                                                                 ^^^^^^^^^ Identifier
+//                                                                          ^ PunctuationBracket
 //                                                                           ^^^^^^ Identifier
+//                                                                                 ^ PunctuationBracket
 //                                                                                  ^ PunctuationDelimiter
               Assert.Contains(@$"rz-datatable-scrollable-view", component.Markup);
 //            ^^^^^^ Identifier
-//                   ^^^^^^^^ Identifier
+//                  ^ PunctuationBracket
+//                   ^^^^^^^^ IdentifierFunction
+//                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                            ^ PunctuationBracket
 //                                                              ^^^^^^^^^ Identifier
+//                                                                       ^ PunctuationBracket
 //                                                                        ^^^^^^ Identifier
+//                                                                              ^ PunctuationBracket
 //                                                                               ^ PunctuationDelimiter
   
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
@@ -174,61 +277,123 @@ expression: "dump_document(&document, &contents)"
 //                ^^^^^^^^^ Identifier
 //                          ^ IdentifierOperator
 //                            ^^^ Identifier
-//                                ^^^^^^^^^^^^^^^ Identifier
+//                               ^ PunctuationBracket
+//                                ^^^^^^^^^^^^^^^ IdentifierFunction
+//                                               ^ PunctuationBracket
+//                                                ^^^^^^^^^^ IdentifierType
+//                                                          ^ PunctuationBracket
+//                                                           ^^^^^^^ IdentifierType
+//                                                                  ^ PunctuationBracket
+//                                                                   ^ PunctuationBracket
+//                                                                    ^ PunctuationBracket
 //                                                                     ^^^^^^^^^^^^^^^^ Identifier
 //                                                                                      ^^ IdentifierType
               {
+//            ^ PunctuationBracket
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
 //                ^^^^^^^^^^^^^^^^ Identifier
-//                                 ^^^ Identifier
+//                                ^ PunctuationBracket
+//                                 ^^^ IdentifierFunction
+//                                    ^ PunctuationBracket
+//                                     ^^^^^^^^^^^ IdentifierType
+//                                                ^ PunctuationBracket
+//                                                 ^^^^^^^ IdentifierType
+//                                                        ^ PunctuationBracket
+//                                                         ^ PunctuationBracket
+//                                                          ^ PunctuationBracket
 //                                                           ^ Identifier
 //                                                             ^^ IdentifierType
 //                                                                ^ Identifier
+//                                                                 ^ PunctuationBracket
 //                                                                  ^^^^ Identifier
+//                                                                      ^ PunctuationBracket
 //                                                                        ^^^ IdentifierOperator
+//                                                                           ^ PunctuationBracket
+//                                                                            ^ PunctuationBracket
+//                                                                              ^ PunctuationBracket
 //                                                                                ^^^ IdentifierOperator
+//                                                                                    ^ PunctuationBracket
 //                                                                                      ^^ Identifier
 //                                                                                         ^ IdentifierOperator
 //                                                                                           ^ NumericLiteral
+//                                                                                             ^ PunctuationBracket
+//                                                                                              ^ PunctuationBracket
 //                                                                                                ^^^ IdentifierOperator
+//                                                                                                    ^ PunctuationBracket
 //                                                                                                      ^^ Identifier
 //                                                                                                         ^ IdentifierOperator
 //                                                                                                           ^ NumericLiteral
+//                                                                                                             ^ PunctuationBracket
+//                                                                                                              ^ PunctuationBracket
 //                                                                                                                ^^^ IdentifierOperator
+//                                                                                                                    ^ PunctuationBracket
 //                                                                                                                      ^^ Identifier
 //                                                                                                                         ^ IdentifierOperator
 //                                                                                                                           ^ NumericLiteral
+//                                                                                                                             ^ PunctuationBracket
+//                                                                                                                               ^ PunctuationBracket
+//                                                                                                                                ^ PunctuationBracket
 //                                                                                                                                 ^ PunctuationDelimiter
                   parameterBuilder.Add<RenderFragment>(p => p.Columns, builder =>
 //                ^^^^^^^^^^^^^^^^ Identifier
-//                                 ^^^ Identifier
+//                                ^ PunctuationBracket
+//                                 ^^^ IdentifierFunction
+//                                    ^ PunctuationBracket
+//                                     ^^^^^^^^^^^^^^ IdentifierType
+//                                                   ^ PunctuationBracket
+//                                                    ^ PunctuationBracket
 //                                                     ^ Identifier
 //                                                       ^^ IdentifierType
 //                                                          ^ Identifier
+//                                                           ^ PunctuationBracket
 //                                                            ^^^^^^^ Identifier
+//                                                                   ^ PunctuationBracket
 //                                                                     ^^^^^^^ Identifier
 //                                                                             ^^ IdentifierType
                   {
+//                ^ PunctuationBracket
                       builder.OpenComponent(0, typeof(RadzenGridColumn<dynamic>));
 //                    ^^^^^^^ Identifier
-//                            ^^^^^^^^^^^^^ Identifier
+//                           ^ PunctuationBracket
+//                            ^^^^^^^^^^^^^ IdentifierFunction
+//                                         ^ PunctuationBracket
 //                                          ^ NumericLiteral
+//                                           ^ PunctuationBracket
 //                                             ^^^^^^ IdentifierOperator
+//                                                   ^ PunctuationBracket
+//                                                    ^^^^^^^^^^^^^^^^ IdentifierType
+//                                                                    ^ PunctuationBracket
+//                                                                     ^^^^^^^ IdentifierType
+//                                                                            ^ PunctuationBracket
+//                                                                             ^ PunctuationBracket
+//                                                                              ^ PunctuationBracket
 //                                                                               ^ PunctuationDelimiter
                       builder.AddAttribute(1, "Property", "Id");
 //                    ^^^^^^^ Identifier
-//                            ^^^^^^^^^^^^ Identifier
+//                           ^ PunctuationBracket
+//                            ^^^^^^^^^^^^ IdentifierFunction
+//                                        ^ PunctuationBracket
 //                                         ^ NumericLiteral
+//                                          ^ PunctuationBracket
 //                                            ^^^^^^^^^^ StringLiteral
+//                                                      ^ PunctuationBracket
 //                                                        ^^^^ StringLiteral
+//                                                            ^ PunctuationBracket
 //                                                             ^ PunctuationDelimiter
                       builder.CloseComponent();
 //                    ^^^^^^^ Identifier
-//                            ^^^^^^^^^^^^^^ Identifier
+//                           ^ PunctuationBracket
+//                            ^^^^^^^^^^^^^^ IdentifierFunction
+//                                          ^ PunctuationBracket
+//                                           ^ PunctuationBracket
 //                                            ^ PunctuationDelimiter
                   });
+//                ^ PunctuationBracket
+//                 ^ PunctuationBracket
 //                  ^ PunctuationDelimiter
               });
+//            ^ PunctuationBracket
+//             ^ PunctuationBracket
 //              ^ PunctuationDelimiter
   
               var markup = new Regex(@"\s\s+").Replace(component.Markup, "").Trim();
@@ -236,53 +401,84 @@ expression: "dump_document(&document, &contents)"
 //                ^^^^^^ Identifier
 //                       ^ IdentifierOperator
 //                         ^^^ IdentifierOperator
+//                             ^^^^^ IdentifierType
+//                                  ^ PunctuationBracket
 //                                   ^^^^^^^^ StringLiteral
-//                                             ^^^^^^^ Identifier
+//                                           ^ PunctuationBracket
+//                                            ^ PunctuationBracket
+//                                             ^^^^^^^ IdentifierFunction
+//                                                    ^ PunctuationBracket
 //                                                     ^^^^^^^^^ Identifier
+//                                                              ^ PunctuationBracket
 //                                                               ^^^^^^ Identifier
+//                                                                     ^ PunctuationBracket
 //                                                                       ^^ StringLiteral
-//                                                                           ^^^^ Identifier
+//                                                                         ^ PunctuationBracket
+//                                                                          ^ PunctuationBracket
+//                                                                           ^^^^ IdentifierFunction
+//                                                                               ^ PunctuationBracket
+//                                                                                ^ PunctuationBracket
 //                                                                                 ^ PunctuationDelimiter
               Assert.Contains(@$"""rz-cell-data"">1", markup);
 //            ^^^^^^ Identifier
-//                   ^^^^^^^^ Identifier
+//                  ^ PunctuationBracket
+//                   ^^^^^^^^ IdentifierFunction
+//                           ^ PunctuationBracket
 //                            ^^^ StringLiteral
 //                               ^^ StringLiteralEscape
 //                                 ^^^^^^^^^^^^ StringLiteral
 //                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
+//                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
+//                                                          ^ PunctuationBracket
 //                                                           ^ PunctuationDelimiter
               Assert.Contains(@$"""rz-cell-data"">2", markup);
 //            ^^^^^^ Identifier
-//                   ^^^^^^^^ Identifier
+//                  ^ PunctuationBracket
+//                   ^^^^^^^^ IdentifierFunction
+//                           ^ PunctuationBracket
 //                            ^^^ StringLiteral
 //                               ^^ StringLiteralEscape
 //                                 ^^^^^^^^^^^^ StringLiteral
 //                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
+//                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
+//                                                          ^ PunctuationBracket
 //                                                           ^ PunctuationDelimiter
               Assert.Contains(@$"""rz-cell-data"">3", markup);
 //            ^^^^^^ Identifier
-//                   ^^^^^^^^ Identifier
+//                  ^ PunctuationBracket
+//                   ^^^^^^^^ IdentifierFunction
+//                           ^ PunctuationBracket
 //                            ^^^ StringLiteral
 //                               ^^ StringLiteralEscape
 //                                 ^^^^^^^^^^^^ StringLiteral
 //                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
+//                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
+//                                                          ^ PunctuationBracket
 //                                                           ^ PunctuationDelimiter
               Assert.Contains(@"
 //            ^^^^^^ Identifier
-//                   ^^^^^^^^ Identifier
+//                  ^ PunctuationBracket
+//                   ^^^^^^^^ IdentifierFunction
+//                           ^ PunctuationBracket
 //                            ^^ StringLiteral 53:28..55:1
   Lorem Ipsum
   ", component.Markup);
+// ^ PunctuationBracket
 //   ^^^^^^^^^ Identifier
+//            ^ PunctuationBracket
 //             ^^^^^^ Identifier
+//                   ^ PunctuationBracket
 //                    ^ PunctuationDelimiter
           }
+//        ^ PunctuationBracket
       }
+//    ^ PunctuationBracket
   }
+//^ PunctuationBracket
 
