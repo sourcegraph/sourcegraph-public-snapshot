@@ -277,10 +277,10 @@
 /code_intelligence/explanations/auto_indexing_inference /code_navigation/explanations/auto_indexing_inference 308
 /code_intelligence/explanations/auto_indexing /code_navigation/explanations/auto_indexing 308
 /code_intelligence/explanations/features /code_navigation/explanations/features 308
-/code_intelligence/explanations/introduction_to_code_intelligence /code_navigation/explanations/introduction_to_code_intelligence 308
-/code_intelligence/explanations/precise_code_intelligence /code_navigation/explanations/precise_code_intelligence 308
+/code_intelligence/explanations/introduction_to_code_intelligence /code_navigation/explanations/introduction_to_code_navigation 308
+/code_intelligence/explanations/precise_code_intelligence /code_navigation/explanations/precise_code_navigation 308
 /code_intelligence/explanations/rockskip /code_navigation/explanations/rockskip 308
-/code_intelligence/explanations/search_based_code_intelligence /code_navigation/explanations/search_based_code_intelligence 308
+/code_intelligence/explanations/search_based_code_intelligence /code_navigation/explanations/search_based_code_navigation 308
 /code_intelligence/explanations/uploads /code_navigation/explanations/uploads 308
 /code_intelligence/explanations /code_navigation/explanations 308
 

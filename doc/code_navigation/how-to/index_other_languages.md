@@ -74,7 +74,7 @@ Now that you have successfully enabled code navigation for your repository, you 
 
 ### Testing
 
-> NOTE: Make sure you have configured your Sourcegraph instance and [enabled precise code navigation](../explanations/precise_code_intelligence.md#enabling-lsif-on-your-sourcegraph-instance).
+> NOTE: Make sure you have configured your Sourcegraph instance and [enabled precise code navigation](../explanations/precise_code_navigation.md#enabling-lsif-on-your-sourcegraph-instance).
 
 Once LSIF data has uploaded, open the Sourcegraph UI or your code host (i.e. GitHub) and navigate to any code file that was part of the repository that was analyzed by the LSIF indexer. Hover over a symbol, variable or function name in the file, you should now see rich LSIF metadata as the source for hover-tooltips, definitions, and references.
 
