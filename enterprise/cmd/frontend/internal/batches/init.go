@@ -14,14 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var config = &store.Config{}
-
-func init() {
-	config.Load()
-}
 
 // Init initializes the given enterpriseServices to include the required
 // resolvers for Batch Changes and sets up webhook handlers for changeset
@@ -39,15 +32,6 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	// Initialize store.
 	bstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
 
-	// Initialize upload store
-	if err := config.Validate(); err != nil {
-		return errors.Wrap(err, "failed to load batches config")
-	}
-	uploadStore, err := store.NewUploadStore(ctx, config, observationContext)
-	if err != nil {
-		return errors.Wrap(err, "initialize upload store")
-	}
-
 	// Register enterprise services.
 	enterpriseServices.BatchChangesResolver = resolvers.New(bstore)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore)
@@ -55,7 +39,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore)
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore)
 	operations := httpapi.NewOperations(observationContext)
-	enterpriseServices.BatchesMountHandler = httpapi.NewMountHandler(bstore, uploadStore, operations, false)
+	enterpriseServices.BatchesMountHandler = httpapi.NewMountHandler(bstore, operations, false)
 
 	return nil
 }

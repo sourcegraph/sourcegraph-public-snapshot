@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -17,16 +16,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // MountHandler handles retrieving and uploading of mount files.
 type MountHandler struct {
-	logger      sglog.Logger
-	store       BatchesStore
-	uploadStore uploadstore.Store
-	operations  *Operations
+	logger     sglog.Logger
+	store      BatchesStore
+	operations *Operations
 }
 
 type BatchesStore interface {
@@ -39,15 +36,13 @@ type BatchesStore interface {
 func NewMountHandler(
 	//db database.DB,
 	store BatchesStore,
-	uploadStore uploadstore.Store,
 	operations *Operations,
 	executor bool,
 ) http.Handler {
 	handler := &MountHandler{
-		logger:      sglog.Scoped("MountHandler", "").With(sglog.Bool("executor", executor)),
-		store:       store,
-		uploadStore: uploadStore,
-		operations:  operations,
+		logger:     sglog.Scoped("MountHandler", "").With(sglog.Bool("executor", executor)),
+		store:      store,
+		operations: operations,
 	}
 
 	// If the handler is being used in the executor, no need to add security. Executor comes with its own security.
@@ -73,12 +68,12 @@ func (h *MountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MountHandler) get(w http.ResponseWriter, r *http.Request) {
-	batchSpecID := mux.Vars(r)["spec"]
-	batchSpecRandID, err := unmarshalRandID(batchSpecID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("batch spec id is malformed: %s", err), http.StatusBadRequest)
-		return
-	}
+	//batchSpecID := mux.Vars(r)["spec"]
+	//batchSpecRandID, err := unmarshalRandID(batchSpecID)
+	//if err != nil {
+	//	http.Error(w, fmt.Sprintf("batch spec id is malformed: %s", err), http.StatusBadRequest)
+	//	return
+	//}
 	batchSpecMountID := mux.Vars(r)["mount"]
 	batchSpecMountRandID, err := unmarshalRandID(batchSpecMountID)
 	if err != nil {
@@ -93,15 +88,7 @@ func (h *MountHandler) get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to lookup mount file metadata: %s", err), http.StatusInternalServerError)
 		return
 	}
-
-	key := filepath.Join(batchSpecRandID, mount.Path, mount.FileName)
-	reader, err := h.uploadStore.Get(r.Context(), key)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to retrieve file: %s", err), http.StatusInternalServerError)
-		return
-	}
-	defer reader.Close()
-	if _, err = io.Copy(w, reader); err != nil {
+	if _, err = w.Write(mount.Content); err != nil {
 		http.Error(w, fmt.Sprintf("failed to write file to reponse: %s", err), http.StatusInternalServerError)
 		return
 	}
@@ -166,8 +153,8 @@ func (h *MountHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec, index
 	defer f.Close()
 
 	filePath := r.Form.Get(fmt.Sprintf("filepath_%d", index))
-	key := filepath.Join(spec.RandID, filePath, headers.Filename)
-	if _, err = h.uploadStore.Upload(r.Context(), key, f); err != nil {
+	content, err := io.ReadAll(f)
+	if err != nil {
 		return err
 	}
 	if err = h.store.UpsertBatchSpecMount(r.Context(), &btypes.BatchSpecMount{
@@ -175,6 +162,7 @@ func (h *MountHandler) uploadFile(r *http.Request, spec *btypes.BatchSpec, index
 		FileName:    headers.Filename,
 		Path:        filePath,
 		Size:        headers.Size,
+		Content:     content,
 		ModifiedAt:  modified,
 	}); err != nil {
 		return err

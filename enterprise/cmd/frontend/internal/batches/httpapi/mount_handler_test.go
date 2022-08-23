@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -21,13 +20,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestMountHandler_ServeHTTP(t *testing.T) {
 	mockStore := new(mockBatchesStore)
-	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	batchSpecRandID := "123"
 	batchSpecMarshalledID := "ZG9lcy1ub3QtbWF0dGVyOiIxMjMi"
@@ -66,20 +63,11 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			mockInvokes: func() {
 				mockStore.
 					On("GetBatchSpecMount", mock.Anything, store.GetBatchSpecMountOpts{RandID: batchSpecMountRandID}).
-					Return(&btypes.BatchSpecMount{Path: "foo/bar", FileName: "hello.txt"}, nil).
+					Return(&btypes.BatchSpecMount{Path: "foo/bar", FileName: "hello.txt", Content: []byte("Hello world!")}, nil).
 					Once()
-				mockUploadStore.GetFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("Hello world!")), nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: "Hello world!",
-		},
-		{
-			name:                 "Get file malformed spec id",
-			isExecutor:           true,
-			method:               http.MethodGet,
-			path:                 fmt.Sprintf("/batches/mount/%s/%s", "foo", batchSpecMountMarshalledID),
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "batch spec id is malformed: illegal base64 data at input byte 0\n",
 		},
 		{
 			name:                 "Get file malformed mount id",
@@ -104,21 +92,6 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "failed to lookup mount file metadata: failed to find mount\n",
 		},
 		{
-			name:       "Get file failed to get from uploadstore",
-			isExecutor: true,
-			method:     http.MethodGet,
-			path:       fmt.Sprintf("/batches/mount/%s/%s", batchSpecMarshalledID, batchSpecMountMarshalledID),
-			mockInvokes: func() {
-				mockStore.
-					On("GetBatchSpecMount", mock.Anything, store.GetBatchSpecMountOpts{RandID: batchSpecMountRandID}).
-					Return(&btypes.BatchSpecMount{Path: "foo/bar", FileName: "hello.txt"}, nil).
-					Once()
-				mockUploadStore.GetFunc.SetDefaultReturn(nil, errors.New("failed to find file"))
-			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "failed to retrieve file: failed to find file\n",
-		},
-		{
 			name:       "Upload file",
 			isExecutor: true,
 			method:     http.MethodPost,
@@ -130,9 +103,8 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
 					Once()
-				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, ModifiedAt: modifiedTime}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
 					Return(nil).
 					Once()
 			},
@@ -153,13 +125,12 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
 					Once()
-				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 6, ModifiedAt: modifiedTime}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 6, Content: []byte("Hello!"), ModifiedAt: modifiedTime}).
 					Return(nil).
 					Once()
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "world.txt", Path: "faz/baz", Size: 6, ModifiedAt: modifiedTime}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "world.txt", Path: "faz/baz", Size: 6, Content: []byte("World!"), ModifiedAt: modifiedTime}).
 					Return(nil).
 					Once()
 			},
@@ -261,6 +232,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 				body := &bytes.Buffer{}
 				w := multipart.NewWriter(body)
 				w.WriteField("count", "1")
+				w.WriteField("filemod_0", modifiedTimeString)
 				w.Close()
 				return body, w.FormDataContentType()
 			},
@@ -271,23 +243,6 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: "failed to upload file: http: no such file\n",
-		},
-		{
-			name:       "Upload file failed to upload",
-			isExecutor: true,
-			method:     http.MethodPost,
-			path:       fmt.Sprintf("/batches/mount/%s", batchSpecMarshalledID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
-			},
-			mockInvokes: func() {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
-					Once()
-				mockUploadStore.UploadFunc.SetDefaultReturn(0, errors.New("failed to upload"))
-			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "failed to upload file: failed to upload\n",
 		},
 		{
 			name:       "Upload file failed to insert batch spec mount",
@@ -301,9 +256,8 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID}, nil).
 					Once()
-				mockUploadStore.UploadFunc.SetDefaultReturn(0, nil)
 				mockStore.
-					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, ModifiedAt: modifiedTime}).
+					On("UpsertBatchSpecMount", mock.Anything, &btypes.BatchSpecMount{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
 					Return(errors.New("failed to insert batch spec mount")).
 					Once()
 			},
@@ -317,7 +271,7 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 				test.mockInvokes()
 			}
 
-			handler := httpapi.NewMountHandler(mockStore, mockUploadStore, nil, test.isExecutor)
+			handler := httpapi.NewMountHandler(mockStore, nil, test.isExecutor)
 
 			var body io.Reader
 			var contentType string
