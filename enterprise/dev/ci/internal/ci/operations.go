@@ -933,7 +933,7 @@ func buildOverviewAnnotation() operations.Operation {
 			bk.AnnotatedCmd("dev/ci/gen-build-overview.sh", bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					Type:         bk.AnnotationTypeInfo,
-					IncludeNames: true,
+					IncludeNames: false,
 				},
 			}),
 		)
