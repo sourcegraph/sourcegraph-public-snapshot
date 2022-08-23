@@ -27,7 +27,7 @@ export interface UseStopwatchControls {
 /**
  * Custom hook which provides stopwatch functionality to track elapsed time.
  *
- * @param autostart whether or not the stopwatch should start automatically
+ * @param autostart whether or not the stopwatch should start automatically, defaults to true
  */
 export const useStopwatch = (autostart: boolean = true): UseStopwatchControls => {
     const [startTime, setStartTime] = useState(new Date().getTime())
