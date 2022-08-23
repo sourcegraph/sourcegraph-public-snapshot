@@ -300,15 +300,15 @@ Available testsuites in `sg.config.yaml`:
 * bext-integration
 * docsite
 * frontend
-* frontend-e2e
+* client-e2e
 * web-integration
 
 ```sh
 # Run different test suites:
 $ sg test backend
 $ sg test backend-integration
-$ sg test frontend
-$ sg test frontend-e2e
+$ sg test client
+$ sg test client-e2e
 
 # List available test suites:
 $ sg test -help

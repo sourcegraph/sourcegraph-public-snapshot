@@ -37,6 +37,7 @@
     "test-lighthouse": "SOURCEGRAPH_API_URL=https://sourcegraph.com lhci collect && lhci open",
     "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/web/src/end-to-end/**/*.test.ts",
     "cover-e2e": "nyc --hook-require=false --silent yarn test-e2e",
+    "test-regression": "yarn workspace @sourcegraph/web run test:regression",
     "storybook": "yarn workspace @sourcegraph/storybook run start",
     "storybook:dll": "yarn workspace @sourcegraph/storybook run start:dll",
     "storybook:branded": "yarn workspace @sourcegraph/branded run storybook",
