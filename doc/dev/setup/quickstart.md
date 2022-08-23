@@ -2,7 +2,7 @@
 
 This is the quickstart guide for [developing Sourcegraph](../index.md).
 
-> NOTE: If you run into any troubles, you can alternatively consult the [deprecated quickstart instructions without `sg`](deprecated_quickstart.md) or reach out on Discord:
+> NOTE: If you run into any troubles, you can alternatively consult the [deprecated quickstart instructions without `sg`](deprecated_quickstart.md) or reach out for help:
 >
 > - [As an open source contributor](https://srcgr.ph/discord)
 > - [As a Sourcegraph employee](https://sourcegraph.slack.com/archives/C01N83PS4TU)
