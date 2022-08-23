@@ -285,7 +285,7 @@ GH_TOKEN=XXX sg test client-e2e
 You can find the `GH_TOKEN` value in the shared 1Password vault under `BUILDKITE_GITHUBDOTCOM_TOKEN`.
 If you have access to CI secrets via the `gcloud` CLI, the `GH_TOKEN` value will be set for you.
 
-In case of running against an existing server image:
+If you run the test suite against an existing server image:
 
 ```
 SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' GH_TOKEN=XXX sg test client-e2e
