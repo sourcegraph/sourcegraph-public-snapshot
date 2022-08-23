@@ -216,3 +216,4 @@ func printStepSummary(w io.Writer, indent string, rawStep any) {
 		fmt.Fprintf(w, "%s- **%s**: %s\n", indent, v.Group.Group, strings.Join(steps, ", "))
 	}
 }
+//REMOVE ME
