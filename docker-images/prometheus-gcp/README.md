@@ -5,4 +5,4 @@ Please note: using this image will automatically begin shipping Prometheus metri
 
 This image is built by calling the [`build.sh` script in `prometheus`](../prometheus/build.sh) with some additional parameters.
 
-https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
+For more details about Google's forked Prometheus server, see: https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
