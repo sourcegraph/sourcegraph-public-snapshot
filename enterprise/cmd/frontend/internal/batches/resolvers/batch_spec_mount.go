@@ -47,7 +47,7 @@ func (r *batchSpecMountResolver) Size() int32 {
 	return int32(r.mount.Size)
 }
 
-func (r *batchSpecMountResolver) Modified() graphqlbackend.DateTime {
+func (r *batchSpecMountResolver) ModifiedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.mount.ModifiedAt}
 }
 

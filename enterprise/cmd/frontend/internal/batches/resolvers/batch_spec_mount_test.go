@@ -63,7 +63,7 @@ func TestBatchSpecMountResolver(t *testing.T) {
 		{
 			name: "ModifiedAt",
 			getActual: func() interface{} {
-				return resolver.Modified()
+				return resolver.ModifiedAt()
 			},
 			expected: graphqlbackend.DateTime{Time: date},
 		},

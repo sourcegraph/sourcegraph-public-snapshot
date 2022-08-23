@@ -3558,7 +3558,7 @@ type BatchSpecMount {
     """
     When the file was last touched.
     """
-    modified: DateTime!
+    modifiedAt: DateTime!
 
     """
     When the file is initially created at.

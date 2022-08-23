@@ -323,6 +323,7 @@ func scanBatchSpecMount(m *btypes.BatchSpecMount, s dbutil.Scanner) error {
 		&m.FileName,
 		&m.Path,
 		&m.Size,
+		&m.Content,
 		&m.ModifiedAt,
 		&m.CreatedAt,
 		&m.UpdatedAt,

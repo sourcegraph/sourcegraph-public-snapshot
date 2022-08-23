@@ -682,7 +682,7 @@ type BatchSpecMountResolver interface {
 	FileName() string
 	Path() string
 	Size() int32
-	Modified() DateTime
+	ModifiedAt() DateTime
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	URL() string
