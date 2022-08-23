@@ -332,7 +332,7 @@ func TestCaptureGroupAggregation(t *testing.T) {
 		query       string
 		want        autogold.Value
 	}{
-		//{types.CAPTURE_GROUP_AGGREGATION_MODE, streaming.SearchEvent{}, "TEST", autogold.Want("no results", map[string]int{})},
+		{types.CAPTURE_GROUP_AGGREGATION_MODE, streaming.SearchEvent{}, "TEST", autogold.Want("no results", map[string]int{})},
 		{
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{
@@ -341,14 +341,25 @@ func TestCaptureGroupAggregation(t *testing.T) {
 			`python([0-9]\.[0-9])`,
 			autogold.Want("two keys from 1 chunk", map[string]int{"2.7": 1, "3.9": 1}),
 		},
-		// {
-		// 	types.CAPTURE_GROUP_AGGREGATION_MODE,
-		// 	streaming.SearchEvent{
-		// 		Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python2.7")},
-		// 	},
-		// 	`python([0-9]\.[0-9])`,
-		// 	autogold.Want("count 2 from 1 chunk", map[string]int{"2.7": 2}),
-		// },
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python2.7")},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("count 2 from 1 chunk", map[string]int{"2.7": 2}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{
+					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
+					contentMatch("myRepo2", "file2.go", 2, "python2.7 python3.9"),
+				},
+			},
+			`python([0-9]\.[0-9])`,
+			autogold.Want("count multiple results", map[string]int{"2.7": 2, "3.9": 2}),
+		},
 		// {
 		// 	types.CAPTURE_GROUP_AGGREGATION_MODE,
 		// 	streaming.SearchEvent{
