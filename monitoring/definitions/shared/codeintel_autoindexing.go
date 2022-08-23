@@ -2,6 +2,25 @@ package shared
 
 import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 
+func (codeIntelligence) NewAutoindexingSummaryGroup(containerName string) monitoring.Group {
+	return monitoring.Group{
+		Title:  "Codeintel: Autoindexing > Summary",
+		Hidden: false,
+		Rows: []monitoring.Row{
+			{
+				monitoring.Observable(NoAlertsOption("none")(Observable{
+					Name:        containerName,
+					Description: "index jobs inserted over 5m",
+					Owner:       monitoring.ObservableOwnerCodeIntel,
+					Query:       "sum(increase(src_codeintel_dbstore_indexes_inserted[5m]))",
+					NoAlert:     true,
+					Panel:       monitoring.Panel().LegendFormat("inserts"),
+				})),
+			},
+		},
+	}
+}
+
 // src_codeintel_autoindexing_total
 // src_codeintel_autoindexing_duration_seconds_bucket
 // src_codeintel_autoindexing_errors_total
@@ -10,7 +29,7 @@ func (codeIntelligence) NewAutoindexingServiceGroup(containerName string) monito
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
 			DescriptionRoot: "Autoindexing > Service",
-			Hidden:          false,
+			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_autoindexing",
@@ -42,7 +61,7 @@ func (codeIntelligence) NewAutoindexingGraphQLTransportGroup(containerName strin
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
 			DescriptionRoot: "Autoindexing > GQL transport",
-			Hidden:          false,
+			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_autoindexing_transport_graphql",
@@ -74,7 +93,7 @@ func (codeIntelligence) NewAutoindexingStoreGroup(containerName string) monitori
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
 			DescriptionRoot: "Autoindexing > Store (internal)",
-			Hidden:          false,
+			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_autoindexing_store",
@@ -106,7 +125,7 @@ func (codeIntelligence) NewAutoindexingInferenceServiceGroup(containerName strin
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
 			DescriptionRoot: "Autoindexing > Inference service (internal)",
-			Hidden:          false,
+			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_autoindexing_inference",
@@ -138,7 +157,7 @@ func (codeIntelligence) NewLuasandboxServiceGroup(containerName string) monitori
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
 			DescriptionRoot: "Luasandbox service",
-			Hidden:          false,
+			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "luasandbox",
