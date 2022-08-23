@@ -82,10 +82,10 @@ describe('renderMarkdown', () => {
     it('sanitizes event handlers', () => {
         expect(renderMarkdown('<svg><rect onclick="evil()"></rect></svg>')).toBe('<p><svg><rect></rect></svg></p>\n')
     })
-    it('sanitizes non-SVG <object> tags', () => {
+    it('does not allow arbitrary <object> tags', () => {
         expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>\n')
     })
-    it('allows SVG <object> tags', () => {
+    it('does not allow SVG <object> tags', () => {
         expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe(
             '<p><object></object></p>\n'
         )
@@ -94,15 +94,6 @@ describe('renderMarkdown', () => {
         const input =
             '<svg viewbox="10 10 10 10" width="100"><rect x="37.5" y="7.5" width="675.0" height="16.875" fill="#e05d44" stroke="white" stroke-width="1"><title>/</title></rect></svg>'
         expect(renderMarkdown(input)).toBe(`<p>${input}</p>\n`)
-    })
-
-    it('filters base64 encoded <svg> tags', () => {
-        const input_prefix =
-            '<svg viewbox="10 10 10 10" width="100"><rect x="37.5" y="7.5" width="675.0" height="16.875" fill="#e05d44" stroke="white" stroke-width="1">'
-        const input_suffix = '<title>/</title></rect></svg>'
-        const input_base64 = window.btoa(input_prefix + '<script>alert(1)</script>' + input_suffix)
-        const object = `<object type="image/svg+xml" data="data:image/svg+xml;base64,${input_base64}"></object>`
-        expect(renderMarkdown(object)).toBe('<p><object></object></p>\n')
     })
 
     describe('allowDataUriLinksAndDownloads option', () => {
