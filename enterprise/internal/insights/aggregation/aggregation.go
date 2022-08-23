@@ -1,6 +1,9 @@
 package aggregation
 
 import (
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
@@ -27,15 +30,16 @@ type AggregationTabulator func(*AggregationMatchResult, error)
 type OnMatches func(matches []result.Match)
 
 type eventMatch struct {
-	Repo        string
-	RepoID      int32
-	Path        string
-	Commit      string
-	Author      string
-	Date        time.Time
-	Lang        string
-	ResultCount int
-	Content     string
+	Repo         string
+	RepoID       int32
+	Path         string
+	Commit       string
+	Author       string
+	Date         time.Time
+	Lang         string
+	ResultCount  int
+	Content      string
+	ChunkMatches result.ChunkMatches
 }
 
 // NewEventEnvironment maps event matches into a consistent type
@@ -44,11 +48,12 @@ func newEventMatch(event result.Match) *eventMatch {
 	case *result.FileMatch:
 		lang, _ := enry.GetLanguageByExtension(match.Path)
 		return &eventMatch{
-			Repo:        string(match.Repo.Name),
-			RepoID:      int32(match.Repo.ID),
-			Path:        match.Path,
-			Lang:        lang,
-			ResultCount: match.ResultCount(),
+			Repo:         string(match.Repo.Name),
+			RepoID:       int32(match.Repo.ID),
+			Path:         match.Path,
+			Lang:         lang,
+			ResultCount:  match.ResultCount(),
+			ChunkMatches: match.ChunkMatches,
 		}
 	case *result.RepoMatch:
 		return &eventMatch{
@@ -133,11 +138,49 @@ func countAuthor(r result.Match) (MatchKey, int, error) {
 	return MatchKey{}, 0, nil
 }
 
+func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
+	regexp, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, errors.New("Could not compile regexp")
+	}
+	return func(r result.Match) (MatchKey, int, error) {
+		match := newEventMatch(r)
+		if len(match.ChunkMatches) != 0 {
+			groups := make([]Match, 0, len(match.ChunkMatches))
+			for _, cm := range match.ChunkMatches {
+				for _, range_ := range cm.Ranges {
+					content := chunkContent(cm, range_)
+					for _, submatches := range regexp.FindAllStringSubmatchIndex(content, -1) {
+						groups = append(groups, fromRegexpMatches(submatches, regexp.SubexpNames(), content, range_))
+					}
+				}
+			}
+
+			// TODO: What if there's more than one capture group per match? This whole thing might need to return an array
+			// of these..
+			if len(groups) > 0 {
+				return MatchKey{
+					RepoID: match.RepoID,
+					Repo:   match.Repo,
+					Group:  groups[0].Value,
+				}, match.ResultCount, nil
+			}
+		}
+		return MatchKey{}, 0, nil
+	}, nil
+}
+
 func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
+	captureGroupsCount, err := countCaptureGroupsFunc(query)
+	if err != nil {
+		return nil, err
+	}
+
 	modeCountTypes := map[types.SearchAggregationMode]AggregationCountFunc{
-		types.REPO_AGGREGATION_MODE:   countRepo,
-		types.PATH_AGGREGATION_MODE:   countPath,
-		types.AUTHOR_AGGREGATION_MODE: countAuthor,
+		types.REPO_AGGREGATION_MODE:          countRepo,
+		types.PATH_AGGREGATION_MODE:          countPath,
+		types.AUTHOR_AGGREGATION_MODE:        countAuthor,
+		types.CAPTURE_GROUP_AGGREGATION_MODE: captureGroupsCount,
 	}
 
 	modeCountFunc, ok := modeCountTypes[mode]
@@ -188,5 +231,99 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	}
 	for key, count := range combined {
 		r.tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)
+	}
+}
+
+func substituteRegexp(content string, match *regexp.Regexp, replacePattern, separator string) string {
+	var b strings.Builder
+	for _, submatches := range match.FindAllStringSubmatchIndex(content, -1) {
+		b.Write(match.ExpandString([]byte{}, replacePattern, content, submatches))
+		b.WriteString(separator)
+	}
+	return b.String()
+}
+
+type Match struct {
+	Value       string      `json:"value"`
+	Range       Range       `json:"range"`
+	Environment Environment `json:"environment"`
+}
+
+type Range struct {
+	Start Location `json:"start"`
+	End   Location `json:"end"`
+}
+
+type Environment map[string]Data
+
+type Location struct {
+	Offset int `json:"offset"`
+	Line   int `json:"line"`
+	Column int `json:"column"`
+}
+
+type Data struct {
+	Value string `json:"value"`
+	Range Range  `json:"range"`
+}
+
+func chunkContent(c result.ChunkMatch, r result.Range) string {
+	// Set range relative to the start of the content.
+	rr := r.Sub(c.ContentStart)
+	return c.Content[rr.Start.Offset:rr.End.Offset]
+}
+
+func fromRegexpMatches(submatches []int, namedGroups []string, content string, range_ result.Range) Match {
+	env := make(Environment)
+	var firstValue string
+	var firstRange Range
+	// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
+	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
+	for j := 0; j < len(submatches); j += 2 {
+		start := submatches[j]
+		end := submatches[j+1]
+		if start == -1 || end == -1 {
+			// The entire regexp matched, but a capture
+			// group inside it did not. Ignore this entry.
+			continue
+		}
+		value := content[start:end]
+		captureRange := newRange(range_.Start.Offset+start, range_.Start.Offset+end)
+
+		if j == 0 {
+			// The first submatch is the overall match
+			// value. Don’t add this to the Environment
+			firstValue = value
+			firstRange = captureRange
+			continue
+		}
+
+		var v string
+		if namedGroups[j/2] == "" {
+			v = strconv.Itoa(j / 2)
+		} else {
+			v = namedGroups[j/2]
+		}
+		env[v] = Data{Value: value, Range: captureRange}
+	}
+	return Match{Value: firstValue, Range: firstRange, Environment: env}
+}
+
+type Regexp struct {
+	Value *regexp.Regexp
+}
+
+func newRange(startOffset, endOffset int) Range {
+	return Range{
+		Start: newLocation(-1, -1, startOffset),
+		End:   newLocation(-1, -1, endOffset),
+	}
+}
+
+func newLocation(line, column, offset int) Location {
+	return Location{
+		Offset: offset,
+		Line:   line,
+		Column: column,
 	}
 }
