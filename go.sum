@@ -2066,8 +2066,8 @@ github.com/sourcegraph/log v0.0.0-20220707160925-6a936691c838 h1:8wknDSCUVYbaRT6
 github.com/sourcegraph/log v0.0.0-20220707160925-6a936691c838/go.mod h1:zWEPlKrWBUVpko/tOgDS+qrp7BmzaCcmUrh9+ver1iQ=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
-github.com/sourcegraph/otelsql v0.0.0-20220823183744-af1710b9120e h1:oNO70jyBoFmJ/RtVpuntJvr0bga52G1OQ+YYHBxqeyY=
-github.com/sourcegraph/otelsql v0.0.0-20220823183744-af1710b9120e/go.mod h1:AfMs/2M3s2GnTKqPBnX5pwNPDxmXCt0poaM8efznH7Q=
+github.com/sourcegraph/otelsql v0.0.0-20220823190616-afb3dd6ab55c h1:WfzzyFAFZDbODUszo1UkIvdwcb7blIgd4wmbQHxn3aY=
+github.com/sourcegraph/otelsql v0.0.0-20220823190616-afb3dd6ab55c/go.mod h1:AfMs/2M3s2GnTKqPBnX5pwNPDxmXCt0poaM8efznH7Q=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=
 github.com/sourcegraph/run v0.9.0/go.mod h1:j6Do38ccF+w/rSWgOuu4Ou/eOIDiU6pC87BZmq0DXDY=
 github.com/sourcegraph/scip v0.1.0 h1:kTs0CJaLQvcRZjg+HpGrcJPNX2Tx31+d6szWio3ZOkQ=
