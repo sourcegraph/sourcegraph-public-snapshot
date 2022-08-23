@@ -320,7 +320,7 @@ If you run into authentication issues, **create a user and promote it site admin
 sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
 ```
 
-The above command resets the database and creates a user like so:
+The above command resets the database and creates a user like. If the command completes succesfully you'll see the following output:
 
 ```
   👉 User test (test@sourcegraph.com) has been created and its password is supersecurepassword .
