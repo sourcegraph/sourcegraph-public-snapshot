@@ -304,7 +304,7 @@ This will open Chromium, add a code host, clone repositories, and execute the e2
 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
 ```
 
-In case of running against an existing server image:
+And if you're running the test suite against an existing server image:
 
 ```
 SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
