@@ -25,7 +25,7 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
     getDatumLink: (datum: Datum) => string | undefined | null
     onBarHover: (datum: Datum, category: Category<Datum>) => void
     onBarLeave: () => void
-    onBarClick: (datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum) => void
 }
 
 const isSafari = getBrowserName() === 'safari'
@@ -72,7 +72,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
         const [datum] = getActiveBar({ event, xScale, xCategoriesScale, categories })
 
         if (datum) {
-            onBarClick(datum)
+            onBarClick(event, datum)
         }
     }
 
@@ -91,6 +91,8 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                             <MaybeLink
                                 key={`bar-group-bar-${category.id}-${getDatumName(datum)}`}
                                 to={getDatumLink(datum)}
+                                onFocus={() => onBarHover(datum, category)}
+                                onClick={event => onBarClick(event, datum)}
                             >
                                 <rect
                                     x={barX}
