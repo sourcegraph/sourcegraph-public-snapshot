@@ -10,4 +10,4 @@ type Permutation = [Package, Package]
 
 type createPermutation = () => Permutation[]
 
-type getPackageInfroamtion = (packageName: Package) => Object
+type createPackageInformation = (packageName: Package) => Object
