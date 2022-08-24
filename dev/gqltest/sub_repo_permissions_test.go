@@ -292,11 +292,7 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
 	}
 
 	aliceID := userClient.AuthenticatedUserID()
-	t.Cleanup(func() {
-		if err := client.DeleteUser(aliceID, true); err != nil {
-			t.Fatal(err)
-		}
-	})
+	removeTestUserAfterTest(t, aliceID)
 
 	if err := client.SetUserEmailVerified(aliceID, aliceEmail, true); err != nil {
 		t.Fatal(err)

@@ -40,12 +40,7 @@ func TestExternalService(t *testing.T) {
 		if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 			t.Fatal(err)
 		}
-		t.Cleanup(func() {
-			err := client.DeleteExternalService(esID, false)
-			if err != nil {
-				t.Fatal(err)
-			}
-		})
+		removeExternalServiceAfterTest(t, esID)
 
 		err = client.WaitForReposToBeCloned(slug)
 		if err != nil {
@@ -99,12 +94,7 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
+	removeExternalServiceAfterTest(t, esID)
 
 	const repoName = "aws/test"
 	err = client.WaitForReposToBeCloned(repoName)
@@ -151,12 +141,7 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
+	removeExternalServiceAfterTest(t, esID)
 
 	const repoName = "bbs/SOURCEGRAPH/jsonrpc2"
 	err = client.WaitForReposToBeCloned(repoName)
@@ -238,12 +223,7 @@ func createPerforceExternalService(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID, true)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
+	removeExternalServiceAfterTest(t, esID)
 }
 
 func TestExternalService_AsyncDeletion(t *testing.T) {
@@ -293,4 +273,13 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 	if !strings.Contains(err.Error(), "external service not found") {
 		t.Fatalf("Not found error should be returned, got: %s", err.Error())
 	}
+}
+
+func removeExternalServiceAfterTest(t *testing.T, esID string) {
+	t.Cleanup(func() {
+		err := client.DeleteExternalService(esID, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }
