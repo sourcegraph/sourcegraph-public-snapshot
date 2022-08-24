@@ -1,8 +1,8 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .root {
-    padding: 0.5rem;
-    background-color: var(--subtle-bg);
+    padding: 0;
+    background-color: var(--color-bg-1);
     border: 1px solid var(--border-color);
     border-radius: 3px;
     margin-bottom: 0.25rem;
@@ -14,18 +14,19 @@
 }
 
 .header {
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    font-weight: 700;
-    font-style: italic;
-    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    margin: 0;
+    font-weight: normal;
+    font-size: 0.75rem;
     display: flex;
     justify-content: space-between;
+    color: var(--body-color);
+    background-color: var(--color-bg-2);
 }
 
 .container {
     list-style: none;
-    padding: 0;
+    padding: 1rem 0.5rem;
     margin: 0;
 }
 

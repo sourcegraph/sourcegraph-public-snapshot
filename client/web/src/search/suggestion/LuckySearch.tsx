@@ -48,7 +48,7 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                 <CollapsePanel>
                     <ul className={styles.container}>
                         {alert?.proposedQueries?.map(entry => (
-                            <li className="mt-2" key={entry.query}>
+                            <li key={entry.query}>
                                 <Link
                                     to={createLinkUrl({
                                         pathname: '/search',
