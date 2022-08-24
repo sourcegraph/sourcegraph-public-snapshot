@@ -41,8 +41,6 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 		l.Metadata = new(PreparingDockerImagesMetadata)
 	case LogEventOperationDeterminingWorkspaceType:
 		l.Metadata = new(DeterminingWorkspaceTypeMetadata)
-	case LogEventOperationResolvingRepositories:
-		l.Metadata = new(ResolvingRepositoriesMetadata)
 	case LogEventOperationDeterminingWorkspaces:
 		l.Metadata = new(DeterminingWorkspacesMetadata)
 	case LogEventOperationCheckingCache:
@@ -93,7 +91,6 @@ const (
 	LogEventOperationResolvingNamespace       LogEventOperation = "RESOLVING_NAMESPACE"
 	LogEventOperationPreparingDockerImages    LogEventOperation = "PREPARING_DOCKER_IMAGES"
 	LogEventOperationDeterminingWorkspaceType LogEventOperation = "DETERMINING_WORKSPACE_TYPE"
-	LogEventOperationResolvingRepositories    LogEventOperation = "RESOLVING_REPOSITORIES"
 	LogEventOperationDeterminingWorkspaces    LogEventOperation = "DETERMINING_WORKSPACES"
 	LogEventOperationCheckingCache            LogEventOperation = "CHECKING_CACHE"
 	LogEventOperationExecutingTasks           LogEventOperation = "EXECUTING_TASKS"
@@ -137,14 +134,11 @@ type DeterminingWorkspaceTypeMetadata struct {
 	Type string `json:"type,omitempty"`
 }
 
-type ResolvingRepositoriesMetadata struct {
-	Unsupported int `json:"unsupported,omitempty"`
-	Ignored     int `json:"ignored,omitempty"`
-	Count       int `json:"count,omitempty"`
-}
-
 type DeterminingWorkspacesMetadata struct {
-	Count int `json:"count,omitempty"`
+	Unsupported    int `json:"unsupported,omitempty"`
+	Ignored        int `json:"ignored,omitempty"`
+	RepoCount      int `json:"repoCount,omitempty"`
+	WorkspaceCount int `json:"workspaceCount,omitempty"`
 }
 
 type CheckingCacheMetadata struct {

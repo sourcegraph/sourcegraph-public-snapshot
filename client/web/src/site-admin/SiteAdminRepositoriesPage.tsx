@@ -169,7 +169,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 value: data.repositoryStats.total,
                 description: 'Repositories',
                 color: 'var(--purple)',
-                tooltip: 'Total number of repositories in the Sourcegraph instance.',
+                tooltip:
+                    'Total number of repositories in the Sourcegraph instance. This number might be higher than the total number of repositories in the list below in case repository permissions do not allow you to view some repositories.',
             },
             {
                 value: data.repositoryStats.notCloned,

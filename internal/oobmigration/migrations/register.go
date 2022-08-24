@@ -12,24 +12,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/batches"
 )
 
-func RegisterOSSMigrations(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
+func RegisterOSSMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 	keyring := keyring.Default()
 
-	return registerOSSMigrations(runner, migratorDependencies{
+	return registerOSSMigrators(runner, false, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
 		keyring: &keyring,
 	})
 }
 
-func RegisterOSSMigrationsFromConfig(ctx context.Context, db database.DB, runner *oobmigration.Runner, conf conftypes.UnifiedQuerier) error {
-	keyring, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
+type StoreFactory interface {
+	Store(ctx context.Context, schemaName string) (*basestore.Store, error)
+}
+
+func RegisterOSSMigratorsUsingConfAndStoreFactory(
+	ctx context.Context,
+	db database.DB,
+	runner *oobmigration.Runner,
+	conf conftypes.UnifiedQuerier,
+	storeFactory StoreFactory,
+) error {
+	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {
 		return err
 	}
+	if keys == nil {
+		keys = &keyring.Ring{}
+	}
 
-	return registerOSSMigrations(runner, migratorDependencies{
+	return registerOSSMigrators(runner, true, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
-		keyring: keyring,
+		keyring: keys,
 	})
 }
 
@@ -38,8 +51,8 @@ type migratorDependencies struct {
 	keyring *keyring.Ring
 }
 
-func registerOSSMigrations(runner *oobmigration.Runner, deps migratorDependencies) error {
-	return RegisterAll(runner, []TaggedMigrator{
+func registerOSSMigrators(runner *oobmigration.Runner, noDelay bool, deps migratorDependencies) error {
+	return RegisterAll(runner, noDelay, []TaggedMigrator{
 		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
 	})
 }
@@ -50,13 +63,14 @@ type TaggedMigrator interface {
 	Interval() time.Duration
 }
 
-func RegisterAll(runner *oobmigration.Runner, migrators []TaggedMigrator) error {
+func RegisterAll(runner *oobmigration.Runner, noDelay bool, migrators []TaggedMigrator) error {
 	for _, migrator := range migrators {
-		if err := runner.Register(
-			migrator.ID(),
-			migrator,
-			oobmigration.MigratorOptions{Interval: migrator.Interval()},
-		); err != nil {
+		options := oobmigration.MigratorOptions{Interval: migrator.Interval()}
+		if noDelay {
+			options.Interval = time.Nanosecond
+		}
+
+		if err := runner.Register(migrator.ID(), migrator, options); err != nil {
 			return err
 		}
 	}

@@ -113,6 +113,7 @@ func peek(pattern string, currentIndex, peekOffset int) byte {
 
 type PatternReplacer interface {
 	Replace(replacement string) (BasicQuery, error)
+	HasCaptureGroups() bool
 }
 
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
@@ -140,6 +141,10 @@ func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 	}
 
 	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, replacement))
+}
+
+func (r *regexpReplacer) HasCaptureGroups() bool {
+	return len(r.groups) != 0
 }
 
 var (

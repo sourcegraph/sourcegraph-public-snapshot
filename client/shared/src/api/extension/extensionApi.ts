@@ -304,7 +304,7 @@ export function createExtensionAPIFactory(
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
-        execute: (query, variables) => clientAPI.requestGraphQL(query, variables),
+        execute: ((query: any, variables: any) => clientAPI.requestGraphQL(query, variables)) as any,
     }
 
     // Content

@@ -1,6 +1,7 @@
 package tracer
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"text/template"
@@ -8,6 +9,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
+	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 
@@ -17,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+
+	"github.com/sourcegraph/sourcegraph/internal/tracer/internal/exporters"
 )
 
 // options control the behavior of a TracerType
@@ -149,7 +154,7 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 		// update old opts for comparison
 		oldOpts = opts
 
-		// create the new tracer and assign it globally
+		// create new tracer providers
 		tracerLogger := logger.With(
 			log.String("tracerType", string(opts.TracerType)),
 			log.Bool("debug", opts.debug))
@@ -158,6 +163,9 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 			tracerLogger.Warn("failed to initialize tracer", log.Error(err))
 			return
 		}
+
+		// update global tracers. for now, we let the OT tracer handle shutdown when
+		// switching (we always switch in tandem, so this is fine)
 		globalOTTracer.set(tracerLogger, otImpl, closer, opts.debug)
 		globalOTelTracerProvider.set(otelImpl, opts.debug)
 	})
@@ -175,19 +183,21 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 	})
 }
 
-// newTracer creates a tracer based on options
+// newTracer creates OpenTelemetry and OpenTracing tracers based on opts
 func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
 	logger.Debug("configuring tracer")
 
+	var exporter oteltracesdk.SpanExporter
+	var err error
 	switch opts.TracerType {
 	case Jaeger, openTracing:
-		ot, closer, err := newJaegerTracer(logger, opts)
-		return ot, nil, closer, err
-
+		exporter, err = exporters.NewJaegerExporter()
 	case OpenTelemetry:
-		return newOTelBridgeTracer(logger, opts)
-
-	default:
-		return opentracing.NoopTracer{}, nil, nil, nil
+		exporter, err = exporters.NewOTelCollectorExporter(context.Background(), logger)
 	}
+
+	if err != nil || exporter == nil {
+		return opentracing.NoopTracer{}, trace.NewNoopTracerProvider(), nil, err
+	}
+	return newOTelBridgeTracer(logger, exporter, opts.resource, opts.debug)
 }

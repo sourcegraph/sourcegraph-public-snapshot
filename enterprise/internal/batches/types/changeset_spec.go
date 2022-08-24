@@ -1,12 +1,14 @@
 package types
 
 import (
+	"bytes"
 	"io"
-	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -22,7 +24,56 @@ func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 }
 
 func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, error) {
-	c := &ChangesetSpec{Spec: spec}
+	baseRepoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.BaseRepository))
+	if err != nil {
+		return nil, err
+	}
+
+	c := &ChangesetSpec{
+		BaseRepoID: baseRepoID,
+		ExternalID: spec.ExternalID,
+		Title:      spec.Title,
+		Body:       spec.Body,
+		Published:  spec.Published,
+	}
+
+	if spec.IsImportingExisting() {
+		c.Type = ChangesetSpecTypeExisting
+	} else {
+		headRepoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.HeadRepository))
+		if err != nil {
+			return nil, err
+		}
+		if baseRepoID != headRepoID {
+			return nil, batcheslib.ErrHeadBaseMismatch
+		}
+
+		diff, err := spec.Diff()
+		if err != nil {
+			return nil, err
+		}
+		commitMsg, err := spec.CommitMessage()
+		if err != nil {
+			return nil, err
+		}
+		authorName, err := spec.AuthorName()
+		if err != nil {
+			return nil, err
+		}
+		authorEmail, err := spec.AuthorEmail()
+		if err != nil {
+			return nil, err
+		}
+		c.Type = ChangesetSpecTypeBranch
+		c.Diff = []byte(diff)
+		c.HeadRef = spec.HeadRef
+		c.BaseRev = spec.BaseRev
+		c.BaseRef = spec.BaseRef
+		c.CommitMessage = commitMsg
+		c.CommitAuthorName = authorName
+		c.CommitAuthorEmail = authorEmail
+	}
+
 	c.computeForkNamespace()
 	return c, c.computeDiffStat()
 }
@@ -38,18 +89,30 @@ type ChangesetSpec struct {
 	ID     int64
 	RandID string
 
-	Spec *batcheslib.ChangesetSpec
+	Type ChangesetSpecType
 
 	DiffStatAdded   int32
 	DiffStatChanged int32
 	DiffStatDeleted int32
 
 	BatchSpecID int64
-	RepoID      api.RepoID
+	BaseRepoID  api.RepoID
 	UserID      int32
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	ExternalID        string
+	BaseRev           string
+	BaseRef           string
+	HeadRef           string
+	Title             string
+	Body              string
+	Published         batcheslib.PublishedValue
+	Diff              []byte
+	CommitMessage     string
+	CommitAuthorName  string
+	CommitAuthorEmail string
 
 	ForkNamespace *string
 }
@@ -64,17 +127,12 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 // diff stat fields that can be retrieved with DiffStat().
 // If the Diff is invalid or parsing failed, an error is returned.
 func (cs *ChangesetSpec) computeDiffStat() error {
-	if cs.Spec.IsImportingExisting() {
+	if cs.Type == ChangesetSpecTypeExisting {
 		return nil
 	}
 
-	d, err := cs.Spec.Diff()
-	if err != nil {
-		return err
-	}
-
 	stats := diff.Stat{}
-	reader := diff.NewMultiFileDiffReader(strings.NewReader(d))
+	reader := diff.NewMultiFileDiffReader(bytes.NewReader(cs.Diff))
 	for {
 		fileDiff, err := reader.ReadFile()
 		if err == io.EOF {
@@ -137,7 +195,7 @@ type ChangesetSpecs []*ChangesetSpec
 func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
 	repoIDMap := make(map[api.RepoID]struct{})
 	for _, c := range cs {
-		repoIDMap[c.RepoID] = struct{}{}
+		repoIDMap[c.BaseRepoID] = struct{}{}
 	}
 	repoIDs := make([]api.RepoID, 0)
 	for id := range repoIDMap {

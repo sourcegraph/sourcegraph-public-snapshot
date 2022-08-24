@@ -37,14 +37,15 @@ import (
 const addr = ":3189"
 
 // Start runs the worker.
-func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations oobmigration.RegisterMigratorsFunc) error {
-	registerMigrations := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrations, registerEnterpriseMigrations)
+func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) error {
+	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
-		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrations),
+		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrators),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
+		"codeintel-crates-syncer":               codeintel.NewCratesSyncerJob(),
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor":             repostatistics.NewCompactor(),
