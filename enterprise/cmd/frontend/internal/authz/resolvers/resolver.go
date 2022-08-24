@@ -34,7 +34,7 @@ type Resolver struct {
 	}
 }
 
-// checkLicense returns a user-facing error if the ACLs feature is not purchased
+// checkLicense returns a user-facing error if the provided feature is not purchased
 // with the current license or any error occurred while validating the licence.
 func (r *Resolver) checkLicense(feature licensing.Feature) error {
 	if !licensing.EnforceTiers {
