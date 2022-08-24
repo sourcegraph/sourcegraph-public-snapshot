@@ -68,6 +68,7 @@ const (
 	routeSurveyScore             = "survey-score"
 	routeRegistry                = "registry"
 	routeExtensions              = "extensions"
+	routePackageRemix            = "package-remix"
 	routeHelp                    = "help"
 	routeCommunitySearchContexts = "community-search-contexts"
 	routeCncf                    = "community-search-contexts.cncf"
@@ -89,8 +90,6 @@ const (
 	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
 	routeLegacyRepoLanding             = "page.repo.landing"
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
-
-	routePackageRemix = "package-remix"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
@@ -160,6 +159,7 @@ func newRouter() *mux.Router {
 	r.Path("/survey/{score}").Methods("GET").Name(routeSurveyScore)
 	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
 	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
+	r.PathPrefix("/package-remix").Methods("GET").Name(routePackageRemix)
 	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
@@ -167,9 +167,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
-
-	//
-	r.PathPrefix("/package-remix").Methods("GET").Name(routePackageRemix)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
 	// Any changes to the embedding route could have security implications. Please consult the security team
@@ -269,14 +266,13 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
 	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
 	router.Get(routeExtensions).Handler(brandedIndex("Extensions"))
+	router.Get(routePackageRemix).Handler(brandedIndex("Package Remix"))
 	router.Get(routeHelp).HandlerFunc(serveHelp)
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
 	router.Get(routeStats).Handler(brandedNoIndex("Stats"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
-
-	router.Get(routePackageRemix).Handler(brandedNoIndex("Package Remix"))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
 	// Any changes to the embedding route could have security implications. Please consult the security team

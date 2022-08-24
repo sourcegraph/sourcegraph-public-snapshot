@@ -16,7 +16,7 @@ try {
         for (const packageB of set) {
             let notebookId: string | null = notebookMap[packageA]?.[packageB] ?? null
 
-            notebookId = await createOrUpdateNotebook(notebookId, 'react', 'redux')
+            notebookId = await createOrUpdateNotebook(notebookId, packageA, packageB)
 
             if (notebookMap[packageA] == null) {
                 notebookMap[packageA] = {}
