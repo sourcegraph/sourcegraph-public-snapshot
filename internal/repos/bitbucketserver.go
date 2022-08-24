@@ -278,7 +278,10 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 			repos, err := s.client.ProjectRepos(ctx, q)
 			if err != nil {
-				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q)}
+				// Getting a "fatal" error for a single project key is not a strong
+				// enough reason to stop syncing, instead wrap this error as a warning
+				// so that the sync can continue.
+				ch <- batch{err: errors.NewWarningError(errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q))}
 				return
 			}
 

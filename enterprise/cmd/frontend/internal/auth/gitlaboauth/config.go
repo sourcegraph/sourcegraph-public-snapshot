@@ -3,31 +3,41 @@ package gitlaboauth
 import (
 	"net/url"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const PkgName = "gitlaboauth"
-
 func Init(db database.DB) {
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(cfg, db)
 		return problems
 	})
+
 	go func() {
+		const pkgName = "gitlaboauth"
+		logger := log.Scoped(pkgName, "GitLab OAuth config watch")
 		conf.Watch(func() {
+			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+				logger.Warn("Check license for SSO (GitLab OAuth)", log.Error(err))
+				providers.Update(pkgName, nil)
+				return
+			}
+
 			newProviders, _ := parseConfig(conf.Get(), db)
 			if len(newProviders) == 0 {
-				providers.Update(PkgName, nil)
+				providers.Update(pkgName, nil)
 			} else {
 				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
 					newProvidersList = append(newProvidersList, p.Provider)
 				}
-				providers.Update(PkgName, newProvidersList)
+				providers.Update(pkgName, newProvidersList)
 			}
 		})
 	}()

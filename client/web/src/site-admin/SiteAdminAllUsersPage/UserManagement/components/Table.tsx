@@ -13,6 +13,7 @@ import {
     Position,
     Button,
     Tooltip,
+    PopoverOpenEvent,
 } from '@sourcegraph/wildcard'
 
 import styles from './Table.module.scss'
@@ -301,8 +302,13 @@ interface ActionsProps<T> {
 }
 
 function Actions<T>({ children, actions, disabled, selection }: ActionsProps<T>): JSX.Element {
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
+        setIsOpen(event.isOpen)
+    }, [])
+
     return (
-        <Popover>
+        <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
             <PopoverTrigger as={Button} disabled={disabled} variant="secondary" outline={true}>
                 {children}
             </PopoverTrigger>
@@ -317,7 +323,10 @@ function Actions<T>({ children, actions, disabled, selection }: ActionsProps<T>)
                                 variant="link"
                                 as="li"
                                 outline={true}
-                                onClick={() => onClick?.(selection)}
+                                onClick={() => {
+                                    onClick?.(selection)
+                                    setIsOpen(false)
+                                }}
                             >
                                 <Icon
                                     aria-label={label}

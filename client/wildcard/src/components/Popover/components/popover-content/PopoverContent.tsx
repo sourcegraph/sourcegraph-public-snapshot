@@ -20,7 +20,7 @@ export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' |
     targetElement?: HTMLElement | null
 }
 
-export const PopoverContent = forwardRef((props, reference) => {
+export const PopoverContent = forwardRef(function PopoverContent(props, reference) {
     const {
         isOpen,
         children,

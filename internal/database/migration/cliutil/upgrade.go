@@ -7,11 +7,18 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryWithSchemas, outFactory OutputFactory) *cli.Command {
+func Upgrade(
+	logger log.Logger,
+	commandName string,
+	runnerFactory RunnerFactoryWithSchemas,
+	outFactory OutputFactory,
+	registerMigrators func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
 		Usage:    "The source (current) instance version. Must be of the form `v{Major}.{Minor}`.",
@@ -25,6 +32,11 @@ func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryW
 	skipVersionCheckFlag := &cli.BoolFlag{
 		Name:     "skip-version-check",
 		Usage:    "Skip validation of the instance's current version.",
+		Required: false,
+	}
+	dryRunFlag := &cli.BoolFlag{
+		Name:     "dry-run",
+		Usage:    "Print the upgrade plan but do not execute it.",
 		Required: false,
 	}
 
@@ -52,7 +64,16 @@ func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryW
 		if err != nil {
 			return err
 		}
-		if err := runUpgrade(ctx, runnerFactory, plan, skipVersionCheckFlag.Get(cmd)); err != nil {
+
+		if err := runUpgrade(
+			ctx,
+			runnerFactory,
+			plan,
+			skipVersionCheckFlag.Get(cmd),
+			dryRunFlag.Get(cmd),
+			registerMigrators,
+			out,
+		); err != nil {
 			return err
 		}
 
@@ -68,6 +89,7 @@ func Upgrade(logger log.Logger, commandName string, runnerFactory RunnerFactoryW
 			fromFlag,
 			toFlag,
 			skipVersionCheckFlag,
+			dryRunFlag,
 		},
 	}
 }

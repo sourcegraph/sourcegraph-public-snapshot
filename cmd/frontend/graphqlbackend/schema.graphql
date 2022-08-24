@@ -5803,6 +5803,11 @@ type Site implements SettingsSubject {
     the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
     """
     allowSiteSettingsEdits: Boolean!
+    """
+    Whether to enable the extension registry and the use of extensions.
+    Reflects the site configuration `enableLegacyExtensions` experimental feature value.
+    """
+    enableLegacyExtensions: Boolean!
 }
 
 """
@@ -6350,7 +6355,7 @@ type AnalyticsExtensionsResult {
     """
     jetbrains: AnalyticsStatItem!
     """
-    VsCode IDE extension search events.
+    VSCode IDE extension search events.
     """
     vscode: AnalyticsStatItem!
     """

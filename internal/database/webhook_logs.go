@@ -60,8 +60,8 @@ func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) err
 		receivedAt,
 		dbutil.NullInt64{N: log.ExternalServiceID},
 		log.StatusCode,
-		rawRequest,
-		rawResponse,
+		[]byte(rawRequest),
+		[]byte(rawResponse),
 		keyID,
 		sqlf.Join(webhookLogColumns, ", "),
 	)
@@ -278,8 +278,9 @@ WHERE
 
 func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.WebhookLog, sc dbutil.Scanner) error {
 	var (
-		externalServiceID        int64 = -1
-		request, response, keyID string
+		externalServiceID int64 = -1
+		request, response []byte
+		keyID             string
 	)
 
 	if err := sc.Scan(
@@ -298,7 +299,7 @@ func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.Webhook
 		log.ExternalServiceID = &externalServiceID
 	}
 
-	log.Request = types.NewEncryptedWebhookLogMessage(request, keyID, s.key)
-	log.Response = types.NewEncryptedWebhookLogMessage(response, keyID, s.key)
+	log.Request = types.NewEncryptedWebhookLogMessage(string(request), keyID, s.key)
+	log.Response = types.NewEncryptedWebhookLogMessage(string(response), keyID, s.key)
 	return nil
 }

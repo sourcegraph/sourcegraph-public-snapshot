@@ -61,7 +61,8 @@ func NewAuthzProviders(
 		p, err := newAuthzProvider(externalServicesStore, c)
 		if err != nil {
 			problems = append(problems, err.Error())
-		} else if p == nil {
+		}
+		if p == nil {
 			continue
 		}
 
