@@ -132,17 +132,25 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	flags := make(map[string]bool)
 	flags["testflag"] = true
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	want := []*database.Event{
 		{
 			Name:             "event1",
 			UserID:           1,
 			Source:           "test",
 			EvaluatedFlagSet: flags,
+			DeviceID:         ptr("device-1"),
+			InsertID:         ptr("insert-1"),
 		},
 		{
-			Name:   "event2",
-			UserID: 2,
-			Source: "test",
+			Name:     "event2",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device-2"),
+			InsertID: ptr("insert-2"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, want)
@@ -163,21 +171,31 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		}
 		autogold.Want("loads events without error", []*database.Event{
 			{
-				ID:               1,
-				Name:             "event1",
-				UserID:           1,
-				Argument:         json.RawMessage("{}"),
+				ID:     1,
+				Name:   "event1",
+				UserID: 1,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:           "test",
 				Version:          "0.0.0+dev",
-				EvaluatedFlagSet: flags,
+				EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
+				DeviceID:         valast.Addr("device-1").(*string),
+				InsertID:         valast.Addr("insert-1").(*string),
 			},
 			{
-				ID:       2,
-				Name:     "event2",
-				UserID:   2,
-				Argument: json.RawMessage("{}"),
+				ID:     2,
+				Name:   "event2",
+				UserID: 2,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device-2").(*string),
+				InsertID: valast.Addr("insert-2").(*string),
 			},
 		}).Equal(t, got)
 	})
@@ -197,17 +215,20 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("loads using specified batch size from settings", []*database.Event{
-			{
-				ID:               1,
-				Name:             "event1",
-				UserID:           1,
-				Argument:         json.RawMessage("{}"),
-				Source:           "test",
-				Version:          "0.0.0+dev",
-				EvaluatedFlagSet: flags,
+		autogold.Want("loads using specified batch size from settings", []*database.Event{{
+			ID:     1,
+			Name:   "event1",
+			UserID: 1,
+			Argument: json.RawMessage{
+				123,
+				125,
 			},
-		}).Equal(t, got)
+			Source:           "test",
+			Version:          "0.0.0+dev",
+			EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
+			DeviceID:         valast.Addr("device-1").(*string),
+			InsertID:         valast.Addr("insert-1").(*string),
+		}}).Equal(t, got)
 	})
 }
 
@@ -217,17 +238,25 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
 		{
-			Name:   "event1",
-			UserID: 1,
-			Source: "test",
+			Name:     "event1",
+			UserID:   1,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "event2",
-			UserID: 2,
-			Source: "test",
+			Name:     "event2",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -251,12 +280,17 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	t.Run("first execution of handler should return first event", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("first execution of handler should return first event", []*database.Event{{
-				ID:       1,
-				Name:     "event1",
-				UserID:   1,
-				Argument: json.RawMessage("{}"),
+				ID:     1,
+				Name:   "event1",
+				UserID: 1,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device").(*string),
+				InsertID: valast.Addr("insert").(*string),
 			}}).Equal(t, got)
 			return nil
 		}
@@ -269,12 +303,17 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	t.Run("second execution of handler should return second event", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("second execution of handler should return second event", []*database.Event{{
-				ID:       2,
-				Name:     "event2",
-				UserID:   2,
-				Argument: json.RawMessage("{}"),
+				ID:     2,
+				Name:   "event2",
+				UserID: 2,
+				Argument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
+				DeviceID: valast.Addr("device").(*string),
+				InsertID: valast.Addr("insert").(*string),
 			}}).Equal(t, got)
 			return nil
 		}
@@ -305,22 +344,32 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
+	ptr := func(s string) *string {
+		return &s
+	}
+
 	initAllowedEvents(t, db, []string{"allowed"})
 	testData := []*database.Event{
 		{
-			Name:   "allowed",
-			UserID: 1,
-			Source: "test",
+			Name:     "allowed",
+			UserID:   1,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "not-allowed",
-			UserID: 2,
-			Source: "test",
+			Name:     "not-allowed",
+			UserID:   2,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 		{
-			Name:   "allowed",
-			UserID: 3,
-			Source: "test",
+			Name:     "allowed",
+			UserID:   3,
+			Source:   "test",
+			DeviceID: ptr("device"),
+			InsertID: ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -344,20 +393,30 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
 			autogold.Want("first execution of handler should return first event", []*database.Event{
 				{
-					ID:       1,
-					Name:     "allowed",
-					UserID:   1,
-					Argument: json.RawMessage("{}"),
+					ID:     1,
+					Name:   "allowed",
+					UserID: 1,
+					Argument: json.RawMessage{
+						123,
+						125,
+					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
+					DeviceID: valast.Addr("device").(*string),
+					InsertID: valast.Addr("insert").(*string),
 				},
 				{
-					ID:       3,
-					Name:     "allowed",
-					UserID:   3,
-					Argument: json.RawMessage("{}"),
+					ID:     3,
+					Name:   "allowed",
+					UserID: 3,
+					Argument: json.RawMessage{
+						123,
+						125,
+					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
+					DeviceID: valast.Addr("device").(*string),
+					InsertID: valast.Addr("insert").(*string),
 				},
 			}).Equal(t, got)
 			return nil

@@ -36,12 +36,14 @@ type operations struct {
 	getVisibleUploadsMatchingMonikers *observation.Operation
 	updateUploadsVisibleToCommits     *observation.Operation
 	updateUploadRetention             *observation.Operation
+	backfillReferenceCountBatch       *observation.Operation
 	updateUploadsReferenceCounts      *observation.Operation
 	softDeleteExpiredUploads          *observation.Operation
 	deleteUploadsWithoutRepository    *observation.Operation
 	deleteUploadsStuckUploading       *observation.Operation
 	hardDeleteUploads                 *observation.Operation
 	inferClosestUploads               *observation.Operation
+	backfillCommittedAtBatch          *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
@@ -103,12 +105,14 @@ func newOperations(observationContext *observation.Context) *operations {
 		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),
+		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),
 		updateUploadsReferenceCounts:      op("UpdateUploadsReferenceCounts"),
 		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),
 		deleteUploadsStuckUploading:       op("DeleteUploadsStuckUploading"),
 		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
 		hardDeleteUploads:                 op("HardDeleteUploads"),
 		inferClosestUploads:               op("InferClosestUploads"),
+		backfillCommittedAtBatch:          op("BackfillCommittedAtBatch"),
 
 		// Dumps
 		findClosestDumps:                   op("FindClosestDumps"),

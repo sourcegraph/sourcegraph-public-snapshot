@@ -41,7 +41,6 @@ func Executor() *monitoring.Dashboard {
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewExecutorQueueGroup(queueContainerName),
 			shared.CodeIntelligence.NewExecutorProcessorGroup(executorsJobName),
-			shared.CodeIntelligence.NewExecutorExecutionRunLockContentionGroup(executorsJobName),
 			shared.CodeIntelligence.NewExecutorAPIClientGroup(executorsJobName),
 			shared.CodeIntelligence.NewExecutorSetupCommandGroup(executorsJobName),
 			shared.CodeIntelligence.NewExecutorExecutionCommandGroup(executorsJobName),

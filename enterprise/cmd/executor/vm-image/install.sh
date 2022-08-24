@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -ex -o nounset -o pipefail
 
-export IGNITE_VERSION=v0.10.0
+export IGNITE_VERSION=v0.10.1
 export CNI_VERSION=v0.9.1
-export RUNTIME_IMAGE="weaveworks/ignite:${IGNITE_VERSION}"
+export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
 export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135-amd64"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
@@ -81,7 +81,7 @@ function install_ignite() {
   apt-get install -y mount tar binutils e2fsprogs openssh-client dmsetup
 
   # Download and install ignite binary.
-  curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
+  curl -sfLo ignite https://github.com/sourcegraph/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
 }
@@ -322,6 +322,15 @@ spec:
       oci: "${RUNTIME_IMAGE}"
     kernel:
       oci: "${KERNEL_IMAGE}"
+      # Explanation of arguments passed here:
+      # console: Default
+      # reboot: Default
+      # panic: Default
+      # pci: Default
+      # ip: Default
+      # random.trust_cpu: Found in https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/random-for-clones.md, this makes RNG initialization much faster (saves ~1s on startup).
+      # i8042.X: Makes boot faster, doesn't poll on the i8042 device on boot. See https://github.com/firecracker-microvm/firecracker/blob/main/docs/api_requests/actions.md#intel-and-amd-only-sendctrlaltdel.
+      cmdLine: "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd"
 EOF
 }
 

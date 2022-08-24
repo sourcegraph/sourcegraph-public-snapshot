@@ -25,7 +25,7 @@ To deploy executors to target your Sourcegraph instance, [follow our deployment 
 
 ## Why use executors?
 
-Running untrusted code is a core requirement of features such as precise code navigation [auto-indexing](../code_intelligence/explanations/auto_indexing.md), and [running batch changes server-side](../batch_changes/explanations/server_side.md).
+Running untrusted code is a core requirement of features such as precise code navigation [auto-indexing](../code_navigation/explanations/auto_indexing.md), and [running batch changes server-side](../batch_changes/explanations/server_side.md).
 
 Auto-indexing jobs, in particular, require the invocation of arbitrary and untrusted code to support the resolution of project dependencies. Invocation of post-install hooks, use of insecure [package management tools](https://github.com/golang/go/issues/29230), and package manager proxy attacks can create opportunities in which an adversary can gain unlimited use of compute or exfiltrate data. The latter outcome is particularly dangerous for on-premise installations of Sourcegraph, which is the chosen option for companies wanting to maintain strict privacy of their code property.
 

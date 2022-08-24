@@ -53,3 +53,35 @@ type GetConfigurationPoliciesOptions struct {
 	// Offset indicates the number of results to skip in the result set.
 	Offset int
 }
+
+// Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
+// records.
+type Upload struct {
+	ID                int
+	Commit            string
+	Root              string
+	VisibleAtTip      bool
+	UploadedAt        time.Time
+	State             string
+	FailureMessage    *string
+	StartedAt         *time.Time
+	FinishedAt        *time.Time
+	ProcessAfter      *time.Time
+	NumResets         int
+	NumFailures       int
+	RepositoryID      int
+	RepositoryName    string
+	Indexer           string
+	IndexerVersion    string
+	NumParts          int
+	UploadedParts     []int
+	UploadSize        *int64
+	Rank              *int
+	AssociatedIndexID *int
+}
+
+type RetentionPolicyMatchCandidate struct {
+	*ConfigurationPolicy
+	Matched           bool
+	ProtectingCommits []string
+}

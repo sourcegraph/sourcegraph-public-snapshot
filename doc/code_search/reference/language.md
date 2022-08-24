@@ -664,26 +664,6 @@ commits past the specified time frame. This parameter is experimental.
 
 **Example:** [`repo:contains.commit.after(1 month ago)` ↗](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.commit.after%281+month+ago%29&patternType=literal)
 
-### Repo dependencies
-
-<script>
-ComplexDiagram(
-    Choice(0,
-        Terminal("dependencies:"),
-        Terminal("deps:")),
-    Terminal("("),
-    Sequence(
-        Terminal("regexp", {href: "#regular-expression"}),
-        Terminal("@"),
-        Terminal("revision", {href: "#revision"})
-    ),
-    Terminal(")")).addTo();
-</script>
-
-Search only inside dependencies of repositories matching the given `regex@rev:a:b:c` input.
-
-**Example:** [`repo:dependencies(^github\.com/sourcegraph/sourcegraph$@3.36:3.35) count:all` ↗](https://sourcegraph.com/search?q=context:global+repo:dependencies%28%5Egithub%5C.com/sourcegraph/sourcegraph%24%403.36:3.35%29+count:all&patternType=literal)
-
 ### Repo has description
 
 <script>

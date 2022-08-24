@@ -8,7 +8,7 @@ Code Insights with automatically generated data series allow you to "detect and 
 
 Match patterns can be returned with a regular expression containing a capture group, or a pattern within parentheses. 
 
-For example, `file:\.pom$ <java\.version>(.*)</java\.version>` will match all of: 
+For example, `file:pom\.xml|\.pom$ <java\.version>(.*)</java\.version>` will match all of: 
 
 ```
 <java.version>1.5</java.version>

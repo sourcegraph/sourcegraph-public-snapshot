@@ -50,6 +50,11 @@ RUN echo "root:root" | chpasswd
 
 ### END UPSTREAM SECTION
 
+## Configures the serial TTY to auto login. This makes it easier to use ignite attach.
+## The password is well-known anyways so this doesn't pose a security threat.
+RUN mkdir -p "/etc/systemd/system/serial-getty@ttyS0.service.d"
+COPY autologin.conf /etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
+
 # hadolint ignore=DL3008,DL3009
 RUN add-apt-repository ppa:git-core/ppa && \
   apt-get update && \

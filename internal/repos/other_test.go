@@ -138,10 +138,11 @@ func TestSrcExpose(t *testing.T) {
 		}},
 	}}
 
-	source, err := NewOtherSource(&types.ExternalService{
+	ctx := context.Background()
+	source, err := NewOtherSource(ctx, &types.ExternalService{
 		ID:     1,
 		Kind:   extsvc.KindOther,
-		Config: fmt.Sprintf(`{"url": %q}`, s.URL),
+		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": %q}`, s.URL)),
 	}, nil)
 	if err != nil {
 		t.Fatal(err)

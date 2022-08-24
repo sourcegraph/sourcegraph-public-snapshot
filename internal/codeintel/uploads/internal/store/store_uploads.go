@@ -377,20 +377,20 @@ func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err err
 		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
-	tx, err := s.db.Transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() { err = tx.db.Done(err) }()
 
 	// Before deleting the record, ensure that we decrease the number of existant references
 	// to all of this upload's dependencies. This also selects a new upload to canonically provide
 	// the same package as the deleted upload, if such an upload exists.
-	if _, err := s.UpdateUploadsReferenceCounts(ctx, ids, shared.DependencyReferenceCountUpdateTypeRemove); err != nil {
+	if _, err := tx.UpdateUploadsReferenceCounts(ctx, ids, shared.DependencyReferenceCountUpdateTypeRemove); err != nil {
 		return err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(hardDeleteUploadsByIDsQuery, sqlf.Join(idQueries, ", "))); err != nil {
+	if err := tx.db.Exec(ctx, sqlf.Sprintf(hardDeleteUploadsByIDsQuery, sqlf.Join(idQueries, ", "))); err != nil {
 		return err
 	}
 
@@ -463,6 +463,83 @@ const updateUploadRetentionQuery = `
 UPDATE lsif_uploads SET %s WHERE id IN (%s)
 `
 
+// BackfillReferenceCountBatch calculates the reference count for a batch of upload records that do not
+// have a set value. This method is used to backfill old upload records prior to reference counting-based
+// expiration, or records that have been re-set to NULL and re-calculated (e.g., emergency resets).
+func (s *store) BackfillReferenceCountBatch(ctx context.Context, batchSize int) (err error) {
+	ctx, _, endObservation := s.operations.backfillReferenceCountBatch.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
+	defer func() { endObservation(1, observation.Args{}) }()
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(backfillReferenceCountBatchQuery, batchSize)))
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.UpdateUploadsReferenceCounts(ctx, ids, shared.DependencyReferenceCountUpdateTypeNone)
+	return err
+}
+
+const backfillReferenceCountBatchQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:BackfillReferenceCountBatch
+SELECT u.id
+FROM lsif_uploads u
+WHERE u.state = 'completed' AND u.reference_count IS NULL
+ORDER BY u.id
+FOR UPDATE SKIP LOCKED
+LIMIT %s
+`
+
+// SourcedCommitsWithoutCommittedAt returns the repository and commits of uploads that do not have an
+// associated committed_at value.
+func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []shared.SourcedCommits, err error) {
+	ctx, _, endObservation := s.operations.sourcedCommitsWithoutCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
+	defer func() { endObservation(1, observation.Args{}) }()
+
+	batch, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
+	if err != nil {
+		return nil, err
+	}
+
+	return batch, nil
+}
+
+const sourcedCommitsWithoutCommittedAtQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:SourcedCommitsWithoutCommittedAt
+SELECT u.repository_id, r.name, u.commit
+FROM lsif_uploads u
+JOIN repo r ON r.id = u.repository_id
+WHERE u.state = 'completed' AND u.committed_at IS NULL
+GROUP BY u.repository_id, r.name, u.commit
+ORDER BY repository_id, commit
+LIMIT %s
+`
+
+// UpdateCommittedAt tupdates the committed_at column for upload matching the given repository and commit.
+func (s *store) UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) (err error) {
+	ctx, _, endObservation := s.operations.updateCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer func() { endObservation(1, observation.Args{}) }()
+
+	return s.db.Exec(ctx, sqlf.Sprintf(updateCommittedAtQuery, commitDateString, repositoryID, commit))
+}
+
+const updateCommittedAtQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateCommittedAt
+UPDATE lsif_uploads SET committed_at = %s WHERE state = 'completed' AND repository_id = %s AND commit = %s AND committed_at IS NULL
+`
+
 var deltaMap = map[shared.DependencyReferenceCountUpdateType]int{
 	shared.DependencyReferenceCountUpdateTypeNone:   +0,
 	shared.DependencyReferenceCountUpdateTypeAdd:    +1,
@@ -500,12 +577,6 @@ func (s *store) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dep
 		return 0, nil
 	}
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	idArray := pq.Array(ids)
 
 	excludeCondition := sqlf.Sprintf("TRUE")
@@ -513,7 +584,7 @@ func (s *store) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dep
 		excludeCondition = sqlf.Sprintf("NOT (u.id = ANY (%s))", idArray)
 	}
 
-	result, err := tx.ExecResult(ctx, sqlf.Sprintf(
+	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(
 		updateUploadsReferenceCountsQuery,
 		idArray,
 		idArray,
@@ -594,16 +665,19 @@ ranked_uploads_providing_packages AS (
 canonical_package_reference_counts AS (
 	SELECT
 		ru.id,
-		count(*) AS count
-	FROM ranked_uploads_providing_packages ru
-	JOIN lsif_references r
-	ON
-		r.scheme = ru.scheme AND
-		r.name = ru.name AND
-		r.version = ru.version AND
-		r.dump_id != ru.id
+		rc.count
+	FROM ranked_uploads_providing_packages ru,
+	LATERAL (
+		SELECT
+			COUNT(*) AS count
+		FROM lsif_references r
+		WHERE
+			r.scheme = ru.scheme AND
+			r.name = ru.name AND
+			r.version = ru.version AND
+			r.dump_id != ru.id
+	) rc
 	WHERE ru.rank = 1
-	GROUP BY ru.id
 ),
 
 -- Count (and ranks) the set of edges that cross over from the target list of uploads

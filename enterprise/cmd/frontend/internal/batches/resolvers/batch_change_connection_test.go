@@ -32,9 +32,9 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, cstore)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/batch-change-connection-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -45,14 +45,14 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec1); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec1); err != nil {
 		t.Fatal(err)
 	}
 	spec2 := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec2); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -64,7 +64,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		LastAppliedAt:   time.Now(),
 		BatchSpecID:     spec1.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange1); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange1); err != nil {
 		t.Fatal(err)
 	}
 	batchChange2 := &btypes.BatchChange{
@@ -75,11 +75,11 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		LastAppliedAt:   time.Now(),
 		BatchSpecID:     spec2.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange2); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange2); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

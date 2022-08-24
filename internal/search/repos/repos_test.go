@@ -12,8 +12,8 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -43,7 +43,7 @@ func TestRevisionValidation(t *testing.T) {
 	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		// trigger errors
 		if spec == "bad_commit" {
-			return "", gitdomain.BadCommitError{}
+			return "", &gitdomain.BadCommitError{}
 		}
 		if spec == "deadline_exceeded" {
 			return "", context.DeadlineExceeded
@@ -107,13 +107,13 @@ func TestRevisionValidation(t *testing.T) {
 			repoFilters:              []string{"repoFoo@revBar:bad_commit"},
 			wantRepoRevs:             nil,
 			wantMissingRepoRevisions: nil,
-			wantErr:                  gitdomain.BadCommitError{},
+			wantErr:                  &gitdomain.BadCommitError{},
 		},
 		{
 			repoFilters:              []string{"repoFoo@revBar:^bad_commit"},
 			wantRepoRevs:             nil,
 			wantMissingRepoRevisions: nil,
-			wantErr:                  gitdomain.BadCommitError{},
+			wantErr:                  &gitdomain.BadCommitError{},
 		},
 		{
 			repoFilters:              []string{"repoFoo@revBar:deadline_exceeded"},

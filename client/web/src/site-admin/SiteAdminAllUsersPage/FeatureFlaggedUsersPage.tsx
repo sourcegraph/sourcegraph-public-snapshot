@@ -4,4 +4,8 @@ import { UsersManagement } from './UserManagement'
 
 import { SiteAdminAllUsersPage } from '.'
 
-export const FeatureFlaggedUsersPage = withFeatureFlag('user-management', UsersManagement, SiteAdminAllUsersPage)
+export const FeatureFlaggedUsersPage = withFeatureFlag(
+    'user-management-disabled',
+    SiteAdminAllUsersPage,
+    UsersManagement
+)

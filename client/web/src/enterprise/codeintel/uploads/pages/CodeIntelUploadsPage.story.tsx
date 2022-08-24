@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
@@ -109,14 +108,46 @@ const story: Meta = {
             viewports: [320, 576, 978, 1440],
         },
     },
+    argTypes: {
+        now: {
+            table: {
+                disable: true,
+            },
+        },
+        repo: {
+            table: {
+                disable: true,
+            },
+        },
+        queryLsifUploadsByRepository: {
+            table: {
+                disable: true,
+            },
+        },
+        queryLsifUploadsList: {
+            table: {
+                disable: true,
+            },
+        },
+        stale: {
+            name: 'staleCommitGraph',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+        updatedAt: {
+            name: 'previouslyUpdatedCommitGraph',
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 export default story
 
-const Template: Story<CodeIntelUploadsPageProps> = args => {
+const Template: Story = args => {
     const queryCommitGraphMetadata = () =>
         of({
-            stale: boolean('staleCommitGraph', false),
-            updatedAt: boolean('previouslyUpdatedCommitGraph', true) ? now() : null,
+            stale: args.stale,
+            updatedAt: args.updatedAt ? now() : null,
         })
 
     return (
@@ -136,11 +167,17 @@ EmptyGlobalPage.args = {
     ...defaults,
     queryLsifUploadsList: () => of(makeResponse([])),
 }
+EmptyGlobalPage.parameters = {
+    controls: { hideNoControlsWarning: true, exclude: ['staleCommitGraph', 'previouslyUpdatedCommitGraph'] },
+}
 
 export const GlobalPage = Template.bind({})
 GlobalPage.args = {
     ...defaults,
     queryLsifUploadsList: () => of(makeResponse(testUploads)),
+}
+GlobalPage.parameters = {
+    controls: { hideNoControlsWarning: true, exclude: ['staleCommitGraph', 'previouslyUpdatedCommitGraph'] },
 }
 
 export const EmptyRepositoryPage = Template.bind({})

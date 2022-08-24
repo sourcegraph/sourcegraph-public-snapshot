@@ -82,7 +82,7 @@ interface Props extends SettingsCascadeProps, TelemetryProps, PlatformContextPro
      */
     openInNewTab?: boolean
 
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
 
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 
