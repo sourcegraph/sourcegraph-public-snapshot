@@ -42,7 +42,7 @@ The following instructions are specific to backing up and restoring the Sourcegr
 
 ### Back up Sourcegraph databases
 
-These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
+These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_navigation/index.md) database.
 
 1\. `ssh` from your local machine into the machine hosting the `sourcegraph` deployment
 

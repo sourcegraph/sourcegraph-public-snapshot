@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS batch_spec_mounts
 );
 
 ALTER TABLE ONLY batch_spec_mounts
-    ADD CONSTRAINT batch_spec_mounts_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs (id);
+    ADD CONSTRAINT batch_spec_mounts_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs (id) ON DELETE CASCADE;
 
 CREATE INDEX batch_spec_mounts_rand_id ON batch_spec_mounts USING btree (rand_id);
 

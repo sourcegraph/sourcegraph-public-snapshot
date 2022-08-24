@@ -137,10 +137,10 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['file:.js$ httptest', 'file:internal/ httptest', 'file:.js$ -file:test http'],
     },
     {
-        ...createQueryExampleFromString('contains.content({regexp-pattern})'),
+        ...createQueryExampleFromString('has.content({regexp-pattern})'),
         field: FilterType.file,
         description: 'Search only inside files that contain content matching the provided regexp pattern.',
-        examples: ['file:contains.content(github.com/sourcegraph/sourcegraph)'],
+        examples: ['file:has.content(github.com/sourcegraph/sourcegraph)'],
     },
     {
         ...createQueryExampleFromString('{yes/only}'),
@@ -179,33 +179,33 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ],
     },
     {
-        ...createQueryExampleFromString('contains.path({path})'),
+        ...createQueryExampleFromString('has.path({path})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain a file path matching the regular expression.',
-        examples: ['repo:contains.path(README)', 'repo:contains.path(src/main/)'],
+        examples: ['repo:has.path(README)', 'repo:has.path(src/main/)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains.content({content})'),
+        ...createQueryExampleFromString('has.content({content})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain file content matching the regular expression.',
-        examples: ['repo:contains.content(TODO)'],
+        examples: ['repo:has.content(TODO)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains.file({path:path content:content})'),
+        ...createQueryExampleFromString('has.file({path:path content:content})'),
         field: FilterType.repo,
         description:
             'Search only inside repositories that contain a file path matching the `path:` and/or `content:` filters.',
-        examples: ['repo:contains.file(path:README content:fix)'],
+        examples: ['repo:has.file(path:README content:fix)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains.commit.after({date})'),
+        ...createQueryExampleFromString('has.commit.after({date})'),
         field: FilterType.repo,
         description:
             'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
-        examples: ['repo:contains.commit.after(1 month ago)', 'repo:contains.commit.after(june 25 2017)'],
+        examples: ['repo:has.commit.after(1 month ago)', 'repo:has.commit.after(june 25 2017)'],
         showSuggestions: false,
     },
     {

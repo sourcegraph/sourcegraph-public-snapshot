@@ -998,7 +998,7 @@ ALTER SEQUENCE batch_specs_id_seq OWNED BY batch_specs.id;
 CREATE TABLE changeset_specs (
     id bigint NOT NULL,
     rand_id text NOT NULL,
-    spec jsonb DEFAULT '{}'::jsonb NOT NULL,
+    spec jsonb DEFAULT '{}'::jsonb,
     batch_spec_id bigint,
     repo_id integer NOT NULL,
     user_id integer,
@@ -1019,7 +1019,7 @@ CREATE TABLE changeset_specs (
     commit_message text,
     commit_author_name text,
     commit_author_email text,
-    type text
+    type text NOT NULL
 );
 
 CREATE TABLE changesets (
@@ -4338,7 +4338,7 @@ ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY batch_spec_mounts
-    ADD CONSTRAINT batch_spec_mounts_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id);
+    ADD CONSTRAINT batch_spec_mounts_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_spec_resolution_jobs
     ADD CONSTRAINT batch_spec_resolution_jobs_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
