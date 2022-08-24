@@ -15,7 +15,7 @@ PR() {
 
 PR_LINK=$(PR)
 
-cat <<EOF> ./annotations/Build\ overview.md
+cat <<EOF > ./annotations/Build\ overview.md
 ${PR_LINK}
 
 Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`
