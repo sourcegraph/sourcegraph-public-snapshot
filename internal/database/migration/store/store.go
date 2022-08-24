@@ -224,7 +224,7 @@ func (s *Store) inferbackfillTargetViaMigrationLogs(ctx context.Context) (int, b
 // DO NOT call this method from inside a transaction, otherwise the absence of this relation will
 // cause a transaction rollback while this function returns a nil-valued error (hard to debug).
 func (s *Store) inferBackfillTargetViaGolangMigrate(ctx context.Context) (int, bool, error) {
-	version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, quote(tableizeSchemaName(s.schemaName)))))
+	version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, quote(s.schemaName))))
 	if err != nil && !isMissingRelation(err) {
 		return 0, false, err
 	}

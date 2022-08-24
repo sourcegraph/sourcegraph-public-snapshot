@@ -81,7 +81,7 @@ func testViaGolangMigrate(t *testing.T, schemaName string, version int, expected
 
 // setupGolangMigrateTest creates and populates the .*schema_migrations table with the given version.
 func setupGolangMigrateTest(ctx context.Context, store *Store, schemaName string, version int) error {
-	tableName := quote(tableizeSchemaName(schemaName))
+	tableName := quote(schemaName)
 
 	if err := store.Exec(ctx, sqlf.Sprintf(`CREATE TABLE %s (version text, dirty bool)`, tableName)); err != nil {
 		return err
