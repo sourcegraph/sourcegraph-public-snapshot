@@ -130,13 +130,14 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 }
 
 func getDefaultAggregationMode(searchQuery, patternType string) (types.SearchAggregationMode, error) {
-	captureGroup, err := canAggregateByCaptureGroup(searchQuery, patternType)
-	if err != nil {
-		return "", err
-	}
-	if captureGroup {
-		return types.CAPTURE_GROUP_AGGREGATION_MODE, nil
-	}
+	//TODO(insights): uncomment when capture group aggregation is supported.
+	//captureGroup, err := canAggregateByCaptureGroup(searchQuery, patternType)
+	//if err != nil {
+	//	return "", err
+	//}
+	//if captureGroup {
+	//	return types.CAPTURE_GROUP_AGGREGATION_MODE, nil
+	//}
 	author, err := canAggregateByAuthor(searchQuery, patternType)
 	if err != nil {
 		return "", err
