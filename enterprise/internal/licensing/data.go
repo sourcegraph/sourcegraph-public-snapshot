@@ -9,7 +9,6 @@ const (
 
 	// team is the "Team" plan.
 	team Plan = "team-0"
-
 	// enterprise0 is the "Enterprise" plan pre-4.0.
 	enterprise0 Plan = "enterprise-0"
 

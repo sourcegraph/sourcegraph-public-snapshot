@@ -36,12 +36,12 @@ type Resolver struct {
 
 // checkLicense returns a user-facing error if the ACLs feature is not purchased
 // with the current license or any error occurred while validating the licence.
-func (r *Resolver) checkLicense() error {
+func (r *Resolver) checkLicense(feature licensing.Feature) error {
 	if !licensing.EnforceTiers {
 		return nil
 	}
 
-	err := licensing.Check(licensing.FeatureBackgroundPermissionsSync)
+	err := licensing.Check(feature)
 	if err != nil {
 		if licensing.IsFeatureNotActivated(err) {
 			return err
@@ -65,7 +65,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 
@@ -136,7 +136,8 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
-	if err := r.checkLicense(); err != nil {
+
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
@@ -161,7 +162,7 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 }
 
 func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 
@@ -185,7 +186,7 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 }
 
 func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserPermissionsSyncArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureBackgroundPermissionsSync); err != nil {
 		return nil, err
 	}
 
@@ -217,7 +218,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureBackgroundPermissionsSync); err != nil {
 		return nil, err
 	}
 
@@ -276,7 +277,7 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 
