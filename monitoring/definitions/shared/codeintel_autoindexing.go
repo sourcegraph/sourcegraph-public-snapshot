@@ -3,7 +3,7 @@ package shared
 import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 
 func (codeIntelligence) NewAutoindexingSummaryGroup(containerName string) monitoring.Group {
-	return monitoring.Group{
+	group := monitoring.Group{
 		Title:  "Codeintel: Autoindexing > Summary",
 		Hidden: false,
 		Rows: []monitoring.Row{
@@ -19,6 +19,12 @@ func (codeIntelligence) NewAutoindexingSummaryGroup(containerName string) monito
 			},
 		},
 	}
+
+	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors)"
+
+	group.Rows = append(group.Rows, CodeIntelligence.NewExecutorQueueGroup(queueContainerName, "codeintel").Rows...)
+
+	return group
 }
 
 // src_codeintel_autoindexing_total
