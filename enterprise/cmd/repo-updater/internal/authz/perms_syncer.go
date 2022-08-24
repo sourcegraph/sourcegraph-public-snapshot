@@ -1365,11 +1365,9 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func (s *PermsSyncer) isDisabled() bool {
-	result := globals.PermissionsUserMapping().Enabled ||
+	return globals.PermissionsUserMapping().Enabled ||
 		(licensing.EnforceTiers && licensing.Check(licensing.FeatureBackgroundPermissionsSync) != nil) ||
 		conf.Get().DisableAutoCodeHostSyncs
-
-	return result
 }
 
 // runSchedule periodically looks for least updated records and schedule syncs
