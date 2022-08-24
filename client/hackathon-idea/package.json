@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "@sourcegraph/hackathon-idea",
+  "version": "0.0.0",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "scripts": {
+    "generate": "ts-node src/generate.ts"
+  }
+}
