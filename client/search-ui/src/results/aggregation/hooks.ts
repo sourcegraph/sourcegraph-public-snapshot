@@ -128,9 +128,9 @@ export const AGGREGATION_SEARCH_QUERY = gql`
         query
     }
 
-    query GetSearchAggregation($query: String!, $patternType: SearchPatternType!, $mode: SearchAggregationMode) {
+    query GetSearchAggregation($query: String!, $patternType: SearchPatternType!, $mode: SearchAggregationMode, $limit: Int!) {
         searchQueryAggregate(query: $query, patternType: $patternType) {
-            aggregations(mode: $mode, limit: 10) {
+            aggregations(mode: $mode, limit: $limit) {
                 __typename
                 ... on ExhaustiveSearchAggregationResult {
                     mode
@@ -145,6 +145,7 @@ export const AGGREGATION_SEARCH_QUERY = gql`
                     groups {
                         ...SearchAggregationDatum
                     }
+                    approximateOtherGroupCount
                 }
 
                 ... on SearchAggregationNotAvailable {
@@ -163,6 +164,7 @@ interface SearchAggregationDataInput {
     query: string
     patternType: SearchPatternType
     aggregationMode: SearchAggregationMode
+    limit?: number
 }
 
 interface SearchAggregationResults {
@@ -172,13 +174,13 @@ interface SearchAggregationResults {
 }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode } = input
+    const { query, patternType, aggregationMode, limit = 10 } = input
 
     const { data, error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
         AGGREGATION_SEARCH_QUERY,
         {
             fetchPolicy: 'cache-first',
-            variables: { query, patternType, mode: aggregationMode },
+            variables: { query, patternType, mode: aggregationMode, limit },
         }
     )
 
@@ -220,5 +222,23 @@ export function getAggregationData(response?: GetSearchAggregationResult | null)
 
         default:
             return []
+    }
+}
+
+export function getOtherGroupCount(response?: GetSearchAggregationResult): number {
+    if (!response) {
+        return 0
+    }
+
+    const aggregationResult = response.searchQueryAggregate?.aggregations
+
+    switch (aggregationResult?.__typename) {
+        case 'ExhaustiveSearchAggregationResult':
+            return aggregationResult.otherGroupCount ?? 0
+        case 'NonExhaustiveSearchAggregationResult':
+            return aggregationResult.approximateOtherGroupCount ?? 0
+
+        default:
+            return 0
     }
 }

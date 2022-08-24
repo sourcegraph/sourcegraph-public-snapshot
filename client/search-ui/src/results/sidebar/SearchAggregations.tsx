@@ -14,6 +14,7 @@ import {
     AggregationChartCard,
     useSearchAggregationData,
     getAggregationData,
+    getOtherGroupCount,
 } from '../aggregation'
 
 import styles from './SearchAggregations.module.scss'
@@ -68,6 +69,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                     mode={aggregationMode}
                     type={AggregationCardMode.Data}
                     data={getAggregationData(data)}
+                    missingCount={getOtherGroupCount(data)}
                     className={styles.chartContainer}
                     onBarLinkClick={onQuerySubmit}
                 />

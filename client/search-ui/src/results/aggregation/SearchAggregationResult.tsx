@@ -7,7 +7,13 @@ import { Button, H2, Icon } from '@sourcegraph/wildcard'
 
 import { AggregationCardMode, AggregationChartCard } from './AggregationChartCard'
 import { AggregationModeControls } from './AggregationModeControls'
-import { getAggregationData, useAggregationSearchMode, useAggregationUIMode, useSearchAggregationData } from './hooks'
+import {
+    getAggregationData,
+    getOtherGroupCount,
+    useAggregationSearchMode,
+    useAggregationUIMode,
+    useSearchAggregationData,
+} from './hooks'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
@@ -30,7 +36,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
 
-    const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode })
+    const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode, limit: 30 })
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
@@ -74,6 +80,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                     mode={aggregationMode}
                     type={AggregationCardMode.Data}
                     data={getAggregationData(data)}
+                    missingCount={getOtherGroupCount(data)}
                     className={styles.chartContainer}
                     onBarLinkClick={onQuerySubmit}
                 />
