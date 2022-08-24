@@ -47,7 +47,8 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	aggregationModeAvailabilityResolver := newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, aggregationMode)
 	supported, err := aggregationModeAvailabilityResolver.Available()
 	if err != nil {
-		return nil, err
+		reason := fmt.Sprintf("could not fetch mode availability: %v", err)
+		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(reason, aggregationMode)}, nil
 	}
 	if !supported {
 		unavailableReason := ""
