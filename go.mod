@@ -148,7 +148,6 @@ require (
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb
 	github.com/stretchr/testify v1.8.0
 	github.com/stripe/stripe-go v70.15.0+incompatible
-	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/temoto/robotstxt v1.1.2
 	github.com/throttled/throttled/v2 v2.9.0
 	github.com/tidwall/gjson v1.14.0
