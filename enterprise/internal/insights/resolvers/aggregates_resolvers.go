@@ -44,7 +44,13 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	// 3. - Run Search
 	// 4. - Check search for errors/alerts
 	// 5 -  Generate correct resolver pass search results if valid
-	aggregationMode := types.SearchAggregationMode(args.Mode)
+	var aggregationMode types.SearchAggregationMode
+	if args.Mode == nil {
+		aggregationMode = types.REPO_AGGREGATION_MODE
+	} else {
+		aggregationMode = types.SearchAggregationMode(*args.Mode)
+	}
+
 	aggregationModeAvailabilityResolver := newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, aggregationMode)
 	supported, err := aggregationModeAvailabilityResolver.Available()
 	if err != nil {
