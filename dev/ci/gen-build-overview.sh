@@ -30,7 +30,9 @@ Branch: \`${BUILDKITE_BRANCH}\`
 
 Commit: \`${BUILDKITE_COMMIT}\`
 
-\`\`\`${BUILDKITE_MESSAGE}\`\`\`
+\`\`\`
+${BUILDKITE_MESSAGE}
+\`\`\`
 
 Agent: \`${BUILDKITE_AGENT_NAME}\`
 EOF
