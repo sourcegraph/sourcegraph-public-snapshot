@@ -17,6 +17,7 @@ type operations struct {
 	updateSourcedCommits      *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
 	getOldestCommitDate       *observation.Operation
+	getCommitGraphMetadata    *observation.Operation
 	hasCommit                 *observation.Operation
 
 	// Repositories
@@ -86,6 +87,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getCommitsVisibleToUpload: op("CommitsVisibleToUploads"),
 		getOldestCommitDate:       op("GetOldestCommitDate"),
 		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
+		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 		updateSourcedCommits:      op("UpdateSourcedCommits"),
 		hasCommit:                 op("HasCommit"),

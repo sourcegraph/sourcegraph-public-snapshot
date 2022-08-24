@@ -58,11 +58,12 @@ func (r *repositorySummaryResolver) RecentIndexes() []gql.LSIFIndexesWithReposit
 	resolvers := make([]gql.LSIFIndexesWithRepositoryNamespaceResolver, 0, len(r.summary.RecentIndexes))
 	for _, index := range r.summary.RecentIndexes {
 		indexResolvers := make([]gql.LSIFIndexResolver, 0, len(index.Indexes))
-		for _, upload := range index.Indexes {
+		for _, u := range index.Indexes {
+			upload := convertSharedIndexToDBStoreIndex(u)
 			indexResolvers = append(indexResolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, upload, r.prefetcher, r.locationResolver, r.errTracer))
 		}
-
-		resolvers = append(resolvers, NewLSIFIndexesWithRepositoryNamespaceResolver(index, indexResolvers))
+		dbstoreIndex := convertSharedIndexesWithRepositoryNamespaceToDBStoreIndexesWithRepositoryNamespace(index)
+		resolvers = append(resolvers, NewLSIFIndexesWithRepositoryNamespaceResolver(dbstoreIndex, indexResolvers))
 	}
 
 	return resolvers
