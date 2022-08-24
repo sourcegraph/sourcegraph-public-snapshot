@@ -179,7 +179,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     objectType: props.match.params.objectType,
                 }}
             >
-                <RepositoryFileTreePage {...props} />,
+                <RepositoryFileTreePage {...props} />
             </TraceSpanProvider>
         ),
     })),
