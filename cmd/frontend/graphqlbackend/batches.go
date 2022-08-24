@@ -365,6 +365,8 @@ type BatchSpecResolver interface {
 	ViewerCanRetry(context.Context) (bool, error)
 
 	Source() string
+
+	Mounts(ctx context.Context, args *ListBatchSpecMountArgs) (BatchSpecMountConnectionResolver, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -594,6 +596,12 @@ type ListBatchSpecArgs struct {
 	IncludeLocallyExecutedSpecs *bool
 }
 
+type ListBatchSpecMountArgs struct {
+	First     int32
+	After     *string
+	BatchSpec graphql.ID
+}
+
 type AvailableBulkOperationsArgs struct {
 	BatchChange graphql.ID
 	Changesets  []graphql.ID
@@ -661,6 +669,22 @@ type BatchSpecConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchSpecResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type BatchSpecMountConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]BatchSpecMountResolver, error)
+}
+
+type BatchSpecMountResolver interface {
+	ID() graphql.ID
+	FileName() string
+	Path() string
+	Size() int32
+	ModifiedAt() DateTime
+	CreatedAt() DateTime
+	UpdatedAt() DateTime
 }
 
 type CommonChangesetsStatsResolver interface {

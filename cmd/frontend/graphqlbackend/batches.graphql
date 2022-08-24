@@ -3247,6 +3247,20 @@ type BatchSpec implements Node {
     server-side execution.
     """
     source: BatchSpecSource!
+
+    """
+    The files that are mounted in the steps of a batch spec.
+    """
+    mounts (
+        """
+        Returns the first n mounts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchSpecMountConnection
 }
 
 """
@@ -3503,4 +3517,56 @@ input ChangesetSpecPublicationStateInput {
     The desired publication state.
     """
     publicationState: PublishedValue!
+}
+
+type BatchSpecMountConnection {
+    """
+    The total number of mounts.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+    """
+    A list of mounts in a batch spec.
+    """
+    nodes: [BatchSpecMount!]!
+}
+
+type BatchSpecMount {
+    """
+    The ID of the mount.
+    """
+    id: ID!
+
+    """
+    The name of the file.
+    """
+    fileName: String!
+
+    """
+    The path the file is expected to be mounted from.
+    """
+    path: String!
+
+    """
+    The size of the file.
+    """
+    size: Int!
+
+    """
+    When the file was last touched.
+    """
+    modifiedAt: DateTime!
+
+    """
+    When the file is initially created at.
+    """
+    createdAt: DateTime!
+
+    """
+    When the file is updated at.
+    """
+    updatedAt: DateTime!
 }
