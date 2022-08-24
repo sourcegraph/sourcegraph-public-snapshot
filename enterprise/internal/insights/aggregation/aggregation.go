@@ -144,26 +144,69 @@ func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
 	return func(r result.Match) (map[MatchKey]int, error) {
 		match := newEventMatch(r)
 		if len(match.ChunkMatches) != 0 {
-			var textResult string
+			matches := map[MatchKey]int{}
 			for _, cm := range match.ChunkMatches {
 				for _, range_ := range cm.Ranges {
 					content := chunkContent(cm, range_)
-					textResult, err = toTextResult(content, &Regexp{Value: regexp}, "$1", "\n", "")
-					if err != nil {
-						return nil, errors.Wrap(err, "toTextResult")
+					for _, submatches := range regexp.FindAllStringSubmatchIndex(content, -1) {
+						chunkMatches := fromRegexpMatches(submatches, regexp.SubexpNames(), content, range_)
+						for value, count := range chunkMatches {
+							key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}
+							current := matches[key]
+							matches[key] = current + count
+						}
 					}
+
 				}
 			}
-			if textResult != "" {
-				return map[MatchKey]int{{
-					RepoID: match.RepoID,
-					Repo:   match.Repo,
-					Group:  match.Repo,
-				}: match.ResultCount}, nil
-			}
+			return matches, nil
 		}
 		return nil, nil
 	}, nil
+}
+
+func fromRegexpMatches(submatches []int, namedGroups []string, content string, range_ result.Range) map[string]int {
+	counts := map[string]int{}
+
+	// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
+	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
+	for j := 0; j < len(submatches); j += 2 {
+		start := submatches[j]
+		end := submatches[j+1]
+		if start == -1 || end == -1 {
+			// The entire regexp matched, but a capture
+			// group inside it did not. Ignore this entry.
+			continue
+		}
+		value := content[start:end]
+
+		if j == 0 {
+			// The first submatch is the overall match
+			// value. Don't add this to the Environment
+
+			continue
+		}
+
+		current, _ := counts[value]
+		counts[value] = current + 1
+
+	}
+	return counts
+}
+
+func newRange(startOffset, endOffset int) result.Range {
+	return result.Range{
+		Start: newLocation(-1, -1, startOffset),
+		End:   newLocation(-1, -1, endOffset),
+	}
+}
+
+func newLocation(line, column, offset int) result.Location {
+	return result.Location{
+		Offset: offset,
+		Line:   line,
+		Column: column,
+	}
 }
 
 func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
