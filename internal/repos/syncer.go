@@ -679,7 +679,6 @@ func (s *Syncer) SyncExternalService(
 			for _, e := range ref.Errors() {
 				if errors.IsWarning(e) {
 					baseError := errors.Unwrap(e)
-					logger.Info(fmt.Sprintf("iswarning unauthed: %+v, error: %+v", errcode.IsUnauthorized(baseError), baseError))
 					if !errcode.IsForbidden(baseError) && !errcode.IsUnauthorized(baseError) {
 						abortDeletion = true
 						break
