@@ -71,18 +71,10 @@ function highlightSlice(html: HtmlBuilder, kind: SyntaxKind | undefined, slice: 
 // Currently assumes that no ranges overlap in the occurrences.
 export function render(info: DocumentInfo): string {
     const occurrences = Occurrence.fromInfo(info)
-    if (!occurrences) {
+
+    if (occurrences.length === 0) {
         return ''
     }
-
-    // Sort by line, and then by start character.
-    occurrences.sort((a, b) => {
-        if (a.range.start.line !== b.range.start.line) {
-            return a.range.start.line - b.range.start.line
-        }
-
-        return a.range.start.character - b.range.start.character
-    })
 
     const lines = info.content.replaceAll('\r\n', '\n').split('\n')
     const html = new HtmlBuilder()
