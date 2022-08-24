@@ -231,7 +231,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         }
 
                         // Replace html with lsif generated HTML, if available
-                        if (!enableCodeMirror && blob.highlight.lsif) {
+                        if (!enableCodeMirror && !blob.highlight.html && blob.highlight.lsif) {
                             const html = renderLsifHtml({ lsif: blob.highlight.lsif, content: blob.content })
                             if (html) {
                                 blob.highlight.html = html
