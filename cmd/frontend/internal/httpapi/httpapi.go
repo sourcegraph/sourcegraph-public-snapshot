@@ -62,6 +62,8 @@ func NewHandler(
 	rateLimiter graphqlbackend.LimitWatcher,
 	handlers *Handlers,
 ) http.Handler {
+	logger := sglog.Scoped("Handler", "frontend HTTP API handler")
+
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -109,8 +111,7 @@ func NewHandler(
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	// Return the minimum src-cli version that's compatible with this instance
-	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))
-	m.Get(apirouter.SrcCliDownload).Handler(trace.Route(handler(srcCliDownloadServe)))
+	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
 
 	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry(db))))
 
