@@ -682,8 +682,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 		},
 	}, {
 		Name:      "search-failures",
-		ArgsUsage: "[text]",
-		Usage:     "Open Sourcegraph's Buildkite failure logs page in browser",
+		ArgsUsage: "[text to search for]",
+		Usage:     "Open Sourcegraph's CI failures Grafana logs page in browser",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "step",
