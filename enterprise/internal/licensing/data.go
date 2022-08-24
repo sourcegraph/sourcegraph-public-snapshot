@@ -105,7 +105,6 @@ var planFeatures = map[Plan][]Feature{
 	},
 
 	free0: {
-		FeatureSSO,
 		FeatureBackgroundPermissionsSync,
 	},
 	business0: {
