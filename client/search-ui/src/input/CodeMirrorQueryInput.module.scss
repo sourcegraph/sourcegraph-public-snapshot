@@ -108,6 +108,7 @@
             background-color: var(--color-bg-1);
             // Default is 50vw
             max-width: 70vw;
+            margin-top: 0.25rem; // Position is controlled absolutely but needs to be shifted down a bit from the default
 
             > ul {
                 font-size: var(--code-font-size);
@@ -141,6 +142,7 @@
                         overflow: hidden;
                         text-overflow: ellipsis;
                         font-style: initial;
+                        text-align: right;
                     }
 
                     :global(.cm-completionMatchedText) {
