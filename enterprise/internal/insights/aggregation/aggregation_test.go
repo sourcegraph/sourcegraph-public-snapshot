@@ -370,22 +370,22 @@ func TestCaptureGroupAggregation(t *testing.T) {
 			`python(?:[0-9])\.([0-9])`,
 			autogold.Want("skips non caputring group", map[string]int{"7": 1, "9": 1}),
 		},
-		// {
-		// 	types.CAPTURE_GROUP_AGGREGATION_MODE,
-		// 	streaming.SearchEvent{
-		// 		Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
-		// 	},
-		// 	`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:no`,
-		// 	autogold.Want("capture match respects case:no", map[string]int{"2.7": 2}),
-		// },
-		// {
-		// 	types.CAPTURE_GROUP_AGGREGATION_MODE,
-		// 	streaming.SearchEvent{
-		// 		Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
-		// 	},
-		// 	`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:yes`,
-		// 	autogold.Want("capture match respects case:yes", map[string]int{}),
-		// },
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			},
+			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:no`,
+			autogold.Want("capture match respects case:no", map[string]int{"2.7": 1}),
+		},
+		{
+			types.CAPTURE_GROUP_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			},
+			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:yes`,
+			autogold.Want("capture match respects case:yes", map[string]int{}),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {

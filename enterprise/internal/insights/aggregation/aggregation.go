@@ -172,20 +172,18 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 }
 
 func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
-
-	//TODO: this is the entire query, capture group piece needs just the query pattern
-	// parse and extract only whats needed.
-	// pattern may need to be modified based on case yes/no
-	captureGroupsCount, err := countCaptureGroupsFunc(query)
-	if err != nil {
-		return nil, err
+	modeCountTypes := map[types.SearchAggregationMode]AggregationCountFunc{
+		types.REPO_AGGREGATION_MODE:   countRepo,
+		types.PATH_AGGREGATION_MODE:   countPath,
+		types.AUTHOR_AGGREGATION_MODE: countAuthor,
 	}
 
-	modeCountTypes := map[types.SearchAggregationMode]AggregationCountFunc{
-		types.REPO_AGGREGATION_MODE:          countRepo,
-		types.PATH_AGGREGATION_MODE:          countPath,
-		types.AUTHOR_AGGREGATION_MODE:        countAuthor,
-		types.CAPTURE_GROUP_AGGREGATION_MODE: captureGroupsCount,
+	if mode == types.CAPTURE_GROUP_AGGREGATION_MODE {
+		captureGroupsCount, err := countCaptureGroupsFunc(query)
+		if err != nil {
+			return nil, err
+		}
+		modeCountTypes[types.CAPTURE_GROUP_AGGREGATION_MODE] = captureGroupsCount
 	}
 
 	modeCountFunc, ok := modeCountTypes[mode]

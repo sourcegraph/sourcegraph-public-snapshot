@@ -287,31 +287,37 @@ func canAggregateByAuthor(searchQuery, patternType string) (bool, error) {
 }
 
 func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
-	// TODO(leonore): Finish up logic for ability to aggregate by capture group.
-	// A query should contain a capture group to allow this kind of aggregation.
-	if !(patternType == "regexp" || patternType == "regex" || patternType == "standard" || patternType == "lucky") {
+	searchType, err := client.SearchTypeFromString(patternType)
+	if err != nil {
+		return false, err
+	}
+	if !(searchType == query.SearchTypeRegex || searchType == query.SearchTypeStandard || searchType == query.SearchTypeLucky) {
 		return false, nil
 	}
-	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
+
+	// A query should contain at least a regexp pattern and capture group to allow capture group aggregation.
+	// Only the first capture group will be used for aggregation.
+	replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType)
 	if err != nil {
-		return false, errors.Wrapf(err, "ParseAndValidateQuery")
+		return false, errors.Wrap(err, "pattern parsing")
 	}
+	if !replacer.HasCaptureGroups() {
+		return false, nil
+	}
+
+	// We use ParseQuery to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
+	plan, _ := querybuilder.ParseQuery(searchQuery, patternType)
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	selectParameter, typeParameter := false, false
+	// At the moment we don't allow capture group aggregation for path and repo searches
 	for _, parameter := range parameters {
-		if parameter.Field == query.FieldSelect {
-			if parameter.Value == "repo" || parameter.Value == "file" {
-				selectParameter = true
-			}
-		} else if parameter.Field == query.FieldType {
-			if parameter.Value == "repo" || parameter.Value == "path" {
-				typeParameter = true
-			}
+		if parameter.Field == query.FieldSelect && (parameter.Value == "repo" || parameter.Value == "file") {
+			return false, nil
+		}
+		if parameter.Field == query.FieldType && (parameter.Value == "repo" || parameter.Value == "path") {
+			return false, nil
 		}
 	}
-	if selectParameter && !typeParameter {
-		return false, nil
-	}
+
 	return true, nil
 }
 

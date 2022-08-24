@@ -6,6 +6,7 @@ import (
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -56,6 +57,10 @@ type group struct {
 	end       int
 	capturing bool
 	number    int
+}
+
+func (r *regexpReplacer) HasCaptureGroups() bool {
+	return len(r.groups) != 0
 }
 
 // findGroups will extract all capturing and non-capturing groups from a
@@ -113,6 +118,7 @@ func peek(pattern string, currentIndex, peekOffset int) byte {
 
 type PatternReplacer interface {
 	Replace(replacement string) (BasicQuery, error)
+	HasCaptureGroups() bool
 }
 
 func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
