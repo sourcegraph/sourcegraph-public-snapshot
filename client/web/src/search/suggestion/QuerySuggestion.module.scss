@@ -9,12 +9,18 @@
     margin-top: 0.25rem;
 }
 
-.root > h3 {
+.collapse-button {
+    display: contents;
+}
+
+.header {
     color: var(--text-muted);
     font-size: 0.875rem;
     font-weight: 700;
     font-style: italic;
     margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
 }
 
 .container {

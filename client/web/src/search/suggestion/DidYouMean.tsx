@@ -140,7 +140,7 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
     if (suggestions.length > 0) {
         return (
             <div className={styles.root}>
-                <H3>Did you mean:</H3>
+                <H3 className={styles.header}>Did you mean:</H3>
                 <ul className={styles.container}>
                     {suggestions.map(suggestion => {
                         const builtURLQuery = buildSearchURLQuery(
