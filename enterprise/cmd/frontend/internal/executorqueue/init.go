@@ -22,6 +22,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
 	codeintelUploadHandler http.Handler,
+	batchesMountHandler http.Handler,
 ) error {
 	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
 
@@ -33,7 +34,7 @@ func Init(
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 
-	queueHandler, err := newExecutorQueueHandler(db, queueOptions, accessToken, codeintelUploadHandler)
+	queueHandler, err := newExecutorQueueHandler(db, queueOptions, accessToken, codeintelUploadHandler, batchesMountHandler)
 	if err != nil {
 		return err
 	}

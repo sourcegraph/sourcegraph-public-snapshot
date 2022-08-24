@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -37,6 +38,8 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore)
 	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore)
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore)
+	operations := httpapi.NewOperations(observationContext)
+	enterpriseServices.BatchesMountHandler = httpapi.NewMountHandler(bstore, operations, false)
 
 	return nil
 }

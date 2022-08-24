@@ -99,11 +99,6 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Fatal("failed to initialize codeintel", log.Error(err))
 	}
 
-	// Initialize executor-specific services with the code-intel services.
-	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.InternalUploadHandler); err != nil {
-		logger.Fatal("failed to initialize executor", log.Error(err))
-	}
-
 	if err := app.Init(db, conf, &enterpriseServices); err != nil {
 		logger.Fatal("failed to initialize app", log.Error(err))
 	}
@@ -114,6 +109,11 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
 			initLogger.Fatal("failed to initialize", log.Error(err))
 		}
+	}
+
+	// Initialize executor-specific services with the code-intel services.
+	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.InternalUploadHandler, enterpriseServices.BatchesMountHandler); err != nil {
+		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
 	return enterpriseServices

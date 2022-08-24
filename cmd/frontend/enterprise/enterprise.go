@@ -20,6 +20,7 @@ type Services struct {
 	GitLabWebhook             http.Handler
 	BitbucketServerWebhook    http.Handler
 	BitbucketCloudWebhook     http.Handler
+	BatchesMountHandler       http.Handler
 	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
 	NewExecutorProxyHandler   NewExecutorProxyHandler
 	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
@@ -99,7 +100,7 @@ func (e ErrBatchChangesDisabledForUser) Error() string {
 	return "batch changes are disabled for non-site-admin users. Ask a site admin to unset 'batchChanges.restrictToAdmins' in the site configuration to enable the feature for all users."
 }
 
-// Checks if Batch Changes are enabled at the site-level and returns `nil` if they are, or
+// BatchChangesEnabledForSite checks if Batch Changes are enabled at the site-level and returns `nil` if they are, or
 // else an error indicating why they're disabled
 func BatchChangesEnabledForSite() error {
 	if !conf.BatchChangesEnabled() {
@@ -114,7 +115,7 @@ func BatchChangesEnabledForSite() error {
 	return nil
 }
 
-// Checks if Batch Changes are enabled for the current user and returns `nil` if they are,
+// BatchChangesEnabledForUser checks if Batch Changes are enabled for the current user and returns `nil` if they are,
 // or else an error indicating why they're disabled
 func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 	if err := BatchChangesEnabledForSite(); err != nil {
