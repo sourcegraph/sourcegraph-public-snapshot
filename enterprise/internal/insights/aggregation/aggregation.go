@@ -247,7 +247,10 @@ func getCasedPattern(querystring string) (MatchPattern, error) {
 	}
 	q := query.ToQ()
 
-	// TODO: How many steps do we expect in the plan? What does it mean if there is more than one step?
+	if len(query) != 1 {
+		// Not sure when we would run into this; calling it out to help during testing.
+		return nil, errors.New("Pipeline generated plan with multiple steps.")
+	}
 	basic := query[0]
 
 	pattern, err := extractPattern(&basic)
