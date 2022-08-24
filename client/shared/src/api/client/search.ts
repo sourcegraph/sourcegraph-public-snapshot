@@ -66,14 +66,14 @@ function goImportsTransform(query: string): string {
     if (query.match(goImportsRegex)) {
         // Get package name
         const packageFilter = query.match(goImportsRegex)
-        const package_ = packageFilter && packageFilter.length >= 1 ? packageFilter[1] : ''
+        const packageName = packageFilter && packageFilter.length >= 1 ? packageFilter[1] : ''
 
         // Package imported in grouped import statements
-        const matchPackage = '^\\t"[^\\s]*' + package_ + '[^\\s]*"$'
+        const matchPackage = '^\\t"[^\\s]*' + packageName + '[^\\s]*"$'
         // Match packages with aliases
-        const matchAlias = '\\t[\\w/]*\\s"[^\\s]*' + package_ + '[^\\s]*"$'
+        const matchAlias = '\\t[\\w/]*\\s"[^\\s]*' + packageName + '[^\\s]*"$'
         // Match packages in single import statement
-        const matchSingle = 'import\\s"[^\\s]*' + package_ + '[^\\s]*"$'
+        const matchSingle = 'import\\s"[^\\s]*' + packageName + '[^\\s]*"$'
         const finalRegex = `(${matchPackage}|${matchAlias}|${matchSingle}) lang:go `
 
         return query.replace(goImportsRegex, finalRegex)
