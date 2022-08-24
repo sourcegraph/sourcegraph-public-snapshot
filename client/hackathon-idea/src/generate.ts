@@ -1,8 +1,8 @@
 import { createOrUpdateNotebook } from './createOrUpdateNotebook'
 import { generatePackagesList } from './generatePackagesList'
-import { Permutation } from './types'
+import { Permutations } from './types'
 
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { createPermutations } from './createPermutations'
 
 // Get the latest package list only if current list is empty
@@ -26,10 +26,7 @@ try {
                 notebookMap[packageA] = {}
             }
             notebookMap[packageA][packageB] = notebookId
-
-            throw new Error('sdf')
-
-            // writeFileSync('db/notebooks.json', JSON.stringify(notebookMap, null, 2))
+            writeFileSync('db/notebooks.json', JSON.stringify(notebookMap, null, 2))
         }
     }
 })()

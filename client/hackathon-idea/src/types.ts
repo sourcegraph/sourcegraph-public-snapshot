@@ -2,9 +2,8 @@ export type Package = string
 
 // Rules for permutation:
 // - The package names are sorted alphanumerically, so this is valid:
-//     [a, b]
+//     [a][b]
 //   But this is not:
-//     [b, a]
+//     [b][a]
 // - The package names are not allowed to be duplicated.
-export type Permutation = [Package, Package]
 export type Permutations = Map<Package, Set<Package>>
