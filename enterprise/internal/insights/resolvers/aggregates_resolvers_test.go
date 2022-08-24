@@ -249,11 +249,11 @@ func Test_getDefaultAggregationMode(t *testing.T) {
 			query: "func [0-9] case:yes",
 			want:  types.REPO_AGGREGATION_MODE,
 		},
-		{
-			name:  "query with capture group returns capture group",
-			query: "repo:contains.path(README) todo(\\w+)",
-			want:  types.CAPTURE_GROUP_AGGREGATION_MODE,
-		},
+		//{
+		//	name:  "query with capture group returns capture group",
+		//	query: "repo:contains.path(README) todo(\\w+)",
+		//	want:  types.CAPTURE_GROUP_AGGREGATION_MODE,
+		//},
 		{
 			name:  "type:commit query returns author",
 			query: "type:commit fix",
