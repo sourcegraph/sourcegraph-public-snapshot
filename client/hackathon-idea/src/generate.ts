@@ -1,8 +1,12 @@
 import { createOrUpdateNotebook } from './createOrUpdateNotebook'
-import { Permutations } from './types'
+import { generatePackagesList } from './generatePackagesList'
+import { Permutation } from './types'
 
 import { readFileSync } from 'fs'
 import { createPermutations } from './createPermutations'
+
+// Get the latest package list only if current list is empty
+generatePackagesList()
 
 let notebookMap: { [packageA: string]: { [packageB: string]: string } } = {}
 try {
