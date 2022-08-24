@@ -41,7 +41,7 @@ func main() {
 }
 
 func run(logger log.Logger, depot string, input io.Reader) {
-	perms, err := perforce.PerformDebugScan(input, extsvc.RepoID(depot))
+	perms, err := perforce.PerformDebugScan(logger, input, extsvc.RepoID(depot))
 	if err != nil {
 		fail(fmt.Sprintf("Error parsing permissions: %s", err))
 	}

@@ -185,12 +185,12 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 
 // PerformDebugScan will scan protections rules from r and log detailed
 // information about how each line was parsed.
-func PerformDebugScan(r io.Reader, depot extsvc.RepoID) (*authz.ExternalUserPermissions, error) {
+func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID) (*authz.ExternalUserPermissions, error) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	scanner := fullRepoPermsScanner(perms, []extsvc.RepoID{depot})
-	err := scanProtects(r, scanner)
+	scanner := fullRepoPermsScanner(logger, perms, []extsvc.RepoID{depot})
+	err := scanProtects(logger, r, scanner)
 	return perms, err
 }
 
@@ -205,8 +205,8 @@ type protectsScanner struct {
 // scanProtects is a utility function for processing values from `p4 protects`.
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
-func scanProtects(rc io.Reader, s *protectsScanner) error {
-	logger := log.Scoped("scanProtects", "")
+func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
+	logger = logger.Scoped("scanProtects", "")
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -324,8 +324,8 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *protects
 
 // fullRepoPermsScanner converts `p4 protects` to a 1:1 implementation of Sourcegraph
 // authorization, including sub-repo perms and exact depot-as-repo matches.
-func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *protectsScanner {
-	logger := log.Scoped("fullRepoPermsScanner", "")
+func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *protectsScanner {
+	logger = logger.Scoped("fullRepoPermsScanner", "")
 	// Get glob equivalents of all depots
 	var configuredDepotMatches []globMatch
 	for _, depot := range configuredDepots {
