@@ -12,25 +12,13 @@ if [[ ${BUILDKITE_PULL_REQUEST} -ne "false" ]]; then
     echo -e "Pull request [🔗]: \`${BUILDKITE_PULL_REQUEST}\`\n" >> "$file"
 fi
 
-cat <<EOF | awk '{print}' >> "$file"
-Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`
-
-Retry count: \`${BUILDKITE_RETRY_COUNT}\`
-
-Pipeline: ${BUILDKITE_PIPELINE_SLUG}
-
-Author: \`${BUILDKITE_BUILD_AUTHOR}\`
-
-Branch: \`${BUILDKITE_BRANCH}\`
-
-Commit: \`${BUILDKITE_COMMIT}\`
-
-\`\`\`
-${BUILDKITE_MESSAGE}
-\`\`\`
-
-Agent: \`${BUILDKITE_AGENT_NAME}\`
-
-EOF
-
-
+echo -e "Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`\n" > "$file"
+echo -e "Retry count: \`${BUILDKITE_RETRY_COUNT}\`\n" > "$file"
+echo -e "Pipeline: ${BUILDKITE_PIPELINE_SLUG}\n" > "$file"
+echo -e "Author: \`${BUILDKITE_BUILD_AUTHOR}\`\n" > "$file"
+echo -e "Branch: \`${BUILDKITE_BRANCH}\`\n" > "$file"
+echo -e "Commit: \`${BUILDKITE_COMMIT}\`\n" > "$file"
+echo -e "\`\`\`\n" > "$file"
+echo -e "${BUILDKITE_MESSAGE}\n" > "$file"
+echo -e "\`\`\`\n" > "$file"
+echo -e "Agent: \`${BUILDKITE_AGENT_NAME}\`\n" > "$file"
