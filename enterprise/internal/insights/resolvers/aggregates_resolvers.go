@@ -37,35 +37,42 @@ func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphq
 
 func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphqlbackend.AggregationsArgs) (graphqlbackend.SearchAggregationResultResolver, error) {
 	// Steps:
-	// 1. - If no mode get the default mode (currently defaulted in gql to REPO)
-	// 2. - Validate mode can be used supported
+	// 1. - If no mode get the default mode
+	// 2. - Validate mode is supported (if in default mode this is done in that step)
 	// 3. - Modify search query (timeout: & count:)
 	// 3. - Run Search
 	// 4. - Check search for errors/alerts
 	// 5 -  Generate correct resolver pass search results if valid
 	var aggregationMode types.SearchAggregationMode
 	if args.Mode == nil {
-		aggregationMode = types.REPO_AGGREGATION_MODE
+		mode, err := getDefaultAggregationMode(r.searchQuery, r.patternType)
+		if err != nil {
+			return nil, errors.Wrap(err, "getDefaultAggregationMode")
+		}
+		aggregationMode = mode
 	} else {
 		aggregationMode = types.SearchAggregationMode(*args.Mode)
 	}
 
-	aggregationModeAvailabilityResolver := newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, aggregationMode)
-	supported, err := aggregationModeAvailabilityResolver.Available()
-	if err != nil {
-		return nil, err
-	}
-	if !supported {
-		unavailableReason := ""
-		// We don't need to assert on the error because this uses the same logic as `Available()` above so it would
-		// have errored already.
-		reason, _ := aggregationModeAvailabilityResolver.ReasonUnavailable()
-		if reason == nil {
-			unavailableReason = "could not fetch unavailability reason"
-		} else {
-			unavailableReason = *reason
+	// If we had to fetch a default aggregation mode we already validated query and got an available mode.
+	if args.Mode != nil {
+		aggregationModeAvailabilityResolver := newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, aggregationMode)
+		supported, err := aggregationModeAvailabilityResolver.Available()
+		if err != nil {
+			return nil, err
 		}
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(unavailableReason, aggregationMode)}, nil
+		if !supported {
+			unavailableReason := ""
+			// We don't need to assert on the error because this uses the same logic as `Available()` above so it would
+			// have errored already.
+			reason, _ := aggregationModeAvailabilityResolver.ReasonUnavailable()
+			if reason == nil {
+				unavailableReason = "could not fetch unavailability reason"
+			} else {
+				unavailableReason = *reason
+			}
+			return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(unavailableReason, aggregationMode)}, nil
+		}
 	}
 
 	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
