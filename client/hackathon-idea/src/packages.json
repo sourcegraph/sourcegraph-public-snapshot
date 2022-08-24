@@ -64,6 +64,7 @@
   { "name": "fis-msprd-vue_2_1_5", "description": "Reactive, component-oriented view layer for modern web interfaces.", "kStars": "198" },
   { "name": "fis-msprd-vue_2_0_8", "description": "Reactive, component-oriented view layer for modern web interfaces.", "kStars": "198" },
   { "name": "fis-msprd-vue_2_0_7", "description": "Reactive, component-oriented view layer for modern web interfaces.", "kStars": "198" },
+  { "name": "vue", "description": "\uD83D\uDD96 Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web.", "kStars": "199" },
   { "name": "vue-ob", "description": "Reactive Vue Observer", "kStars": "198" },
   { "name": "qq-apis", "description": "QQ小程序API语法提示.", "kStars": "198" },
   { "name": "@recly/vue", "description": "Reactive, component-oriented view layer for modern web interfaces.", "kStars": "198" },
