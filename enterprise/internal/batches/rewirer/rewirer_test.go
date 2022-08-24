@@ -213,8 +213,8 @@ func TestRewirer_Rewire(t *testing.T) {
 				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					// Importing spec
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				Repo: testRepo,
 			}},
@@ -233,8 +233,8 @@ func TestRewirer_Rewire(t *testing.T) {
 					ID:   testChangesetSpecID,
 					Repo: testRepoID,
 
-					// Branch spec
 					HeadRef: "refs/heads/test-branch",
+					Typ:     btypes.ChangesetSpecTypeBranch,
 				}),
 				Repo: testRepo,
 			}},
@@ -254,6 +254,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo:       unsupportedTestRepoID,
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				RepoID: unsupportedTestRepoID,
 				Repo:   unsupportedTestRepo,
@@ -269,6 +270,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo:       testRepoID,
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				RepoID: testRepoID,
 				Repo:   nil,
@@ -283,8 +285,8 @@ func TestRewirer_Rewire(t *testing.T) {
 				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					// Importing spec
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:       testRepoID,
@@ -310,8 +312,8 @@ func TestRewirer_Rewire(t *testing.T) {
 				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					// Importing spec
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:       testRepoID,
@@ -335,8 +337,8 @@ func TestRewirer_Rewire(t *testing.T) {
 				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					// Importing spec
 					ExternalID: "123",
+					Typ:        btypes.ChangesetSpecTypeExisting,
 				}),
 				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:       testRepoID,
@@ -365,8 +367,8 @@ func TestRewirer_Rewire(t *testing.T) {
 					ID:   testChangesetSpecID + 1,
 					Repo: testRepoID,
 
-					// Branch spec
 					HeadRef: "refs/heads/test-branch",
+					Typ:     btypes.ChangesetSpecTypeBranch,
 				}),
 				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:               testRepoID,
@@ -399,8 +401,8 @@ func TestRewirer_Rewire(t *testing.T) {
 					ID:   testChangesetSpecID + 1,
 					Repo: testRepoID,
 
-					// Branch spec
 					HeadRef: "refs/heads/test-branch",
+					Typ:     btypes.ChangesetSpecTypeBranch,
 				}),
 				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
 					Repo:               testRepoID,
