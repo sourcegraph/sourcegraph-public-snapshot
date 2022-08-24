@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type upgradePlan struct {
@@ -114,8 +115,7 @@ func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedM
 		for _, tag := range tags {
 			bounds, ok := shared.StitchedMigationsBySchemaName[schemaName].BoundsByRev[tag]
 			if !ok {
-				// TODO
-				// return nil, errors.Newf("unknown tag %q", tag)
+				return nil, errors.Newf("unknown tag %q", tag)
 			}
 
 			boundsByRev[tag] = bounds
