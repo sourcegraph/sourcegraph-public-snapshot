@@ -7,17 +7,51 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type UsersStatsDateTimeRange struct {
+	Before *string
+	After  *string
+}
+
+type UsersStatsNumberRange struct {
+	Min  *float64
+	Max  *float64
+}
+
+func (d *UsersStatsDateTimeRange) Parse() (before *time.Time, after *time.Time, err error) {
+	if d.Before != nil {
+		beforeTime, err := time.Parse(time.RFC3339, *d.Before)
+		if err != nil {
+			return nil, nil, err
+		}
+		before = &beforeTime
+	}
+	if d.After != nil {
+		afterTime, err := time.Parse(time.RFC3339, *d.After)
+		if err != nil {
+			return nil, nil, err
+		}
+		after = &afterTime
+	}
+	return before, after, nil
+}
+
+type UsersStatsNullableDateRange struct {
+	UsersStatsDateTimeRange
+	IsNull *bool
+}
+
 type UsersStatsFilters struct {
-	Query            *string
-	SiteAdmin        *bool
-	Username         *string
-	Email            *string
-	LastActivePeriod *string
-	Deleted          *bool
+	Query        *string
+	SiteAdmin    *bool
+	Username     *string
+	Email        *string
+	LastActiveAt *UsersStatsNullableDateRange
+	DeletedAt    *UsersStatsNullableDateRange
+	CreatedAt    *UsersStatsDateTimeRange
+	EventsCount  *UsersStatsNumberRange
 }
 
 type UsersStats struct {
@@ -40,35 +74,61 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 	if s.Filters.Email != nil {
 		conds = append(conds, sqlf.Sprintf("primary_email ILIKE %s", "%"+*s.Filters.Email+"%"))
 	}
-	if s.Filters.Deleted != nil {
-		if *s.Filters.Deleted {
-			conds = append(conds, sqlf.Sprintf("deleted_at IS NOT NULL"))
-		} else {
+	if s.Filters.DeletedAt != nil {
+		if s.Filters.DeletedAt.IsNull != nil && *s.Filters.DeletedAt.IsNull {
 			conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+		} else {
+			before, after, err := s.Filters.DeletedAt.Parse()
+			if err != nil {
+				return nil, err
+			}
+			if before != nil {
+				conds = append(conds, sqlf.Sprintf("deleted_at <= %s", before))
+			}
+			if after != nil {
+				conds = append(conds, sqlf.Sprintf("deleted_at >= %s", after))
+			}
 		}
 	}
-	if s.Filters.LastActivePeriod != nil && *s.Filters.LastActivePeriod != "ALL" {
-		lastActiveStartTime, err := makeLastActiveStartTime(*s.Filters.LastActivePeriod)
+
+	if s.Filters.LastActiveAt != nil {
+		if s.Filters.LastActiveAt.IsNull != nil && *s.Filters.LastActiveAt.IsNull {
+			conds = append(conds, sqlf.Sprintf("last_active_at IS NULL"))
+		} else {
+			before, after, err := s.Filters.LastActiveAt.Parse()
+			if err != nil {
+				return nil, err
+			}
+			if before != nil {
+				conds = append(conds, sqlf.Sprintf("last_active_at <= %s", before))
+			}
+			if after != nil {
+				conds = append(conds, sqlf.Sprintf("last_active_at >= %s", after))
+			}
+		}
+	}
+	if s.Filters.CreatedAt != nil {
+		before, after, err := s.Filters.CreatedAt.Parse()
 		if err != nil {
 			return nil, err
 		}
-		conds = append(conds, sqlf.Sprintf("last_active_at >= %s", lastActiveStartTime))
+		if before != nil {
+			conds = append(conds, sqlf.Sprintf("created_at <= %s", before))
+		}
+		if after != nil {
+			conds = append(conds, sqlf.Sprintf("created_at >= %s", after))
+		}
+	}
+
+	if s.Filters.EventsCount != nil {
+		if s.Filters.EventsCount.Max != nil {
+			conds = append(conds, sqlf.Sprintf("events_count <= %s", *s.Filters.EventsCount.Max))
+		}
+		if s.Filters.EventsCount.Min != nil {
+			conds = append(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Min))
+		}
 	}
 	return conds, nil
-}
-
-func makeLastActiveStartTime(lastActivePeriod string) (time.Time, error) {
-	now := time.Now()
-	switch lastActivePeriod {
-	case "TODAY":
-		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC), nil
-	case "THIS_WEEK":
-		return timeutil.StartOfWeek(now.UTC(), 0), nil
-	case "THIS_MONTH":
-		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC), nil
-	default:
-		return now, errors.Newf("invalid lastActivePeriod: %s", lastActivePeriod)
-	}
 }
 
 var (

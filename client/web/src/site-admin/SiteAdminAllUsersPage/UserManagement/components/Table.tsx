@@ -14,9 +14,78 @@ import {
     Button,
     Tooltip,
     PopoverOpenEvent,
+    Input,
+    Select,
 } from '@sourcegraph/wildcard'
 
+import { DateRangeSelect } from './DateRangeSelect'
+
 import styles from './Table.module.scss'
+
+type ColumnFilterProps =
+    | {
+          type: 'text'
+          placeholder: string
+          value?: string
+          onChange?: (value: string) => void
+      }
+    | {
+          type: 'select'
+          options: { label: string; value: string }[]
+          value?: string
+          onChange?: (value: string) => void
+      }
+    | {
+          type: 'date-range'
+          placeholder: string
+          value?: [Date, Date] | null
+          /**
+           * If provided, will allow "null" value selection
+           */
+          nullLabel?: string
+          onChange?: (value?: [Date, Date] | null) => void
+      }
+
+const ColumnFilter: React.FunctionComponent<ColumnFilterProps> = props => {
+    const { type, value, onChange } = props
+    if (type === 'text') {
+        return (
+            <Input
+                className="flex-1"
+                placeholder={props.placeholder}
+                value={value}
+                onChange={event => onChange?.(event.target.value)}
+            />
+        )
+    }
+    if (type === 'select') {
+        return (
+            <Select
+                aria-labelledby="Select filter"
+                className="m-0 p-0"
+                value={value}
+                onChange={value => onChange?.(value.target.value)}
+            >
+                {props.options.map(({ label, value }) => (
+                    <option key={label} value={value}>
+                        {label}
+                    </option>
+                ))}
+            </Select>
+        )
+    }
+    if (type === 'date-range') {
+        return (
+            <DateRangeSelect
+                placeholder={props.placeholder}
+                nullLabel={props.nullLabel}
+                value={value}
+                onChange={onChange}
+            />
+        )
+    }
+    return null
+}
 
 interface IColumn<T> {
     key: string
@@ -31,6 +100,7 @@ interface IColumn<T> {
     sortable?: boolean
     align?: 'left' | 'right' | 'center'
     render?: (data: T, index: number) => JSX.Element
+    filter?: ColumnFilterProps
 }
 
 interface IAction<T> {
@@ -51,10 +121,6 @@ interface TableProps<T> {
     selectable?: boolean
     note?: string | JSX.Element
     getRowId: (data: T) => string
-    sortBy?: {
-        key: string
-        descending: boolean
-    }
     onSortByChange?: (newOderBy: NonNullable<TableProps<T>['sortBy']>) => void
 }
 
@@ -179,13 +245,11 @@ export function Table<T>({
                                                 <Icon
                                                     aria-label="Sort ascending"
                                                     svgPath={mdiMenuUp}
-                                                    size="md"
                                                     className={styles.sortAscIcon}
                                                 />
                                                 <Icon
                                                     aria-label="Sort descending"
                                                     svgPath={mdiMenuDown}
-                                                    size="md"
                                                     className={styles.sortDescIcon}
                                                 />
                                             </div>
@@ -194,6 +258,12 @@ export function Table<T>({
                                 </th>
                             )
                         })}
+                    </tr>
+                    <tr>
+                        {selectable && <th />}
+                        {memoizedColumns.map(({ key, filter }) => (
+                            <th key={key}>{filter && <ColumnFilter {...filter} />}</th>
+                        ))}
                     </tr>
                 </thead>
                 <tbody>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import {
     mdiLogoutVariant,
@@ -10,22 +10,19 @@ import {
     mdiClose,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { formatDistanceToNowStrict } from 'date-fns'
+import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { H2, LoadingSpinner, Text, Input, Button, Alert, useDebounce, Link, Tooltip, Icon } from '@sourcegraph/wildcard'
+import { H2, LoadingSpinner, Text, Button, Alert, useDebounce, Link, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import {
-    SiteUsersLastActivePeriod,
     SiteUserOrderBy,
     UsersManagementUsersListResult,
     UsersManagementUsersListVariables,
 } from '../../../../graphql-operations'
 import { useURLSyncedState } from '../../../../hooks'
-import { eventLogger } from '../../../../tracking/eventLogger'
-import { HorizontalSelect } from '../../../analytics/components/HorizontalSelect'
 import { randomizeUserPassword, setUserIsSiteAdmin } from '../../../backend'
 import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS, USERS_MANAGEMENT_USERS_LIST } from '../queries'
 
@@ -40,19 +37,45 @@ interface UsersListProps {
     onActionEnd?: () => void
 }
 
+function parseDateRangeQueryParameter(rawValue: string): [Date, Date] | null | undefined {
+    if (!rawValue) {
+        return
+    }
+    const value = JSON.parse(rawValue)
+
+    if (value === null) {
+        return null
+    }
+
+    if (Array.isArray(value) && value.length === 2) {
+        return [new Date(value[0]), new Date(value[1])]
+    }
+    return null
+}
+
+const DEFAULT_FILTERS = {
+    searchText: '',
+    limit: LIMIT.toString(),
+    orderBy: SiteUserOrderBy.EVENTS_COUNT,
+    descending: 'false',
+    isAdmin: '',
+    eventsCount: '',
+    lastActiveAt: '',
+    createdAt: '',
+    deletedAt: '',
+}
+
 export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd }) => {
-    const [filters, setFilters] = useURLSyncedState({
-        searchText: '',
-        limit: LIMIT.toString(),
-        lastActivePeriod: SiteUsersLastActivePeriod.ALL,
-        orderBy: SiteUserOrderBy.EVENTS_COUNT,
-        descending: 'false',
-    })
+    const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedSearchText = useDebounce(filters.searchText, 300)
     const showMore = useCallback(() => setFilters({ limit: (Number(filters.limit) + LIMIT).toString() }), [
         filters.limit,
         setFilters,
     ])
+
+    const lastActiveAtFilter = useMemo(() => parseDateRangeQueryParameter(filters.lastActiveAt), [filters.lastActiveAt])
+    const deletedAtFilter = useMemo(() => parseDateRangeQueryParameter(filters.deletedAt), [filters.deletedAt])
+    const createdAtFilter = useMemo(() => parseDateRangeQueryParameter(filters.createdAt), [filters.createdAt])
 
     const { data, previousData, refetch, variables, error, loading } = useQuery<
         UsersManagementUsersListResult,
@@ -61,9 +84,36 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         variables: {
             first: Number(filters.limit),
             query: debouncedSearchText || null,
-            lastActivePeriod: filters.lastActivePeriod,
+            lastActiveAt:
+                lastActiveAtFilter === undefined
+                    ? null
+                    : {
+                          isNull: lastActiveAtFilter === null,
+                          after: lastActiveAtFilter === null ? null : startOfDay(lastActiveAtFilter[0]),
+                          before: lastActiveAtFilter === null ? null : endOfDay(lastActiveAtFilter[1]),
+                      },
+            deletedAt:
+                deletedAtFilter === undefined
+                    ? null
+                    : {
+                          isNull: deletedAtFilter === null,
+                          after: deletedAtFilter === null ? null : startOfDay(deletedAtFilter[0]),
+                          before: deletedAtFilter === null ? null : endOfDay(deletedAtFilter[1]),
+                      },
+            createdAt: !createdAtFilter
+                ? null
+                : {
+                      after: startOfDay(createdAtFilter[0]),
+                      before: endOfDay(createdAtFilter[1]),
+                  },
+            eventsCount: !filters.eventsCount
+                ? null
+                : {
+                      max: Number(filters.eventsCount),
+                  },
             orderBy: filters.orderBy,
-            descending: JSON.parse(filters.descending),
+            descending: filters.descending ? (JSON.parse(filters.descending) as boolean) : null,
+            siteAdmin: filters.isAdmin ? (JSON.parse(filters.isAdmin) as boolean) : null,
         },
     })
 
@@ -94,33 +144,12 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         <div className="position-relative">
             <div className="mb-4 mt-4 pt-4 d-flex justify-content-between align-items-center text-nowrap">
                 <H2>Users</H2>
-                <div className="d-flex w-75">
-                    <HorizontalSelect<SiteUsersLastActivePeriod>
-                        className="mr-4"
-                        value={filters.lastActivePeriod}
-                        label="Last active"
-                        onChange={value => {
-                            setFilters({ lastActivePeriod: value })
-                            eventLogger.log(`UserManagementLastActive${value}`)
-                        }}
-                        items={[
-                            { value: SiteUsersLastActivePeriod.ALL, label: 'All' },
-                            { value: SiteUsersLastActivePeriod.TODAY, label: 'Today' },
-                            { value: SiteUsersLastActivePeriod.THIS_WEEK, label: 'This week' },
-                            { value: SiteUsersLastActivePeriod.THIS_MONTH, label: 'This month' },
-                        ]}
-                    />
-                    <div className="flex-1 d-flex align-items-baseline m-0">
-                        <Text as="label">Search users</Text>
-                        <Input
-                            className="flex-1 ml-2"
-                            placeholder="Search username, display name, email"
-                            value={filters.searchText}
-                            onChange={event => setFilters({ searchText: event.target.value })}
-                        />
-                    </div>
-                </div>
+                <Button size="sm" onClick={() => setFilters(DEFAULT_FILTERS)} outline={true} variant="secondary">
+                    Clear all filters
+                    <Icon aria-hidden={true} className="ml-1" svgPath={mdiClose} />
+                </Button>
             </div>
+
             {notification && (
                 <Alert
                     className="mt-2 d-flex justify-content-between align-items-center"
@@ -212,25 +241,59 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 header: 'User',
                                 sortable: true,
                                 render: RenderUsernameAndEmail,
+                                filter: {
+                                    type: 'text',
+                                    placeholder: 'Username, email, display name',
+                                    onChange: value => {
+                                        setFilters({ searchText: value })
+                                    },
+                                    value: filters.searchText,
+                                },
                             },
                             {
                                 key: SiteUserOrderBy.SITE_ADMIN,
                                 accessor: item => (item.siteAdmin ? 'Yes' : 'No'),
-                                header: { label: 'Site Admin', align: 'right' },
+                                header: { label: 'Is Admin', align: 'left' },
                                 sortable: true,
                                 align: 'center',
+                                filter: {
+                                    type: 'select',
+                                    options: [
+                                        { value: 'null', label: 'All' },
+                                        { value: 'true', label: 'Yes' },
+                                        { value: 'false', label: 'No' },
+                                    ],
+                                    onChange: value => {
+                                        setFilters({ isAdmin: value })
+                                    },
+                                    value: filters.isAdmin,
+                                },
                             },
                             {
                                 key: SiteUserOrderBy.EVENTS_COUNT,
                                 accessor: 'eventsCount',
                                 header: {
                                     label: 'Events',
-                                    align: 'right',
+                                    align: 'left',
                                     tooltip:
                                         '"Events" count is cached and updated every 12 hours. It is based on event logs table and available for the last 93 days.',
                                 },
                                 sortable: true,
                                 align: 'right',
+                                filter: {
+                                    type: 'select',
+                                    options: [
+                                        { value: '', label: 'All' },
+                                        { value: '0', label: '= 0' },
+                                        { value: '10', label: '< 10' },
+                                        { value: '100', label: '< 100' },
+                                        { value: '1000', label: '< 1000' },
+                                    ],
+                                    onChange: value => {
+                                        setFilters({ eventsCount: value })
+                                    },
+                                    value: filters.eventsCount,
+                                },
                             },
                             {
                                 key: SiteUserOrderBy.LAST_ACTIVE_AT,
@@ -240,20 +303,37 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                         : '',
                                 header: {
                                     label: 'Last Active',
-                                    align: 'right',
+                                    align: 'left',
                                     tooltip:
                                         '"Last Active" is cached and updated every 12 hours. It is based on event logs table and available for the last 93 days.',
                                 },
                                 sortable: true,
                                 align: 'right',
+                                filter: {
+                                    type: 'date-range',
+                                    placeholder: 'Select',
+                                    nullLabel: 'Never',
+                                    onChange: value => {
+                                        setFilters({ lastActiveAt: JSON.stringify(value) })
+                                    },
+                                    value: lastActiveAtFilter,
+                                },
                             },
                             {
                                 key: SiteUserOrderBy.CREATED_AT,
                                 accessor: item =>
                                     formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true }),
-                                header: { label: 'Created', align: 'right' },
+                                header: { label: 'Created', align: 'left' },
                                 sortable: true,
                                 align: 'right',
+                                filter: {
+                                    type: 'date-range',
+                                    placeholder: 'Select',
+                                    onChange: value => {
+                                        setFilters({ createdAt: JSON.stringify(value) })
+                                    },
+                                    value: parseDateRangeQueryParameter(filters.createdAt),
+                                },
                             },
                             {
                                 key: SiteUserOrderBy.DELETED_AT,
@@ -261,9 +341,18 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                     item.deletedAt
                                         ? formatDistanceToNowStrict(new Date(item.deletedAt), { addSuffix: true })
                                         : '',
-                                header: { label: 'Deleted', align: 'right' },
+                                header: { label: 'Deleted', align: 'left' },
                                 sortable: true,
                                 align: 'right',
+                                filter: {
+                                    type: 'date-range',
+                                    placeholder: 'Select',
+                                    nullLabel: 'Not Deleted',
+                                    onChange: value => {
+                                        setFilters({ deletedAt: JSON.stringify(value) })
+                                    },
+                                    value: deletedAtFilter,
+                                },
                             },
                         ]}
                         note={
