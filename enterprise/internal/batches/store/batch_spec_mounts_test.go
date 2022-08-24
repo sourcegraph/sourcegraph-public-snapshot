@@ -95,6 +95,18 @@ func testStoreBatchSpecMounts(t *testing.T, ctx context.Context, s *Store, clock
 	})
 
 	t.Run("Count", func(t *testing.T) {
+		t.Run("ByID", func(t *testing.T) {
+			count, err := s.CountBatchSpecMounts(ctx, ListBatchSpecMountsOpts{ID: mounts[0].ID})
+			require.NoError(t, err)
+			assert.Equal(t, 1, count)
+		})
+
+		t.Run("ByRandID", func(t *testing.T) {
+			count, err := s.CountBatchSpecMounts(ctx, ListBatchSpecMountsOpts{RandID: mounts[0].RandID})
+			require.NoError(t, err)
+			assert.Equal(t, 1, count)
+		})
+
 		t.Run("ByBatchSpecID", func(t *testing.T) {
 			count, err := s.CountBatchSpecMounts(ctx, ListBatchSpecMountsOpts{BatchSpecID: spec.ID})
 			require.NoError(t, err)

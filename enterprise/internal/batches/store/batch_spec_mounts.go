@@ -211,6 +211,8 @@ type ListBatchSpecMountsOpts struct {
 	LimitOpts
 	Cursor int64
 
+	ID              int64
+	RandID          string
 	BatchSpecID     int64
 	BatchSpecRandID string
 }
@@ -226,6 +228,14 @@ func (s *Store) CountBatchSpecMounts(ctx context.Context, opts ListBatchSpecMoun
 func countBatchSpecMountsQuery(opts ListBatchSpecMountsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	var joins []*sqlf.Query
+
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_mounts.id = %s", opts.ID))
+	}
+
+	if opts.RandID != "" {
+		preds = append(preds, sqlf.Sprintf("batch_spec_mounts.rand_id = %s", opts.RandID))
+	}
 
 	if opts.BatchSpecID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_spec_mounts.batch_spec_id = %s", opts.BatchSpecID))
