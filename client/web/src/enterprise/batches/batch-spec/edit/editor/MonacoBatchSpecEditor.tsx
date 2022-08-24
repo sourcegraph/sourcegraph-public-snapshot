@@ -150,6 +150,11 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
 
 function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string): void {
     const schema = cloneDeep(batchSpecSchemaJSON)
+    // We don't allow env forwarding in src-cli so we remove it from the schema
+    // so that monaco can show the error inline.
+    schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf = schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf.filter(
+        type => type.type !== 'string'
+    )
 
     // Temporarily remove the mount field from the schema, so it does not show up in the auto-suggestion.
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

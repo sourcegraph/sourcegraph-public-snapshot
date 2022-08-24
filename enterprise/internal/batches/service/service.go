@@ -469,6 +469,18 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 		return errors.New("mounts are not allowed for server-side processing")
 	}
 
+	// The global env is always mocked to be empty for executors, so we just
+	// want to throw a validation error here for now.
+	var errs error
+	for i, step := range opts.spec.Spec.Steps {
+		if !step.Env.IsStatic() {
+			errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
+		}
+	}
+	if errs != nil {
+		return errs
+	}
+
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
