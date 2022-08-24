@@ -1,0 +1,3044 @@
+{
+	"dashboards": [
+		{
+			"Title": "Backend Insights Testing",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"Insights overall and in src/src",
+				"One more test getting going for jestd",
+				"Testing joelkw with a count:all to make sure it works ",
+				"[Test 1.1] query: \"jeste\" expected present day 11.9k resuls",
+				"[Test 1.2] query: \"jeste count:all\" expected present day 11.9k resuls",
+				"[Test 1.3] query: \"jeste repo:.\" expected present day 11.9k resuls",
+				"[Test 1.4] query:\"jeste count:all repo:.\" expected 11.9k results",
+				"[Test 1.5] query:\"jest file:.\" expected results near 273k or so",
+				"joelkw results but filtered just to sourcegraph/sourcegraph$"
+			]
+		},
+		{
+			"Title": "Backend Test 2021-08-29",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"[Test-v3 1.5] query:\"jest file:.        \" ev 275k",
+				"[Test-v3 2.1] query: \"count:all aardvark        \"",
+				"[Test-v3 2.3] query:\"aardvark lang:[go|ts|js|md]        \" EVs \u003c500",
+				"[Test-v3 3.2] various sub \"coury\" query tests",
+				"[Test-v3 6.1] query:\"felix[f]        \" ",
+				"[Test-v3 9.1] query:\"campaigns        \"",
+				"[Test-v4 9.1] Campaigns time test"
+			]
+		},
+		{
+			"Title": "Backend Testing 3",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"Test loading state ",
+				"[Test-v2 0.2] query:\"jestd     \" ev 136",
+				"[Test-v2 1.1] query:\"jeste     \" ev 11.9k",
+				"[Test-v2 1.5] query:\"jest file:.     \" ev 273k",
+				"[Test-v2 2.1] query: \"count:all aardvark     \" ",
+				"[Test-v2 2.3] query:\"aardvark lang:[go|ts|js|md]     \" EVs \u003c500 ",
+				"[Test-v2 3.1] query:\"coury     \" ev 206",
+				"[Test-v2 3.2] various sub \"coury\" query tests",
+				"[Test-v2 4.1] query:\"joel     \" ev 32.5k ",
+				"[Test-v2 5.1] query:\"select:repo     \" ev 26.2k",
+				"[Test-v2 6.1] query:\"felix     \" / \"felixf     \"",
+				"[Test-v2 7.1] \"Joelj\" see if biting large files expected 31",
+				"[test-v2 0.1] insights over all "
+			]
+		},
+		{
+			"Title": "Beta demo dashboard",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"Todos in all repos!!"
+			]
+		},
+		{
+			"Title": "Custom global dashboard",
+			"Grants": [
+				"global"
+			],
+			"Views": [
+				"Copy of terraform funky symbols, new view",
+				"GLOBAL func",
+				"Terraform funky symbols test ",
+				"checkup todo and tod testing title changed",
+				"test234 changed"
+			]
+		},
+		{
+			"Title": "Demo Dashboard",
+			"Grants": [
+				"user 1"
+			],
+			"Views": [
+				"So many insights"
+			]
+		},
+		{
+			"Title": "DevX",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"CI Pipeline Generator Tests",
+				"Total count of skipped tests"
+			]
+		},
+		{
+			"Title": "Docs Screenshot Dashboard",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"Language usage in Sourcegraph",
+				"Migration to CSS Modules",
+				"Number of end-to-end vs integration tests"
+			]
+		},
+		{
+			"Title": "Frontend Platform",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"Bootstrap spacing utility classes",
+				"Component imports",
+				"Data fetching from GraphQL",
+				"Migration from FilteredConnection to useConnection",
+				"Migration to CSS Modules",
+				"Raw HTML elements vs Wildcard atoms",
+				"Usage of JavaScript and TypeScript",
+				"Usage of React testing libraries",
+				"Wildcard growth"
+			]
+		},
+		{
+			"Title": "Global Insights",
+			"Grants": [
+				"global"
+			],
+			"Views": [
+				"Copy of terraform funky symbols, new view",
+				"Felix test new view",
+				"GLOBAL func",
+				"Insights overall and in src/src",
+				"JDB Regression Test 6",
+				"Readmes and readmes that are \"complete\"",
+				"Removing raw commands",
+				"Terraform funky symbols test ",
+				"Test \"campaigns\" in context:@joel/src/src",
+				"Test global pings insight",
+				"Testing joelkw with a count:all to make sure it works ",
+				"Use of unstable event.API calls",
+				"[Test 1.1] query: \"jeste\" expected present day 11.9k resuls",
+				"[Test 1.2] query: \"jeste count:all\" expected present day 11.9k resuls",
+				"[Test 1.3] query: \"jeste repo:.\" expected present day 11.9k resuls",
+				"[Test 1.4] query:\"jeste count:all repo:.\" expected 11.9k results",
+				"[Test 1.5] query:\"jest file:.\" expected results near 273k or so",
+				"[Test 2.1] query:\"count:all aardvark\" all repos",
+				"[Test 2.2] query:\"aardvark\" all repos",
+				"[Test 2.3] query:\"aardvark lang:[go|ts|js|md]\" expected results all \u003c500",
+				"[Test 2.4] query:\"Aardvark language:TypeScript fork:no archived:no\" expected 32",
+				"[Test 3.1] query:\"coury\" expected 206",
+				"[Test 3.2] various sub \"coury\" query tests",
+				"[Test 4.1] query:\"joel\" expected 32.5k",
+				"[Test 5.1] query:\"select:repo\" final expected 26.2k",
+				"[Test 6.1] query:\"felix\" / \"felixf\" for more wrong data confirmation",
+				"[Test 7.1] \"Joelj\" see if biting large files expected 31",
+				"[Test 8.1] Test search contexts expected 3 (11 without context)",
+				"[Test 9.2] Campaigns frontend insight ",
+				"[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)",
+				"[Test-v2 2.1] query: \"count:all aardvark     \" ",
+				"[Test-v2 2.3] query:\"aardvark lang:[go|ts|js|md]     \" EVs \u003c500 ",
+				"[Test-v2 3.1] query:\"coury     \" ev 206",
+				"[Test-v2 3.2] various sub \"coury\" query tests",
+				"[Test-v2 4.1] query:\"joel     \" ev 32.5k ",
+				"[Test-v2 5.1] query:\"select:repo     \" ev 26.2k",
+				"[Test-v2 6.1] query:\"felix     \" / \"felixf     \"",
+				"[Test-v2 7.1] \"Joelj\" see if biting large files expected 31",
+				"[test 7.1 second filters]",
+				"[test-v2 0.1] insights over all ",
+				"checkup todo and tod testing title changed",
+				"global test",
+				"joelkw offset test",
+				"joelkw results but filtered just to sourcegraph/sourcegraph$",
+				"test234 changed"
+			]
+		},
+		{
+			"Title": "JDB Global Regression Testing",
+			"Grants": [
+				"global"
+			],
+			"Views": [
+				"joelkw offset test"
+			]
+		},
+		{
+			"Title": "JDB Org regression testing",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"JDB Regression Test 2!",
+				"JDB Regression Test 6",
+				"Testing joelkw with a count:all to make sure it works "
+			]
+		},
+		{
+			"Title": "Migration from global database mocks",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"Migration from dbtesting to dbtest",
+				"Migration from global db mocks",
+				"Migration to database.DB",
+				"Migration to method store construction",
+				"Removing uses of dbconn.Global",
+				"database.NewDB outside test files"
+			]
+		},
+		{
+			"Title": "RFC 487: Hexagonal Gitserver",
+			"Grants": [
+				"global"
+			],
+			"Views": [
+				"Removing raw commands"
+			]
+		},
+		{
+			"Title": "Readme example",
+			"Grants": [
+				"global"
+			],
+			"Views": [
+				"Readmes and readmes that are \"complete\""
+			]
+		},
+		{
+			"Title": "Regression Testing 3.34",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"test123",
+				"test234 changed"
+			]
+		},
+		{
+			"Title": "Todo",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"\"Org\" test counts"
+			]
+		},
+		{
+			"Title": "Vova's org visible dashboard",
+			"Grants": [
+				"org 1"
+			],
+			"Views": null
+		},
+		{
+			"Title": "backend testing 2",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"Test \"campaigns\" in context:@joel/src/src",
+				"Use of unstable event.API calls",
+				"[Test 2.1] query:\"count:all aardvark\" all repos",
+				"[Test 2.3] query:\"aardvark lang:[go|ts|js|md]\" expected results all \u003c500",
+				"[Test 3.1] query:\"coury\" expected 206",
+				"[Test 3.2] various sub \"coury\" query tests",
+				"[Test 4.1] query:\"joel\" expected 32.5k",
+				"[Test 5.1] query:\"select:repo\" final expected 26.2k",
+				"[Test 6.1] query:\"felix\" / \"felixf\" for more wrong data confirmation",
+				"[Test 7.1 new view saved just src/src]",
+				"[Test 7.1] \"Joelj\" see if biting large files expected 31",
+				"[Test 8.1] Test search contexts expected 3 (11 without context)",
+				"[Test 9.2] Campaigns frontend insight ",
+				"[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)",
+				"[Test 9.5] Campaigns but spaces (to then filter down to src/src to match frontend)"
+			]
+		},
+		{
+			"Title": "demo dashboard 2",
+			"Grants": [
+				"user 1"
+			],
+			"Views": [
+				"Todos in src/src"
+			]
+		},
+		{
+			"Title": "stress test streaming search, whooo!",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"LOC in TS vs GO ",
+				"LOC test 2: .\\n "
+			]
+		},
+		{
+			"Title": "test's Insights",
+			"Grants": [
+				"org 1"
+			],
+			"Views": [
+				"\"Org\" test counts",
+				"Add insight 1.1 Test",
+				"Adobe lang stats usage",
+				"Another adobe lang stats insight",
+				"Bootstrap spacing utility classes",
+				"CI Pipeline Generator Tests",
+				"Component imports",
+				"Data fetching from GraphQL",
+				"Database usage",
+				"Go error wrapping adoption",
+				"JDB Regression Test 2!",
+				"Java version usage",
+				"LOC in TS vs GO ",
+				"LOC test 2: .\\n ",
+				"Language usage in Sourcegraph",
+				"Migrate away from global database connections",
+				"Migration from FilteredConnection to useConnection",
+				"Migration from dbtesting to dbtest",
+				"Migration from global db mocks",
+				"Migration to CSS Modules",
+				"Migration to database.DB",
+				"Migration to method store construction",
+				"Migration to new GraphQL TS types",
+				"Migration to new GraphQL TS types Diff Search",
+				"Monitoring API",
+				"Monitoring API",
+				"New insight with new API 22",
+				"New joelkw test insight ",
+				"Number of end-to-end vs integration tests",
+				"One more test getting going for jestd",
+				"Ping testing 2",
+				"Raw HTML elements vs Wildcard atoms",
+				"React function component migration",
+				"Removing uses of dbconn.Global",
+				"Steps to create a release",
+				"Storybook growth",
+				"Test loading state ",
+				"Testing time to run over all repos for string \"joelkw\" changed title",
+				"Todos in all repos!!",
+				"Total count of skipped tests",
+				"Trigger frontend insight sep 16",
+				"Trigger second frontend insight sep 16",
+				"Triggering a ping for new insight created sep 16",
+				"Usage of JavaScript and TypeScript",
+				"Usage of React testing libraries",
+				"Wildcard growth",
+				"[Test 7.1 new view saved just src/src]",
+				"[Test 9.5] Campaigns but spaces (to then filter down to src/src to match frontend)",
+				"[Test-v2 0.2] query:\"jestd     \" ev 136",
+				"[Test-v2 1.1] query:\"jeste     \" ev 11.9k",
+				"[Test-v2 1.5] query:\"jest file:.     \" ev 273k",
+				"[Test-v3 1.5] query:\"jest file:.        \" ev 275k",
+				"[Test-v3 2.1] query: \"count:all aardvark        \"",
+				"[Test-v3 2.3] query:\"aardvark lang:[go|ts|js|md]        \" EVs \u003c500",
+				"[Test-v3 3.2] various sub \"coury\" query tests",
+				"[Test-v3 6.1] query:\"felix[f]        \" ",
+				"[Test-v3 9.1] query:\"campaigns        \"",
+				"[Test-v4 9.1] Campaigns time test",
+				"database.NewDB outside test files",
+				"test123"
+			]
+		},
+		{
+			"Title": "test's Insights",
+			"Grants": [
+				"user 1"
+			],
+			"Views": [
+				"Commits over all repos",
+				"Commits over time",
+				"So many insights",
+				"Todos in src/src",
+				"[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)",
+				"campaigns extension",
+				"extension based 'insights'",
+				"mismatched dates?",
+				"sourcegraph insights",
+				"test435",
+				"testing mismatched dates"
+			]
+		},
+		{
+			"Title": "testing db creation",
+			"Grants": [
+				"user 1"
+			],
+			"Views": [
+				"extension based 'insights'",
+				"test435"
+			]
+		}
+	],
+	"series": [
+		{
+			"Query": "",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/adobe-accessibility-Accessible-Mega-Menu"
+			],
+			"Views": [
+				"Another adobe lang stats insight"
+			]
+		},
+		{
+			"Query": "",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/adobe-adobe.github.com"
+			],
+			"Views": [
+				"Adobe lang stats usage"
+			]
+		},
+		{
+			"Query": "",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/soulwire-Makisu"
+			],
+			"Views": [
+				"New insight with new API 22"
+			]
+		},
+		{
+			"Query": "",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Language usage in Sourcegraph"
+			]
+		},
+		{
+			"Query": "\"app.terraform.io/.*\\n[^#] version\\s=\\s\"~\u003e\\s2",
+			"Repositories": null,
+			"Views": [
+				"Copy of terraform funky symbols, new view",
+				"Terraform funky symbols test "
+			]
+		},
+		{
+			"Query": "\u003cFilteredConnection",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration from FilteredConnection to useConnection"
+			]
+		},
+		{
+			"Query": "= useConnection",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration from FilteredConnection to useConnection"
+			]
+		},
+		{
+			"Query": "Aardvark language:TypeScript fork:no archived:no",
+			"Repositories": null,
+			"Views": [
+				"[Test 2.4] query:\"Aardvark language:TypeScript fork:no archived:no\" expected 32"
+			]
+		},
+		{
+			"Query": "FunctionComponent",
+			"Repositories": null,
+			"Views": [
+				"Add insight 1.1 Test"
+			]
+		},
+		{
+			"Query": "FunctionComponent",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"JDB Regression Test 2!"
+			]
+		},
+		{
+			"Query": "React.Component",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"JDB Regression Test 2!"
+			]
+		},
+		{
+			"Query": "aardvark",
+			"Repositories": null,
+			"Views": [
+				"[Test 2.2] query:\"aardvark\" all repos"
+			]
+		},
+		{
+			"Query": "aardvark lang:JavaScript ",
+			"Repositories": null,
+			"Views": [
+				"[Test 2.3] query:\"aardvark lang:[go|ts|js|md]\" expected results all \u003c500"
+			]
+		},
+		{
+			"Query": "aardvark lang:JavaScript     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 2.3] query:\"aardvark lang:[go|ts|js|md]     \" EVs \u003c500 "
+			]
+		},
+		{
+			"Query": "aardvark lang:JavaScript        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 2.3] query:\"aardvark lang:[go|ts|js|md]        \" EVs \u003c500"
+			]
+		},
+		{
+			"Query": "aardvark lang:Markdown ",
+			"Repositories": null,
+			"Views": [
+				"[Test 2.3] query:\"aardvark lang:[go|ts|js|md]\" expected results all \u003c500"
+			]
+		},
+		{
+			"Query": "aardvark lang:Markdown     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 2.3] query:\"aardvark lang:[go|ts|js|md]     \" EVs \u003c500 "
+			]
+		},
+		{
+			"Query": "aardvark lang:Markdown        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 2.3] query:\"aardvark lang:[go|ts|js|md]        \" EVs \u003c500"
+			]
+		},
+		{
+			"Query": "aardvark lang:TypeScript ",
+			"Repositories": null,
+			"Views": [
+				"[Test 2.3] query:\"aardvark lang:[go|ts|js|md]\" expected results all \u003c500"
+			]
+		},
+		{
+			"Query": "aardvark lang:TypeScript     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 2.3] query:\"aardvark lang:[go|ts|js|md]     \" EVs \u003c500 "
+			]
+		},
+		{
+			"Query": "aardvark lang:TypeScript        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 2.3] query:\"aardvark lang:[go|ts|js|md]        \" EVs \u003c500"
+			]
+		},
+		{
+			"Query": "aardvark lang:go ",
+			"Repositories": null,
+			"Views": [
+				"[Test 2.3] query:\"aardvark lang:[go|ts|js|md]\" expected results all \u003c500"
+			]
+		},
+		{
+			"Query": "aardvark lang:go     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 2.3] query:\"aardvark lang:[go|ts|js|md]     \" EVs \u003c500 "
+			]
+		},
+		{
+			"Query": "aardvark lang:go        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 2.3] query:\"aardvark lang:[go|ts|js|md]        \" EVs \u003c500"
+			]
+		},
+		{
+			"Query": "campaigns",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"[Test 9.2] Campaigns frontend insight "
+			]
+		},
+		{
+			"Query": "campaigns    ",
+			"Repositories": null,
+			"Views": [
+				"[Test 9.5] Campaigns but spaces (to then filter down to src/src to match frontend)"
+			]
+		},
+		{
+			"Query": "campaigns        ",
+			"Repositories": null,
+			"Views": [
+				"Use of unstable event.API calls",
+				"[Test-v3 9.1] query:\"campaigns        \""
+			]
+		},
+		{
+			"Query": "campaigns           ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v4 9.1] Campaigns time test"
+			]
+		},
+		{
+			"Query": "campaigns context:@joel/src/src",
+			"Repositories": null,
+			"Views": [
+				"Test \"campaigns\" in context:@joel/src/src"
+			]
+		},
+		{
+			"Query": "campaigns file:. context:@joel/src/src",
+			"Repositories": null,
+			"Views": [
+				"[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)",
+				"[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)"
+			]
+		},
+		{
+			"Query": "campaigns file:. context:@joel/src/src",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"campaigns extension"
+			]
+		},
+		{
+			"Query": "context:global \"app.terraform.io/.*\\n version\\s=\\s\"[0-9] patterntype:regexp",
+			"Repositories": null,
+			"Views": [
+				"Copy of terraform funky symbols, new view",
+				"Terraform funky symbols test "
+			]
+		},
+		{
+			"Query": "context:global file:readme.md \\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n.*\\n*\\n.*\\n.* select:file patterntype:regexp",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Readmes and readmes that are \"complete\""
+			]
+		},
+		{
+			"Query": "context:global file:readme.md select:file patterntype:regexp",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Readmes and readmes that are \"complete\""
+			]
+		},
+		{
+			"Query": "context:global repo:^github\\.com/sourcegraph/sourcegraph$ lang:Go ^[^\\S\\r\\n]*\\/\\/[^\\S\\r\\n]*func\\ Test or ^[^\\S\\r\\n]*\\/\\/[^\\S\\r\\n]*t\\.Run or ^[^\\S\\r\\n]*t\\.Skip patternType:regexp",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Total count of skipped tests"
+			]
+		},
+		{
+			"Query": "context:global type:commit",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Commits over time"
+			]
+		},
+		{
+			"Query": "context:global type:commit fix",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Commits over time"
+			]
+		},
+		{
+			"Query": "context:global type:commit revert",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Commits over time"
+			]
+		},
+		{
+			"Query": "context:global type:file lang:scss -file:module.scss -file:global-styles patterntype:regexp",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to CSS Modules"
+			]
+		},
+		{
+			"Query": "context:global type:file lang:scss file:module.scss patterntype:regexp",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to CSS Modules"
+			]
+		},
+		{
+			"Query": "count:all aardvark",
+			"Repositories": null,
+			"Views": [
+				"[Test 2.1] query:\"count:all aardvark\" all repos"
+			]
+		},
+		{
+			"Query": "count:all aardvark     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 2.1] query: \"count:all aardvark     \" "
+			]
+		},
+		{
+			"Query": "count:all aardvark        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 2.1] query: \"count:all aardvark        \""
+			]
+		},
+		{
+			"Query": "coury",
+			"Repositories": null,
+			"Views": [
+				"[Test 3.1] query:\"coury\" expected 206"
+			]
+		},
+		{
+			"Query": "coury     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 3.1] query:\"coury     \" ev 206"
+			]
+		},
+		{
+			"Query": "coury file:.",
+			"Repositories": null,
+			"Views": [
+				"[Test 3.1] query:\"coury\" expected 206"
+			]
+		},
+		{
+			"Query": "coury file:.     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 3.1] query:\"coury     \" ev 206"
+			]
+		},
+		{
+			"Query": "coury select:repo",
+			"Repositories": null,
+			"Views": [
+				"[Test 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury select:repo     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury select:repo        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury,",
+			"Repositories": null,
+			"Views": [
+				"[Test 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury,     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury,        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury.",
+			"Repositories": null,
+			"Views": [
+				"[Test 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury.     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury.        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury@",
+			"Repositories": null,
+			"Views": [
+				"[Test 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury@     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "coury@        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 3.2] various sub \"coury\" query tests"
+			]
+		},
+		{
+			"Query": "database.DB",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to database.DB"
+			]
+		},
+		{
+			"Query": "database.Mocks",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration from global db mocks"
+			]
+		},
+		{
+			"Query": "database.NewDB -file:test.go$",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"database.NewDB outside test files"
+			]
+		},
+		{
+			"Query": "dbconn.Global",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migrate away from global database connections"
+			]
+		},
+		{
+			"Query": "dbconn.Global",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Removing uses of dbconn.Global"
+			]
+		},
+		{
+			"Query": "dbtest.New",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration from dbtesting to dbtest"
+			]
+		},
+		{
+			"Query": "dbtesting.GetDB",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration from dbtesting to dbtest"
+			]
+		},
+		{
+			"Query": "dbutil.DB",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to database.DB"
+			]
+		},
+		{
+			"Query": "felix",
+			"Repositories": null,
+			"Views": [
+				"[Test 6.1] query:\"felix\" / \"felixf\" for more wrong data confirmation"
+			]
+		},
+		{
+			"Query": "felix     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 6.1] query:\"felix     \" / \"felixf     \""
+			]
+		},
+		{
+			"Query": "felix        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 6.1] query:\"felix[f]        \" "
+			]
+		},
+		{
+			"Query": "felixf",
+			"Repositories": null,
+			"Views": [
+				"[Test 6.1] query:\"felix\" / \"felixf\" for more wrong data confirmation"
+			]
+		},
+		{
+			"Query": "felixf     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 6.1] query:\"felix     \" / \"felixf     \""
+			]
+		},
+		{
+			"Query": "felixf       ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 6.1] query:\"felix[f]        \" "
+			]
+		},
+		{
+			"Query": "file:^client/wildcard/src/components/index\\.ts export",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Wildcard growth"
+			]
+		},
+		{
+			"Query": "file:^client/wildcard/src/hooks/index\\.ts export",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Wildcard growth"
+			]
+		},
+		{
+			"Query": "from '@testing-library/react'",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Usage of React testing libraries"
+			]
+		},
+		{
+			"Query": "from 'enzyme'",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Usage of React testing libraries"
+			]
+		},
+		{
+			"Query": "from 'react-test-renderer'",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Usage of React testing libraries"
+			]
+		},
+		{
+			"Query": "func",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"GLOBAL func"
+			]
+		},
+		{
+			"Query": "gitserver.DefaultClient.Command file:vcs/git",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Removing raw commands"
+			]
+		},
+		{
+			"Query": "global test",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"global test"
+			]
+		},
+		{
+			"Query": "insights",
+			"Repositories": null,
+			"Views": [
+				"Insights overall and in src/src",
+				"So many insights",
+				"extension based 'insights'",
+				"sourcegraph insights"
+			]
+		},
+		{
+			"Query": "insights     ",
+			"Repositories": null,
+			"Views": [
+				"[test-v2 0.1] insights over all "
+			]
+		},
+		{
+			"Query": "insights fork:no archived:no     ",
+			"Repositories": null,
+			"Views": [
+				"[test-v2 0.1] insights over all "
+			]
+		},
+		{
+			"Query": "insights repo:sourcegraph/sourcegraph$",
+			"Repositories": null,
+			"Views": [
+				"Insights overall and in src/src"
+			]
+		},
+		{
+			"Query": "jest file:.",
+			"Repositories": null,
+			"Views": [
+				"Felix test new view",
+				"[Test 1.5] query:\"jest file:.\" expected results near 273k or so"
+			]
+		},
+		{
+			"Query": "jest file:.     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 1.5] query:\"jest file:.     \" ev 273k"
+			]
+		},
+		{
+			"Query": "jest file:.        ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v3 1.5] query:\"jest file:.        \" ev 275k"
+			]
+		},
+		{
+			"Query": "jestd",
+			"Repositories": null,
+			"Views": [
+				"One more test getting going for jestd"
+			]
+		},
+		{
+			"Query": "jestd     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 0.2] query:\"jestd     \" ev 136"
+			]
+		},
+		{
+			"Query": "jeste",
+			"Repositories": null,
+			"Views": [
+				"[Test 1.1] query: \"jeste\" expected present day 11.9k resuls"
+			]
+		},
+		{
+			"Query": "jeste     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 1.1] query:\"jeste     \" ev 11.9k"
+			]
+		},
+		{
+			"Query": "jeste archived:no fork:no     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 1.1] query:\"jeste     \" ev 11.9k"
+			]
+		},
+		{
+			"Query": "jeste count:all",
+			"Repositories": null,
+			"Views": [
+				"[Test 1.2] query: \"jeste count:all\" expected present day 11.9k resuls"
+			]
+		},
+		{
+			"Query": "jeste count:all repo:.",
+			"Repositories": null,
+			"Views": [
+				"[Test 1.4] query:\"jeste count:all repo:.\" expected 11.9k results"
+			]
+		},
+		{
+			"Query": "jeste repo:.",
+			"Repositories": null,
+			"Views": [
+				"[Test 1.3] query: \"jeste repo:.\" expected present day 11.9k resuls"
+			]
+		},
+		{
+			"Query": "joel",
+			"Repositories": null,
+			"Views": [
+				"[Test 4.1] query:\"joel\" expected 32.5k"
+			]
+		},
+		{
+			"Query": "joel     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 4.1] query:\"joel     \" ev 32.5k "
+			]
+		},
+		{
+			"Query": "joel file:. ",
+			"Repositories": null,
+			"Views": [
+				"[Test 4.1] query:\"joel\" expected 32.5k"
+			]
+		},
+		{
+			"Query": "joel file:.     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 4.1] query:\"joel     \" ev 32.5k "
+			]
+		},
+		{
+			"Query": "joel fork:no archived:no     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 4.1] query:\"joel     \" ev 32.5k "
+			]
+		},
+		{
+			"Query": "joel visibility:any",
+			"Repositories": null,
+			"Views": [
+				"[Test 4.1] query:\"joel\" expected 32.5k"
+			]
+		},
+		{
+			"Query": "joel visibility:any     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 4.1] query:\"joel     \" ev 32.5k "
+			]
+		},
+		{
+			"Query": "joelj",
+			"Repositories": null,
+			"Views": [
+				"[Test 7.1 new view saved just src/src]",
+				"[Test 7.1] \"Joelj\" see if biting large files expected 31",
+				"[test 7.1 second filters]"
+			]
+		},
+		{
+			"Query": "joelj     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 7.1] \"Joelj\" see if biting large files expected 31"
+			]
+		},
+		{
+			"Query": "joelk",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Trigger second frontend insight sep 16"
+			]
+		},
+		{
+			"Query": "joelkw",
+			"Repositories": null,
+			"Views": [
+				"New joelkw test insight ",
+				"Testing time to run over all repos for string \"joelkw\" changed title",
+				"Triggering a ping for new insight created sep 16"
+			]
+		},
+		{
+			"Query": "joelkw",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Trigger frontend insight sep 16"
+			]
+		},
+		{
+			"Query": "joelkw                              ",
+			"Repositories": null,
+			"Views": [
+				"joelkw offset test"
+			]
+		},
+		{
+			"Query": "joelkw                                                ",
+			"Repositories": null,
+			"Views": [
+				"joelkw offset test"
+			]
+		},
+		{
+			"Query": "joelkw context:@joel/src/src",
+			"Repositories": null,
+			"Views": [
+				"[Test 8.1] Test search contexts expected 3 (11 without context)"
+			]
+		},
+		{
+			"Query": "joelkw count:all",
+			"Repositories": null,
+			"Views": [
+				"JDB Regression Test 6",
+				"Testing joelkw with a count:all to make sure it works "
+			]
+		},
+		{
+			"Query": "joelkw repo:sourcegraph/sourcegraph$",
+			"Repositories": null,
+			"Views": [
+				"joelkw results but filtered just to sourcegraph/sourcegraph$"
+			]
+		},
+		{
+			"Query": "loader",
+			"Repositories": null,
+			"Views": [
+				"Test loading state "
+			]
+		},
+		{
+			"Query": "org",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"\"Org\" test counts"
+			]
+		},
+		{
+			"Query": "patternType:literal file:^handbook/engineering/releases/patch_release_issue_template\\.md [ ]",
+			"Repositories": [
+				"github.com/sourcegraph/about"
+			],
+			"Views": [
+				"Steps to create a release"
+			]
+		},
+		{
+			"Query": "patternType:literal file:^handbook/engineering/releases/release_issue_template\\.md [ ]",
+			"Repositories": [
+				"github.com/sourcegraph/about"
+			],
+			"Views": [
+				"Steps to create a release"
+			]
+		},
+		{
+			"Query": "patternType:regex case:yes \\*\\sas\\sGQL",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to new GraphQL TS types"
+			]
+		},
+		{
+			"Query": "patternType:regex case:yes \\*\\sas\\sGQL type:diff",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to new GraphQL TS types Diff Search"
+			]
+		},
+		{
+			"Query": "patternType:regexp (query|mutate)GraphQL(\\(|\u003c[^\u003e]*\u003e\\()",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Data fetching from GraphQL"
+			]
+		},
+		{
+			"Query": "patternType:regexp . lang:TypeScript",
+			"Repositories": null,
+			"Views": [
+				"LOC in TS vs GO "
+			]
+		},
+		{
+			"Query": "patternType:regexp . lang:go",
+			"Repositories": null,
+			"Views": [
+				"LOC in TS vs GO "
+			]
+		},
+		{
+			"Query": "patternType:regexp .\\n lang:Go",
+			"Repositories": null,
+			"Views": [
+				"LOC test 2: .\\n "
+			]
+		},
+		{
+			"Query": "patternType:regexp .\\n lang:TypeScript",
+			"Repositories": null,
+			"Views": [
+				"LOC test 2: .\\n "
+			]
+		},
+		{
+			"Query": "patternType:regexp case:yes /graphql-operations'",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to new GraphQL TS types"
+			]
+		},
+		{
+			"Query": "patternType:regexp case:yes /graphql-operations' type:diff",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to new GraphQL TS types Diff Search"
+			]
+		},
+		{
+			"Query": "patternType:regexp case:yes \\b(it|test)\\( f:/end-to-end/.*\\.test\\.ts$",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Number of end-to-end vs integration tests"
+			]
+		},
+		{
+			"Query": "patternType:regexp case:yes \\b(it|test)\\( f:/integration/.*\\.test\\.ts$ ",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Number of end-to-end vs integration tests"
+			]
+		},
+		{
+			"Query": "patternType:regexp case:yes \\b(it|test)\\( f:/regression/.*\\.test\\.ts$",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Number of end-to-end vs integration tests"
+			]
+		},
+		{
+			"Query": "patternType:regexp case:yes \\bt\\.Run\\( file:^dev/gqltest/",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Number of end-to-end vs integration tests"
+			]
+		},
+		{
+			"Query": "patternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"React function component migration"
+			]
+		},
+		{
+			"Query": "patternType:regexp extends\\s(React\\.)?(Pure)?Component",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"React function component migration"
+			]
+		},
+		{
+			"Query": "patternType:regexp f:\\.story\\.tsx$ \\badd\\(",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Storybook growth"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared Interpretation:(\\s+)\"(.?$|[^n].+|n[^o].*)\" OR Interpretation:(\\s+)`",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared Interpretation:(\\s+)\"(.?$|[^n].+|n[^o].*)\" OR Interpretation:(\\s+)`",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared NoAlert:(\\s+)true",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared NoAlert:(\\s+)true",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared PossibleSolutions:(\\s+)\"(.?$|[^n].+|n[^o].*)\" OR PossibleSolutions:(\\s+)`",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared PossibleSolutions:(\\s+)\"(.?$|[^n].+|n[^o].*)\" OR PossibleSolutions:(\\s+)`",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared Query:",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go -file:shared Query:",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go PanelOptions\\.(.*)",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go With\\((.*)",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp file:^monitoring/definitions/(.*).go With\\((.*)",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Monitoring API"
+			]
+		},
+		{
+			"Query": "patternType:regexp m[a-z]?-\\d",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Bootstrap spacing utility classes"
+			]
+		},
+		{
+			"Query": "patternType:regexp p[a-z]?-\\d",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Bootstrap spacing utility classes"
+			]
+		},
+		{
+			"Query": "patternType:regexp repo:^github\\.com/sourcegraph/sourcegraph$ import.+ from '@sourcegraph\\/branded/src/components.+",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Component imports"
+			]
+		},
+		{
+			"Query": "patternType:regexp repo:^github\\.com/sourcegraph/sourcegraph$ import.+ from '@sourcegraph\\/shared/src/components.+",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Component imports"
+			]
+		},
+		{
+			"Query": "patternType:regexp repo:^github\\.com/sourcegraph/sourcegraph$ import.+ from '@sourcegraph\\/wildcard.+",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Component imports"
+			]
+		},
+		{
+			"Query": "patternType:regexp requestGraphQL(\\(|\u003c[^\u003e]*\u003e\\()",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Data fetching from GraphQL"
+			]
+		},
+		{
+			"Query": "patternType:regexp sourceCompatibility 1[_\\.]6 f:build\\.gradle$",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/AntennaPod-AntennaPod",
+				"ghe.sgdev.org/sourcegraph/JakeWharton-RxBinding",
+				"ghe.sgdev.org/sourcegraph/JakeWharton-scalpel",
+				"ghe.sgdev.org/sourcegraph/Kotlin-dokka"
+			],
+			"Views": [
+				"Java version usage"
+			]
+		},
+		{
+			"Query": "patternType:regexp sourceCompatibility 1[_\\.]7 f:build\\.gradle$",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/AntennaPod-AntennaPod",
+				"ghe.sgdev.org/sourcegraph/JakeWharton-RxBinding",
+				"ghe.sgdev.org/sourcegraph/JakeWharton-scalpel",
+				"ghe.sgdev.org/sourcegraph/Kotlin-dokka"
+			],
+			"Views": [
+				"Java version usage"
+			]
+		},
+		{
+			"Query": "patternType:regexp sourceCompatibility 1[_\\.]8 f:build\\.gradle$",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/AntennaPod-AntennaPod",
+				"ghe.sgdev.org/sourcegraph/JakeWharton-RxBinding",
+				"ghe.sgdev.org/sourcegraph/JakeWharton-scalpel",
+				"ghe.sgdev.org/sourcegraph/Kotlin-dokka"
+			],
+			"Views": [
+				"Java version usage"
+			]
+		},
+		{
+			"Query": "patternType:regexp sourceCompatibility 1[_\\.]9 f:build\\.gradle$",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/AntennaPod-AntennaPod",
+				"ghe.sgdev.org/sourcegraph/JakeWharton-RxBinding",
+				"ghe.sgdev.org/sourcegraph/JakeWharton-scalpel",
+				"ghe.sgdev.org/sourcegraph/Kotlin-dokka"
+			],
+			"Views": [
+				"Java version usage"
+			]
+		},
+		{
+			"Query": "patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|\u003c[^\u003e]*\u003e\\()",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Data fetching from GraphQL"
+			]
+		},
+		{
+			"Query": "patternType:structural lang:go errors.Wrap(:[_])",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Go error wrapping adoption"
+			]
+		},
+		{
+			"Query": "patternType:structural lang:go fmt.Errorf(\":[_]%w:[_]\", :[_])",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Go error wrapping adoption"
+			]
+		},
+		{
+			"Query": "patterntype:regex database\\.(AccessTokens|Authz|EventLogs|ExternalServices|FeatureFlags|Namespaces|OrgInvitations|OrgMembers|Orgs|Phabricator|Repos|SavedSearches|SearchContexts|Settings|SubRepoPerms|TemporarySettings|UserCredentials|UserEmails|UserExternalAccounts|UserPublicRepos|Users|WebhookLogs)\\([^\\)]+\\)",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to method store construction"
+			]
+		},
+		{
+			"Query": "patterntype:regex dbmock.NewMock\\w+Store type:file",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration from global db mocks"
+			]
+		},
+		{
+			"Query": "patterntype:regex repo:sourcegraph/sourcegraph$ db\\.(AccessTokens|Authz|EventLogs|ExternalServices|FeatureFlags|Namespaces|OrgInvitations|OrgMembers|Orgs|Phabricator|Repos|SavedSearches|SearchContexts|Settings|SubRepoPerms|TemporarySettings|UserCredentials|UserEmails|UserExternalAccounts|UserPublicRepos|Users|WebhookLogs)\\(\\)",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Migration to method store construction"
+			]
+		},
+		{
+			"Query": "patterntype:regexp file:tsx select:file content:(\u003cbutton | \u003cinput | \u003ctextarea | \u003cselect ) file:tsx",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Raw HTML elements vs Wildcard atoms"
+			]
+		},
+		{
+			"Query": "patterntype:regexp file:tsx select:file import (Button|Input|Checkbox|RadioButton|Select|TextArea) from '@sourcegraph/wildcard'",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Raw HTML elements vs Wildcard atoms"
+			]
+		},
+		{
+			"Query": "ping",
+			"Repositories": null,
+			"Views": [
+				"Ping testing 2"
+			]
+		},
+		{
+			"Query": "postgres",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Database usage"
+			]
+		},
+		{
+			"Query": "redis",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Database usage"
+			]
+		},
+		{
+			"Query": "repo:^github\\.com/sourcegraph/sourcegraph$  test.skip (lang:TypeScript or lang:javascript)",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Total count of skipped tests"
+			]
+		},
+		{
+			"Query": "repo:^github\\.com/sourcegraph/sourcegraph$ lang:Go file:enterprise/dev/ci/.* (func Test or t.Run)",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"CI Pipeline Generator Tests"
+			]
+		},
+		{
+			"Query": "repo:sourcegraph/sourcegraph lang:JavaScript",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Usage of JavaScript and TypeScript"
+			]
+		},
+		{
+			"Query": "repo:sourcegraph/sourcegraph lang:TypeScript",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Usage of JavaScript and TypeScript"
+			]
+		},
+		{
+			"Query": "select:repo",
+			"Repositories": null,
+			"Views": [
+				"[Test 5.1] query:\"select:repo\" final expected 26.2k"
+			]
+		},
+		{
+			"Query": "select:repo     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 5.1] query:\"select:repo     \" ev 26.2k"
+			]
+		},
+		{
+			"Query": "select:repo archived:no fork:no     ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 5.1] query:\"select:repo     \" ev 26.2k"
+			]
+		},
+		{
+			"Query": "select:repo archived:only fork:only.    ",
+			"Repositories": null,
+			"Views": [
+				"[Test-v2 5.1] query:\"select:repo     \" ev 26.2k"
+			]
+		},
+		{
+			"Query": "sqlite",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"Database usage"
+			]
+		},
+		{
+			"Query": "test ",
+			"Repositories": [
+				"github.com/sourcegraph/about"
+			],
+			"Views": [
+				"Test global pings insight"
+			]
+		},
+		{
+			"Query": "test123",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"test123"
+			]
+		},
+		{
+			"Query": "test234 changed",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"test234 changed"
+			]
+		},
+		{
+			"Query": "test435",
+			"Repositories": [
+				"github.com/sourcegraph/sourcegraph"
+			],
+			"Views": [
+				"test435"
+			]
+		},
+		{
+			"Query": "tod",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/sourcegraph-checkup"
+			],
+			"Views": [
+				"checkup todo and tod testing title changed"
+			]
+		},
+		{
+			"Query": "todo",
+			"Repositories": null,
+			"Views": [
+				"Todos in all repos!!",
+				"Todos in src/src"
+			]
+		},
+		{
+			"Query": "todo",
+			"Repositories": [
+				"ghe.sgdev.org/sourcegraph/sourcegraph-checkup"
+			],
+			"Views": [
+				"checkup todo and tod testing title changed"
+			]
+		},
+		{
+			"Query": "type:commit fix",
+			"Repositories": null,
+			"Views": [
+				"Commits over all repos"
+			]
+		},
+		{
+			"Query": "type:commit fix ",
+			"Repositories": null,
+			"Views": [
+				"mismatched dates?",
+				"testing mismatched dates"
+			]
+		},
+		{
+			"Query": "type:commit revert",
+			"Repositories": null,
+			"Views": [
+				"Commits over all repos"
+			]
+		},
+		{
+			"Query": "type:commit revert ",
+			"Repositories": null,
+			"Views": [
+				"testing mismatched dates"
+			]
+		},
+		{
+			"Query": "type:commit revert 2",
+			"Repositories": null,
+			"Views": [
+				"mismatched dates?"
+			]
+		}
+	],
+	"views": [
+		{
+			"Title": "\"Org\" test counts",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Todo",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Add insight 1.1 Test",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Adobe lang stats usage",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Another adobe lang stats insight",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Bootstrap spacing utility classes",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "CI Pipeline Generator Tests",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"DevX",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Commits over all repos",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Commits over time",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Component imports",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Copy of terraform funky symbols, new view",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Custom global dashboard",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "Data fetching from GraphQL",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Database usage",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Felix test new view",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "GLOBAL func",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Custom global dashboard",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "Go error wrapping adoption",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Insights overall and in src/src",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "JDB Regression Test 2!",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"JDB Org regression testing",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "JDB Regression Test 6",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"JDB Org regression testing"
+			]
+		},
+		{
+			"Title": "Java version usage",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "LOC in TS vs GO ",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"stress test streaming search, whooo!",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "LOC test 2: .\\n ",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"stress test streaming search, whooo!",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Language usage in Sourcegraph",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Docs Screenshot Dashboard",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migrate away from global database connections",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migration from FilteredConnection to useConnection",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migration from dbtesting to dbtest",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Migration from global database mocks",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migration from global db mocks",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Migration from global database mocks",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migration to CSS Modules",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Docs Screenshot Dashboard",
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migration to database.DB",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Migration from global database mocks",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migration to method store construction",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Migration from global database mocks",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migration to new GraphQL TS types",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Migration to new GraphQL TS types Diff Search",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Monitoring API",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Monitoring API",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "New insight with new API 22",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "New joelkw test insight ",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Number of end-to-end vs integration tests",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Docs Screenshot Dashboard",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "One more test getting going for jestd",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Ping testing 2",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Raw HTML elements vs Wildcard atoms",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "React function component migration",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Readmes and readmes that are \"complete\"",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"Readme example"
+			]
+		},
+		{
+			"Title": "Removing raw commands",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"RFC 487: Hexagonal Gitserver"
+			]
+		},
+		{
+			"Title": "Removing uses of dbconn.Global",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Migration from global database mocks",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "So many insights",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"Demo Dashboard",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Steps to create a release",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Storybook growth",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Terraform funky symbols test ",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Custom global dashboard",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "Test \"campaigns\" in context:@joel/src/src",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "Test global pings insight",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "Test loading state ",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Testing joelkw with a count:all to make sure it works ",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"Global Insights",
+				"JDB Org regression testing"
+			]
+		},
+		{
+			"Title": "Testing time to run over all repos for string \"joelkw\" changed title",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Todos in all repos!!",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Beta demo dashboard",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Todos in src/src",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"demo dashboard 2",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Total count of skipped tests",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"DevX",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Trigger frontend insight sep 16",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Trigger second frontend insight sep 16",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Triggering a ping for new insight created sep 16",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Usage of JavaScript and TypeScript",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Usage of React testing libraries",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "Use of unstable event.API calls",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "Wildcard growth",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Frontend Platform",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test 1.1] query: \"jeste\" expected present day 11.9k resuls",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test 1.2] query: \"jeste count:all\" expected present day 11.9k resuls",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test 1.3] query: \"jeste repo:.\" expected present day 11.9k resuls",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test 1.4] query:\"jeste count:all repo:.\" expected 11.9k results",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test 1.5] query:\"jest file:.\" expected results near 273k or so",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test 2.1] query:\"count:all aardvark\" all repos",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 2.2] query:\"aardvark\" all repos",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test 2.3] query:\"aardvark lang:[go|ts|js|md]\" expected results all \u003c500",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 2.4] query:\"Aardvark language:TypeScript fork:no archived:no\" expected 32",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test 3.1] query:\"coury\" expected 206",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 3.2] various sub \"coury\" query tests",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 4.1] query:\"joel\" expected 32.5k",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 5.1] query:\"select:repo\" final expected 26.2k",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 6.1] query:\"felix\" / \"felixf\" for more wrong data confirmation",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 7.1 new view saved just src/src]",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"backend testing 2",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test 7.1] \"Joelj\" see if biting large files expected 31",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 8.1] Test search contexts expected 3 (11 without context)",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 9.2] Campaigns frontend insight ",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"backend testing 2"
+			]
+		},
+		{
+			"Title": "[Test 9.3] \"Campaigns\" in src/src to match frontend (fixed, added context)",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test 9.5] Campaigns but spaces (to then filter down to src/src to match frontend)",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"backend testing 2",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 0.2] query:\"jestd     \" ev 136",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 1.1] query:\"jeste     \" ev 11.9k",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 1.5] query:\"jest file:.     \" ev 273k",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 2.1] query: \"count:all aardvark     \" ",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 2.3] query:\"aardvark lang:[go|ts|js|md]     \" EVs \u003c500 ",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 3.1] query:\"coury     \" ev 206",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 3.2] various sub \"coury\" query tests",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 4.1] query:\"joel     \" ev 32.5k ",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 5.1] query:\"select:repo     \" ev 26.2k",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 6.1] query:\"felix     \" / \"felixf     \"",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test-v2 7.1] \"Joelj\" see if biting large files expected 31",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[Test-v3 1.5] query:\"jest file:.        \" ev 275k",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Test 2021-08-29",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v3 2.1] query: \"count:all aardvark        \"",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Test 2021-08-29",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v3 2.3] query:\"aardvark lang:[go|ts|js|md]        \" EVs \u003c500",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Test 2021-08-29",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v3 3.2] various sub \"coury\" query tests",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Test 2021-08-29",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v3 6.1] query:\"felix[f]        \" ",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Test 2021-08-29",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v3 9.1] query:\"campaigns        \"",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Test 2021-08-29",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[Test-v4 9.1] Campaigns time test",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Backend Test 2021-08-29",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "[test 7.1 second filters]",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "[test-v2 0.1] insights over all ",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Testing 3",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "campaigns extension",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "checkup todo and tod testing title changed",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Custom global dashboard",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "database.NewDB outside test files",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Migration from global database mocks",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "extension based 'insights'",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights",
+				"testing db creation"
+			]
+		},
+		{
+			"Title": "global test",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "joelkw offset test",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Global Insights",
+				"JDB Global Regression Testing"
+			]
+		},
+		{
+			"Title": "joelkw results but filtered just to sourcegraph/sourcegraph$",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Backend Insights Testing",
+				"Global Insights"
+			]
+		},
+		{
+			"Title": "mismatched dates?",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "sourcegraph insights",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "test123",
+			"Grants": [
+				"org 1"
+			],
+			"Dashboards": [
+				"Regression Testing 3.34",
+				"test's Insights"
+			]
+		},
+		{
+			"Title": "test234 changed",
+			"Grants": [
+				"global"
+			],
+			"Dashboards": [
+				"Custom global dashboard",
+				"Global Insights",
+				"Regression Testing 3.34"
+			]
+		},
+		{
+			"Title": "test435",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights",
+				"testing db creation"
+			]
+		},
+		{
+			"Title": "testing mismatched dates",
+			"Grants": [
+				"user 1"
+			],
+			"Dashboards": [
+				"test's Insights"
+			]
+		}
+	]
+}

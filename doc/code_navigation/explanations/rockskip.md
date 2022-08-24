@@ -38,7 +38,7 @@ For Helm:
 symbols:
   env:
     # 👇 Enables Rockskip
-    USE_ROCKSHIP:
+    USE_ROCKSKIP:
       value: "true"
     # 👇 Uses Rockskip for all repositories over 1GB
     ROCKSKIP_MIN_REPO_SIZE_MB:

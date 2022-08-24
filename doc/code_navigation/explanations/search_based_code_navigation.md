@@ -25,7 +25,7 @@ Are you using a language we don't support? [File a GitHub issue](https://github.
 
 Search-based code navigation uses search-based heuristics rather than parsing the code into an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) (AST). Incorrect results occur more often for tokens with common names (such as `Get`) than for tokens with more unique names simply because those tokens appear more often in the search index.
 
-We recommend using precise code navigation if you require 100% confidence in accuracy for a definition or reference results for a symbol you hovered over. We describe scenarios where you may still get search-based code navigation results, even with precision enabled, in the [precise code navigation docs](./precise_code_intelligence.md).
+We recommend using precise code navigation if you require 100% confidence in accuracy for a definition or reference results for a symbol you hovered over. We describe scenarios where you may still get search-based code navigation results, even with precision enabled, in the [precise code navigation docs](./precise_code_navigation.md).
 
 ## Why does it sometimes time out?
 

@@ -998,7 +998,7 @@ ALTER SEQUENCE batch_specs_id_seq OWNED BY batch_specs.id;
 CREATE TABLE changeset_specs (
     id bigint NOT NULL,
     rand_id text NOT NULL,
-    spec jsonb DEFAULT '{}'::jsonb NOT NULL,
+    spec jsonb DEFAULT '{}'::jsonb,
     batch_spec_id bigint,
     repo_id integer NOT NULL,
     user_id integer,
@@ -1019,7 +1019,7 @@ CREATE TABLE changeset_specs (
     commit_message text,
     commit_author_name text,
     commit_author_email text,
-    type text
+    type text NOT NULL
 );
 
 CREATE TABLE changesets (

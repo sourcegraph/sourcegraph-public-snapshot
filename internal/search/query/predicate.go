@@ -25,15 +25,20 @@ type Predicate interface {
 var DefaultPredicateRegistry = PredicateRegistry{
 	FieldRepo: {
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
+		"has.file":              func() Predicate { return &RepoContainsFilePredicate{} },
 		"contains.path":         func() Predicate { return &RepoContainsPathPredicate{} },
+		"has.path":              func() Predicate { return &RepoContainsPathPredicate{} },
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
+		"has.content":           func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
+		"has.commit.after":      func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
 		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
 		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
+		"has.content":      func() Predicate { return &FileContainsContentPredicate{} },
 		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
 		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},

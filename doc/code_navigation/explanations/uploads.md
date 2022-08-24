@@ -15,7 +15,7 @@ img.terminal-screenshot {
 }
 </style>
 
-[Code graph indexers](../references/indexers.md) analyze source code and produce an index file. This file is [uploaded to a Sourcegraph instance](../how-to/index_other_languages.md#4-upload-lsif-data) via [Sourcegraph CLI](../../cli/index.md) for processing. Once processed, its data is available to [precise code navigation queries](precise_code_intelligence.md).
+[Code graph indexers](../references/indexers.md) analyze source code and produce an index file. This file is [uploaded to a Sourcegraph instance](../how-to/index_other_languages.md#4-upload-lsif-data) via [Sourcegraph CLI](../../cli/index.md) for processing. Once processed, its data is available to [precise code navigation queries](precise_code_navigation.md).
 
 ## Lifecycle of an upload
 

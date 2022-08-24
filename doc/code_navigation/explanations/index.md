@@ -1,9 +1,9 @@
 # Explanations
 
-- [Introduction to code navigation](introduction_to_code_intelligence.md)
-- [Precise code navigation](precise_code_intelligence.md)
+- [Introduction to code navigation](introduction_to_code_navigation.md)
+- [Precise code navigation](precise_code_navigation.md)
   - [Code graph data uploads](uploads.md)
-- [Search-based code navigation](search_based_code_intelligence.md)
+- [Search-based code navigation](search_based_code_navigation.md)
 - [Code navigation features](features.md)
   - [Popover](features.md#popover)
   - [Go to definition](features.md#go-to-definition)

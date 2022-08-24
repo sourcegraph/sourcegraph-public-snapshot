@@ -27,7 +27,7 @@ The second front determines the set of index jobs that can run over candidate co
 
 ## Configure auto-indexing policies
 
-This guide shows how to configure policies to control the scheduling of precise code navigation indexing jobs. Indexing jobs [produce a code graph data index](../explanations/precise_code_intelligence.md) and uploads it to your Sourcegraph instance for use with code navigation.
+This guide shows how to configure policies to control the scheduling of precise code navigation indexing jobs. Indexing jobs [produce a code graph data index](../explanations/precise_code_navigation.md) and uploads it to your Sourcegraph instance for use with code navigation.
 
 Each policy has a number of configurable options, including:
 
