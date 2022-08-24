@@ -284,12 +284,15 @@ func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinit
 	if alert.isEmpty() {
 		return "", errors.New("cannot generate description for empty alert")
 	}
+
 	var description string
 
 	// description based on thresholds. no special description for 'alert.strictCompare',
 	// because the description is pretty ambiguous to fit different alerts.
 	units := o.Panel.unitType.short()
-	if alert.greaterThan {
+	if alert.description != "" {
+		description = fmt.Sprintf("%s: %s", c.Name, alert.description)
+	} else if alert.greaterThan {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
 		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.threshold, units, o.Description)
 	} else if alert.lessThan {
@@ -311,7 +314,6 @@ func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinit
 // how these work, see:
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
-//
 func (c *Dashboard) renderRules() (*promRulesFile, error) {
 	group := promGroup{Name: c.Name}
 	for groupIndex, g := range c.Groups {
@@ -908,6 +910,8 @@ type ObservableAlertDefinition struct {
 	threshold float64
 	// alternative query to use for an alert instead of the observables query.
 	query string
+	// alternative description to use for an alert instead of the observables description.
+	description string
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
@@ -959,6 +963,13 @@ func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinit
 // query.
 func (a *ObservableAlertDefinition) CustomQuery(query string) *ObservableAlertDefinition {
 	a.query = query
+	return a
+}
+
+// CustomDescription sets a different description to be used for this alert instead of the description
+// used for the Grafana panel.
+func (a *ObservableAlertDefinition) CustomDescription(desc string) *ObservableAlertDefinition {
+	a.description = desc
 	return a
 }
 

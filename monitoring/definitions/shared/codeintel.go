@@ -291,6 +291,7 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 	})
 }
 
+// src_executor_total
 // src_executor_processor_total
 // src_executor_processor_duration_seconds_bucket
 // src_executor_processor_errors_total
@@ -301,7 +302,7 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 	constructorOptions := ObservableConstructorOptions{
 		MetricNameRoot:        "executor",
 		JobLabel:              "sg_job",
-		MetricDescriptionRoot: "handler",
+		MetricDescriptionRoot: "executor",
 		Filters:               filters,
 	}
 
@@ -320,17 +321,7 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total: CriticalOption(
-				monitoring.Alert().
-					CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
-					LessOrEqual(0).
-					// ~5min for scale-from-zero
-					For(time.Minute*5),
-				`
-				- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
-				- Make sure the executors appear under Site Admin > Executors.
-				- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
-			`),
+			Total:    NoAlertsOption("none"),
 			Duration: NoAlertsOption("none"),
 			Errors:   NoAlertsOption("none"),
 			ErrorRate: CriticalOption(
@@ -345,7 +336,18 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 				problem is not know to be resolved until jobs start succeeding again.
 			`),
 		},
-		Handlers: NoAlertsOption("none"),
+		Handlers: CriticalOption(
+			monitoring.Alert().
+				CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
+				CustomDescription("0 active executor handlers and > 0 queue size").
+				LessOrEqual(0).
+				// ~5min for scale-from-zero
+				For(time.Minute*5),
+			`
+			- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+			- Make sure the executors appear under Site Admin > Executors.
+			- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
+		`),
 	})
 }
 

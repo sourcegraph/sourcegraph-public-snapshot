@@ -148,6 +148,10 @@ func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
 	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, replacement))
 }
 
+func (r *regexpReplacer) HasCaptureGroups() bool {
+	return len(r.groups) != 0
+}
+
 var (
 	multiplePatternErr        = errors.New("pattern replacement does not support queries with multiple patterns")
 	unsupportedPatternTypeErr = errors.New("pattern replacement is only supported for regexp patterns")

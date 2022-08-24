@@ -524,9 +524,10 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 	return repoIDs
 }
 
-// syncScheduler will periodically list the cloned repositories on gitserver and
-// update the scheduler with the list. It also ensures that if any of our default
-// repos are missing from the cloned list they will be added for cloning ASAP.
+// syncScheduler will periodically list the uncloned repositories on gitserver
+// and update the scheduler with the list. It also ensures that if any of our
+// indexable repos are missing from the cloned list they will be added for
+// cloning ASAP.
 func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
 	baseRepoStore := database.ReposWith(logger, store)
 
@@ -536,18 +537,20 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 			return
 		}
 
-		// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
-		// scheduler
-		opts := database.ListIndexableReposOptions{
-			CloneStatus:    types.CloneStatusNotCloned,
-			IncludePrivate: true,
-		}
-		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
-			logger.Error("listing indexable repos", log.Error(err))
-			return
-		} else {
+		if envvar.SourcegraphDotComMode() {
+			// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
+			// scheduler
+			opts := database.ListIndexableReposOptions{
+				CloneStatus:    types.CloneStatusNotCloned,
+				IncludePrivate: true,
+			}
+			indexable, err := baseRepoStore.ListIndexableRepos(ctx, opts)
+			if err != nil {
+				logger.Error("listing indexable repos", log.Error(err))
+				return
+			}
 			// Ensure that uncloned indexable repos are known to the scheduler
-			sched.EnsureScheduled(u)
+			sched.EnsureScheduled(indexable)
 		}
 
 		// Next, move any repos managed by the scheduler that are uncloned to the front

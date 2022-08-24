@@ -268,6 +268,7 @@ var SyntectLanguageMap = map[string]string{
 	"rest":                 "rest",
 	"ruby":                 "rb",
 	"rb":                   "rb",
+	"rbi":                  "rb",
 	"appfile":              "Appfile",
 	"appraisals":           "Appraisals",
 	"berksfile":            "Berksfile",

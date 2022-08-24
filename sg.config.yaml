@@ -987,28 +987,15 @@ tests:
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
-  frontend:
+  client:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
-  frontend-e2e:
+  client-e2e:
     preamble: |
       A Sourcegraph isntance must be already running for these tests to work, most
-      commonly with:
+      commonly with: `sg start enterprise-e2e`
 
-        sg start enterprise-e2e
-
-      You can also run tests against an existing server image (note that this test must
-      be run with SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' for the following to work):
-
-        TAG=insiders sg run server
-
-      If you run into authentication issues, you can run the following commands to fix them:
-
-        sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
-
-      The above command resets the database and creates a user like so:
-
-        👉 User test (test@sourcegraph.com) has been created and its password is supersecurepassword .
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-end-to-end-tests
     cmd: |
       yarn run test-e2e
     env:
@@ -1021,6 +1008,21 @@ tests:
         provider: 'gcloud'
         project: 'sourcegraph-ci'
         name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
+
+  client-regression:
+    preamble: |
+      A Sourcegraph instance must be already running for these tests to work, most
+      commonly with: `sg start enterprise-e2e`
+
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-regression-tests
+
+    cmd: |
+      yarn run test-regression
+    env:
+      SOURCEGRAPH_SUDO_USER: test
+      SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
+      TEST_USER_PASSWORD: supersecurepassword
+      BROWSER: chrome
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

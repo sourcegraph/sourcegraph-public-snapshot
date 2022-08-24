@@ -23,6 +23,7 @@ interface ChildTreeLayerProps extends Pick<TreeRootProps, Exclude<keyof TreeRoot
     singleChildTreeEntry: SingleChildGitTree
     /** The children entries of a SingleChildTreeLayer. Will be undefined if there is no SingleChildTreeLayer to render. */
     childrenEntries?: SingleChildGitTree[]
+    enableMergedFileSymbolSidebar: boolean
     onHover: (filePath: string) => void
 }
 
@@ -85,6 +86,7 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                 isActive={false}
                                                 isSelected={false}
                                                 customIconPath={mdiFolderOutline}
+                                                enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                             />
                                         )}
                                     </TreeRootContext.Consumer>
@@ -106,6 +108,7 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                     fileDecorationsByPath={props.fileDecorationsByPath}
                                     fileDecorations={props.fileDecorationsByPath[props.singleChildTreeEntry.path]}
                                     telemetryService={props.telemetryService}
+                                    enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                 />
                             ) : (
                                 props.entries.map((item, index) => (
@@ -118,6 +121,7 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                         entryInfo={item}
                                         fileDecorations={props.fileDecorationsByPath[item.path]}
                                         telemetryService={props.telemetryService}
+                                        enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                     />
                                 ))
                             )}
