@@ -21,7 +21,6 @@ console.log('loading notebookMap', notebookMap)
             notebookMap[packageA] = {}
         }
         notebookMap[packageA][packageB] = notebookId
+        writeFileSync('db/notebooks.json', JSON.stringify(notebookMap, null, 2))
     }
-
-    writeFileSync('db/notebooks.json', JSON.stringify(notebookMap, null, 2))
 })()
