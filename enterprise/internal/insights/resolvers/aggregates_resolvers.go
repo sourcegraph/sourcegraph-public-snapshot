@@ -295,12 +295,12 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 		return false, nil
 	}
 
-	// A query should contain a single capture group to allow capture group aggregation.
+	// A query should contain at least a regexp pattern and capture group to allow capture group aggregation.
+	// Only the first capture group will be used for aggregation.
 	replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType)
 	if err != nil {
 		return false, errors.Wrap(err, "pattern parsing")
 	}
-	// If there is no value to capture we can't run this aggregation.
 	if !replacer.HasCaptureGroups() {
 		return false, nil
 	}
