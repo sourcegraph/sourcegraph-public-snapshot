@@ -59,10 +59,6 @@ type group struct {
 	number    int
 }
 
-func (r *regexpReplacer) HasCaptureGroups() bool {
-	return len(r.groups) != 0
-}
-
 // findGroups will extract all capturing and non-capturing groups from a
 // **valid** regexp string. If the provided string is not a valid regexp this
 // function may panic or otherwise return undefined results.
