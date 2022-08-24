@@ -594,8 +594,8 @@ func TestService(t *testing.T) {
 			}
 
 			want := &btypes.ChangesetSpec{
-				ID:  5,
-				Typ: btypes.ChangesetSpecTypeBranch,
+				ID:   5,
+				Type: btypes.ChangesetSpecTypeBranch,
 				Diff: []byte(`diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md

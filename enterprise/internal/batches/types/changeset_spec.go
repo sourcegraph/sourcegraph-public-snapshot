@@ -38,7 +38,7 @@ func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, e
 	}
 
 	if spec.IsImportingExisting() {
-		c.Typ = ChangesetSpecTypeExisting
+		c.Type = ChangesetSpecTypeExisting
 	} else {
 		headRepoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.HeadRepository))
 		if err != nil {
@@ -64,7 +64,7 @@ func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, e
 		if err != nil {
 			return nil, err
 		}
-		c.Typ = ChangesetSpecTypeBranch
+		c.Type = ChangesetSpecTypeBranch
 		c.Diff = []byte(diff)
 		c.HeadRef = spec.HeadRef
 		c.BaseRev = spec.BaseRev
@@ -89,7 +89,7 @@ type ChangesetSpec struct {
 	ID     int64
 	RandID string
 
-	Typ ChangesetSpecType
+	Type ChangesetSpecType
 
 	DiffStatAdded   int32
 	DiffStatChanged int32
@@ -127,7 +127,7 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 // diff stat fields that can be retrieved with DiffStat().
 // If the Diff is invalid or parsing failed, an error is returned.
 func (cs *ChangesetSpec) computeDiffStat() error {
-	if cs.Typ == ChangesetSpecTypeExisting {
+	if cs.Type == ChangesetSpecTypeExisting {
 		return nil
 	}
 

@@ -69,15 +69,15 @@ func (r *ChangesetRewirer) Rewire() (changesets []*btypes.Changeset, err error) 
 
 		if m.Changeset != nil {
 			changeset = m.Changeset
-			if spec.Typ == btypes.ChangesetSpecTypeExisting {
+			if spec.Type == btypes.ChangesetSpecTypeExisting {
 				r.attachTrackingChangeset(changeset)
-			} else if spec.Typ == btypes.ChangesetSpecTypeBranch {
+			} else if spec.Type == btypes.ChangesetSpecTypeBranch {
 				r.updateChangesetToNewSpec(changeset, spec)
 			}
 		} else {
-			if spec.Typ == btypes.ChangesetSpecTypeExisting {
+			if spec.Type == btypes.ChangesetSpecTypeExisting {
 				changeset = r.createTrackingChangeset(repo, spec.ExternalID)
-			} else if spec.Typ == btypes.ChangesetSpecTypeBranch {
+			} else if spec.Type == btypes.ChangesetSpecTypeBranch {
 				changeset = r.createChangesetForSpec(repo, spec)
 			}
 		}

@@ -74,10 +74,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			c.Diff = testDiff
 			c.CommitAuthorName = "name"
 			c.CommitAuthorEmail = "email"
-			c.Typ = btypes.ChangesetSpecTypeBranch
+			c.Type = btypes.ChangesetSpecTypeBranch
 		} else {
 			c.ExternalID = "123456"
-			c.Typ = btypes.ChangesetSpecTypeExisting
+			c.Type = btypes.ChangesetSpecTypeExisting
 		}
 
 		if i == cap(changesetSpecs)-1 {
@@ -97,7 +97,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		BaseRepoID:  deletedRepo.ID,
 
 		ExternalID: "123",
-		Typ:        btypes.ChangesetSpecTypeExisting,
+		Type:       btypes.ChangesetSpecTypeExisting,
 	}
 
 	t.Run("Create", func(t *testing.T) {
@@ -405,7 +405,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					BatchSpecID: int64(i + 1),
 					BaseRepoID:  repo.ID,
 					ExternalID:  "123",
-					Typ:         btypes.ChangesetSpecTypeExisting,
+					Type:        btypes.ChangesetSpecTypeExisting,
 				}
 				err := s.CreateChangesetSpec(ctx, spec)
 				if err != nil {
@@ -435,7 +435,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					BatchSpecID: int64(i + 1),
 					BaseRepoID:  repo.ID,
 					ExternalID:  "123",
-					Typ:         btypes.ChangesetSpecTypeExisting,
+					Type:        btypes.ChangesetSpecTypeExisting,
 				}
 				err := s.CreateChangesetSpec(ctx, spec)
 				if err != nil {
@@ -486,7 +486,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				BaseRepoID: repo.ID,
 				ExternalID: "123",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				Type:       btypes.ChangesetSpecTypeExisting,
 				CreatedAt:  tc.createdAt,
 			}
 
@@ -585,7 +585,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				BaseRepoID: repo.ID,
 				ExternalID: "123",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				Type:       btypes.ChangesetSpecTypeExisting,
 				CreatedAt:  tc.createdAt,
 			}
 

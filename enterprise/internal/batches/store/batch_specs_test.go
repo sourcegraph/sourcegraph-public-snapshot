@@ -522,8 +522,8 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 
 		if err := s.CreateChangesetSpec(ctx,
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10, ExternalID: "123", Typ: btypes.ChangesetSpecTypeExisting},
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20, ExternalID: "123", Typ: btypes.ChangesetSpecTypeExisting},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10, ExternalID: "123", Type: btypes.ChangesetSpecTypeExisting},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20, ExternalID: "123", Type: btypes.ChangesetSpecTypeExisting},
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -612,7 +612,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 					BaseRepoID:  1,
 					BatchSpecID: batchSpec.ID,
 					ExternalID:  "123",
-					Typ:         btypes.ChangesetSpecTypeExisting,
+					Type:        btypes.ChangesetSpecTypeExisting,
 				}
 				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 					t.Fatal(err)

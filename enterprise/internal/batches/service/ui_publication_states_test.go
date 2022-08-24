@@ -71,19 +71,19 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 			ID:        1,
 			RandID:    "1",
 			Published: batcheslib.PublishedValue{Val: nil},
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			Type:      btypes.ChangesetSpecTypeBranch,
 		}
 		changesetPublished = &btypes.ChangesetSpec{
 			ID:        2,
 			RandID:    "2",
 			Published: batcheslib.PublishedValue{Val: true},
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			Type:      btypes.ChangesetSpecTypeBranch,
 		}
 		changesetUnwired = &btypes.ChangesetSpec{
 			ID:        3,
 			RandID:    "3",
 			Published: batcheslib.PublishedValue{Val: true},
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			Type:      btypes.ChangesetSpecTypeBranch,
 		}
 
 		mappings = btypes.RewirerMappings{

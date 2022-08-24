@@ -76,7 +76,7 @@ func (r *changesetSpecResolver) ID() graphql.ID {
 }
 
 func (r *changesetSpecResolver) Type() string {
-	return strings.ToUpper(string(r.changesetSpec.Typ))
+	return strings.ToUpper(string(r.changesetSpec.Type))
 }
 
 func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend.ChangesetDescription, error) {
@@ -138,13 +138,13 @@ type changesetDescriptionResolver struct {
 }
 
 func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlbackend.ExistingChangesetReferenceResolver, bool) {
-	if r.spec.Typ == btypes.ChangesetSpecTypeExisting {
+	if r.spec.Type == btypes.ChangesetSpecTypeExisting {
 		return r, true
 	}
 	return nil, false
 }
 func (r *changesetDescriptionResolver) ToGitBranchChangesetDescription() (graphqlbackend.GitBranchChangesetDescriptionResolver, bool) {
-	if r.spec.Typ == btypes.ChangesetSpecTypeBranch {
+	if r.spec.Type == btypes.ChangesetSpecTypeBranch {
 		return r, true
 	}
 	return nil, false

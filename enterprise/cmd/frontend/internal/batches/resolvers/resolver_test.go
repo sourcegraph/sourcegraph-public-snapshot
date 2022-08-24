@@ -147,7 +147,7 @@ func TestCreateBatchSpec(t *testing.T) {
 			BaseRepoID: repo.ID,
 			UserID:     userID,
 			ExternalID: "123",
-			Typ:        btypes.ChangesetSpecTypeExisting,
+			Type:       btypes.ChangesetSpecTypeExisting,
 		}
 		if err := bstore.CreateChangesetSpec(ctx, changesetSpecs[i]); err != nil {
 			t.Fatal(err)
@@ -552,7 +552,7 @@ func TestApplyBatchChange(t *testing.T) {
 		BatchSpecID: batchSpec.ID,
 		BaseRepoID:  repo.ID,
 		UserID:      userID,
-		Typ:         btypes.ChangesetSpecTypeExisting,
+		Type:        btypes.ChangesetSpecTypeExisting,
 		ExternalID:  "123",
 	}
 	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
@@ -1173,7 +1173,7 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 					BatchSpecID: batchSpec.ID,
 					BaseRepoID:  repo.ID,
 					ExternalID:  "123",
-					Typ:         btypes.ChangesetSpecTypeExisting,
+					Type:        btypes.ChangesetSpecTypeExisting,
 				}
 				err = bstore.CreateChangesetSpec(ctx, changesetSpecs[i])
 				require.NoError(t, err)

@@ -75,7 +75,7 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 		DiffStatAdded:     TestChangsetSpecDiffStat.Added,
 		DiffStatChanged:   TestChangsetSpecDiffStat.Changed,
 		DiffStatDeleted:   TestChangsetSpecDiffStat.Deleted,
-		Typ:               opts.Typ,
+		Type:              opts.Typ,
 	}
 
 	return spec

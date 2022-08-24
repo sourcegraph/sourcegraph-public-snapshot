@@ -127,7 +127,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				dbutil.NewNullString(c.CommitMessage),
 				dbutil.NewNullString(c.CommitAuthorName),
 				dbutil.NewNullString(c.CommitAuthorEmail),
-				c.Typ,
+				c.Type,
 			); err != nil {
 				return err
 			}
@@ -568,7 +568,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		return errors.Wrap(err, "scanning changeset spec")
 	}
 
-	c.Typ = btypes.ChangesetSpecType(typ)
+	c.Type = btypes.ChangesetSpecType(typ)
 
 	if err := json.Unmarshal(published, &c.Published); err != nil {
 		return err

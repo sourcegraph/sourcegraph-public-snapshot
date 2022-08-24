@@ -291,7 +291,7 @@ func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btyp
 		return nil, err
 	}
 
-	if spec.Typ == btypes.ChangesetSpecTypeExisting {
+	if spec.Type == btypes.ChangesetSpecTypeExisting {
 		return nil, errors.New("ChangesetSpec imports a changeset")
 	}
 

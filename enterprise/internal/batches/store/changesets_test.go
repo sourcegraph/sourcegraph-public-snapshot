@@ -1806,7 +1806,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		spec := &btypes.ChangesetSpec{
 			Title:      title,
 			ExternalID: "123",
-			Typ:        btypes.ChangesetSpecTypeExisting,
+			Type:       btypes.ChangesetSpecTypeExisting,
 		}
 		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 			t.Fatalf("creating changeset spec: %v", err)
@@ -2117,7 +2117,7 @@ func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, c
 		spec := &btypes.ChangesetSpec{
 			Title:      "fake spec",
 			ExternalID: "123",
-			Typ:        btypes.ChangesetSpecTypeExisting,
+			Type:       btypes.ChangesetSpecTypeExisting,
 		}
 		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 			t.Fatalf("creating changeset spec: %v", err)
