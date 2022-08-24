@@ -23,15 +23,22 @@ export async function handleAccessTokenError(badToken?: string, endpointURL?: st
 
         const instanceVersion = await getInstanceVersionNumber()
         const supportsTokenCallback = instanceVersion && instanceVersion < '3410'
-        const action = await vscode.window.showErrorMessage(message, "Get Token", "Open Settings")
+        const action = await vscode.window.showErrorMessage(message, 'Get Token', 'Open Settings')
 
-        if (action === "Open Settings") {
+        if (action === 'Open Settings') {
             vscode.commands.executeCommand('workbench.action.openSettings', 'sourcegraph.accessToken')
-        } else if (action === "Get Token") {
+        } else if (action === 'Get Token') {
             const path = supportsTokenCallback ? '/user/settings/tokens/new/callback' : '/user/settings/'
             const query = supportsTokenCallback ? 'requestFrom=VSCEAUTH' : ''
 
-            vscode.env.openExternal(vscode.Uri.from({ scheme: endpointProtocolSetting().slice(0, -1), authority: endpointHostnameSetting(), path, query }))
+            vscode.env.openExternal(
+                vscode.Uri.from({
+                    scheme: endpointProtocolSetting().slice(0, -1),
+                    authority: endpointHostnameSetting(),
+                    path,
+                    query,
+                })
+            )
         }
         showingAccessTokenErrorMessage = false
     }
