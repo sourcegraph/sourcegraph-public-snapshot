@@ -680,7 +680,24 @@ From there, you can start exploring logs with the Grafana explore panel.
 			}
 			return open.URL(buildkiteURL)
 		},
+	}, {
+		Name:      "search-failures",
+		ArgsUsage: "[text]",
+		Usage:     "Open Sourcegraph's Buildkite failure logs page in browser",
+		Action: func(ctx *cli.Context) error {
+			text := "TODO"
+			if ctx.Args().Len() > 0 {
+				text = ctx.Args().Slice()[0]
+			}
+			grafanaURL := buildGrafanaURL(text)
+			return open.URL(grafanaURL)
+		},
 	}},
+}
+
+func buildGrafanaURL(text string) string {
+	base := "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+	return strings.ReplaceAll(base, "_TEXT_", text)
 }
 
 func getAllowedBuildTypeArgs() []string {
