@@ -76,11 +76,11 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         features => features.applySearchQuerySuggestionOnEnter ?? false
     )
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
+    const [hideSearchHistory] = useFeatureFlag('search-input-hide-history')
 
     const suggestionSources = useMemo(
         () =>
-            coreWorkflowImprovementsEnabled && props.authenticatedUser && showSearchHistory
+            coreWorkflowImprovementsEnabled && props.authenticatedUser && !hideSearchHistory
                 ? [
                       searchQueryHistorySource({
                           userId: props.authenticatedUser.id,
@@ -99,7 +99,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             props.authenticatedUser,
             props.selectedSearchContextSpec,
             props.telemetryService,
-            showSearchHistory,
+            hideSearchHistory,
         ]
     )
 
