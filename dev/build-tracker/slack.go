@@ -160,12 +160,13 @@ func (c *NotificationClient) createMessageBlocks(build *Build) ([]slack.Block, e
 		}
 	}
 
-	c.logger.Debug("getting teammate information", log.String("authorName", build.authorName()), log.String("authorEmail", build.authorEmail()))
+	c.logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
 	teammate, err := c.getTeammateForBuild(build)
 	var author string
 	if err != nil {
-		c.logger.Error("failed to find teammate", log.String("commit", build.commit()), log.Error(err))
+		c.logger.Error("failed to find teammate", log.Error(err))
 		// the error has some guidance on how to fix it so that teammate resolver can figure out who you are from the commit!
+		// so we set author here to that msg, so that the message can be conveyed to the person in slack
 		author = err.Error()
 	} else {
 		author = slackMention(teammate)
