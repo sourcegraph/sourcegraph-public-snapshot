@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -76,4 +77,76 @@ func toRegexpPattern(value string) (MatchPattern, error) {
 		return nil, errors.Wrap(err, "compute endpoint")
 	}
 	return &Regexp{Value: rp}, nil
+}
+
+func extractPattern(basic *query.Basic) (*query.Pattern, error) {
+	if basic.Pattern == nil {
+		return nil, errors.New("compute endpoint expects nonempty pattern")
+	}
+	var err error
+	var pattern *query.Pattern
+	seen := false
+	query.VisitPattern([]query.Node{basic.Pattern}, func(value string, negated bool, annotation query.Annotation) {
+		if err != nil {
+			return
+		}
+		if negated {
+			err = errors.New("compute endpoint expects a nonnegated pattern")
+			return
+		}
+		if seen {
+			err = errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
+			return
+		}
+		pattern = &query.Pattern{Value: value, Annotation: annotation}
+		seen = true
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pattern, nil
+}
+
+func fromRegexpMatches(submatches []int, namedGroups []string, content string, range_ result.Range) map[string]int {
+	counts := map[string]int{}
+
+	// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
+	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
+	for j := 0; j < len(submatches); j += 2 {
+		start := submatches[j]
+		end := submatches[j+1]
+		if start == -1 || end == -1 {
+			// The entire regexp matched, but a capture
+			// group inside it did not. Ignore this entry.
+			continue
+		}
+		value := content[start:end]
+
+		if j == 0 {
+			// The first submatch is the overall match
+			// value. Don't add this to the Environment
+
+			continue
+		}
+
+		current, _ := counts[value]
+		counts[value] = current + 1
+
+	}
+	return counts
+}
+
+func newRange(startOffset, endOffset int) result.Range {
+	return result.Range{
+		Start: newLocation(-1, -1, startOffset),
+		End:   newLocation(-1, -1, endOffset),
+	}
+}
+
+func newLocation(line, column, offset int) result.Location {
+	return result.Location{
+		Offset: offset,
+		Line:   line,
+		Column: column,
+	}
 }

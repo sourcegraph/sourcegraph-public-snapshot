@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -136,11 +137,16 @@ func countAuthor(r result.Match) (map[MatchKey]int, error) {
 	return nil, nil
 }
 
-func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
-	regexp, err := regexp.Compile(pattern)
+func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
+	pattern, err := getCasedPattern(querystring)
 	if err != nil {
-		return nil, errors.New("Could not compile regexp")
+		return nil, errors.Wrap(err, "getCasedPattern")
 	}
+	regexp, err := regexp.Compile(pattern.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not compile regexp")
+	}
+
 	return func(r result.Match) (map[MatchKey]int, error) {
 		match := newEventMatch(r)
 		if len(match.ChunkMatches) != 0 {
@@ -163,50 +169,6 @@ func countCaptureGroupsFunc(pattern string) (AggregationCountFunc, error) {
 		}
 		return nil, nil
 	}, nil
-}
-
-func fromRegexpMatches(submatches []int, namedGroups []string, content string, range_ result.Range) map[string]int {
-	counts := map[string]int{}
-
-	// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
-	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
-	for j := 0; j < len(submatches); j += 2 {
-		start := submatches[j]
-		end := submatches[j+1]
-		if start == -1 || end == -1 {
-			// The entire regexp matched, but a capture
-			// group inside it did not. Ignore this entry.
-			continue
-		}
-		value := content[start:end]
-
-		if j == 0 {
-			// The first submatch is the overall match
-			// value. Don't add this to the Environment
-
-			continue
-		}
-
-		current, _ := counts[value]
-		counts[value] = current + 1
-
-	}
-	return counts
-}
-
-func newRange(startOffset, endOffset int) result.Range {
-	return result.Range{
-		Start: newLocation(-1, -1, startOffset),
-		End:   newLocation(-1, -1, endOffset),
-	}
-}
-
-func newLocation(line, column, offset int) result.Location {
-	return result.Location{
-		Offset: offset,
-		Line:   line,
-		Column: column,
-	}
 }
 
 func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
@@ -277,4 +239,29 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	for key, count := range combined {
 		r.tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)
 	}
+}
+
+func getCasedPattern(querystring string) (MatchPattern, error) {
+	query, err := querybuilder.ParseQuery(querystring, "regexp")
+	if err != nil {
+		return nil, errors.Wrap(err, "ParseQuery")
+	}
+	q := query.ToQ()
+
+	// TODO: How many steps do we expect in the plan? What does it mean if there is more than one step?
+	basic := query[0]
+
+	pattern, err := extractPattern(&basic)
+	if err != nil {
+		return nil, err
+	}
+	patternValue := pattern.Value
+	if !q.IsCaseSensitive() {
+		patternValue = "(?i:" + pattern.Value + ")"
+	}
+	casedPattern, err := toRegexpPattern(patternValue)
+	if err != nil {
+		return nil, err
+	}
+	return casedPattern, nil
 }
