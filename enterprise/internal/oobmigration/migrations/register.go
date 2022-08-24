@@ -84,13 +84,6 @@ type dependencies struct {
 }
 
 func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps dependencies) error {
-	var insightsMigrator migrations.TaggedMigrator
-	if internalInsights.IsEnabled() {
-		insightsMigrator = insights.NewMigrator(deps.store, deps.insightsStore)
-	} else {
-		insightsMigrator = insights.NewMigratorNoOp()
-	}
-
 	return migrations.RegisterAll(runner, noDelay, []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
@@ -99,6 +92,6 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000),
 		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000),
 		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100),
-		insightsMigrator,
+		insights.NewMigrator(deps.store, deps.insightsStore),
 	})
 }

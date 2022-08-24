@@ -4,13 +4,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func ParseQuery(q string, patternType string) (query.Plan, error) {
+func DetectSearchType(rawQuery string, patternType string) (query.SearchType, error) {
 	searchType, err := client.SearchTypeFromString(patternType)
 	if err != nil {
-		return nil, errors.Wrap(err, "SearchTypeFromString")
+		return -1, errors.Wrap(err, "client.SearchTypeFromString")
+	}
+	q, err := query.Parse(rawQuery, searchType)
+	if err != nil {
+		return -1, errors.Wrap(err, "query.Parse")
+	}
+	q = query.LowercaseFieldNames(q)
+	query.VisitField(q, searchquery.FieldPatternType, func(value string, _ bool, _ query.Annotation) {
+		if value != "" {
+			searchType, err = client.SearchTypeFromString(value)
+		}
+	})
+	return searchType, err
+
+}
+
+func ParseQuery(q string, patternType string) (query.Plan, error) {
+	searchType, err := DetectSearchType(q, patternType)
+	if err != nil {
+		return nil, errors.Wrap(err, "overrideSearchType")
 	}
 	plan, err := query.Pipeline(query.Init(q, searchType))
 	if err != nil {

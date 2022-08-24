@@ -256,7 +256,7 @@ func AddAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 		}
 		modified = append(modified, searchquery.Parameter{
 			Field:      searchquery.FieldAuthor,
-			Value:      regexp.QuoteMeta(author),
+			Value:      fmt.Sprintf("(^%s$)", regexp.QuoteMeta(author)),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})

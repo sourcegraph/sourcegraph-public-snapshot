@@ -372,15 +372,16 @@ describe('getCompletionItems()', () => {
                             repository: 'repo/with a space',
                         },
                     ]),
+
                     {}
                 )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toMatchInlineSnapshot(`
             [
-              "contains.path(\${1:CHANGELOG}) ",
-              "contains.content(\${1:TODO}) ",
-              "contains.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
-              "contains.commit.after(\${1:1 month ago}) ",
+              "has.path(\${1:CHANGELOG}) ",
+              "has.content(\${1:TODO}) ",
+              "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
@@ -399,10 +400,10 @@ describe('getCompletionItems()', () => {
               "^github\\\\.com/\${1:ORGANIZATION}/.* ",
               "^github\\\\.com/\${1:ORGANIZATION}/\${2:REPO-NAME}$ ",
               "\${1:STRING} ",
-              "contains.path(\${1:CHANGELOG}) ",
-              "contains.content(\${1:TODO}) ",
-              "contains.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
-              "contains.commit.after(\${1:1 month ago}) ",
+              "has.path(\${1:CHANGELOG}) ",
+              "has.content(\${1:TODO}) ",
+              "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) "
             ]
         `)

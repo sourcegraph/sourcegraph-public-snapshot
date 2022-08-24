@@ -39,7 +39,7 @@ but would not get a precise result we instead have indexes for A@v1 and B@v1.
 ## Why are my results sometimes incorrect?
 
 If an index is not found for a particular file in a repository, Sourcegraph will fall back to search-based code navigation.
-You may occasionally see results from [search-based code navigation](search_based_code_intelligence.md) even when you have uploaded an index.
+You may occasionally see results from [search-based code navigation](search_based_code_navigation.md) even when you have uploaded an index.
 This can happen in the following scenarios:
 
 - The line containing the symbol was created or edited between the nearest indexed commit and the commit being browsed.

@@ -9,4 +9,4 @@ To make code navigation work on the air-gapped Sourcegraph instances code naviga
  src extensions list -query='sourcegraph/ category:"Programming languages"'
  ```
  
- Languages specifications for which [search-based code navigation](../explanations/search_based_code_intelligence.md) is supported are listed [here](https://github.com/sourcegraph/code-intel-extensions/blob/master/template/src/language-specs/languages.ts#L345-L390).
+ Languages specifications for which [search-based code navigation](../explanations/search_based_code_navigation.md) is supported are listed [here](https://github.com/sourcegraph/code-intel-extensions/blob/master/template/src/language-specs/languages.ts#L345-L390).

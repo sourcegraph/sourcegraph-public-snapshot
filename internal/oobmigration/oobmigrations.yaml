@@ -72,6 +72,8 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 43
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
 - id: 16
   team: iam
   component: frontend-db.product_licenses
@@ -80,3 +82,5 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 43
+  deprecated_version_major: 4
+  deprecated_version_minor: 0
