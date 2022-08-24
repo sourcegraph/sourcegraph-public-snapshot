@@ -268,7 +268,7 @@ sg start enterprise-e2e
 ```
 
 You can also run tests against an existing server image (note that this test must
-be run with SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' for the following to work):
+be run with SOURCEGRAPH_BASE_URL=http://localhost:7080 for the following to work):
 
 ```
 TAG=insiders sg run server
@@ -288,7 +288,7 @@ If you have access to CI secrets via the `gcloud` CLI, the `GH_TOKEN` value will
 If you run the test suite against an existing server image:
 
 ```
-SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' GH_TOKEN=XXX sg test client-e2e
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GH_TOKEN=XXX sg test client-e2e
 ```
 
 This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
@@ -307,7 +307,7 @@ GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
 And if you're running the test suite against an existing server image:
 
 ```
-SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test client-regression
 ```
 
 Also, you can also run tests selectively with a command like `yarn run test:regression:search` in the `client/web` directory, which runs the tests for search functionality.
