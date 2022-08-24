@@ -10,10 +10,10 @@ import { SearchAggregationModeAvailability } from '../../graphql-operations'
 import styles from './AggregationModeControls.module.scss'
 
 interface AggregationModeControlsProps extends HTMLAttributes<HTMLDivElement> {
-    mode: SearchAggregationMode
+    mode: SearchAggregationMode | null
     availability?: SearchAggregationModeAvailability[]
-    onModeChange: (nextMode: SearchAggregationMode) => void
     size?: 'sm' | 'lg'
+    onModeChange: (nextMode: SearchAggregationMode) => void
 }
 
 export const AggregationModeControls: FC<AggregationModeControlsProps> = props => {

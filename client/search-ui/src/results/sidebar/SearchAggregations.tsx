@@ -43,7 +43,6 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
-
     const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode })
 
     return (

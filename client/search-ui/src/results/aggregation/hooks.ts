@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import { ApolloError, gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
@@ -36,7 +36,7 @@ function useSyncedWithURLState<State, SerializedState>(
 
     const urlSearchParameters = useMemo(() => new URLSearchParams(search), [search])
     const queryParameter = useMemo(
-        () => deserializer((urlSearchParameters.get(urlKey) as unknown) as SerializedState),
+        () => deserializer((urlSearchParameters.get(urlKey) as unknown) as SerializedState | null),
         [urlSearchParameters, urlKey, deserializer]
     )
 
@@ -52,11 +52,13 @@ function useSyncedWithURLState<State, SerializedState>(
     return [queryParameter, setNextState]
 }
 
-type SerializedAggregationMode = `${SearchAggregationMode}`
+type SerializedAggregationMode = `${SearchAggregationMode}` | ''
 
-const aggregationModeSerializer = (mode: SearchAggregationMode): SerializedAggregationMode => mode
+const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => mode ?? ''
 
-const aggregationModeDeserializer = (serializedValue: SerializedAggregationMode | null): SearchAggregationMode => {
+const aggregationModeDeserializer = (
+    serializedValue: SerializedAggregationMode | null
+): SearchAggregationMode | null => {
     switch (serializedValue) {
         case 'REPO':
             return SearchAggregationMode.REPO
@@ -67,6 +69,9 @@ const aggregationModeDeserializer = (serializedValue: SerializedAggregationMode 
         case 'CAPTURE_GROUP':
             return SearchAggregationMode.CAPTURE_GROUP
 
+        // TODO Return null FE default value instead REPO when aggregation type
+        // will be provided by the backend.
+        // see https://github.com/sourcegraph/sourcegraph/issues/40425
         default:
             return SearchAggregationMode.REPO
     }
@@ -76,8 +81,11 @@ const aggregationModeDeserializer = (serializedValue: SerializedAggregationMode 
  * Shared state hook for syncing aggregation type state between different UI trough
  * ULR query param {@link AGGREGATION_MODE_URL_KEY}
  */
-export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode> => {
-    const [aggregationMode, setAggregationMode] = useSyncedWithURLState({
+export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode | null> => {
+    const [aggregationMode, setAggregationMode] = useSyncedWithURLState<
+        SearchAggregationMode | null,
+        SerializedAggregationMode
+    >({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
         deserializer: aggregationModeDeserializer,
@@ -128,7 +136,12 @@ export const AGGREGATION_SEARCH_QUERY = gql`
         query
     }
 
-    query GetSearchAggregation($query: String!, $patternType: SearchPatternType!, $mode: SearchAggregationMode, $limit: Int!) {
+    query GetSearchAggregation(
+        $query: String!
+        $patternType: SearchPatternType!
+        $mode: SearchAggregationMode
+        $limit: Int!
+    ) {
         searchQueryAggregate(query: $query, patternType: $patternType) {
             aggregations(mode: $mode, limit: $limit) {
                 __typename
@@ -163,7 +176,7 @@ export const AGGREGATION_SEARCH_QUERY = gql`
 interface SearchAggregationDataInput {
     query: string
     patternType: SearchPatternType
-    aggregationMode: SearchAggregationMode
+    aggregationMode: SearchAggregationMode | null
     limit?: number
 }
 
@@ -176,6 +189,7 @@ interface SearchAggregationResults {
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
     const { query, patternType, aggregationMode, limit = 10 } = input
 
+    const [, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
         AGGREGATION_SEARCH_QUERY,
         {
@@ -183,6 +197,17 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
             variables: { query, patternType, mode: aggregationMode, limit },
         }
     )
+
+    const calculatedAggregationMode = getCalculatedAggregationMode(data)
+
+    // Sync calculated aggregation mode with initial aggregation mode
+    useEffect(() => {
+        // Catch initial state when aggregation mode isn't set and BE calculated
+        // aggregation mode automatically on the backend based on given query
+        if (calculatedAggregationMode && aggregationMode === null) {
+            setAggregationMode(calculatedAggregationMode)
+        }
+    }, [setAggregationMode, calculatedAggregationMode, aggregationMode])
 
     return {
         data,
@@ -223,6 +248,16 @@ export function getAggregationData(response?: GetSearchAggregationResult | null)
         default:
             return []
     }
+}
+
+function getCalculatedAggregationMode(response?: GetSearchAggregationResult): SearchAggregationMode | null {
+    if (!response) {
+        return null
+    }
+
+    const aggregationResult = response.searchQueryAggregate?.aggregations
+
+    return aggregationResult?.mode ?? null
 }
 
 export function getOtherGroupCount(response?: GetSearchAggregationResult): number {

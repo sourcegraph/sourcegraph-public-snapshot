@@ -19,7 +19,15 @@ import { AggregationUIMode } from './types'
 import styles from './SearchAggregationResult.module.scss'
 
 interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
+
+    /**
+     * Current submitted query, note that this query isn't a live query
+     * that is synced with typed query in the search box, this query is submitted
+     * see `searchQueryFromURL` state in the global query Zustand store.
+     */
     query: string
+
+    /** Current search query pattern type. */
     patternType: SearchPatternType
 
     /**
