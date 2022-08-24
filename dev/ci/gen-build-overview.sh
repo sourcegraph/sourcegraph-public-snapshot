@@ -6,43 +6,18 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 echo "--- Generating build overview annotation"
 mkdir -p annotations
 
-PR() {
-    if [[ ${BUILDKITE_PULL_REQUEST} -ne "false" ]]; then
-        echo "Pull request [🔗]: \`${BUILDKITE_PULL_REQUEST}\`"
-    fi
-}
+file="./annotations/Build overview.md"
 
-PR_LINK=$(PR)
-
-annotation=$(
-cat <<EOF
-${PR_LINK}
-
-Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`
-
-
-Retry count: \`${BUILDKITE_RETRY_COUNT}\`
-
-
-Pipeline: ${BUILDKITE_PIPELINE_SLUG}
-
-
-Author: \`${BUILDKITE_BUILD_AUTHOR}\`
-
-
-Branch: \`${BUILDKITE_BRANCH}\`
-
-
-Commit: \`${BUILDKITE_COMMIT}\`
-
-
-\`\`\`
-${BUILDKITE_MESSAGE}
-\`\`\`
-
-Agent: \`${BUILDKITE_AGENT_NAME}\`
-EOF
-)
-
-echo "$annotation" > ./annotations/Build\ overview.md
-
+if [[ ${BUILDKITE_PULL_REQUEST} -ne "false" ]]; then
+    echo "Pull request [🔗]: \`${BUILDKITE_PULL_REQUEST}\`" >> "$file"
+fi
+echo -e "Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`" >> "$file"
+echo -e "Retry count: \`${BUILDKITE_RETRY_COUNT}\`" >> "$file"
+echo -e "Pipeline: ${BUILDKITE_PIPELINE_SLUG}" >> "$file"
+echo -e "Author: \`${BUILDKITE_BUILD_AUTHOR}\`" >> "$file"
+echo -e "Branch: \`${BUILDKITE_BRANCH}\`" >> "$file"
+echo -e "Commit: \`${BUILDKITE_COMMIT}\`" >> "$file"
+echo -e "\`\`\`" >> "$file"
+echo -e "${BUILDKITE_MESSAGE}" >> "$file"
+echo -e "\`\`\`" >> "$file"
+echo -e "Agent: \`${BUILDKITE_AGENT_NAME}\`" >> "$file"
