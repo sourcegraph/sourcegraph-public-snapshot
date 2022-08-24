@@ -171,7 +171,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
                     />
                 </div>
-                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
+                {!coreWorkflowImprovementsEnabled && (
+                    <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
+                )}
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>

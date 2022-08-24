@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
-
 	"github.com/grafana/regexp"
 
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -190,7 +188,7 @@ const insightsComputeCommand = "output.extra"
 // ComputeInsightCommandQuery will convert a standard Sourcegraph search query into a compute "map type" insight query. This command type will group by
 // certain fields. The original search query semantic should be preserved, although any new limitations or restrictions in Compute will apply.
 func ComputeInsightCommandQuery(query BasicQuery, mapType MapType) (ComputeInsightQuery, error) {
-	q, err := compute.Parse(string(query))
+	q, err := ParseComputeQuery(string(query))
 	if err != nil {
 		return "", err
 	}
@@ -237,7 +235,7 @@ func IsSingleRepoQuery(query BasicQuery) (bool, error) {
 	return true, nil
 }
 
-func addAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
+func AddAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", err
@@ -258,7 +256,7 @@ func addAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 		}
 		modified = append(modified, searchquery.Parameter{
 			Field:      searchquery.FieldAuthor,
-			Value:      regexp.QuoteMeta(author),
+			Value:      fmt.Sprintf("(^%s$)", regexp.QuoteMeta(author)),
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})
@@ -268,11 +266,11 @@ func addAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
 
-func addRepoFilter(query BasicQuery, repo string) (BasicQuery, error) {
+func AddRepoFilter(query BasicQuery, repo string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldRepo, repo)
 }
 
-func addFileFilter(query BasicQuery, file string) (BasicQuery, error) {
+func AddFileFilter(query BasicQuery, file string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldFile, file)
 }
 

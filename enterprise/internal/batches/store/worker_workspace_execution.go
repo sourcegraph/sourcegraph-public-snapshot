@@ -233,7 +233,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 			return false, errors.Wrap(err, "failed to build db changeset specs")
 		}
 		changesetSpec.BatchSpecID = batchSpec.ID
-		changesetSpec.RepoID = repo.ID
+		changesetSpec.BaseRepoID = repo.ID
 		changesetSpec.UserID = batchSpec.UserID
 
 		specs = append(specs, changesetSpec)

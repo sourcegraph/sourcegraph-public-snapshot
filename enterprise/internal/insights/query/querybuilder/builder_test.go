@@ -348,8 +348,8 @@ func TestIsSingleRepoQuery(t *testing.T) {
 			want:       false,
 		},
 		{
-			name:       "repo contains",
-			inputQuery: "repo:contains.file(CHANGELOG) TEST",
+			name:       "repo contains path",
+			inputQuery: "repo:contains.path(CHANGELOG) TEST",
 			mapType:    Lang,
 			want:       false,
 		},
@@ -469,27 +469,27 @@ func Test_addAuthorFilter(t *testing.T) {
 		{
 			input:  "myquery repo:myrepo type:commit",
 			author: "santa",
-			want:   autogold.Want("no initial author field in commit search", BasicQuery("repo:myrepo type:commit author:santa myquery")),
+			want:   autogold.Want("no initial author field in commit search", BasicQuery("repo:myrepo type:commit author:(^santa$) myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:commit",
 			author: "xtreme[username]",
-			want:   autogold.Want("ensure author is escaped", BasicQuery("repo:myrepo type:commit author:xtreme\\[username\\] myquery")),
+			want:   autogold.Want("ensure author is escaped", BasicQuery("repo:myrepo type:commit author:(^xtreme\\[username\\]$) myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:commit author:claus",
 			author: "santa",
-			want:   autogold.Want("one initial author field in commit search", BasicQuery("repo:myrepo type:commit author:claus author:santa myquery")),
+			want:   autogold.Want("one initial author field in commit search", BasicQuery("repo:myrepo type:commit author:claus author:(^santa$) myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:diff",
 			author: "santa",
-			want:   autogold.Want("no initial author field in diff search", BasicQuery("repo:myrepo type:diff author:santa myquery")),
+			want:   autogold.Want("no initial author field in diff search", BasicQuery("repo:myrepo type:diff author:(^santa$) myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:diff author:claus",
 			author: "santa",
-			want:   autogold.Want("one initial author field in diff search", BasicQuery("repo:myrepo type:diff author:claus author:santa myquery")),
+			want:   autogold.Want("one initial author field in diff search", BasicQuery("repo:myrepo type:diff author:claus author:(^santa$) myquery")),
 		},
 		{
 			input:  "myquery repo:myrepo type:file author:claus",
@@ -504,12 +504,17 @@ func Test_addAuthorFilter(t *testing.T) {
 		{
 			input:  "(myquery repo:myrepo type:repo) or (type:diff repo:asdf findme)",
 			author: "santa",
-			want:   autogold.Want("compound query where one side is author and one side is repo", BasicQuery("(repo:myrepo type:repo myquery OR type:diff repo:asdf author:santa findme)")),
+			want:   autogold.Want("compound query where one side is author and one side is repo", BasicQuery("(repo:myrepo type:repo myquery OR type:diff repo:asdf author:(^santa$) findme)")),
+		},
+		{
+			input:  "insights type:commit",
+			author: "Santa Claus",
+			want:   autogold.Want("author with whitespace in name", BasicQuery("type:commit author:(^Santa Claus$) insights")),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, err := addAuthorFilter(BasicQuery(test.input), test.author)
+			got, err := AddAuthorFilter(BasicQuery(test.input), test.author)
 			if err != nil {
 				test.want.Equal(t, err.Error())
 			} else {
@@ -543,7 +548,7 @@ func Test_addRepoFilter(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, err := addRepoFilter(BasicQuery(test.input), test.repo)
+			got, err := AddRepoFilter(BasicQuery(test.input), test.repo)
 			if err != nil {
 				test.want.Equal(t, err.Error())
 			} else {
@@ -577,7 +582,7 @@ func Test_addFileFilter(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, err := addFileFilter(BasicQuery(test.input), test.file)
+			got, err := AddFileFilter(BasicQuery(test.input), test.file)
 			if err != nil {
 				test.want.Equal(t, err.Error())
 			} else {

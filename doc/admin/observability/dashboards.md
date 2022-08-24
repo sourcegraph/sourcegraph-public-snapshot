@@ -17641,9 +17641,9 @@ Query: `max by (queue)(src_executor_queued_duration_seconds_total{job=~"^(execut
 
 #### executor: executor_handlers
 
-<p class="subtitle">Handler active handlers</p>
+<p class="subtitle">Executor active handlers</p>
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#executor-executor-handlers) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100100` on your Sourcegraph instance.
 
@@ -17660,9 +17660,9 @@ Query: `sum(src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^so
 
 #### executor: executor_processor_total
 
-<p class="subtitle">Handler operations every 5m</p>
+<p class="subtitle">Executor operations every 5m</p>
 
-Refer to the [alerts reference](./alerts.md#executor-executor-processor-total) for 1 alert related to this panel.
+This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100110` on your Sourcegraph instance.
 
@@ -17679,7 +17679,7 @@ Query: `sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job
 
 #### executor: executor_processor_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful executor operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -17698,7 +17698,7 @@ Query: `sum  by (le)(rate(src_executor_processor_duration_seconds_bucket{queue=~
 
 #### executor: executor_processor_errors_total
 
-<p class="subtitle">Handler operation errors every 5m</p>
+<p class="subtitle">Executor operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -17717,7 +17717,7 @@ Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}"
 
 #### executor: executor_processor_error_rate
 
-<p class="subtitle">Handler operation error rate over 5m</p>
+<p class="subtitle">Executor operation error rate over 5m</p>
 
 Refer to the [alerts reference](./alerts.md#executor-executor-processor-error-rate) for 1 alert related to this panel.
 

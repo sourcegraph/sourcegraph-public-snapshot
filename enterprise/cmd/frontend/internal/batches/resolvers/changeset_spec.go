@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -47,7 +48,7 @@ func NewChangesetSpecResolver(ctx context.Context, store *store.Store, changeset
 	// filters out repositories that the user doesn't have access to.
 	// In case we don't find a repository, it might be because it's deleted
 	// or because the user doesn't have access.
-	rs, err := store.Repos().GetByIDs(ctx, changesetSpec.RepoID)
+	rs, err := store.Repos().GetByIDs(ctx, changesetSpec.BaseRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +76,13 @@ func (r *changesetSpecResolver) ID() graphql.ID {
 }
 
 func (r *changesetSpecResolver) Type() string {
-	return string(r.changesetSpec.Spec.Type())
+	return strings.ToUpper(string(r.changesetSpec.Type))
 }
 
 func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend.ChangesetDescription, error) {
 	descriptionResolver := &changesetDescriptionResolver{
 		store: r.store,
-		desc:  r.changesetSpec.Spec,
+		spec:  r.changesetSpec,
 		// Note: r.repo can never be nil, because Description is a VisibleChangesetSpecResolver-only field.
 		repoResolver: graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), r.repo),
 		diffStat:     r.changesetSpec.DiffStat(),
@@ -132,18 +133,18 @@ var _ graphqlbackend.ChangesetDescription = &changesetDescriptionResolver{}
 type changesetDescriptionResolver struct {
 	store        *store.Store
 	repoResolver *graphqlbackend.RepositoryResolver
-	desc         *batcheslib.ChangesetSpec
+	spec         *btypes.ChangesetSpec
 	diffStat     diff.Stat
 }
 
 func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlbackend.ExistingChangesetReferenceResolver, bool) {
-	if r.desc.IsImportingExisting() {
+	if r.spec.Type == btypes.ChangesetSpecTypeExisting {
 		return r, true
 	}
 	return nil, false
 }
 func (r *changesetDescriptionResolver) ToGitBranchChangesetDescription() (graphqlbackend.GitBranchChangesetDescriptionResolver, bool) {
-	if r.desc.IsBranch() {
+	if r.spec.Type == btypes.ChangesetSpecTypeBranch {
 		return r, true
 	}
 	return nil, false
@@ -152,21 +153,21 @@ func (r *changesetDescriptionResolver) ToGitBranchChangesetDescription() (graphq
 func (r *changesetDescriptionResolver) BaseRepository() *graphqlbackend.RepositoryResolver {
 	return r.repoResolver
 }
-func (r *changesetDescriptionResolver) ExternalID() string { return r.desc.ExternalID }
+func (r *changesetDescriptionResolver) ExternalID() string { return r.spec.ExternalID }
 func (r *changesetDescriptionResolver) BaseRef() string {
-	return gitdomain.AbbreviateRef(r.desc.BaseRef)
+	return gitdomain.AbbreviateRef(r.spec.BaseRef)
 }
-func (r *changesetDescriptionResolver) BaseRev() string { return r.desc.BaseRev }
+func (r *changesetDescriptionResolver) BaseRev() string { return r.spec.BaseRev }
 func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.RepositoryResolver {
 	return r.repoResolver
 }
 func (r *changesetDescriptionResolver) HeadRef() string {
-	return gitdomain.AbbreviateRef(r.desc.HeadRef)
+	return gitdomain.AbbreviateRef(r.spec.HeadRef)
 }
-func (r *changesetDescriptionResolver) Title() string { return r.desc.Title }
-func (r *changesetDescriptionResolver) Body() string  { return r.desc.Body }
+func (r *changesetDescriptionResolver) Title() string { return r.spec.Title }
+func (r *changesetDescriptionResolver) Body() string  { return r.spec.Body }
 func (r *changesetDescriptionResolver) Published() *batcheslib.PublishedValue {
-	if published := r.desc.Published; !published.Nil() {
+	if published := r.spec.Published; !published.Nil() {
 		return &published
 	}
 	return nil
@@ -177,25 +178,17 @@ func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {
 }
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	diff, err := r.desc.Diff()
-	if err != nil {
-		return nil, err
-	}
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repoResolver, r.desc.BaseRev, diff)
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repoResolver, r.spec.BaseRev, string(r.spec.Diff))
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {
-	var resolvers []graphqlbackend.GitCommitDescriptionResolver
-	for _, c := range r.desc.Commits {
-		resolvers = append(resolvers, &gitCommitDescriptionResolver{
-			store:       r.store,
-			message:     c.Message,
-			diff:        c.Diff,
-			authorName:  c.AuthorName,
-			authorEmail: c.AuthorEmail,
-		})
-	}
-	return resolvers
+	return []graphqlbackend.GitCommitDescriptionResolver{&gitCommitDescriptionResolver{
+		store:       r.store,
+		message:     r.spec.CommitMessage,
+		diff:        string(r.spec.Diff),
+		authorName:  r.spec.CommitAuthorName,
+		authorEmail: r.spec.CommitAuthorEmail,
+	}}
 }
 
 var _ graphqlbackend.GitCommitDescriptionResolver = &gitCommitDescriptionResolver{}

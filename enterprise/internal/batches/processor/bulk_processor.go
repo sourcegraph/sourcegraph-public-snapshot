@@ -257,7 +257,7 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 		return errcode.MakeNonRetryable(errors.Newf("no changeset spec for changeset %d", b.ch.ID))
 	}
 
-	if !spec.Spec.Published.Nil() {
+	if !spec.Published.Nil() {
 		return errcode.MakeNonRetryable(errors.New("cannot publish a changeset that has a published value set in its changesetTemplate"))
 	}
 
