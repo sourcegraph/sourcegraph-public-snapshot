@@ -582,7 +582,7 @@ Search only inside repositories that contain a file matching the `path:` with `c
 
 **Example:** [`repo:has.file(path:CHANGELOG content:fix)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+repo:has.file%28path:CHANGELOG+content:fix%29&patternType=standard)
 
-Note: `repo:contains.file(...)` is an alias for `repo:has.file(...)` and behaves identically.
+_Note:_ `repo:contains.file(...)` is an alias for `repo:has.file(...)` and behaves identically.
 
 ### Repo has path
 
@@ -598,7 +598,7 @@ Search only inside repositories that contain a file path matching the regular ex
 
 **Example:** [`repo:has.path(README)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+repo:has.path%28README%29&patternType=standard)
 
-Note: `repo:contains.path(...)` is an alias for `repo:has.path(..)` and behaves identically.
+_Note:_ `repo:contains.path(...)` is an alias for `repo:has.path(..)` and behaves identically.
 
 ### Repo has content
 
@@ -614,7 +614,7 @@ Search only inside repositories that contain file content matching the regular e
 
 **Example:** [`repo:has.content(TODO)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+repo:has.content%28TODO%29&patternType=standard)
 
-Note: `repo:contains.content(...)` is an alias for `repo:has.content(...)` and behaves identically.
+_Note:_ `repo:contains.content(...)` is an alias for `repo:has.content(...)` and behaves identically.
 
 ### Repo has commit after
 
@@ -633,7 +633,7 @@ commits past the specified time frame. This parameter is experimental.
 
 **Example:** [`repo:has.commit.after(1 month ago)` ↗](https://sourcegraph.com/search?q=context:global+repo:.*sourcegraph.*+repo:has.commit.after%281+month+ago%29&patternType=standard)
 
-Note: `repo:contains.commit.after(...)` is an alias for `repo:has.commit.after(...)` and behaves identically.
+_Note:_ `repo:contains.commit.after(...)` is an alias for `repo:has.commit.after(...)` and behaves identically.
 
 ### Repo has description
 
@@ -672,7 +672,7 @@ Search only inside files that contain content matching the provided regexp patte
 
 **Example:** [`file:has.content(test)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+file:has.content%28test%29&patternType=standard)
 
-Note: `file:contains.content(...)` is an alias for `file:has.content(...)` and behaves identically.
+_Note:_ `file:contains.content(...)` is an alias for `file:has.content(...)` and behaves identically.
 
 ## Regular expression
 
