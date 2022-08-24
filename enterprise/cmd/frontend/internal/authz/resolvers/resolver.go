@@ -41,7 +41,7 @@ func (r *Resolver) checkLicense() error {
 		return nil
 	}
 
-	err := licensing.Check(licensing.FeatureACLs)
+	err := licensing.Check(licensing.FeatureBackgroundPermissionsSync)
 	if err != nil {
 		if licensing.IsFeatureNotActivated(err) {
 			return err

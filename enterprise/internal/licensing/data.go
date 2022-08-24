@@ -9,9 +9,12 @@ const (
 
 	// team is the "Team" plan.
 	team Plan = "team-0"
+
 	// enterprise0 is the "Enterprise" plan pre-4.0.
 	enterprise0 Plan = "enterprise-0"
 
+	// free is the "Free" plan for 4.0.
+	free0 Plan = "free-0"
 	// business0 is the "Business" plan for 4.0.
 	business0 Plan = "business-0"
 	// enterprise1 is the "Enterprise" plan for 4.0.
@@ -24,6 +27,7 @@ var allPlans = []Plan{
 	team,
 	enterprise0,
 
+	free0,
 	business0,
 	enterprise1,
 }
@@ -35,9 +39,12 @@ const (
 	// OAuth, GitLab OAuth, SAML, and OpenID.
 	FeatureSSO Feature = "sso"
 
-	// FeatureACLs is whether ACLs may be used, such as GitHub, GitLab or Bitbucket Server repository
-	// permissions and integration with GitHub, GitLab or Bitbucket Server for user authentication.
-	FeatureACLs Feature = "acls"
+	// FeatureBackgroundPermissionsSyncing is whether the backgroud perms syncing may be be used.
+	FeatureBackgroundPermissionsSync Feature = "background-permissions-sync"
+
+	// FeatureExplicitPermissionsAPI is whether the Explicit Permissions API may be be used for
+	// sycing repository permissions.
+	FeatureExplicitPermissionsAPI Feature = "explicit-permissions-api"
 
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
 	// purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use
@@ -76,7 +83,8 @@ var planFeatures = map[Plan][]Feature{
 	oldEnterpriseStarter: {},
 	oldEnterprise: {
 		FeatureSSO,
-		FeatureACLs,
+		FeatureBackgroundPermissionsSync,
+		FeatureExplicitPermissionsAPI,
 		FeatureExtensionRegistry,
 		FeatureRemoteExtensionsAllowDisallow,
 		FeatureBranding,
@@ -88,16 +96,27 @@ var planFeatures = map[Plan][]Feature{
 	},
 	team: {
 		FeatureSSO,
+		FeatureBackgroundPermissionsSync,
+		FeatureExplicitPermissionsAPI,
 	},
 	enterprise0: {
 		FeatureSSO,
+		FeatureBackgroundPermissionsSync,
+		FeatureExplicitPermissionsAPI,
 	},
 
+	free0: {
+		FeatureSSO,
+		FeatureBackgroundPermissionsSync,
+	},
 	business0: {
 		FeatureSSO,
+		FeatureBackgroundPermissionsSync,
 	},
 	enterprise1: {
 		FeatureSSO,
+		FeatureBackgroundPermissionsSync,
+		FeatureExplicitPermissionsAPI,
 	},
 }
 

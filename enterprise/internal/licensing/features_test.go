@@ -37,17 +37,17 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureSSO, license(plan(enterprise1)), true)
 	})
 
-	t.Run(string(FeatureACLs), func(t *testing.T) {
-		check(t, FeatureACLs, nil, false)
+	t.Run(string(FeatureBackgroundPermissionsSync), func(t *testing.T) {
+		check(t, FeatureBackgroundPermissionsSync, nil, false)
 
-		check(t, FeatureACLs, license("starter"), false)
-		check(t, FeatureACLs, license(plan(oldEnterpriseStarter)), false)
-		check(t, FeatureACLs, license(plan(oldEnterprise)), true)
-		check(t, FeatureACLs, license(), true)
+		check(t, FeatureBackgroundPermissionsSync, license("starter"), false)
+		check(t, FeatureBackgroundPermissionsSync, license(plan(oldEnterpriseStarter)), false)
+		check(t, FeatureBackgroundPermissionsSync, license(plan(oldEnterprise)), true)
+		check(t, FeatureBackgroundPermissionsSync, license(), true)
 
-		check(t, FeatureACLs, license(plan(team)), false)
-		check(t, FeatureACLs, license(plan(enterprise0)), false)
-		check(t, FeatureACLs, license(plan(enterprise0), string(FeatureACLs)), true)
+		check(t, FeatureBackgroundPermissionsSync, license(plan(team)), false)
+		check(t, FeatureBackgroundPermissionsSync, license(plan(enterprise0)), false)
+		check(t, FeatureBackgroundPermissionsSync, license(plan(enterprise0), string(FeatureBackgroundPermissionsSync)), true)
 	})
 
 	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
