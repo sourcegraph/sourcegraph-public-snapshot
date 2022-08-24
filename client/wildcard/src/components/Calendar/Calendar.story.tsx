@@ -6,10 +6,27 @@ import { addDays, startOfDay, subDays } from 'date-fns'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Badge, Text } from '..'
+
 import { Calendar } from './Calendar'
 
 const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    <BrandedStory styles={webStyles}>
+        {() => (
+            <div className="container mt-3">
+                <Text>
+                    This is an{' '}
+                    <Badge variant="merged" className="mb-2">
+                        Experimental
+                    </Badge>{' '}
+                    component and built on top of `react-calendar` package with Sourcegraph CSS styling on top. It
+                    intentionally, omits other `react-calendar` props/features to not over-complicate and use as simple
+                    calendar, in case if we migrate to another calendar library or build our own.
+                </Text>
+                <div className="d-flex flex-column">{story()}</div>
+            </div>
+        )}
+    </BrandedStory>
 )
 
 const config: Meta = {
@@ -73,6 +90,18 @@ export const HighlightToday: Story = () => {
 }
 
 HighlightToday.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: true,
+    },
+}
+
+export const HighlightTodayRange: Story = () => {
+    const [value, onChange] = useState<[Date, Date]>([subDays(new Date(), 4), addDays(new Date(), 3)])
+    return <Calendar isRange={true} value={value} onChange={onChange} highlightToday={true} />
+}
+
+HighlightTodayRange.parameters = {
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: true,
