@@ -180,19 +180,6 @@ func TestHumanizeSchemaName(t *testing.T) {
 	}
 }
 
-func TestTableizeSchemaName(t *testing.T) {
-	for input, expected := range map[string]string{
-		"frontend":     "schema_migrations",
-		"codeintel":    "codeintel_schema_migrations",
-		"codeinsights": "codeinsights_schema_migrations",
-		"test":         "test_schema_migrations",
-	} {
-		if output := tableizeSchemaName(input); output != expected {
-			t.Errorf("unexpected output. want=%q have=%q", expected, output)
-		}
-	}
-}
-
 func TestVersions(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := dbtest.NewDB(logger, t)

@@ -523,16 +523,6 @@ func humanizeSchemaName(schemaName string) string {
 	return strings.TrimSuffix(schemaName, "_schema_migrations")
 }
 
-// tableizeSchemaName converts a migration name as defined in the migrations/ directory to
-// the name of the table used by golang-migrate.
-func tableizeSchemaName(schemaName string) string {
-	if schemaName == "frontend" {
-		return "schema_migrations"
-	}
-
-	return fmt.Sprintf("%s_schema_migrations", schemaName)
-}
-
 var quote = sqlf.Sprintf
 
 // isMissingRelation returns true if the given error occurs due to a missing relation in Postgres.
