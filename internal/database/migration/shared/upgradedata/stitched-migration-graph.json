@@ -468,6 +468,20 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1659572248,
+				"Name": "refresh_scoped_insights",
+				"UpQuery": "ALTER TABLE IF EXISTS insight_series\n    ADD COLUMN IF NOT EXISTS needs_migration bool;\n\n\nupdate insight_series\nset needs_migration = true\nwhere cardinality(repositories) \u003e 0 AND generation_method in ('search', 'search-compute') AND needs_migration is NULL;",
+				"DownQuery": "-- take no action on down so that the next up will not trigger another refreshing of series data.",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1656517037,
+					1656608833
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -555,6 +569,12 @@
 				"LeafIDs": [
 					1656517037,
 					1656608833
+				]
+			},
+			"v3.43.0": {
+				"RootID": 1000000027,
+				"LeafIDs": [
+					1659572248
 				]
 			}
 		}
@@ -1052,6 +1072,12 @@
 				]
 			},
 			"v3.42.0": {
+				"RootID": 1000000033,
+				"LeafIDs": [
+					1000000034
+				]
+			},
+			"v3.43.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1000000034
@@ -4375,7 +4401,7 @@
 				"ID": 1655481894,
 				"Name": "faster_ssbc_dequeue",
 				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs (user_id, started_at DESC);",
-				"DownQuery": "DROP INDEX IF EXISTS batch_spec_workspace_execution_jobsbatch_spec_workspace_execution_jobs_last_dequeue;",
+				"DownQuery": "DROP INDEX IF EXISTS batch_spec_workspace_execution_jobs_last_dequeue;",
 				"Privileged": false,
 				"NonIdempotent": false,
 				"Parents": [
@@ -4570,6 +4596,19 @@
 				"IndexMetadata": null
 			},
 			{
+				"ID": 1658122170,
+				"Name": "add_batch_change_id_to_batch_spec",
+				"UpQuery": "ALTER TABLE batch_specs\n    ADD COLUMN IF NOT EXISTS batch_change_id bigint,\n    ADD FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE;\n\nUPDATE batch_specs SET batch_change_id = (\n    -- In the event, the database is in a not-so-optimal state (usually in dev environment)\n    -- we want the subquery to never return more than one row.\n    -- This will never happen in production.\n    SELECT\n        bc.id\n    FROM batch_changes bc\n    WHERE bc.batch_spec_id = batch_specs.id\n    LIMIT 1\n);",
+				"DownQuery": "ALTER TABLE batch_specs\n    DROP COLUMN IF EXISTS batch_change_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1657635365
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
 				"ID": 1658174103,
 				"Name": "workspace_execution_user_queues",
 				"UpQuery": "CREATE TABLE IF NOT EXISTS batch_spec_workspace_execution_last_dequeues (\n    user_id integer PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED,\n    latest_dequeue timestamp with time zone\n);\n\nCREATE OR REPLACE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n    INSERT INTO\n        batch_spec_workspace_execution_last_dequeues\n    SELECT\n        user_id,\n        MAX(started_at) as latest_dequeue\n    FROM\n        newtab\n    GROUP BY\n        user_id\n    ON CONFLICT (user_id) DO UPDATE SET\n        latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);\n\n    RETURN NULL;\nEND $$;\n\nDROP TRIGGER IF EXISTS batch_spec_workspace_execution_last_dequeues_insert ON batch_spec_workspace_execution_jobs;\nCREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();\n\nDROP TRIGGER IF EXISTS batch_spec_workspace_execution_last_dequeues_update ON batch_spec_workspace_execution_jobs;\nCREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();\n\nDROP VIEW IF EXISTS batch_spec_workspace_execution_jobs_with_rank;\nDROP VIEW IF EXISTS batch_spec_workspace_execution_queue;\n\nCREATE VIEW batch_spec_workspace_execution_queue AS\nWITH queue_candidates AS (\n    SELECT\n        exec.id,\n        RANK() OVER (\n            PARTITION BY queue.user_id\n            -- Make sure the jobs are still fulfilled in timely order, and that the ordering is stable.\n            ORDER BY exec.created_at ASC, exec.id ASC\n        ) AS place_in_user_queue\n    FROM batch_spec_workspace_execution_jobs exec\n    JOIN batch_spec_workspace_execution_last_dequeues queue ON queue.user_id = exec.user_id\n    WHERE\n    \t-- Only queued records should get a rank.\n        exec.state = 'queued'\n    ORDER BY\n        -- Round-robin let users dequeue jobs.\n        place_in_user_queue,\n        -- And ensure the user who dequeued the longest ago is next.\n        queue.latest_dequeue ASC NULLS FIRST\n)\nSELECT\n    queue_candidates.id, ROW_NUMBER() OVER () AS place_in_global_queue, queue_candidates.place_in_user_queue\nFROM queue_candidates;\n\nCREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS (\n    SELECT\n        j.*,\n        q.place_in_global_queue,\n        q.place_in_user_queue\n    FROM\n        batch_spec_workspace_execution_jobs j\n    LEFT JOIN batch_spec_workspace_execution_queue q ON j.id = q.id\n);\n\nINSERT INTO batch_spec_workspace_execution_last_dequeues\nSELECT\n    exec.user_id as user_id,\n    MAX(exec.started_at) AS latest_dequeue\nFROM batch_spec_workspace_execution_jobs exec\nGROUP BY exec.user_id\nON CONFLICT (user_id) DO UPDATE\n    SET latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);",
@@ -4607,6 +4646,254 @@
 				"NonIdempotent": false,
 				"Parents": [
 					1657279170
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658255432,
+				"Name": "add_missing_constraints",
+				"UpQuery": "DELETE FROM batch_spec_resolution_jobs WHERE batch_spec_id IS NULL OR state IS NULL;\n\nALTER TABLE batch_spec_resolution_jobs\n    ALTER COLUMN batch_spec_id SET NOT NULL,\n    ALTER COLUMN state SET NOT NULL;\n\nDELETE FROM batch_spec_workspace_execution_jobs WHERE batch_spec_workspace_id IS NULL OR state IS NULL;\n\nALTER TABLE batch_spec_workspace_execution_jobs\n    ALTER COLUMN batch_spec_workspace_id SET NOT NULL,\n    ALTER COLUMN state SET NOT NULL;\n\nDELETE FROM batch_spec_workspaces WHERE batch_spec_id IS NULL OR changeset_spec_ids IS NULL OR repo_id IS NULL;\n\nALTER TABLE batch_spec_workspaces\n    ALTER COLUMN batch_spec_id SET NOT NULL,\n    ALTER COLUMN changeset_spec_ids SET NOT NULL,\n    ALTER COLUMN repo_id SET NOT NULL;\n\nDELETE FROM changeset_jobs WHERE state IS NULL;\nALTER TABLE changeset_jobs\n    ALTER COLUMN state SET NOT NULL;",
+				"DownQuery": "ALTER TABLE batch_spec_resolution_jobs\n    ALTER COLUMN batch_spec_id DROP NOT NULL,\n    ALTER COLUMN state DROP NOT NULL;\n\nALTER TABLE batch_spec_workspace_execution_jobs\n    ALTER COLUMN batch_spec_workspace_id DROP NOT NULL,\n    ALTER COLUMN state DROP NOT NULL;\n\nALTER TABLE batch_spec_workspaces\n    ALTER COLUMN batch_spec_id DROP NOT NULL,\n    ALTER COLUMN changeset_spec_ids DROP NOT NULL,\n    ALTER COLUMN repo_id DROP NOT NULL;\n\nALTER TABLE changeset_jobs\n    ALTER COLUMN state DROP NOT NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1654770608,
+					1657663493,
+					1658174103,
+					1658225452
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658384388,
+				"Name": "normalize product_licenses.license_key fields",
+				"UpQuery": "ALTER TABLE product_licenses ADD COLUMN IF NOT EXISTS license_version INT;\nALTER TABLE product_licenses ADD COLUMN IF NOT EXISTS license_tags TEXT[];\nALTER TABLE product_licenses ADD COLUMN IF NOT EXISTS license_user_count INT;\nALTER TABLE product_licenses ADD COLUMN IF NOT EXISTS license_expires_at TIMESTAMP WITH TIME ZONE;\nALTER TABLE product_subscriptions ADD COLUMN IF NOT EXISTS account_number TEXT;",
+				"DownQuery": "ALTER TABLE product_licenses DROP COLUMN IF EXISTS license_version;\nALTER TABLE product_licenses DROP COLUMN IF EXISTS license_tags;\nALTER TABLE product_licenses DROP COLUMN IF EXISTS license_user_count;\nALTER TABLE product_licenses DROP COLUMN IF EXISTS license_expires_at;\nALTER TABLE product_subscriptions DROP COLUMN IF EXISTS account_number;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658255432
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1653596521,
+				"Name": "Add column detached_at to changesets table",
+				"UpQuery": "ALTER TABLE changesets\n    ADD COLUMN IF NOT EXISTS detached_at timestamp with time zone;\n\nCREATE INDEX IF NOT EXISTS\n    changesets_detached_at\n    ON\n        changesets (detached_at);\n\nDROP VIEW IF EXISTS reconciler_changesets;\n\nCREATE VIEW reconciler_changesets AS\nSELECT c.id,\n       c.batch_change_ids,\n       c.repo_id,\n       c.queued_at,\n       c.created_at,\n       c.updated_at,\n       c.metadata,\n       c.external_id,\n       c.external_service_type,\n       c.external_deleted_at,\n       c.external_branch,\n       c.external_updated_at,\n       c.external_state,\n       c.external_review_state,\n       c.external_check_state,\n       c.diff_stat_added,\n       c.diff_stat_changed,\n       c.diff_stat_deleted,\n       c.sync_state,\n       c.current_spec_id,\n       c.previous_spec_id,\n       c.publication_state,\n       c.owned_by_batch_change_id,\n       c.reconciler_state,\n       c.failure_message,\n       c.started_at,\n       c.finished_at,\n       c.process_after,\n       c.num_resets,\n       c.closing,\n       c.num_failures,\n       c.log_contents,\n       c.execution_logs,\n       c.syncer_error,\n       c.external_title,\n       c.worker_hostname,\n       c.ui_publication_state,\n       c.last_heartbeat_at,\n       c.external_fork_namespace,\n       c.detached_at\nFROM changesets c\n         JOIN repo r ON r.id = c.repo_id\nWHERE r.deleted_at IS NULL AND EXISTS (\n    SELECT 1\n    FROM batch_changes\n             LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id\n             LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id\n    WHERE c.batch_change_ids ? batch_changes.id::text AND namespace_user.deleted_at IS NULL AND namespace_org.deleted_at IS NULL\n    );",
+				"DownQuery": "DROP VIEW IF EXISTS reconciler_changesets;\n\nCREATE VIEW reconciler_changesets AS\nSELECT c.id,\n       c.batch_change_ids,\n       c.repo_id,\n       c.queued_at,\n       c.created_at,\n       c.updated_at,\n       c.metadata,\n       c.external_id,\n       c.external_service_type,\n       c.external_deleted_at,\n       c.external_branch,\n       c.external_updated_at,\n       c.external_state,\n       c.external_review_state,\n       c.external_check_state,\n       c.diff_stat_added,\n       c.diff_stat_changed,\n       c.diff_stat_deleted,\n       c.sync_state,\n       c.current_spec_id,\n       c.previous_spec_id,\n       c.publication_state,\n       c.owned_by_batch_change_id,\n       c.reconciler_state,\n       c.failure_message,\n       c.started_at,\n       c.finished_at,\n       c.process_after,\n       c.num_resets,\n       c.closing,\n       c.num_failures,\n       c.log_contents,\n       c.execution_logs,\n       c.syncer_error,\n       c.external_title,\n       c.worker_hostname,\n       c.ui_publication_state,\n       c.last_heartbeat_at,\n       c.external_fork_namespace\nFROM changesets c\n         JOIN repo r ON r.id = c.repo_id\nWHERE r.deleted_at IS NULL AND EXISTS (\n    SELECT 1\n    FROM batch_changes\n             LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id\n             LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id\n    WHERE c.batch_change_ids ? batch_changes.id::text AND namespace_user.deleted_at IS NULL AND namespace_org.deleted_at IS NULL\n    );\n\nDROP INDEX IF EXISTS changesets_detached_at;\n\nALTER TABLE changesets DROP COLUMN IF EXISTS detached_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1652946496,
+					1653334014
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658484997,
+				"Name": "add webhook_build_jobs table",
+				"UpQuery": "CREATE SEQUENCE IF NOT EXISTS webhook_build_jobs_id_seq\n    START WITH 1\n    INCREMENT BY 1\n    NO MINVALUE\n    NO MAXVALUE\n    CACHE 1;\n\n CREATE TABLE IF NOT EXISTS webhook_build_jobs (\n    repo_id integer,\n    repo_name text,\n    extsvc_kind text,\n    queued_at timestamp with time zone DEFAULT now(),\n    id integer DEFAULT nextval('webhook_build_jobs_id_seq'::regclass) NOT NULL,\n    state text DEFAULT 'queued'::text NOT NULL,\n    failure_message text,\n    started_at timestamp with time zone,\n    finished_at timestamp with time zone,\n    process_after timestamp with time zone,\n    num_resets integer DEFAULT 0 NOT NULL,\n    num_failures integer DEFAULT 0 NOT NULL,\n    execution_logs json[],\n    last_heartbeat_at timestamp with time zone,\n    worker_hostname text DEFAULT ''::text NOT NULL\n );\n\n CREATE INDEX IF NOT EXISTS webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);",
+				"DownQuery": "DROP TABLE IF EXISTS webhook_build_jobs;\nDROP INDEX IF EXISTS webhook_build_jobs_queued_at_idx;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1653596521,
+					1658384388
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658503913,
+				"Name": "batches_changeset_state_computed",
+				"UpQuery": "ALTER TABLE changesets ADD COLUMN IF NOT EXISTS computed_state TEXT;\n\nDROP TRIGGER IF EXISTS changesets_update_computed_state ON changesets;\n\nUPDATE\n    changesets\nSET\n    computed_state = CASE\n        WHEN reconciler_state = 'errored' THEN 'RETRYING'\n        WHEN reconciler_state = 'failed' THEN 'FAILED'\n        WHEN reconciler_state = 'scheduled' THEN 'SCHEDULED'\n        WHEN reconciler_state != 'completed' THEN 'PROCESSING'\n        WHEN publication_state = 'UNPUBLISHED' THEN 'UNPUBLISHED'\n        ELSE external_state\n    END;\n\nALTER TABLE changesets ALTER COLUMN computed_state SET NOT NULL;\n\nCREATE OR REPLACE FUNCTION changesets_computed_state_ensure() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n\n    NEW.computed_state = CASE\n        WHEN NEW.reconciler_state = 'errored' THEN 'RETRYING'\n        WHEN NEW.reconciler_state = 'failed' THEN 'FAILED'\n        WHEN NEW.reconciler_state = 'scheduled' THEN 'SCHEDULED'\n        WHEN NEW.reconciler_state != 'completed' THEN 'PROCESSING'\n        WHEN NEW.publication_state = 'UNPUBLISHED' THEN 'UNPUBLISHED'\n        ELSE NEW.external_state\n    END AS computed_state;\n\n    RETURN NEW;\nEND $$;\n\nCREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();\n\nDROP VIEW IF EXISTS branch_changeset_specs_and_changesets;\nCREATE VIEW branch_changeset_specs_and_changesets AS\n SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state,\n    changesets.computed_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));\n\nDROP VIEW IF EXISTS tracking_changeset_specs_and_changesets;\nCREATE VIEW tracking_changeset_specs_and_changesets AS\n SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    repo.name AS repo_name,\n    COALESCE((changesets.metadata -\u003e\u003e 'Title'::text), (changesets.metadata -\u003e\u003e 'title'::text)) AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state,\n    changesets.computed_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));\n\nDROP VIEW IF EXISTS reconciler_changesets;\nCREATE VIEW reconciler_changesets AS\nSELECT c.id,\n       c.batch_change_ids,\n       c.repo_id,\n       c.queued_at,\n       c.created_at,\n       c.updated_at,\n       c.metadata,\n       c.external_id,\n       c.external_service_type,\n       c.external_deleted_at,\n       c.external_branch,\n       c.external_updated_at,\n       c.external_state,\n       c.external_review_state,\n       c.external_check_state,\n       c.diff_stat_added,\n       c.diff_stat_changed,\n       c.diff_stat_deleted,\n       c.sync_state,\n       c.current_spec_id,\n       c.previous_spec_id,\n       c.publication_state,\n       c.owned_by_batch_change_id,\n       c.reconciler_state,\n       c.computed_state,\n       c.failure_message,\n       c.started_at,\n       c.finished_at,\n       c.process_after,\n       c.num_resets,\n       c.closing,\n       c.num_failures,\n       c.log_contents,\n       c.execution_logs,\n       c.syncer_error,\n       c.external_title,\n       c.worker_hostname,\n       c.ui_publication_state,\n       c.last_heartbeat_at,\n       c.external_fork_namespace,\n       c.detached_at\nFROM changesets c\n         JOIN repo r ON r.id = c.repo_id\nWHERE r.deleted_at IS NULL AND EXISTS (\n    SELECT 1\n    FROM batch_changes\n             LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id\n             LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id\n    WHERE c.batch_change_ids ? batch_changes.id::text AND namespace_user.deleted_at IS NULL AND namespace_org.deleted_at IS NULL\n    );",
+				"DownQuery": "DROP TRIGGER IF EXISTS changesets_update_computed_state ON changesets;\nDROP FUNCTION IF EXISTS changesets_computed_state_ensure();\n\nDROP VIEW IF EXISTS branch_changeset_specs_and_changesets;\nCREATE VIEW branch_changeset_specs_and_changesets AS\n SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));\n\nDROP VIEW IF EXISTS tracking_changeset_specs_and_changesets;\nCREATE VIEW tracking_changeset_specs_and_changesets AS\n SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    repo.name AS repo_name,\n    COALESCE((changesets.metadata -\u003e\u003e 'Title'::text), (changesets.metadata -\u003e\u003e 'title'::text)) AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));\n\nDROP VIEW IF EXISTS reconciler_changesets;\nCREATE VIEW reconciler_changesets AS\nSELECT c.id,\n       c.batch_change_ids,\n       c.repo_id,\n       c.queued_at,\n       c.created_at,\n       c.updated_at,\n       c.metadata,\n       c.external_id,\n       c.external_service_type,\n       c.external_deleted_at,\n       c.external_branch,\n       c.external_updated_at,\n       c.external_state,\n       c.external_review_state,\n       c.external_check_state,\n       c.diff_stat_added,\n       c.diff_stat_changed,\n       c.diff_stat_deleted,\n       c.sync_state,\n       c.current_spec_id,\n       c.previous_spec_id,\n       c.publication_state,\n       c.owned_by_batch_change_id,\n       c.reconciler_state,\n       c.failure_message,\n       c.started_at,\n       c.finished_at,\n       c.process_after,\n       c.num_resets,\n       c.closing,\n       c.num_failures,\n       c.log_contents,\n       c.execution_logs,\n       c.syncer_error,\n       c.external_title,\n       c.worker_hostname,\n       c.ui_publication_state,\n       c.last_heartbeat_at,\n       c.external_fork_namespace,\n       c.detached_at\nFROM changesets c\n         JOIN repo r ON r.id = c.repo_id\nWHERE r.deleted_at IS NULL AND EXISTS (\n    SELECT 1\n    FROM batch_changes\n             LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id\n             LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id\n    WHERE c.batch_change_ids ? batch_changes.id::text AND namespace_user.deleted_at IS NULL AND namespace_org.deleted_at IS NULL\n    );\n\n\nALTER TABLE changesets DROP COLUMN IF EXISTS computed_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1653596521,
+					1658384388
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658512336,
+				"Name": "batches_changeset_state_index",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS changesets_computed_state ON changesets (computed_state);",
+				"DownQuery": "DROP INDEX IF EXISTS changesets_computed_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658503913
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "changesets",
+					"IndexName": "changesets_computed_state"
+				}
+			},
+			{
+				"ID": 1658748822,
+				"Name": "add_timestamps_to_lockfiles",
+				"UpQuery": "ALTER TABLE codeintel_lockfiles\n  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT NOW(),\n  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT NOW()\n  ;\n\nCOMMENT ON COLUMN codeintel_lockfiles.created_at IS 'Time when lockfile was indexed';\nCOMMENT ON COLUMN codeintel_lockfiles.updated_at IS 'Time when lockfile index was updated';",
+				"DownQuery": "ALTER TABLE codeintel_lockfiles\n  DROP COLUMN IF EXISTS created_at,\n  DROP COLUMN IF EXISTS updated_at\n  ;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658512336
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658837440,
+				"Name": "sync_jobs_missing_index",
+				"UpQuery": "DELETE FROM external_service_sync_jobs WHERE external_service_id IS NULL;\nALTER TABLE external_service_sync_jobs ALTER COLUMN external_service_id SET NOT NULL;",
+				"DownQuery": "ALTER TABLE external_service_sync_jobs ALTER COLUMN external_service_id DROP NOT NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658748822
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658856572,
+				"Name": "event_log_scrape_state",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS event_logs_scrape_state\n(\n    id                     SERIAL\n        CONSTRAINT event_logs_scrape_state_pk\n            PRIMARY KEY,\n    bookmark_id INT NOT NULL\n);\n\nCOMMENT ON TABLE event_logs_scrape_state IS 'Contains state for the periodic telemetry job that scrapes events if enabled.';\nCOMMENT ON COLUMN event_logs_scrape_state.bookmark_id IS 'Bookmarks the maximum most recent successful event_logs.id that was scraped';",
+				"DownQuery": "DROP TABLE IF EXISTS event_logs_scrape_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658748822
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658950366,
+				"Name": "event_log_scrape_allow_list",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS event_logs_export_allowlist\n(\n    id         SERIAL PRIMARY KEY,\n    event_name TEXT NOT NULL\n);\n\nCREATE UNIQUE INDEX IF NOT EXISTS event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist (event_name);\n\nCOMMENT ON TABLE event_logs_export_allowlist IS 'An allowlist of events that are approved for export if the scraping job is enabled';\nCOMMENT ON COLUMN event_logs_export_allowlist.event_name IS 'Name of the event that corresponds to event_logs.name';",
+				"DownQuery": "DROP TABLE IF EXISTS event_logs_export_allowlist;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658122170,
+					1658484997,
+					1658856572
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1659368926,
+				"Name": "cleanup_lsif_indexes_errored",
+				"UpQuery": "UPDATE lsif_indexes SET state = 'failed' WHERE state = 'errored' AND num_failures \u003e 0;",
+				"DownQuery": "-- Nothing to do here, to older instances both versions of this data are valid state.",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658950366
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1659380538,
+				"Name": "event_log_dot_com_fields",
+				"UpQuery": "ALTER TABLE IF EXISTS event_logs\n    ADD COLUMN IF NOT EXISTS first_source_url TEXT,\n    ADD COLUMN IF NOT EXISTS last_source_url  TEXT,\n    ADD COLUMN IF NOT EXISTS referrer         TEXT,\n    ADD COLUMN IF NOT EXISTS device_id        TEXT,\n    ADD COLUMN IF NOT EXISTS insert_id        TEXT;",
+				"DownQuery": "ALTER TABLE IF EXISTS event_logs\n    DROP COLUMN IF EXISTS first_source_url,\n    DROP COLUMN IF EXISTS last_source_url,\n    DROP COLUMN IF EXISTS referrer,\n    DROP COLUMN IF EXISTS device_id,\n    DROP COLUMN IF EXISTS insert_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1659368926
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1659434035,
+				"Name": "alter webhook_build_jobs table",
+				"UpQuery": "ALTER TABLE IF EXISTS webhook_build_jobs\n    ADD COLUMN IF NOT EXISTS org text,\n    ADD COLUMN IF NOT EXISTS extsvc_id integer;",
+				"DownQuery": "ALTER TABLE IF EXISTS webhook_build_jobs\n    DROP COLUMN IF EXISTS org,\n    DROP COLUMN IF EXISTS extsvc_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1659368926
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1659459805,
+				"Name": "repo key value pairs",
+				"UpQuery": "-- Perform migration here.\n\nCREATE TABLE IF NOT EXISTS repo_kvps (\n    repo_id INTEGER NOT NULL REFERENCES repo(id) ON DELETE CASCADE,\n    key TEXT NOT NULL,\n    value TEXT NULL,\n    PRIMARY KEY (repo_id, key) INCLUDE (value)\n);",
+				"DownQuery": "-- Undo the changes made in the up migration\n\nDROP TABLE IF EXISTS repo_kvps;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1659434035
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1659721548,
+				"Name": "data_usage_seed_allowlist",
+				"UpQuery": "INSERT INTO event_logs_export_allowlist (event_name)\nVALUES ('codeintel.searchDocumentHighlight'),\n       ('SearchNotebookBlocksUpdated'),\n       ('search.latencies.symbol'),\n       ('hover'),\n       ('codeintel.lsifDocumentHighlight'),\n       ('search.latencies.literal'),\n       ('codeintel.lsifHover'),\n       ('codeintel.lsifDefinitions'),\n       ('SearchResultsFetched'),\n       ('search.latencies.regexp'),\n       ('codeintel.searchDefinitions'),\n       ('codeintel.searchHover'),\n       ('ViewHome'),\n       ('ViewSearchResults'),\n       ('search.latencies.repo'),\n       ('HomepageInvitationsViewEmpty'),\n       ('RecentSearchesPanelLoaded'),\n       ('SavedSearchesPanelLoaded'),\n       ('SearchResultClicked'),\n       ('INSIGHT_TOTAL_ORGS_WITH_DASHBOARD'),\n       ('INSIGHT_TOTAL_COUNT_CRITICAL'),\n       ('INSIGHT_TIME_INTERVALS'),\n       ('INSIGHT_ORG_VISIBLE_INSIGHTS'),\n       ('INSIGHT_TOTAL_COUNTS'),\n       ('INSIGHT_DASHBOARD_TOTAL_COUNT'),\n       ('INSIGHTS_PER_DASHBORD_STATS'),\n       ('RepositoriesPanelLoaded'),\n       ('RecentFilesPanelLoaded'),\n       ('SearchResultsCacheRetrieved'),\n       ('BrowserExtensionConnectedToServer'),\n       ('ViewTree'),\n       ('FileTreeClick'),\n       ('codeintel.searchDefinitions.xrepo'),\n       ('search.latencies.file'),\n       ('ViewNoResultsPage'),\n       ('ViewRepository'),\n       ('search.latencies.structural'),\n       ('InsightHover'),\n       ('ExternalAuthSignupFailed'),\n       ('CodeIntelRefs'),\n       ('search.latencies.diff'),\n       ('SurveyReminderViewed'),\n       ('ExtensionActivation'),\n       ('InstallBrowserExtensionCTAShown'),\n       ('ViewSiteAdminOverview'),\n       ('ViewSettingsUser'),\n       ('SearchContextDropdownToggled'),\n       ('definitionHoverOverlay.click'),\n       ('InstallIDEExtensionCTAShown'),\n       ('search.latencies.commit'),\n       ('ViewRepositoryCommit'),\n       ('ViewOnboardingTour'),\n       ('ViewCodeIntelIndexes'),\n       ('ViewInsights'),\n       ('codeintel.lsifReferences'),\n       ('NotebookVisibilitySettingsDropdownToggled'),\n       ('referenceHoverOverlay.click'),\n       ('ViewSearchNotebooksListMyNotebooks'),\n       ('ViewBatchChangesListPage'),\n       ('SearchContextsDropdownViewed'),\n       ('ViewExecutorsList'),\n       ('findReferences'),\n       ('ReferencePanelResultsClicked'),\n       ('SearchNotebooksListPageViewed'),\n       ('SearchNotebookPageViewed'),\n       ('ViewCodeIntelUploads'),\n       ('ViewCodeIntelConfiguration'),\n       ('ExternalAuthSignupSucceeded'),\n       ('ViewSiteAdminConfiguration'),\n       ('goToDefinition.preloaded'),\n       ('ViewSiteAdminExternalServices'),\n       ('CodeCopied'),\n       ('SearchNotebookRunBlock'),\n       ('ViewSiteAdminRepos'),\n       ('git.blame.toggle'),\n       ('codeintel.searchReferences'),\n       ('SearchContextSelected'),\n       ('ViewSiteAdminUsageStatistics'),\n       ('ViewUserProfile'),\n       ('SettingsFileSaved'),\n       ('CodeMonitoringGettingStartedPageViewed'),\n       ('SignInAttempted'),\n       ('SearchNotebookAddBlock'),\n       ('ViewUserSettingsTokens'),\n       ('ViewCodeIntelIndex'),\n       ('GoToCodeHostClicked'),\n       ('RecentSearchesPanelSearchClicked'),\n       ('RepositoriesPanelRepoFilterClicked'),\n       ('codeintel.lsifDefinitions.xrepo'),\n       ('ViewSiteAdminAllUsers'),\n       ('SignInSucceeded'),\n       ('CodeMonitoringPageViewed'),\n       ('ViewCodeIntelRepositoryIndexConfiguration'),\n       ('ViewCodeIntelConfigurationPolicy'),\n       ('NotebooksGettingStartedTabViewed'),\n       ('ViewAddExternalService'),\n       ('InsightUICustomization'),\n       ('ViewRepositoryError'),\n       ('ViewCodeInsightsCreationPage'),\n       ('SearchNotebookShareModalOpened'),\n       ('ViewSiteAdminExternalService'),\n       ('ViewExtensionsOverview'),\n       ('ManageCodeMonitorPageViewed'),\n       ('ViewInsightsGetStartedPage'),\n       ('StandaloneInsightPageViewed'),\n       ('ViewBatchChangeDetailsPage'),\n       ('ViewRevisionsPopover'),\n       ('ViewUserSettingsEmails'),\n       ('codeintel.searchReferences.xrepo'),\n       ('SymbolTreeViewClicked'),\n       ('ViewApiConsole'),\n       ('UTMCodeHostIntegration'),\n       ('ViewSettingsSite'),\n       ('ViewRepoSettingsIndex'),\n       ('codeintel.lsifImplementations'),\n       ('IDESearchSubmitted'),\n       ('ViewUserSettingsProductResearch'),\n       ('ViewUserSettingsPassword'),\n       ('ViewSettingsOrg'),\n       ('ViewSearchNotebooksListExploreNotebooks'),\n       ('ViewRepoSettings'),\n       ('SearchDidYouMeanDisplayed'),\n       ('SiteConfigurationSaved'),\n       ('ShowHistoryPanel'),\n       ('ViewSavedSearchListPage'),\n       ('ViewCodeInsightsSearchBasedCreationPage'),\n       ('findImplementations'),\n       ('ViewRepoSettingsMirror'),\n       ('AdminAnalyticsCodeIntelViewed'),\n       ('AdminAnalyticsSearchViewed'),\n       ('InsightAddMoreClick'),\n       ('ViewSignIn'),\n       ('ViewOrgSettingsProfile'),\n       ('InsightDataPointClick'),\n       ('SignInFailed'),\n       ('ViewSearchNotebooksListStarredNotebooks'),\n       ('ViewSiteAdminOrgs'),\n       ('ViewRepoSettingsPermissions'),\n       ('BrowserExtensionPopupOpened'),\n       ('CreateCodeMonitorPageViewed'),\n       ('FuzzyFinderViewed'),\n       ('ViewNewAccessToken'),\n       ('AccessTokenCreated'),\n       ('RepositoriesPopover'),\n       ('ViewRepositoriesPopover'),\n       ('SearchNotebookDeleteBlock'),\n       ('RootBreadcrumbClicked'),\n       ('ViewUserEventLogPage'),\n       ('CodeInsightsCreateSearchBasedInsightClick'),\n       ('ViewRepositoryCompareOverview'),\n       ('InsightAddition'),\n       ('AdminAnalyticsCodeIntelAggUniquesClicked'),\n       ('StandaloneInsightPageEditClick'),\n       ('SearchNotebookTitleUpdated'),\n       ('SearchNotebooksNotebooksTabClick'),\n       ('CopyFilePath'),\n       ('ViewOrgMembers'),\n       ('InsightEdit'),\n       ('RepositoryComparisonFetched'),\n       ('SearchNotebookCreated'),\n       ('AdminAnalyticsNotebooksViewed'),\n       ('NoResultsPanel'),\n       ('ViewSiteAdminProductSubscription'),\n       ('AdminAnalyticsUsersViewed'),\n       ('ReferencePanelClickedReferences'),\n       ('CreateCodeMonitorFormSubmitted'),\n       ('ViewBatchChangeApplyPage'),\n       ('CloseOnboardingTourClicked'),\n       ('IDEInstalled'),\n       ('FileTreeViewClicked'),\n       ('AdminAnalyticsBatchChangesViewed'),\n       ('ViewRepositoryBranchesOverview'),\n       ('WAUsChartSelected'),\n       ('ViewCodeIntelUpload'),\n       ('codeintel.lsifReferences.xrepo'),\n       ('mixPreciseAndSearchBasedReferences.toggle'),\n       ('ViewSiteAdminSurveyResponses'),\n       ('ViewRepositoryCommits'),\n       ('ViewNewOrg'),\n       ('SearchResultsFetchFailed'),\n       ('SiteConfigurationActionExecuted'),\n       ('CodeInsightsSearchBasedCreationPageSubmitClick'),\n       ('ReferencePanelClickedImplementations'),\n       ('SearchNotebookMoveBlock'),\n       ('UserNotificationsLinkClicked'),\n       ('AdminAnalyticsCodeIntelAggTotalsClicked'),\n       ('ReferencePanelClickedDefinition'),\n       ('ViewCodeInsightsCaptureGroupCreationPage'),\n       ('SearchNotebooksGettingStartedTabClick'),\n       ('ViewUserSettingsPermissions'),\n       ('CodeInsightsCreateCaptureGroupInsightClick'),\n       ('BrowserExtensionPopupRejected'),\n       ('AdminAnalyticsSearchAggUniquesClicked'),\n       ('CommitSHACopiedToClipboard'),\n       ('ExtensionToggled'),\n       ('vscode.open.file'),\n       ('SearchNotebookRunAllBlocks'),\n       ('CodeInsightsDashboardCreationPageSubmitClick'),\n       ('BatchSpecCreated'),\n       ('AddExternalServiceSucceeded'),\n       ('ManageCodeMonitorFormSubmitted'),\n       ('BatchChangeCreatedOrUpdated'),\n       ('SearchNotepadEnabled'),\n       ('ReferencePanelClickedHistory'),\n       ('SearchSnippetClicked'),\n       ('ViewSiteAdminUpdates'),\n       ('CodeInsightsCaptureGroupCreationPageSubmitClick'),\n       ('SearchSkippedResultsAgainClicked'),\n       ('ViewRepositoryReleasesTags'),\n       ('OrgMemberAdded'),\n       ('RepositoryComparisonSubmitted'),\n       ('AdminAnalyticsSearchDateRangeLAST_WEEKSelected'),\n       ('ViewCodeInsightsCodeStatsCreationPage'),\n       ('DAUsChartSelected'),\n       ('goToDefinition'),\n       ('MAUsChartSelected'),\n       ('SettingsFileDiscard'),\n       ('ViewRepositoryStatsContributors'),\n       ('InstallBrowserExtensionCTAClicked'),\n       ('NewUserEmailAddressAdded'),\n       ('HomepageFooterCTASelected'),\n       ('ViewedOnboardingTourFilterRepoStep'),\n       ('SurveyButtonClicked'),\n       ('ViewNewSavedSearchPage'),\n       ('allResultsCollapsed'),\n       ('SearchHelpDropdownQueryDocsLinkClicked'),\n       ('CodeMonitoringLogsPageViewed'),\n       ('AdminAnalyticsSearchAggTotalsClicked'),\n       ('ViewBatchChangeDetailsPageAfterCreate'),\n       ('OnboardingTourRepositoryOptionClicked'),\n       ('CodeInsightsCreateCodeStatsInsightClick'),\n       ('referenceCodeHost.click'),\n       ('InsightsGetStartedTabClick'),\n       ('NewOrgCreated'),\n       ('BatchChangeClosed'),\n       ('CreateNewOrgClicked'),\n       ('AddExternalServiceFailed'),\n       ('CommitBodyToggled'),\n       ('ViewSurvey'),\n       ('HideHistoryPanel'),\n       ('IDEUninstalled'),\n       ('ViewSiteAdminPings'),\n       ('InsightRemoval'),\n       ('ViewRepositoryBranchesAll'),\n       ('SavedSearchCreated'),\n       ('UserEmailAddressSetAsPrimary'),\n       ('WrappedCode'),\n       ('batch_change_list_page:create_batch_change_details:clicked'),\n       ('ViewRegistryExtensionManifest'),\n       ('SearchReferenceClosed'),\n       ('AdminAnalyticsUsersAggTotalsClicked'),\n       ('SearchNotebookCopyNotebookButtonClick'),\n       ('codecov.decorations.toggleCoverage'),\n       ('AdminAnalyticsUsersAggUniquesClicked'),\n       ('AlertNeedsRepoConfigCTAClicked'),\n       ('BatchChangeDeleted'),\n       ('ManageCodeMonitorDeleteSubmitted'),\n       ('AdminAnalyticsNotebooksAggTotalsClicked'),\n       ('CodeInsightsCodeStatsCreationPageSubmitClick'),\n       ('SearchNotebookImportMarkdownNotebookButtonClick'),\n       ('NoResultsVideoPlayed'),\n       ('AdminAnalyticsNotebooksAggUniquesClicked'),\n       ('NoResultsMore'),\n       ('SearchNotebookDeleteButtonClicked'),\n       ('SurveySubmitted'),\n       ('UpdateUserClicked'),\n       ('SavedSearchesPanelCreateButtonClicked'),\n       ('UserEmailAddressMarkedVerified'),\n       ('SearchNotebookImportedFromMarkdown'),\n       ('AddOrgMemberFailed'),\n       ('SearchResultsAutoPureOther'),\n       ('allResultsExpanded'),\n       ('SettingsFileDiscardCanceled'),\n       ('SearchResultsAutoPureAnd'),\n       ('SignUpSucceeded'),\n       ('SearchNotebookDeleteModalOpened'),\n       ('AdminAnalyticsNotebooksDateRangeLAST_MONTHSelected'),\n       ('AdminAnalyticsNotebooksDateRangeLAST_WEEKSelected'),\n       ('ViewSiteAdminRegistryExtensions'),\n       ('InsightsGetStartedBigTemplateClick'),\n       ('ViewSiteAdminCreateUser'),\n       ('SearchResultContextsCTAShown'),\n       ('AdminAnalyticsNotebooksDateRangeLAST_THREE_MONTHSSelected'),\n       ('SearchDidYouMeanClicked'),\n       ('SearchNotebookExportNotebook'),\n       ('InsightGetStartedTemplateClick'),\n       ('UserProfileUpdated'),\n       ('AdminAnalyticsSearchMinutesInputEdited'),\n       ('UserEmailAddressMarkedUnverified'),\n       ('searchExport.export'),\n       ('CodeMonitoringExampleMonitorClicked'),\n       ('BrowserExtensionPopupClosed'),\n       ('ViewSearchNotebooksListOrgNotebooks')\nON CONFLICT DO NOTHING;",
+				"DownQuery": "DELETE\nFROM event_logs_export_allowlist\nWHERE event_name IN ('codeintel.searchDocumentHighlight',\n                     'SearchNotebookBlocksUpdated',\n                     'search.latencies.symbol',\n                     'hover',\n                     'codeintel.lsifDocumentHighlight',\n                     'search.latencies.literal',\n                     'codeintel.lsifHover',\n                     'codeintel.lsifDefinitions',\n                     'SearchResultsFetched',\n                     'search.latencies.regexp',\n                     'codeintel.searchDefinitions',\n                     'codeintel.searchHover',\n                     'ViewHome',\n                     'ViewSearchResults',\n                     'search.latencies.repo',\n                     'HomepageInvitationsViewEmpty',\n                     'RecentSearchesPanelLoaded',\n                     'SavedSearchesPanelLoaded',\n                     'SearchResultClicked',\n                     'INSIGHT_TOTAL_ORGS_WITH_DASHBOARD',\n                     'INSIGHT_TOTAL_COUNT_CRITICAL',\n                     'INSIGHT_TIME_INTERVALS',\n                     'INSIGHT_ORG_VISIBLE_INSIGHTS',\n                     'INSIGHT_TOTAL_COUNTS',\n                     'INSIGHT_DASHBOARD_TOTAL_COUNT',\n                     'INSIGHTS_PER_DASHBORD_STATS',\n                     'RepositoriesPanelLoaded',\n                     'RecentFilesPanelLoaded',\n                     'SearchResultsCacheRetrieved',\n                     'BrowserExtensionConnectedToServer',\n                     'ViewTree',\n                     'FileTreeClick',\n                     'codeintel.searchDefinitions.xrepo',\n                     'search.latencies.file',\n                     'ViewNoResultsPage',\n                     'ViewRepository',\n                     'search.latencies.structural',\n                     'InsightHover',\n                     'ExternalAuthSignupFailed',\n                     'CodeIntelRefs',\n                     'search.latencies.diff',\n                     'SurveyReminderViewed',\n                     'ExtensionActivation',\n                     'InstallBrowserExtensionCTAShown',\n                     'ViewSiteAdminOverview',\n                     'ViewSettingsUser',\n                     'SearchContextDropdownToggled',\n                     'definitionHoverOverlay.click',\n                     'InstallIDEExtensionCTAShown',\n                     'search.latencies.commit',\n                     'ViewRepositoryCommit',\n                     'ViewOnboardingTour',\n                     'ViewCodeIntelIndexes',\n                     'ViewInsights',\n                     'codeintel.lsifReferences',\n                     'NotebookVisibilitySettingsDropdownToggled',\n                     'referenceHoverOverlay.click',\n                     'ViewSearchNotebooksListMyNotebooks',\n                     'ViewBatchChangesListPage',\n                     'SearchContextsDropdownViewed',\n                     'ViewExecutorsList',\n                     'findReferences',\n                     'ReferencePanelResultsClicked',\n                     'SearchNotebooksListPageViewed',\n                     'SearchNotebookPageViewed',\n                     'ViewCodeIntelUploads',\n                     'ViewCodeIntelConfiguration',\n                     'ExternalAuthSignupSucceeded',\n                     'ViewSiteAdminConfiguration',\n                     'goToDefinition.preloaded',\n                     'ViewSiteAdminExternalServices',\n                     'CodeCopied',\n                     'SearchNotebookRunBlock',\n                     'ViewSiteAdminRepos',\n                     'git.blame.toggle',\n                     'codeintel.searchReferences',\n                     'SearchContextSelected',\n                     'ViewSiteAdminUsageStatistics',\n                     'ViewUserProfile',\n                     'SettingsFileSaved',\n                     'CodeMonitoringGettingStartedPageViewed',\n                     'SignInAttempted',\n                     'SearchNotebookAddBlock',\n                     'ViewUserSettingsTokens',\n                     'ViewCodeIntelIndex',\n                     'GoToCodeHostClicked',\n                     'RecentSearchesPanelSearchClicked',\n                     'RepositoriesPanelRepoFilterClicked',\n                     'codeintel.lsifDefinitions.xrepo',\n                     'ViewSiteAdminAllUsers',\n                     'SignInSucceeded',\n                     'CodeMonitoringPageViewed',\n                     'ViewCodeIntelRepositoryIndexConfiguration',\n                     'ViewCodeIntelConfigurationPolicy',\n                     'NotebooksGettingStartedTabViewed',\n                     'ViewAddExternalService',\n                     'InsightUICustomization',\n                     'ViewRepositoryError',\n                     'ViewCodeInsightsCreationPage',\n                     'SearchNotebookShareModalOpened',\n                     'ViewSiteAdminExternalService',\n                     'ViewExtensionsOverview',\n                     'ManageCodeMonitorPageViewed',\n                     'ViewInsightsGetStartedPage',\n                     'StandaloneInsightPageViewed',\n                     'ViewBatchChangeDetailsPage',\n                     'ViewRevisionsPopover',\n                     'ViewUserSettingsEmails',\n                     'codeintel.searchReferences.xrepo',\n                     'SymbolTreeViewClicked',\n                     'ViewApiConsole',\n                     'UTMCodeHostIntegration',\n                     'ViewSettingsSite',\n                     'ViewRepoSettingsIndex',\n                     'codeintel.lsifImplementations',\n                     'IDESearchSubmitted',\n                     'ViewUserSettingsProductResearch',\n                     'ViewUserSettingsPassword',\n                     'ViewSettingsOrg',\n                     'ViewSearchNotebooksListExploreNotebooks',\n                     'ViewRepoSettings',\n                     'SearchDidYouMeanDisplayed',\n                     'SiteConfigurationSaved',\n                     'ShowHistoryPanel',\n                     'ViewSavedSearchListPage',\n                     'ViewCodeInsightsSearchBasedCreationPage',\n                     'findImplementations',\n                     'ViewRepoSettingsMirror',\n                     'AdminAnalyticsCodeIntelViewed',\n                     'AdminAnalyticsSearchViewed',\n                     'InsightAddMoreClick',\n                     'ViewSignIn',\n                     'ViewOrgSettingsProfile',\n                     'InsightDataPointClick',\n                     'SignInFailed',\n                     'ViewSearchNotebooksListStarredNotebooks',\n                     'ViewSiteAdminOrgs',\n                     'ViewRepoSettingsPermissions',\n                     'BrowserExtensionPopupOpened',\n                     'CreateCodeMonitorPageViewed',\n                     'FuzzyFinderViewed',\n                     'ViewNewAccessToken',\n                     'AccessTokenCreated',\n                     'RepositoriesPopover',\n                     'ViewRepositoriesPopover',\n                     'SearchNotebookDeleteBlock',\n                     'RootBreadcrumbClicked',\n                     'ViewUserEventLogPage',\n                     'CodeInsightsCreateSearchBasedInsightClick',\n                     'ViewRepositoryCompareOverview',\n                     'InsightAddition',\n                     'AdminAnalyticsCodeIntelAggUniquesClicked',\n                     'StandaloneInsightPageEditClick',\n                     'SearchNotebookTitleUpdated',\n                     'SearchNotebooksNotebooksTabClick',\n                     'CopyFilePath',\n                     'ViewOrgMembers',\n                     'InsightEdit',\n                     'RepositoryComparisonFetched',\n                     'SearchNotebookCreated',\n                     'AdminAnalyticsNotebooksViewed',\n                     'NoResultsPanel',\n                     'ViewSiteAdminProductSubscription',\n                     'AdminAnalyticsUsersViewed',\n                     'ReferencePanelClickedReferences',\n                     'CreateCodeMonitorFormSubmitted',\n                     'ViewBatchChangeApplyPage',\n                     'CloseOnboardingTourClicked',\n                     'IDEInstalled',\n                     'FileTreeViewClicked',\n                     'AdminAnalyticsBatchChangesViewed',\n                     'ViewRepositoryBranchesOverview',\n                     'WAUsChartSelected',\n                     'ViewCodeIntelUpload',\n                     'codeintel.lsifReferences.xrepo',\n                     'mixPreciseAndSearchBasedReferences.toggle',\n                     'ViewSiteAdminSurveyResponses',\n                     'ViewRepositoryCommits',\n                     'ViewNewOrg',\n                     'SearchResultsFetchFailed',\n                     'SiteConfigurationActionExecuted',\n                     'CodeInsightsSearchBasedCreationPageSubmitClick',\n                     'ReferencePanelClickedImplementations',\n                     'SearchNotebookMoveBlock',\n                     'UserNotificationsLinkClicked',\n                     'AdminAnalyticsCodeIntelAggTotalsClicked',\n                     'ReferencePanelClickedDefinition',\n                     'ViewCodeInsightsCaptureGroupCreationPage',\n                     'SearchNotebooksGettingStartedTabClick',\n                     'ViewUserSettingsPermissions',\n                     'CodeInsightsCreateCaptureGroupInsightClick',\n                     'BrowserExtensionPopupRejected',\n                     'AdminAnalyticsSearchAggUniquesClicked',\n                     'CommitSHACopiedToClipboard',\n                     'ExtensionToggled',\n                     'vscode.open.file',\n                     'SearchNotebookRunAllBlocks',\n                     'CodeInsightsDashboardCreationPageSubmitClick',\n                     'BatchSpecCreated',\n                     'AddExternalServiceSucceeded',\n                     'ManageCodeMonitorFormSubmitted',\n                     'BatchChangeCreatedOrUpdated',\n                     'SearchNotepadEnabled',\n                     'ReferencePanelClickedHistory',\n                     'SearchSnippetClicked',\n                     'ViewSiteAdminUpdates',\n                     'CodeInsightsCaptureGroupCreationPageSubmitClick',\n                     'SearchSkippedResultsAgainClicked',\n                     'ViewRepositoryReleasesTags',\n                     'OrgMemberAdded',\n                     'RepositoryComparisonSubmitted',\n                     'AdminAnalyticsSearchDateRangeLAST_WEEKSelected',\n                     'ViewCodeInsightsCodeStatsCreationPage',\n                     'DAUsChartSelected',\n                     'goToDefinition',\n                     'MAUsChartSelected',\n                     'SettingsFileDiscard',\n                     'ViewRepositoryStatsContributors',\n                     'InstallBrowserExtensionCTAClicked',\n                     'NewUserEmailAddressAdded',\n                     'HomepageFooterCTASelected',\n                     'ViewedOnboardingTourFilterRepoStep',\n                     'SurveyButtonClicked',\n                     'ViewNewSavedSearchPage',\n                     'allResultsCollapsed',\n                     'SearchHelpDropdownQueryDocsLinkClicked',\n                     'CodeMonitoringLogsPageViewed',\n                     'AdminAnalyticsSearchAggTotalsClicked',\n                     'ViewBatchChangeDetailsPageAfterCreate',\n                     'OnboardingTourRepositoryOptionClicked',\n                     'CodeInsightsCreateCodeStatsInsightClick',\n                     'referenceCodeHost.click',\n                     'InsightsGetStartedTabClick',\n                     'NewOrgCreated',\n                     'BatchChangeClosed',\n                     'CreateNewOrgClicked',\n                     'AddExternalServiceFailed',\n                     'CommitBodyToggled',\n                     'ViewSurvey',\n                     'HideHistoryPanel',\n                     'IDEUninstalled',\n                     'ViewSiteAdminPings',\n                     'InsightRemoval',\n                     'ViewRepositoryBranchesAll',\n                     'SavedSearchCreated',\n                     'UserEmailAddressSetAsPrimary',\n                     'WrappedCode',\n                     'batch_change_list_page:create_batch_change_details:clicked',\n                     'ViewRegistryExtensionManifest',\n                     'SearchReferenceClosed',\n                     'AdminAnalyticsUsersAggTotalsClicked',\n                     'SearchNotebookCopyNotebookButtonClick',\n                     'codecov.decorations.toggleCoverage',\n                     'AdminAnalyticsUsersAggUniquesClicked',\n                     'AlertNeedsRepoConfigCTAClicked',\n                     'BatchChangeDeleted',\n                     'ManageCodeMonitorDeleteSubmitted',\n                     'AdminAnalyticsNotebooksAggTotalsClicked',\n                     'CodeInsightsCodeStatsCreationPageSubmitClick',\n                     'SearchNotebookImportMarkdownNotebookButtonClick',\n                     'NoResultsVideoPlayed',\n                     'AdminAnalyticsNotebooksAggUniquesClicked',\n                     'NoResultsMore',\n                     'SearchNotebookDeleteButtonClicked',\n                     'SurveySubmitted',\n                     'UpdateUserClicked',\n                     'SavedSearchesPanelCreateButtonClicked',\n                     'UserEmailAddressMarkedVerified',\n                     'SearchNotebookImportedFromMarkdown',\n                     'AddOrgMemberFailed',\n                     'SearchResultsAutoPureOther',\n                     'allResultsExpanded',\n                     'SettingsFileDiscardCanceled',\n                     'SearchResultsAutoPureAnd',\n                     'SignUpSucceeded',\n                     'SearchNotebookDeleteModalOpened',\n                     'AdminAnalyticsNotebooksDateRangeLAST_MONTHSelected',\n                     'AdminAnalyticsNotebooksDateRangeLAST_WEEKSelected',\n                     'ViewSiteAdminRegistryExtensions',\n                     'InsightsGetStartedBigTemplateClick',\n                     'ViewSiteAdminCreateUser',\n                     'SearchResultContextsCTAShown',\n                     'AdminAnalyticsNotebooksDateRangeLAST_THREE_MONTHSSelected',\n                     'SearchDidYouMeanClicked',\n                     'SearchNotebookExportNotebook',\n                     'InsightGetStartedTemplateClick',\n                     'UserProfileUpdated',\n                     'AdminAnalyticsSearchMinutesInputEdited',\n                     'UserEmailAddressMarkedUnverified',\n                     'searchExport.export',\n                     'CodeMonitoringExampleMonitorClicked',\n                     'BrowserExtensionPopupClosed',\n                     'ViewSearchNotebooksListOrgNotebooks');",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658837440,
+					1659380538,
+					1659434035
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1660132915,
+				"Name": "lsif_uploads_uncompressed_size",
+				"UpQuery": "ALTER TABLE lsif_uploads\nADD COLUMN IF NOT EXISTS uncompressed_size bigint;\n\nDROP VIEW IF EXISTS lsif_uploads_with_repository_name;\n\nCREATE VIEW lsif_uploads_with_repository_name AS\nSELECT u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\nFROM lsif_uploads u\nJOIN repo r ON r.id = u.repository_id\nWHERE r.deleted_at IS NULL;",
+				"DownQuery": "DROP VIEW IF EXISTS lsif_uploads_with_repository_name;\n\nCREATE VIEW lsif_uploads_with_repository_name AS\nSELECT u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name\nFROM lsif_uploads u\nJOIN repo r ON r.id = u.repository_id\nWHERE r.deleted_at IS NULL;\n\nALTER TABLE lsif_uploads\nDROP COLUMN IF EXISTS uncompressed_size;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1659721548
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1660312877,
+				"Name": "add aggregated user statistics table",
+				"UpQuery": "-- Perform migration here.\n\nCREATE TABLE IF NOT EXISTS aggregated_user_statistics (\n    user_id BIGINT NOT NULL PRIMARY KEY,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,\n    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,\n    user_last_active_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,\n    user_events_count BIGINT DEFAULT NULL,\n    CONSTRAINT aggregated_user_statistics_user_id_fkey FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE\n);",
+				"DownQuery": "-- Undo the changes made in the up migration\n\nDROP TABLE IF EXISTS aggregated_user_statistics;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1659459805,
+					1660132915
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1658874734,
+				"Name": "normalized_changeset_specs",
+				"UpQuery": "ALTER TABLE changeset_specs\n    ADD COLUMN IF NOT EXISTS diff bytea,\n    ADD COLUMN IF NOT EXISTS base_rev TEXT,\n    ADD COLUMN IF NOT EXISTS base_ref TEXT,\n    ADD COLUMN IF NOT EXISTS body TEXT,\n    ADD COLUMN IF NOT EXISTS published TEXT,\n    ADD COLUMN IF NOT EXISTS commit_message TEXT,\n    ADD COLUMN IF NOT EXISTS commit_author_name TEXT,\n    ADD COLUMN IF NOT EXISTS commit_author_email TEXT,\n    ADD COLUMN IF NOT EXISTS type TEXT;\n\nUPDATE\n    changeset_specs\nSET\n    diff = convert_to(spec-\u003e'commits'-\u003e0-\u003e\u003e'diff', 'UTF8'),\n    base_rev = spec-\u003e\u003e'baseRev',\n    base_ref = spec-\u003e\u003e'baseRef',\n    body = spec-\u003e\u003e'body',\n    published = spec-\u003e\u003e'published',\n    commit_message = spec-\u003e'commits'-\u003e0-\u003e\u003e'message',\n    commit_author_name = spec-\u003e'commits'-\u003e0-\u003e\u003e'authorName',\n    commit_author_email = spec-\u003e'commits'-\u003e0-\u003e\u003e'authorEmail',\n    type = CASE WHEN spec-\u003e\u003e'externalID' IS NOT NULL THEN 'existing' ELSE 'branch' END;",
+				"DownQuery": "ALTER TABLE changeset_specs\n    DROP COLUMN IF EXISTS diff,\n    DROP COLUMN IF EXISTS base_rev,\n    DROP COLUMN IF EXISTS base_ref,\n    DROP COLUMN IF EXISTS body,\n    DROP COLUMN IF EXISTS published,\n    DROP COLUMN IF EXISTS commit_message,\n    DROP COLUMN IF EXISTS commit_author_name,\n    DROP COLUMN IF EXISTS commit_author_email,\n    DROP COLUMN IF EXISTS type;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1658748822
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
@@ -4702,6 +4989,13 @@
 					1658174103,
 					1658225452,
 					1657663493
+				]
+			},
+			"v3.43.0": {
+				"RootID": 1646027072,
+				"LeafIDs": [
+					1660312877,
+					1658874734
 				]
 			}
 		}
