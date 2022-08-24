@@ -26,8 +26,6 @@ var preview bool
 var wantYaml bool
 var docs bool
 
-var logger log.Logger
-
 func init() {
 	flag.BoolVar(&preview, "preview", false, "Preview the pipeline steps")
 	flag.BoolVar(&wantYaml, "yaml", false, "Use YAML instead of JSON")
@@ -53,10 +51,10 @@ func main() {
 	))
 	defer liblog.Sync()
 
-	logger = log.Scoped("gen-pipeline", "generates the pipeline for ci")
+	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
 	if docs {
-		renderPipelineDocs(os.Stdout)
+		renderPipelineDocs(logger, os.Stdout)
 		return
 	}
 
@@ -120,7 +118,7 @@ func trimEmoji(s string) string {
 	return strings.TrimSpace(emojiRegexp.ReplaceAllString(s, ""))
 }
 
-func renderPipelineDocs(w io.Writer) {
+func renderPipelineDocs(logger log.Logger, w io.Writer) {
 	fmt.Fprintln(w, "# Pipeline types reference")
 	fmt.Fprintln(w, "\nThis is a reference outlining what CI pipelines we generate under different conditions.")
 	fmt.Fprintln(w, "\nTo preview the pipeline for your branch, use `sg ci preview`.")
