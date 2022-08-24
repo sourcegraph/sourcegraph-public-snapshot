@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import { noop } from 'lodash'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 import shallow from 'zustand/shallow'
@@ -183,6 +182,10 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [props.filters, onDynamicFilterClicked]
     )
 
+    const handleAggregationBarLinkClick = (query: string): void => {
+        submitQueryWithProps([{ type: 'replaceQuery', value: query }])
+    }
+
     let body
 
     // collapsedSections is undefined on first render. To prevent the sections
@@ -202,7 +205,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         <SearchAggregations
                             query={searchQueryFromURL}
                             patternType={searchPatternType}
-                            onQuerySubmit={noop}
+                            onQuerySubmit={handleAggregationBarLinkClick}
                         />
                     </SearchSidebarSection>
                 )}

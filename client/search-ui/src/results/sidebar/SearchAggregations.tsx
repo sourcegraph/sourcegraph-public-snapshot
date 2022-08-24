@@ -69,6 +69,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                     type={AggregationCardMode.Data}
                     data={getAggregationData(data)}
                     className={styles.chartContainer}
+                    onBarLinkClick={onQuerySubmit}
                 />
             )}
 

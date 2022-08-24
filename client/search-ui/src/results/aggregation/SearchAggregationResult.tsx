@@ -15,10 +15,17 @@ import styles from './SearchAggregationResult.module.scss'
 interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
     query: string
     patternType: SearchPatternType
+
+    /**
+     * Emits whenever a user clicks one of aggregation chart segments (bars).
+     * That should update the query and re-trigger search (but this should be connected
+     * to this UI through its consumer)
+     */
+    onQuerySubmit: (newQuery: string) => void
 }
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
-    const { query, patternType, ...attributes } = props
+    const { query, patternType, onQuerySubmit, ...attributes } = props
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
@@ -68,6 +75,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                     type={AggregationCardMode.Data}
                     data={getAggregationData(data)}
                     className={styles.chartContainer}
+                    onBarLinkClick={onQuerySubmit}
                 />
             )}
 
