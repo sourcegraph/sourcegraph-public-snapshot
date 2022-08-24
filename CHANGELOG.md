@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- **Predicates have been updated to use `repo:has` and `file:has` syntax in all user-facing places.** This is purely a syntactical change. For example, `repo:has.content` behaves identically to `repo:contains.content`. Query completion now suggests the `repo:has` format of predicates. For now, existing predicates that use `repo:contains` syntax still work, but **the preferred syntax moving forward is `repo:has`**.
+-
 
 ### Fixed
 
