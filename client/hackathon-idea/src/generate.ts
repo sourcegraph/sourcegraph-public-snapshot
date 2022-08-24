@@ -1,26 +1,29 @@
 import { createOrUpdateNotebook } from './createOrUpdateNotebook'
-import { Permutation } from './types'
+import { Permutations } from './types'
 
 import { readFileSync, writeFileSync } from 'fs'
+import { createPermutations } from './createPermutations'
 
 let notebookMap: { [packageA: string]: { [packageB: string]: string } } = {}
 try {
     notebookMap = JSON.parse(readFileSync('db/notebooks.json', 'utf8').toString() || '{}')
 } catch {}
 
-console.log('loading notebookMap', notebookMap)
 ;(async function () {
-    const permutations: Permutation[] = [['react', 'redux']]
+    const permutations: Permutations = createPermutations()
 
-    for (let [packageA, packageB] of permutations) {
-        let notebookId: string | null = notebookMap[packageA]?.[packageB] ?? null
+    for (const [packageA, set] of permutations) {
+        for (const packageB of set) {
+            let notebookId: string | null = notebookMap[packageA]?.[packageB] ?? null
 
-        notebookId = await createOrUpdateNotebook(notebookId, 'react', 'redux')
+            notebookId = await createOrUpdateNotebook(notebookId, 'react', 'redux')
 
-        if (notebookMap[packageA] == null) {
-            notebookMap[packageA] = {}
+            if (notebookMap[packageA] == null) {
+                notebookMap[packageA] = {}
+            }
+            notebookMap[packageA][packageB] = notebookId
+
+            writeFileSync('db/notebooks.json', JSON.stringify(notebookMap, null, 2))
         }
-        notebookMap[packageA][packageB] = notebookId
-        writeFileSync('db/notebooks.json', JSON.stringify(notebookMap, null, 2))
     }
 })()
