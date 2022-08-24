@@ -2,7 +2,6 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 #set -euo pipefail
-set -x
 
 echo "--- Generating build overview annotation"
 mkdir -p annotations
@@ -15,7 +14,8 @@ PR() {
 
 PR_LINK=$(PR)
 
-cat <<EOF > ./annotations/Build\ overview.md
+annotation=$(
+cat <<EOF
 ${PR_LINK}
 
 Build Number [🔗](${BUILDKITE_BUILD_URL}): \`${BUILDKITE_BUILD_NUMBER}\`
@@ -42,4 +42,7 @@ ${BUILDKITE_MESSAGE}
 
 Agent: \`${BUILDKITE_AGENT_NAME}\`
 EOF
+)
+
+echo "$annotation" > ./annotations/Build\ overview.md
 
