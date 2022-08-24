@@ -47,8 +47,9 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	if args.Mode == nil {
 		mode, err := getDefaultAggregationMode(r.searchQuery, r.patternType)
 		if err != nil {
+			reason := fmt.Sprintf("could not fetch a default aggregation mode: %v", err)
 			return &searchAggregationResultResolver{
-				resolver: newSearchAggregationNotAvailableResolver("could not fetch a default aggregation mode", aggregationMode),
+				resolver: newSearchAggregationNotAvailableResolver(reason, aggregationMode),
 			}, nil
 		}
 		aggregationMode = mode
