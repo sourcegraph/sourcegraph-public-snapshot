@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
@@ -131,12 +131,6 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         },
         [nextFetchWithDisabledTimeout]
     )
-
-    useEffect(() => {
-        if (!blobInfoOrError) {
-            console.error('error')
-        }
-    }, [blobInfoOrError])
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 

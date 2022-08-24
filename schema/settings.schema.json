@@ -507,7 +507,7 @@
       }
     },
     "quicklinks": {
-      "description": "Links that should be accessible quickly from the home and search pages.",
+      "description": "DEPRECATED: This setting will be removed in a future version of Sourcegraph.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/QuickLink"

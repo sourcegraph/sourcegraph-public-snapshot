@@ -58,8 +58,8 @@ developers to explore code by
 
 Code navigation is made up of multiple features that build on top of each other:
 
-- [Search-based code navigation](explanations/search_based_code_intelligence.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
-- [Precise code navigation](explanations/precise_code_intelligence.md) uses code graph data to provide correct code navigation features and accurate cross-repository navigation.
+- [Search-based code navigation](explanations/search_based_code_navigation.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
+- [Precise code navigation](explanations/precise_code_navigation.md) uses code graph data to provide correct code navigation features and accurate cross-repository navigation.
 - [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code navigation.
 - <span class="badge badge-beta">Beta</span> [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code navigation and auto-indexing.
 
@@ -67,11 +67,11 @@ Code navigation is made up of multiple features that build on top of each other:
 
 Here's how you go from search-based code navigation to **automatically-updating, precise code navigation across multiple repositories and dependencies**:
 
-1. Navigate code with [search-based code navigation](explanations/search_based_code_intelligence.md) and [Sourcegraph extensions](../../../extensions/index.md).
+1. Navigate code with [search-based code navigation](explanations/search_based_code_navigation.md) and [Sourcegraph extensions](../../../extensions/index.md).
 
     Included in a standard Sourcegraph installation and works out of the box on the instances connected to the Internet.
     To see how to enable code navigation on the air-gapped instances please check [this guide](how-to/enable_code_intel_on_air_gapped_instances.md).
-1. Start using [precise code navigation](explanations/precise_code_intelligence.md) by creating an index of a repository and uploading it to your Sourcegraph instance:
+1. Start using [precise code navigation](explanations/precise_code_navigation.md) by creating an index of a repository and uploading it to your Sourcegraph instance:
 
     - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
     - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md#manual-indexing)
@@ -95,10 +95,10 @@ Once setup, code navigation is available for use across popular development tool
 
 ## [Explanations](explanations/index.md)
 
-- [Introduction to code navigation](explanations/introduction_to_code_intelligence.md)
-- [Precise code navigation](explanations/precise_code_intelligence.md)
+- [Introduction to code navigation](explanations/introduction_to_code_navigation.md)
+- [Precise code navigation](explanations/precise_code_navigation.md)
   - [Code graph data uploads](explanations/uploads.md)
-- [Search-based code navigation](explanations/search_based_code_intelligence.md)
+- [Search-based code navigation](explanations/search_based_code_navigation.md)
 - [Code navigation features](explanations/features.md)
 - <span class="badge badge-beta">Beta</span> [Rockskip: faster search-based code navigation](explanations/rockskip.md)
 - [Writing an indexer](explanations/writing_an_indexer.md)
