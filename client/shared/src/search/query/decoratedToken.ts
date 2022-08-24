@@ -980,7 +980,8 @@ const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | u
 const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (path.join('.')) {
-        case 'contains.file': {
+        case 'contains.file':
+        case 'has.file': {
             const result = decorateContainsFileBody(body, offset)
             if (result !== undefined) {
                 return result
@@ -988,7 +989,9 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             break
         }
         case 'contains.path':
+        case 'has.path':
         case 'contains.content':
+        case 'has.content':
         case 'has.description':
             return mapRegexpMetaSucceed({
                 type: 'pattern',
