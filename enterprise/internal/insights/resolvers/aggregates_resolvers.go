@@ -308,18 +308,14 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, error) {
 	// We use ParseQuery to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
 	plan, _ := querybuilder.ParseQuery(searchQuery, patternType)
 	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// We allow capture group aggregation for select:path and select:file searches
-	// if they are accompanied by the correct `type` (query syntax edge cases)
-	selectParameter, typeParameter := false, false
+	// At the moment we don't allow capture group aggregation for path and repo searches
 	for _, parameter := range parameters {
 		if parameter.Field == query.FieldSelect && (parameter.Value == "repo" || parameter.Value == "file") {
-			selectParameter = true
-		} else if parameter.Field == query.FieldType && (parameter.Value == "repo" || parameter.Value == "path") {
-			typeParameter = true
+			return false, nil
 		}
-	}
-	if selectParameter && !typeParameter {
-		return false, nil
+		if parameter.Field == query.FieldType && (parameter.Value == "repo" || parameter.Value == "path") {
+			return false, nil
+		}
 	}
 
 	return true, nil
