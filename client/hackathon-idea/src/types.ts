@@ -1,4 +1,4 @@
-type Package = string
+export type Package = string
 
 // Rules for permutation:
 // - The package names are sorted alphanumerically, so this is valid:
@@ -6,8 +6,8 @@ type Package = string
 //   But this is not:
 //     [b, a]
 // - The package names are not allowed to be duplicated.
-type Permutation = [Package, Package]
+export type Permutation = [Package, Package]
 
-type createPermutation = () => Permutation[]
+export type createPermutation = () => Permutation[]
 
-type createPackageInformation = (packageName: Package) => Object
+export type createPackageInformation = (packageName: Package) => Object
