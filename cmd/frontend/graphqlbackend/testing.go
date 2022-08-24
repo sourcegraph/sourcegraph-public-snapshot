@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
-å
+
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 

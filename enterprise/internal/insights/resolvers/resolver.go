@@ -130,6 +130,8 @@ func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userId
 
 // AggregationResolver is the GraphQL resolver for insights aggregations.
 type AggregationResolver struct {
+	baseInsightResolver
+
 	logger log.Logger
 }
 
@@ -141,7 +143,8 @@ func NewAggregationResolver() graphqlbackend.InsightsAggregationResolver {
 
 func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
 	return &searchAggregateResolver{
-		searchQuery: args.Query,
-		patternType: args.PatternType,
+		baseInsightResolver: r.baseInsightResolver,
+		searchQuery:         args.Query,
+		patternType:         args.PatternType,
 	}, nil
 }
