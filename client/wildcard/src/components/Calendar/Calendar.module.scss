@@ -1,4 +1,5 @@
 // stylelint-disable selector-class-pattern
+
 /*
 * The 'react-calendar' is imported without styles but with predefined BEM-classes.
 * This file styles the calendar to follow Sourcegraph designs styles.
@@ -70,5 +71,5 @@
 .highlight-today :global(.react-calendar__tile--now) {
     font-weight: 500;
     text-decoration: underline;
-    text-decoration-thickness: 0.10rem;
+    text-decoration-thickness: 0.1rem;
 }
