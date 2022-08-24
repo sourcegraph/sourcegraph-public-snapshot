@@ -43,6 +43,7 @@ type service interface {
 
 	// Repositories
 	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
+	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error)
@@ -314,6 +315,13 @@ func (s *Service) GetRepoName(ctx context.Context, repositoryID int) (_ string, 
 	defer endObservation(1, observation.Args{})
 
 	return s.store.RepoName(ctx, repositoryID)
+}
+
+func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
 func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
