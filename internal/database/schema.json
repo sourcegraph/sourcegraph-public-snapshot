@@ -1844,7 +1844,7 @@
           "ConstraintType": "f",
           "RefTableName": "batch_specs",
           "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)"
+          "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
