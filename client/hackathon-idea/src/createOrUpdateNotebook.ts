@@ -2,6 +2,8 @@ import { CreateNotebookVariables, UpdateNotebookVariables } from '../../web/src/
 import type { Package } from './types'
 import { NotebookBlockType } from '@sourcegraph/shared/src/schema'
 
+import * as packageDescriptions from '../descriptor/packages.json'
+
 import fetch, { Headers, Response } from 'node-fetch'
 
 // @ts-ignore
@@ -22,7 +24,13 @@ export async function createOrUpdateNotebook(
             {
                 id: '1',
                 type: NotebookBlockType.MARKDOWN,
-                markdownInput: '# Packages that use ' + packageA + ' and ' + packageB,
+                markdownInput: `## ${packageA}
+${getDescriptionForPackage(packageA)}
+
+## ${packageB}
+${getDescriptionForPackage(packageB)}
+
+## Find npm packages that mix both:`,
             },
             {
                 id: '2',
@@ -93,4 +101,9 @@ async function requestGraphQL(query: string, variables: CreateNotebookVariables 
     }
 
     return response.json()
+}
+
+function getDescriptionForPackage(pkg: Package): string {
+    // @ts-ignore
+    return packageDescriptions.default.find((p: any) => p.name === pkg)?.description
 }

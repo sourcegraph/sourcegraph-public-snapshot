@@ -1,7 +1,7 @@
 import { createOrUpdateNotebook } from './createOrUpdateNotebook'
 import { Permutations } from './types'
 
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { createPermutations } from './createPermutations'
 
 let notebookMap: { [packageA: string]: { [packageB: string]: string } } = {}
@@ -23,7 +23,9 @@ try {
             }
             notebookMap[packageA][packageB] = notebookId
 
-            writeFileSync('db/notebooks.json', JSON.stringify(notebookMap, null, 2))
+            throw new Error('sdf')
+
+            // writeFileSync('db/notebooks.json', JSON.stringify(notebookMap, null, 2))
         }
     }
 })()
