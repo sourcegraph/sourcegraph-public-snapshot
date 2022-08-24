@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 import shallow from 'zustand/shallow'
@@ -22,6 +23,8 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Code, Icon } from '@sourcegraph/wildcard'
+
+import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -69,14 +72,20 @@ const selectFromQueryState = ({
     queryState: { query },
     setQueryState,
     submitSearch,
+    searchQueryFromURL,
+    searchPatternType,
 }: SearchQueryState): {
     query: string
     setQueryState: SearchQueryState['setQueryState']
     submitSearch: SearchQueryState['submitSearch']
+    searchQueryFromURL: SearchQueryState['searchQueryFromURL']
+    searchPatternType: SearchQueryState['searchPatternType']
 } => ({
     query,
     setQueryState,
     submitSearch,
+    searchQueryFromURL,
+    searchPatternType,
 })
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
@@ -88,7 +97,14 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     // The zustand store for search query state is referenced through context
     // because there may be different global stores across clients
     // (e.g. VS Code extension, web app)
-    const { query, setQueryState, submitSearch } = useSearchQueryStateStoreContext()(selectFromQueryState, shallow)
+    const {
+        query,
+        searchQueryFromURL,
+        searchPatternType,
+        setQueryState,
+        submitSearch,
+    } = useSearchQueryStateStoreContext()(selectFromQueryState, shallow)
+    const [aggregationUIMode] = useAggregationUIMode()
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const submitQueryWithProps = useCallback(
@@ -175,15 +191,19 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     if (collapsedSections) {
         body = (
             <>
-                {props.enableSearchAggregation && (
+                {props.enableSearchAggregation && aggregationUIMode === AggregationUIMode.Sidebar && (
                     <SearchSidebarSection
                         sectionId={SectionID.GROUPED_BY}
                         className={styles.item}
-                        header="Grouped by"
+                        header="Group results by"
                         startCollapsed={collapsedSections?.[SectionID.GROUPED_BY]}
                         onToggle={persistToggleState}
                     >
-                        <SearchAggregations />
+                        <SearchAggregations
+                            query={searchQueryFromURL}
+                            patternType={searchPatternType}
+                            onQuerySubmit={noop}
+                        />
                     </SearchSidebarSection>
                 )}
 

@@ -1,28 +1,29 @@
 import { FC, HTMLAttributes } from 'react'
 
-import { mdiArrowCollapse, mdiPlus } from '@mdi/js'
-import { ParentSize } from '@visx/responsive'
+import { mdiArrowCollapse } from '@mdi/js'
 
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Button, H2, Icon } from '@sourcegraph/wildcard'
 
-import { AggregationChart } from './AggregationChart'
+import { AggregationCardMode, AggregationChartCard } from './AggregationChartCard'
 import { AggregationModeControls } from './AggregationModeControls'
-import { useAggregationSearchMode, useAggregationUIMode } from './hooks'
-import { LANGUAGE_USAGE_DATA, LanguageUsageDatum } from './search-aggregation-mock-data'
+import { getAggregationData, useAggregationSearchMode, useAggregationUIMode, useSearchAggregationData } from './hooks'
 import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
 
-const getValue = (datum: LanguageUsageDatum): number => datum.value
-const getColor = (datum: LanguageUsageDatum): string => datum.fill
-const getLink = (datum: LanguageUsageDatum): string => datum.linkURL
-const getName = (datum: LanguageUsageDatum): string => datum.name
+interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
+    query: string
+    patternType: SearchPatternType
+}
 
-interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {}
+export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
+    const { query, patternType, ...attributes } = props
 
-export const SearchAggregationResult: FC<SearchAggregationResultProps> = attributes => {
-    const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const [, setAggregationUIMode] = useAggregationUIMode()
+    const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
+
+    const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode })
 
     const handleCollapseClick = (): void => {
         setAggregationUIMode(AggregationUIMode.Sidebar)
@@ -46,37 +47,40 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = attribu
             <hr className="mt-2 mb-3" />
 
             <div className={styles.controls}>
-                <AggregationModeControls mode={aggregationMode} onModeChange={setAggregationMode} />
-
-                <Button variant="secondary" outline={true}>
-                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiPlus} />
-                    Save insight
-                </Button>
+                <AggregationModeControls
+                    mode={aggregationMode}
+                    availability={data?.searchQueryAggregate?.modeAvailability}
+                    onModeChange={setAggregationMode}
+                />
             </div>
 
-            <ParentSize className={styles.chartContainer}>
-                {parent => (
-                    <AggregationChart
-                        mode={aggregationMode}
-                        width={parent.width}
-                        height={parent.height}
-                        data={LANGUAGE_USAGE_DATA}
-                        getDatumName={getName}
-                        getDatumValue={getValue}
-                        getDatumColor={getColor}
-                        getDatumLink={getLink}
-                    />
-                )}
-            </ParentSize>
+            {loading ? (
+                <AggregationChartCard type={AggregationCardMode.Loading} className={styles.chartContainer} />
+            ) : error ? (
+                <AggregationChartCard
+                    type={AggregationCardMode.Error}
+                    errorMessage={error.message}
+                    className={styles.chartContainer}
+                />
+            ) : (
+                <AggregationChartCard
+                    mode={aggregationMode}
+                    type={AggregationCardMode.Data}
+                    data={getAggregationData(data)}
+                    className={styles.chartContainer}
+                />
+            )}
 
-            <ul className={styles.listResult}>
-                {LANGUAGE_USAGE_DATA.map(datum => (
-                    <li key={getName(datum)} className={styles.listResultItem}>
-                        <span>{getName(datum)}</span>
-                        <span>{getValue(datum)}</span>
-                    </li>
-                ))}
-            </ul>
+            {data && (
+                <ul className={styles.listResult}>
+                    {getAggregationData(data).map(datum => (
+                        <li key={datum.label} className={styles.listResultItem}>
+                            <span>{datum.label}</span>
+                            <span>{datum.count}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </section>
     )
 }
