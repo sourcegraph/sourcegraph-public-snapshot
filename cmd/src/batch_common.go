@@ -370,49 +370,18 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		ui.DeterminingWorkspaceCreatorTypeSuccess(typ)
 	}
 
-	var (
-		repos      []*graphql.Repository
-		workspaces []service.RepoWorkspace
-	)
-	if svc.Features().ServerSideWorkspaceResolution {
-		ui.ResolvingRepositories()
-		var err error
-		workspaces, repos, err = svc.ResolveWorkspacesForBatchSpec(ctx, batchSpec, opts.flags.allowUnsupported, opts.flags.allowIgnored)
-		if err != nil {
-			if repoSet, ok := err.(batches.UnsupportedRepoSet); ok {
-				ui.ResolvingRepositoriesDone(repos, repoSet, nil)
-			} else if repoSet, ok := err.(batches.IgnoredRepoSet); ok {
-				ui.ResolvingRepositoriesDone(repos, nil, repoSet)
-			} else {
-				return errors.Wrap(err, "resolving repositories server-side")
-			}
+	ui.DeterminingWorkspaces()
+	workspaces, repos, err := svc.ResolveWorkspacesForBatchSpec(ctx, batchSpec, opts.flags.allowUnsupported, opts.flags.allowIgnored)
+	if err != nil {
+		if repoSet, ok := err.(batches.UnsupportedRepoSet); ok {
+			ui.DeterminingWorkspacesSuccess(len(workspaces), len(repos), repoSet, nil)
+		} else if repoSet, ok := err.(batches.IgnoredRepoSet); ok {
+			ui.DeterminingWorkspacesSuccess(len(workspaces), len(repos), nil, repoSet)
 		} else {
-			ui.ResolvingRepositoriesDone(repos, nil, nil)
+			return errors.Wrap(err, "resolving repositories")
 		}
-
-		ui.DeterminingWorkspaces()
-		ui.DeterminingWorkspacesSuccess(len(workspaces))
 	} else {
-		ui.ResolvingRepositories()
-		repos, err = svc.ResolveRepositories(ctx, batchSpec, opts.flags.allowUnsupported, opts.flags.allowIgnored)
-		if err != nil {
-			if repoSet, ok := err.(batches.UnsupportedRepoSet); ok {
-				ui.ResolvingRepositoriesDone(repos, repoSet, nil)
-			} else if repoSet, ok := err.(batches.IgnoredRepoSet); ok {
-				ui.ResolvingRepositoriesDone(repos, nil, repoSet)
-			} else {
-				return errors.Wrap(err, "resolving repositories")
-			}
-		} else {
-			ui.ResolvingRepositoriesDone(repos, nil, nil)
-		}
-
-		ui.DeterminingWorkspaces()
-		workspaces, err = svc.DetermineWorkspaces(ctx, repos, batchSpec)
-		if err != nil {
-			return err
-		}
-		ui.DeterminingWorkspacesSuccess(len(workspaces))
+		ui.DeterminingWorkspacesSuccess(len(workspaces), len(repos), nil, nil)
 	}
 
 	archiveRegistry := repozip.NewArchiveRegistry(opts.client, opts.flags.cacheDir, opts.flags.cleanArchives)

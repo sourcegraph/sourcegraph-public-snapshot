@@ -93,33 +93,25 @@ func (ui *TUI) DeterminingWorkspaceCreatorTypeSuccess(wt workspace.CreatorType) 
 	batchCompletePending(ui.pending, "Set workspace type")
 }
 
-func (ui *TUI) ResolvingRepositories() {
-	ui.pending = batchCreatePending(ui.Out, "Resolving repositories")
+func (ui *TUI) DeterminingWorkspaces() {
+	ui.pending = batchCreatePending(ui.Out, "Determining workspaces")
 }
-func (ui *TUI) ResolvingRepositoriesDone(repos []*graphql.Repository, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
-	batchCompletePending(ui.pending, fmt.Sprintf("Resolved %d repositories", len(repos)))
+func (ui *TUI) DeterminingWorkspacesSuccess(workspacesCount, reposCount int, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
+	batchCompletePending(ui.pending, fmt.Sprintf("Resolved %d workspaces from %d repositories", workspacesCount, reposCount))
 
-	if unsupported != nil && len(unsupported) != 0 {
+	if len(unsupported) != 0 {
 		block := ui.Out.Block(output.Line(" ", output.StyleWarning, "Some repositories are hosted on unsupported code hosts and will be skipped. Use the -allow-unsupported flag to avoid skipping them."))
 		for repo := range unsupported {
 			block.Write(repo.Name)
 		}
 		block.Close()
-	} else if ignored != nil && len(ignored) != 0 {
+	} else if len(ignored) != 0 {
 		block := ui.Out.Block(output.Line(" ", output.StyleWarning, "The repositories listed below contain .batchignore files and will be skipped. Use the -force-override-ignore flag to avoid skipping them."))
 		for repo := range ignored {
 			block.Write(repo.Name)
 		}
 		block.Close()
 	}
-}
-
-func (ui *TUI) DeterminingWorkspaces() {
-	ui.pending = batchCreatePending(ui.Out, "Determining workspaces")
-}
-
-func (ui *TUI) DeterminingWorkspacesSuccess(num int) {
-	batchCompletePending(ui.pending, fmt.Sprintf("Found %d workspaces with steps to execute", num))
 }
 
 func (ui *TUI) CheckingCache() {

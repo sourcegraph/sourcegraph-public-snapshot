@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/batches/ui"
@@ -90,31 +91,34 @@ Examples:
 			return err
 		}
 
+		_, repos, err := svc.ResolveWorkspacesForBatchSpec(ctx, spec, allowUnsupported, allowIgnored)
+		if err != nil {
+			if _, ok := err.(batches.UnsupportedRepoSet); ok {
+				// This is fine, we just ignore those in the output.
+			} else if _, ok := err.(batches.IgnoredRepoSet); ok {
+				// This is fine, we just ignore those in the output.
+			} else {
+				return errors.Wrap(err, "resolving repositories")
+			}
+		}
+
 		repoCount := 0
-		for _, on := range spec.On {
-			repos, _, err := svc.ResolveRepositoriesOn(ctx, &on)
-			if err != nil {
-				return errors.Wrapf(err, "Resolving %q", on.String())
+		max := 0
+		for _, repo := range repos {
+			if len(repo.Name) > max {
+				max = len(repo.Name)
 			}
 
-			max := 0
-			for _, repo := range repos {
-				if len(repo.Name) > max {
-					max = len(repo.Name)
-				}
+			repoCount++
+		}
 
-				repoCount++
-			}
-
-			if err := execTemplate(queryTmpl, batchRepositoryTemplateInput{
-				Max:                 max,
-				Query:               on.String(),
-				RepoCount:           len(repos),
-				Repos:               repos,
-				SourcegraphEndpoint: cfg.Endpoint,
-			}); err != nil {
-				return err
-			}
+		if err := execTemplate(queryTmpl, batchRepositoryTemplateInput{
+			Max:                 max,
+			RepoCount:           len(repos),
+			Repos:               repos,
+			SourcegraphEndpoint: cfg.Endpoint,
+		}); err != nil {
+			return err
 		}
 
 		return execTemplate(totalTmpl, batchRepositoryTemplateInput{
@@ -135,19 +139,6 @@ Examples:
 }
 
 const batchRepositoriesTemplate = `
-{{- color "logo" -}}✱{{- color "nc" -}}
-{{- " " -}}
-{{- if eq .RepoCount 0 -}}
-    {{- color "warning" -}}
-{{- else -}}
-    {{- color "success" -}}
-{{- end -}}
-{{- .RepoCount }} workspace{{ if ne .RepoCount 1 }}s{{ end }}{{- color "nc" -}}
-{{- if ne (len .Query) 0 -}}
-    {{- " for " -}}{{- color "search-query"}}"{{.Query}}"{{ color "nc" -}}
-{{- end -}}
-{{- "\n" -}}
-
 {{- range .Repos -}}
     {{- "  "}}{{ color "success" }}{{ padRight .Name $.Max " " }}{{ color "nc" -}}
     {{- if ne (len .Branch.Name) 0 -}}{{ " " }}{{- color "search-branch" -}}{{- .Branch.Name -}}{{ color "nc" -}}{{- end -}}

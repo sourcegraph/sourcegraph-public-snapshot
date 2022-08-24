@@ -66,22 +66,16 @@ func (ui *JSONLines) DeterminingWorkspaceCreatorTypeSuccess(wt workspace.Creator
 	logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaceType, &batcheslib.DeterminingWorkspaceTypeMetadata{Type: t})
 }
 
-func (ui *JSONLines) ResolvingRepositories() {
-	logOperationStart(batcheslib.LogEventOperationResolvingRepositories, &batcheslib.ResolvingRepositoriesMetadata{})
-}
-func (ui *JSONLines) ResolvingRepositoriesDone(repos []*graphql.Repository, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
-	logOperationSuccess(batcheslib.LogEventOperationResolvingRepositories, &batcheslib.ResolvingRepositoriesMetadata{
-		Unsupported: len(unsupported),
-		Ignored:     len(ignored),
-		Count:       len(repos),
-	})
-}
-
 func (ui *JSONLines) DeterminingWorkspaces() {
 	logOperationStart(batcheslib.LogEventOperationDeterminingWorkspaces, &batcheslib.DeterminingWorkspacesMetadata{})
 }
-func (ui *JSONLines) DeterminingWorkspacesSuccess(num int) {
-	logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaces, &batcheslib.DeterminingWorkspacesMetadata{Count: num})
+func (ui *JSONLines) DeterminingWorkspacesSuccess(workspacesCount, reposCount int, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
+	logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaces, &batcheslib.DeterminingWorkspacesMetadata{
+		Unsupported:    len(unsupported),
+		Ignored:        len(ignored),
+		RepoCount:      reposCount,
+		WorkspaceCount: workspacesCount,
+	})
 }
 
 func (ui *JSONLines) CheckingCache() {

@@ -22,11 +22,8 @@ type ExecUI interface {
 	DeterminingWorkspaceCreatorType()
 	DeterminingWorkspaceCreatorTypeSuccess(wt workspace.CreatorType)
 
-	ResolvingRepositories()
-	ResolvingRepositoriesDone(repos []*graphql.Repository, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet)
-
 	DeterminingWorkspaces()
-	DeterminingWorkspacesSuccess(num int)
+	DeterminingWorkspacesSuccess(workspacesCount, reposCount int, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet)
 
 	CheckingCache()
 	CheckingCacheSuccess(cachedSpecsFound int, tasksToExecute int)
