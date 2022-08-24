@@ -524,8 +524,8 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 	return repoIDs
 }
 
-// syncScheduler will periodically list the cloned repositories on gitserver and
-// update the scheduler with the list. It also ensures that if any of our
+// syncScheduler will periodically list the uncloned repositories on gitserver
+// and update the scheduler with the list. It also ensures that if any of our
 // indexable repos are missing from the cloned list they will be added for
 // cloning ASAP.
 func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
