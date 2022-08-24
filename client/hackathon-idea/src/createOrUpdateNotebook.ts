@@ -1,4 +1,4 @@
-import { CreateNotebookVariables } from '../../web/src/graphql-operations'
+import { CreateNotebookVariables, UpdateNotebookVariables } from '../../web/src/graphql-operations'
 import type { Package } from './types'
 import { NotebookBlockType } from '@sourcegraph/shared/src/schema'
 
@@ -9,9 +9,13 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
 
 const INSTANCE_URL = 'https://sourcegraph.test:3443/'
 
-export async function generateNotebook(packageA: Package, packageB: Package): Promise<void> {
+export async function createOrUpdateNotebook(
+    notebookId: string | null,
+    packageA: Package,
+    packageB: Package
+): Promise<string> {
     const notebook: CreateNotebookVariables['notebook'] = {
-        title: 'Test page',
+        title: `Mixing ${packageA} with ${packageB}`,
         namespace: 'VXNlcjox',
         public: false,
         blocks: [
@@ -28,22 +32,43 @@ export async function generateNotebook(packageA: Package, packageB: Package): Pr
         ],
     }
 
-    const response = await requestGraphQL(
-        `
-        mutation createNotebook($notebook: NotebookInput!) {
-            createNotebook(notebook: $notebook) {
-                id
+    if (notebookId == null) {
+        const response = await requestGraphQL(
+            `
+            mutation createNotebook($notebook: NotebookInput!) {
+                createNotebook(notebook: $notebook) {
+                    id
+                }
             }
-        }
-        `,
-        {
-            notebook,
-        }
-    )
-    console.log(`Created: ${INSTANCE_URL}notebooks/${response?.data?.createNotebook?.id}`)
+            `,
+            {
+                notebook,
+            } as CreateNotebookVariables
+        )
+        console.log(`Created: ${INSTANCE_URL}notebooks/${response?.data?.createNotebook?.id}`)
+
+        return response?.data?.createNotebook?.id
+    } else {
+        await requestGraphQL(
+            `
+            mutation createNotebook($notebook: NotebookInput!, $id: ID!) {
+                updateNotebook(notebook: $notebook, id: $id) {
+                    id
+                }
+            }
+            `,
+            {
+                notebook,
+                id: notebookId,
+            } as UpdateNotebookVariables
+        )
+        console.log(`Updated: ${INSTANCE_URL}notebooks/${notebookId}`)
+
+        return notebookId
+    }
 }
 
-async function requestGraphQL(query: string, variables: CreateNotebookVariables) {
+async function requestGraphQL(query: string, variables: CreateNotebookVariables | UpdateNotebookVariables) {
     const headers = new Headers()
     headers.set('Content-Type', 'application/json')
     headers.set('Authorization', `token ${process.env.TOKEN}`)
