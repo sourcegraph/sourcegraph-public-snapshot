@@ -37,9 +37,15 @@ func (s *Users) Activity() (*AnalyticsFetcher, error) {
 var (
 	frequencyQuery = `
 	WITH t1 AS (
-		SELECT DATE(timestamp) AS date, anonymous_user_id AS user_id
+		SELECT
+			DATE(timestamp) AS date,
+			-- distinct registered or anonymous/not-registered user
+			CASE
+				WHEN user_id = 0 THEN anonymous_user_id
+				ELSE CAST(user_id AS VARCHAR)
+			END user_id
 		FROM event_logs
-		WHERE DATE(timestamp) %s
+		WHERE DATE(timestamp) %s AND anonymous_user_id != 'backend'
 		GROUP BY 2, 1
 	),
 	t2 AS (
@@ -69,7 +75,7 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 	}
 	query := sqlf.Sprintf(frequencyQuery, dateRangeCond)
 	cacheKey := fmt.Sprintf("Users:%s:%s", "Frequencies", f.DateRange)
-	if f.Cache == true {
+	if f.Cache {
 		if nodes, err := getArrayFromCache[UsersFrequencyNode](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -122,7 +128,8 @@ var (
 	WITH daus AS (
 		SELECT
 		FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24) as day,
-		COUNT(DISTINCT anonymous_user_id) AS total_count
+		-- distinct registered users + anonymous/not-registered users
+		COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) + COUNT(DISTINCT anonymous_user_id) FILTER (WHERE user_id = 0) AS total_count
 		FROM
 			event_logs
 			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
@@ -132,7 +139,8 @@ var (
 	waus AS (
 		SELECT
 			FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24 / 7) as week,
-			COUNT(DISTINCT anonymous_user_id) AS total_count
+			-- distinct registered users + anonymous/not-registered users
+			COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) + COUNT(DISTINCT anonymous_user_id) FILTER (WHERE user_id = 0) AS total_count
 		FROM
 			event_logs
 			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
@@ -142,7 +150,8 @@ var (
 	maus AS (
 		SELECT
 			FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24 / 30) as month,
-			COUNT(DISTINCT anonymous_user_id) AS total_count
+			-- distinct registered users + anonymous/not-registered users
+			COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) + COUNT(DISTINCT anonymous_user_id) FILTER (WHERE user_id = 0) AS total_count
 		FROM
 			event_logs
 			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
@@ -207,12 +216,13 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 
 	cacheKey := fmt.Sprintf("Users:%s:%s", "Summary", s.DateRange)
 
-	if s.Cache == true {
+	if s.Cache {
 		if summary, err := getItemFromCache[UsersSummary](cacheKey); err == nil {
 			return summary, nil
 		}
 	}
-	query := sqlf.Sprintf(fmt.Sprintf(avgUsersByPeriodQuery, from.Format("2006-01-02 15:04:05"), now.Format("2006-01-02 15:04:05")))
+	timeFormatLayout := "2006-01-02 15:04:05"
+	query := sqlf.Sprintf(fmt.Sprintf(avgUsersByPeriodQuery, from.Format(timeFormatLayout), now.Format(timeFormatLayout)))
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
 	if err != nil {
