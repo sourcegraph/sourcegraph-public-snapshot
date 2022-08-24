@@ -34,7 +34,6 @@ export const PackageRemixArea: React.FunctionComponent<React.PropsWithChildren<P
 
     const redirectToNotebook = () => {
         const [a, b] = [packageA, packageB].sort(sortFunction)
-        console.log(a, b)
         const URL = `/notebooks/${notebooks[a][b]}`
         location.href = URL
     }
