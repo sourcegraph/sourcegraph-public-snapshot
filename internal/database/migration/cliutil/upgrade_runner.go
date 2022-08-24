@@ -2,6 +2,7 @@ package cliutil
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -99,6 +100,19 @@ func runUpgrade(
 		}
 	}
 
+	// After successful upgrade, set the new instance version. The frontend still checks on
+	// startup that the previously running instance version was only one minor version away.
+	// If we run the upload without updating that value, the new instance will refuse to
+	// start without manual modification of the database.
+	//
+	// Note that we don't want to get rid of that check entirely from the frontend, as we do
+	// still want to catch the cases where site-admins "jump forward" several versions while
+	// using the zero-downtime upgrade path (not this upgrade utility).
+
+	if err := updateVersion(ctx, r, plan.to); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -125,4 +139,17 @@ func checkUpgradeVersion(ctx context.Context, r Runner, plan upgradePlan) error 
 	}
 
 	return errors.Newf("version assertion failed: unknown version != %q", plan.from)
+}
+
+func updateVersion(ctx context.Context, r Runner, version oobmigration.Version) error {
+	db, err := extractDatabase(ctx, r)
+	if err != nil {
+		return err
+	}
+
+	return upgradestore.New(db).SetServiceVersion(
+		ctx,
+		"frontend",
+		fmt.Sprintf("%d.%d.0", version.Major, version.Minor),
+	)
 }
