@@ -18,6 +18,7 @@ import { ThemePreferenceProps } from './theme'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
+const PackageRemixArea = lazyComponent(() => import('./packageRemix/PackageRemixArea'), 'PackageRemixArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const NotebookPage = lazyComponent(() => import('./notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
@@ -230,6 +231,11 @@ export const routes: readonly LayoutRouteProps<any>[] = ([
     {
         path: PageRoutes.Survey,
         render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
+    },
+
+    {
+        path: PageRoutes.PackageRemix,
+        render: () => <PackageRemixArea />,
     },
     window.context.enableLegacyExtensions
         ? {

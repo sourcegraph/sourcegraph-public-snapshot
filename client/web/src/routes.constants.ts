@@ -24,6 +24,7 @@ export enum PageRoutes {
     Notebooks = '/notebooks',
     RepoContainer = '/:repoRevAndRest+',
     InstallGitHubAppSuccess = '/install-github-app-success',
+    PackageRemix = '/package-remix',
 }
 
 export enum EnterprisePageRoutes {
