@@ -1,9 +1,19 @@
 import { useCallback, useMemo } from 'react'
 
+import { ApolloError, gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
+import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+
+import {
+    GetSearchAggregationResult,
+    GetSearchAggregationVariables,
+    SearchAggregationDatum,
+} from '../../graphql-operations'
+
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
-import { AggregationMode, AggregationUIMode } from './types'
+import { AggregationUIMode } from './types'
 
 interface URLStateOptions<State, SerializedState> {
     urlKey: string
@@ -42,23 +52,23 @@ function useSyncedWithURLState<State, SerializedState>(
     return [queryParameter, setNextState]
 }
 
-type SerializedAggregationMode = `${AggregationMode}`
+type SerializedAggregationMode = `${SearchAggregationMode}`
 
-const aggregationModeSerializer = (mode: AggregationMode): SerializedAggregationMode => `${mode}`
+const aggregationModeSerializer = (mode: SearchAggregationMode): SerializedAggregationMode => mode
 
-const aggregationModeDeserializer = (serializedValue: SerializedAggregationMode | null): AggregationMode => {
+const aggregationModeDeserializer = (serializedValue: SerializedAggregationMode | null): SearchAggregationMode => {
     switch (serializedValue) {
-        case 'repo':
-            return AggregationMode.Repository
-        case 'file':
-            return AggregationMode.FilePath
-        case 'author':
-            return AggregationMode.Author
-        case 'captureGroup':
-            return AggregationMode.CaptureGroups
+        case 'REPO':
+            return SearchAggregationMode.REPO
+        case 'PATH':
+            return SearchAggregationMode.PATH
+        case 'AUTHOR':
+            return SearchAggregationMode.AUTHOR
+        case 'CAPTURE_GROUP':
+            return SearchAggregationMode.CAPTURE_GROUP
 
         default:
-            return AggregationMode.Repository
+            return SearchAggregationMode.REPO
     }
 }
 
@@ -66,7 +76,7 @@ const aggregationModeDeserializer = (serializedValue: SerializedAggregationMode 
  * Shared state hook for syncing aggregation type state between different UI trough
  * ULR query param {@link AGGREGATION_MODE_URL_KEY}
  */
-export const useAggregationSearchMode = (): SetStateResult<AggregationMode> => {
+export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode> => {
     const [aggregationMode, setAggregationMode] = useSyncedWithURLState({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
@@ -77,7 +87,7 @@ export const useAggregationSearchMode = (): SetStateResult<AggregationMode> => {
 }
 
 type SerializedAggregationUIMode = `${AggregationUIMode}`
-const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => `${uiMode}`
+const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => uiMode
 
 const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIMode | null): AggregationUIMode => {
     switch (serializedValue) {
@@ -101,4 +111,114 @@ export const useAggregationUIMode = (): SetStateResult<AggregationUIMode> => {
     })
 
     return [aggregationMode, setAggregationMode]
+}
+
+export const AGGREGATION_SEARCH_QUERY = gql`
+    fragment SearchAggregationModeAvailability on AggregationModeAvailability {
+        __typename
+        mode
+        available
+        reasonUnavailable
+    }
+
+    fragment SearchAggregationDatum on AggregationGroup {
+        __typename
+        label
+        count
+        query
+    }
+
+    query GetSearchAggregation($query: String!, $patternType: SearchPatternType!, $mode: SearchAggregationMode) {
+        searchQueryAggregate(query: $query, patternType: $patternType) {
+            aggregations(mode: $mode, limit: 10) {
+                __typename
+                ... on ExhaustiveSearchAggregationResult {
+                    mode
+                    groups {
+                        ...SearchAggregationDatum
+                    }
+                    otherGroupCount
+                }
+
+                ... on NonExhaustiveSearchAggregationResult {
+                    mode
+                    groups {
+                        ...SearchAggregationDatum
+                    }
+                }
+
+                ... on SearchAggregationNotAvailable {
+                    reason
+                    mode
+                }
+            }
+            modeAvailability {
+                ...SearchAggregationModeAvailability
+            }
+        }
+    }
+`
+
+interface SearchAggregationDataInput {
+    query: string
+    patternType: SearchPatternType
+    aggregationMode: SearchAggregationMode
+}
+
+interface SearchAggregationResults {
+    data: GetSearchAggregationResult | undefined
+    loading: boolean
+    error: Error | undefined
+}
+
+export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
+    const { query, patternType, aggregationMode } = input
+
+    const { data, error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
+        AGGREGATION_SEARCH_QUERY,
+        {
+            fetchPolicy: 'cache-first',
+            variables: { query, patternType, mode: aggregationMode },
+        }
+    )
+
+    return {
+        data,
+        loading,
+        // We need to handle error properly for cases when we got errors
+        // in error field (network request error, gql error) or in data
+        // response (data aggregation error)
+        error: getAggregationError(error, data),
+    }
+}
+
+function getAggregationError(apolloError?: ApolloError, response?: GetSearchAggregationResult): Error | undefined {
+    if (apolloError) {
+        return apolloError
+    }
+
+    const aggregationData = response?.searchQueryAggregate?.aggregations
+
+    if (aggregationData?.__typename === 'SearchAggregationNotAvailable') {
+        return new Error(aggregationData.reason)
+    }
+
+    return
+}
+
+export function getAggregationData(response?: GetSearchAggregationResult | null): SearchAggregationDatum[] {
+    if (!response) {
+        return []
+    }
+
+    const aggregationResult = response.searchQueryAggregate?.aggregations
+
+    switch (aggregationResult?.__typename) {
+        case 'ExhaustiveSearchAggregationResult':
+        case 'NonExhaustiveSearchAggregationResult':
+            return aggregationResult.groups
+
+        default:
+            return []
+    }
 }
