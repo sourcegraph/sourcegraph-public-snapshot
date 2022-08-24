@@ -41,7 +41,7 @@ func main() {
 
 	liblog := log.Init(log.Resource{
 		Name:       "buildkite-ci",
-		Version:    "-",
+		Version:    "",
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWith(
 		log.SentrySink{
