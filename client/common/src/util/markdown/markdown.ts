@@ -103,7 +103,6 @@ export const renderMarkdown = (
                 'img',
                 'picture',
                 'source',
-                'object',
                 'svg',
                 'rect',
                 'defs',
