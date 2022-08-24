@@ -7,7 +7,4 @@ export type Package = string
 //     [b, a]
 // - The package names are not allowed to be duplicated.
 export type Permutation = [Package, Package]
-
-export type createPermutation = () => Permutation[]
-
-export type createPackageInformation = (packageName: Package) => Object
+export type Permutations = Map<Package, Set<Package>>

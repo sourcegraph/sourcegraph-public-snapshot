@@ -12,6 +12,13 @@ import styles from './PackageRemixArea.module.scss'
 
 interface PackageRemixAreaProps {}
 
+const sortFn = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true })
+
+let PACKAGE_NAMES = allPackages
+    .slice(0, 100)
+    .map(pkg => pkg.name)
+    .sort(sortFn)
+
 export const PackageRemixArea: React.FunctionComponent<React.PropsWithChildren<PackageRemixAreaProps>> = () => {
     const [packageA, setPackageA] = React.useState('react')
     const [packageB, setPackageB] = React.useState('redux')
@@ -24,7 +31,8 @@ export const PackageRemixArea: React.FunctionComponent<React.PropsWithChildren<P
     }, [])
 
     const redirectToNotebook = () => {
-        const [a, b] = [packageA, packageB].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
+        const [a, b] = [packageA, packageB].sort(sortFn)
+        console.log(a, b)
         const URL = `/notebooks/${notebooks[a][b]}`
         location.href = URL
     }
@@ -34,22 +42,18 @@ export const PackageRemixArea: React.FunctionComponent<React.PropsWithChildren<P
             <H1> Package Remix</H1>
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', width: '100%' }}>
                 <Select aria-labelledby="package a" value={packageA} onChange={handlePackageASelect}>
-                    {allPackages
-                        .filter(pck => pck.name !== packageB)
-                        .map(pack => (
-                            <option key={pack.name} value={pack.name}>
-                                {pack.name}
-                            </option>
-                        ))}
+                    {PACKAGE_NAMES.filter(pck => pck !== packageB).map(pack => (
+                        <option key={pack} value={pack}>
+                            {pack}
+                        </option>
+                    ))}
                 </Select>
                 <Select aria-labelledby="package b" value={packageB} onChange={handlePackageBSelect}>
-                    {allPackages
-                        .filter(pck => pck.name !== packageA)
-                        .map(pack => (
-                            <option key={pack.name} value={pack.name}>
-                                {pack.name}
-                            </option>
-                        ))}
+                    {PACKAGE_NAMES.filter(pck => pck !== packageA).map(pack => (
+                        <option key={pack} value={pack}>
+                            {pack}
+                        </option>
+                    ))}
                 </Select>
                 <Button
                     variant="primary"
