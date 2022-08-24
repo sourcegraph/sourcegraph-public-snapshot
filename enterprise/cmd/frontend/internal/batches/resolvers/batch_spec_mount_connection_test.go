@@ -29,15 +29,15 @@ func TestBatchSpecMountConnectionResolver_TotalCount(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	specID, err := createBatchSpec(t, db, ctx, cstore)
+	specID, err := createBatchSpec(t, db, ctx, bstore)
 	require.NoError(t, err)
-	err = createBatchSpecMounts(ctx, cstore, specID, 1)
+	err = createBatchSpecMounts(ctx, bstore, specID, 1)
 	require.NoError(t, err)
 
 	resolver := batchSpecMountConnectionResolver{
-		store: cstore,
+		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			BatchSpecID: specID,
 		},
@@ -57,15 +57,15 @@ func TestBatchSpecMountConnectionResolver_PageInfo_SinglePage(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	specID, err := createBatchSpec(t, db, ctx, cstore)
+	specID, err := createBatchSpec(t, db, ctx, bstore)
 	require.NoError(t, err)
-	err = createBatchSpecMounts(ctx, cstore, specID, 1)
+	err = createBatchSpecMounts(ctx, bstore, specID, 1)
 	require.NoError(t, err)
 
 	resolver := batchSpecMountConnectionResolver{
-		store: cstore,
+		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			BatchSpecID: specID,
 		},
@@ -85,15 +85,15 @@ func TestBatchSpecMountConnectionResolver_PageInfo_MultiplePages(t *testing.T) {
 
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	specID, err := createBatchSpec(t, db, ctx, cstore)
+	specID, err := createBatchSpec(t, db, ctx, bstore)
 	require.NoError(t, err)
-	err = createBatchSpecMounts(ctx, cstore, specID, 10)
+	err = createBatchSpecMounts(ctx, bstore, specID, 10)
 	require.NoError(t, err)
 
 	resolver := batchSpecMountConnectionResolver{
-		store: cstore,
+		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			LimitOpts: store.LimitOpts{
 				Limit: 5,
@@ -110,7 +110,7 @@ func TestBatchSpecMountConnectionResolver_PageInfo_MultiplePages(t *testing.T) {
 	cursor, err := strconv.ParseInt(*pageInfo.EndCursor(), 10, 32)
 	require.NoError(t, err)
 	resolver = batchSpecMountConnectionResolver{
-		store: cstore,
+		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			LimitOpts: store.LimitOpts{
 				Limit: 5,
@@ -135,15 +135,15 @@ func TestBatchSpecMountConnectionResolver_Nodes(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	specID, err := createBatchSpec(t, db, ctx, cstore)
+	specID, err := createBatchSpec(t, db, ctx, bstore)
 	require.NoError(t, err)
-	err = createBatchSpecMounts(ctx, cstore, specID, 1)
+	err = createBatchSpecMounts(ctx, bstore, specID, 1)
 	require.NoError(t, err)
 
 	resolver := batchSpecMountConnectionResolver{
-		store: cstore,
+		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			BatchSpecID: specID,
 		},
@@ -163,13 +163,13 @@ func TestBatchSpecMountConnectionResolver_Nodes_Empty(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	specID, err := createBatchSpec(t, db, ctx, cstore)
+	specID, err := createBatchSpec(t, db, ctx, bstore)
 	require.NoError(t, err)
 
 	resolver := batchSpecMountConnectionResolver{
-		store: cstore,
+		store: bstore,
 		opts: store.ListBatchSpecMountsOpts{
 			BatchSpecID: specID,
 		},
@@ -180,19 +180,19 @@ func TestBatchSpecMountConnectionResolver_Nodes_Empty(t *testing.T) {
 	assert.Len(t, nodes, 0)
 }
 
-func createBatchSpec(t *testing.T, db database.DB, ctx context.Context, cstore *store.Store) (int64, error) {
+func createBatchSpec(t *testing.T, db database.DB, ctx context.Context, bstore *store.Store) (int64, error) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		return 0, err
 	}
 	return spec.ID, nil
 }
 
-func createBatchSpecMounts(ctx context.Context, cstore *store.Store, specID int64, count int) error {
+func createBatchSpecMounts(ctx context.Context, bstore *store.Store, specID int64, count int) error {
 	for i := 0; i < count; i++ {
 		mount := &btypes.BatchSpecMount{
 			BatchSpecID: specID,
@@ -201,7 +201,7 @@ func createBatchSpecMounts(ctx context.Context, cstore *store.Store, specID int6
 			Size:        12,
 			ModifiedAt:  time.Now().UTC(),
 		}
-		if err := cstore.UpsertBatchSpecMount(ctx, mount); err != nil {
+		if err := bstore.UpsertBatchSpecMount(ctx, mount); err != nil {
 			return err
 		}
 	}
