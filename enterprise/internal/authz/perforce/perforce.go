@@ -199,8 +199,6 @@ func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, err
 		return p.cachedAllUserEmails, nil
 	}
 
-	p.emailsCacheMutex.Lock()
-	defer p.emailsCacheMutex.Unlock()
 	userEmails := make(map[string]string)
 	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "users")
 	if err != nil {
@@ -220,8 +218,11 @@ func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, err
 		return nil, errors.Wrap(err, "scanner.Err")
 	}
 
+	p.emailsCacheMutex.Lock()
+	defer p.emailsCacheMutex.Unlock()
 	p.cachedAllUserEmails = userEmails
 	p.emailsCacheLastUpdate = time.Now()
+
 	return p.cachedAllUserEmails, nil
 }
 
@@ -232,6 +233,7 @@ func (p *Provider) getAllUsers(ctx context.Context) ([]string, error) {
 		return nil, errors.Wrap(err, "get all user emails")
 	}
 
+	// We lock here since userEmails above is a reference to the cached emails
 	p.emailsCacheMutex.RLock()
 	defer p.emailsCacheMutex.RUnlock()
 	users := make([]string, 0, len(userEmails))
@@ -353,6 +355,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return nil, errors.Wrap(err, "get all user emails")
 	}
 	extIDs := make([]extsvc.AccountID, 0, len(users))
+
+	// We lock here since userEmails above is a reference to the cached emails
 	p.emailsCacheMutex.RLock()
 	defer p.emailsCacheMutex.RUnlock()
 	for user := range users {

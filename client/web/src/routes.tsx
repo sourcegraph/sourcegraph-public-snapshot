@@ -10,9 +10,6 @@ import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
-import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
-import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
-import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
 import { BlobProps } from './repo/blob/Blob'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
@@ -28,6 +25,15 @@ const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage'
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
+const CreateNotebookPage = lazyComponent(
+    () => import('./notebooks/createPage/CreateNotebookPage'),
+    'CreateNotebookPage'
+)
+const NotebooksListPage = lazyComponent(() => import('./notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
+const InstallGitHubAppSuccessPage = lazyComponent(
+    () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
+    'InstallGitHubAppSuccessPage'
+)
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,

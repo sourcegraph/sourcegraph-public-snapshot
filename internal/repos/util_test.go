@@ -22,19 +22,19 @@ func TestSetUserinfoBestEffort(t *testing.T) {
 		{"https://foo.com/foo/bar", "", "p", "https://foo.com/foo/bar"},
 
 		// user set already
-		{"https://x@foo.com/foo/bar", "u", "p", "https://x:p@foo.com/foo/bar"},
-		{"https://x@foo.com/foo/bar", "u", "", "https://x@foo.com/foo/bar"},
-		{"https://x@foo.com/foo/bar", "", "p", "https://x:p@foo.com/foo/bar"},
+		{"https://x@foo.com/foo/bar", "u", "p", "https://u:p@foo.com/foo/bar"},
+		{"https://x@foo.com/foo/bar", "u", "", "https://u@foo.com/foo/bar"},
+		{"https://x@foo.com/foo/bar", "", "p", "https://x@foo.com/foo/bar"},
 
 		// user and password set already
-		{"https://x:y@foo.com/foo/bar", "u", "p", "https://x:y@foo.com/foo/bar"},
-		{"https://x:y@foo.com/foo/bar", "u", "", "https://x:y@foo.com/foo/bar"},
+		{"https://x:y@foo.com/foo/bar", "u", "p", "https://u:p@foo.com/foo/bar"},
+		{"https://x:y@foo.com/foo/bar", "u", "", "https://u@foo.com/foo/bar"},
 		{"https://x:y@foo.com/foo/bar", "", "p", "https://x:y@foo.com/foo/bar"},
 
 		// empty password
-		{"https://x:@foo.com/foo/bar", "u", "p", "https://x:@foo.com/foo/bar"},
-		{"https://x:@foo.com/foo/bar", "u", "", "https://x:@foo.com/foo/bar"},
-		{"https://x:@foo.com/foo/bar", "", "p", "https://x:@foo.com/foo/bar"},
+		{"https://x:@foo.com/foo/bar", "u", "p", "https://u:p@foo.com/foo/bar"},
+		{"https://x:@foo.com/foo/bar", "u", "", "https://u@foo.com/foo/bar"},
+		{"https://x:@foo.com/foo/bar", "", "p", "https://x@foo.com/foo/bar"},
 	}
 	for _, c := range cases {
 		got := setUserinfoBestEffort(c.rawurl, c.username, c.password)
