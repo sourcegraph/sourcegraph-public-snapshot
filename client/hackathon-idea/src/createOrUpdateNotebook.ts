@@ -27,7 +27,7 @@ export async function createOrUpdateNotebook(
             {
                 id: '2',
                 type: NotebookBlockType.QUERY,
-                queryInput: `${packageA} AND ${packageB}`,
+                queryInput: `\"${packageA}\":\s\"[0-9a-zA-Z-~^*.+><=|\s]+\" AND \"${packageB}\":\s\"[0-9a-zA-Z-~^*.+><=|\s]+\" file:^package\.json`,
             },
         ],
     }

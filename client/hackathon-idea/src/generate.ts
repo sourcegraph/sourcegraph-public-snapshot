@@ -1,13 +1,16 @@
 import { createOrUpdateNotebook } from './createOrUpdateNotebook'
+import { generatePackagesList } from './generatePackagesList'
 import { Permutation } from './types'
 
 import { readFileSync, writeFileSync } from 'fs'
+
+// Get the latest package list only if current list is empty
+generatePackagesList()
 
 let notebookMap: { [packageA: string]: { [packageB: string]: string } } = {}
 try {
     notebookMap = JSON.parse(readFileSync('db/notebooks.json', 'utf8').toString() || '{}')
 } catch {}
-
 console.log('loading notebookMap', notebookMap)
 ;(async function () {
     const permutations: Permutation[] = [['react', 'redux']]
