@@ -79,7 +79,6 @@ func extractPattern(basic *query.Basic) (*query.Pattern, error) {
 
 func fromRegexpMatches(submatches []int, namedGroups []string, content string, range_ result.Range) map[string]int {
 	counts := map[string]int{}
-
 	// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
 	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
 	for j := 0; j < len(submatches); j += 2 {
@@ -95,13 +94,11 @@ func fromRegexpMatches(submatches []int, namedGroups []string, content string, r
 		if j == 0 {
 			// The first submatch is the overall match
 			// value. Don't add this to the Environment
-
 			continue
 		}
 
 		current, _ := counts[value]
 		counts[value] = current + 1
-
 	}
 	return counts
 }

@@ -162,7 +162,6 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 							matches[key] = current + count
 						}
 					}
-
 				}
 			}
 			return matches, nil
@@ -239,6 +238,8 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	}
 }
 
+// Pulls the pattern out of the querystring
+// If the query contains a case:no field, we need to wrap the pattern in some additional regex.
 func getCasedPattern(querystring string) (MatchPattern, error) {
 	query, err := querybuilder.ParseQuery(querystring, "regexp")
 	if err != nil {

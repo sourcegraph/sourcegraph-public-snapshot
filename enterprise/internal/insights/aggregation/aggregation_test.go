@@ -368,7 +368,7 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				},
 			},
 			`python(?:[0-9])\.([0-9])`,
-			autogold.Want("skips non caputring group", map[string]int{"7": 1, "9": 1}),
+			autogold.Want("skips non capturing group", map[string]int{"7": 1, "9": 1}),
 		},
 		{
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
