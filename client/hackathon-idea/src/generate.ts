@@ -1,1 +1,4 @@
-console.log('Hello world');
+import { generateNotebook } from './generateNotebook'
+;(async function () {
+    generateNotebook('react', 'redux')
+})()
