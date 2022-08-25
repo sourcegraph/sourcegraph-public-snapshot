@@ -459,14 +459,14 @@ replace (
 	github.com/prometheus/common => github.com/prometheus/common v0.32.1
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
+	// Forked until PR is merged upstream TODO @jhchabran
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220823190616-afb3dd6ab55c
 )
 
 // Status unclear replace directives
 // =================================
 // These entries indicate replace directives that are defined for unknown reasons.
 replace (
-	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220823190616-afb3dd6ab55c
 	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
 	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d

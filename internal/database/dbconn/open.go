@@ -73,14 +73,39 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 	}
 }
 
-// extendedDriver turn a wrapping sql.Driver that doesn't implement Ping,
-// ResetSession and CheckNamedValue into one that does, by reaching for the
-// underlying implementation that actually does support it.
+// extendedDriver wraps sqlHooks' driver to provide a conn that implements Ping, ResetSession
+// and CheckNamedValue, which is mandatory as otelsql is instrumenting these methods.
 //
-// A sqlhooks.Driver must be used as a Driver, otherwise this is going to crash.
+//                             Ping()
+//                             ResetSession()
+//                             CheckNamedValue()
+//                    ┌──────────────────────────────┐
+//                    │                              │
+//                    │                              │
+//                    │                              │
+// ┌───────┐   ┌──────┴─────┐   ┌────────┐     ┌─────▼───────┐
+// │       │   │            │   │        │     │             │
+// │otelsql├──►│extendedConn├──►│sqlhooks├────►│DefaultDriver│
+// │       │   │            │   │        │     │             │
+// └─┬─────┘   └─┬──────────┘   └─┬──────┘     └─┬───────────┘
+//   │           │                │              │
+//   │           │                │              │Implements all SQL driver methods
+//   │           │                │
+//   │           │                │Only implements mandatory ones
+//   │           │                │Ping(), ResetSession() and CheckNamedValue() are missing.
+//   │           │
+//   │           │Implement all SQL driver methods
+//   │
+//   │Expects all SQL driver methods
+//
+// A sqlhooks.Driver must be used as a Driver otherwise errors will be raised.
 type extendedDriver struct {
 	driver.Driver
 }
+
+// extendedConn wraps sqlHooks' conn that does implement Ping, ResetSession and
+// CheckNamedValue into one that does, by accessing the underlying conn from the
+// original driver that does implement these methods.
 type extendedConn struct {
 	driver.ExecerContext
 	driver.QueryerContext
@@ -89,12 +114,16 @@ type extendedConn struct {
 	driver.ConnBeginTx
 }
 
+var _ driver.Pinger = &extendedConn{}
+var _ driver.SessionResetter = &extendedConn{}
+var _ driver.NamedValueChecker = &extendedConn{}
+
 // Open returns a conn wrapped through extendedConn, implementing the
 // Ping, ResetSession and CheckNamedValue optional methods that the
 // otelsql.Conn expects to be implemented.
 func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	if _, ok := d.Driver.(*sqlhooks.Driver); !ok {
-		return nil, errors.New("sql driver is not a sqlhooks.Driver, aborting")
+		return nil, errors.New("sql driver is not a sqlhooks.Driver")
 	}
 	c, err := d.Driver.Open(str)
 	if err != nil {
@@ -178,7 +207,7 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 				Skip: func(ctx context.Context, query string, args []any) bool {
 					// Do not decorate span with args as attributes if that's a bulk insertion
 					// or if we have too many args (it's unreadable anyway).
-					return bulkInsertion(ctx) || len(args) > 24
+					return isBulkInsertion(ctx) || len(args) > 24
 				}},
 		}),
 	)
