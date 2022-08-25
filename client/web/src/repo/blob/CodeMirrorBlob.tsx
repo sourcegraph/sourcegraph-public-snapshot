@@ -25,12 +25,17 @@ import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
+import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
 
 const staticExtensions: Extension = [
-    // Using EditorState.readOnly instead of EditorView.editable allows us to
-    // focus the editor and placing a text cursor
     EditorState.readOnly.of(true),
+    EditorView.editable.of(false),
+    EditorView.contentAttributes.of({
+        // This is required to make the blob view focusable and to make
+        // triggering the in-document search (see below) work when Mod-f is
+        // pressed
+        tabindex: '0',
+    }),
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
@@ -52,7 +57,7 @@ const staticExtensions: Extension = [
     keymap.of(searchKeymap),
 ]
 
-// Compartments are used to reconfigure some parts of the editor withoug
+// Compartments are used to reconfigure some parts of the editor without
 // affecting others.
 
 // Compartment to update various smaller settings
@@ -61,6 +66,28 @@ const settingsCompartment = new Compartment()
 const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
+
+// See CodeMirrorQueryInput for a detailed comment about the pattern that's used
+// below. The CodeMirror search bar uses a similar pattern to support global
+// shortcuts (including Mod-k) while the search bar is focused.
+const [callbacksField, setCallbacks] = createUpdateableField<Pick<BlobProps, 'onHandleFuzzyFinder'>>(
+    { onHandleFuzzyFinder: () => {} },
+    callbacks => [
+        keymap.of([
+            {
+                key: 'Mod-k',
+                run: view => {
+                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
+                    if (onHandleFuzzyFinder) {
+                        onHandleFuzzyFinder(true)
+                        return true
+                    }
+                    return false
+                },
+            },
+        ]),
+    ]
+)
 
 export const Blob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -78,14 +105,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // Reference panel specific props
         disableStatusBar,
         disableDecorations,
-        disableHovercards,
+        onHandleFuzzyFinder,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
-    const blobIsLoading = useBlobIsLoading(blobInfo, location.pathname)
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
@@ -147,17 +173,19 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const extensions = useMemo(
         () => [
             staticExtensions,
+            callbacksField,
             selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
-            sourcegraphExtensions({
-                blobInfo,
-                initialSelection: position,
-                extensionsController,
-                disableStatusBar,
-                disableDecorations,
-                disableHovercards,
-            }),
+            extensionsController !== null
+                ? sourcegraphExtensions({
+                      blobInfo,
+                      initialSelection: position,
+                      extensionsController,
+                      disableStatusBar,
+                      disableDecorations,
+                  })
+                : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
             settingsCompartment.of(settings),
@@ -174,6 +202,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         updateValueOnChange: false,
         updateOnExtensionChange: false,
     })
+
+    useEffect(() => {
+        if (editor) {
+            setCallbacks(editor, { onHandleFuzzyFinder })
+        }
+    }, [editor, onHandleFuzzyFinder])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -225,23 +259,24 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     // Update selected lines when URL changes
     useEffect(() => {
-        if (editor && !blobIsLoading) {
+        if (editor) {
             selectLines(editor, position.line ? position : null)
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [position, blobIsLoading])
+    }, [position])
 
     // Update pinned hovercard range
     useEffect(() => {
-        if (editor && !blobIsLoading) {
+        if (editor && (!hasPin || (position.line && isValidLineRange(position, editor.state.doc)))) {
+            // Only update range if position is valid inside the document.
             updatePinnedRangeField(editor, hasPin ? position : null)
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [position, hasPin, blobIsLoading])
+    }, [position, hasPin])
 
     return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
 }
@@ -252,18 +287,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
  */
 function urlIsPinned(search: string): boolean {
     return new URLSearchParams(search).get('popover') === 'pinned'
-}
-
-/**
- * Because the location changes before new blob info is available we often apply
- * updates to the old document, which can be problematic or throw errors. This
- * helper hook keeps track of which path is set when the blob info updates
- * and compares it against the current path.
- */
-function useBlobIsLoading(blobInfo: BlobInfo, pathname: string): boolean {
-    // pathname is intentionally ignored to make this functionality work
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    return pathname !== useMemo(() => pathname, [blobInfo])
 }
 
 /**
@@ -332,6 +355,7 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
                     start: startPosition,
                     end: endPosition,
                 },
+                pinned: true,
             },
         ]
     })

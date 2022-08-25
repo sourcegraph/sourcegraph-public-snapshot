@@ -468,8 +468,6 @@ type DebugLog struct {
 
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
-	// GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
-	GithubAppCloud *GithubAppCloud `json:"githubApp.cloud,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 }
@@ -606,7 +604,7 @@ type ExperimentalFeatures struct {
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
-	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
+	EnableLegacyExtensions *bool `json:"enableLegacyExtensions,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
@@ -743,6 +741,20 @@ type GitCommitDescription struct {
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
+}
+
+// GitHubApp description: The config options for Sourcegraph GitHub App.
+type GitHubApp struct {
+	// AppID description: The app ID of the GitHub App for Sourcegraph.
+	AppID string `json:"appID,omitempty"`
+	// ClientID description: The Client ID of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps .
+	ClientID string `json:"clientID,omitempty"`
+	// ClientSecret description: The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps .
+	ClientSecret string `json:"clientSecret,omitempty"`
+	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph.
+	PrivateKey string `json:"privateKey,omitempty"`
+	// Slug description: The slug of the GitHub App for Sourcegraph.
+	Slug string `json:"slug,omitempty"`
 }
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
@@ -950,20 +962,6 @@ type GitLabRateLimit struct {
 type GitLabWebhook struct {
 	// Secret description: The secret used to authenticate incoming webhook requests
 	Secret string `json:"secret"`
-}
-
-// GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
-type GithubAppCloud struct {
-	// AppID description: The app ID of the GitHub App for Sourcegraph Cloud.
-	AppID string `json:"appID,omitempty"`
-	// ClientID description: The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps .
-	ClientID string `json:"clientID,omitempty"`
-	// ClientSecret description: The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps .
-	ClientSecret string `json:"clientSecret,omitempty"`
-	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph Cloud.
-	PrivateKey string `json:"privateKey,omitempty"`
-	// Slug description: The slug of the GitHub App for Sourcegraph Cloud.
-	Slug string `json:"slug,omitempty"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -1296,7 +1294,7 @@ type ObservabilityTracing struct {
 	Debug bool `json:"debug,omitempty"`
 	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. An appropriate tracing backend must be running for traces to be collected (for "opentracing", a Jaeger instance must be running as described in the Sourcegraph installation instructions). Additional downsampling can be configured in tracing backend (for Jaeger, see https://www.jaegertracing.io/docs/1.17/sampling).
 	Sampling string `json:"sampling,omitempty"`
-	// Type description: Determines what tracing provider to enable. For "opentracing", the required backend is a Jaeger instance. For "opentelemetry" (EXPERIMENTAL), the required backend is a OpenTelemetry collector instance. "datadog" support has been removed, and the configuration option will be removed in a future release.
+	// Type description: Determines what tracing provider to enable. For "jaeger", a Jaeger instance is required. For "opentelemetry" (EXPERIMENTAL), the required backend is a OpenTelemetry collector instance. "datadog" and "opentracing" options are deprecated, and the configuration option will be removed in a future release.
 	Type string `json:"type,omitempty"`
 	// UrlTemplate description: Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'.
 	UrlTemplate string `json:"urlTemplate,omitempty"`
@@ -1714,7 +1712,7 @@ type Settings struct {
 	//
 	// Usually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.
 	Notices []*Notice `json:"notices,omitempty"`
-	// Quicklinks description: Links that should be accessible quickly from the home and search pages.
+	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
 	SearchContextLines int `json:"search.contextLines,omitempty"`
@@ -1783,8 +1781,14 @@ type SettingsExperimentalFeatures struct {
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
+	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
+	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
+	// EnableMergedFileSymbolSidebar description: Enables the new file sidebar experience with merged file and symbol entries.
+	EnableMergedFileSymbolSidebar *bool `json:"enableMergedFileSymbolSidebar,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
+	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover.
+	EnableSidebarFilePrefetch *bool `json:"enableSidebarFilePrefetch,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
@@ -1952,6 +1956,8 @@ type SiteConfiguration struct {
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
+	// GitHubApp description: The config options for Sourcegraph GitHub App.
+	GitHubApp *GitHubApp `json:"gitHubApp,omitempty"`
 	// GitLongCommandTimeout description: Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.
 	GitLongCommandTimeout int `json:"gitLongCommandTimeout,omitempty"`
 	// GitMaxCodehostRequestsPerSecond description: Maximum number of remote code host git operations (e.g. clone or ls-remote) to be run per second per gitserver. Default is -1, which is unlimited.
@@ -2108,7 +2114,7 @@ type SyntaxHighlightingLanguagePatterns struct {
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 type TlsExternal struct {
-	// Certificates description: TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
+	// Certificates description: TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh. NOTE: git will only respect these certificates and will ignore system certificates. Remember to include system certificates in this setting.
 	Certificates []string `json:"certificates,omitempty"`
 	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.

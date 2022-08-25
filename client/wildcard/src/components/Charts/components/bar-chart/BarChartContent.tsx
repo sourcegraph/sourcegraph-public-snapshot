@@ -1,4 +1,4 @@
-import { ReactElement, SVGProps, useRef, useState } from 'react'
+import { MouseEvent, ReactElement, SVGProps, useRef, useState } from 'react'
 
 import { Group } from '@visx/group'
 import classNames from 'classnames'
@@ -9,14 +9,10 @@ import { Tooltip } from '../../core'
 import { GroupedBars } from './components/GroupedBars'
 import { StackedBars } from './components/StackedBars'
 import { BarTooltipContent } from './components/TooltipContent'
+import { ActiveSegment } from './types'
 import { Category } from './utils/get-grouped-categories'
 
 import styles from './BarChartContent.module.scss'
-
-interface ActiveSegment<Datum> {
-    category: Category<Datum>
-    datum: Datum
-}
 
 interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
     stacked: boolean
@@ -30,9 +26,10 @@ interface BarChartContentProps<Datum> extends SVGProps<SVGGElement> {
 
     getDatumName: (datum: Datum) => string
     getDatumValue: (datum: Datum) => number
+    getDatumHover?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink: (datum: Datum) => string | undefined | null
-    onBarClick: (datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum) => void
 }
 
 export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): ReactElement {
@@ -45,6 +42,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
         left,
         width = 0,
         height = 0,
+        getDatumHover,
         getDatumName,
         getDatumValue,
         getDatumColor,
@@ -66,6 +64,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
         >
             {stacked ? (
                 <StackedBars
+                    aria-label="chart content group"
                     categories={categories}
                     xScale={xScale}
                     yScale={yScale}
@@ -79,6 +78,8 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                 />
             ) : (
                 <GroupedBars
+                    aria-label="chart content group"
+                    activeSegment={activeSegment}
                     categories={categories}
                     xScale={xScale}
                     yScale={yScale}
@@ -102,6 +103,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                         getDatumColor={getDatumColor}
                         getDatumValue={getDatumValue}
                         getDatumName={getDatumName}
+                        getDatumHover={getDatumHover}
                     />
                 </Tooltip>
             )}

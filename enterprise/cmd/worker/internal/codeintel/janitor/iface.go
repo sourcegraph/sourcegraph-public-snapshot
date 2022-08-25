@@ -2,7 +2,6 @@ package janitor
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
@@ -14,13 +13,6 @@ type DBStore interface {
 
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
-
-	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
-	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
-	SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) ([]int, error)
-	CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error)
-	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error
-	DirtyRepositories(ctx context.Context) (map[int]int, error)
 }
 
 type DBStoreShim struct {

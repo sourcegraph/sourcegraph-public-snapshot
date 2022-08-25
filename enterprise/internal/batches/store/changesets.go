@@ -1061,31 +1061,6 @@ updated_records AS (
 SELECT COUNT(id) FROM all_matching WHERE all_matching.reconciler_state = %s
 `
 
-func scanFirstChangeset(rows *sql.Rows, err error) (*btypes.Changeset, bool, error) {
-	changesets, err := scanChangesets(rows, err)
-	if err != nil || len(changesets) == 0 {
-		return &btypes.Changeset{}, false, err
-	}
-	return changesets[0], true, nil
-}
-
-func scanChangesets(rows *sql.Rows, queryErr error) ([]*btypes.Changeset, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	var cs []*btypes.Changeset
-
-	return cs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
-		var c btypes.Changeset
-		if err = scanChangeset(&c, sc); err != nil {
-			return err
-		}
-		cs = append(cs, &c)
-		return nil
-	})
-}
-
 // jsonBatchChangeChangesetSet represents a "join table" set as a JSONB object
 // where the keys are the ids and the values are json objects holding the properties.
 // It implements the sql.Scanner interface so it can be used as a scan destination,

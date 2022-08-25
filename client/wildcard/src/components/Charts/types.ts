@@ -15,9 +15,10 @@ export interface CategoricalLikeChart<Datum> {
     data: Datum[]
     getDatumValue: (datum: Datum) => number
     getDatumName: (datum: Datum) => string
+    getDatumHover?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink?: (datum: Datum) => string | undefined
-    onDatumLinkClick?: (event: React.MouseEvent) => void
+    onDatumLinkClick?: (event: React.MouseEvent, datum: Datum) => void
 }
 
 export interface Series<Datum> {

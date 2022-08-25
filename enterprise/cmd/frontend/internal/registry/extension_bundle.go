@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -36,10 +37,17 @@ func handleRegistryExtensionBundle(db database.DB) http.HandlerFunc {
 			return
 		}
 
+		err := api.ExtensionRegistryReadEnabled()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		filename := mux.Vars(r)["RegistryExtensionReleaseFilename"]
 		wantSourceMap := filepath.Ext(filename) == ".map"
 
-		releaseID, err := parseExtensionBundleFilename(filename)
+		var releaseID int64
+		releaseID, err = parseExtensionBundleFilename(filename)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

@@ -53,6 +53,7 @@ export interface SearchResultsInfoBarProps
     query?: string
     resultsFound: boolean
 
+    batchChangesEnabled?: boolean
     /** Whether running batch changes server-side is enabled */
     batchChangesExecutionEnabled?: boolean
 
@@ -135,7 +136,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     props.query,
                     props.patternType,
                     props.authenticatedUser,
-                    props.batchChangesExecutionEnabled
+                    props.batchChangesEnabled && props.batchChangesExecutionEnabled
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
@@ -150,6 +151,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             props.enableCodeInsights,
             props.patternType,
             props.query,
+            props.batchChangesEnabled,
             props.batchChangesExecutionEnabled,
         ]
     )
@@ -264,6 +266,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         props.onShowFiltersChanged?.(newShowFilters)
     }
 
+    const { extensionsController } = props
+
     return (
         <aside
             role="region"
@@ -291,30 +295,34 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
-                    <ActionsContainer
-                        {...props}
-                        extraContext={extraContext}
-                        menu={ContributableMenu.SearchResultsToolbar}
-                    >
-                        {actionItems => (
-                            <>
-                                {actionItems.map(actionItem => (
-                                    <ActionItem
-                                        {...props}
-                                        {...actionItem}
-                                        key={actionItem.action.id}
-                                        showLoadingSpinnerDuringExecution={false}
-                                        className="mr-2 text-decoration-none"
-                                        actionItemStyleProps={{
-                                            actionItemVariant: 'secondary',
-                                            actionItemSize: 'sm',
-                                            actionItemOutline: true,
-                                        }}
-                                    />
-                                ))}
-                            </>
-                        )}
-                    </ActionsContainer>
+                    {extensionsController !== null ? (
+                        <ActionsContainer
+                            {...props}
+                            extensionsController={extensionsController}
+                            extraContext={extraContext}
+                            menu={ContributableMenu.SearchResultsToolbar}
+                        >
+                            {actionItems => (
+                                <>
+                                    {actionItems.map(actionItem => (
+                                        <ActionItem
+                                            {...props}
+                                            {...actionItem}
+                                            extensionsController={extensionsController}
+                                            key={actionItem.action.id}
+                                            showLoadingSpinnerDuringExecution={false}
+                                            className="mr-2 text-decoration-none"
+                                            actionItemStyleProps={{
+                                                actionItemVariant: 'secondary',
+                                                actionItemSize: 'sm',
+                                                actionItemOutline: true,
+                                            }}
+                                        />
+                                    ))}
+                                </>
+                            )}
+                        </ActionsContainer>
+                    ) : null}
 
                     {(createActions.length > 0 ||
                         createCodeMonitorButton ||

@@ -5,8 +5,15 @@ import (
 )
 
 func TestWarningError(t *testing.T) {
-	err := New("foo")
 	var ref Warning
+	var err error
+
+	// Ensure that a nil error is not a warning type error.
+	if As(err, &ref) {
+		t.Error(`Expected nil error to NOT be of type warning`)
+	}
+
+	err = New("foo")
 
 	// Ensure that all errors are not a warning type error.
 	if As(err, &ref) {
@@ -27,5 +34,9 @@ func TestWarningError(t *testing.T) {
 	// Test that IsWarning always returns true.
 	if !w.IsWarning() {
 		t.Error("Expecting warning.IsWarning to return true but got false")
+	}
+
+	if !IsWarning(w) {
+		t.Error("Expecting IsWarning to return true but got false")
 	}
 }

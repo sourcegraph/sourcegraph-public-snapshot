@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/zoekt"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/log/logtest"
 

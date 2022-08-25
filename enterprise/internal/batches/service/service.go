@@ -7,14 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -175,7 +173,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, errors.Wrap(err, "marshalling name")
 	}
 	// TODO: Should name require a minimum length?
-	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +252,7 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, errors.Wrap(err, "marshalling name")
 	}
 
-	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -352,8 +350,8 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	for _, changesetSpec := range cs {
 		// 🚨 SECURITY: We return an error if the user doesn't have access to one
 		// of the repositories associated with a ChangesetSpec.
-		if _, ok := accessibleReposByID[changesetSpec.RepoID]; !ok {
-			return nil, &database.RepoNotFoundErr{ID: changesetSpec.RepoID}
+		if _, ok := accessibleReposByID[changesetSpec.BaseRepoID]; !ok {
+			return nil, &database.RepoNotFoundErr{ID: changesetSpec.BaseRepoID}
 		}
 		byRandID[changesetSpec.RandID] = changesetSpec
 	}
@@ -467,6 +465,18 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	// Temporarily prevent mounts for server-side processing.
 	if hasMount(opts.spec) {
 		return errors.New("mounts are not allowed for server-side processing")
+	}
+
+	// The global env is always mocked to be empty for executors, so we just
+	// want to throw a validation error here for now.
+	var errs error
+	for i, step := range opts.spec.Spec.Steps {
+		if !step.Env.IsStatic() {
+			errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
+		}
+	}
+	if errs != nil {
+		return errs
 	}
 
 	opts.spec.CreatedFromRaw = true
@@ -765,14 +775,10 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 		return nil, err
 	}
 	spec.UserID = userID
-	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.Spec.BaseRepository))
-	if err != nil {
-		return nil, err
-	}
 
 	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = s.store.Repos().Get(ctx, spec.RepoID); err != nil {
+	if _, err = s.store.Repos().Get(ctx, spec.BaseRepoID); err != nil {
 		return nil, err
 	}
 

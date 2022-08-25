@@ -43,12 +43,12 @@ func (v Version) GitTag() string {
 	return fmt.Sprintf("v%d.%d.0", v.Major, v.Minor)
 }
 
+var lastMinorVersionInMajorRelease = map[int]int{
+	3: 43, // 3.43.0 -> 4.0.0
+}
+
 // Next returns the next minor version immediately following the receiver.
 func (v Version) Next() Version {
-	lastMinorVersionInMajorRelease := map[int]int{
-		3: 43, // 3.43.0 -> 4.0.0
-	}
-
 	if minor, ok := lastMinorVersionInMajorRelease[v.Major]; ok && minor == v.Minor {
 		// We're at terminal minor version for some major release
 		// :tada:
@@ -58,6 +58,16 @@ func (v Version) Next() Version {
 
 	// Bump minor version
 	return NewVersion(v.Major, v.Minor+1)
+}
+
+// Previous returns the previous minor version immediately preceding the receiver.
+func (v Version) Previous() (Version, bool) {
+	if v.Minor == 0 {
+		minor, ok := lastMinorVersionInMajorRelease[v.Major-1]
+		return NewVersion(v.Major-1, minor), ok
+	}
+
+	return NewVersion(v.Major, v.Minor-1), true
 }
 
 // UpgradeRange returns all minor versions in the closed interval [from, to].

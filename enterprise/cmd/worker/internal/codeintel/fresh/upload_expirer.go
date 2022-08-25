@@ -65,9 +65,10 @@ func (j *uploadExpirerJob) Routines(ctx context.Context, logger log.Logger) ([]g
 
 	db := database.NewDBWith(logger, dbStore)
 	uploadSvc := uploads.GetService(db, database.NewDBWith(logger, lsifStore), gitserverClient)
-	policySvc := policies.GetService(db)
+	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 
 	return []goroutine.BackgroundRoutine{
 		expiration.NewExpirer(uploadSvc, policySvc, policyMatcher, metrics),
+		expiration.NewReferenceCountUpdater(uploadSvc),
 	}, nil
 }

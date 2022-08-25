@@ -23,6 +23,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Notices } from '../../global/Notices'
 import {
     useExperimentalFeatures,
@@ -75,18 +76,31 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         features => features.applySearchQuerySuggestionOnEnter ?? false
     )
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const [hideSearchHistory] = useFeatureFlag('search-input-hide-history')
 
     const suggestionSources = useMemo(
         () =>
-            coreWorkflowImprovementsEnabled && props.authenticatedUser
+            coreWorkflowImprovementsEnabled && props.authenticatedUser && !hideSearchHistory
                 ? [
                       searchQueryHistorySource({
                           userId: props.authenticatedUser.id,
                           selectedSearchContext: props.selectedSearchContextSpec,
+                          onSelection: index => {
+                              props.telemetryService.log('SearchSuggestionItemClicked', {
+                                  type: 'SearchHistory',
+                                  index,
+                              })
+                          },
                       }),
                   ]
                 : [],
-        [props.authenticatedUser, props.selectedSearchContextSpec, coreWorkflowImprovementsEnabled]
+        [
+            coreWorkflowImprovementsEnabled,
+            props.authenticatedUser,
+            props.selectedSearchContextSpec,
+            props.telemetryService,
+            hideSearchHistory,
+        ]
     )
 
     const quickLinks =
@@ -160,7 +174,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
                     />
                 </div>
-                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
+                {!coreWorkflowImprovementsEnabled && (
+                    <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
+                )}
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>

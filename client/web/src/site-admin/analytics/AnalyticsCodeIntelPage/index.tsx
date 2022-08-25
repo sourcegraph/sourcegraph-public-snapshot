@@ -174,7 +174,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Code intel</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Code intel</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
@@ -218,7 +218,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                                 <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have
                                 precise code intel.{' '}
                                 <AnchorLink
-                                    to="/help/code_intelligence/explanations/precise_code_intelligence"
+                                    to="/help/code_navigation/explanations/precise_code_intelligence"
                                     target="_blank"
                                 >
                                     Learn how to improve precise code intel coverage.

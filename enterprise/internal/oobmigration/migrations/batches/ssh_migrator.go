@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -17,24 +17,23 @@ import (
 type SSHMigrator struct {
 	logger    log.Logger
 	store     *basestore.Store
-	BatchSize int
 	key       encryption.Key
+	batchSize int
 }
 
 var _ oobmigration.Migrator = &SSHMigrator{}
 
-func NewSSHMigratorWithDB(db database.DB, key encryption.Key) *SSHMigrator {
+func NewSSHMigratorWithDB(store *basestore.Store, key encryption.Key, batchSize int) *SSHMigrator {
 	return &SSHMigrator{
 		logger:    log.Scoped("SSHMigrator", ""),
-		store:     basestore.NewWithHandle(db.Handle()),
-		BatchSize: 5,
+		store:     store,
 		key:       key,
+		batchSize: batchSize,
 	}
 }
 
-func (m *SSHMigrator) ID() int {
-	return 2
-}
+func (m *SSHMigrator) ID() int                 { return 2 }
+func (m *SSHMigrator) Interval() time.Duration { return time.Second * 5 }
 
 // Progress returns the percentage (ranged [0, 1]) of external services without a marker
 // indicating that this migration has been applied to that row.
@@ -163,7 +162,7 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 		Credential string
 	}
 	credentials, err := func() (credentials []credential, err error) {
-		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorSelectQuery, "batches", sshMigrationsApplied, m.BatchSize))
+		rows, err := tx.Query(ctx, sqlf.Sprintf(sshMigratorSelectQuery, "batches", sshMigrationsApplied, m.batchSize))
 		if err != nil {
 			return nil, err
 		}
@@ -216,7 +215,17 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 
 const sshMigratorSelectQuery = `
 -- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
-SELECT id, credential, encryption_key_id FROM user_credentials WHERE domain = %s AND ssh_migration_applied = %s ORDER BY ID LIMIT %s FOR UPDATE
+SELECT
+	id,
+	credential,
+	encryption_key_id
+FROM user_credentials
+WHERE
+	domain = %s AND
+	ssh_migration_applied = %s
+ORDER BY ID
+LIMIT %s
+FOR UPDATE
 `
 
 const sshMigratorUpdateQuery = `

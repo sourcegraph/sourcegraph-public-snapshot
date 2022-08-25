@@ -1,4 +1,10 @@
-import { excludeRepo, haveMatchingWorkspaces, insertFieldIntoLibraryItem, quoteYAMLString } from './yaml-util'
+import {
+    excludeRepo,
+    haveMatchingWorkspaces,
+    insertFieldIntoLibraryItem,
+    insertQueryIntoLibraryItem,
+    quoteYAMLString,
+} from './yaml-util'
 
 const SPEC_WITH_ONE_REPOSITORY = `name: hello-world
 on:
@@ -338,6 +344,80 @@ describe('Batch spec yaml utils', () => {
                     SPEC_WITH_ONE_REPOSITORY.replace('hello-world', newName)
                 )
             }
+        })
+    })
+
+    describe('insertQueryIntoLibraryItem', () => {
+        it('should add simple query', () => {
+            const spec = insertQueryIntoLibraryItem(SPEC_WITH_QUERY, 'context:global hello patternType:standard')
+            expect(spec).toEqual(
+                'name: hello-world\n' +
+                    'on:\n' +
+                    '    - repositoriesMatchingQuery: context:global hello patternType:standard\n\n'
+            )
+        })
+
+        it('should add quoted query', () => {
+            const spec = insertQueryIntoLibraryItem(SPEC_WITH_QUERY, 'context:global "hello" patternType:standard')
+            expect(spec).toEqual(
+                'name: hello-world\n' +
+                    'on:\n' +
+                    '    - repositoriesMatchingQuery: context:global "hello" patternType:standard\n\n'
+            )
+        })
+
+        it('should add unbalanced quoted query', () => {
+            const spec = insertQueryIntoLibraryItem(SPEC_WITH_QUERY, 'context:global "hello patternType:standard')
+            expect(spec).toEqual(
+                'name: hello-world\n' +
+                    'on:\n' +
+                    '    - repositoriesMatchingQuery: context:global "hello patternType:standard\n\n'
+            )
+        })
+
+        it('should add query with colon', () => {
+            const spec = insertQueryIntoLibraryItem(SPEC_WITH_QUERY, 'context:global hello: world patternType:standard')
+            expect(spec).toEqual(
+                'name: hello-world\n' +
+                    'on:\n' +
+                    '    - repositoriesMatchingQuery: "context:global hello: world patternType:standard"\n\n'
+            )
+        })
+
+        it('should add query with colon and quotes', () => {
+            const spec = insertQueryIntoLibraryItem(
+                SPEC_WITH_QUERY,
+                'context:global hello: "world" patternType:standard'
+            )
+            expect(spec).toEqual(
+                'name: hello-world\n' +
+                    'on:\n' +
+                    '    - repositoriesMatchingQuery: "context:global hello: \\"world\\" patternType:standard"\n\n'
+            )
+        })
+
+        it('should add query with colon and unbalanced quotes', () => {
+            const spec = insertQueryIntoLibraryItem(
+                SPEC_WITH_QUERY,
+                'context:global hello: "world patternType:standard'
+            )
+            expect(spec).toEqual(
+                'name: hello-world\n' +
+                    'on:\n' +
+                    '    - repositoriesMatchingQuery: "context:global hello: \\"world patternType:standard"\n\n'
+            )
+        })
+
+        it('should add query with colon and double unbalanced quotes', () => {
+            const spec = insertQueryIntoLibraryItem(
+                SPEC_WITH_QUERY,
+                'context:global "hello": "world patternType:standard'
+            )
+            expect(spec).toEqual(
+                'name: hello-world\n' +
+                    'on:\n' +
+                    '    - repositoriesMatchingQuery: "context:global \\"hello\\": \\"world patternType:standard"\n\n'
+            )
         })
     })
 

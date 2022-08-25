@@ -31,13 +31,13 @@ export const formatXLabel = timeFormat('%d %B %A')
 
 const MINIMUM_NUMBER_OF_TICKS = 2
 
-interface GetScaleTicksInput {
+export interface GetScaleTicksOptions {
     scale: AnyD3Scale
     space: number
     pixelsPerTick?: number
 }
 
-export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
+export function getXScaleTicks<T>(input: GetScaleTicksOptions): T[] {
     const { scale, space, pixelsPerTick = 80 } = input
 
     // Calculate desirable number of ticks
@@ -63,7 +63,7 @@ export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
  * Ticks are constrained to integers.
  */
 
-export function getYScaleTicks(input: GetScaleTicksInput): number[] {
+export function getYScaleTicks(input: GetScaleTicksOptions): number[] {
     const { scale, space, pixelsPerTick = 40 } = input
 
     // Generate max density ticks (d3 scale generation)

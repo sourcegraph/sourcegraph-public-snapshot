@@ -1,23 +1,22 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 452
 expression: "dump_document(&document, src)"
 ---
   package main
-//^^^^^^^ IdentifierKeyword
-//        ^^^^ IdentifierNamespace
+//^^^^^^^ IdentifierKeyword 
+//        ^^^^ IdentifierNamespace 
   import "fmt"
-//^^^^^^ IdentifierKeyword
-//       ^^^^^ StringLiteral
+//^^^^^^ IdentifierKeyword 
+//       ^^^^^ StringLiteral 
   
   func main() {
-//^^^^ IdentifierKeyword
-//     ^^^^ IdentifierFunctionDefinition
+//^^^^ IdentifierKeyword 
+//     ^^^^ IdentifierFunctionDefinition 
    fmt.Println("Hello, world", 5)
-// ^^^ IdentifierBuiltin
-//     ^^^^^^^ IdentifierFunctionDefinition
-//             ^^^^^^^^^^^^^^ StringLiteral
-//                           ^ PunctuationDelimiter
-//                             ^ NumericLiteral
+// ^^^ IdentifierBuiltin 
+//     ^^^^^^^ IdentifierFunctionDefinition 
+//             ^^^^^^^^^^^^^^ StringLiteral 
+//                           ^ PunctuationDelimiter 
+//                             ^ NumericLiteral 
   }
 
