@@ -1377,7 +1377,7 @@
       "examples": [30]
     },
     "insights.aggregations.bufferSize": {
-      "description": "The size of the buffer for aggregations ran in-memory. A higher limit might cause memory issues for the frontend",
+      "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
       "type": "integer",
       "group": "CodeInsights",
       "default": 500
