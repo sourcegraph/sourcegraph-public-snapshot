@@ -4245,6 +4245,21 @@
 				"IndexMetadata": null
 			},
 			{
+				"ID": 1654770608,
+				"Name": "workspace_user_id_non_nullable",
+				"UpQuery": "UPDATE batch_spec_workspace_execution_jobs exec SET user_id = (\n    SELECT spec.user_id\n    FROM batch_spec_workspaces AS workspace\n    JOIN batch_specs spec ON spec.id = workspace.batch_spec_id\n    WHERE workspace.id = exec.batch_spec_workspace_id\n);\n\nALTER TABLE batch_spec_workspace_execution_jobs ALTER COLUMN user_id SET NOT NULL;",
+				"DownQuery": "ALTER TABLE batch_spec_workspace_execution_jobs ALTER COLUMN user_id DROP NOT NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1653524883,
+					1654116265,
+					1654168174
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
 				"ID": 1654848945,
 				"Name": "add_explicit_permissions_bitbucket_projects_jobs_index",
 				"UpQuery": "CREATE INDEX IF NOT EXISTS explicit_permissions_bitbucket_projects_jobs_project_key_external_service_id_state_idx ON explicit_permissions_bitbucket_projects_jobs (project_key, external_service_id, state);",
