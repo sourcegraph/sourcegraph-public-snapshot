@@ -61,7 +61,7 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureACLs, license(plan(oldEnterprise)), true)
 		check(t, FeatureACLs, license(), true)
 
-		check(t, FeatureACLs, license(plan(team)), false)
+		check(t, FeatureACLs, license(plan(team)), true)
 		check(t, FeatureACLs, license(plan(enterprise0)), true)
 		check(t, FeatureACLs, license(plan(enterprise0), string(FeatureACLs)), true)
 	})
