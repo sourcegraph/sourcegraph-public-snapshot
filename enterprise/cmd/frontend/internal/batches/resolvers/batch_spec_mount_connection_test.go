@@ -199,6 +199,7 @@ func createBatchSpecMounts(ctx context.Context, bstore *store.Store, specID int6
 			FileName:    fmt.Sprintf("hello-%d.txt", i),
 			Path:        "foo/bar",
 			Size:        12,
+			Content:     []byte("hello world!"),
 			ModifiedAt:  time.Now().UTC(),
 		}
 		if err := bstore.UpsertBatchSpecMount(ctx, mount); err != nil {
