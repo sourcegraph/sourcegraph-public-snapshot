@@ -10,12 +10,13 @@ func (codeIntelligence) NewAutoindexingSummaryGroup(containerName string) monito
 			{
 				monitoring.Observable(NoAlertsOption("none")(Observable{
 					Name:        containerName,
-					Description: "index jobs inserted over 5m",
+					Description: "auto-index jobs inserted over 5m",
 					Owner:       monitoring.ObservableOwnerCodeIntel,
 					Query:       "sum(increase(src_codeintel_dbstore_indexes_inserted[5m]))",
 					NoAlert:     true,
 					Panel:       monitoring.Panel().LegendFormat("inserts"),
 				})),
+				CodeIntelligence.NewIndexSchedulerGroup(containerName).Rows[0][3],
 			},
 		},
 	}
