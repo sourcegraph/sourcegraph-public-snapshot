@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
 
@@ -33,7 +33,7 @@ export interface SearchResultsInfoBarProps
 interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
     showExperimentalVersion: boolean
     nonExperimentalLinkTo?: string
-    isNonExperimentalLinkDisabled?: boolean
+    disabled?: boolean
     onNonExperimentalLinkClick?: () => void
     className?: string
 }
@@ -45,14 +45,15 @@ const ExperimentalActionButton: React.FunctionComponent<
         return <ButtonDropdownCta {...props} />
     }
     return (
-        <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary text-decoration-none"
+        <Button
+            variant="secondary"
+            outline={true}
+            size="sm"
             onClick={props.onNonExperimentalLinkClick}
-            disabled={props.isNonExperimentalLinkDisabled}
+            disabled={props.disabled}
         >
             {props.button}
-        </button>
+        </Button>
     )
 }
 
@@ -139,7 +140,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         viewEventName="VSCECodeMonitorCTAShown"
                         returnTo={`/code-monitoring/new?${searchParameters.toString()}`}
                         telemetryService={platformContext.telemetryService}
-                        isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
+                        disabled={!canCreateMonitorFromQuery}
                         instanceURL={instanceURL}
                     />
                 </Tooltip>
@@ -177,7 +178,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     viewEventName="VSCESaveSearchCTAShown"
                     returnTo=""
                     telemetryService={platformContext.telemetryService}
-                    isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
+                    disabled={showActionButtonExperimentalVersion}
                     instanceURL={instanceURL}
                     onToggle={() => setShowSavedSearchForm(!showSavedSearchForm)}
                 />
@@ -198,14 +199,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         () => (
             <Tooltip content="Share results link">
                 <li className={classNames('mr-2', styles.navItem)}>
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary text-decoration-none"
-                        onClick={onShareResultsClick}
-                    >
+                    <Button variant="secondary" outline={true} size="sm" onClick={onShareResultsClick}>
                         <Icon aria-hidden={true} className="mr-1" svgPath={mdiLink} />
                         Share
-                    </button>
+                    </Button>
                 </li>
             </Tooltip>
         ),

@@ -260,6 +260,16 @@ export const StreamingSearchResults: React.FunctionComponent<
         [query, telemetryService, patternType, caseSensitive, props]
     )
 
+    const handleSearchAggregationBarClick = (query: string): void => {
+        submitSearch({
+            ...props,
+            caseSensitive,
+            patternType,
+            query,
+            source: 'nav',
+        })
+    }
+
     return (
         <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={query} />
@@ -289,7 +299,13 @@ export const StreamingSearchResults: React.FunctionComponent<
             />
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
-                <SearchAggregationResult aria-label="Aggregation results panel" className={styles.contents} />
+                <SearchAggregationResult
+                    query={query}
+                    patternType={patternType}
+                    aria-label="Aggregation results panel"
+                    className={styles.contents}
+                    onQuerySubmit={handleSearchAggregationBarClick}
+                />
             )}
 
             {aggregationUIMode !== AggregationUIMode.SearchPage && (

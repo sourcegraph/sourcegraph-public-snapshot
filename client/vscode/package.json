@@ -217,7 +217,7 @@
     }
   },
   "scripts": {
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
     "prebuild": "yarn build-inline-extensions",

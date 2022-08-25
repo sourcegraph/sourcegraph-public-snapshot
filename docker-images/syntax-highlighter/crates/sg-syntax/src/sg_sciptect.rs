@@ -111,6 +111,11 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("entity.name.tag.yaml"), StringLiteralKey),
             (scope("entity.other.attribute-name.class.css"), Identifier),
             (scope("meta.link.inline.markdown"), StringLiteral),
+            (scope("storage.type.scala"), IdentifierKeyword),
+            (scope("storage.type.stable.scala"), IdentifierKeyword),
+            (scope("storage.type.class.scala"), IdentifierKeyword),
+            (scope("storage.type.function.scala"), IdentifierKeyword),
+            (scope("storage.type.volatile.scala"), IdentifierKeyword),
             // (scope("entity.name.section.markdown"), IdentifierType),
 
             (scope("meta.tag"), Identifier),
