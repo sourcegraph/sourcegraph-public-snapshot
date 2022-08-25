@@ -19,7 +19,6 @@ import { AggregationUIMode } from './types'
 import styles from './SearchAggregationResult.module.scss'
 
 interface SearchAggregationResultProps extends HTMLAttributes<HTMLElement> {
-
     /**
      * Current submitted query, note that this query isn't a live query
      * that is synced with typed query in the search box, this query is submitted
@@ -43,7 +42,6 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
-
     const { data, error, loading } = useSearchAggregationData({ query, patternType, aggregationMode, limit: 30 })
 
     const handleCollapseClick = (): void => {
