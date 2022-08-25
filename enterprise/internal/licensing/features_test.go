@@ -37,6 +37,22 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureSSO, license(plan(enterprise1)), true)
 	})
 
+	t.Run(string(FeatureExplicitPermissionsAPI), func(t *testing.T) {
+		check(t, FeatureExplicitPermissionsAPI, nil, false)
+
+		check(t, FeatureExplicitPermissionsAPI, license("starter"), false)
+		check(t, FeatureExplicitPermissionsAPI, license("starter", string(FeatureExplicitPermissionsAPI)), true)
+		check(t, FeatureExplicitPermissionsAPI, license(plan(oldEnterpriseStarter)), false)
+		check(t, FeatureExplicitPermissionsAPI, license(plan(oldEnterprise)), true)
+		check(t, FeatureExplicitPermissionsAPI, license(), true)
+
+		check(t, FeatureExplicitPermissionsAPI, license(plan(team)), true)
+		check(t, FeatureExplicitPermissionsAPI, license(plan(enterprise0)), true)
+
+		check(t, FeatureExplicitPermissionsAPI, license(plan(business0)), false)
+		check(t, FeatureExplicitPermissionsAPI, license(plan(enterprise1)), true)
+	})
+
 	t.Run(string(FeatureACLs), func(t *testing.T) {
 		check(t, FeatureACLs, nil, false)
 
