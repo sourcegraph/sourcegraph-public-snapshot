@@ -31407,7 +31407,7 @@ pvutils@latest:
 "tether@github:atlassian/tether#amd-with-global":
   version: 0.6.5
   resolution: "tether@https://github.com/atlassian/tether.git#commit=bf85430889b5231fbe5b383416cce6281225bf06"
-  checksum: c11271d296ab587f6a54fda366d7d49bbec06f3dce6d6b7b348f618352576f63f8452705dd814a2c8d7e66828f6da6ea755b7b04ecb02901b2b1a1e7c40c2669
+  checksum: 4d85419d0a10fac4ba952f7a17e0a321f84225e2d3ac4ebfd3ce903a9f4bcca1549f4926002bd09146f3b3d149b67400f7e78fdbe41a8d51ba7a2c84e84c921e
   languageName: node
   linkType: hard
 
