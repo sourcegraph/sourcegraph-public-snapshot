@@ -285,18 +285,18 @@ describe('Search aggregation', () => {
             const editor = await createEditorAPI(driver, QUERY_INPUT_SELECTOR)
             await editor.waitForIt()
 
-            await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
+            await driver.page.waitForSelector('[aria-label="chart content group"] a')
             await driver.page.click('[aria-label="Sidebar search aggregation chart"] a')
 
-            expect(await editor.getValue()).toStrictEqual('context:global insights repo:sourcegraph/sourcegraph')
+            expect(await editor.getValue()).toStrictEqual('insights repo:sourcegraph/sourcegraph')
 
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
-            await driver.page.waitForSelector('[aria-label="Expanded search aggregation chart"]')
+            await driver.page.waitForSelector('[aria-label="chart content group"] g:nth-child(2) a')
             await driver.page.click(
-                '[aria-label="Expanded search aggregation chart"] [ aria-label="chart content group"] g:nth-child(2) a'
+                '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
             )
 
-            expect(await editor.getValue()).toStrictEqual('context:global insights repo:sourecegraph/about')
+            expect(await editor.getValue()).toStrictEqual('insights repo:sourecegraph/about')
         })
     })
 })
