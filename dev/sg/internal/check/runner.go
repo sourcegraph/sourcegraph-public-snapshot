@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	automaticFixChoice = "Automatic fix: You try fixing all of it for me"
-	manualFixChoice = "Manual fix: I want to fix these manually"
-	goBackChoice = "Go back"
+	automaticFixChoice = "Automatic fix: Please try fixing this for me automatically"
+	manualFixChoice    = "Manual fix: Let me fix this manually"
+	goBackChoice       = "Go back"
 )
 
 type SuggestFunc[Args any] func(category string, c *Check[Args], err error) string
