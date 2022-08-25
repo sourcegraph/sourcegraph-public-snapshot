@@ -517,32 +517,28 @@ spec:
             value: "<REDIS_STORE_DSN>"
 ```
 
-## Connect to an external Jaeger instance
+## Configure a tracing backend
+Sourcegraph currently supports exporting tracing data to the following backends:
+- Any backend implementing the [OpenTelemetry Protocol](https://opentelemetry.io/docs/reference/specification/protocol/), over gRPC or HTTP
+- Jaeger
+- Google Cloud Trace
+- Grafana Loki
+- Log output
 
-If you have an existing Jaeger instance you would like to connect Sourcegraph to (instead of running the Jaeger instance inside the Sourcegraph cluster), do:
+Exporting is handled by the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/), which needs to be configured to export to your backend of choice.  
+If you do not currently have any tracing backend configured, you can [enable the optional Jaeger deployment](#enable-the-bundled-jaeger-deployment) that ships with the reference repository.
 
-1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
-1. Update the Jaeger agent containers to point to your Jaeger collector.
-   1. Find all instances of Jaeger agent (`grep -R 'jaegertracing/jaeger-agent'`).
-   1. Update the `args` field of the Jaeger agent container configuration to point to the external
-      collector. E.g.,
-      ```
-      args:
-        - --reporter.grpc.host-port=external-jaeger-collector-host:14250
-        - --reporter.type=grpc
-      ```
-1. Apply these changes to the cluster.
+### Enable the bundled Jaeger deployment
 
-### Disable Jaeger entirely
+### Connect to an OTLP backend
 
-To disable Jaeger entirely, do:
+### Connect to Jaeger
 
-1. Update the Sourcegraph [site
-   configuration](https://docs.sourcegraph.com/admin/config/site_config) to remove the
-   `observability.tracing` field.
-1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
-1. Remove the jaeger agent containers from each `*.Deployment.yaml` and `*.StatefulSet.yaml` file.
-1. Apply these changes to the cluster.
+### Connect to Google Cloud Trace
+
+### Connect to Grafana Loki
+
+### Connect to logging
 
 ## Install without cluster-wide RBAC
 
