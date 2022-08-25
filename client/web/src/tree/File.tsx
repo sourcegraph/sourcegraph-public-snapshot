@@ -130,6 +130,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             // needed because of dynamic styling
                             style={offsetStyle}
                             tabIndex={-1}
+                            isSelected={props.isSelected}
                         >
                             <TreeLayerRowContentsText className="d-flex">
                                 <TreeRowIcon onClick={props.noopRowClick}>
