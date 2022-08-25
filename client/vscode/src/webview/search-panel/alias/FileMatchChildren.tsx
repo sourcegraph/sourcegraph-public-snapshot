@@ -28,7 +28,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Code } from '@sourcegraph/wildcard'
+import { Button, Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
@@ -262,9 +262,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
             {/* Symbols */}
             {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
-                <button
-                    type="button"
-                    className={classNames('test-file-match-children-item', styles.item, 'btn btn-text-link')}
+                <Button
+                    className={classNames('test-file-match-children-item', styles.item, 'btn-text-link')}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
                     onClick={() => openSymbol(symbol.url)}
@@ -274,7 +273,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
                     </Code>
-                </button>
+                </Button>
             ))}
 
             {/* Line matches */}
