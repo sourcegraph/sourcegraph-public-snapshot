@@ -2,7 +2,7 @@ package repos
 
 import (
 	"context"
-	"os"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,25 +31,19 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 		return nil, errors.Wrap(err, "fetching sync errors")
 	}
 
-	for id, failure := range externalServiceSyncErrors {
-		if failure == "" {
-			continue
-		}
-		messages = append(messages, StatusMessage{
-			ExternalServiceSyncError: &ExternalServiceSyncError{
-				Message:           failure,
-				ExternalServiceId: id,
-			},
-		})
-	}
-
-	if os.Getenv("DISABLE_STATUS_MESSAGES_REPOS_COUNTING") == "true" {
-		return messages, nil
-	}
-
 	extsvcIDs := make([]int64, 0, len(externalServiceSyncErrors))
-	for id := range externalServiceSyncErrors {
+
+	for id, failure := range externalServiceSyncErrors {
 		extsvcIDs = append(extsvcIDs, id)
+
+		if failure != "" {
+			messages = append(messages, StatusMessage{
+				ExternalServiceSyncError: &ExternalServiceSyncError{
+					Message:           failure,
+					ExternalServiceId: id,
+				},
+			})
+		}
 	}
 
 	// Return early since the user doesn't have any affiliated external services
@@ -72,7 +66,7 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 	if len(notCloned) > 0 {
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: "Some repositories cloning...",
+				Message: fmt.Sprintf("%d %s cloning...", len(notCloned), pluralize(len(notCloned), "repository", "repositories")),
 			},
 		})
 	}
@@ -92,12 +86,19 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 	if len(failedSync) > 0 {
 		messages = append(messages, StatusMessage{
 			SyncError: &SyncError{
-				Message: "Some repositories could not be synced",
+				Message: fmt.Sprintf("%d %s could not be synced", len(failedSync), pluralize(len(failedSync), "repository", "repositories")),
 			},
 		})
 	}
 
 	return messages, nil
+}
+
+func pluralize(count int, singularNoun, pluralNoun string) string {
+	if count == 1 {
+		return singularNoun
+	}
+	return pluralNoun
 }
 
 type CloningProgress struct {
