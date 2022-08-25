@@ -674,10 +674,10 @@ type BatchSpecConnectionResolver interface {
 type WorkspaceFileConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]WorkspaceFileResolver, error)
+	Nodes(ctx context.Context) ([]BatchWorkspaceFileResolver, error)
 }
 
-type WorkspaceFileResolver interface {
+type BatchWorkspaceFileResolver interface {
 	ID() graphql.ID
 	ModifiedAt() DateTime
 	CreatedAt() DateTime
@@ -697,7 +697,7 @@ type WorkspaceFileResolver interface {
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
 	ToVirtualFile() (*VirtualFileResolver, bool)
-	ToWorkspaceFile() (WorkspaceFileResolver, bool)
+	ToWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }
 
 type CommonChangesetsStatsResolver interface {
