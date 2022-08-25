@@ -251,6 +251,54 @@ func TestMountHandler_ServeHTTP(t *testing.T) {
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: "failed to upload file: failed to insert batch spec mount\n",
 		},
+		{
+			name:       "File Exists",
+			isExecutor: true,
+			method:     http.MethodHead,
+			path:       fmt.Sprintf("/batches/mount/%s/%s", batchSpecRandID, batchSpecMountRandID),
+			mockInvokes: func() {
+				mockStore.
+					On("CountBatchSpecMounts", mock.Anything, store.ListBatchSpecMountsOpts{RandID: batchSpecMountRandID}).
+					Return(1, nil).
+					Once()
+			},
+			expectedStatusCode: http.StatusOK,
+		},
+		{
+			name:       "File Does Exists",
+			isExecutor: true,
+			method:     http.MethodHead,
+			path:       fmt.Sprintf("/batches/mount/%s/%s", batchSpecRandID, batchSpecMountRandID),
+			mockInvokes: func() {
+				mockStore.
+					On("CountBatchSpecMounts", mock.Anything, store.ListBatchSpecMountsOpts{RandID: batchSpecMountRandID}).
+					Return(0, nil).
+					Once()
+			},
+			expectedStatusCode: http.StatusNotFound,
+		},
+		{
+			name:       "File Exists Error",
+			isExecutor: true,
+			method:     http.MethodHead,
+			path:       fmt.Sprintf("/batches/mount/%s/%s", batchSpecRandID, batchSpecMountRandID),
+			mockInvokes: func() {
+				mockStore.
+					On("CountBatchSpecMounts", mock.Anything, store.ListBatchSpecMountsOpts{RandID: batchSpecMountRandID}).
+					Return(0, errors.New("failed to count")).
+					Once()
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: "failed to check if file exists: failed to count\n",
+		},
+		{
+			name:                 "File Exists Missing Mount ID",
+			isExecutor:           true,
+			method:               http.MethodHead,
+			path:                 fmt.Sprintf("/batches/mount/%s", batchSpecRandID),
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedResponseBody: "mount id not provided\n",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
