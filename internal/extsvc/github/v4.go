@@ -501,6 +501,9 @@ func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 				}
 				return nil, err
 			}
+			// The lack of an error return here is intentional. Do not use this
+			// as a basis for implementing other functions that need normal
+			// error handling!
 		} else {
 			return nil, err
 		}
