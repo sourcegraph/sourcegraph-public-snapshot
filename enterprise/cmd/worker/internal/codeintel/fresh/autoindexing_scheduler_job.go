@@ -12,7 +12,8 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/scheduler"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -51,11 +52,6 @@ func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger)
 	}
 	databaseDB := database.NewDB(logger, db)
 
-	dbStore, err := codeintel.InitDBStore()
-	if err != nil {
-		return nil, err
-	}
-
 	lsifStore, err := codeintel.InitLSIFStore()
 	if err != nil {
 		return nil, err
@@ -67,13 +63,15 @@ func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger)
 		return nil, err
 	}
 	repoUpdater := codeintel.InitRepoUpdaterClient()
-	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
+	policyMatcher := policiesEnterprise.NewMatcher(gitserverClient, policiesEnterprise.IndexingExtractor, false, true)
 
 	// Initialize services
 	uploadSvc := uploads.GetService(databaseDB, database.NewDBWith(logger, lsifStore), gitserverClient)
 	autoindexingSvc := autoindexing.GetService(databaseDB, uploadSvc, gitserverClient, repoUpdater)
+	policySvc := policies.GetService(databaseDB, uploadSvc, gitserverClient)
 
+	// Initialize services
 	return []goroutine.BackgroundRoutine{
-		scheduler.NewScheduler(autoindexingSvc, dbStore, policyMatcher, observationContext),
+		scheduler.NewScheduler(autoindexingSvc, policySvc, uploadSvc, policyMatcher, observationContext),
 	}, nil
 }
