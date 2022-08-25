@@ -147,22 +147,9 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
     }
 }
 
-/** Start line to use when fetching an entire file. */
-const ENTIRE_FILE_START_LINE = 0
-/** End line to use when fetching an entire file.
- * For reference, this is a Mersenne prime number: https://en.wikipedia.org/wiki/2,147,483,647 */
-const ENTIRE_FILE_END_LINE = 2147483647
-
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    /**
-     * If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
-     * fetch (instead of the entire file.)
-     */
-    const optimizeHighlighting =
-        props.settingsCascade.final &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures?.enableFastResultLoading
+
     /**
      * If LazyFileResultSyntaxHighlighting is enabled, we fetch plaintext
      * line ranges _alongside_ the typical highlighted line ranges.
@@ -187,21 +174,20 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 },
                 false
             ),
-        [fetchHighlightedFileLineRanges, result]
+        [result, fetchHighlightedFileLineRanges]
     )
 
     const fetchHighlightedFileMatchLineRanges = React.useCallback(
         (startLine: number, endLine: number) => {
             const startTime = Date.now()
             return fetchFileRangeMatches({
-                ranges: optimizeHighlighting
-                    ? grouped.map(
-                          (group): IHighlightLineRange => ({
-                              startLine: group.startLine,
-                              endLine: group.endLine,
-                          })
-                      )
-                    : [{ startLine: ENTIRE_FILE_START_LINE, endLine: ENTIRE_FILE_END_LINE }], // entire file
+                format: HighlightResponseFormat.HTML_HIGHLIGHT,
+                ranges: grouped.map(
+                    (group): IHighlightLineRange => ({
+                        startLine: group.startLine,
+                        endLine: group.endLine,
+                    })
+                ),
             }).pipe(
                 map(lines => {
                     const endTime = Date.now()
@@ -210,35 +196,30 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         { durationMs: endTime - startTime },
                         { durationMs: endTime - startTime }
                     )
-                    return optimizeHighlighting
-                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-                        : lines[0].slice(startLine, endLine)
+                    return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 })
             )
         },
-        [fetchFileRangeMatches, optimizeHighlighting, grouped, telemetryService]
+        [fetchFileRangeMatches, grouped, telemetryService]
     )
 
     const fetchPlainTextFileMatchLineRanges = React.useCallback(
         (startLine: number, endLine: number) =>
             fetchFileRangeMatches({
                 format: HighlightResponseFormat.HTML_PLAINTEXT,
-                ranges: optimizeHighlighting
-                    ? grouped.map(
-                          (group): IHighlightLineRange => ({
-                              startLine: group.startLine,
-                              endLine: group.endLine,
-                          })
-                      )
-                    : [{ startLine: ENTIRE_FILE_START_LINE, endLine: ENTIRE_FILE_END_LINE }], // entire file
+                ranges: grouped.map(
+                    (group): IHighlightLineRange => ({
+                        startLine: group.startLine,
+                        endLine: group.endLine,
+                    })
+                ),
             }).pipe(
-                map(lines =>
-                    optimizeHighlighting
-                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-                        : lines[0].slice(startLine, endLine)
+                map(
+                    lines =>
+                        lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                 )
             ),
-        [fetchFileRangeMatches, optimizeHighlighting, grouped]
+        [fetchFileRangeMatches, grouped]
     )
 
     const fetchHighlightedSymbolMatchLineRanges = React.useCallback(
@@ -249,14 +230,13 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
             const startTime = Date.now()
             return fetchFileRangeMatches({
-                ranges: optimizeHighlighting
-                    ? result.symbols.map(
-                          (symbol): IHighlightLineRange => ({
-                              startLine: symbol.line - 1,
-                              endLine: symbol.line,
-                          })
-                      )
-                    : [{ startLine: ENTIRE_FILE_START_LINE, endLine: ENTIRE_FILE_END_LINE }], // entire file,
+                format: HighlightResponseFormat.HTML_HIGHLIGHT,
+                ranges: result.symbols.map(
+                    (symbol): IHighlightLineRange => ({
+                        startLine: symbol.line - 1,
+                        endLine: symbol.line,
+                    })
+                ),
             }).pipe(
                 map(lines => {
                     const endTime = Date.now()
@@ -265,17 +245,13 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         { durationMs: endTime - startTime },
                         { durationMs: endTime - startTime }
                     )
-                    return optimizeHighlighting
-                        ? lines[
-                              result.symbols.findIndex(
-                                  symbol => symbol.line - 1 === startLine && symbol.line === endLine
-                              )
-                          ]
-                        : lines[0].slice(startLine, endLine)
+                    return lines[
+                        result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
+                    ]
                 })
             )
         },
-        [result, fetchFileRangeMatches, optimizeHighlighting, telemetryService]
+        [result, fetchFileRangeMatches, telemetryService]
     )
 
     const fetchPlainTextSymbolMatchLineRanges = React.useCallback(
@@ -286,27 +262,22 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
             return fetchFileRangeMatches({
                 format: HighlightResponseFormat.HTML_PLAINTEXT,
-                ranges: optimizeHighlighting
-                    ? result.symbols.map(
-                          (symbol): IHighlightLineRange => ({
-                              startLine: symbol.line - 1,
-                              endLine: symbol.line,
-                          })
-                      )
-                    : [{ startLine: ENTIRE_FILE_START_LINE, endLine: ENTIRE_FILE_END_LINE }], // entire file,
+                ranges: result.symbols.map(
+                    (symbol): IHighlightLineRange => ({
+                        startLine: symbol.line - 1,
+                        endLine: symbol.line,
+                    })
+                ),
             }).pipe(
-                map(lines =>
-                    optimizeHighlighting
-                        ? lines[
-                              result.symbols.findIndex(
-                                  symbol => symbol.line - 1 === startLine && symbol.line === endLine
-                              )
-                          ]
-                        : lines[0].slice(startLine, endLine)
+                map(
+                    lines =>
+                        lines[
+                            result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
+                        ]
                 )
             )
         },
-        [result, fetchFileRangeMatches, optimizeHighlighting]
+        [result, fetchFileRangeMatches]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {

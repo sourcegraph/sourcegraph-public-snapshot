@@ -34,11 +34,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
   interfaces:
     - DBStore
-    - EnqueuerDBStore
-    - EnqueuerGitserverClient
-    - IndexEnqueuer
     - LSIFStore
-    - RepoUpdaterClient
 - filename: enterprise/cmd/frontend/internal/executorqueue/handler/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/services/executors/store
   interfaces:
@@ -100,12 +96,16 @@
   interfaces:
     - SyncStore
 - filename: internal/codeintel/autoindexing/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing
-  interfaces:
-    - DBStore
-    - GitServerClient
-    - InferenceService
-    - RepoUpdaterClient
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared
+      interfaces:
+        - RepoUpdaterClient
+        - GitServerClient
+        - InferenceService
+        - UploadService
 - filename: internal/codeintel/autoindexing/background/scheduler/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/scheduler
   interfaces:

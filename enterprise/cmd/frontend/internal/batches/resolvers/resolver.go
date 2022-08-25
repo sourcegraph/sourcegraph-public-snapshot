@@ -215,11 +215,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 	}
 
 	// Parse the batch spec.
-	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
-		AllowTransformChanges:  true,
-		AllowConditionalExec:   true,
-		AllowArrayEnvironments: true,
-	})
+	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec))
 	if err != nil {
 		return nil, err
 	}

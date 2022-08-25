@@ -1210,14 +1210,6 @@ type SiteUsageSummary struct {
 	IntegrationUniquesMonth int32
 	IntegrationUniquesWeek  int32
 	IntegrationUniquesDay   int32
-	ManageUniquesMonth      int32
-	CodeUniquesMonth        int32
-	VerifyUniquesMonth      int32
-	MonitorUniquesMonth     int32
-	ManageUniquesWeek       int32
-	CodeUniquesWeek         int32
-	VerifyUniquesWeek       int32
-	MonitorUniquesWeek      int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and

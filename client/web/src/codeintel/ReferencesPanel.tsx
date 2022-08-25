@@ -689,16 +689,9 @@ const SideBlob: React.FunctionComponent<
         return <>Nothing found</>
     }
 
-    const { html, aborted, lsif } = data?.repository?.commit?.blob?.highlight
-    if (aborted) {
-        return (
-            <Text alignment="center" className="text-warning">
-                <i>
-                    Highlighting <Code>{props.activeLocation.file}</Code> failed
-                </i>
-            </Text>
-        )
-    }
+    const { html, lsif } = data?.repository?.commit?.blob?.highlight
+
+    // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
     return (
         <BlobComponent

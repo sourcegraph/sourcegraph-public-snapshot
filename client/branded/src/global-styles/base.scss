@@ -62,8 +62,6 @@ $enable-transitions: false;
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 
-// Modified in `./buttons.scss`
-@import 'bootstrap/scss/buttons';
 /* stylelint-enable @sourcegraph/no-restricted-imports */
 
 @import 'wildcard/src/global-styles/breakpoints';
@@ -78,8 +76,6 @@ $enable-transitions: false;
 @import './typography';
 @import './tables';
 @import './code';
-@import './buttons';
-@import './button-group';
 @import './input-group';
 @import './forms';
 @import './tabs';

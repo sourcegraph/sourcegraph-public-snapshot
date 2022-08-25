@@ -167,25 +167,44 @@ func (t *requestCounterMiddleware) Do(req *http.Request) (*http.Response, error)
 //
 // It is safe to call this function more than once for the same path.
 func MustRegisterDiskMonitor(path string) {
-	mustRegisterOnce(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        "src_disk_space_available_bytes",
-		Help:        "Amount of free space disk space.",
-		ConstLabels: prometheus.Labels{"path": path},
-	}, func() float64 {
-		var stat syscall.Statfs_t
-		_ = syscall.Statfs(path, &stat)
-		return float64(stat.Bavail * uint64(stat.Bsize))
-	}))
+	mustRegisterOnce(newDiskCollector(path))
+}
 
-	mustRegisterOnce(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        "src_disk_space_total_bytes",
-		Help:        "Amount of total disk space.",
-		ConstLabels: prometheus.Labels{"path": path},
-	}, func() float64 {
-		var stat syscall.Statfs_t
-		_ = syscall.Statfs(path, &stat)
-		return float64(stat.Blocks * uint64(stat.Bsize))
-	}))
+type diskCollector struct {
+	path          string
+	availableDesc *prometheus.Desc
+	totalDesc     *prometheus.Desc
+}
+
+func newDiskCollector(path string) prometheus.Collector {
+	constLabels := prometheus.Labels{"path": path}
+	return &diskCollector{
+		path: path,
+		availableDesc: prometheus.NewDesc(
+			"src_disk_space_available_bytes",
+			"Amount of free space disk space.",
+			nil,
+			constLabels,
+		),
+		totalDesc: prometheus.NewDesc(
+			"src_disk_space_total_bytes",
+			"Amount of total disk space.",
+			nil,
+			constLabels,
+		),
+	}
+}
+
+func (c *diskCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- c.availableDesc
+	ch <- c.totalDesc
+}
+
+func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
+	var stat syscall.Statfs_t
+	_ = syscall.Statfs(c.path, &stat)
+	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(stat.Bavail*uint64(stat.Bsize)))
+	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(stat.Blocks*uint64(stat.Bsize)))
 }
 
 func mustRegisterOnce(c prometheus.Collector) {

@@ -183,7 +183,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.IndexableRepos.List, with tracing. It lists
+// ListIndexable calls database.ListMinimalRepos, with tracing. It lists
 // ALL indexable repos which could include private user added repos.
 // In addition, it only lists cloned repositories.
 //

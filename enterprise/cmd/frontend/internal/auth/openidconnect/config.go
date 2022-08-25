@@ -9,8 +9,10 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -49,8 +51,46 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p
 	return p, false
 }
 
-func init() {
+func Init() {
 	conf.ContributeValidator(validateConfig)
+
+	const pkgName = "openidconnect"
+	logger := log.Scoped(pkgName, "OpenID Connect config watch")
+	go func() {
+		conf.Watch(func() {
+			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+				logger.Warn("Check license for SSO (OpenID Connect)", log.Error(err))
+				providers.Update(pkgName, nil)
+				return
+			}
+
+			ps := getProviders()
+			for _, p := range ps {
+				go func(p providers.Provider) {
+					if err := p.Refresh(context.Background()); err != nil {
+						log15.Error("Error prefetching OpenID Connect service provider metadata.", "error", err)
+					}
+				}(p)
+			}
+			providers.Update(pkgName, ps)
+		})
+	}()
+}
+
+func getProviders() []providers.Provider {
+	var cfgs []*schema.OpenIDConnectAuthProvider
+	for _, p := range conf.Get().AuthProviders {
+		if p.Openidconnect == nil {
+			continue
+		}
+		cfgs = append(cfgs, p.Openidconnect)
+	}
+	ps := make([]providers.Provider, 0, len(cfgs))
+	for _, cfg := range cfgs {
+		p := &provider{config: *cfg}
+		ps = append(ps, p)
+	}
+	return ps
 }
 
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {

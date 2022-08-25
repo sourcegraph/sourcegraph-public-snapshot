@@ -3,6 +3,8 @@ package perforce
 import (
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -55,7 +57,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(urn, host, user, password, depotIDs, db)
+	return NewProvider(log.Scoped("authzProvider", ""), urn, host, user, password, depotIDs, db)
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

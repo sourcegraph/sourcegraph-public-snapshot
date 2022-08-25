@@ -81,7 +81,7 @@ func testViaGolangMigrate(t *testing.T, schemaName string, version int, expected
 
 // setupGolangMigrateTest creates and populates the .*schema_migrations table with the given version.
 func setupGolangMigrateTest(ctx context.Context, store *Store, schemaName string, version int) error {
-	tableName := quote(tableizeSchemaName(schemaName))
+	tableName := quote(schemaName)
 
 	if err := store.Exec(ctx, sqlf.Sprintf(`CREATE TABLE %s (version text, dirty bool)`, tableName)); err != nil {
 		return err
@@ -97,7 +97,7 @@ func setupGolangMigrateTest(ctx context.Context, store *Store, schemaName string
 // the migration_logs table has an entry with the given initial version.
 func testViaMigrationLogs(t *testing.T, schemaName string, initialVersion int, expectedVersions []int) {
 	testBackfillSchemaVersion(t, schemaName, expectedVersions, func(ctx context.Context, store *Store) {
-		if err := setupGolangMigrateTest(ctx, store, schemaName, initialVersion); err != nil {
+		if err := setupMigrationLogsTest(ctx, store, schemaName, initialVersion); err != nil {
 			t.Fatalf("unexpected error preparing migration_logs tests: %s", err)
 		}
 	})
@@ -175,19 +175,6 @@ func TestHumanizeSchemaName(t *testing.T) {
 		"test_schema_migrations":         "test",
 	} {
 		if output := humanizeSchemaName(input); output != expected {
-			t.Errorf("unexpected output. want=%q have=%q", expected, output)
-		}
-	}
-}
-
-func TestTableizeSchemaName(t *testing.T) {
-	for input, expected := range map[string]string{
-		"frontend":     "schema_migrations",
-		"codeintel":    "codeintel_schema_migrations",
-		"codeinsights": "codeinsights_schema_migrations",
-		"test":         "test_schema_migrations",
-	} {
-		if output := tableizeSchemaName(input); output != expected {
 			t.Errorf("unexpected output. want=%q have=%q", expected, output)
 		}
 	}
