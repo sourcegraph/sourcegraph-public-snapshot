@@ -134,27 +134,6 @@ var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCoun
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
 
-// scanCounts scans pairs of id/counts from the return value of `*Store.query`.
-func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	visibilities := map[int]int{}
-	for rows.Next() {
-		var id int
-		var count int
-		if err := rows.Scan(&id, &count); err != nil {
-			return nil, err
-		}
-
-		visibilities[id] = count
-	}
-
-	return visibilities, nil
-}
-
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -1189,16 +1168,19 @@ ranked_uploads_providing_packages AS (
 canonical_package_reference_counts AS (
 	SELECT
 		ru.id,
-		count(*) AS count
-	FROM ranked_uploads_providing_packages ru
-	JOIN lsif_references r
-	ON
-		r.scheme = ru.scheme AND
-		r.name = ru.name AND
-		r.version = ru.version AND
-		r.dump_id != ru.id
+		rc.count
+	FROM ranked_uploads_providing_packages ru,
+	LATERAL (
+		SELECT
+			COUNT(*) AS count
+		FROM lsif_references r
+		WHERE
+			r.scheme = ru.scheme AND
+			r.name = ru.name AND
+			r.version = ru.version AND
+			r.dump_id != ru.id
+	) rc
 	WHERE ru.rank = 1
-	GROUP BY ru.id
 ),
 
 -- Count (and ranks) the set of edges that cross over from the target list of uploads

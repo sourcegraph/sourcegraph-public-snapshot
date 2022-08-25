@@ -103,11 +103,12 @@ var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, 
 
 // Each failed sg maintenance run increments a counter in the sgmLog file.
 // We reclone the repository if the number of retries exceeds sgmRetries.
-// Setting SRC_SGM_RETRIES to -1 (default) disables the limit.
+// Setting SRC_SGM_RETRIES to -1 disables recloning due to sgm failures.
+// Default value is 3 (reclone after 3 failed sgm runs).
 //
 // We mention this ENV variable in the header message of the sgmLog files. Make
 // sure that changes here are reflected in sgmLogHeader, too.
-var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum number of times we retry sg maintenance before triggering a reclone."))
+var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "3", "the maximum number of times we retry sg maintenance before triggering a reclone."))
 
 // The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
 var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))

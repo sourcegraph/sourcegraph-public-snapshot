@@ -3,7 +3,6 @@ package tracer
 import (
 	"context"
 	"io"
-	"regexp"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -12,17 +11,11 @@ import (
 	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
 	"go.opentelemetry.io/otel"
 	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	w3cpropagator "go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
-
-	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // newOTelBridgeTracer creates an opentracing.Tracer that exports all OpenTracing traces
@@ -32,12 +25,7 @@ import (
 //
 // All configuration is sourced directly from the environment using the specification
 // laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
-func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
-	// We don't support OTEL_EXPORTER_OTLP_ENDPOINT yet, see newOTelCollectorExporter
-	// docstring.
-	endpoint := otlpenv.GetEndpoint()
-	logger = logger.Scoped("otel", "OpenTelemetry tracer").With(log.String("endpoint", endpoint))
-
+func newOTelBridgeTracer(logger log.Logger, exporter oteltracesdk.SpanExporter, resource log.Resource, debug bool) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
 	// Ensure propagation between services continues to work. This is also done by another
 	// project that uses the OpenTracing bridge:
 	// https://sourcegraph.com/github.com/thanos-io/thanos/-/blob/pkg/tracing/migration/bridge.go?L62
@@ -49,13 +37,17 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	)
 	otel.SetTextMapPropagator(compositePropagator)
 
-	// Initialize OpenTelemetry processor and tracer provider
-	processor, err := newOTelCollectorExporter(context.Background(), logger, endpoint, opts.debug)
-	if err != nil {
-		return nil, nil, nil, err
+	// If in debug mode, we use a synchronous span processor to force spans to get pushed
+	// immediately, otherwise we batch
+	processor := oteltracesdk.NewBatchSpanProcessor(exporter)
+	if debug {
+		logger.Warn("using synchronous span processor - disable 'observability.debug' to use something more suitable for production")
+		processor = oteltracesdk.NewSimpleSpanProcessor(exporter)
 	}
+
+	// Create trace provider
 	provider := oteltracesdk.NewTracerProvider(
-		oteltracesdk.WithResource(newResource(opts.resource)),
+		oteltracesdk.WithResource(newResource(resource)),
 		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
 		oteltracesdk.WithSpanProcessor(processor),
 	)
@@ -72,55 +64,6 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 
 	// Done
 	return bridge, otelTracerProvider, &otelBridgeCloser{provider}, nil
-}
-
-// newOTelCollectorExporter creates a processor that exports spans to an OpenTelemetry
-// collector.
-func newOTelCollectorExporter(ctx context.Context, logger log.Logger, endpoint string, debug bool) (oteltracesdk.SpanProcessor, error) {
-	// Set up client to otel-collector - we replicate some of the logic used internally in
-	// https://github.com/open-telemetry/opentelemetry-go/blob/21c1641831ca19e3acf341cc11459c87b9791f2f/exporters/otlp/internal/otlpconfig/envconfig.go
-	// based on our own inferred endpoint.
-	var (
-		client          otlptrace.Client
-		protocol        = otlpenv.GetProtocol()
-		trimmedEndpoint = trimSchema(endpoint)
-		insecure        = otlpenv.IsInsecure(endpoint)
-	)
-
-	// Work with different protocols
-	switch protocol {
-	case otlpenv.ProtocolGRPC:
-		opts := []otlptracegrpc.Option{
-			otlptracegrpc.WithEndpoint(trimmedEndpoint),
-		}
-		if insecure {
-			opts = append(opts, otlptracegrpc.WithInsecure())
-		}
-		client = otlptracegrpc.NewClient(opts...)
-
-	case otlpenv.ProtocolHTTPJSON:
-		opts := []otlptracehttp.Option{
-			otlptracehttp.WithEndpoint(trimmedEndpoint),
-		}
-		if insecure {
-			opts = append(opts, otlptracehttp.WithInsecure())
-		}
-		client = otlptracehttp.NewClient(opts...)
-	}
-
-	// Initialize the exporter
-	traceExporter, err := otlptrace.New(ctx, client)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create trace exporter")
-	}
-
-	// If in debug mode, we use a synchronous span processor to force spans to get pushed
-	// immediately.
-	if debug {
-		logger.Warn("using synchronous span processor - disable 'observability.debug' to use something more suitable for production")
-		return oteltracesdk.NewSimpleSpanProcessor(traceExporter), nil
-	}
-	return oteltracesdk.NewBatchSpanProcessor(traceExporter), nil
 }
 
 // otelBridgeCloser shuts down the wrapped TracerProvider, and unsets the global OTel
@@ -145,10 +88,4 @@ func newResource(r log.Resource) *resource.Resource {
 		semconv.ServiceNamespaceKey.String(r.Namespace),
 		semconv.ServiceInstanceIDKey.String(r.InstanceID),
 		semconv.ServiceVersionKey.String(r.Version))
-}
-
-var httpSchemeRegexp = regexp.MustCompile(`(?i)^http://|https://`)
-
-func trimSchema(endpoint string) string {
-	return httpSchemeRegexp.ReplaceAllString(endpoint, "")
 }

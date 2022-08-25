@@ -15,9 +15,6 @@
       "isBackground": true,
       "command": ["node_modules/.bin/tsc"],
       "args": ["--build", "tsconfig.all.json", "--watch", "--incremental"],
-      "runOptions": {
-        "runOn": "folderOpen",
-      },
     },
     {
       "label": "Watch web app",

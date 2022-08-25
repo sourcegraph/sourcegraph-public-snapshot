@@ -1,6 +1,10 @@
 package oobmigration
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 type MigrationInterrupt struct {
 	Version      Version
@@ -40,7 +44,7 @@ func scheduleMigrationInterrupts(from, to Version, migrations []yamlMigration) (
 		}
 
 		deprecated := Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor}
-		if !(CompareVersions(from, deprecated) == VersionOrderBefore && CompareVersions(deprecated, to) == VersionOrderBefore) {
+		if !(CompareVersions(from, deprecated) == VersionOrderBefore && CompareVersions(deprecated, to) != VersionOrderAfter) {
 			// Skip migrations not deprecated within the the instance upgrade interval
 			continue
 		}
@@ -66,7 +70,11 @@ func scheduleMigrationInterrupts(from, to Version, migrations []yamlMigration) (
 	points := make([]Version, 0, len(intervals))
 	for _, interval := range intervals {
 		if len(points) == 0 || CompareVersions(points[len(points)-1], interval.introduced) == VersionOrderBefore {
-			points = append(points, interval.deprecated)
+			v, ok := interval.deprecated.Previous()
+			if !ok {
+				return nil, errors.Newf("cannot determine version prior to %s", interval.deprecated.String())
+			}
+			points = append(points, v)
 		}
 	}
 

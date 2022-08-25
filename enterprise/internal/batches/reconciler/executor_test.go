@@ -568,10 +568,12 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if tc.hasCurrentSpec {
 				// The attributes of the spec don't really matter, but the
 				// associations do.
-				specOpts := bt.TestSpecOpts{}
-				specOpts.User = admin.ID
-				specOpts.Repo = repo.ID
-				specOpts.BatchSpec = batchSpec.ID
+				specOpts := bt.TestSpecOpts{
+					User:      admin.ID,
+					Repo:      repo.ID,
+					BatchSpec: batchSpec.ID,
+					Typ:       btypes.ChangesetSpecTypeBranch,
+				}
 				changesetSpec = bt.CreateChangesetSpec(t, ctx, bstore, specOpts)
 			}
 
@@ -594,7 +596,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Setup gitserver dependency.
 			gitClient := &bt.FakeGitserverClient{ResponseErr: tc.gitClientErr}
 			if changesetSpec != nil {
-				gitClient.Response = changesetSpec.Spec.HeadRef
+				gitClient.Response = changesetSpec.HeadRef
 			}
 
 			// Setup the sourcer that's used to create a Source with which
@@ -612,8 +614,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				fakeSource.FakeMetadata = githubPR
 			}
 			if changesetSpec != nil {
-				fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
-				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
+				fakeSource.WantHeadRef = changesetSpec.HeadRef
+				fakeSource.WantBaseRef = changesetSpec.BaseRef
 			}
 
 			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
@@ -765,6 +767,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	plan.ChangesetSpec = bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 		Repo:      repo.ID,
 		HeadRef:   commonHeadRef,
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		Published: true,
 	})
 	plan.Changeset = bt.BuildChangeset(bt.TestChangesetOpts{Repo: repo.ID})
@@ -790,6 +793,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	changesetSpec := bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 		Repo:      repo.ID,
 		HeadRef:   "refs/heads/my-pr",
+		Typ:       btypes.ChangesetSpecTypeBranch,
 		Published: true,
 	})
 	changeset := bt.BuildChangeset(bt.TestChangesetOpts{ExternalState: "OPEN", Repo: repo.ID})
@@ -1155,6 +1159,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			}
 			plan.ChangesetSpec = bt.BuildChangesetSpec(t, bt.TestSpecOpts{
 				HeadRef:    "refs/heads/my-branch",
+				Typ:        btypes.ChangesetSpecTypeBranch,
 				Published:  true,
 				CommitDiff: "testdiff",
 			})

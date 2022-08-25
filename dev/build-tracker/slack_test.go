@@ -7,9 +7,11 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 )
 
-var RunIntegrationTest *bool = flag.Bool("RunIntegrationTest", false, "Run integrations tests")
+var RunSlackIntegrationTest *bool = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
+var RunGitHubIntegrationTest *bool = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
 
 func newJob(name string, exit int) *Job {
 	return &Job{buildkite.Job{
@@ -18,10 +20,78 @@ func newJob(name string, exit int) *Job {
 	}}
 }
 
+func TestGetTeammateFromBuild(t *testing.T) {
+	flag.Parse()
+	if !*RunGitHubIntegrationTest {
+		t.Skip("Github Integration test not enabled")
+	}
+
+	logger := logtest.NoOp(t)
+	config, err := configFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("with nil author, commit author is still retrieved", func(t *testing.T) {
+		client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
+
+		num := 160000
+		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
+		pipelineID := "sourcegraph"
+		build := &Build{
+			Build: buildkite.Build{
+				Pipeline: &buildkite.Pipeline{
+					ID:   &pipelineID,
+					Name: &pipelineID,
+				},
+				Number: &num,
+				Commit: &commit,
+			},
+			Pipeline: &Pipeline{buildkite.Pipeline{
+				Name: &pipelineID,
+			}},
+			Jobs: map[string]Job{},
+		}
+
+		teammate, err := client.getTeammateForBuild(build)
+		require.NoError(t, err)
+		require.Equal(t, teammate.Name, "Ryan Slade")
+	})
+	t.Run("commit author preferred over build author", func(t *testing.T) {
+		client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
+
+		num := 160000
+		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
+		pipelineID := "sourcegraph"
+		build := &Build{
+			Build: buildkite.Build{
+				Pipeline: &buildkite.Pipeline{
+					ID:   &pipelineID,
+					Name: &pipelineID,
+				},
+				Number: &num,
+				Commit: &commit,
+				Author: &buildkite.Author{
+					Name:  "William Bezuidenhout",
+					Email: "william.bezuidenhout@sourcegraph.com",
+				},
+			},
+			Pipeline: &Pipeline{buildkite.Pipeline{
+				Name: &pipelineID,
+			}},
+			Jobs: map[string]Job{},
+		}
+
+		teammate, err := client.getTeammateForBuild(build)
+		require.NoError(t, err)
+		require.Equal(t, teammate.Name, "Ryan Slade")
+	})
+}
+
 func TestSlack(t *testing.T) {
 	flag.Parse()
-	if !*RunIntegrationTest {
-		t.Skip("Integration test not enabled")
+	if !*RunSlackIntegrationTest {
+		t.Skip("Slack Integration test not enabled")
 	}
 	logger := logtest.NoOp(t)
 

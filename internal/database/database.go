@@ -49,6 +49,7 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
+	RepoStatistics() RepoStatisticsStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -213,4 +214,8 @@ func (d *db) Users() UserStore {
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
+}
+
+func (d *db) RepoStatistics() RepoStatisticsStore {
+	return RepoStatisticsWith(d.Store)
 }

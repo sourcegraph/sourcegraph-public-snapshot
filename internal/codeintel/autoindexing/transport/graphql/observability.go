@@ -8,17 +8,23 @@ import (
 )
 
 type operations struct {
-	deleteLSIFIndex                    *observation.Operation
-	indexConfiguration                 *observation.Operation
-	lsifIndexByID                      *observation.Operation
-	lsifIndexes                        *observation.Operation
-	lsifIndexesByRepo                  *observation.Operation
-	queueAutoIndexJobsForRepo          *observation.Operation
-	updateRepositoryIndexConfiguration *observation.Operation
+	// Indexes
+	getIndexByID                  *observation.Operation
+	getIndexesByIDs               *observation.Operation
+	getRecentIndexesSummary       *observation.Operation
+	getLastIndexScanForRepository *observation.Operation
+	deleteIndexByID               *observation.Operation
+	queueAutoIndexJobsForRepo     *observation.Operation
+
+	// Index Configuration
+	getIndexConfiguration                  *observation.Operation
+	updateIndexConfigurationByRepositoryID *observation.Operation
+	inferedIndexConfiguration              *observation.Operation
+	inferedIndexConfigurationHints         *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_autoindexing_transport_graphql",
 		metrics.WithLabels("op"),
@@ -29,17 +35,23 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.autoindexing.transport.graphql.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
 	return &operations{
-		deleteLSIFIndex:                    op("DeleteLSIFIndex"),
-		indexConfiguration:                 op("IndexConfiguration"),
-		lsifIndexByID:                      op("LSIFIndexByID"),
-		lsifIndexes:                        op("LSIFIndexes"),
-		lsifIndexesByRepo:                  op("LSIFIndexesByRepo"),
-		queueAutoIndexJobsForRepo:          op("QueueAutoIndexJobsForRepo"),
-		updateRepositoryIndexConfiguration: op("UpdateRepositoryIndexConfiguration"),
+		// Indexes
+		getIndexByID:                  op("GetIndexByID"),
+		getIndexesByIDs:               op("GetIndexesByIDs"),
+		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
+		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
+		deleteIndexByID:               op("DeleteIndexByID"),
+		queueAutoIndexJobsForRepo:     op("QueueAutoIndexJobsForRepo"),
+
+		// Index Configuration
+		getIndexConfiguration:                  op("IndexConfiguration"),
+		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+		inferedIndexConfiguration:              op("InferedIndexConfiguration"),
+		inferedIndexConfigurationHints:         op("InferedIndexConfigurationHints"),
 	}
 }

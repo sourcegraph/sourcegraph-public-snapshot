@@ -604,7 +604,7 @@ type ExperimentalFeatures struct {
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
-	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
+	EnableLegacyExtensions *bool `json:"enableLegacyExtensions,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
@@ -1712,7 +1712,7 @@ type Settings struct {
 	//
 	// Usually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.
 	Notices []*Notice `json:"notices,omitempty"`
-	// Quicklinks description: Links that should be accessible quickly from the home and search pages.
+	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
 	SearchContextLines int `json:"search.contextLines,omitempty"`
@@ -1783,6 +1783,8 @@ type SettingsExperimentalFeatures struct {
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
+	// EnableMergedFileSymbolSidebar description: Enables the new file sidebar experience with merged file and symbol entries.
+	EnableMergedFileSymbolSidebar *bool `json:"enableMergedFileSymbolSidebar,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover.
@@ -2112,7 +2114,7 @@ type SyntaxHighlightingLanguagePatterns struct {
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 type TlsExternal struct {
-	// Certificates description: TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
+	// Certificates description: TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh. NOTE: git will only respect these certificates and will ignore system certificates. Remember to include system certificates in this setting.
 	Certificates []string `json:"certificates,omitempty"`
 	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.

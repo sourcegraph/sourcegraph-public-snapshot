@@ -7,14 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -352,8 +350,8 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	for _, changesetSpec := range cs {
 		// 🚨 SECURITY: We return an error if the user doesn't have access to one
 		// of the repositories associated with a ChangesetSpec.
-		if _, ok := accessibleReposByID[changesetSpec.RepoID]; !ok {
-			return nil, &database.RepoNotFoundErr{ID: changesetSpec.RepoID}
+		if _, ok := accessibleReposByID[changesetSpec.BaseRepoID]; !ok {
+			return nil, &database.RepoNotFoundErr{ID: changesetSpec.BaseRepoID}
 		}
 		byRandID[changesetSpec.RandID] = changesetSpec
 	}
@@ -765,14 +763,10 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 		return nil, err
 	}
 	spec.UserID = userID
-	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.Spec.BaseRepository))
-	if err != nil {
-		return nil, err
-	}
 
 	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = s.store.Repos().Get(ctx, spec.RepoID); err != nil {
+	if _, err = s.store.Repos().Get(ctx, spec.BaseRepoID); err != nil {
 		return nil, err
 	}
 
