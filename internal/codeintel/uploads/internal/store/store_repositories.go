@@ -36,7 +36,7 @@ func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column s
 
 	replacer := strings.NewReplacer("{column_name}", column)
 	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
-		replacer.Replace(selectRepositoriesForIndexScanQuery),
+		replacer.Replace(getRepositoriesForIndexScanQuery),
 		allowGlobalPolicies,
 		limitExpression,
 		quote(table),
@@ -51,8 +51,8 @@ func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column s
 
 func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
-const selectRepositoriesForIndexScanQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForIndexScan
+const getRepositoriesForIndexScanQuery = `
+-- source: internal/codeintel/uploads/internal/store/store_repositories.go:getRepositoriesForIndexScanQuery
 WITH
 repositories_matching_policy AS (
 	(
@@ -313,6 +313,6 @@ func (s *store) HasRepository(ctx context.Context, repositoryID int) (_ bool, er
 }
 
 const hasRepositoryQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:HasRepository
+-- source: internal/codeintel/uploads/internal/store/store_repositories.go:HasRepository
 SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
 `
