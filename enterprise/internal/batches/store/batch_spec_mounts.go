@@ -248,7 +248,7 @@ func countBatchSpecMountsQuery(opts ListBatchSpecMountsOpts) *sqlf.Query {
 }
 
 var countBatchSpecMountQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_mounts.go:ListBatchSpecMounts
+-- source: enterprise/internal/batches/store/batch_spec_mounts.go:CountBatchSpecMounts
 SELECT COUNT(1) FROM batch_spec_mounts
 %s
 WHERE %s`
