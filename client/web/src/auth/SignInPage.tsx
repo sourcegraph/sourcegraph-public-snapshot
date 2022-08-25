@@ -74,10 +74,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
                             <Button
-                                href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
+                                to={maybeAddPostSignUpRedirect(provider.authenticationURL)}
                                 display="block"
                                 variant="secondary"
-                                as="a"
+                                as={Link}
                             >
                                 {provider.serviceType === 'github' && (
                                     <>

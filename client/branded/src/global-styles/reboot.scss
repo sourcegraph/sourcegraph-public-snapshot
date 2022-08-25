@@ -1,4 +1,6 @@
-// stylelint-disable at-rule-no-vendor-prefix, declaration-no-important, selector-no-qualifying-type, property-no-vendor-prefix
+:root {
+    --dt-font-weight: 700;
+}
 
 // Reboot
 //
@@ -19,11 +21,6 @@
 *::before,
 *::after {
     box-sizing: border-box; // 1
-}
-:root {
-    --dt-font-weight: 700;
-    --link-decoration: none;
-    --link-hover-decoration: underline;
 }
 
 html {
@@ -51,7 +48,6 @@ section {
 // 2. As a best practice, apply a default `background-color`.
 // 3. Set an explicit initial text-align value so that we can later use
 //    the `inherit` value on things like `<th>` elements.
-
 body {
     margin: 0; // 1
     font-family: var(--font-family-base);
@@ -87,36 +83,6 @@ dd {
 }
 
 //
-// Links
-//
-
-a {
-    color: $link-color;
-    text-decoration: $link-decoration;
-    background-color: transparent; // Remove the gray background on active links in IE 10.
-
-    &:hover {
-        color: $link-hover-color;
-        text-decoration: $link-hover-decoration;
-    }
-}
-
-// And undo these styles for placeholder links/named anchors (without href).
-// It would be more straightforward to just use a[href] in previous block, but that
-// causes specificity issues in many other styles that are too complex to fix.
-// See https://github.com/twbs/bootstrap/issues/19402
-
-a:not([href]):not([class]) {
-    color: inherit;
-    text-decoration: none;
-
-    &:hover {
-        color: inherit;
-        text-decoration: none;
-    }
-}
-
-//
 // Figures
 //
 
@@ -139,4 +105,23 @@ svg {
     // See https://github.com/twbs/bootstrap/issues/26878
     overflow: hidden;
     vertical-align: middle;
+}
+
+// Always hide an element with the `hidden` HTML attribute (from PureCSS).
+// Needed for proper display in IE 10-.
+[hidden] {
+    display: none !important;
+}
+
+// Future-proof rule: in browsers that support :focus-visible, suppress the focus outline
+// on elements that programmatically receive focus but wouldn't normally show a visible
+// focus outline. In general, this would mean that the outline is only applied if the
+// interaction that led to the element receiving programmatic focus was a keyboard interaction,
+// or the browser has somehow determined that the user is primarily a keyboard user and/or
+// wants focus outlines to always be presented.
+//
+// See https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible
+// and https://developer.paciellogroup.com/blog/2018/03/focus-visible-and-backwards-compatibility/
+[tabindex='-1']:focus:not(:focus-visible) {
+    outline: 0 !important;
 }

@@ -45,11 +45,13 @@ label {
     display: inline-block;
     margin-bottom: var(--label-margin-bottom);
 }
+
 // Remove the inheritance of word-wrap in Safari.
 // Details at https://github.com/twbs/bootstrap/issues/24990
 select {
     word-wrap: normal;
 }
+
 // Work around a Firefox/IE bug where the transparent `button` background
 // results in a loss of the default `button` focus styles.
 //
@@ -154,41 +156,16 @@ progress {
     -webkit-appearance: none;
 }
 
-//
 // Remove the inner padding in Chrome and Safari on macOS.
-//
-
 [type='search']::-webkit-search-decoration {
     -webkit-appearance: none;
 }
 
-//
 // 1. Correct the inability to style clickable types in iOS and Safari.
 // 2. Change font properties to `inherit` in Safari.
-//
-
 ::-webkit-file-upload-button {
     font: inherit; // 2
     -webkit-appearance: button; // 1
-}
-
-// Always hide an element with the `hidden` HTML attribute (from PureCSS).
-// Needed for proper display in IE 10-.
-[hidden] {
-    display: none !important;
-}
-
-// Future-proof rule: in browsers that support :focus-visible, suppress the focus outline
-// on elements that programmatically receive focus but wouldn't normally show a visible
-// focus outline. In general, this would mean that the outline is only applied if the
-// interaction that led to the element receiving programmatic focus was a keyboard interaction,
-// or the browser has somehow determined that the user is primarily a keyboard user and/or
-// wants focus outlines to always be presented.
-//
-// See https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible
-// and https://developer.paciellogroup.com/blog/2018/03/focus-visible-and-backwards-compatibility/
-[tabindex='-1']:focus:not(:focus-visible) {
-    outline: 0 !important;
 }
 
 .form-control {

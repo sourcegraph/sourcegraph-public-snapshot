@@ -151,7 +151,7 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     orgId: string
     onInviteSent: (result: IModalInviteResult) => void
     triggerLabel?: string
-    as?: keyof JSX.IntrinsicElements | Component | FunctionComponent<React.PropsWithChildren<unknown>>
+    as?: keyof JSX.IntrinsicElements | Component | FunctionComponent<React.PropsWithChildren<unknown>> | Link
     initiallyOpened?: boolean
     eventLoggerEventName?: string
 }

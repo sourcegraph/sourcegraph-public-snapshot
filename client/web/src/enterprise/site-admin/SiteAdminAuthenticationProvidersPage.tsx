@@ -41,7 +41,7 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
                     {authExp && (
                         <div className="text-nowrap">
                             {this.props.node.authenticationURL && (
-                                <Button href={this.props.node.authenticationURL} variant="secondary" as="a">
+                                <Button to={this.props.node.authenticationURL} variant="secondary" as={Link}>
                                     Authenticate
                                 </Button>
                             )}

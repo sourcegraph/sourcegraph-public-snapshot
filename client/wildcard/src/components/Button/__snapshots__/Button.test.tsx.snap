@@ -135,7 +135,8 @@ exports[`Button renders a simple button correctly 1`] = `
 exports[`Button supports rendering as different elements 1`] = `
 <DocumentFragment>
   <a
-    class="btn"
+    class="anchorLink btn"
+    href=""
   >
     I am a link
   </a>

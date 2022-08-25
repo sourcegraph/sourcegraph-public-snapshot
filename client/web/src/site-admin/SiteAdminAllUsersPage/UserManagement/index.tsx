@@ -73,12 +73,12 @@ export const UsersManagement: React.FunctionComponent<RouteComponentProps<{}>> =
                 </H1>
                 <div>
                     <Button
-                        href="/site-admin/usage-statistics/archive"
+                        to="/site-admin/usage-statistics/archive"
                         download="true"
                         className="mr-4"
                         variant="secondary"
                         outline={true}
-                        as="a"
+                        as={Link}
                     >
                         <Icon svgPath={mdiDownload} aria-label="Download usage stats" className="mr-1" />
                         Download usage stats

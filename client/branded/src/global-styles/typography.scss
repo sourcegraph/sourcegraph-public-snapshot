@@ -4,7 +4,6 @@
     --hr-margin-y: 0.25rem;
     --line-height-typography: 1.2;
     --paragraph-margin-bottom: 1rem;
-    --font-weight-bolder: bolder;
     --headings-margin-bottom: 0.5rem;
 }
 
@@ -91,8 +90,8 @@ sup {
 sub {
     bottom: -0.25em;
 }
+
 // Reset margins on paragraphs
-//
 // Similarly, the top margin on `<p>`s get reset. However, we also reset the
 // bottom margin to use `rem` units instead of `em`.
 p {
@@ -114,15 +113,13 @@ legend {
     white-space: normal; // 1
 }
 
-b {
-    font-weight: var(--font-weight-bolder); // Add the correct font weight in Chrome, Edge, and Safari
-}
 // Body / Base / Medium
 .font-weight-medium {
     font-weight: 500;
 }
 
 // Body / Base / Strong
+b,
 strong {
     font-weight: 600;
 }

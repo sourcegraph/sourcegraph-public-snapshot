@@ -159,7 +159,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                             </Button>
                         )}{' '}
                         {!!this.props.node.refreshURL && (
-                            <Button href={this.props.node.refreshURL} variant="secondary" as="a">
+                            <Button to={this.props.node.refreshURL} variant="secondary" as={Link}>
                                 Refresh
                             </Button>
                         )}{' '}

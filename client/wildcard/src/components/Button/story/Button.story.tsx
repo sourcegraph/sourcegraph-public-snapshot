@@ -4,7 +4,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, H2, Text, Tooltip } from '../..'
+import { H1, H2, Link, Text, Tooltip } from '../..'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
@@ -86,8 +86,8 @@ export const AllButtons: Story = () => (
         <Text>Links can be made to look like buttons.</Text>
         <Button
             variant="secondary"
-            as="a"
-            href="https://example.com"
+            as={Link}
+            to="https://example.com"
             target="_blank"
             rel="noopener noreferrer"
             className="mb-3"

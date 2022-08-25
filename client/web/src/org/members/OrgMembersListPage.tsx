@@ -339,7 +339,7 @@ export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren
                                     orgId={org.id}
                                     onInviteSent={onInviteSent}
                                     className={styles.inviteMemberLink}
-                                    as="a"
+                                    as={Link}
                                     size="lg"
                                     variant="link"
                                 />
