@@ -1366,7 +1366,7 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func (s *PermsSyncer) isDisabled() bool {
 	return globals.PermissionsUserMapping().Enabled ||
-		(licensing.EnforceTiers && licensing.Check(licensing.FeatureBackgroundPermissionsSync) != nil) ||
+		(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) ||
 		conf.Get().DisableAutoCodeHostSyncs
 }
 

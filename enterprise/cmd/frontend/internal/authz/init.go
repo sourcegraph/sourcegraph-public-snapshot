@@ -63,8 +63,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 			return nil
 		}
 
-		// todo: check this. add question to Draft PR to clarify this.
-		if licensing.IsFeatureEnabledLenient(licensing.FeatureBackgroundPermissionsSync) {
+		if licensing.IsFeatureEnabledLenient(licensing.FeatureACLs) {
 			return nil
 		}
 

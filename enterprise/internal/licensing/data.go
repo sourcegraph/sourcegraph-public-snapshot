@@ -12,8 +12,6 @@ const (
 	// enterprise0 is the "Enterprise" plan pre-4.0.
 	enterprise0 Plan = "enterprise-0"
 
-	// free is the "Free" plan for 4.0.
-	free0 Plan = "free-0"
 	// business0 is the "Business" plan for 4.0.
 	business0 Plan = "business-0"
 	// enterprise1 is the "Enterprise" plan for 4.0.
@@ -26,7 +24,6 @@ var allPlans = []Plan{
 	team,
 	enterprise0,
 
-	free0,
 	business0,
 	enterprise1,
 }
@@ -38,8 +35,9 @@ const (
 	// OAuth, GitLab OAuth, SAML, and OpenID.
 	FeatureSSO Feature = "sso"
 
-	// FeatureBackgroundPermissionsSyncing is whether the backgroud perms syncing may be be used.
-	FeatureBackgroundPermissionsSync Feature = "background-permissions-sync"
+	// FeatureACLs is whether ACLs may be used, such as GitHub, GitLab or Bitbucket Server repository
+	// permissions and integration with GitHub, GitLab or Bitbucket Server for user authentication.
+	FeatureACLs Feature = "acls"
 
 	// FeatureExplicitPermissionsAPI is whether the Explicit Permissions API may be be used for
 	// sycing repository permissions.
@@ -82,7 +80,7 @@ var planFeatures = map[Plan][]Feature{
 	oldEnterpriseStarter: {},
 	oldEnterprise: {
 		FeatureSSO,
-		FeatureBackgroundPermissionsSync,
+		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 		FeatureExtensionRegistry,
 		FeatureRemoteExtensionsAllowDisallow,
@@ -95,25 +93,21 @@ var planFeatures = map[Plan][]Feature{
 	},
 	team: {
 		FeatureSSO,
-		FeatureBackgroundPermissionsSync,
+		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 	},
 	enterprise0: {
 		FeatureSSO,
-		FeatureBackgroundPermissionsSync,
+		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
-	},
-
-	free0: {
-		FeatureBackgroundPermissionsSync,
 	},
 	business0: {
 		FeatureSSO,
-		FeatureBackgroundPermissionsSync,
+		FeatureACLs,
 	},
 	enterprise1: {
 		FeatureSSO,
-		FeatureBackgroundPermissionsSync,
+		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 	},
 }

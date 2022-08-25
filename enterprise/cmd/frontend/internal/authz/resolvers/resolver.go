@@ -162,7 +162,7 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 }
 
 func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
 
@@ -186,7 +186,7 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 }
 
 func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserPermissionsSyncArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(licensing.FeatureBackgroundPermissionsSync); err != nil {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
 
@@ -218,7 +218,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(licensing.FeatureBackgroundPermissionsSync); err != nil {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
 
