@@ -9,7 +9,19 @@ import { Subject } from 'rxjs'
 import semver from 'semver'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Badge, LoadingSpinner, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip, Alert } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    LoadingSpinner,
+    Container,
+    Link,
+    PageHeader,
+    Icon,
+    H3,
+    H4,
+    Text,
+    Tooltip,
+    Alert,
+} from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -116,9 +128,12 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                 {loading ? (
                     <LoadingSpinner />
                 ) : (
-                    <FilteredConnection<ExecutorFields, {
-                        sourcegraphVersion: string
-                    }>
+                    <FilteredConnection<
+                        ExecutorFields,
+                        {
+                            sourcegraphVersion: string
+                        }
+                    >
                         listComponent="ul"
                         listClassName="list-group mb-2"
                         showMoreClassName="mb-0"
@@ -127,7 +142,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                         querySubject={querySubject}
                         nodeComponent={ExecutorNode}
                         nodeComponentProps={{
-                            sourcegraphVersion: data.site.productVersion
+                            sourcegraphVersion: data.site.productVersion,
                         }}
                         queryConnection={queryExecutorsCallback}
                         history={history}
@@ -149,16 +164,19 @@ export interface ExecutorNodeProps {
 
 /**
  * Valid build date examples for sourcegraph
- *      169135_2022-08-25_a2b623dce148
- *      169120_2022-08-25_a94c7eb7beca
+ * 169135_2022-08-25_a2b623dce148
+ * 169120_2022-08-25_a94c7eb7beca
  *
  * Valid build date example for executor (patch)
- *      executor-patch-notest-es-ignite-debug_168065_2022-08-18_e94e18c4ebcc_patch
+ * executor-patch-notest-es-ignite-debug_168065_2022-08-18_e94e18c4ebcc_patch
  */
 const buildDateRegex = /^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+/
 const developmentVersion = '0.0.0+dev'
 
-export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node, sourcegraphVersion }) => {
+export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({
+    node,
+    sourcegraphVersion,
+}) => {
     const isOutdated = useMemo(() => {
         const isDevelopment = node.executorVersion === developmentVersion && sourcegraphVersion === developmentVersion
 
@@ -294,7 +312,10 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
 
             {isOutdated && (
                 <Alert variant="warning" className="mt-3">
-                    <Text className="m-0">Executor {node.id} is outdated. Please upgrade to a version compatible with the sourcegraph version.</Text>
+                    <Text className="m-0">
+                        Executor {node.id} is outdated. Please upgrade to a version compatible with your sourcegraph
+                        version.
+                    </Text>
                 </Alert>
             )}
         </li>
